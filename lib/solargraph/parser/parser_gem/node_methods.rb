@@ -12,7 +12,7 @@ require 'ast'
 #     class Node
 #       # New children
 #
-#       # @return [Array<AST::Node>]
+#       # @return [Array<self, Integer, String, Symbol, nil>]
 #       attr_reader :children
 #     end
 #   end
@@ -40,7 +40,7 @@ module Solargraph
               if n.is_a?(AST::Node)
                 if n.type == :cbase
                   parts = [''] + pack_name(n)
-                else
+                elsif n.type == :const
                   parts += pack_name(n)
                 end
               else
@@ -59,6 +59,8 @@ module Solargraph
             return '::String'
           elsif node.type == :array
             return '::Array'
+          elsif node.type == :nil
+            return '::NilClass'
           elsif node.type == :hash
             return '::Hash'
           elsif node.type == :int
@@ -311,7 +313,7 @@ module Solargraph
         #    statements in value positions.
         module DeepInference
           class << self
-            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless, :or_asgn]
+            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
             CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]
@@ -462,7 +464,7 @@ module Solargraph
               result
             end
 
-            # @param nodes [Enumerable<Parser::AST::Node, BaseObject>]
+            # @param nodes [Enumerable<Parser::AST::Node, BasicObject>]
             # @return [Array<Parser::AST::Node, nil>]
             def reduce_to_value_nodes nodes
               result = []

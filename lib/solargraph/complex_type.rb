@@ -7,6 +7,7 @@ module Solargraph
     GENERIC_TAG_NAME = 'generic'.freeze
     # @!parse
     #   include TypeMethods
+    include Equality
 
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
@@ -15,7 +16,18 @@ module Solargraph
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
-      @items = types.flat_map(&:items).uniq(&:to_s)
+      items = types.flat_map(&:items).uniq(&:to_s)
+      if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
+        items.delete_if { |i| i.name == 'false' || i.name == 'true' }
+        items.unshift(ComplexType::BOOLEAN)
+      end
+      items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
+      @items = items
+    end
+
+    # @sg-ignore Fix "Not enough arguments to Module#protected"
+    protected def equality_fields
+      [self.class, items]
     end
 
     # @param api_map [ApiMap]
@@ -24,7 +36,8 @@ module Solargraph
     def qualify api_map, context = ''
       red = reduce_object
       types = red.items.map do |t|
-        next t if ['Boolean', 'nil', 'void', 'undefined'].include?(t.name)
+        next t if ['nil', 'void', 'undefined'].include?(t.name)
+        next t if ['::Boolean'].include?(t.rooted_name)
         t.qualify api_map, context
       end
       ComplexType.new(types).reduce_object
@@ -52,8 +65,18 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
+    # @param dst [ComplexType]
+    # @return [ComplexType]
+    def self_to_type dst
+      object_type_dst = dst.reduce_class_type
+      transform do |t|
+        next t if t.name != 'self'
+        object_type_dst
+      end
+    end
+
     # @yieldparam [UniqueType]
-    # @return [Array]
+    # @return [Array<UniqueType>]
     def map &block
       @items.map &block
     end
@@ -76,6 +99,12 @@ module Solargraph
       end
     end
 
+    # @param atype [ComplexType] type which may be assigned to this type
+    # @param api_map [ApiMap] The ApiMap that performs qualification
+    def can_assign?(api_map, atype)
+      any? { |ut| ut.can_assign?(api_map, atype) }
+    end
+
     # @return [Integer]
     def length
       @items.length
@@ -84,10 +113,6 @@ module Solargraph
     # @return [Array<UniqueType>]
     def to_a
       @items
-    end
-
-    def tags
-      @items.map(&:tag).join(', ')
     end
 
     # @param index [Integer]
@@ -130,14 +155,39 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    def tags
+      map(&:tag).join(', ')
+    end
+
+    def simple_tags
+      simplify_literals.tags
+    end
+
+    def literal?
+      @items.any?(&:literal?)
+    end
+
+    # @return [ComplexType]
+    def downcast_to_literal_if_possible
+      ComplexType.new(items.map(&:downcast_to_literal_if_possible))
+    end
+
+    def desc
+      rooted_tags
+    end
+
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
 
+    # @yieldparam [UniqueType]
     def all? &block
       @items.all? &block
     end
 
+    # @yieldparam [UniqueType]
+    # @yieldreturn [Boolean]
+    # @return [Boolean]
     def any? &block
       @items.compact.any? &block
     end
@@ -148,6 +198,10 @@ module Solargraph
 
     def generic?
       any?(&:generic?)
+    end
+
+    def simplify_literals
+      ComplexType.new(map(&:simplify_literals))
     end
 
     # @param new_name [String, nil]
@@ -171,16 +225,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.try_parse(*result.map(&:tag))
-    end
-
-    # @param dst [String]
-    # @return [ComplexType]
-    def self_to dst
-      return self unless selfy?
-      red = reduce_class(dst)
-      result = @items.map { |i| i.self_to red }
-      ComplexType.try_parse(*result.map(&:tag))
+      ComplexType.new(result)
     end
 
     def nullable?
@@ -192,14 +237,43 @@ module Solargraph
       @items.first.all_params || []
     end
 
+    # @return [ComplexType]
+    def reduce_class_type
+      new_items = items.flat_map do |type|
+        next type unless ['Module', 'Class'].include?(type.name)
+
+        type.all_params
+      end
+      ComplexType.new(new_items)
+    end
+
+    # every type and subtype in this union have been resolved to be
+    # fully qualified
+    def all_rooted?
+      all?(&:all_rooted?)
+    end
+
+    # every top-level type has resolved to be fully qualified; see
+    # #all_rooted? to check their subtypes as well
+    def rooted?
+      all?(&:rooted?)
+    end
+
     attr_reader :items
+
+    def rooted?
+      @items.all?(&:rooted?)
+    end
 
     protected
 
     # @return [ComplexType]
     def reduce_object
-      return self if name != 'Object' || subtypes.empty?
-      ComplexType.try_parse(reduce_class(subtypes.join(', ')))
+      new_items = items.flat_map do |ut|
+        next [ut] if ut.name != 'Object' || ut.subtypes.empty?
+        ut.subtypes
+      end
+      ComplexType.new(new_items)
     end
 
     def bottom?
@@ -219,12 +293,17 @@ module Solargraph
       #   Consumers should not need to use this parameter; it should only be
       #   used internally.
       #
-      # @param *strings [Array<String>] The type definitions to parse
+      # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
-      # @overload parse(*strings, partial: false)
-      #  @todo Need ability to use a literal true as a type below
-      #  @param partial [Boolean] True if the string is part of a another type
-      #  @return [Array<UniqueType>]
+      # # @overload parse(*strings, partial: false)
+      # #  @todo Need ability to use a literal true as a type below
+      # #  @param partial [Boolean] True if the string is part of a another type
+      # #  @return [Array<UniqueType>]
+      # @sg-ignore
+      # @todo To be able to select the right signature above,
+      #   Chain::Call needs to know the decl type (:arg, :optarg,
+      #   :kwarg, etc) of the arguments given, instead of just having
+      #   an array of Chains as the arguments.
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType}]
         @cache ||= {}

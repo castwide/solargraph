@@ -9,6 +9,11 @@ module Solargraph
       # @return [Pin::Closure, nil]
       attr_reader :closure
 
+      def closure
+        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        @closure
+      end
+
       # @return [String]
       def name
         @name ||= ''
@@ -19,7 +24,7 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @return [ComplexType, Array<UniqueType>]
+      # @return [ComplexType]
       def context
         # Get the static context from the nearest namespace
         @context ||= find_context
@@ -59,11 +64,7 @@ module Solargraph
           if here.is_a?(Pin::Namespace)
             return here.return_type
           elsif here.is_a?(Pin::Method)
-            if here.scope == :instance
-              return ComplexType.try_parse(here.context.tag)
-            else
-              return here.context
-            end
+            return here.context
           end
           here = here.closure
         end

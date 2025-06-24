@@ -10,7 +10,9 @@ module Solargraph
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
+    autoload :StructDefinition, 'solargraph/convention/struct_definition'
 
+    # @type [Set<Convention::Base>]
     @@conventions = Set.new
 
     # @param convention [Class<Convention::Base>]

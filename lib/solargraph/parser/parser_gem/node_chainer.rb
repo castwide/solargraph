@@ -57,22 +57,22 @@ module Solargraph
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
-              result.push Chain::Call.new(n.children[1].to_s, node_args(n), passed_block(n))
+              result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             else
               raise "No idea what to do with #{n}"
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
               result.concat generate_links(n.children[0])
-              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             elsif n.children[0].nil?
-              result.push Chain::QCall.new(n.children[1].to_s, node_args(n))
+              result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             else
               raise "No idea what to do with #{n}"
             end
@@ -82,15 +82,15 @@ module Solargraph
             result.push Chain::ZSuper.new('super')
           elsif n.type == :super
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('super', args)
+            result.push Chain::Call.new('super', Location.from_node(n), args)
           elsif n.type == :yield
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
-            result.push Chain::Call.new('yield', args)
+            result.push Chain::Call.new('yield', Location.from_node(n), args)
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
           elsif [:lvar, :lvasgn].include?(n.type)
-            result.push Chain::Call.new(n.children[0].to_s)
+            result.push Chain::Call.new(n.children[0].to_s, Location.from_node(n))
           elsif [:ivar, :ivasgn].include?(n.type)
             result.push Chain::InstanceVariable.new(n.children[0].to_s)
           elsif [:cvar, :cvasgn].include?(n.type)
@@ -124,13 +124,13 @@ module Solargraph
               end
             end
           elsif n.type == :hash
-            result.push Chain::Hash.new('::Hash', hash_is_splatted?(n))
+            result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
-            result.push Source::Chain::Array.new(chained_children)
+            result.push Source::Chain::Array.new(chained_children, n)
           else
             lit = infer_literal_node_type(n)
-            result.push (lit ? Chain::Literal.new(lit) : Chain::Link.new)
+            result.push (lit ? Chain::Literal.new(lit, n) : Chain::Link.new)
           end
           result
         end

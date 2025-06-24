@@ -430,6 +430,16 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#bar')
   end
 
+  # pending https://github.com/apiology/solargraph/pull/4
+  xit 'understands tuples inherit from regular arrays' do
+    method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
+    method_pin = method_pins.first
+    expect(method_pin).to_not be_nil
+    expect(method_pin.path).to eq('Array#include?')
+    parameter_type = method_pin.signatures.first.parameters.first.return_type
+    expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
+  end
+
   it 'loads workspaces from directories' do
     api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
     expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
@@ -744,6 +754,21 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
+  it 'can qualify "Boolean"' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.qualify('Boolean')).to eq('Boolean')
+  end
+
+  it 'knows that true is a "subtype" of Boolean' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+  end
+
+  it 'knows that false is a "subtype" of Boolean' do
+    api_map = Solargraph::ApiMap.new
+    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+  end
+
   it 'resolves aliases for YARD methods' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
     yard_pins = Dir.chdir dir do
@@ -768,5 +793,28 @@ describe Solargraph::ApiMap do
     mixin = Solargraph::Pin::Reference::Include.new(name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure)
     api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
+  end
+
+  it 'understands aliases in local classes' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        # @return [Symbol]
+        def foo; whatever; end
+
+        alias bar foo
+      end
+
+      class B
+        def baz
+          a = A.new.bar
+          a
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('Symbol')
   end
 end

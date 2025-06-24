@@ -1,3 +1,91 @@
+## 0.55.2 - June 21, 2025
+- Require external bundle (#972)
+
+## 0.55.1 - June 8, 2025
+- Fix inline Struct definition (#962)
+- Ensure DocMap requires bundler when loading gemspecs (#963)
+- DelegatedMethod improvements (#953)
+
+## 0.55.0 - June 3, 2025
+- Flow-sensitive typing - automatically downcast from is_a? calls (#856)
+- Tuple enabler: infer literal types and use them for signature selection (#836)
+- Signature selection improvements (#907)
+- Add support for Ruby Structs (#939)
+- [regression] Fix interface change breaking solargraph-rails (#940)
+- [regression] Add back bundler/require support for solargraph-rails (#941)
+- Add specs for initialize capabilities (#955)
+- Create MethodAlias pins from YARD (#945)
+- MessageWorker prioritizes synchronization (#956)
+- initialize/new method pin cleanups (#949)
+- Clip rebinds blocks when cursor is not part of receiver (#958)
+
+## 0.54.5 - May 17, 2025
+- Repair unknown encoding errors (#936, #935)
+- Index arbitrary pinsets (#937)
+- Separate YARD cache from doc map cache (#938)
+
+## 0.54.4 - May 14, 2025
+- Delete files from Library hash (#932)
+- Clip#define returns variable pins (#934, #933)
+
+## 0.54.3 - May 13, 2025
+- Improve inspect()/desc()/to_s() methods for better debugging output (#913)
+- Fix generic resolution in Hash types (#906)
+- Stop parsing RBS type parameter constraints as the type name (#918)
+- Fix pin inference stack (#922)
+- Refactor pin equality for performance (#925)
+- Improve ApiMap catalog speed by preserving static pin indexes (#930)
+- Update jaro_winkler dependency (#931)
+
+## 0.54.2 - April 28, 2025
+- Resolve generics correctly on mixin inclusion (#898)
+- Pick correct String#split overload (#905)
+- Fix type sent into YARD method (#912)
+- Early CancelRequest handling (#914)
+- Destructure partial yield types (#915)
+- Dependency versions (#916)
+
+## 0.54.1 - April 26, 2025
+- Retire more RubyVM-specific code (#797)
+- Add additional docs for key classes, modules and methods (#802)
+- Populate location information from RBS files (#768)
+- Consolidate parameter handling into Pin::Callable (#844)
+- Adjust local variable presence to start after assignment, not before (#864)
+- Resolve params from ref tags (#872)
+- Reduce use of ComplexType.parse() to preserve rooted? information (#870)
+- Ensure yield return types are qualified (#886)
+- Understand type of 'def foo; @foo ||= bar; end' reader methods (#888)
+- Improvements to #inspect output on pins and chains (#895)
+- Block method resolution improvements (#885)
+- Understand mass assignment into instance variables (#893)
+- Library sync and cache invalidation (#903)
+- Handle super and yield scenarios from blocks (#891)
+- Allow core and stdlib documentation to be uncached (#899)
+- Surface variable names in LSP, e.g., textDocument/hover (#910)
+- Keep idle progress notifications alive (#911)
+
+## 0.54.0 - April 14, 2025
+- Add support for simple block argument destructuring (#821)
+- Benchmark the typecheck command (#852)
+- Send Gem Caching Progress Notifications to LSP Clients (#855)
+- [breaking] Fix more complex_type_spec.rb cases (#813)
+- Mass assignment support - e.g., a, b = ['1', '2'] (#843)
+- Memoize result of Chain#infer (#857)
+- Ignore malformed mixins and overloads (#862)
+- Drop Parser::ParserGem::ClassMethods#returns_from_node (#866)
+- Refactor TypeChecker#argument_problems_for for type safety (#867)
+- Specify more type behavior for variable reassignment (#863)
+- One-step source synchronization (#871)
+- Show cache progress in shell commands (#874)
+- Fix miscellaneous scan errors (#875)
+- Synchronous libraries (#876)
+- Fix parsing of Set#classify method signature from RBS (#878)
+- Sync Library#diagnose (#882)
+- Doesn't false-alarm over splatted non-final args in typechecking (#883)
+- Remove accidental inclusion of Module's methods in objects (#884)
+- Remove another splat-related false alarm in strict typechecking (#889)
+- Change require path `warn` to `debug` (#897)
+
 ## 0.53.4 - March 30, 2025
 - [regression] Restore 'Unresolved call' typecheck for stdlib objects (#849)
 - Lazy dynamic rebinding (#851)

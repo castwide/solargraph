@@ -93,4 +93,36 @@ describe Solargraph::RbsMap::CoreMap do
     clip = api_map.clip_at('test.rb', [5, 6])
     expect(clip.infer.to_s).to eq('Foo')
   end
+
+  it "generates rooted pins from RBS for core" do
+    map = Solargraph::RbsMap::CoreMap.new
+    map.pins.each do |pin|
+      expect(pin).to be_all_rooted
+      unless pin.is_a?(Solargraph::Pin::Keyword)
+        expect(pin.closure).to_not be_nil, ->(){ "Pin #{pin.inspect} (#{pin.path}) has no closure" }
+      end
+    end
+  end
+
+  it 'renders string literals from RBS in a useful way' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil
+      bar = foo.to_s # => '""' in rbs
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect(clip.infer.to_s).to eq('""')
+    expect(clip.infer.to_rbs).to eq('""')
+  end
+
+  it 'treats literal nil as NilClass for method resolution' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil.to_s # => "''" in rbs
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('""')
+  end
 end

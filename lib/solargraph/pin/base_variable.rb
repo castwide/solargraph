@@ -11,12 +11,14 @@ module Solargraph
 
       attr_accessor :mass_assignment
 
+      # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, **splat
+      def initialize assignment: nil, return_type: nil, **splat
         super(**splat)
         @assignment = assignment
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = nil
+        @return_type = return_type
       end
 
       def completion_item_kind
@@ -32,7 +34,10 @@ module Solargraph
         @return_type ||= generate_complex_type
       end
 
+      # @sg-ignore
       def nil_assignment?
+        # this will always be false - should it be return_type ==
+        #   ComplexType::NIL or somesuch?
         return_type.nil?
       end
 
@@ -57,7 +62,7 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            result = chain.infer(api_map, closure, clip.locals).self_to(closure.context.tag)
+            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -88,11 +93,13 @@ module Solargraph
         ComplexType::UNDEFINED
       end
 
+      # @param other [Object]
       def == other
         return false unless super
         assignment == other.assignment
       end
 
+      # @param pin [self]
       def try_merge! pin
         return false unless super
         @assignment = pin.assignment
@@ -100,8 +107,8 @@ module Solargraph
         true
       end
 
-      def desc
-        "#{to_rbs} = #{assignment&.type.inspect}"
+      def type_desc
+        "#{super} = #{assignment&.type.inspect}"
       end
 
       private

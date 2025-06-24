@@ -11,44 +11,52 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
+      # does not assert like super, as a namespace without a closure
+      # may be the root level namespace, or it may not yet be
+      # qualified
+      attr_reader :closure
+
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
-      def initialize type: :class, visibility: :public, gates: [''], **splat
+      # @param name [String]
+      def initialize type: :class, visibility: :public, gates: [''], name: '', **splat
         # super(location, namespace, name, comments)
-        super(**splat)
+        super(**splat, name: name)
         @type = type
         @visibility = visibility
         if name.start_with?('::')
-          @name = name[2..-1]
+          # @type [String]
+          name = name[2..-1] || ''
           @closure = Solargraph::Pin::ROOT_PIN
         end
         @open_gates = gates
-        if @name.include?('::')
+        if name.include?('::')
           # In this case, a chained namespace was opened (e.g., Foo::Bar)
           # but Foo does not exist.
-          parts = @name.split('::')
-          @name = parts.pop
+          parts = name.split('::')
+          name = parts.pop
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
             ''
           else
             closure.full_context.namespace + '::'
           end
           closure_name += parts.join('::')
-          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
+          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')], source: :namespace)
           @context = nil
         end
+        @name = name
       end
 
       def to_rbs
-        "#{@type.to_s} #{generics_as_rbs}#{return_type.to_rbs}"
+        "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
-      def desc
-        if name.nil?
+      def inner_desc
+        if name.nil? || name.empty?
           '(top-level)'
         else
-          to_rbs
+          super
         end
       end
 
@@ -57,7 +65,7 @@ module Solargraph
       end
 
       def full_context
-        @full_context ||= ComplexType.try_parse("#{type.to_s.capitalize}<#{path}>")
+        @full_context ||= ComplexType.try_parse("::#{type.to_s.capitalize}<#{path}>")
       end
 
       def binder
@@ -83,7 +91,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.try_parse( (type == :class ? 'Class' : 'Module') + "<#{path}>" )
+        @return_type ||= ComplexType.try_parse( (type == :class ? '::Class' : '::Module') + "<::#{path}>")
       end
 
       # @return [Array<String>]

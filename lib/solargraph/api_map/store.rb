@@ -1,16 +1,50 @@
 # frozen_string_literal: true
 
-
 module Solargraph
   class ApiMap
+    # Queryable collection of Pins representing a Workspace, gems and the Ruby
+    # core.
+    #
     class Store
-      # @return [Array<Solargraph::Pin::Base>]
-      attr_reader :pins
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      def initialize *pinsets
+        catalog pinsets
+      end
 
-      # @param pins [Enumerable<Solargraph::Pin::Base>]
-      def initialize pins = []
-        @pins = pins
-        index
+      # @return [Array<Solargraph::Pin::Base>]
+      def pins
+        index.pins
+      end
+
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @return [Boolean] True if the index was updated
+      def update *pinsets
+        return catalog(pinsets) if pinsets.length != @pinsets.length
+
+        changed = pinsets.find_index.with_index { |pinset, idx| @pinsets[idx] != pinset }
+        return false unless changed
+
+        # @todo Fix this map
+        @fqns_pins_map = nil
+        return catalog(pinsets) if changed == 0
+
+        pinsets[changed..].each_with_index do |pins, idx|
+          @pinsets[changed + idx] = pins
+          @indexes[changed + idx] = if pins.empty?
+            @indexes[changed + idx - 1]
+          else
+            @indexes[changed + idx - 1].merge(pins)
+          end
+        end
+        true
+      end
+
+      def to_s
+        self.class.to_s
+      end
+
+      def inspect
+        to_s
       end
 
       # @param fqns [String]
@@ -32,12 +66,18 @@ module Solargraph
         end
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
-      def get_superclass fqns
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
+        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
+        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -62,11 +102,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        path_pin_hash[path] || []
-      end
-
-      def cacheable_pins
-        @cacheable_pins ||= pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant) + pins_by_class(Pin::Method) + pins_by_class(Pin::Reference)
+        index.path_pin_hash[path]
       end
 
       # @param fqns [String]
@@ -81,7 +117,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_class_variables(fqns)
-        namespace_children(fqns).select{|pin| pin.is_a?(Pin::ClassVariable)}
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]
@@ -97,10 +133,10 @@ module Solargraph
 
       # @return [Set<String>]
       def namespaces
-        @namespaces ||= Set.new
+        index.namespaces
       end
 
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
       end
@@ -139,18 +175,11 @@ module Solargraph
         pins_by_class(Pin::Block)
       end
 
-      def inspect
-        # Avoid insane dumps in specs
-        to_s
-      end
-
       # @generic T
-      # @param klass [Class<T>]
-      # @return [Array<T>]
+      # @param klass [Class<generic<T>>]
+      # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
-        s = Set.new
-        @pin_select_cache[klass] ||= @pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
+        index.pins_by_class klass
       end
 
       # @param fqns [String]
@@ -170,6 +199,23 @@ module Solargraph
 
       private
 
+      def index
+        @indexes.last
+      end
+
+      def catalog pinsets
+        @pinsets = pinsets
+        @indexes = []
+        pinsets.each do |pins|
+          if @indexes.last && pins.empty?
+            @indexes.push @indexes.last
+          else
+            @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
+          end
+        end
+        true
+      end
+
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
@@ -180,129 +226,39 @@ module Solargraph
 
       # @return [Enumerable<Solargraph::Pin::Symbol>]
       def symbols
-        pins_by_class(Pin::Symbol)
+        index.pins_by_class(Pin::Symbol)
       end
 
       # @return [Hash{String => Array<String>}]
       def superclass_references
-        @superclass_references ||= {}
+        index.superclass_references
       end
 
       # @return [Hash{String => Array<String>}]
       def include_references
-        @include_references ||= {}
+        index.include_references
       end
 
       # @return [Hash{String => Array<String>}]
       def prepend_references
-        @prepend_references ||= {}
+        index.prepend_references
       end
 
       # @return [Hash{String => Array<String>}]
       def extend_references
-        @extend_references ||= {}
+        index.extend_references
       end
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def namespace_children name
-        namespace_map[name] || []
-      end
-
-      # @return [Hash{String => Enumerable<Pin::Base>}
-      def namespace_map
-        @namespace_map ||= {}
+        return [] unless index.namespace_hash.key?(name)
+        index.namespace_hash[name]
       end
 
       # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
-        pins_by_class(Pin::InstanceVariable)
-      end
-
-      # @return [Hash{String => Array<Pin::Base>}]
-      def path_pin_hash
-        @path_pin_hash ||= {}
-      end
-
-      # Add references to a map
-      #
-      # @param h [Hash{String => Pin:Base}]
-      # @param reference_pin [Pin::Reference]
-      #
-      # @return [void]
-      def store_parametric_reference(h, reference_pin)
-        referenced_ns = reference_pin.name
-        referenced_tag_params = reference_pin.generic_values
-        referenced_tag = referenced_ns +
-                         if referenced_tag_params && referenced_tag_params.length > 0
-                           "<" + referenced_tag_params.join(', ') + ">"
-                         else
-                           ''
-                         end
-        referencing_ns = reference_pin.namespace
-        h[referencing_ns] ||= []
-        h[referencing_ns].push referenced_tag
-      end
-
-      # @return [void]
-      def index
-        set = pins.to_set
-        @pin_class_hash = set.classify(&:class).transform_values(&:to_a)
-        # @type [Hash{Class => ::Array<Solargraph::Pin::Base>}]
-        @pin_select_cache = {}
-        @namespace_map = set.classify(&:namespace)
-        @path_pin_hash = set.classify(&:path)
-        @namespaces = @path_pin_hash.keys.compact.to_set
-        pins_by_class(Pin::Reference::Include).each do |pin|
-          store_parametric_reference(include_references, pin)
-        end
-        # @todo move the rest of these reference pins over to use
-        #   generic types, adding rbs_map/conversions.rb code to
-        #   populate type parameters and adding related specs ensuring
-        #   the generics get resolved, along with any api_map.rb
-        #   changes needed in
-        pins_by_class(Pin::Reference::Prepend).each do |pin|
-          prepend_references[pin.namespace] ||= []
-          prepend_references[pin.namespace].push pin.name
-        end
-        pins_by_class(Pin::Reference::Extend).each do |pin|
-          extend_references[pin.namespace] ||= []
-          extend_references[pin.namespace].push pin.name
-        end
-        pins_by_class(Pin::Reference::Superclass).each do |pin|
-          superclass_references[pin.namespace] ||= []
-          superclass_references[pin.namespace].push pin.name
-        end
-        pins_by_class(Pin::Reference::Override).each do |ovr|
-          pin = get_path_pins(ovr.name).first
-          next if pin.nil?
-          new_pin = if pin.path.end_with?('#initialize')
-            get_path_pins(pin.path.sub(/#initialize/, '.new')).first
-          end
-          (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-            pin.docstring.delete_tags tag.to_sym
-            new_pin.docstring.delete_tags tag.to_sym if new_pin
-          end
-          ovr.tags.each do |tag|
-            pin.docstring.add_tag(tag)
-            redefine_return_type pin, tag
-            if new_pin
-              new_pin.docstring.add_tag(tag)
-              redefine_return_type new_pin, tag
-            end
-          end
-        end
-      end
-
-      # @param pin [Pin::Base]
-      # @param tag [String]
-      # @return [void]
-      def redefine_return_type pin, tag
-        return unless pin && tag.tag_name == 'return'
-        pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
-        pin.signatures.each do |sig|
-          sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
-        end
+        index.pins_by_class(Pin::InstanceVariable)
       end
     end
   end

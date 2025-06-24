@@ -4,38 +4,37 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
-    class Method < Closure
+    class Method < Callable
       include Solargraph::Parser::NodeMethods
-
-      # @return [::Array<Pin::Parameter>]
-      attr_reader :parameters
 
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
+
+      attr_writer :signatures
 
       # @return [Parser::AST::Node]
       attr_reader :node
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
-      # @param parameters [::Array<Pin::Parameter>]
       # @param block [Pin::Signature, nil, ::Symbol]
-      # @param node [Parser::AST::Node, RubyVM::AbstractSyntaxTree::Node, nil]
+      # @param node [Parser::AST::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      # @param return_type [ComplexType, nil]
-      def initialize visibility: :public, explicit: true, parameters: [], block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, return_type: nil, **splat
+      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
-        @parameters = parameters
         @block = block
         @node = node
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
-        @return_type = return_type
+      end
+
+      def == other
+        super && other.node == node
       end
 
       def transform_types(&transform)
@@ -44,13 +43,14 @@ module Solargraph
         m.signatures = m.signatures.map do |sig|
           sig.transform_types(&transform)
         end
-        m.parameters = m.parameters.map do |param|
-          param.transform_types(&transform)
-        end
         m.block = block&.transform_types(&transform)
         m.signature_help = nil
         m.documentation = nil
         m
+      end
+
+      def all_rooted?
+        super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
       end
 
       # @param signature [Pin::Signature]
@@ -71,15 +71,14 @@ module Solargraph
         m
       end
 
+      def block?
+        !block.nil?
+      end
+
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
-        @block = signatures.first.block
-      end
-
-      # @return [::Array<String>]
-      def parameter_names
-        @parameter_names ||= parameters.map(&:name)
+        @block = signatures.first&.block
       end
 
       def completion_item_kind
@@ -119,13 +118,16 @@ module Solargraph
               name: name,
               decl: decl,
               presence: location ? location.range : nil,
-              return_type: ComplexType.try_parse(*p.types)
+              return_type: ComplexType.try_parse(*p.types),
+              source: source
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(generics, yield_parameters, yield_return_type)
+          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source)
         end
-        Signature.new(generics, parameters, return_type, block)
+        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source)
+        block.closure = signature if block
+        signature
       end
 
       # @return [::Array<Signature>]
@@ -166,12 +168,12 @@ module Solargraph
         end
       end
 
-      def desc
+      def inner_desc
         # ensure the signatures line up when logged
         if signatures.length > 1
-          "\n#{to_rbs}\n"
+          path + " \n#{to_rbs}\n"
         else
-          to_rbs
+          super
         end
       end
 
@@ -199,13 +201,14 @@ module Solargraph
         name.end_with?('?') ? ComplexType::BOOLEAN : ComplexType::UNDEFINED
       end
 
+      # @sg-ignore
       def documentation
         if @documentation.nil?
-          @documentation ||= super || ''
+          method_docs ||= super || ''
           param_tags = docstring.tags(:param)
           unless param_tags.nil? or param_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Params:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Params:\n"
             lines = []
             param_tags.each do |p|
               l = "* #{p.name}"
@@ -213,12 +216,12 @@ module Solargraph
               l += " #{p.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           yieldparam_tags = docstring.tags(:yieldparam)
           unless yieldparam_tags.nil? or yieldparam_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Block Params:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Block Params:\n"
             lines = []
             yieldparam_tags.each do |p|
               l = "* #{p.name}"
@@ -226,12 +229,12 @@ module Solargraph
               l += " #{p.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           yieldreturn_tags = docstring.tags(:yieldreturn)
           unless yieldreturn_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Block Returns:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Block Returns:\n"
             lines = []
             yieldreturn_tags.each do |r|
               l = "*"
@@ -239,12 +242,12 @@ module Solargraph
               l += " #{r.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
           return_tags = docstring.tags(:return)
           unless return_tags.empty?
-            @documentation += "\n\n" unless @documentation.empty?
-            @documentation += "Returns:\n"
+            method_docs += "\n\n" unless method_docs.empty?
+            method_docs += "Returns:\n"
             lines = []
             return_tags.each do |r|
               l = "*"
@@ -252,10 +255,11 @@ module Solargraph
               l += " #{r.text}"
               lines.push l
             end
-            @documentation += lines.join("\n")
+            method_docs += lines.join("\n")
           end
-          @documentation += "\n\n" unless @documentation.empty?
-          @documentation += "Visibility: #{visibility}"
+          method_docs += "\n\n" unless method_docs.empty?
+          method_docs += "Visibility: #{visibility}"
+          @documentation = method_docs
           concat_example_tags
         end
         @documentation.to_s
@@ -269,10 +273,11 @@ module Solargraph
         @attribute
       end
 
+      # @parm other [Method]
       def nearly? other
-        return false unless super
-        parameters == other.parameters and
-          scope == other.scope and
+        super &&
+          parameters == other.parameters &&
+          scope == other.scope &&
           visibility == other.visibility
       end
 
@@ -280,9 +285,11 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
+      # @param pin [Pin::Method]
       def try_merge! pin
         return false unless super
         @node = pin.node
+        @resolved_ref_tag = false
         true
       end
 
@@ -292,8 +299,8 @@ module Solargraph
         # tag's source is likely malformed.
         @overloads ||= docstring.tags(:overload).select(&:parameters).map do |tag|
           Pin::Signature.new(
-            generics,
-            tag.parameters.map do |src|
+            generics: generics,
+            parameters: tag.parameters.map do |src|
               name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(
                 location: location,
@@ -302,10 +309,12 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location ? location.range : nil,
-                return_type: param_type_from_name(tag, src.first)
+                return_type: param_type_from_name(tag, src.first),
+                source: :overloads
               )
             end,
-            ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types))
+            return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types)),
+            source: :overloads,
           )
         end
         @overloads
@@ -315,13 +324,32 @@ module Solargraph
         @anon_splat
       end
 
+      # @param api_map [ApiMap]
+      # @return [self]
+      def resolve_ref_tag api_map
+        return self if @resolved_ref_tag
+
+        @resolved_ref_tag = true
+        return self unless docstring.ref_tags.any?
+        docstring.ref_tags.each do |tag|
+          ref = if tag.owner.to_s.start_with?(/[#\.]/)
+            api_map.get_methods(namespace)
+                   .select { |pin| pin.path.end_with?(tag.owner.to_s) }
+                   .first
+          else
+            # @todo Resolve relative namespaces
+            api_map.get_path_pins(tag.owner.to_s).first
+          end
+          next unless ref
+
+          docstring.add_tag(*ref.docstring.tags(:param))
+        end
+        self
+      end
+
       protected
 
       attr_writer :block
-
-      attr_writer :parameters
-
-      attr_writer :signatures
 
       attr_writer :signature_help
 
@@ -452,7 +480,7 @@ module Solargraph
         end
         result.push ComplexType::NIL if has_nil
         return ComplexType::UNDEFINED if result.empty?
-        ComplexType.try_parse(*result.map(&:tag).uniq)
+        ComplexType.new(result.uniq)
       end
 
       # @param [ApiMap] api_map
@@ -467,7 +495,7 @@ module Solargraph
           types.push type if type.defined?
         end
         return ComplexType::UNDEFINED if types.empty?
-        ComplexType.try_parse(*types.map(&:tag).uniq)
+        ComplexType.new(types.uniq)
       end
 
       # When YARD parses an overload tag, it includes rest modifiers in the parameters names.
@@ -475,6 +503,7 @@ module Solargraph
       # @param name [String]
       # @return [::Array(String, ::Symbol)]
       def parse_overload_param(name)
+        # @todo this needs to handle mandatory vs not args, kwargs, blocks, etc
         if name.start_with?('**')
           [name[2..-1], :kwrestarg]
         elsif name.start_with?('*')
@@ -496,6 +525,10 @@ module Solargraph
         .join("\n")
         .concat("```\n")
       end
+
+      protected
+
+      attr_writer :return_type
     end
   end
 end

@@ -2,8 +2,8 @@
 
 module Solargraph
   class SourceMap
-    # A static analysis tool for obtaining definitions, completions,
-    # signatures, and type inferences from a cursor.
+    # A static analysis tool for obtaining definitions, Completions,
+    # signatures, and type inferences from a Cursor.
     #
     class Clip
       # @param api_map [ApiMap]
@@ -11,7 +11,9 @@ module Solargraph
       def initialize api_map, cursor
         @api_map = api_map
         @cursor = cursor
-        block.rebind(api_map) if block.is_a?(Pin::Block)
+        block_pin = block
+        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver).contain?(cursor.range.start)
+        @in_block = nil
       end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
@@ -40,7 +42,7 @@ module Solargraph
         end
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Method>]
       def signify
         return [] unless cursor.argument?
         chain = Parser.chain(cursor.recipient_node, cursor.filename)
@@ -53,10 +55,10 @@ module Solargraph
         if result.tag == 'Class'
           # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, block, locals).first
-          return ComplexType.try_parse('BasicObject') if dfn && dfn.path == 'Class#new'
+          return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
         return result unless result.tag == 'self'
-        ComplexType.try_parse(cursor.chain.base.infer(api_map, block, locals).tag)
+        cursor.chain.base.infer(api_map, block, locals)
       end
 
       # Get an array of all the locals that are visible from the cursors's

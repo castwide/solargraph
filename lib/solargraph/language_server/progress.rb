@@ -66,10 +66,10 @@ module Solargraph
         return unless host.client_supports_progress? && !finished?
 
         message = build
-
-        create(host) unless created?
+        create(host)
         host.send_notification '$/progress', message
         @status = FINISHED if kind == 'end'
+        keep_alive host
       end
 
       def created?
@@ -112,6 +112,23 @@ module Solargraph
         else
           raise "Invalid progress kind #{kind}"
         end
+      end
+
+      # @param host [Host]
+      def keep_alive host
+        mutex.synchronize { @last = Time.now }
+        @keep_alive ||= Thread.new do
+          until finished?
+            sleep 10
+            break if finished?
+            next if mutex.synchronize { Time.now - @last < 10 }
+            send host
+          end
+        end
+      end
+
+      def mutex
+        @mutex ||= Mutex.new
       end
     end
   end

@@ -7,8 +7,14 @@ module Solargraph
     #
     class UniqueType
       include TypeMethods
+      include Equality
 
       attr_reader :all_params, :subtypes, :key_types
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      protected def equality_fields
+        [@name, @all_params, @subtypes, @key_types]
+      end
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -21,10 +27,12 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         if name.start_with?(':::')
-          raise "Illegal prefix: #{name}"
+          raise ComplexTypeError, "Illegal prefix: #{name}"
         end
         if name.start_with?('::')
           name = name[2..-1]
+          rooted = true
+        elsif !can_root_name?(name)
           rooted = true
         else
           rooted = false
@@ -40,7 +48,7 @@ module Solargraph
           subs = ComplexType.parse(substring[1..-2], partial: true)
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
-            raise ComplexTypeError, "Bad hash type" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
+            raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
             # @todo should be able to resolve map; both types have it
             #   with same return type
             # @sg-ignore
@@ -63,19 +71,81 @@ module Solargraph
         if parameters_type.nil?
           raise "You must supply parameters_type if you provide parameters" unless key_types.empty? && subtypes.empty?
         end
-        raise "Please remove leading :: and set rooted instead - #{name}" if name.start_with?('::')
+        raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
-        @key_types = key_types
-        @subtypes = subtypes
+        @parameters_type = parameters_type
+        if implicit_union?
+          @key_types = key_types.uniq
+          @subtypes = subtypes.uniq
+        else
+          @key_types = key_types
+          @subtypes = subtypes
+        end
         @rooted = rooted
         @all_params = []
-        @all_params.concat key_types
-        @all_params.concat subtypes
-        @parameters_type = parameters_type
+        @all_params.concat @key_types
+        @all_params.concat @subtypes
+      end
+
+      def implicit_union?
+        # @todo use api_map to establish number of generics in type;
+        #   if only one is allowed but multiple are passed in, treat
+        #   those as implicit unions
+        ['Hash', 'Array', 'Set', '_ToAry', 'Enumerable', '_Each'].include?(name) && parameters_type != :fixed
       end
 
       def to_s
         tag
+      end
+
+      def simplify_literals
+        transform do |t|
+          next t unless t.literal?
+          t.recreate(new_name: t.non_literal_name)
+        end
+      end
+
+      def literal?
+        non_literal_name != name
+      end
+
+      def non_literal_name
+        @non_literal_name ||= determine_non_literal_name
+      end
+
+      def determine_non_literal_name
+        # https://github.com/ruby/rbs/blob/master/docs/syntax.md
+        #
+        # _literal_ ::= _string-literal_
+        #    | _symbol-literal_
+        #    | _integer-literal_
+        #    | `true`
+        #    | `false`
+        return name if name.empty?
+        return 'NilClass' if name == 'nil'
+        return 'Boolean' if ['true', 'false'].include?(name)
+        return 'Symbol' if name[0] == ':'
+        return 'String' if ['"', "'"].include?(name[0])
+        return 'Integer' if name.match?(/^-?\d+$/)
+        name
+      end
+
+      def eql?(other)
+        self.class == other.class &&
+          @name == other.name &&
+          @key_types == other.key_types &&
+          @subtypes == other.subtypes &&
+          @rooted == other.rooted? &&
+          @all_params == other.all_params &&
+          @parameters_type == other.parameters_type
+      end
+
+      def ==(other)
+        eql?(other)
+      end
+
+      def hash
+        [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
       end
 
       # @return [Array<UniqueType>]
@@ -87,9 +157,15 @@ module Solargraph
       def rbs_name
         if name == 'undefined'
           'untyped'
+        elsif literal?
+          name
         else
           rooted_name
         end
+      end
+
+      def desc
+        rooted_tags
       end
 
       # @return [String]
@@ -108,7 +184,11 @@ module Solargraph
           # tuples don't have a name; they're just [foo, bar, baz].
           if substring == '()'
             # but there are no zero element tuples, so we go with an array
-            'Array[]'
+            if rooted?
+              '::Array[]'
+            else
+              'Array[]'
+            end
           else
             # already generated surrounded by []
             parameters_as_rbs
@@ -147,6 +227,23 @@ module Solargraph
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
+      end
+
+      # @param api_map [ApiMap] The ApiMap that performs qualification
+      # @param atype [ComplexType] type which may be assigned to this type
+      def can_assign?(api_map, atype)
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
+        downcasted_atype = atype.downcast_to_literal_if_possible
+        out = downcasted_atype.all? do |autype|
+          autype.name == name || api_map.super_and_sub?(name, autype.name)
+        end
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
+        out
+      end
+
+      # @return [UniqueType]
+      def downcast_to_literal_if_possible
+        SINGLE_SUBTYPE.fetch(rooted_tag, self)
       end
 
       # @param generics_to_resolve [Enumerable<String>]
@@ -209,9 +306,26 @@ module Solargraph
 
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
-            idx = definitions.generics.index(t.subtypes.first&.name)
+            generic_name = t.subtypes.first&.name
+            idx = definitions.generics.index(generic_name)
             next t if idx.nil?
-            context_type.all_params[idx] || ComplexType::UNDEFINED
+            if context_type.parameters_type == :hash
+              if idx == 0
+                next ComplexType.new(context_type.key_types)
+              elsif idx == 1
+                next ComplexType.new(context_type.subtypes)
+              else
+                next ComplexType::UNDEFINED
+              end
+            elsif context_type.all?(&:implicit_union?)
+              if idx == 0 && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
+              end
+            else
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
+            end
           else
             t
           end
@@ -238,6 +352,7 @@ module Solargraph
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
         raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')
+
         new_name ||= name
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
@@ -278,17 +393,26 @@ module Solargraph
           new_key_types = @key_types.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
           new_subtypes = @subtypes.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
         end
-        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes)
+        new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes, make_rooted: @rooted)
         yield new_type
       end
 
-      # Transform references to the 'self' type to the specified concrete namespace
-      # @param dst [String]
-      # @return [UniqueType]
-      def self_to dst
+      # Generate a ComplexType that fully qualifies this type's namespaces.
+      #
+      # @param api_map [ApiMap] The ApiMap that performs qualification
+      # @param context [String] The namespace from which to resolve names
+      # @return [self, ComplexType, UniqueType] The generated ComplexType
+      def qualify api_map, context = ''
         transform do |t|
-          next t if t.name != 'self'
-          t.recreate(new_name: dst, new_key_types: [], new_subtypes: [])
+          next t if t.name == GENERIC_TAG_NAME
+          next t if t.duck_type? || t.void? || t.undefined?
+          recon = (t.rooted? ? '' : context)
+          fqns = api_map.qualify(t.name, recon)
+          if fqns.nil?
+            next UniqueType::BOOLEAN if t.tag == 'Boolean'
+            next UniqueType::UNDEFINED
+          end
+          t.recreate(new_name: fqns, make_rooted: true)
         end
       end
 
@@ -296,8 +420,49 @@ module Solargraph
         @name == 'self' || @key_types.any?(&:selfy?) || @subtypes.any?(&:selfy?)
       end
 
+      # @param dst [ComplexType]
+      # @return [self]
+      def self_to_type dst
+        object_type_dst = dst.reduce_class_type
+        transform do |t|
+          next t if t.name != 'self'
+          object_type_dst
+        end
+      end
+
+      def all_rooted?
+        return true if name == GENERIC_TAG_NAME
+        rooted? && all_params.all?(&:rooted?)
+      end
+
+      def rooted?
+        !can_root_name? || @rooted
+      end
+
+      def can_root_name?(name_to_check = name)
+        self.class.can_root_name?(name_to_check)
+      end
+
+      # @param name [String]
+      def self.can_root_name?(name)
+        # name is not lowercase
+        !name.empty? && name != name.downcase
+      end
+
       UNDEFINED = UniqueType.new('undefined', rooted: false)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
+      TRUE = UniqueType.new('true', rooted: true)
+      FALSE = UniqueType.new('false', rooted: true)
+      NIL = UniqueType.new('nil', rooted: true)
+      # @type [Hash{String => UniqueType}]
+      SINGLE_SUBTYPE = {
+        '::TrueClass' => UniqueType::TRUE,
+        '::FalseClass' => UniqueType::FALSE,
+        '::NilClass' => UniqueType::NIL
+      }.freeze
+
+
+      include Logging
     end
   end
 end

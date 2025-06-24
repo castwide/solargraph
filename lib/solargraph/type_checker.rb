@@ -29,6 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
       @rules = Rules.new(level)
+      # @type [Array<Range>]
       @marked_ranges = []
     end
 
@@ -90,11 +91,11 @@ module Solargraph
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
       result = []
-      declared = pin.typify(api_map).self_to(pin.full_context.namespace)
+      declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, pin.full_context.tag)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
-            inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+            inferred = pin.probe(api_map).self_to_type(pin.full_context)
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin) unless inferred.defined?
           else
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
@@ -106,14 +107,14 @@ module Solargraph
         end
       elsif rules.validate_tags?
         unless pin.node.nil? || declared.void? || virtual_pin?(pin) || abstract?(pin)
-          inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+          inferred = pin.probe(api_map).self_to_type(pin.full_context)
           if inferred.undefined?
             unless rules.ignore_all_undefined? || external?(pin)
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless (rules.rank > 1 ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
-              result.push Problem.new(pin.location, "Declared return type #{declared} does not match inferred type #{inferred} for #{pin.path}", pin: pin)
+            unless (rules.require_all_return_types_match_inferred? ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
+              result.push Problem.new(pin.location, "Declared return type #{declared.rooted_tags} does not match inferred type #{inferred.rooted_tags} for #{pin.path}", pin: pin)
             end
           end
         end
@@ -154,7 +155,7 @@ module Solargraph
             break if par.decl == :restarg || par.decl == :kwrestarg || par.decl == :blockarg
             unless params[par.name]
               if pin.attribute?
-                inferred = pin.probe(api_map).self_to(pin.full_context.namespace)
+                inferred = pin.probe(api_map).self_to_type(pin.full_context)
                 if inferred.undefined?
                   result.push Problem.new(pin.location, "Missing @param tag for #{par.name} on #{pin.path}", pin: pin)
                 end
@@ -337,17 +338,17 @@ module Solargraph
               argchain = arguments[idx]
               if argchain.nil?
                 if par.decl == :arg
-                  last = arguments.last
-                  if last && last.node.type == :splat
-                    argchain = last
+                  final_arg = arguments.last
+                  if final_arg && final_arg.node.type == :splat
+                    argchain = final_arg
                     next # don't try to apply the type of the splat - unlikely to be specific enough
                   else
                     errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
                     next
                   end
                 else
-                  last = arguments.last
-                  argchain = last if last && [:kwsplat, :hash].include?(last.node.type)
+                  final_arg = arguments.last
+                  argchain = final_arg if final_arg && [:kwsplat, :hash].include?(final_arg.node.type)
                 end
               end
               if argchain
@@ -355,12 +356,29 @@ module Solargraph
                   errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
                   next
                 else
-                  last = arguments.last
-                  if last && last.node.type == :splat
-                    next # don't try to apply the type of the splat - unlikely to be specific enough
+                  if argchain.node.type == :splat && argchain == arguments.last
+                    final_arg = argchain
+                  end
+                  if (final_arg && final_arg.node.type == :splat)
+                    # The final argument given has been seen and was a
+                    # splat, which doesn't give us useful types or
+                    # arities against positional parameters, so let's
+                    # continue on in case there are any required
+                    # kwargs we should warn about
+                    next
+                  end
+
+                  if argchain.node.type == :splat && par != sig.parameters.last
+                    # we have been given a splat and there are more
+                    # arguments to come.
+
+                    # @todo Improve this so that we can skip past the
+                    #   rest of the positional parameters here but still
+                    #   process the kwargs
+                    break
                   end
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
-                  ptype = ptype.self_to(par.context.namespace)
+                  ptype = ptype.self_to_type(par.context)
                   if ptype.nil?
                     # @todo Some level (strong, I guess) should require the param here
                   else
@@ -396,7 +414,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => [nil, Hash]}]
+    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
@@ -450,13 +468,24 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @return [Hash{String => Hash{Symbol => BaseObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_hash(pin)
-      tags = pin.docstring.tags(:param)
-      return {} if tags.empty?
+      # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
       result = {}
+      pin.parameters.each do |param|
+        type = param.typify(api_map)
+        next if type.nil? || type.undefined?
+        result[param.name.to_s] = {
+          tagged: type.tags,
+          qualified: type
+        }
+      end
+      # see if we have additional tags to pay attention to from YARD -
+      # e.g., kwargs in a **restkwargs splat
+      tags = pin.docstring.tags(:param)
       tags.each do |tag|
-        next if tag.types.nil? || tag.types.empty?
+        next if result.key? tag.name.to_s
+        next if tag.types.nil?
         result[tag.name.to_s] = {
           tagged: tag.types.join(', '),
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
@@ -466,15 +495,29 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Method>]
-    # @return [Hash{String => Hash{Symbol => BasicObject}}]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
-      pins.each do |pin|
+      return {} if pins.empty?
+      first_pin_type = pins.first.typify(api_map)
+      first_pin = pins.first.proxy first_pin_type
+      param_names = first_pin.parameter_names
+      results = param_hash(first_pin)
+      pins[1..].each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
         # @type [Hash{String => Hash{Symbol => BasicObject}}]
-        result = param_hash(pin)
-        return result unless result.empty?
+
+        # documentation of types in superclasses should fail back to
+        # subclasses if the subclass hasn't documented something
+        superclass_results = param_hash(pin)
+        superclass_results.each do |param_name, details|
+          next unless param_names.include?(param_name)
+
+          results[param_name] ||= {}
+          results[param_name][:tagged] ||= details[:tagged]
+          results[param_name][:qualified] ||= details[:qualified]
+        end
       end
-      {}
+      results
     end
 
     # @param pin [Pin::Base]
@@ -495,7 +538,7 @@ module Solargraph
       !internal? pin
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::BaseVariable]
     def declared_externally? pin
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
@@ -545,7 +588,7 @@ module Solargraph
       return [] unless pin.explicit?
       return [] if parameters.empty? && arguments.empty?
       return [] if pin.anon_splat?
-      unchecked = arguments.clone
+      unchecked = arguments.dup # creates copy of and unthaws array
       add_params = 0
       if unchecked.empty? && parameters.any? { |param| param.decl == :kwarg }
         return [Problem.new(location, "Missing keyword arguments to #{pin.path}")]
@@ -567,7 +610,8 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
-                  return [] if arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash) && arguments.last.links.last.splatted?
+                  last_arg_last_link = arguments.last.links.last
+                  return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
               end
@@ -621,7 +665,7 @@ module Solargraph
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
-    # @param pin [Pin::Base]
+    # @param pin [Pin::Method]
     # @return [Array<Source::Chain>]
     def fake_args_for(pin)
       args = []

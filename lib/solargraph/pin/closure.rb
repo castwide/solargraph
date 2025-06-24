@@ -8,17 +8,22 @@ module Solargraph
 
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
-      def initialize scope: :class, generics: nil, **splat
+      def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
         @scope = scope
         @generics = generics
+        @generic_defaults = generic_defaults
+      end
+
+      def generic_defaults
+        @generic_defaults ||= {}
       end
 
       def context
         @context ||= begin
           result = super
           if scope == :instance
-            Solargraph::ComplexType.parse(result.namespace)
+            result.reduce_class_type
           else
             result
           end
@@ -42,10 +47,15 @@ module Solargraph
       end
 
       # @return [String]
-      def generics_as_rbs
+      def to_rbs
+        rbs_generics + return_type.to_rbs
+      end
+
+      # @return [String]
+      def rbs_generics
         return '' if generics.empty?
 
-        generics.join(', ') + ' '
+        '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
       end
     end
   end

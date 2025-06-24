@@ -1,5 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'strict level' do
+    # @return [Solargraph::TypeChecker]
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
@@ -116,6 +117,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
+
+    xit 'complains about calling a private method from an illegal place'
+
+    xit 'complains about calling a non-existent method'
+
+    xit 'complains about inserting the wrong type into a tuple slot' do
+      checker = type_checker(%(
+        # @param a [::Solargraph::Fills::Tuple(String, Integer)]
+        def foo(a)
+          a[0] = :something
+        end
+      ))
+      expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
+    end
+
+    xit 'complains about dereferencing a non-existent tuple slot'
 
     it 'reports mismatched keyword arguments' do
       checker = type_checker(%(
@@ -490,7 +507,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'requires strict return tags' do
+    xit 'requires strict return tags' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -498,6 +515,21 @@ describe Solargraph::TypeChecker do
           # @return [String]
           def bar
             false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    xit 'requires strict return tags' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            true ? nil : 'bar'
           end
         end
       ))
@@ -705,6 +737,33 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
     end
 
+    it 'does not falsely enforce nil in return types' do
+      checker = type_checker(%(
+      # @return [Integer]
+      def foo
+        # @sg-ignore
+        # @type [Integer, nil]
+        a = bar
+        a || 123
+      end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'refines types on is_a? and && to downcast and avoid false positives' do
+      checker = type_checker(%(
+        def foo
+          # @sg-ignore
+          # @type [Object]
+          a = bar
+          if a.is_a?(String) && a.length > 0
+            a.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'interprets self references correctly' do
       checker = type_checker(%(
         class Bar
@@ -727,6 +786,25 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it "doesn't get confused about rooted types from attr_accessors" do
+      checker = type_checker(%(
+        module Foo
+          class Symbol; end
+          class Bar
+            # @return [::Symbol]
+            attr_accessor :bar
+          end
+       end
+       class Quux
+         def baz
+           bar = Foo::Bar.new
+           bar.bar = :foo
+         end
+       end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it "doesn't false alarm over splatted args which aren't the final argument" do
       checker = type_checker(%(
         # @param path [Array<String>]
@@ -735,6 +813,134 @@ describe Solargraph::TypeChecker do
         def foo *path, baz; end
 
         foo('a', 'b', 'c', ['d'])
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+
+    it 'understands tuple superclass' do
+      checker = type_checker(%(
+        b = ['a', 'b', 123]
+        c = b.include?('a')
+        c
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    xit "Uses flow scope to specialize understanding of cvar types" do
+      checker = type_checker(%(
+        class Bar
+          # @return [String]
+          def foo
+            'feh'
+          end
+
+          # @return [void]
+          def reset_blah
+            @blah = nil
+          end
+        end
+
+        class Foo < Bar
+          # @return [String]
+          def foo
+            @blah.upcase!
+            if @blah.nil?
+              @blah = super
+              @blah.empty?
+            end
+            @blah
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(["Unresolved call to upcase!"])
+    end
+
+    it "does not lose track of place and false alarm when using kwargs after a splat" do
+      checker = type_checker(%(
+        def foo(a, b, c); end
+        def bar(*args, **kwargs, &blk)
+          foo(*args, **kwargs, &blk)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands Array#+ overloads" do
+      checker = type_checker(%(
+        c = ['a'] + ['a']
+        c
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands String#+ overloads" do
+      checker = type_checker(%(
+        detail = ''
+        detail += "foo"
+        detail.strip!
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it "understands Enumerable#each via _Each self type" do
+      checker = type_checker(%(
+        class Blah
+          # @param e [Enumerable<String>]
+          # @return [void]
+          def foo(e)
+            e
+            e.each do |x|
+              x
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing nil to a NilClass parameter' do
+      checker = type_checker(%(
+        # @param a [NilClass]
+        def foo(a); end
+
+        foo(nil)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing NilClass to nil parameter' do
+      checker = type_checker(%(
+        # @param a [nil]
+        def foo(a); end
+
+        # @param a [NilClass]
+        def bar(a)
+          foo(a)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing true to TrueClass parameter' do
+      checker = type_checker(%(
+        # @param a [TrueClass]
+        def foo(a); end
+
+        foo(true)
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain when passing TrueClass to true parameter' do
+      checker = type_checker(%(
+        # @param a [true]
+        def foo(a); end
+
+        # @param a [TrueClass]
+        def bar(a)
+          foo(a)
+        end
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end

@@ -24,10 +24,8 @@ module Solargraph
       attr_writer :client_capabilities
 
       def initialize
-        @cancel_semaphore = Mutex.new
         @buffer_semaphore = Mutex.new
         @request_mutex = Mutex.new
-        @cancel = []
         @buffer = String.new
         @stopped = true
         @next_request_id = 1
@@ -65,7 +63,7 @@ module Solargraph
       # @param id [Integer]
       # @return [void]
       def cancel id
-        @cancel_semaphore.synchronize { @cancel.push id }
+        cancelled.push id
       end
 
       # True if the host received a request to cancel the method with the
@@ -74,9 +72,7 @@ module Solargraph
       # @param id [Integer]
       # @return [Boolean]
       def cancel? id
-        result = false
-        @cancel_semaphore.synchronize { result = @cancel.include? id }
-        result
+        cancelled.include? id
       end
 
       # Delete the specified ID from the list of cancelled IDs if it exists.
@@ -84,7 +80,7 @@ module Solargraph
       # @param id [Integer]
       # @return [void]
       def clear id
-        @cancel_semaphore.synchronize { @cancel.delete id }
+        cancelled.delete id
       end
 
       # Called by adapter, to handle the request
@@ -101,11 +97,11 @@ module Solargraph
       # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
       def receive request
         if request['method']
-          logger.info "Server received #{request['method']}"
+          logger.info "Host received ##{request['id']} #{request['method']}"
           logger.debug request
           message = Message.select(request['method']).new(self, request)
           begin
-            message.process
+            message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
             logger.warn e.backtrace.join("\n")
@@ -381,7 +377,6 @@ module Solargraph
           envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
           queue envelope
           @next_request_id += 1
-          logger.info "Server sent #{method}"
           logger.debug params
         end
       end
@@ -476,6 +471,7 @@ module Solargraph
       def locate_pins params
         return [] unless params['data'] && params['data']['uri']
         library = library_for(params['data']['uri'])
+        # @type [Array<Pin::Base>]
         result = []
         if params['data']['location']
           location = Location.new(
@@ -505,7 +501,8 @@ module Solargraph
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
-                closure: pin.closure
+                closure: pin.closure,
+                source: :solargraph
               )
             end)
           end
@@ -575,7 +572,7 @@ module Solargraph
       # @param column [Integer]
       # @param strip [Boolean] Strip special characters from variable names
       # @param only [Boolean] If true, search current file only
-      # @return [Array<Solargraph::Range>]
+      # @return [Array<Solargraph::Location>]
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
         library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)
@@ -693,6 +690,11 @@ module Solargraph
 
       private
 
+      # @return [Array<Integer>]
+      def cancelled
+        @cancelled ||= []
+      end
+
       # @return [MessageWorker]
       def message_worker
         @message_worker ||= MessageWorker.new(self)
@@ -748,6 +750,7 @@ module Solargraph
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
+        # @sg-ignore push this upstream
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

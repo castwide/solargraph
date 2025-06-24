@@ -253,10 +253,17 @@ describe Solargraph::ComplexType do
 
   it "typifies Booleans" do
     api_map = double(Solargraph::ApiMap, qualify: nil)
-    type = Solargraph::ComplexType.parse('Boolean')
+    type = Solargraph::ComplexType.parse('::Boolean')
     qualified = type.qualify(api_map)
     expect(qualified.tag).to eq('Boolean')
     expect(qualified.to_rbs).to eq('bool')
+  end
+
+  it "does not typify non-rooted Booleans" do
+    api_map = double(Solargraph::ApiMap, qualify: nil)
+    type = Solargraph::ComplexType.parse('Boolean')
+    expect(type.rooted_tag).to eq('Boolean')
+    expect(type.to_rbs).to eq('bool')
   end
 
   it "returns undefined for unqualified types" do
@@ -281,26 +288,26 @@ describe Solargraph::ComplexType do
 
   it 'resolves self keywords in types' do
     selfy = Solargraph::ComplexType.parse('self')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Foo')
   end
 
   it 'resolves self keywords in parameter types' do
     selfy = Solargraph::ComplexType.parse('Array<self>')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Array<Foo>')
   end
 
   it 'resolves self keywords in hash parameter types' do
     selfy = Solargraph::ComplexType.parse('Hash{String => self}')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Hash{String => Foo}')
     expect(type.to_rbs).to eq('Hash[String, Foo]')
   end
 
   it 'resolves self keywords in ordered array types' do
     selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
-    type = selfy.self_to('Foo')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
     expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
     expect(type.to_rbs).to eq('Array[[String, Symbol, Foo]]')
   end
@@ -314,7 +321,7 @@ describe Solargraph::ComplexType do
   end
 
   it 'parses a complex subtype' do
-    type = Solargraph::ComplexType.parse('Array<self>').self_to('Foo<String>')
+    type = Solargraph::ComplexType.parse('Array<self>').self_to_type(Solargraph::ComplexType.parse('Foo<String>'))
     expect(type.tag).to eq('Array<Foo<String>>')
     expect(type.to_rbs).to eq('Array[Foo[String]]')
   end
@@ -340,7 +347,7 @@ describe Solargraph::ComplexType do
   it 'reduces objects' do
     api_map = Solargraph::ApiMap.new
     selfy = Solargraph::ComplexType.parse('Array<self>')
-    type = selfy.self_to('String')
+    type = selfy.self_to_type(Solargraph::ComplexType.parse('String'))
     expect(type.tag).to eq('Array<String>')
     expect(type.to_rbs).to eq('Array[String]')
     result = type.qualify(api_map)
@@ -380,7 +387,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'resolves generic namespace parameters' do
-    api_map = Solargraph::ApiMap.new
     return_type = Solargraph::ComplexType.parse('Array<generic<GenericTypeParam>>')
     generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: '@generic GenericTypeParam')
     called_method = Solargraph::Pin::Method.new(
@@ -394,7 +400,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'resolves generic parameters on a tuple using ()' do
-    api_map = Solargraph::ApiMap.new
     return_type = Solargraph::ComplexType.parse('Array(generic<GenericTypeParam1>, generic<GenericTypeParam2>)')
     generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
     called_method = Solargraph::Pin::Method.new(
@@ -408,7 +413,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'resolves generic parameters on a tuple using <()>' do
-    api_map = Solargraph::ApiMap.new
     return_type = Solargraph::ComplexType.parse('Array<(generic<GenericTypeParam1>, generic<GenericTypeParam2>)>')
     generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
     called_method = Solargraph::Pin::Method.new(
@@ -421,17 +425,63 @@ describe Solargraph::ComplexType do
     expect(type.tag).to eq('Array<(String, Integer)>')
   end
 
+  # See literal details at
+  # https://github.com/ruby/rbs/blob/master/docs/syntax.md and
+  # https://yardoc.org/types.html
+  xit 'understands literal strings with double quotes' do
+    type = Solargraph::ComplexType.parse('"foo"')
+    expect(type.tag).to eq('"foo"')
+    expect(type.to_rbs).to eq('"foo"')
+    expect(type.to_s).to eq('String')
+  end
+
+  xit 'understands literal strings with single quotes' do
+    type = Solargraph::ComplexType.parse("'foo'")
+    expect(type.tag).to eq("'foo'")
+    expect(type.to_rbs).to eq("'foo'")
+    expect(type.to_s).to eq('String')
+  end
+
+  it 'understands literal symbols' do
+    type = Solargraph::ComplexType.parse(':foo')
+    expect(type.tag).to eq(':foo')
+    expect(type.to_rbs).to eq(':foo')
+    expect(type.to_s).to eq(':foo')
+  end
+
+  it 'understands literal integers' do
+    type = Solargraph::ComplexType.parse('123')
+    expect(type.tag).to eq('123')
+    expect(type.to_rbs).to eq('123')
+    expect(type.to_s).to eq('123')
+  end
+
+  it 'understands literal true' do
+    type = Solargraph::ComplexType.parse('true')
+    expect(type.tag).to eq('true')
+    expect(type.to_rbs).to eq('true')
+    expect(type.to_s).to eq('true')
+  end
+
+  it 'understands literal false' do
+    type = Solargraph::ComplexType.parse('false')
+    expect(type.tag).to eq('false')
+    expect(type.to_rbs).to eq('false')
+    expect(type.to_s).to eq('false')
+  end
+
   it 'parses tuples of tuples' do
-    api_map = Solargraph::ApiMap.new
     type = Solargraph::ComplexType.parse('Array(Array(String), String)')
     expect(type.tag).to eq('Array(Array(String), String)')
+    expect(type.to_rbs).to eq('[[String], String]')
+    expect(type.to_s).to eq('Array(Array(String), String)')
   end
 
   it 'parses tuples of tuples with same type twice in a row' do
-    api_map = Solargraph::ApiMap.new
     type = Solargraph::ComplexType.parse('Array(Symbol, String, Array(Integer, Integer))')
-    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+    expect(type.tag).to eq('Array(Symbol, String, Array(Integer, Integer))')
     expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
   end
 
   it 'qualifies tuples of tuples with same type twice in a row' do
@@ -440,5 +490,46 @@ describe Solargraph::ComplexType do
     type = type.qualify(api_map)
     expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
     expect(type.to_rbs).to eq('[::Symbol, ::String, [::Integer, ::Integer]]')
+  end
+
+  it 'throws away other types when in union with an undefined' do
+    type = Solargraph::ComplexType.parse('Symbol, String, Array(Integer, Integer), undefined')
+    expect(type.to_s).to eq('undefined')
+  end
+
+  it 'deduplicates types that are implicit unions' do
+    type = Solargraph::ComplexType.parse('Array<Symbol, String, Symbol>')
+    expect(type.to_s).to eq('Array<Symbol, String>')
+  end
+
+  it "does not deduplicate types that aren't implicit unions" do
+    type = Solargraph::ComplexType.parse('Foo<Symbol, String, Symbol>')
+    expect(type.to_s).to eq('Foo<Symbol, String, Symbol>')
+  end
+
+  it 'squashes literal types when simplifying literals of same type' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('1, 2, 3')
+    type = type.qualify(api_map)
+    expect(type.to_s).to eq('1, 2, 3')
+    expect(type.tags).to eq('1, 2, 3')
+    expect(type.simple_tags).to eq('Integer')
+    expect(type.to_rbs).to eq('(1 | 2 | 3)')
+  end
+
+  xit 'stops parsing when the first character indicates a string literal' do
+    api_map = Solargraph::ApiMap.new
+    type = Solargraph::ComplexType.parse('"Array(Symbol, String, Array(Integer, Integer)"')
+    type = type.qualify(api_map)
+    expect(type.tag).to eq('Array(Symbol, String, Array(Integer, Integer))')
+    expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
+    expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+  end
+
+  ['generic<T>', "nil", "true", "false", ":123", "123"].each do |tag|
+    it "treats #{tag} as rooted" do
+      types = Solargraph::ComplexType.parse(tag)
+      expect(types.all?(&:rooted?)).to be(true)
+    end
   end
 end
