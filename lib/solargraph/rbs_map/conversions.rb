@@ -511,9 +511,10 @@ module Solargraph
         final_scope = decl.kind == :instance ? :instance : :class
         name = "#{decl.name.to_s}="
         visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
+        type_location = location_decl_to_pin_location(decl.location)
         pin = Solargraph::Pin::Method.new(
           name: name,
-          type_location: location_decl_to_pin_location(decl.location),
+          type_location: type_location,
           closure: closure,
           parameters: [],
           comments: decl.comment&.string,
@@ -527,7 +528,8 @@ module Solargraph
             name: 'value',
             return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted,
             source: :rbs,
-            closure: pin
+            closure: pin,
+            type_location: type_location
           )
         rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
