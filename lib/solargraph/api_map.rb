@@ -94,7 +94,7 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
       if @unresolved_requires != unresolved_requires || @doc_map&.uncached_gemspecs&.any?
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace.rbs_collection_path) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
@@ -396,7 +396,7 @@ module Solargraph
             init_pin = get_method_stack(rooted_tag, 'initialize').first
             next pin unless init_pin
 
-            type = ComplexType.try_parse(ComplexType.try_parse(rooted_tag).namespace)
+            type = ComplexType::SELF
             Pin::Method.new(
               name: 'new',
               scope: :class,
@@ -405,9 +405,10 @@ module Solargraph
               signatures: init_pin.signatures.map { |sig| sig.proxy(type) },
               return_type: type,
               comments: init_pin.comments,
-              closure: init_pin.closure
-            # @todo Hack to force TypeChecker#internal_or_core?
-            ).tap { |pin| pin.source = :rbs }
+              closure: init_pin.closure,
+              source: init_pin.source,
+              type_location: init_pin.type_location,
+            )
           end
         end
         result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)

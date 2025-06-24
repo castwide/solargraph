@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'bundler'
 require 'set'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
