@@ -42,6 +42,7 @@ module Solargraph
           generics: rbs.generics,
           node: yard.node,
           signatures: yard.signatures,
+          type_location: rbs.type_location,
           return_type: best_return_type(rbs.return_type, yard.return_type),
           source: :gem_pins
         )

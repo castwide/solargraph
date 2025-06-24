@@ -121,9 +121,11 @@ module Solargraph
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source)
+          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source,
+                                location: location, type_location: type_location)
         end
-        Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: source)
+        Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: source,
+                      location: location, type_location: type_location)
       end
 
       # @return [::Array<Signature>]
