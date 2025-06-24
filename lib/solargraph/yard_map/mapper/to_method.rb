@@ -6,6 +6,11 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        VISIBILITY_OVERRIDE = {
+          # YARD pays attention to 'private' statements prior to class methods but shouldn't
+          ["Rails::Engine", :class, "find_root_with_flag"] => :public
+        }
+
         # @param code_object [YARD::CodeObjects::Base]
         # @param name [String, nil]
         # @param scope [Symbol, nil]
@@ -20,7 +25,14 @@ module Solargraph
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
-          final_visibility = visibility || code_object.visibility
+          override_key = [closure.path, final_scope, name]
+          final_visibility = VISIBILITY_OVERRIDE[override_key]
+          final_visibility ||= VISIBILITY_OVERRIDE[override_key[0..-2]]
+          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name)
+          final_visibility ||= visibility
+          final_visibility ||= :private if code_object.module_function? && final_scope == :instance
+          final_visibility ||= :public if code_object.module_function? && final_scope == :class
+          final_visibility ||= code_object.visibility
           if code_object.is_alias?
             origin_code_object = code_object.namespace.aliases[code_object]
             pin = Pin::MethodAlias.new(
@@ -52,6 +64,7 @@ module Solargraph
               source: :yardoc,
             )
             pin.parameters.concat get_parameters(code_object, location, comments, pin)
+            pin.parameters.freeze
           end
           logger.debug { "ToMethod.make: Just created method pin: #{pin.inspect}" }
           pin

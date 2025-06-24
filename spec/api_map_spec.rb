@@ -430,6 +430,16 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#bar')
   end
 
+  # pending https://github.com/apiology/solargraph/pull/4
+  xit 'understands tuples inherit from regular arrays' do
+    method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
+    method_pin = method_pins.first
+    expect(method_pin).to_not be_nil
+    expect(method_pin.path).to eq('Array#include?')
+    parameter_type = method_pin.signatures.first.parameters.first.return_type
+    expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
+  end
+
   it 'loads workspaces from directories' do
     api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
     expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
