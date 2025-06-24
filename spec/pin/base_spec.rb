@@ -4,9 +4,9 @@ describe Solargraph::Pin::Base do
 
   it "will not combine pins with directive changes" do
     pin1 = Solargraph::Pin::Base.new(location: zero_location, name: 'Foo', comments: 'A Foo class',
-                                     closure: Solargraph::Pin::ROOT_PIN)
+                                     source: :yardoc, closure: Solargraph::Pin::ROOT_PIN)
     pin2 = Solargraph::Pin::Base.new(location: zero_location, name: 'Foo', comments: '@!macro my_macro',
-                                     closure: Solargraph::Pin::ROOT_PIN)
+                                     source: :yardoc, closure: Solargraph::Pin::ROOT_PIN)
     expect(pin1.nearly?(pin2)).to be(false)
     # enable asserts
     with_env_var('SOLARGRAPH_ASSERTS', 'on') do
@@ -16,9 +16,9 @@ describe Solargraph::Pin::Base do
 
   it "will not combine pins with different directives" do
     pin1 = Solargraph::Pin::Base.new(location: zero_location, name: 'Foo', comments: '@!macro my_macro',
-                                     closure: Solargraph::Pin::ROOT_PIN)
+                                     source: :yardoc, closure: Solargraph::Pin::ROOT_PIN)
     pin2 = Solargraph::Pin::Base.new(location: zero_location, name: 'Foo', comments: '@!macro other',
-                                     closure: Solargraph::Pin::ROOT_PIN)
+                                     source: :yardoc, closure: Solargraph::Pin::ROOT_PIN)
     expect(pin1.nearly?(pin2)).to be(false)
     with_env_var('SOLARGRAPH_ASSERTS', 'on') do
       expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :macros values/)
