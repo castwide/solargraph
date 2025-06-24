@@ -23,24 +23,26 @@ module Solargraph
       combine yard_pins, rbs_map
     end
 
+    # @param pins [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
-      # @type [Hash{::Array(String, String) => ::Array<Pin::Method>}]
-      by_name_and_class = {}
-      pins.each do |pin|
-        by_name_and_class[[pin.name, pin.path, pin.class]] ||= []
-        by_name_and_class[[pin.name, pin.path, pin.class]].push pin
+      # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
+      method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
+      by_path = method_pins.group_by(&:path)
+      by_path.transform_values! do |pins|
+        GemPins.combine_method_pins(*pins)
       end
-      by_name_and_class.transform_values! do |pins|
-        method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
-        [GemPins.combine_method_pins(*method_pins)].compact + alias_pins
-      end
-      by_name_and_class.values.flatten(1)
+      by_path.values + alias_pins
     end
 
     def self.combine_method_pins(*pins)
       out = pins.reduce(nil) do |memo, pin|
-        raise "sent wrong type of pin: #{pin.inspect}" unless pin.class == Pin::Method
         next pin if memo.nil?
+        if memo == pin && memo.source != :combined
+          # @todo we should track down situations where we are handled
+          #   the same pin from the same source here and eliminate them -
+          #   this is an efficiency workaround for now
+          next memo
+        end
         memo.combine_with(pin)
       end
       logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
