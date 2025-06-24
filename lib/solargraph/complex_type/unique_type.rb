@@ -73,13 +73,25 @@ module Solargraph
         end
         raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
-        @key_types = key_types
-        @subtypes = subtypes
+        @parameters_type = parameters_type
+        if implicit_union?
+          @key_types = key_types.uniq
+          @subtypes = subtypes.uniq
+        else
+          @key_types = key_types
+          @subtypes = subtypes
+        end
         @rooted = rooted
         @all_params = []
-        @all_params.concat key_types
-        @all_params.concat subtypes
-        @parameters_type = parameters_type
+        @all_params.concat @key_types
+        @all_params.concat @subtypes
+      end
+
+      def implicit_union?
+        # @todo use api_map to establish number of generics in type;
+        #   if only one is allowed but multiple are passed in, treat
+        #   those as implicit unions
+        ['Hash', 'Array', 'Set', '_ToAry', 'Enumerable', '_Each'].include?(name) && parameters_type != :fixed
       end
 
       def to_s
@@ -294,7 +306,8 @@ module Solargraph
 
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
-            idx = definitions.generics.index(t.subtypes.first&.name)
+            generic_name = t.subtypes.first&.name
+            idx = definitions.generics.index(generic_name)
             next t if idx.nil?
             if context_type.parameters_type == :hash
               if idx == 0
@@ -304,8 +317,14 @@ module Solargraph
               else
                 next ComplexType::UNDEFINED
               end
+            elsif context_type.all?(&:implicit_union?)
+              if idx == 0 && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
+              end
             else
-              context_type.all_params[idx] || ComplexType::UNDEFINED
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
             t

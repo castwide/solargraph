@@ -12,8 +12,8 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         closure_pin = closure
-        closure_pin.rebind(api_map)
-     end
+        closure_pin.rebind(api_map) if closure_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver).contain?(cursor.range.start)
+      end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
