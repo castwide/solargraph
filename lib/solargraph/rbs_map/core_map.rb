@@ -14,8 +14,8 @@ module Solargraph
           pins.replace cache
         else
           loader.add(path: Pathname(FILLS_DIRECTORY))
-          pins.concat RbsMap::CoreFills::ALL
           @pins = conversions.pins
+          @pins.concat RbsMap::CoreFills::ALL
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           pins.replace processed
 
