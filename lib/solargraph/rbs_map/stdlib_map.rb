@@ -16,8 +16,9 @@ module Solargraph
       def initialize library
         cached_pins = PinCache.deserialize_stdlib_require library
         if cached_pins
-          @pins = cached_pins
+          @pins = cache
           @resolved = true
+          @loaded = true
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
         else
           super
