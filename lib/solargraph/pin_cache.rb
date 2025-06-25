@@ -30,8 +30,12 @@ module Solargraph
         File.join(base_dir, "yard-#{YARD::VERSION}", "#{gemspec.name}-#{gemspec.version}.yardoc")
       end
 
+      def stdlib_path
+        File.join(work_dir, 'stdlib')
+      end
+
       def stdlib_require_path require
-        File.join(work_dir, 'stdlib', "#{require}.ser")
+        File.join(stdlib_path, "#{require}.ser")
       end
 
       def deserialize_stdlib_require require
@@ -107,11 +111,11 @@ module Solargraph
       end
 
       def uncache_core
-        uncache("core.ser")
+        uncache(core_path)
       end
 
       def uncache_stdlib
-        uncache("stdlib")
+        uncache(stdlib_path)
       end
 
       def uncache_gem(gemspec, out: nil)
