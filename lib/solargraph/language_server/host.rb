@@ -602,7 +602,11 @@ module Solargraph
       # @return [Array]
       def document query
         result = []
-        libraries.each { |lib| result.concat lib.document(query) }
+        if libraries.empty?
+          result.concat generic_library.document(query)
+        else
+          libraries.each { |lib| result.concat lib.document(query) }
+        end
         result
       end
 
