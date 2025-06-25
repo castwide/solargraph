@@ -231,7 +231,7 @@ module Solargraph
       if map.resolved?
         logger.debug { "Loading stdlib pins for #{path}" }
         @pins.concat map.pins
-        logger.info { "Loaded #{map.pins.length} stdlib pins for #{path}" }
+        logger.debug { "Loaded #{map.pins.length} stdlib pins for #{path}" }
         map.pins
       else
         # @todo Temporarily ignoring unresolved `require 'set'`

@@ -46,7 +46,7 @@ module Solargraph
         environment = RBS::Environment.from_loader(loader).resolve_type_names
         cursor = pins.length
         if environment.declarations.empty?
-          Solargraph.logger.warn "No RBS declarations found in environment for #{loader.core_root}."
+          Solargraph.logger.info "No RBS declarations found in environment for core_root #{loader.core_root.inspect}, libraries #{loader.libs} and directories #{loader.dirs}"
           return
         end
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
