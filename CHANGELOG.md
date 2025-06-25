@@ -1,3 +1,6 @@
+## 0.55.3 - June 25, 2025
+-  Nil guards in flow-sensitive typing (patch release) #980 
+
 ## 0.55.2 - June 21, 2025
 - Require external bundle (#972)
 
