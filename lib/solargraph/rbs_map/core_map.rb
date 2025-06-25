@@ -5,7 +5,6 @@ module Solargraph
     # Ruby core pins
     #
     class CoreMap
-      include Conversions
 
       FILLS_DIRECTORY = File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills')
 
@@ -14,15 +13,28 @@ module Solargraph
         if cache
           pins.replace cache
         else
-          loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
           loader.add(path: Pathname(FILLS_DIRECTORY))
-          load_environment_to_pins(loader)
           pins.concat RbsMap::CoreFills::ALL
+          @pins = conversions.pins
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           pins.replace processed
 
           Cache.save('core.ser', pins)
         end
+      end
+
+      def pins
+        @pins ||= []
+      end
+
+      private
+
+      def loader
+        @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
+      end
+
+      def conversions
+        @conversions ||= Conversions.new(loader: loader)
       end
     end
   end
