@@ -14,25 +14,21 @@ module Solargraph
 
       # @param library [String]
       def initialize library
-        super
-      end
-
-      def gems
-        return @pins if @pins
         cached_pins = PinCache.deserialize_stdlib_require library
         if cached_pins
           @pins = cached_pins
           @resolved = true
-          logger.warn { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
-          cached_pins
+          logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
         else
-          generated_pins = load_environment_to_pins(loader)
+          super
           unless resolved?
-            logger.warn { "Could not resolve #{library.inspect}" }
-            return []
+            @pins = []
+            logger.info { "Could not resolve #{library.inspect}" }
+            return
           end
+          generated_pins = pins
+          logger.debug { "Found #{generated_pins.length} pins for stdlib library #{library}" }
           PinCache.serialize_stdlib_require library, generated_pins
-          @pins = generated_pins
         end
       end
 
