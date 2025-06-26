@@ -685,15 +685,15 @@ module Solargraph
           end
         else
           store.get_includes(fqns).reverse.each do |include_tag|
+            rooted_include_tag = qualify(include_tag, rooted_tag)
             logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
-            module_extends = store.get_extends(include_tag)
+            module_extends = store.get_extends(rooted_include_tag)
             # ActiveSupport::Concern is syntactic sugar for a common
             # pattern to include class methods while mixing-in a Module
 
             # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
             logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
             if module_extends.include? 'ActiveSupport::Concern'
-              rooted_include_tag = qualify(include_tag, rooted_tag)
               unless rooted_include_tag.nil?
                 # yard-activesupport-concern pulls methods inside
                 # 'class_methods' blocks into main class visible from YARD
@@ -701,7 +701,8 @@ module Solargraph
                 result.concat included_class_pins
 
                 # another pattern is to put class methods inside a submodule
-                included_classmethods_pins = inner_get_methods_from_reference(rooted_include_tag + "::ClassMethods", namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
+                classmethods_include_tag = rooted_include_tag + "::ClassMethods"
+                included_classmethods_pins = inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
                 result.concat included_classmethods_pins
               end
             end
