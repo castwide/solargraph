@@ -207,7 +207,7 @@ module Solargraph
           logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
           # can happen in local filesystem references
           specs = resolve_path_to_gemspecs lazy_spec.name
-          logger.info "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
+          logger.warn "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
           next specs
         end.compact
       else
@@ -229,13 +229,13 @@ module Solargraph
         if s.success?
           Solargraph.logger.debug "External bundle: #{o}"
           hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-          hash.map do |name, version|
+          hash.flat_map do |name, version|
             Gem::Specification.find_by_name(name, version)
           rescue Gem::MissingSpecError => e
             logger.info("Could not find #{name}:#{version} with find_by_name, falling back to guess")
             # can happen in local filesystem references
             specs = resolve_path_to_gemspecs name
-            logger.info "Gem #{name} #{version} from bundle not found: #{e}" if specs.nil?
+            logger.warn "Gem #{name} #{version} from bundle not found: #{e}" if specs.nil?
             next specs
           end.compact
         else
