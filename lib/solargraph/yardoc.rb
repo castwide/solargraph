@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'yard'
+require 'yard-activesupport-concern'
+
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
   #
@@ -35,7 +38,10 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [String]
     def path_for(gemspec)
-      File.join(Solargraph::Cache.base_dir, "yard-#{YARD::VERSION}", "#{gemspec.name}-#{gemspec.version}.yardoc")
+      File.join(Solargraph::Cache.base_dir,
+                "yard-#{YARD::VERSION}",
+                "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",
+                "#{gemspec.name}-#{gemspec.version}.yardoc")
     end
 
     # Load a gem's yardoc and return its code objects.
