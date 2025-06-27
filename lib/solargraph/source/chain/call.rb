@@ -85,6 +85,7 @@ module Solargraph
 
             with_block, without_block = overloads.partition(&:block?)
             sorted_overloads = with_block + without_block
+            # @type [Pin::Signature, nil]
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
@@ -97,8 +98,7 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context), locals)
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context, source: :chain), locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
                   match = false
                   break
@@ -114,6 +114,7 @@ module Solargraph
                     blocktype = block_call_type(api_map, name_pin, locals)
                   end
                 end
+                # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
                 if head?
@@ -181,7 +182,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
         end
 
         # @param pin [Pin::Method]
@@ -196,7 +197,7 @@ module Solargraph
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
-          Pin::ProxyType.anonymous ComplexType::UNDEFINED
+          Pin::ProxyType.anonymous ComplexType::UNDEFINED, source: :chain
         end
 
         # @param pin [Pin::Base]
@@ -206,7 +207,7 @@ module Solargraph
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
-          vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals)) }
+          vals = arguments.map{ |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
@@ -220,9 +221,9 @@ module Solargraph
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
-            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types))
+            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types), source: :chain)
           end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED)
+          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
         end
 
         # @param docstring [YARD::Docstring]
