@@ -24,6 +24,15 @@ module Solargraph
       [start, ending]
     end
 
+    def <=>(other)
+      return nil unless other.is_a?(Range)
+      if start == other.start
+        ending <=> other.ending
+      else
+        start <=> other.start
+      end
+    end
+
     # Get a hash of the range. This representation is suitable for use in
     # the language server protocol.
     #

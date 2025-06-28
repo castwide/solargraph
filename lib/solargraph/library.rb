@@ -327,9 +327,10 @@ module Solargraph
 
     # @param query [String]
     # @return [Enumerable<YARD::CodeObjects::Base>]
+    # @return [Array(ApiMap, Enumerable<Pin::Base>)]
     def document query
       sync_catalog
-      mutex.synchronize { api_map.document query }
+      mutex.synchronize { [api_map, api_map.get_path_pins(query)] }
     end
 
     # @param query [String]

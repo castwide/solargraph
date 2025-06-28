@@ -129,7 +129,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
     end
 
-    xit 'complains about dereferencing a non-existent tuple slot'
+    it 'complains about dereferencing a non-existent tuple slot'
 
     it 'reports mismatched keyword arguments' do
       checker = type_checker(%(

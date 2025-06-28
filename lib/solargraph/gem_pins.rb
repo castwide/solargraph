@@ -11,10 +11,6 @@ module Solargraph
       include Logging
     end
 
-    def log_level
-      :debug
-    end
-
     # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>]
     def self.build_yard_pins(gemspec)
@@ -23,39 +19,56 @@ module Solargraph
       YardMap::Mapper.new(yardoc, gemspec).map
     end
 
-    # Build an array of pins by combining YARD and RBS
-    # information.
-    #
+    # @param pins [Array<Pin::Base>]
+    def self.combine_method_pins_by_path(pins)
+      # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
+      method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
+      by_path = method_pins.group_by(&:path)
+      by_path.transform_values! do |pins|
+        GemPins.combine_method_pins(*pins)
+      end
+      by_path.values + alias_pins
+    end
+
+    def self.combine_method_pins(*pins)
+      out = pins.reduce(nil) do |memo, pin|
+        next pin if memo.nil?
+        if memo == pin && memo.source != :combined
+          # @todo we should track down situations where we are handled
+          #   the same pin from the same source here and eliminate them -
+          #   this is an efficiency workaround for now
+          next memo
+        end
+        memo.combine_with(pin)
+      end
+      logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
+      out
+    end
+
     # @param yard_pins [Array<Pin::Base>]
     # @param rbs_map [RbsMap]
     # @return [Array<Pin::Base>]
     def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new
       rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
-      combined = yard_pins.map do |yard|
-        in_yard.add yard.path
-        next yard unless yard.is_a?(Pin::Method)
+      combined = yard_pins.map do |yard_pin|
+        in_yard.add yard_pin.path
+        rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+        next yard_pin unless rbs_pin && yard_pin.class == Pin::Method
 
-        rbs = rbs_api_map.get_path_pins(yard.path).first
-        next yard unless rbs && yard.is_a?(Pin::Method)
+        unless rbs_pin
+          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
+          next yard_pin
+        end
 
-        # @sg-ignore
-        yard.class.new(
-          location: yard.location,
-          closure: yard.closure,
-          name: yard.name,
-          comments: yard.comments,
-          scope: yard.scope,
-          parameters: rbs.parameters,
-          generics: rbs.generics,
-          node: yard.node,
-          signatures: yard.signatures,
-          return_type: best_return_type(rbs.return_type, yard.return_type),
-          source: :gem_pins
-        )
+        out = combine_method_pins(rbs_pin, yard_pin)
+        logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
+        out
       end
-      in_rbs = rbs_pins.reject { |pin| in_yard.include?(pin.path) }
-      out = combined + in_rbs
+      in_rbs_only = rbs_pins.select do |pin|
+        pin.path.nil? || !in_yard.include?(pin.path)
+      end
+      out = combined + in_rbs_only
       logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
       out
     end
