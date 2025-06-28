@@ -109,6 +109,10 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
+    def doc_map
+      @doc_map ||= DocMap.new([], [])
+    end
+
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
@@ -538,13 +542,8 @@ module Solargraph
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
-    # Get YARD documentation for the specified path.
-    #
-    # @example
-    #   api_map.document('String#split')
-    #
-    # @todo This method is likely superfluous. Calling get_path_pins directly
-    #   should be sufficient.
+    # @deprecated This method is likely superfluous. Calling #get_path_pins
+    #   directly should be sufficient.
     #
     # @param path [String] The path to find
     # @return [Enumerable<Pin::Base>]
@@ -636,6 +635,19 @@ module Solargraph
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
       store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
+    end
+
+    # @param pins [Enumerable<Pin::Base>]
+    # @param visibility [Enumerable<Symbol>]
+    # @return [Array<Pin::Base>]
+    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
+      with_resolved_aliases = pins.map do |pin|
+        resolved = resolve_method_alias(pin)
+        next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
+        resolved
+      end.compact
+      logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
+      GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
     private
@@ -876,17 +888,6 @@ module Solargraph
         end
       end
       result + nil_pins
-    end
-
-    # @param pins [Enumerable<Pin::Base>]
-    # @param visibility [Enumerable<Symbol>]
-    # @return [Array<Pin::Base>]
-    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
-      pins.map do |pin|
-        resolved = resolve_method_alias(pin)
-        next pin if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
-        resolved
-      end.compact
     end
 
     # @param pin [Pin::MethodAlias, Pin::Base]

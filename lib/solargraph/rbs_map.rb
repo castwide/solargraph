@@ -10,7 +10,7 @@ module Solargraph
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
     autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
 
-    include Conversions
+    include Logging
 
     # @type [Hash{String => RbsMap}]
     @@rbs_maps_hash = {}
@@ -25,10 +25,12 @@ module Solargraph
       @version = version
       @collection = nil
       @directories = directories
-      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       add_library loader, library, version
       return unless resolved?
-      load_environment_to_pins(loader)
+    end
+
+    def pins
+      @pins ||= resolved? ? conversions.pins : []
     end
 
     # @generic T
@@ -70,6 +72,14 @@ module Solargraph
     end
 
     private
+
+    def loader
+      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
+    end
+
+    def conversions
+      @conversions ||= Conversions.new(loader: loader)
+    end
 
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]

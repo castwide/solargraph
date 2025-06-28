@@ -19,6 +19,18 @@ module Solargraph
         @generic_defaults ||= {}
       end
 
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      #
+      # @return [self]
+      def combine_with(other, attrs={})
+        new_attrs = {
+          scope: assert_same(other, :scope),
+          generics: generics.empty? ? other.generics : generics,
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
       def context
         @context ||= begin
           result = super

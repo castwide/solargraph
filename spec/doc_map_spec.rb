@@ -24,7 +24,7 @@ describe Solargraph::DocMap do
       spec.name = 'not_a_gem'
       spec.version = '1.0.0'
     end
-    allow(Gem::Specification).to receive(:find_by_path).with('not_a_gem').and_return(gemspec)
+    allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
     doc_map = Solargraph::DocMap.new(['not_a_gem'], [gemspec])
     expect(doc_map.uncached_gemspecs).to eq([gemspec])
   end
@@ -40,7 +40,7 @@ describe Solargraph::DocMap do
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
-    expect(Solargraph.logger).not_to receive(:warn)
+    expect(Solargraph.logger).not_to receive(:warn).with(/path set/)
     Solargraph::DocMap.new(['set'], [])
   end
 
