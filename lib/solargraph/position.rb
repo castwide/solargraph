@@ -26,6 +26,15 @@ module Solargraph
       [line, character]
     end
 
+    def <=>(other)
+      return nil unless other.is_a?(Position)
+      if line == other.line
+        character <=> other.character
+      else
+        line <=> other.line
+      end
+    end
+
     # Get a hash of the position. This representation is suitable for use in
     # the language server protocol.
     #
