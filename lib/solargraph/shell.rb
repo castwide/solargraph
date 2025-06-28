@@ -4,6 +4,7 @@ require 'benchmark'
 require 'thor'
 require 'yard'
 require 'sord'
+require 'tmpdir'
 
 module Solargraph
   class Shell < Thor
@@ -293,10 +294,13 @@ module Solargraph
         end
       end
       rake_yard(store)
-      YARD::Registry.save(false, '.yardoc')
-      YARD::Registry.load('.yardoc')
-      FileUtils.mkdir_p('sig')
-      `sord gen sig/solargraph.rbs --rbs --no-regenerate`
+      Dir.mktmpdir do |tmpdir|
+        yardoc = File.join(tmpdir, '.yardoc')
+        YARD::Registry.save(false, yardoc)
+        YARD::Registry.load(yardoc)
+        FileUtils.mkdir_p('sig')
+        `sord gen sig/sig.rbs --rbs --no-regenerate`
+      end
     end
 
     private
