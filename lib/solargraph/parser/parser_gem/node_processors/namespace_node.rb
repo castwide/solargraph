@@ -45,8 +45,8 @@ module Solargraph
             process_children region.update(closure: nspin, visibility: :public)
           end
 
-          # TODO: Move this out of [NamespaceNode] once [Solargraph::Parser::NodeProcessor] supports
-          # multiple processors.
+          # @todo Move this out of [NamespaceNode] once [Solargraph::Parser::NodeProcessor] supports
+          #   multiple processors.
           def process_struct_definition
             processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
             processor = processor_klass.new(node, region, pins, locals)

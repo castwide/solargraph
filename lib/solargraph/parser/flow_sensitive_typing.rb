@@ -153,8 +153,6 @@ module Solargraph
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String)]
       def parse_isa(isa_node)
-        # @todo A nil guard might be good enough here, but we might want to
-        #   see if the callers are checking for nils instead.
         return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
@@ -167,12 +165,12 @@ module Solargraph
         # check if isa_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        if isa_receiver.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
+        if isa_receiver&.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
           variable_name = isa_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        variable_name = isa_receiver.children[0].to_s if isa_receiver.type == :lvar
+        variable_name = isa_receiver.children[0].to_s if isa_receiver&.type == :lvar
         return unless variable_name
 
         [isa_type_name, variable_name]

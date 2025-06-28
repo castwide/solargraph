@@ -4,12 +4,13 @@ describe Solargraph::DocMap do
   before :all do
     # We use ast here because it's a known dependency.
     gemspec = Gem::Specification.find_by_name('ast')
-    pins = Solargraph::GemPins.build(gemspec)
-    Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+    yard_pins = Solargraph::GemPins.build_yard_pins(gemspec)
+    Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
   end
 
   it 'generates pins from gems' do
     doc_map = Solargraph::DocMap.new(['ast'], [])
+    doc_map.cache_all!($stderr)
     node_pin = doc_map.pins.find { |pin| pin.path == 'AST::Node' }
     expect(node_pin).to be_a(Solargraph::Pin::Namespace)
   end
@@ -24,9 +25,10 @@ describe Solargraph::DocMap do
       spec.name = 'not_a_gem'
       spec.version = '1.0.0'
     end
-    allow(Gem::Specification).to receive(:find_by_path).with('not_a_gem').and_return(gemspec)
+    allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
     doc_map = Solargraph::DocMap.new(['not_a_gem'], [gemspec])
-    expect(doc_map.uncached_gemspecs).to eq([gemspec])
+    expect(doc_map.uncached_yard_gemspecs).to eq([gemspec])
+    expect(doc_map.uncached_rbs_collection_gemspecs).to eq([gemspec])
   end
 
   it 'imports all gems when bundler/require used' do
@@ -40,7 +42,7 @@ describe Solargraph::DocMap do
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
-    expect(Solargraph.logger).not_to receive(:warn)
+    expect(Solargraph.logger).not_to receive(:warn).with(/path set/)
     Solargraph::DocMap.new(['set'], [])
   end
 

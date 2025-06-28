@@ -1,3 +1,9 @@
+## 0.55.4 - June 27, 2025
+-  Flatten results of DocMap external bundle query (#981)
+
+## 0.55.3 - June 25, 2025
+-  Nil guards in flow-sensitive typing (patch release) (#980)
+
 ## 0.55.2 - June 21, 2025
 - Require external bundle (#972)
 
