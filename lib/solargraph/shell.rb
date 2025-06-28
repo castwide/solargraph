@@ -135,23 +135,6 @@ module Solargraph
       end
     end
 
-    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @param names [Array<String>]
-    # @return [void]
-    def gems *names
-      if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec }
-      else
-        names.each do |name|
-          spec = Gem::Specification.find_by_name(*name.split('='))
-          do_cache spec
-        rescue Gem::MissingSpecError
-          warn "Gem '#{name}' not found"
-        end
-      end
-    end
-
     desc 'reporters', 'Get a list of diagnostics reporters'
     # @return [void]
     def reporters
