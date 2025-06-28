@@ -1,6 +1,10 @@
 ---
 name: Plugin Backwards Compatibility Tests
 
+# To debug locally:
+#   npm install -g act
+#   cd /Users/broz/src/solargraph/ && act pull_request -j run_solargraph_rails_specs # e.g
+
 on:
   push:
     branches: [ master ]
@@ -73,29 +77,39 @@ jobs:
     - name: clone solargraph-rails
       run: |
        cd ..
-       git clone https://github.com/apiology/solargraph-rails.git
+       git clone https://github.com/iftheshoefritz/solargraph-rails.git
        cd solargraph-rails
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.0'
+        ruby-version: '3.1'
         bundler-cache: false
         # specified in Gemfile
         bundler: 2.3
     - name: Install gems
       run: |
+       set -x
+       BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
+       export BUNDLE_PATH
        cd ../solargraph-rails
+       echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
+       bundle install
        cd spec/rails7
-       echo "gem 'solargraph', path: '/home/runner/work/solargraph/solargraph'" >> Gemfile
        bundle install
-       bundle exec rbs collection install
+       bundle exec --gemfile ../../Gemfile rbs --version
+       bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
-       echo "gem 'solargraph', path: '/home/runner/work/solargraph/solargraph'" >> Gemfile
-       bundle install
        bundle exec rbs collection init
        bundle exec rbs collection install
+      env:
+        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
     - name: Run specs
       run: |
+        BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
+        export BUNDLE_PATH
         cd ../solargraph-rails
         bundle exec rake spec
+      env:
+        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
+        MATRIX_RAILS_VERSION: 7.0
