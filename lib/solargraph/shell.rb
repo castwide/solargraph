@@ -295,13 +295,14 @@ module Solargraph
         end
       end
       rake_yard(store)
-      target = File.absolute_path(File.join('sig', options[:filename]))
+      work_dir = Dir.pwd
       Dir.mktmpdir do |tmpdir|
         Dir.chdir tmpdir do
           yardoc = File.join(tmpdir, '.yardoc')
           YARD::Registry.save(false, yardoc)
           YARD::Registry.load(yardoc)
-          FileUtils.mkdir_p('sig')
+          target = File.join(work_dir, 'sig', options[:filename])
+          FileUtils.mkdir_p(File.join(work_dir, 'sig'))
           `sord #{target} --rbs --no-regenerate`
         end
       end
