@@ -278,6 +278,7 @@ module Solargraph
     end
 
     desc 'rbs', 'Generate RBS definitions'
+    option :filename, type: :string, alias: :f, desc: 'Generated file name', default: 'sig.rbs'
     option :inference, type: :boolean, desc: 'Enhance definitions with type inference', default: true
     def rbs
       api_map = Solargraph::ApiMap.load('.')
@@ -294,12 +295,15 @@ module Solargraph
         end
       end
       rake_yard(store)
+      target = File.absolute_path(File.join('sig', options[:filename]))
       Dir.mktmpdir do |tmpdir|
-        yardoc = File.join(tmpdir, '.yardoc')
-        YARD::Registry.save(false, yardoc)
-        YARD::Registry.load(yardoc)
-        FileUtils.mkdir_p('sig')
-        `sord gen sig/sig.rbs --rbs --no-regenerate`
+        Dir.chdir tmpdir do
+          yardoc = File.join(tmpdir, '.yardoc')
+          YARD::Registry.save(false, yardoc)
+          YARD::Registry.load(yardoc)
+          FileUtils.mkdir_p('sig')
+          `sord #{target} --rbs --no-regenerate`
+        end
       end
     end
 
