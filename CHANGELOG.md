@@ -1,3 +1,48 @@
+## 0.55.4 - June 27, 2025
+-  Flatten results of DocMap external bundle query (#981)
+
+## 0.55.3 - June 25, 2025
+-  Nil guards in flow-sensitive typing (patch release) (#980)
+
+## 0.55.2 - June 21, 2025
+- Require external bundle (#972)
+
+## 0.55.1 - June 8, 2025
+- Fix inline Struct definition (#962)
+- Ensure DocMap requires bundler when loading gemspecs (#963)
+- DelegatedMethod improvements (#953)
+
+## 0.55.0 - June 3, 2025
+- Flow-sensitive typing - automatically downcast from is_a? calls (#856)
+- Tuple enabler: infer literal types and use them for signature selection (#836)
+- Signature selection improvements (#907)
+- Add support for Ruby Structs (#939)
+- [regression] Fix interface change breaking solargraph-rails (#940)
+- [regression] Add back bundler/require support for solargraph-rails (#941)
+- Add specs for initialize capabilities (#955)
+- Create MethodAlias pins from YARD (#945)
+- MessageWorker prioritizes synchronization (#956)
+- initialize/new method pin cleanups (#949)
+- Clip rebinds blocks when cursor is not part of receiver (#958)
+
+## 0.54.5 - May 17, 2025
+- Repair unknown encoding errors (#936, #935)
+- Index arbitrary pinsets (#937)
+- Separate YARD cache from doc map cache (#938)
+
+## 0.54.4 - May 14, 2025
+- Delete files from Library hash (#932)
+- Clip#define returns variable pins (#934, #933)
+
+## 0.54.3 - May 13, 2025
+- Improve inspect()/desc()/to_s() methods for better debugging output (#913)
+- Fix generic resolution in Hash types (#906)
+- Stop parsing RBS type parameter constraints as the type name (#918)
+- Fix pin inference stack (#922)
+- Refactor pin equality for performance (#925)
+- Improve ApiMap catalog speed by preserving static pin indexes (#930)
+- Update jaro_winkler dependency (#931)
+
 ## 0.54.2 - April 28, 2025
 - Resolve generics correctly on mixin inclusion (#898)
 - Pick correct String#split overload (#905)

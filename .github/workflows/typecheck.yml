@@ -31,4 +31,4 @@ jobs:
     - name: Install gems
       run: bundle install
     - name: Typecheck self
-      run: bundle exec solargraph typecheck --level strict
+      run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level strict

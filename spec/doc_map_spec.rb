@@ -24,15 +24,23 @@ describe Solargraph::DocMap do
       spec.name = 'not_a_gem'
       spec.version = '1.0.0'
     end
-    allow(Gem::Specification).to receive(:find_by_path).with('not_a_gem').and_return(gemspec)
+    allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
     doc_map = Solargraph::DocMap.new(['not_a_gem'], [gemspec])
     expect(doc_map.uncached_gemspecs).to eq([gemspec])
+  end
+
+  it 'imports all gems when bundler/require used' do
+    workspace = Solargraph::Workspace.new(Dir.pwd)
+    plain_doc_map = Solargraph::DocMap.new([], [], workspace)
+    doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [], workspace)
+
+    expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
   end
 
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
-    expect(Solargraph.logger).not_to receive(:warn)
+    expect(Solargraph.logger).not_to receive(:warn).with(/path set/)
     Solargraph::DocMap.new(['set'], [])
   end
 

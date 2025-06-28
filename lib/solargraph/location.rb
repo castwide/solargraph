@@ -25,9 +25,30 @@ module Solargraph
       [filename, range]
     end
 
+    def <=>(other)
+      return nil unless other.is_a?(Location)
+      if filename == other.filename
+        range <=> other.range
+      else
+        filename <=> other.filename
+      end
+    end
+
+    def rbs?
+      filename.end_with?('.rbs')
+    end
+
     # @param location [self]
     def contain? location
       range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
+    end
+
+    def inspect
+      "<#{self.class.name}: filename=#{filename}, range=#{range.inspect}>"
+    end
+
+    def to_s
+      inspect
     end
 
     # @return [Hash]

@@ -1,7 +1,15 @@
 # frozen_string_literal: true
 
-require 'parser/current'
-require 'parser/source/buffer'
+require 'prism'
+
+# Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
+#
+# @!parse
+#   class ::Parser::Base < ::Parser::Builder
+#     # @return [Integer]
+#     def version; end
+#   end
+#   class ::Parser::CurrentRuby < ::Parser::Base; end
 
 module Solargraph
   module Parser
@@ -11,13 +19,9 @@ module Solargraph
         # @param filename [String, nil]
         # @return [Array(Parser::AST::Node, Hash{Integer => String})]
         def parse_with_comments code, filename = nil
-          buffer = ::Parser::Source::Buffer.new(filename, 0)
-          buffer.source = code
-          node = parser.parse(buffer)
+          node = parse(code, filename)
           comments = CommentRipper.new(code, filename, 0).parse
           [node, comments]
-        rescue ::Parser::SyntaxError => e
-          raise Parser::SyntaxError, e.message
         end
 
         # @param code [String]
@@ -28,18 +32,16 @@ module Solargraph
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code
           parser.parse(buffer)
-        rescue ::Parser::SyntaxError => e
+        rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
           raise Parser::SyntaxError, e.message
         end
 
         # @return [::Parser::Base]
         def parser
-          # @todo Consider setting an instance variable. We might not need to
-          #   recreate the parser every time we use it.
-          parser = ::Parser::CurrentRuby.new(FlawedBuilder.new)
-          parser.diagnostics.all_errors_are_fatal = true
-          parser.diagnostics.ignore_warnings      = true
-          parser
+          @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            parser.diagnostics.all_errors_are_fatal = true
+            parser.diagnostics.ignore_warnings      = true
+          end
         end
 
         # @param source [Source]

@@ -49,7 +49,7 @@ describe Solargraph::RbsMap::CoreMap do
     expect(signature.block.return_type.to_s).to eq('void')
   end
 
-  xit 'populates types in block parameters from generics' do
+  it 'populates types in block parameters from generics' do
     api_map = Solargraph::ApiMap.new
     methods = api_map.get_methods('Enumerable<String>')
     each_pins = methods.select{|pin| pin.path.end_with?('#each')}
@@ -102,5 +102,27 @@ describe Solargraph::RbsMap::CoreMap do
         expect(pin.closure).to_not be_nil, ->(){ "Pin #{pin.inspect} (#{pin.path}) has no closure" }
       end
     end
+  end
+
+  it 'renders string literals from RBS in a useful way' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil
+      bar = foo.to_s # => '""' in rbs
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect(clip.infer.to_s).to eq('""')
+    expect(clip.infer.to_rbs).to eq('""')
+  end
+
+  it 'treats literal nil as NilClass for method resolution' do
+    source = Solargraph::Source.load_string(%(
+      foo = nil.to_s # => "''" in rbs
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 6])
+    expect(clip.infer.to_s).to eq('""')
   end
 end

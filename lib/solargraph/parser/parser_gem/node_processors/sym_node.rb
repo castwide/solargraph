@@ -8,7 +8,8 @@ module Solargraph
           def process
             pins.push Solargraph::Pin::Symbol.new(
               get_node_location(node),
-              ":#{node.children[0]}"
+              ":#{node.children[0]}",
+              source: :parser
             )
           end
         end

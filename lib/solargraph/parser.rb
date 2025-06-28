@@ -4,6 +4,7 @@ module Solargraph
     autoload :ParserGem, 'solargraph/parser/parser_gem'
     autoload :Region, 'solargraph/parser/region'
     autoload :NodeProcessor, 'solargraph/parser/node_processor'
+    autoload :FlowSensitiveTyping, 'solargraph/parser/flow_sensitive_typing'
     autoload :Snippet, 'solargraph/parser/snippet'
 
     class SyntaxError < StandardError

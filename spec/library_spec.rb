@@ -243,7 +243,7 @@ describe Solargraph::Library do
 
   it "returns YARD documentation from the core" do
     library = Solargraph::Library.new
-    result = library.document('String')
+    api_map, result = library.document('String')
     expect(result).not_to be_empty
     expect(result.first).to be_a(Solargraph::Pin::Base)
   end
@@ -257,7 +257,7 @@ describe Solargraph::Library do
       end
     ), 'test.rb', 0)
     library.attach src
-    result = library.document('Foo#bar')
+    api_map, result = library.document('Foo#bar')
     expect(result).not_to be_empty
     expect(result.first).to be_a(Solargraph::Pin::Base)
   end
@@ -476,6 +476,26 @@ describe Solargraph::Library do
       location = Solargraph::Location.new(File.join(workspace, 'app.rb'), Solargraph::Range.from_to(0, 8, 0, 8))
       found = library.locate_ref(location)
       expect(found).to be_nil
+    end
+  end
+
+  describe '#delete' do
+    it 'removes files from Library#source_map_hash' do
+      workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
+      library = Solargraph::Library.load(workspace)
+      library.map!
+      library.catalog
+      other_file = File.absolute_path(File.join('spec', 'fixtures', 'workspace', 'lib', 'other.rb'))
+
+      expect(library.source_map_hash.key?(other_file)).to be(true)
+      pins = library.get_path_pins('Other')
+      expect(pins).to be_one
+
+      library.delete other_file
+      library.catalog
+      expect(library.source_map_hash.key?(other_file)).to be(false)
+      pins = library.get_path_pins('Other')
+      expect(pins).to be_empty
     end
   end
 
