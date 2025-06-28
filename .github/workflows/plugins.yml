@@ -3,7 +3,7 @@ name: Plugin Backwards Compatibility Tests
 
 # To debug locally:
 #   npm install -g act
-#   cd /Users/broz/src/solargraph/ && act pull_request -j run_solargraph_rails_specs # e.g
+#   cd /Users/broz/src/solargraph/ && act pull_request -j run_solargraph_rails_specs # e.g.
 
 on:
   push:
