@@ -47,7 +47,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
-  s.add_development_dependency 'simplecov', '~> 0.14'
+  s.add_development_dependency 'simplecov', '~> 0.21'
+  s.add_development_dependency 'simplecov-lcov', '~> 0.8'
+  s.add_development_dependency 'undercover', '~> 0.6'
   s.add_development_dependency 'webmock', '~> 3.6'
   # work around missing yard dependency needed as of Ruby 3.5
   s.add_development_dependency 'irb', '~> 1.15'
