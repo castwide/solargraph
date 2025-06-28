@@ -27,7 +27,10 @@ module Solargraph
       end
 
       def yardoc_path gemspec
-        File.join(base_dir, "yard-#{YARD::VERSION}", "#{gemspec.name}-#{gemspec.version}.yardoc")
+        File.join(base_dir,
+                  "yard-#{YARD::VERSION}",
+                  "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",
+                  "#{gemspec.name}-#{gemspec.version}.yardoc")
       end
 
       def stdlib_path
