@@ -8,14 +8,11 @@ module Solargraph
 
         # @param code_object [YARD::CodeObjects::NamespaceObject]
         def self.make code_object, spec, closure = nil
-          closure ||= Solargraph::Pin::Namespace.new(
-            name: code_object.namespace.to_s,
-            closure: Pin::ROOT_PIN,
-            gates: [code_object.namespace.to_s],
-            source: :yardoc,
-          )
+          closure ||= create_closure_namespace_for(code_object, spec)
+          location = object_location(code_object, spec)
+
           Pin::Namespace.new(
-            location: object_location(code_object, spec),
+            location: location,
             name: code_object.name.to_s,
             comments: code_object.docstring ? code_object.docstring.all.to_s : '',
             type: code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
