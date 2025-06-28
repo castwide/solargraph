@@ -1,23 +1,23 @@
-<% objects.reverse.each do |object| %>
+<% pins.each do |pin| %>
     <h1>
-        <%= object.name %>
-        <% if object.is_a?(YARD::CodeObjects::MethodObject) and !object.parameters.empty? %>
-            <small>(<%= object.parameters.map {|p| "#{p[0]}#{p[1] and p[0].end_with?(':') ? ' ' : (p[1] ? ' = ' : '')}#{p[1]}"}.join(', ') %>)</small>
+        <%= pin.name %>
+        <% if pin.is_a?(Solargraph::Pin::Method) && !pin.parameters.empty? %>
+            <small>(<%= pin.parameters.map {|p| "#{p[0]}#{p[1] and p[0].end_with?(':') ? ' ' : (p[1] ? ' = ' : '')}#{p[1]}"}.join(', ') %>)</small>
         <% end %>
     </h1>
-    <% unless object.files.empty? %>
+    <% unless pins.map(&:location).compact.empty? %>
         <h2>
             Defined in:
         </h2>
         <ul>
-            <% object.files.each do |f| %>
+            <% pins.map(&:location).compact.map(&:filename).each do |f| %>
                 <li><%= f %></li>
             <% end %>
         </ul>
     <% end %>
-    <% if object.is_a?(YARD::CodeObjects::NamespaceObject) %>
-        <%= erb :_namespace, layout: false, locals: {object: object} %>
-    <% elsif object.is_a?(YARD::CodeObjects::MethodObject) %>
-        <%= erb :_method, layout: false, locals: {object: object} %>
+    <% if pin.is_a?(Solargraph::Pin::Namespace) %>
+        <%= erb :_namespace, layout: false, locals: {api_map: api_map, pin: pin} %>
+    <% elsif pin.is_a?(Solargraph::Pin::Method) %>
+        <%= erb :_method, layout: false, locals: {api_map: api_map, pin: pin} %>
     <% end %>
 <% end %>
