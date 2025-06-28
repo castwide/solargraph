@@ -1062,8 +1062,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Foo, Bar').or eq('Bar, Foo')
   end
 
-  # pending https://github.com/castwide/solargraph/pull/836
-  xit 'handles parallel type possibilities with #nil?' do
+  it 'handles parallel type possibilities with #nil?' do
     source = Solargraph::Source.load_string(%(
       # @type [Integer, nil]
       b = foo
