@@ -4,12 +4,13 @@ describe Solargraph::DocMap do
   before :all do
     # We use ast here because it's a known dependency.
     gemspec = Gem::Specification.find_by_name('ast')
-    pins = Solargraph::GemPins.build(gemspec)
-    Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
+    yard_pins = Solargraph::GemPins.build_yard_pins(gemspec)
+    Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
   end
 
   it 'generates pins from gems' do
     doc_map = Solargraph::DocMap.new(['ast'], [])
+    doc_map.cache_all!($stderr)
     node_pin = doc_map.pins.find { |pin| pin.path == 'AST::Node' }
     expect(node_pin).to be_a(Solargraph::Pin::Namespace)
   end
@@ -26,7 +27,8 @@ describe Solargraph::DocMap do
     end
     allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
     doc_map = Solargraph::DocMap.new(['not_a_gem'], [gemspec])
-    expect(doc_map.uncached_gemspecs).to eq([gemspec])
+    expect(doc_map.uncached_yard_gemspecs).to eq([gemspec])
+    expect(doc_map.uncached_rbs_collection_gemspecs).to eq([gemspec])
   end
 
   it 'imports all gems when bundler/require used' do

@@ -133,6 +133,15 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    def rbs_collection_config_path
+      @rbs_collection_config_path ||= begin
+        unless directory.empty? || directory == '*'
+          yaml_file = File.join(directory, 'rbs_collection.yaml')
+          yaml_file if File.file?(yaml_file)
+        end
+      end
+    end
+
     # Synchronize the workspace from the provided updater.
     #
     # @param updater [Source::Updater]
@@ -230,10 +239,11 @@ module Solargraph
 
     # @return [String, nil]
     def read_rbs_collection_path
-      yaml_file = File.join(directory, 'rbs_collection.yaml')
-      return unless File.file?(yaml_file)
+      return unless rbs_collection_config_path
 
-      YAML.load_file(yaml_file)&.fetch('path')
+      path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
+      # make fully qualified
+      File.expand_path(path, directory)
     end
   end
 end
