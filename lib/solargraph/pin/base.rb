@@ -309,7 +309,6 @@ module Solargraph
         end
         # arbitrary way of choosing a pin
         [val1, val2].compact.min_by { _1.best_location.to_s }
->>>>>>> master
       end
 
       def assert_source_provided
