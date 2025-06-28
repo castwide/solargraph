@@ -8,10 +8,27 @@ module Solargraph
 
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
-      def initialize scope: :class, generics: nil, **splat
+      def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
         @scope = scope
         @generics = generics
+        @generic_defaults = generic_defaults
+      end
+
+      def generic_defaults
+        @generic_defaults ||= {}
+      end
+
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      #
+      # @return [self]
+      def combine_with(other, attrs={})
+        new_attrs = {
+          scope: assert_same(other, :scope),
+          generics: generics.empty? ? other.generics : generics,
+        }.merge(attrs)
+        super(other, new_attrs)
       end
 
       def context

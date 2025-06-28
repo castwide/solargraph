@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'bundler'
 require 'set'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
@@ -51,6 +52,23 @@ module Solargraph
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
+
+  # @param type [Symbol] Type of assert.
+  def self.asserts_on?(type)
+    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+      false
+    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+      true
+    else
+      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+      false
+    end
+  end
+
+  def self.assert_or_log(type, msg = nil, &block)
+    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
+    logger.info msg, &block
+  end
 
   # A convenience method for Solargraph::Logging.logger.
   #

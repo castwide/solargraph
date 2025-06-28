@@ -11,6 +11,11 @@ module Solargraph
       # @return [::Symbol] :class or :module
       attr_reader :type
 
+      # does not assert like super, as a namespace without a closure
+      # may be the root level namespace, or it may not yet be
+      # qualified
+      attr_reader :closure
+
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
@@ -37,7 +42,7 @@ module Solargraph
             closure.full_context.namespace + '::'
           end
           closure_name += parts.join('::')
-          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')])
+          @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')], source: :namespace)
           @context = nil
         end
         @name = name
@@ -47,7 +52,7 @@ module Solargraph
         "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
-      def desc
+      def inner_desc
         if name.nil? || name.empty?
           '(top-level)'
         else

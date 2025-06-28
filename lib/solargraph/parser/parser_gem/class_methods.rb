@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require 'parser/current'
-require 'parser/source/buffer'
+require 'prism'
 
 # Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
 #
@@ -39,12 +38,10 @@ module Solargraph
 
         # @return [::Parser::Base]
         def parser
-          # @todo Consider setting an instance variable. We might not need to
-          #   recreate the parser every time we use it.
-          parser = ::Parser::CurrentRuby.new(FlawedBuilder.new)
-          parser.diagnostics.all_errors_are_fatal = true
-          parser.diagnostics.ignore_warnings      = true
-          parser
+          @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            parser.diagnostics.all_errors_are_fatal = true
+            parser.diagnostics.ignore_warnings      = true
+          end
         end
 
         # @param source [Source]

@@ -88,6 +88,7 @@ module Solargraph
       # @return [Symbol, nil]
       attr_reader :parameters_type
 
+      # @type [Hash{String => Symbol}]
       PARAMETERS_TYPE_BY_STARTING_TAG = {
         '{' => :hash,
         '(' => :fixed,

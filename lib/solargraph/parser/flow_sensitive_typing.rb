@@ -118,7 +118,8 @@ module Solargraph
           comments: pin.comments,
           presence: presence,
           return_type: ComplexType.try_parse(downcast_type_name),
-          presence_certain: true
+          presence_certain: true,
+          source: :flow_sensitive_typing
         )
         locals.push(new_pin)
       end
@@ -152,7 +153,7 @@ module Solargraph
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String)]
       def parse_isa(isa_node)
-        return unless isa_node.type == :send && isa_node.children[1] == :is_a?
+        return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
         #     s(:send, nil, :foo), :is_a?,
@@ -164,12 +165,12 @@ module Solargraph
         # check if isa_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        if isa_receiver.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
+        if isa_receiver&.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
           variable_name = isa_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        variable_name = isa_receiver.children[0].to_s if isa_receiver.type == :lvar
+        variable_name = isa_receiver.children[0].to_s if isa_receiver&.type == :lvar
         return unless variable_name
 
         [isa_type_name, variable_name]
