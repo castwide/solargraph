@@ -61,15 +61,19 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        namespace_children(fqns).select do |pin|
+        all_pins = namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
+        GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
-      def get_superclass fqns
-        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'

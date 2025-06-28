@@ -20,12 +20,12 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
-      # The Environ for a YARD map.
+      # The Environ for a DocMap.
       # Subclasses can override this method.
       #
-      # @param yard_map [YardMap]
+      # @param doc_map [DocMap]
       # @return [Environ]
-      def global yard_map
+      def global doc_map
         EMPTY_ENVIRON
       end
     end

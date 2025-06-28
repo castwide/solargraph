@@ -8,6 +8,10 @@ module Solargraph
         super(name: name, **kwargs)
       end
 
+      def closure
+        @closure ||= Pin::ROOT_PIN
+      end
+
       def name
         @name
       end

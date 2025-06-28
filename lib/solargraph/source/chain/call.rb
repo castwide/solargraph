@@ -85,6 +85,7 @@ module Solargraph
 
             with_block, without_block = overloads.partition(&:block?)
             sorted_overloads = with_block + without_block
+            # @type [Pin::Signature, nil]
             new_signature_pin = nil
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
@@ -113,6 +114,7 @@ module Solargraph
                     blocktype = block_call_type(api_map, name_pin, locals)
                   end
                 end
+                # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
                 new_return_type = new_signature_pin.return_type
                 if head?
