@@ -17,6 +17,7 @@ module Solargraph
             base = word
             gates = crawl_gates(name_pin)
           end
+          logger.debug { "Constant#resolve(word=#{word.inspect}) - gates=#{gates}, name_pin=#{name_pin}" }
           parts = base.split('::')
           gates.each do |gate|
             # @todo 'Wrong argument type for
@@ -33,6 +34,7 @@ module Solargraph
               break if type.undefined?
             end
             next if type.undefined?
+            logger.debug { "Constant#resolve(word=#{word.inspect}) - name_pin=#{name_pin}, type=#{type}, type.namespace=#{type.namespace}" }
             result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
             return result unless result.empty?
           end
@@ -49,6 +51,7 @@ module Solargraph
             if clos.is_a?(Pin::Namespace)
               gates = clos.gates
               gates.push('') if gates.empty?
+              logger.debug { "Constant#crawl_gates(pin=#{pin}) clos=#{clos}, clos.path=#{clos.path.inspect} - gates=#{gates}" }
               return gates
             end
             clos = clos.closure

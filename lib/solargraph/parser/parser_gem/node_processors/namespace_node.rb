@@ -23,16 +23,18 @@ module Solargraph
           # @param superclass_name [String, nil]
           def process_namespace(superclass_name)
             loc = get_node_location(node)
+            name = unpack_name(node.children[0])
             nspin = Solargraph::Pin::Namespace.new(
               type: node.type,
               location: loc,
               closure: region.closure,
-              name: unpack_name(node.children[0]),
+              name: name,
               comments: comments_for(node),
               visibility: :public,
               gates: region.closure.gates.freeze,
               source: :parser
             )
+            logger.debug { "NamespaceNode#process: Created namespace pin: #{nspin} in closure #{region.closure} and namespace=#{nspin.namespace} and name=#{name}" }
             pins.push nspin
             unless superclass_name.nil?
               pins.push Pin::Reference::Superclass.new(

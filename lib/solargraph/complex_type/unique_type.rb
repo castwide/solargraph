@@ -311,7 +311,7 @@ module Solargraph
       def resolve_generics definitions, context_type
         return self if definitions.nil? || definitions.generics.empty?
 
-        transform(name) do |t|
+        out = transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
             generic_name = t.subtypes.first&.name
             idx = definitions.generics.index(generic_name)
@@ -337,6 +337,8 @@ module Solargraph
             t
           end
         end
+        # logger.debug { "UniqueType#resolve_generics(self=#{self.rooted_tag}, definitions=#{definitions}, context_type=#{context_type.rooted_tags}) => #{out}" }
+        out
       end
 
       # @yieldparam t [self]
@@ -410,7 +412,7 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, context = ''
-        transform do |t|
+        out = transform do |t|
           next t if t.name == GENERIC_TAG_NAME
           next t if t.duck_type? || t.void? || t.undefined?
           recon = (t.rooted? ? '' : context)
@@ -421,6 +423,8 @@ module Solargraph
           end
           t.recreate(new_name: fqns, make_rooted: true)
         end
+        logger.debug { "UniqueType#qualify(self=#{rooted_tags.inspect}, context=#{context}) => #{out.rooted_tags.inspect}" }
+        out
       end
 
       def selfy?
@@ -467,7 +471,6 @@ module Solargraph
         '::FalseClass' => UniqueType::FALSE,
         '::NilClass' => UniqueType::NIL
       }.freeze
-
 
       include Logging
     end
