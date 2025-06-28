@@ -49,7 +49,7 @@ describe Solargraph::RbsMap::CoreMap do
     expect(signature.block.return_type.to_s).to eq('void')
   end
 
-  xit 'populates types in block parameters from generics' do
+  it 'populates types in block parameters from generics' do
     api_map = Solargraph::ApiMap.new
     methods = api_map.get_methods('Enumerable<String>')
     each_pins = methods.select{|pin| pin.path.end_with?('#each')}
