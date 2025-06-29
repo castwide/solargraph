@@ -44,7 +44,6 @@ jobs:
     - name: Ensure specs still run
       run: bundle exec rake spec
 
-  #
   # run_solargraph_rspec_specs:
   #   # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
   #   runs-on: ubuntu-latest
@@ -110,6 +109,7 @@ jobs:
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
         export BUNDLE_PATH
         cd ../solargraph-rails
+        bundle exec solargraph --version
         bundle exec rake spec
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
