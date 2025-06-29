@@ -83,7 +83,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.1'
+        ruby-version: '3.0'
         bundler-cache: false
         # specified in Gemfile.lock
         bundler: 2.6.9
