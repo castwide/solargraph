@@ -99,6 +99,7 @@ jobs:
        bundle install
        cd spec/rails7
        bundle install
+       bundle update rbs
        bundle exec --gemfile ../../Gemfile rbs --version
        bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
