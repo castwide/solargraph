@@ -9,3 +9,7 @@
 doc
 coverage
 /tmp/
+pkg/*
+.tool-versions
+.ruby-version
+.ruby_version
