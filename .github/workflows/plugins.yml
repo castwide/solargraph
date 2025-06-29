@@ -96,6 +96,7 @@ jobs:
        export BUNDLE_PATH
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
+       bundle update solargraph
        RAILS_DIR="${GITHUB_WORKSPACE:?}/spec/rails7
        export RAILS_DIR
        cd ${RAILS_DIR}
@@ -108,6 +109,7 @@ jobs:
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
         MATRIX_RAILS_VERSION: "7.0"
+        MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Run specs
       run: |
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
