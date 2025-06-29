@@ -44,6 +44,7 @@ jobs:
     - name: Ensure specs still run
       run: bundle exec rake spec
 
+  #
   # run_solargraph_rspec_specs:
   #   # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
   #   runs-on: ubuntu-latest
@@ -85,8 +86,8 @@ jobs:
         # solargraph-rails supports Ruby 3.0+
         ruby-version: '3.1'
         bundler-cache: false
-        # specified in Gemfile
-        bundler: 2.3
+        # specified in Gemfile.lock
+        bundler: 2.6.9
     - name: Install gems
       run: |
        set -x
