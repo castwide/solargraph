@@ -100,8 +100,8 @@ jobs:
        bundle exec --gemfile ../../Gemfile rbs --version
        bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
-       bundle exec rbs collection init
-       bundle exec rbs collection install
+       # bundle exec rbs collection init
+       # bundle exec rbs collection install
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
     - name: Run specs
