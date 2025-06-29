@@ -97,7 +97,7 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
-       RAILS_DIR="${GITHUB_WORKSPACE:?}/spec/rails7
+       RAILS_DIR="${GITHUB_WORKSPACE:?}/spec/rails7"
        export RAILS_DIR
        cd ${RAILS_DIR}
        bundle install
