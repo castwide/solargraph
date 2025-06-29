@@ -88,7 +88,7 @@ jobs:
         bundler: latest
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
-        MATRIX_RAILS_VERSION: 7.0
+        MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
       run: |
        set -x
@@ -106,7 +106,7 @@ jobs:
        # bundle exec rbs collection install
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
-        MATRIX_RAILS_VERSION: 7.0
+        MATRIX_RAILS_VERSION: "7.0"
     - name: Run specs
       run: |
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
@@ -119,4 +119,4 @@ jobs:
         bundle exec rake spec
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
-        MATRIX_RAILS_VERSION: 7.0
+        MATRIX_RAILS_VERSION: "7.0"
