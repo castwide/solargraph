@@ -85,6 +85,7 @@ jobs:
         # solargraph-rails supports Ruby 3.0+
         ruby-version: '3.0'
         bundler-cache: false
+        bundler: latest
     - name: Install gems
       run: |
        set -x
