@@ -97,9 +97,9 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
+       bundle update rbs
        cd spec/rails7
        bundle install
-       bundle update rbs
        bundle exec --gemfile ../../Gemfile rbs --version
        bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
