@@ -103,12 +103,16 @@ jobs:
        # bundle exec rbs collection install
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
+        MATRIX_RAILS_VERSION: 7.0
     - name: Run specs
       run: |
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
         export BUNDLE_PATH
         cd ../solargraph-rails
         bundle exec solargraph --version
+        bundle info solargraph
+        bundle info rbs
+        bundle info yard
         bundle exec rake spec
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
