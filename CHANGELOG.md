@@ -1,3 +1,6 @@
+## 0.55.5 - July 1, 2025
+- Ignore directory paths in Workspace#would_require? (#988)
+
 ## 0.55.4 - June 27, 2025
 -  Flatten results of DocMap external bundle query (#981)
 
