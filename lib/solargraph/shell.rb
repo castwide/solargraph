@@ -137,15 +137,18 @@ module Solargraph
     # @param names [Array<String>]
     # @return [void]
     def gems *names
+      api_map = ApiMap.load('.')
       if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec }
+        Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
+        STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
           spec = Gem::Specification.find_by_name(*name.split('='))
-          do_cache spec
+          do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
+        STDERR.puts "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -256,8 +259,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @return [void]
-    def do_cache gemspec
-      api_map = ApiMap.load('.')
+    def do_cache gemspec, api_map
       # @todo if the rebuild: option is passed as a positional arg,
       #   typecheck doesn't complain on the below line
       api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
