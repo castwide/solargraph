@@ -12,7 +12,8 @@ module Solargraph
               'Gem::Specification.new',
               %(
 @yieldparam [self]
-              )
+              ),
+              source: :gemspec
             )
           ]
         )
