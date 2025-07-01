@@ -1,5 +1,5 @@
 ## 0.56.0 - July 1, 2025
--  [regression] Gem caching perf and logging fixes #983 
+-  [regression] Gem caching perf and logging fixes #983
 
 ## 0.55.5 - July 1, 2025
 - Flatten results of DocMap external bundle query (#981)
