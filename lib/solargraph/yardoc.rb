@@ -30,6 +30,13 @@ module Solargraph
       File.exist?(yardoc)
     end
 
+    # True if another process is currently building the yardoc cache.
+    #
+    def processing?(gemspec)
+      yardoc = File.join(PinCache.yardoc_path(gemspec), 'processing')
+      File.exist?(yardoc)
+    end
+
     # Load a gem's yardoc and return its code objects.
     #
     # @note This method modifies the global YARD registry.
