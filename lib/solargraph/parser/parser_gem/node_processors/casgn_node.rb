@@ -30,8 +30,8 @@ module Solargraph
             process_children
           end
 
-          # TODO: Move this out of [CasgnNode] once [Solargraph::Parser::NodeProcessor] supports
-          # multiple processors.
+          # @todo Move this out of [CasgnNode] once [Solargraph::Parser::NodeProcessor] supports
+          #   multiple processors.
           def process_struct_assignment
             processor_klass = Convention::StructDefinition::NodeProcessors::StructNode
             processor = processor_klass.new(node, region, pins, locals)
