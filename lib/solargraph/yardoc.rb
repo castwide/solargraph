@@ -12,7 +12,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [String] The path to the cached yardoc.
     def cache(gemspec)
-      path = path_for(gemspec)
+      path = PinCache.yardoc_path gemspec
       return path if cached?(gemspec)
 
       Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
@@ -26,16 +26,8 @@ module Solargraph
     #
     # @param gemspec [Gem::Specification]
     def cached?(gemspec)
-      yardoc = File.join(path_for(gemspec), 'complete')
+      yardoc = File.join(PinCache.yardoc_path(gemspec), 'complete')
       File.exist?(yardoc)
-    end
-
-    # Get the absolute path for a cached gem yardoc.
-    #
-    # @param gemspec [Gem::Specification]
-    # @return [String]
-    def path_for(gemspec)
-      File.join(Solargraph::Cache.base_dir, "yard-#{YARD::VERSION}", "#{gemspec.name}-#{gemspec.version}.yardoc")
     end
 
     # Load a gem's yardoc and return its code objects.
@@ -45,7 +37,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Array<YARD::CodeObjects::Base>]
     def load!(gemspec)
-      YARD::Registry.load! path_for(gemspec)
+      YARD::Registry.load! PinCache.yardoc_path gemspec
       YARD::Registry.all
     end
   end

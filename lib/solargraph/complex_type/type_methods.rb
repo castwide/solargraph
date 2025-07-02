@@ -172,7 +172,11 @@ module Solargraph
         elsif fixed_parameters?
           "(#{subtypes_str})"
         else
-          "<#{subtypes_str}>"
+          if name == 'Hash'
+            "<#{key_types_str}, #{subtypes_str}>"
+          else
+            "<#{key_types_str}#{subtypes_str}>"
+          end
         end
       end
 

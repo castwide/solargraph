@@ -30,5 +30,7 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: bundle install
+    - name: Install gem types
+      run: bundle exec rbs collection install
     - name: Typecheck self
       run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed

@@ -48,7 +48,7 @@ module Solargraph
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'
-  autoload :Cache,            'solargraph/cache'
+  autoload :PinCache,         'solargraph/pin_cache'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')

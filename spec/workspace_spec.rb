@@ -117,6 +117,11 @@ describe Solargraph::Workspace do
     expect(workspace.would_require?('not_there')).to be(false)
   end
 
+  it 'would not require directory paths' do
+    FileUtils.mkdir_p(File.join(dir_path, 'lib', 'emptydir'))
+    expect(workspace.would_require?('emptydir')).to be(false)
+  end
+
   it "uses configured require paths" do
     workspace = Solargraph::Workspace.new('spec/fixtures/workspace')
     expect(workspace.require_paths).to eq(['spec/fixtures/workspace/lib', 'spec/fixtures/workspace/ext'])
