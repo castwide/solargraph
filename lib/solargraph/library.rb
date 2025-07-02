@@ -597,7 +597,7 @@ module Solargraph
       if Yardoc.processing?(spec)
         logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
         queued_gemspec_cache.push(spec)
-        return if pending < 2
+        return if pending - queued_gemspec_cache.length < 1
 
         catalog
         sync_catalog
@@ -622,10 +622,13 @@ module Solargraph
     end
 
     def cacheable_specs
-      api_map.uncached_yard_gemspecs +
-        api_map.uncached_rbs_collection_gemspecs +
-        queued_gemspec_cache -
-        cache_errors.to_a
+      cacheable = api_map.uncached_yard_gemspecs +
+                  api_map.uncached_rbs_collection_gemspecs -
+                  queued_gemspec_cache -
+                  cache_errors.to_a
+      return cacheable unless cacheable.empty?
+
+      queued_gemspec_cache
     end
 
     def queued_gemspec_cache
