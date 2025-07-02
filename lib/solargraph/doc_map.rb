@@ -355,7 +355,10 @@ module Solargraph
     end
 
     def gemspecs_required_from_bundler
-      if workspace&.directory && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
+      # @todo Handle projects with custom Bundler/Gemfile setups
+      return unless workspace.gemfile?
+
+      if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
         # Find only the gems bundler is now using
         Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
           logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
@@ -396,8 +399,7 @@ module Solargraph
             next specs
           end.compact
         else
-          Solargraph.logger.warn e
-          raise BundleNotFoundError, "Failed to load gems from bundle at #{workspace&.directory}"
+          Solargraph.logger.warn "Failed to load gems from bundle at #{workspace&.directory}: #{e}"
         end
       end
     end
