@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'yard'
+require 'yard-activesupport-concern'
+
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
   #
@@ -17,7 +20,7 @@ module Solargraph
 
       Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
       Dir.chdir gemspec.gem_dir do
-        `yardoc --db #{path} --no-output --plugin solargraph`
+        `yardoc --db #{path} --no-output --plugin solargraph --plugin activesupport-concern`
       end
       path
     end
