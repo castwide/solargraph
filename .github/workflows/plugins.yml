@@ -7,9 +7,9 @@ name: Plugin Backwards Compatibility Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 permissions:
   contents: read
@@ -85,10 +85,12 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.1'
+        ruby-version: '3.0'
         bundler-cache: false
-        # specified in Gemfile
-        bundler: 2.3
+        bundler: latest
+      env:
+        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
+        MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
       run: |
        set -x
@@ -97,21 +99,29 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
-       cd spec/rails7
+       RAILS_DIR="$(pwd)/spec/rails7"
+       export RAILS_DIR
+       cd ${RAILS_DIR}
        bundle install
        bundle exec --gemfile ../../Gemfile rbs --version
        bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
-       bundle exec rbs collection init
-       bundle exec rbs collection install
+       # bundle exec rbs collection init
+       # bundle exec rbs collection install
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
+        MATRIX_RAILS_VERSION: "7.0"
+        MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Run specs
       run: |
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
         export BUNDLE_PATH
         cd ../solargraph-rails
+        bundle exec solargraph --version
+        bundle info solargraph
+        bundle info rbs
+        bundle info yard
         bundle exec rake spec
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
-        MATRIX_RAILS_VERSION: 7.0
+        MATRIX_RAILS_VERSION: "7.0"

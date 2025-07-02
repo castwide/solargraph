@@ -1,3 +1,20 @@
+## 0.56.0 - July 1, 2025
+-  [regression] Gem caching perf and logging fixes #983
+
+## 0.55.5 - July 1, 2025
+- Flatten results of DocMap external bundle query (#981)
+- [breaking] Reimplement global conventions (#877)
+- GemPins pin merging improvements (#946)
+- Support class-scoped aliases and attributes from RBS (#952)
+- Restructure ComplexType specs towards YARD doc compliance (#969)
+- Use Prism (#974)
+- Document pages (#977)
+- Enable disabled-but-working specs (#978)
+- Map RBS 'untyped' type (RBS::Types::Bases::Any) to 'undefined' (#979)
+- Re-enable support for .gem_rbs_collection directories (#942)
+- [breaking] Comply with YARD documentation on Hash tag format (#968)
+- Ignore directory paths in Workspace#would_require? (#988)
+
 ## 0.55.4 - June 27, 2025
 -  Flatten results of DocMap external bundle query (#981)
 
