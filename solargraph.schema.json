@@ -1,0 +1,86 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "include": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "A list of directory globs to include in Solargraph's code maps. Exclude takes priority over include.",
+            "default": ["**/*.rb"]
+        },
+        "exclude": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "A list of directory globs to exclude from Solargraph's code maps. Exclude takes priority over include.",
+            "default": [
+                "spec/**/*",
+                "test/**/*",
+                "vendor/**/*",
+                ".bundle/**/*"
+            ]
+        },
+        "require": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "**Note**: Consider adding requires with a YARD @!parse directive instead of using this configuration setting.\nUse require to add require paths that are not explicitly defined in code"
+        },
+        "domains": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Solargraph will use the designated classes and modules as contexts in which the project’s scripts will run. Example: if one of the domains is Class<Sinatra::Base>, the Sinatra DSL will be included in suggestions. (Whether you need to specify the domain inside Class<> depends on how the library is implemented.)"
+        },
+        "reporters": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {
+                        "const": "rubocop",
+                        "description": "Enables RuboCop linting. Its rules can be configured in a `.rubocop.yml` file",
+                        "title": "RubocCop Reporter"
+                    },
+                    {
+                        "const": "require_not_found",
+                        "description": "Highlights `require` calls where Solargraph could not resolve a required path. Note that this error does not necessarily mean that the path is incorrect; only that Solargraph was unable to recognize it",
+                        "title": "Unresolved Require Reporter"
+                    },
+                    {
+                        "title": "Typecheck Reporter",
+                        "oneOf": [
+                            {
+                                "enum": ["typecheck", "typecheck:normal"],
+                                "description": "Normal Typecheck Level\n  - @return and @param tags are optional\n  - Validate arity of calls to explicit methods\n  - Resolve namespaces in all type tags\n  - Ignore all undefined types\n\nNormal checks validate YARD type tags, but do not perform type inference on the code. Untagged types are ignored"
+                            },
+                            {
+                                "const": "typecheck:typed",
+                                "description": "Typed Typecheck Level:\n  - @return and @param tags are optional\n  - Validate arity of calls to explicit methods\n  - Resolve namespaces in all type tags\n  - Validate existing @return tags against inferred types\n  - Validate existing @type tags against inferred types\n  - Validate existing @param tags against arguments\n  - Loose @return tag matches\n  - Ignore all undefined types\n\nTyped checks compare type tags to inferred types"
+                            },
+                            {
+                                "const": "typecheck:strict",
+                                "description": "Strict Typecheck Level:\n  - @param tags are optional\n  - Validate arity of calls to explicit methods\n  - All methods must have either a @return tag or an inferred type\n  - Resolve namespaces in all type tags\n  - Validate existing @return tags against inferred types\n  - Validate existing @param tags against arguments\n  - Validate existing @type tags against inferred types\n  - Strict @return tag matches\n  - Validate method calls\n  - Ignore undefined types from external sources\n\nStrict checks require all methods to have either a tagged type or an inferred type. If an untagged method’s type cannot be inferred, the type checker issues a warning. @param tags are optional, but checked if they exist"
+                            },
+                            {
+                                "const": "typecheck:strong",
+                                "description": "Strong Typecheck Level:\n  - @return and @param tags are required\n  - Validate arity of calls to explicit methods\n  - Resolve namespaces in all type tags\n  - Validate @return tags against inferred types\n  - Validate @param tags against arguments\n  - Validate existing @type tags against inferred types\n  - Strict @return tag matches\n  - Validate method calls\n  - Ignore undefined types from external sources\n\nStrong checks require all method types to be tagged and the inferred types to match the tags. @param tags are required"
+                            }
+                        ]
+                    },
+                    {
+                        "const": "update_errors",
+                        "title": "Syntax Error Reporter",
+                        "description": "Reports syntax errors"
+                    },
+                    {
+                        "const": "all!",
+                        "description": "Use all available reporters"
+                    }
+                ]
+            },
+            "description": "A list of reporters that Solargraph will use to analyze your code for problems"
+        },
+        "max_files": {
+            "type": "integer",
+            "description": "Maximum number of files to index",
+            "default": 5000
+        }
+    }
+}
