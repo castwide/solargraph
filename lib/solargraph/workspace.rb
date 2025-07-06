@@ -171,6 +171,8 @@ module Solargraph
     # @return [void]
     def load_sources
       source_hash.clear
+      Solargraph::Parser.force_new_parser(config.ruby_version == 'current' ? :current : config.ruby_version)
+
       unless directory.empty? || directory == '*'
         size = config.calculated.length
         raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
