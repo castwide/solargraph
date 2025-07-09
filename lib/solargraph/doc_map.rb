@@ -293,6 +293,7 @@ module Solargraph
       gemspec = Gem::Specification.find_by_path(path)
       if gemspec.nil?
         gem_name_guess = path.split('/').first
+        return nil if gem_name_guess.to_s.empty?
         begin
           # this can happen when the gem is included via a local path in
           # a Gemfile; Gem doesn't try to index the paths in that case.
