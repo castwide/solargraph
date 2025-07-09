@@ -9,7 +9,7 @@ name: Linting
 on:
   workflow_dispatch: {}
   pull_request:
-    branches: [main]
+    branches: [ master ]
   push:
     branches:
       - 'main'
@@ -33,19 +33,17 @@ jobs:
           ruby-version: 3.4
           bundler: latest
           bundler-cache: true
-          cache-version: ${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}.${{ matrix.versions.rails-minor }}-2025-06-06
+          cache-version: 2025-06-06
 
       - name: Restore cache of gem annotations
         id: dot-cache-restore
         uses: actions/cache/restore@v4
         with:
           key: |
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}--${{ matrix.versions.rails-minor }}-${{ hashFiles('spec/**/Gemfile.lock') }}-${{ hashFiles('Gemfile.lock') }}
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('spec/**/Gemfile.lock') }}-${{ hashFiles('Gemfile.lock') }}
           restore-keys: |
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-${{ matrix.versions.rails-minor }}-${{ hashFiles('spec/**/Gemfile.lock') }}-
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-${{ matrix.versions.rails-minor }}-
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('spec/**/Gemfile.lock') }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache-
           path: |
             /home/runner/.cache/solargraph
 
