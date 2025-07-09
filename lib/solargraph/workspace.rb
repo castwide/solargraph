@@ -155,6 +155,14 @@ module Solargraph
       server['commandPath'] || 'solargraph'
     end
 
+    # True if the workspace has a root Gemfile.
+    #
+    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
+    #
+    def gemfile?
+      directory && File.file?(File.join(directory, 'Gemfile'))
+    end
+
     private
 
     # The language server configuration (or an empty hash if the workspace was
