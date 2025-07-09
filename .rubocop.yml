@@ -31,3 +31,4 @@ Metrics/MethodLength:
 plugins:
   - rubocop-rspec
   - rubocop-rake
+  - rubocop-yard
