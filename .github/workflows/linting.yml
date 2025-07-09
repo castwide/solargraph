@@ -50,7 +50,7 @@ jobs:
       - name: Overcommit
         run: |
           bundle exec overcommit --sign
-          bundle exec overcommit --run --diff origin/main
+          bundle exec overcommit --run --diff origin/master
   rubocop:
     name: rubocop
     runs-on: ubuntu-latest
