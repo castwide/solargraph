@@ -1,0 +1,75 @@
+---
+# To debug locally:
+#   npm install -g act
+#   act pull_release -j overcommit
+#
+
+name: Linting
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  overcommit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        # Number of commits to fetch. 0 indicates all history for all branches and tags.
+        with:
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.4
+          bundler: latest
+          bundler-cache: true
+          cache-version: ${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}.${{ matrix.versions.rails-minor }}-2025-06-06
+
+      - name: Restore cache of gem annotations
+        id: dot-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          key: |
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}--${{ matrix.versions.rails-minor }}-${{ hashFiles('spec/**/Gemfile.lock') }}-${{ hashFiles('Gemfile.lock') }}
+          restore-keys: |
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-${{ matrix.versions.rails-minor }}-${{ hashFiles('spec/**/Gemfile.lock') }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-${{ matrix.versions.rails-minor }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-${{ matrix.versions.rails-major }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ matrix.solargraph-version }}-
+          path: |
+            /home/runner/.cache/solargraph
+
+      - name: Overcommit
+        run: |
+          bundle exec overcommit --sign
+          bundle exec overcommit --run --diff origin/main
+  rubocop:
+    name: rubocop
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_ONLY: rubocop
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - uses: reviewdog/action-rubocop@fcb74ba274da10b18d038d0bcddaae3518739634 # v2.21.2
+        with:
+          reporter: github-pr-check
+          skip_install: true
+          use_bundler: true
+          rubocop_extensions: 'rubocop-performance:gemfile rubocop-rspec:gemfile rubocop-rake:gemfile rubocop-yard:gemfile'
+          fail_level: info
+          rubocop_version: Gemfile
+          level: info
