@@ -40,9 +40,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           key: |
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('spec/**/Gemfile.lock') }}-${{ hashFiles('Gemfile.lock') }}
+            2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
           restore-keys: |
-            2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('spec/**/Gemfile.lock') }}-
+            2025-06-26-09-${{ runner.os }}-dot-cache
             2025-06-26-09-${{ runner.os }}-dot-cache-
           path: |
             /home/runner/.cache/solargraph
@@ -68,6 +68,7 @@ jobs:
           skip_install: true
           use_bundler: true
           rubocop_extensions: 'rubocop-rspec:gemfile rubocop-rake:gemfile rubocop-yard:gemfile'
+          rubocop_flags: '-c .rubocop.yml'
           fail_level: info
           rubocop_version: Gemfile
           level: info
