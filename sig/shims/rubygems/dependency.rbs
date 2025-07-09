@@ -1,0 +1,5 @@
+class Gem::Dependency
+  # Version of the gem
+  #
+  def version: () -> untyped
+end

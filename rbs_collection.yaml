@@ -6,9 +6,9 @@ sources:
     revision: main
     repo_dir: gems
 
-# You can specify local directories as sources also.
-# - type: local
-#   path: path/to/your/local/repository
+  # You can specify local directories as sources also.
+  - type: local
+    path: sig/shims
 
 # A directory to install the downloaded RBSs
 path: .gem_rbs_collection

@@ -1,0 +1,17 @@
+module Gem
+  class LoadError < ::LoadError
+    attr_accessor name: String
+
+    attr_accessor requirement: untyped
+  end
+
+  class MissingSpecError < Gem::LoadError
+    def initialize: (untyped name, untyped requirement, ?untyped? extra_message) -> void
+
+    def message: () -> untyped
+  end
+
+  class MissingSpecVersionError < MissingSpecError
+    def initialize: (untyped name, untyped requirement, untyped specs) -> void
+  end
+end

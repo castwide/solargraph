@@ -1,0 +1,9 @@
+class Gem::SpecFetcher
+  include Gem::UserInteraction
+
+  include Gem::Text
+
+  def search_for_dependency: (untyped dependency, ?bool matching_platform) -> [::Array[[Gem::Dependency, untyped]], ::Array[untyped]]
+
+  def spec_for_dependency: (untyped dependency, ?bool matching_platform) -> ::Array[untyped]
+end
