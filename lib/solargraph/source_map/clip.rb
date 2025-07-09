@@ -101,7 +101,7 @@ module Solargraph
 
       # @return [Solargraph::Pin::Closure]
       def closure
-        @block ||= source_map.locate_closure_pin(cursor.node_position.line, cursor.node_position.character)
+        @closure ||= source_map.locate_closure_pin(cursor.node_position.line, cursor.node_position.character)
       end
 
       # The context at the current position.
