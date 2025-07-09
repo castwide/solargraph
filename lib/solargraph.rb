@@ -53,16 +53,15 @@ module Solargraph
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 
-  # @param type [Symbol] Type of assert.
   def self.asserts_on?
-    @asserts_on ||= if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
-                      false
-                    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
-                      true
-                    else
-                      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
-                      false
-                    end
+    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+      false
+    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+      true
+    else
+      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+      false
+    end
   end
 
   def self.assert_or_log(type, msg = nil, &block)
