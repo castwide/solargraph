@@ -46,7 +46,7 @@ describe Solargraph::Pin::LocalVariable do
     # set env variable 'FOO' to 'true' in block
 
     with_env_var('SOLARGRAPH_ASSERTS', 'on') do
-      expect(Solargraph.asserts_on?(:combine_with_closure_name)).to be true
+      expect(Solargraph.asserts_on?).to be true
       expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :closure name/)
     end
   end
