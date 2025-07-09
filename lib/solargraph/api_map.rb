@@ -730,19 +730,18 @@ module Solargraph
 
             # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
             logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
-            if module_extends.include? 'ActiveSupport::Concern'
-              unless rooted_include_tag.nil?
-                # yard-activesupport-concern pulls methods inside
-                # 'class_methods' blocks into main class visible from YARD
-                included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, :class, visibility, deep, skip, true)
-                result.concat included_class_pins
+            next unless module_extends.include? 'ActiveSupport::Concern'
+            next if rooted_include_tag.nil?
 
-                # another pattern is to put class methods inside a submodule
-                classmethods_include_tag = rooted_include_tag + "::ClassMethods"
-                included_classmethods_pins = inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
-                result.concat included_classmethods_pins
-              end
-            end
+            # yard-activesupport-concern pulls methods inside
+            # 'class_methods' blocks into main class visible from YARD
+            included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, :class, visibility, deep, skip, true)
+            result.concat included_class_pins
+
+            # another pattern is to put class methods inside a submodule
+            classmethods_include_tag = rooted_include_tag + "::ClassMethods"
+            included_classmethods_pins = inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
+            result.concat included_classmethods_pins
           end
 
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
