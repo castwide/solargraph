@@ -67,7 +67,7 @@
                     {
                         "const": "update_errors",
                         "title": "Syntax Error Reporter",
-                        "description": "Reports syntax errors"
+                        "description": "Track repaired source code's error locations"
                     },
                     {
                         "const": "all!",
@@ -81,6 +81,28 @@
             "type": "integer",
             "description": "Maximum number of files to index",
             "default": 5000
+        },
+        "formatter": {
+            "type": "object",
+            "properties": {
+                "rubocop": {
+                    "type": "object",
+                    "properties": {
+                        "cops": {"type": "string"},
+                        "except": {"$ref": "#/definitions/strArr"},
+                        "only": {"$ref": "#/definitions/strArr"},
+                        "extra_args": {"$ref": "#/definitions/strArr"}
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "strArr": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
         }
     }
 }
