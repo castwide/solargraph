@@ -111,6 +111,10 @@ module Solargraph
         raw_data['max_files']
       end
 
+      def ruby_version
+        raw_data['ruby_version']
+      end
+
       private
 
       # @return [String]
@@ -156,6 +160,7 @@ module Solargraph
           'require' => [],
           'domains' => [],
           'reporters' => %w[rubocop require_not_found],
+          'ruby_version' => 'current',
           'formatter' => {
             'rubocop' => {
               'cops' => 'safe',

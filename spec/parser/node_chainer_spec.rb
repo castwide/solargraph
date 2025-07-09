@@ -163,18 +163,19 @@ describe 'NodeChainer' do
     expect(arg).to be_a(Solargraph::Source::Chain::BlockSymbol)
   end
 
-  # feature added in Ruby 3.1
-  if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1')
-    it 'tracks anonymous block forwarding' do
-      source = Solargraph::Source.load_string(%(
+  it 'tracks anonymous block forwarding' do
+    Solargraph::Parser.force_new_parser('3.1') # (added in ruby 3.1)
+
+    source = Solargraph::Source.load_string(%(
       def foo(&)
         bar(&)
       end
     ))
-      anonymous_block_pass = source.node.children[2].children[2]
-      chain = Solargraph::Parser.chain(anonymous_block_pass)
-      block_variable_node = chain.links.first
-      expect(block_variable_node.word).to be_nil
-    end
+    anonymous_block_pass = source.node.children[2].children[2]
+    chain = Solargraph::Parser.chain(anonymous_block_pass)
+    block_variable_node = chain.links.first
+    expect(block_variable_node.word).to be_nil
+
+    Solargraph::Parser.force_new_parser(:current)
   end
 end

@@ -14,6 +14,13 @@ require 'prism'
 module Solargraph
   module Parser
     module ParserGem
+      FORCED_LEGACY_PARSERS = {
+        1 => (8..9),
+        2 => (0..7),
+        3 => (0..2)
+      }
+      MIN_MODERN_PARSER_VERSION = [3, 3]
+
       module ClassMethods
         # @param code [String]
         # @param filename [String, nil]
@@ -31,17 +38,67 @@ module Solargraph
         def parse code, filename = nil, line = 0
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code
-          parser.parse(buffer)
+          res = parser.parse(buffer)
+          parser.reset
+
+          res
         rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
+          parser.reset
+
           raise Parser::SyntaxError, e.message
+        end
+
+        def parser_opts(parser)
+          parser.diagnostics.all_errors_are_fatal = true
+          parser.diagnostics.ignore_warnings      = true
+        end
+
+        # @param version [String] a presentation of the ruby version as a string
+        #   Eg. ruby 2.7.4 => 27
+        #       ruby 3.4   => 34
+        def modern_parser(version)
+          Solargraph.logger.info("Using modern ruby parser (#{version})")
+
+          Prism::Translation.const_get("Parser#{version}").new(FlawedBuilder.new).tap do |parser|
+            parser_opts(parser)
+          end
+        end
+
+        def legacy_parser(version)
+          Solargraph.logger.info("Using legacy ruby parser (#{version})")
+
+          require "parser/ruby#{version}"
+          parser = ::Parser.const_get("Ruby#{version}").new(FlawedBuilder.new)
+          parser_opts(parser)
+
+          parser
+        end
+
+        # Forces a new parser with a specified version of ruby
+        # @param ruby_version [String, :current]
+        # @return [::Parser::Base]
+        def force_new_parser(ruby_version = :current)
+          Solargraph.logger.debug("Trying to set new parser version for '#{ruby_version}'")
+
+          ruby_version = RUBY_VERSION if ruby_version == :current
+          major, minor = ruby_version.split('.').map(&:to_i)[..1]
+
+          if major >= MIN_MODERN_PARSER_VERSION[0] && minor >= MIN_MODERN_PARSER_VERSION[1]
+            # Modern parsers can be memoized, idk why legacy one can't be :/
+            @parser = modern_parser([major, minor].join)
+          elsif FORCED_LEGACY_PARSERS.key?(major) && FORCED_LEGACY_PARSERS[major].include?(minor)
+            @parser = legacy_parser([major, minor].join)
+          else
+            # Ruby < 3 is unsupported, so this shouldn't get into an infinite loop, ever
+            force_new_parser(:current)
+          end
+
+          @parser
         end
 
         # @return [::Parser::Base]
         def parser
-          @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
-            parser.diagnostics.all_errors_are_fatal = true
-            parser.diagnostics.ignore_warnings      = true
-          end
+          @parser ||= force_new_parser
         end
 
         # @param source [Source]
