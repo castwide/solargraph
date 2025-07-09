@@ -55,7 +55,7 @@ module Solargraph
       end
 
       def assert_location_provided
-        return unless best_location.nil? && [:yardoc, :source, :rbs].include?(source)
+        return unless best_location.nil? && %i[yardoc source rbs].include?(source)
 
         Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end

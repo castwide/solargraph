@@ -440,7 +440,12 @@ module Solargraph
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin
         type_location = pin.type_location
-        return [[Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs, type_location: type_location)], ComplexType.try_parse(method_type_to_tag(type)).force_rooted] if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
+        if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
+          return [
+            [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs, type_location: type_location)],
+            ComplexType.try_parse(method_type_to_tag(type)).force_rooted
+          ]
+        end
 
         parameters = []
         arg_num = -1
