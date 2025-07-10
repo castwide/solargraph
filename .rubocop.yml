@@ -17,6 +17,7 @@ AllCops:
     - "spec/fixtures/invalid_byte.rb"
     - "spec/fixtures/invalid_node_comment.rb"
     - "spec/fixtures/invalid_utf8.rb"
+    - "vendor/**/*.rb"
   TargetRubyVersion: 3.0
 
 Style/MethodDefParentheses:
