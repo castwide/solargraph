@@ -17,8 +17,6 @@ module Solargraph
     @@logger.formatter = proc do |severity, datetime, progname, msg|
       "[#{severity}] #{msg}\n"
     end
-    @@dev_null_logger = Logger.new('/dev/null')
-
 
     module_function
 
