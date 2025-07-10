@@ -23,8 +23,9 @@ module Solargraph
     # override this in your class to temporarily set a custom
     # filtering log level for the class (e.g., suppress any debug
     # message by setting it to :info even if it is set elsewhere, or
-    # show existing debug messages by setting to :debug).  @return
-    # [Symbol]
+    # show existing debug messages by setting to :debug).
+    #
+    # @return [Symbol]
     def log_level
       :warn
     end
