@@ -243,7 +243,7 @@ describe Solargraph::Library do
 
   it "returns YARD documentation from the core" do
     library = Solargraph::Library.new
-    result = library.document('String')
+    api_map, result = library.document('String')
     expect(result).not_to be_empty
     expect(result.first).to be_a(Solargraph::Pin::Base)
   end
@@ -257,7 +257,7 @@ describe Solargraph::Library do
       end
     ), 'test.rb', 0)
     library.attach src
-    result = library.document('Foo#bar')
+    api_map, result = library.document('Foo#bar')
     expect(result).not_to be_empty
     expect(result.first).to be_a(Solargraph::Pin::Base)
   end
