@@ -74,7 +74,7 @@ describe Solargraph::DocMap do
       # we know this is included in our bundle
       doc_map = Solargraph::DocMap.new([], [])
 
-      expect(doc_map.pins).to include(new_pin)
+      expect(doc_map.pins).to include(environ_pin)
     end
 
     let(:cache_pin) { Solargraph::Pin::Method.new(name: 'my_method', source: :cache) }
