@@ -8,6 +8,7 @@ module Solargraph
 
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
+      # @param generic_defaults [Hash{String => ComplexType}]
       def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
         @scope = scope
@@ -15,6 +16,7 @@ module Solargraph
         @generic_defaults = generic_defaults
       end
 
+      # @return [Hash{String => ComplexType}]
       def generic_defaults
         @generic_defaults ||= {}
       end
