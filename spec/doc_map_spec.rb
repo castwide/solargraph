@@ -58,4 +58,42 @@ describe Solargraph::DocMap do
     doc_map = Solargraph::DocMap.new(['rspec'], [])
     expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
   end
+
+  context 'with a plugin' do
+    let(:environ_pin) do
+      Solargraph::Pin::Method.new(name: 'my_method', return_type: Solargraph::ComplexType.parse('String'), source: :solargraph_foo)
+    end
+
+    before do
+      allow(Solargraph::Convention)
+        .to(receive(:for_global))
+        .and_return(Solargraph::Environ.new(pins: [environ_pin]))
+    end
+
+    it 'includes environ pins' do
+      # we know this is included in our bundle
+      doc_map = Solargraph::DocMap.new([], [])
+
+      expect(doc_map.pins).to include(new_pin)
+    end
+
+    let(:cache_pin) { Solargraph::Pin::Method.new(name: 'my_method', source: :cache) }
+
+    let(:fake_gem_name) { 'fake_gem_name' }
+    let(:fake_gemspec) { double('Gem::Specification', name: fake_gem_name) }
+
+    it 'merges environ pins with existing pins' do
+      allow(Solargraph::PinCache).to receive(:deserialize_combined_gem).and_return([cache_pin])
+      allow(Gem::Specification).to receive(:find_by_path).with(fake_gem_name).and_return(fake_gemspec)
+      allow(fake_gemspec).to receive(:dependencies).and_return([])
+      allow(fake_gemspec).to receive(:development_dependencies).and_return([])
+      allow(fake_gemspec).to receive(:version).and_return('1.0.0')
+      doc_map = Solargraph::DocMap.new([fake_gem_name], [])
+      expect(Solargraph::PinCache).to have_received(:deserialize_combined_gem).with(fake_gemspec, "unresolved")
+      expect(Solargraph::Convention).to have_received(:for_global)
+      expect(doc_map.pins.map(&:source)).to eq([:combined])
+      expect(doc_map.pins.map(&:return_type).map(&:rooted_tag)).to eq(['String'])
+      expect(doc_map.pins.length).to eq(1)
+    end
+  end
 end

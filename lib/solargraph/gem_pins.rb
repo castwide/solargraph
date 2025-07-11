@@ -21,7 +21,6 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
-      # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
       by_path = method_pins.group_by(&:path)
       by_path.transform_values! do |pins|
@@ -33,7 +32,7 @@ module Solargraph
     def self.combine_method_pins(*pins)
       out = pins.reduce(nil) do |memo, pin|
         next pin if memo.nil?
-        if memo == pin && memo.source != :combined
+        if memo == pin && memo.source != :combined && memo.source == pin.source
           # @todo we should track down situations where we are handled
           #   the same pin from the same source here and eliminate them -
           #   this is an efficiency workaround for now
