@@ -7,6 +7,9 @@ module Solargraph
         extend YardMap::Helpers
 
         # @param code_object [YARD::CodeObjects::NamespaceObject]
+        # @param spec [Gem::Specification, nil]
+        # @param closure [Pin::Closure, nil]
+        # @return [Pin::Namespace]
         def self.make code_object, spec, closure = nil
           closure ||= create_closure_namespace_for(code_object, spec)
           location = object_location(code_object, spec)

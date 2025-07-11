@@ -22,12 +22,14 @@ module Solargraph
         end
       end
 
+      # @param loader [RBS::EnvironmentLoader]
       def initialize(loader:)
         @loader = loader
         @pins = []
         load_environment_to_pins(loader)
       end
 
+      # @return [RBS::EnvironmentLoader]
       attr_reader :loader
 
       # @return [Array<Pin::Base>]
@@ -102,14 +104,14 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def convert_members_to_pins decl, closure
-        context = Context.new
+        context = Conversions::Context.new
         decl.members.each { |m| context = convert_member_to_pin(m, closure, context) }
       end
 
       # @param member [RBS::AST::Members::Base,RBS::AST::Declarations::Base]
       # @param closure [Pin::Namespace]
       # @param context [Context]
-      # @return [void]
+      # @return [Context]
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
@@ -313,6 +315,7 @@ module Solargraph
       #   related overrides
       # @todo externalize remaining overrides into yaml file, then
       #   allow that to be extended via .solargraph.yml
+      # @type [Hash{Array(String, Symbol, String) => Symbol}
       VISIBILITY_OVERRIDE = {
         ["Rails::Engine", :instance, "run_tasks_blocks"] => :protected,
         # Should have been marked as both instance and class method in module -e.g., 'module_function'
@@ -337,6 +340,13 @@ module Solargraph
         ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
       }
 
+      # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrAccessor]
+      # @param closure [Pin::Namespace]
+      # @param context [Context]
+      # @param scope [Symbol] :instance or :class
+      # @param name [String] The name of the method
+      # @sg-ignore
+      # @return [Symbol]
       def calculate_method_visibility(decl, context, closure, scope, name)
         override_key = [closure.path, scope, name]
         visibility = VISIBILITY_OVERRIDE[override_key]
@@ -494,6 +504,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Members::AttrReader,RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
+      # @param context [Context]
       # @return [void]
       def attr_reader_to_pin(decl, closure, context)
         name = decl.name.to_s
@@ -517,6 +528,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
+      # @param context [Context]
       # @return [void]
       def attr_writer_to_pin(decl, closure, context)
         final_scope = decl.kind == :instance ? :instance : :class
@@ -549,6 +561,7 @@ module Solargraph
 
       # @param decl [RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Namespace]
+      # @param context [Context]
       # @return [void]
       def attr_accessor_to_pin(decl, closure, context)
         attr_reader_to_pin(decl, closure, context)

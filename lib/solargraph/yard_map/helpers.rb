@@ -18,7 +18,9 @@ module Solargraph
         Solargraph::Location.new(file, Solargraph::Range.from_to(code_object.line - 1, 0, code_object.line - 1, 0))
       end
 
+      # @param code_object [YARD::CodeObjects::Base]
       # @param spec [Gem::Specification, nil]
+      # @return [Solargraph::Pin::Namespace]
       def create_closure_namespace_for(code_object, spec)
         code_object_for_location = code_object
         # code_object.namespace is sometimes a YARD proxy object pointing to a method path ("Object#new")
