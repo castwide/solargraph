@@ -1,3 +1,4 @@
+require 'yard-activesupport-concern'
 require 'fileutils'
 require 'rbs'
 
