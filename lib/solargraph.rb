@@ -66,7 +66,10 @@ module Solargraph
 
   def self.assert_or_log(type, msg = nil, &block)
     if asserts_on?
+      # @type [String, nil]
       msg ||= block.call
+
+      raise "No message given for #{type.inspect}" if msg.nil?
 
       # not ready for prime time
       return if [:combine_with_visibility].include?(type)
