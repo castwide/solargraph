@@ -25,20 +25,19 @@ module Solargraph
           # ActiveSupport::Concern is syntactic sugar for a common
           # pattern to include class methods while mixing-in a Module
           # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
-          if module_extends.include? 'ActiveSupport::Concern'
-            # yard-activesupport-concern pulls methods inside
-            # 'class_methods' blocks into main class visible from YARD
-            included_class_pins = api_map.inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type,
-                                                                           :class, visibility, deep, skip, true)
-            logger.debug { "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - Found #{included_class_pins.length} inluded class methods for #{rooted_include_tag}" }
+          next unless module_extends.include? 'ActiveSupport::Concern'
+          # yard-activesupport-concern pulls methods inside
+          # 'class_methods' blocks into main class visible from YARD
+          included_class_pins = api_map.inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type,
+                                                                         :class, visibility, deep, skip, true)
+          logger.debug { "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - Found #{included_class_pins.length} inluded class methods for #{rooted_include_tag}" }
 
-            environ.pins.concat included_class_pins
-            # another pattern is to put class methods inside a submodule
-            classmethods_include_tag = rooted_include_tag + "::ClassMethods"
-            included_classmethods_pins = api_map.inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
-            logger.debug { "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - Found #{included_classmethods_pins.length} included classmethod class methods for #{classmethods_include_tag}" }
-            environ.pins.concat included_classmethods_pins
-          end
+          environ.pins.concat included_class_pins
+          # another pattern is to put class methods inside a submodule
+          classmethods_include_tag = "#{rooted_include_tag}::ClassMethods"
+          included_classmethods_pins = api_map.inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
+          logger.debug { "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - Found #{included_classmethods_pins.length} included classmethod class methods for #{classmethods_include_tag}" }
+          environ.pins.concat included_classmethods_pins
         end
 
         environ
