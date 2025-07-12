@@ -11,14 +11,6 @@ module Solargraph
       include Logging
     end
 
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build_yard_pins(gemspec)
-      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
-      YardMap::Mapper.new(yardoc, gemspec).map
-    end
-
     # @param pins [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
       # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
@@ -43,6 +35,19 @@ module Solargraph
       end
       logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
       out
+    end
+
+    # Build an array of pins from a gem specification. The process starts with
+    # YARD, enhances the resulting pins with RBS definitions, and appends RBS
+    # pins that don't exist in the YARD mapping.
+    #
+    # @param yard_plugins [Array<String>]
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>]
+    def self.build(yard_plugins, gemspec)
+      yard_pins = build_yard_pins(yard_plugins, gemspec)
+      rbs_map = RbsMap.from_gemspec(gemspec)
+      combine yard_pins, rbs_map
     end
 
     # @param yard_pins [Array<Pin::Base>]
@@ -75,6 +80,15 @@ module Solargraph
 
     class << self
       private
+
+      # @param yard_plugins [Array<String>] The names of YARD plugins to use.
+      # @param gemspec [Gem::Specification]
+      # @return [Array<Pin::Base>]
+      def build_yard_pins(yard_plugins, gemspec)
+        Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
+        yardoc = Yardoc.load!(gemspec)
+        YardMap::Mapper.new(yardoc, gemspec).map
+      end
 
       # Select the first defined type.
       #

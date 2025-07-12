@@ -228,6 +228,10 @@ module Solargraph
       load(directory)
     end
 
+    def yard_plugins
+      @doc_map.yard_plugins
+    end
+
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins.clone.freeze
@@ -340,6 +344,14 @@ module Solargraph
                end
       cache.set_qualified_namespace(namespace, context_namespace, result)
       result
+    end
+
+    def get_extends(fqns)
+      store.get_extends(fqns)
+    end
+
+    def get_includes(fqns)
+      store.get_includes(fqns)
     end
 
     # Get an array of instance variable pins defined in specified namespace
@@ -675,6 +687,41 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
+    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
+    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    #   parameter - used to pull generics information
+    # @param type [ComplexType] The type which is having its
+    #   methods supplemented from fq_reference_tag
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean]
+    # @param skip [Set<String>]
+    # @param no_core [Boolean] Skip core classes if true
+    # @return [Array<Pin::Base>]
+    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
+      logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
+
+      # Ensure the types returned by the methods in the referenced
+      # type are relative to the generic values passed in the
+      # reference.  e.g., Foo<String> might include Enumerable<String>
+      #
+      # @todo perform the same translation in the other areas
+      #  here after adding a spec and handling things correctly
+      #  in ApiMap::Store and RbsMap::Conversions for each
+      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
+      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
+      if namespace_pin && !resolved_reference_type.all_params.empty?
+        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
+        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
+        methods = methods.map do |method_pin|
+          method_pin.resolve_generics(reference_pin, resolved_reference_type)
+        end
+      end
+      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
+      methods
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -708,6 +755,8 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.add reqstr
       result = []
+      environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
+      result.concat environ.pins
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = qualify(im, fqns)
@@ -732,29 +781,6 @@ module Solargraph
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
           end
         else
-          store.get_includes(fqns).reverse.each do |include_tag|
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-            logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
-            module_extends = store.get_extends(rooted_include_tag)
-            # ActiveSupport::Concern is syntactic sugar for a common
-            # pattern to include class methods while mixing-in a Module
-
-            # See https://api.rubyonrails.org/classes/ActiveSupport/Concern.html
-            logger.debug { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}) - Handling class include include_tag=#{include_tag}" }
-            next unless module_extends.include? 'ActiveSupport::Concern'
-            next if rooted_include_tag.nil?
-
-            # yard-activesupport-concern pulls methods inside
-            # 'class_methods' blocks into main class visible from YARD
-            included_class_pins = inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, :class, visibility, deep, skip, true)
-            result.concat included_class_pins
-
-            # another pattern is to put class methods inside a submodule
-            classmethods_include_tag = rooted_include_tag + "::ClassMethods"
-            included_classmethods_pins = inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type, :instance, visibility, deep, skip, true)
-            result.concat included_classmethods_pins
-          end
-
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
@@ -776,41 +802,6 @@ module Solargraph
         end
       end
       result
-    end
-
-    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
-    #   parameter - used to pull generics information
-    # @param type [ComplexType] The type which is having its
-    #   methods supplemented from fq_reference_tag
-    # @param scope [Symbol] :class or :instance
-    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param deep [Boolean]
-    # @param skip [Set<String>]
-    # @param no_core [Boolean] Skip core classes if true
-    # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
-
-      # Ensure the types returned by the methods in the referenced
-      # type are relative to the generic values passed in the
-      # reference.  e.g., Foo<String> might include Enumerable<String>
-      #
-      # @todo perform the same translation in the other areas
-      #  here after adding a spec and handling things correctly
-      #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
-      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
-      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
-      if namespace_pin && !resolved_reference_type.all_params.empty?
-        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
-        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
-        methods = methods.map do |method_pin|
-          method_pin.resolve_generics(reference_pin, resolved_reference_type)
-        end
-      end
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
-      methods
     end
 
     # @param fqns [String]

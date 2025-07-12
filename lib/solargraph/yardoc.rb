@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require 'yard'
-require 'yard-activesupport-concern'
+require 'open3'
 
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
@@ -12,15 +11,25 @@ module Solargraph
     # Build and cache a gem's yardoc and return the path. If the cache already
     # exists, do nothing and return the path.
     #
-    # @param gemspec [Gem::Specification]
+    # @param yard_plugins [Array<String>] The names of YARD plugins to use.
+    # @param gemspec [Array<String>]
     # @return [String] The path to the cached yardoc.
-    def cache(gemspec)
+    def cache(yard_plugins, gemspec)
       path = PinCache.yardoc_path gemspec
       return path if cached?(gemspec)
 
       Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
-      Dir.chdir gemspec.gem_dir do
-        `yardoc --db #{path} --no-output --plugin solargraph --plugin activesupport-concern`
+      cmd = "yardoc --db #{path} --no-output --plugin solargraph"
+      yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
+      Solargraph.logger.debug { "Running: #{cmd}" }
+      # @todo set these up to run in parallel
+      #
+      # @sg-ignore RBS gem doesn't reflect that Open3.* also include
+      #   kwopts from Process.spawn()
+      stdout_and_stderr_str, status = Open3.capture2e(cmd, chdir: gemspec.gem_dir)
+      unless status.success?
+        Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
+        Solargraph.logger.info stdout_and_stderr_str
       end
       path
     end
