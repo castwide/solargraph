@@ -21,8 +21,9 @@ module Solargraph
 
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
-      (uncached_yard_gemspecs + uncached_rbs_collection_gemspecs).sort.
-        uniq { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
+      uncached_yard_gemspecs.concat(uncached_rbs_collection_gemspecs)
+                            .sort
+                            .uniq { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
     end
 
     # @return [Array<Gem::Specification>]
@@ -90,9 +91,16 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     def cache(gemspec, rebuild: false, out: nil)
-      out.puts("Caching pins for gem #{gemspec.name}:#{gemspec.version}") if out
-      cache_yard_pins(gemspec, out) if uncached_yard_gemspecs.include?(gemspec) || rebuild
-      cache_rbs_collection_pins(gemspec, out) if uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
+      build_yard = uncached_yard_gemspecs.include?(gemspec) || rebuild
+      build_rbs_collection = uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
+      if build_yard || build_rbs_collection
+        type = []
+        type << 'YARD' if build_yard
+        type << 'RBS collection' if build_rbs_collection
+        out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
+      end
+      cache_yard_pins(gemspec, out) if build_yard
+      cache_rbs_collection_pins(gemspec, out) if build_rbs_collection
     end
 
     # @return [Array<Gem::Specification>]
@@ -121,8 +129,12 @@ module Solargraph
       self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
     end
 
-    def combined_pins_in_memory
+    def self.all_combined_pins_in_memory
       @combined_pins_in_memory ||= {}
+    end
+
+    def combined_pins_in_memory
+      self.class.all_combined_pins_in_memory
     end
 
     # @return [Set<Gem::Specification>]
@@ -344,7 +356,10 @@ module Solargraph
     end
 
     def gemspecs_required_from_bundler
-      if workspace&.directory && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
+      # @todo Handle projects with custom Bundler/Gemfile setups
+      return unless workspace.gemfile?
+
+      if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
         # Find only the gems bundler is now using
         Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
           logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
@@ -385,8 +400,7 @@ module Solargraph
             next specs
           end.compact
         else
-          Solargraph.logger.warn e
-          raise BundleNotFoundError, "Failed to load gems from bundle at #{workspace&.directory}"
+          Solargraph.logger.warn "Failed to load gems from bundle at #{workspace&.directory}: #{e}"
         end
       end
     end

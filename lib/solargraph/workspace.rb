@@ -106,7 +106,7 @@ module Solargraph
     def would_require? path
       require_paths.each do |rp|
         full = File.join rp, path
-        return true if File.exist?(full) or File.exist?(full << ".rb")
+        return true if File.file?(full) || File.file?(full << ".rb")
       end
       false
     end
@@ -153,6 +153,14 @@ module Solargraph
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'
+    end
+
+    # True if the workspace has a root Gemfile.
+    #
+    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
+    #
+    def gemfile?
+      directory && File.file?(File.join(directory, 'Gemfile'))
     end
 
     private
@@ -223,7 +231,7 @@ module Solargraph
     def configured_require_paths
       return ['lib'] if directory.empty?
       return [File.join(directory, 'lib')] if config.require_paths.empty?
-      config.require_paths.map{|p| File.join(directory, p)}
+      config.require_paths.map { |p| File.join(directory, p) }
     end
 
     # @return [void]
