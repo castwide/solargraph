@@ -12,7 +12,7 @@ module Solargraph
     # exists, do nothing and return the path.
     #
     # @param yard_plugins [Array<String>] The names of YARD plugins to use.
-    # @param gemspec [Array<String>]
+    # @param gemspec [Gem::Specification]
     # @return [String] The path to the cached yardoc.
     def cache(yard_plugins, gemspec)
       path = PinCache.yardoc_path gemspec
