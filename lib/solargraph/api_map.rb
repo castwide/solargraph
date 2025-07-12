@@ -228,6 +228,7 @@ module Solargraph
       load(directory)
     end
 
+    # @return [Array<String>]
     def yard_plugins
       @doc_map.yard_plugins
     end
@@ -346,10 +347,14 @@ module Solargraph
       result
     end
 
+    # @param fqns [String]
+    # @return [Array<String>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
+    # @param fqns [String]
+    # @return [Array<String>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end

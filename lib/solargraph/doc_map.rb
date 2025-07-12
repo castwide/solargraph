@@ -137,6 +137,7 @@ module Solargraph
       self.class.all_combined_pins_in_memory
     end
 
+    # @return [Array<String>]
     def yard_plugins
       @environ.yard_plugins
     end
