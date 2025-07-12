@@ -10,6 +10,7 @@ module Solargraph
       end
 
       # @param and_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
       def process_and(and_node, true_ranges = [])
         lhs = and_node.children[0]
         rhs = and_node.children[1]

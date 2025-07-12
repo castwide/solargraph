@@ -39,6 +39,7 @@ module Solargraph
         end
 
         # debugging description of contents; not for machine use
+        # @return [String]
         def desc
           word
         end
