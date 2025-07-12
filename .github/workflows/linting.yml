@@ -34,6 +34,10 @@ jobs:
           bundler-cache: true
           cache-version: 2025-06-06
 
+      - name: Update to best available RBS
+        run: |
+          bundle update rbs # use latest available for this Ruby version
+
       - name: Restore cache of gem annotations
         id: dot-cache-restore
         uses: actions/cache/restore@v4

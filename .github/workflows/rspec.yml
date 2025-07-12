@@ -31,7 +31,9 @@ jobs:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: false
     - name: Install gems
-      run: bundle install
+      run: |
+        bundle install
+        bundle update rbs # use latest available for this Ruby version
     - name: Run tests
       run: bundle exec rspec
   undercover:
