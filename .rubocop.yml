@@ -19,10 +19,6 @@ AllCops:
     - "spec/fixtures/invalid_utf8.rb"
     - "vendor/**/*"
     - "vendor/**/.*"
-    - "spec/fixtures/rubocop-validation-error/**/*"
-    - "spec/fixtures/rubocop-validation-error/**/.*"
-    - "spec/fixtures/rubocop-unused-variable-error/**/*"
-    - "spec/fixtures/rubocop-subfolder-configuration/**/*"
   TargetRubyVersion: 3.0
 
 Style/MethodDefParentheses:
