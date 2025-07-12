@@ -63,6 +63,7 @@ module Solargraph
       end
 
       # @param pins [Array<Pin::Base>]
+      # @return [self]
       def merge pins
         deep_clone.catalog pins
       end
@@ -72,6 +73,7 @@ module Solargraph
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references
 
+      # @return [self]
       def deep_clone
         Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
@@ -87,6 +89,7 @@ module Solargraph
       end
 
       # @param new_pins [Array<Pin::Base>]
+      # @return [self]
       def catalog new_pins
         @pin_select_cache = {}
         pins.concat new_pins

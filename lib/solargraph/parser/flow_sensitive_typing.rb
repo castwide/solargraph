@@ -4,6 +4,7 @@ module Solargraph
       include Solargraph::Parser::NodeMethods
 
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
+      # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       def initialize(locals, enclosing_breakable_pin = nil)
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
@@ -11,6 +12,8 @@ module Solargraph
 
       # @param and_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      #
+      # @return [void]
       def process_and(and_node, true_ranges = [])
         lhs = and_node.children[0]
         rhs = and_node.children[1]
@@ -24,6 +27,8 @@ module Solargraph
       end
 
       # @param if_node [Parser::AST::Node]
+      #
+      # @return [void]
       def process_if(if_node)
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -73,8 +78,11 @@ module Solargraph
       # them based on the Closure and Location.
       #
       # @param pins [Array<Pin::LocalVariable>]
+      # @param name [String]
       # @param closure [Pin::Closure]
       # @param location [Location]
+      #
+      # @return [Array<Pin::LocalVariable>]
       def self.visible_pins(pins, name, closure, location)
         logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location})" }
         pins_with_name = pins.select { |p| p.name == name }
@@ -108,7 +116,10 @@ module Solargraph
       private
 
       # @param pin [Pin::LocalVariable]
-      # @param if_node [Parser::AST::Node]
+      # @param downcast_type_name [String]
+      # @param presence [Range]
+      #
+      # @return [void]
       def add_downcast_local(pin, downcast_type_name, presence)
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
@@ -127,6 +138,7 @@ module Solargraph
 
       # @param facts_by_pin [Hash{Pin::LocalVariable => Array<Hash{Symbol => String}>}]
       # @param presences [Array<Range>]
+      #
       # @return [void]
       def process_facts(facts_by_pin, presences)
         #
@@ -143,6 +155,7 @@ module Solargraph
       end
 
       # @param conditional_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
       def process_conditional(conditional_node, true_ranges)
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
@@ -177,12 +190,20 @@ module Solargraph
         [isa_type_name, variable_name]
       end
 
+      # @param variable_name [String]
+      # @param position [Position]
+      #
+      # @return [Solargraph::Pin::LocalVariable, nil]
       def find_local(variable_name, position)
         pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
         return unless pins.length == 1
         pins.first
       end
 
+      # @param isa_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      #
+      # @return [void]
       def process_isa(isa_node, true_presences)
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
@@ -198,6 +219,8 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
+      #
+      # @return [String, nil]
       def type_name(node)
         # e.g.,
         #  s(:const, nil, :Baz)
