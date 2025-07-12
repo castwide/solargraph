@@ -12,6 +12,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
       # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
@@ -22,6 +23,8 @@ module Solargraph
       by_path.values + alias_pins
     end
 
+    # @param pins [Pin::Base]
+    # @return [Pin::Base, nil]
     def self.combine_method_pins(*pins)
       out = pins.reduce(nil) do |memo, pin|
         next pin if memo.nil?
@@ -35,19 +38,6 @@ module Solargraph
       end
       logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
       out
-    end
-
-    # Build an array of pins from a gem specification. The process starts with
-    # YARD, enhances the resulting pins with RBS definitions, and appends RBS
-    # pins that don't exist in the YARD mapping.
-    #
-    # @param yard_plugins [Array<String>]
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build(yard_plugins, gemspec)
-      yard_pins = build_yard_pins(yard_plugins, gemspec)
-      rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
-      combine yard_pins, rbs_map
     end
 
     # @param yard_plugins [Array<String>] The names of YARD plugins to use.
