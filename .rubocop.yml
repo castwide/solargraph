@@ -35,7 +35,6 @@ Metrics/MethodLength:
   Max: 25
 
 plugins:
-  - rubocop-on-rbs
   - rubocop-rspec
   - rubocop-rake
   - rubocop-yard
