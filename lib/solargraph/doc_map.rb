@@ -50,7 +50,7 @@ module Solargraph
       @preferences = preferences.compact
       @workspace = workspace
       @environ = Convention.for_global(self)
-      generate
+      load_serialized_gem_pins
     end
 
     # @return [Array<Gem::Specification>]
