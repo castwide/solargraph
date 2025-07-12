@@ -2,7 +2,6 @@
 # To debug locally:
 #   npm install -g act
 #   act pull_release -j overcommit
-#
 
 name: Linting
 
