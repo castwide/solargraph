@@ -65,7 +65,7 @@ jobs:
           reporter: github-pr-check
           skip_install: true
           use_bundler: true
-          rubocop_extensions: 'rubocop-rspec:gemfile rubocop-rake:gemfile rubocop-yard:gemfile'
+          rubocop_extensions: 'rubocop-rspec:gemfile rubocop-rake:gemfile rubocop-yard:gemfile rubocop-on-rbs:gemfile'
           rubocop_flags: '-c .rubocop.yml'
           fail_level: info
           rubocop_version: Gemfile

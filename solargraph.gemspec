@@ -50,6 +50,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rubocop-rake', '~> 0.7'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6'
   s.add_development_dependency 'rubocop-yard', '~> 1.0'
+  s.add_development_dependency 'rubocop-on-rbs', '~> 1.8'
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
   s.add_development_dependency 'undercover', '~> 0.6'
