@@ -1,3 +1,0 @@
-class Gem::BasicSpecification
-  def name: () -> String
-end
