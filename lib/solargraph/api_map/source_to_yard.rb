@@ -67,7 +67,7 @@ module Solargraph
           method_object.docstring = pin.docstring
           method_object.visibility = pin.visibility || :public
           method_object.parameters = pin.parameters.map do |p|
-            [p.name, p.asgn_code]
+            [p.full_name, p.asgn_code]
           end
         end
       end

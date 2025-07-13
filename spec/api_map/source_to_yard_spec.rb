@@ -92,4 +92,21 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(method_object.parameters[0]).to eq(['baz', nil])
     expect(method_object.parameters[1]).to eq(['boo', "'boo'"])
   end
+
+  it "generates method keyword parameters" do
+    source = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar baz, boo: 'boo'
+        end
+      end
+    ))
+    object = Object.new
+    object.extend Solargraph::ApiMap::SourceToYard
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
+    method_object = object.code_object_at('Foo#bar')
+    expect(method_object.parameters.length).to eq(2)
+    expect(method_object.parameters[0]).to eq(['baz', nil])
+    expect(method_object.parameters[1]).to eq(['boo:', "'boo'"])
+  end
+
 end

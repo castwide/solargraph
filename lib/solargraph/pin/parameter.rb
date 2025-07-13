@@ -105,15 +105,11 @@ module Solargraph
         end
       end
 
-      # @return [String]
-      def full
+      def full_name
         case decl
-        when :optarg
-          "#{name} = #{asgn_code || '?'}"
-        when :kwarg
+        when :kwarg, :kwoptarg
           "#{name}:"
-        when :kwoptarg
-          "#{name}: #{asgn_code || '?'}"
+          "#{name}:"
         when :restarg
           "*#{name}"
         when :kwrestarg
@@ -123,6 +119,18 @@ module Solargraph
         else
           name
         end
+      end
+
+      # @return [String]
+      def full
+        full_name + case decl
+                    when :optarg
+                      "= #{asgn_code || '?'}"
+                    when :kwoptarg
+                      " #{asgn_code || '?'}"
+                    else
+                      ''
+                    end
       end
 
       # @return [ComplexType]
