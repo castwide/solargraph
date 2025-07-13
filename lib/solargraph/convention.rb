@@ -11,6 +11,7 @@ module Solargraph
     autoload :Gemspec, 'solargraph/convention/gemspec'
     autoload :Rakefile, 'solargraph/convention/rakefile'
     autoload :StructDefinition, 'solargraph/convention/struct_definition'
+    autoload :DataDefinition,   'solargraph/convention/data_definition'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new

@@ -2,20 +2,20 @@
 
 module Solargraph
   module Convention
-    module StructDefinition
-      # A node wrapper for a Struct definition via inheritance.
+    module DataDefinition
+      # A node wrapper for a Data definition via inheritance.
       # @example
-      #   class MyStruct < Struct.new(:bar, :baz)
+      #   class MyData < Data.new(:bar, :baz)
       #     def foo
       #     end
       #   end
-      class StructDefintionNode
+      class DataDefintionNode
         class << self
           # @example
           #   s(:class,
           #     s(:const, nil, :Foo),
           #     s(:send,
-          #       s(:const, nil, :Struct), :new,
+          #       s(:const, nil, :Data), :define,
           #       s(:sym, :bar),
           #       s(:sym, :baz)),
           #       s(:hash,
@@ -28,19 +28,19 @@ module Solargraph
           def match?(node)
             return false unless node&.type == :class
 
-            struct_definition_node?(node.children[1])
+            data_definition_node?(node.children[1])
           end
 
           private
 
-          # @param struct_node [Parser::AST::Node]
+          # @param data_node [Parser::AST::Node]
           # @return [Boolean]
-          def struct_definition_node?(struct_node)
-            return false unless struct_node.is_a?(::Parser::AST::Node)
-            return false unless struct_node&.type == :send
-            return false unless struct_node.children[0]&.type == :const
-            return false unless struct_node.children[0].children[1] == :Struct
-            return false unless struct_node.children[1] == :new
+          def data_definition_node?(data_node)
+            return false unless data_node.is_a?(::Parser::AST::Node)
+            return false unless data_node&.type == :send
+            return false unless data_node.children[0]&.type == :const
+            return false unless data_node.children[0].children[1] == :Data
+            return false unless data_node.children[1] == :define
 
             true
           end
@@ -58,21 +58,10 @@ module Solargraph
 
         # @return [Array<Array(Parser::AST::Node, String)>]
         def attributes
-          struct_attribute_nodes.map do |struct_def_param|
-            next unless struct_def_param.type == :sym
-            [struct_def_param, struct_def_param.children[0].to_s]
+          data_attribute_nodes.map do |data_def_param|
+            next unless data_def_param.type == :sym
+            [data_def_param, data_def_param.children[0].to_s]
           end.compact
-        end
-
-        def keyword_init?
-          keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
-            struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
-              struct_def_param.children[0].children[0].children[0] == :keyword_init
-          end
-
-          return false if keyword_init_param.nil?
-
-          keyword_init_param.children[0].children[1].type == :true
         end
 
         # @return [Parser::AST::Node]
@@ -86,13 +75,13 @@ module Solargraph
         attr_reader :node
 
         # @return [Parser::AST::Node]
-        def struct_node
+        def data_node
           node.children[1]
         end
 
         # @return [Array<Parser::AST::Node>]
-        def struct_attribute_nodes
-          struct_node.children[2..-1]
+        def data_attribute_nodes
+          data_node.children[2..-1]
         end
       end
     end
