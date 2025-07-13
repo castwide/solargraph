@@ -53,7 +53,6 @@ module Solargraph
       @rbs_collection_config_path = workspace&.rbs_collection_config_path
       @environ = Convention.for_global(self)
       load_serialized_gem_pins
-      pins.concat @environ.pins
     end
 
     def cache_all!(out)
@@ -163,6 +162,10 @@ module Solargraph
           pins = deserialize_combined_pin_cache gemspec
           @pins.concat pins if pins
         end
+      end
+      environ_pins = @environ.pins
+      unless environ_pins.empty?
+        @pins = GemPins.combine_method_pins_by_path(@pins + environ_pins)
       end
       logger.info { "DocMap#load_serialized_gem_pins: Loaded and processed serialized pins together in #{time.real} seconds" }
       @uncached_yard_gemspecs.uniq!
