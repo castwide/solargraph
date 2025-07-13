@@ -11,16 +11,12 @@ module Solargraph
       include Logging
     end
 
-    # Build an array of pins from a gem specification. The process starts with
-    # YARD, enhances the resulting pins with RBS definitions, and appends RBS
-    # pins that don't exist in the YARD mapping.
-    #
     # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>]
-    def self.build(gemspec)
-      yard_pins = build_yard_pins(gemspec)
-      rbs_map = RbsMap.from_gemspec(gemspec)
-      combine yard_pins, rbs_map
+    def self.build_yard_pins(gemspec)
+      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
+      yardoc = Yardoc.load!(gemspec)
+      YardMap::Mapper.new(yardoc, gemspec).map
     end
 
     # @param pins [Array<Pin::Base>]
@@ -52,16 +48,14 @@ module Solargraph
     # @param yard_pins [Array<Pin::Base>]
     # @param rbs_map [RbsMap]
     # @return [Array<Pin::Base>]
-    def self.combine(yard_pins, rbs_map)
+    def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new
       rbs_store = Solargraph::ApiMap::Store.new(rbs_pins)
       combined = yard_pins.map do |yard_pin|
+        in_yard.add yard_pin.path        
         rbs_pin = rbs_store.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
         next yard_pin unless rbs_pin && yard_pin.class == Pin::Method
 
-        in_yard.add yard_pin.path
-
-        rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
         unless rbs_pin
           logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
           next yard_pin
@@ -71,22 +65,16 @@ module Solargraph
         logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
         out
       end
-      in_rbs_only = rbs_map.pins.select do |pin|
+      in_rbs_only = rbs_pins.select do |pin|
         pin.path.nil? || !in_yard.include?(pin.path)
       end
-      combined + in_rbs_only
+      out = combined + in_rbs_only
+      logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
+      out
     end
 
     class << self
       private
-
-      # @param gemspec [Gem::Specification]
-      # @return [Array<Pin::Base>]
-      def build_yard_pins(gemspec)
-        Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
-        yardoc = Yardoc.load!(gemspec)
-        YardMap::Mapper.new(yardoc, gemspec).map
-      end
 
       # Select the first defined type.
       #

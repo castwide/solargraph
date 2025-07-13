@@ -197,7 +197,7 @@ describe 'YARD type specifier list parsing' do
       expect(types.to_rbs).to eq('Hash[String, Integer]')
     end
 
-    xit 'parses Hash using <> notation' do
+    it 'parses Hash using <> notation' do
       types = Solargraph::ComplexType.parse 'Hash<Symbol, String>'
       expect(types.length).to eq(1)
       expect(types.first.tag).to eq('Hash<Symbol, String>')

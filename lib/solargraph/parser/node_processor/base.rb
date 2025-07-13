@@ -30,9 +30,12 @@ module Solargraph
 
         # Subclasses should override this method to generate new pins.
         #
-        # @return [void]
+        # @return [Boolean] continue processing the next processor of the same node type.
+        # @return [void] In case there is only one processor registered for the node type, it can be void.
         def process
           process_children
+
+          true
         end
 
         private
@@ -64,7 +67,9 @@ module Solargraph
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def named_path_pin position
-          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)}.last
+          pins.select do |pin|
+            pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)
+          end.last
         end
 
         # @todo Candidate for deprecation
@@ -72,14 +77,14 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def block_pin position
           # @todo determine if this can return a Pin::Block
-          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
 
         # @todo Candidate for deprecation
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def closure_pin position
-          pins.select{|pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position)}.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
       end
     end
