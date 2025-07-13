@@ -54,9 +54,10 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def self.combine(yard_pins, rbs_map)
       in_yard = Set.new
-      rbs_api_map = Solargraph::ApiMap.new(pins: rbs_map.pins)
+      rbs_store = Solargraph::ApiMap::Store.new(rbs_pins)
       combined = yard_pins.map do |yard_pin|
-        next yard_pin unless yard_pin.class == Pin::Method
+        rbs_pin = rbs_store.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+        next yard_pin unless rbs_pin && yard_pin.class == Pin::Method
 
         in_yard.add yard_pin.path
 
