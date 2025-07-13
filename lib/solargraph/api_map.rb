@@ -894,7 +894,7 @@ module Solargraph
       origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
       @method_alias_stack.pop
       if origin.nil?
-        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing = #{pin.inspect}" }
+        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{pin.full_context.tag} #{pin.original}() in #{pin.scope} scope = #{pin.inspect}" }
         return nil
       end
       args = {
