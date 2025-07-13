@@ -125,7 +125,7 @@ module Solargraph
       def full
         full_name + case decl
                     when :optarg
-                      "= #{asgn_code || '?'}"
+                      " = #{asgn_code || '?'}"
                     when :kwoptarg
                       " #{asgn_code || '?'}"
                     else
