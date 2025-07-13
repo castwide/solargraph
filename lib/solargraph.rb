@@ -97,3 +97,5 @@ module Solargraph
     Bundler.send meth, &block
   end
 end
+
+require 'solargraph/parser/parser_gem/node_processors'
