@@ -239,6 +239,54 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
+    desc 'method_pin [PATH]', 'Describe a method pin'
+    option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
+    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
+    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
+    option :stack, type: :boolean, desc: 'Show entire stack by including definitions in superclasses', default: false
+    # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
+    # @return [void]
+    def method_pin path
+      api_map = Solargraph::ApiMap.load_with_cache('.', STDERR)
+
+      pins = if options[:stack]
+               scope, ns, meth = if path.include? '#'
+                                   [:instance, *path.split('#', 2)]
+                                 else
+                                   [:class, *path.split('.', 2)]
+                                 end
+               api_map.get_method_stack(ns, meth, scope: scope)
+             else
+               api_map.get_path_pins path
+             end
+      if pins.empty?
+        STDERR.puts "Pin not found for path '#{path}'"
+        exit 1
+      end
+      pins.each do |pin|
+        if options[:typify] || options[:probe]
+          type = ComplexType::UNDEFINED
+          if options[:typify]
+            type = pin.typify(api_map)
+          end
+          if options[:probe] && type.undefined?
+            type = pin.probe(api_map)
+          end
+          if options[:rbs]
+            puts type.to_rbs
+          else
+            puts type.rooted_tag
+          end
+        else
+          if options[:rbs]
+            puts pin.to_rbs
+          else
+            puts pin.inspect
+          end
+        end
+      end
+    end
+
     private
 
     # @param pin [Solargraph::Pin::Base]
