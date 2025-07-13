@@ -25,9 +25,9 @@ module Solargraph
 
       def to_rbs
         if scope == :class
-          rbs = "alias self.#{name} self.#{original}"
+          "alias self.#{name} self.#{original}"
         else
-          rbs = "alias #{name} #{original}"
+          "alias #{name} #{original}"
         end
       end
 
