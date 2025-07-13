@@ -23,6 +23,14 @@ module Solargraph
         :public
       end
 
+      def to_rbs
+        if scope == :class
+          rbs = "alias self.#{name} self.#{original}"
+        else
+          rbs = "alias #{name} #{original}"
+        end
+      end
+
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
