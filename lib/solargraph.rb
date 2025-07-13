@@ -98,4 +98,6 @@ module Solargraph
   end
 end
 
+# Ensure that ParserGem node processors are properly loaded to avoid conflicts
+# with Convention node processors
 require 'solargraph/parser/parser_gem/node_processors'
