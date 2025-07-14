@@ -70,11 +70,11 @@ module Bundler
 
     def eval_gemfile: (untyped gemfile, ?untyped? contents) -> untyped
 
-    def gemspec: (?path: String, ?glob: String, ?name: String, ?development_group: Symbol) -> void
+    def gemspec: (?path: ::String, ?glob: ::String, ?name: ::String, ?development_group: ::Symbol) -> void
 
     def gem: (untyped name, *untyped args) -> void
 
-    def source: (String source, ?type: Symbol) ?{ (?) -> untyped } -> void
+    def source: (::String source, ?type: ::Symbol) ?{ (?) -> untyped } -> void
 
     def git_source: (untyped name) ?{ (?) -> untyped } -> untyped
 
@@ -145,30 +145,30 @@ module Bundler
 
       @to_s: untyped
 
-      # @return [String] the description that should be presented to the user.
+      # @return [::String] the description that should be presented to the user.
       #
-      attr_reader description: String
+      attr_reader description: ::String
 
-      # @return [String] the path of the dsl file that raised the exception.
+      # @return [::String] the path of the dsl file that raised the exception.
       #
-      attr_reader dsl_path: String
+      attr_reader dsl_path: ::String
 
-      # @return [Exception] the backtrace of the exception raised by the
+      # @return [::Exception] the backtrace of the exception raised by the
       #         evaluation of the dsl file.
       #
-      attr_reader backtrace: Exception
+      attr_reader backtrace: ::Exception
 
-      # @param [Exception] backtrace @see backtrace
-      # @param [String]    dsl_path  @see dsl_path
+      # @param [::Exception] backtrace @see backtrace
+      # @param [::String]    dsl_path  @see dsl_path
       #
-      def initialize: (untyped description, String dsl_path, Exception backtrace, ?untyped? contents) -> void
+      def initialize: (untyped description, ::String dsl_path, ::Exception backtrace, ?untyped? contents) -> void
 
       def status_code: () -> untyped
 
-      # @return [String] the contents of the DSL that cause the exception to
+      # @return [::String] the contents of the DSL that cause the exception to
       #         be raised.
       #
-      def contents: () -> String
+      def contents: () -> ::String
 
       # The message of the exception reports the content of podspec for the
       # line that generated the original exception.
@@ -186,9 +186,9 @@ module Bundler
       #         end
       #       -------------------------------------------
       #
-      # @return [String] the message of the exception.
+      # @return [::String] the message of the exception.
       #
-      def to_s: () -> String
+      def to_s: () -> ::String
 
       private
 
