@@ -1,0 +1,200 @@
+# <!-- rdoc-file=lib/bundler.rb -->
+# Bundler provides a consistent environment for Ruby projects by tracking and
+# installing the exact gems and versions that are needed.
+#
+# Bundler is a part of Ruby's standard library.
+#
+# Bundler is used by creating *gemfiles* listing all the project dependencies
+# and (optionally) their versions and then using
+#
+#     require 'bundler/setup'
+#
+# or Bundler.setup to setup environment where only specified gems and their
+# specified versions could be used.
+#
+# See [Bundler website](https://bundler.io/docs.html) for extensive
+# documentation on gemfiles creation and Bundler usage.
+#
+# As a standard library inside project, Bundler could be used for introspection
+# of loaded and required modules.
+#
+module Bundler
+  class Dsl
+    @source: untyped
+
+    @sources: untyped
+
+    @git_sources: untyped
+
+    @dependencies: untyped
+
+    @groups: untyped
+
+    @install_conditionals: untyped
+
+    @optional_groups: untyped
+
+    @platforms: untyped
+
+    @env: untyped
+
+    @ruby_version: untyped
+
+    @gemspecs: untyped
+
+    @gemfile: untyped
+
+    @gemfiles: untyped
+
+    @valid_keys: untyped
+
+    include RubyDsl
+
+    def self.evaluate: (untyped gemfile, untyped lockfile, untyped unlock) -> untyped
+
+    VALID_PLATFORMS: untyped
+
+    VALID_KEYS: ::Array["group" | "groups" | "git" | "path" | "glob" | "name" | "branch" | "ref" | "tag" | "require" | "submodules" | "platform" | "platforms" | "source" | "install_if" | "force_ruby_platform"]
+
+    GITHUB_PULL_REQUEST_URL: ::Regexp
+
+    GITLAB_MERGE_REQUEST_URL: ::Regexp
+
+    attr_reader gemspecs: untyped
+
+    attr_reader gemfile: untyped
+
+    attr_accessor dependencies: untyped
+
+    def initialize: () -> void
+
+    def eval_gemfile: (untyped gemfile, ?untyped? contents) -> untyped
+
+    def gemspec: (?untyped? opts) -> void
+
+    def gem: (untyped name, *untyped args) -> void
+
+    def source: (untyped source, *untyped args) ?{ (?) -> untyped } -> void
+
+    def git_source: (untyped name) ?{ (?) -> untyped } -> untyped
+
+    def path: (untyped path, ?::Hash[untyped, untyped] options) ?{ (?) -> untyped } -> untyped
+
+    def git: (untyped uri, ?::Hash[untyped, untyped] options) ?{ (?) -> untyped } -> untyped
+
+    def github: (untyped repo, ?::Hash[untyped, untyped] options) ?{ () -> untyped } -> untyped
+
+    def to_definition: (untyped lockfile, untyped unlock) -> untyped
+
+    def group: (*untyped args) { () -> untyped } -> untyped
+
+    def install_if: (*untyped args) { () -> untyped } -> untyped
+
+    def platforms: (*untyped platforms) { () -> untyped } -> untyped
+
+    alias platform platforms
+
+    def env: (untyped name) { () -> untyped } -> untyped
+
+    def plugin: (*untyped args) -> nil
+
+    def method_missing: (untyped name, *untyped args) -> untyped
+
+    def check_primary_source_safety: () -> untyped
+
+    private
+
+    def add_dependency: (untyped name, ?untyped? version, ?::Hash[untyped, untyped] options) -> (nil | untyped)
+
+    def with_gemfile: (untyped gemfile) { (untyped) -> untyped } -> untyped
+
+    def add_git_sources: () -> untyped
+
+    def with_source: (untyped source) ?{ () -> untyped } -> untyped
+
+    def normalize_hash: (untyped opts) -> untyped
+
+    def valid_keys: () -> untyped
+
+    def normalize_options: (untyped name, untyped version, untyped opts) -> untyped
+
+    def normalize_group_options: (untyped opts, untyped groups) -> untyped
+
+    def validate_keys: (untyped command, untyped opts, untyped valid_keys) -> (true | untyped)
+
+    def normalize_source: (untyped source) -> untyped
+
+    def deprecate_legacy_windows_platforms: (untyped platforms) -> (nil | untyped)
+
+    def check_path_source_safety: () -> (nil | untyped)
+
+    def check_rubygems_source_safety: () -> (untyped | nil)
+
+    def multiple_global_source_warning: () -> untyped
+
+    class DSLError < GemfileError
+      @status_code: untyped
+
+      @description: untyped
+
+      @dsl_path: untyped
+
+      @backtrace: untyped
+
+      @contents: untyped
+
+      @to_s: untyped
+
+      # @return [String] the description that should be presented to the user.
+      #
+      attr_reader description: untyped
+
+      # @return [String] the path of the dsl file that raised the exception.
+      #
+      attr_reader dsl_path: untyped
+
+      # @return [Exception] the backtrace of the exception raised by the
+      #         evaluation of the dsl file.
+      #
+      attr_reader backtrace: untyped
+
+      # @param [Exception] backtrace @see backtrace
+      # @param [String]    dsl_path  @see dsl_path
+      #
+      def initialize: (untyped description, untyped dsl_path, untyped backtrace, ?untyped? contents) -> void
+
+      def status_code: () -> untyped
+
+      # @return [String] the contents of the DSL that cause the exception to
+      #         be raised.
+      #
+      def contents: () -> untyped
+
+      # The message of the exception reports the content of podspec for the
+      # line that generated the original exception.
+      #
+      # @example Output
+      #
+      #   Invalid podspec at `RestKit.podspec` - undefined method
+      #   `exclude_header_search_paths=' for #<Pod::Specification for
+      #   `RestKit/Network (0.9.3)`>
+      #
+      #       from spec-repos/master/RestKit/0.9.3/RestKit.podspec:36
+      #       -------------------------------------------
+      #           # because it would break: #import <CoreData/CoreData.h>
+      #    >      ns.exclude_header_search_paths = 'Code/RestKit.h'
+      #         end
+      #       -------------------------------------------
+      #
+      # @return [String] the message of the exception.
+      #
+      def to_s: () -> untyped
+
+      private
+
+      def parse_line_number_from_description: () -> ::Array[untyped]
+    end
+
+    def gemfile_root: () -> untyped
+  end
+end
