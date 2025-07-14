@@ -114,9 +114,12 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Namespace,Pin::Method,Pin::Block]
-    def locate_block_pin line, character
-      _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
+    def locate_closure_pin line, character
+      _locate_pin line, character, Pin::Closure
     end
+
+    # @deprecated Please use locate_closure_pin instead
+    alias locate_block_pin locate_closure_pin
 
     # @param name [String]
     # @return [Array<Location>]
@@ -158,10 +161,12 @@ module Solargraph
 
     private
 
+    # @return [Hash{Class => Array<Pin::Base>}]
     def pin_class_hash
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
+    # @return [Data]
     def data
       @data ||= Data.new(source)
     end

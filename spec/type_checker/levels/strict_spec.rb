@@ -814,6 +814,23 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it "understands enough of define_method not to think the block is in class scope" do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            @resolved_method = nil
+          end
+
+          def bar
+          end
+
+          define_method('a') do
+            bar
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
 
     it 'understands tuple superclass' do
       checker = type_checker(%(
