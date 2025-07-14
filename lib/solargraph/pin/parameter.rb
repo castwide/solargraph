@@ -105,10 +105,12 @@ module Solargraph
         end
       end
 
+      # @return [String] the full name of the parameter, including any
+      #   declarative symbols such as `*` or `:` indicating type of
+      #   parameter. This is used in method signatures.
       def full_name
         case decl
         when :kwarg, :kwoptarg
-          "#{name}:"
           "#{name}:"
         when :restarg
           "*#{name}"
