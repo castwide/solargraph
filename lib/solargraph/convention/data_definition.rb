@@ -88,6 +88,7 @@ module Solargraph
           end
 
           # @param attribute_node [Parser::AST::Node]
+          # @param attribute_name [String]
           # @return [String, nil]
           def attribute_comments(attribute_node, attribute_name)
             data_comments = comments_for(attribute_node)
