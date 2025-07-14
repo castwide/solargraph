@@ -27,8 +27,10 @@ module Solargraph
       end
 
       # @param text [String]
+      # @sg-ignore
       # @return [String]
       def htmlify text
+        # @type [String]
         YARD::Templates::Helpers::Markup::RDocMarkup.new(text).to_html
       end
 
@@ -70,8 +72,10 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
+    # @sg-ignore
     # @return [String]
     def render template, layout: true, locals: {}
+      # @type [String]
       @render_method.call(template, layout: layout, locals: locals)
     end
 

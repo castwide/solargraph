@@ -17,7 +17,13 @@ module Solargraph
           @word = word
         end
 
-        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        # @sg-ignore two problems - Declared return type
+        #   ::Solargraph::Source::Chain::Array does not match inferred
+        #   type ::Array(::Class<::Solargraph::Source::Chain::Link>,
+        #   ::String) for
+        #   Solargraph::Source::Chain::Link#equality_fields
+        #   and
+        #   Not enough arguments to Module#protected
         protected def equality_fields
           [self.class, word]
         end
@@ -39,6 +45,7 @@ module Solargraph
         end
 
         # debugging description of contents; not for machine use
+        # @return [String]
         def desc
           word
         end
@@ -74,6 +81,8 @@ module Solargraph
         end
 
         # debugging description of contents; not for machine use
+        #
+        # @return [String]
         def desc
           word
         end

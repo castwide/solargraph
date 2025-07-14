@@ -13,10 +13,10 @@ module Solargraph
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       attr_reader :location
 
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       attr_reader :type_location
 
       # @return [String]
