@@ -108,5 +108,4 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(method_object.parameters[0]).to eq(['baz', nil])
     expect(method_object.parameters[1]).to eq(['boo:', "'boo'"])
   end
-
 end
