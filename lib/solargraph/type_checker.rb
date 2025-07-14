@@ -467,7 +467,7 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
+    # @return [void]
     def add_restkwarg_param_tag_details(param_details, pin)
       # see if we have additional tags to pay attention to from YARD -
       # e.g., kwargs in a **restkwargs splat
@@ -483,6 +483,7 @@ module Solargraph
     end
 
     # @param pin [Pin::Signature]
+    # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def signature_param_details(pin)
       # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
       result = {}
