@@ -23,6 +23,7 @@ module Solargraph
         if cache
           @pins.replace cache
         else
+          @pins.concat conversions.pins
           Dir.glob(File.join(FILLS_DIRECTORY, '*')).each do |path|
             next unless File.directory?(path)
             fill_loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
