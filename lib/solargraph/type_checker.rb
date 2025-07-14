@@ -379,7 +379,7 @@ module Solargraph
                   ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
                   ptype = ptype.self_to_type(par.context)
                   if ptype.nil?
-                  # @todo Some level (strong, I guess) should require the param here
+                    # @todo Some level (strong, I guess) should require the param here
                   else
                     argtype = argchain.infer(api_map, block_pin, locals)
                     if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
@@ -428,7 +428,7 @@ module Solargraph
         if argchain
           data = params[par.name]
           if data.nil?
-          # @todo Some level (strong, I guess) should require the param here
+            # @todo Some level (strong, I guess) should require the param here
           else
             ptype = data[:qualified]
             unless ptype.undefined?
