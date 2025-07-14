@@ -1,6 +1,6 @@
 module Solargraph
   module Parser
-    class NodeMethods
+    module NodeMethods
       module_function
 
       # @abstract
