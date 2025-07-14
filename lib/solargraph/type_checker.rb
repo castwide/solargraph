@@ -73,7 +73,7 @@ module Solargraph
       end
     end
 
-    private
+  private
 
     # @return [Array<Problem>]
     def method_tag_problems
