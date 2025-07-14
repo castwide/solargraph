@@ -35,5 +35,15 @@ describe Solargraph::Convention::Gemfile do
         to eq(["Unrecognized keyword argument bad_name to Bundler::Dsl#gemspec",
                "Wrong argument type for Bundler::Dsl#source: source expected String, received Class<File>"].sort)
     end
+
+    # @todo add rest arg support to type checker
+    xit 'finds bad arguments to DSL ruby method' do
+      checker = type_checker(%(
+        ruby 123
+      ))
+
+      expect(checker.problems.map(&:message)).
+        to eq(["Wrong argument type for Bundler::Dsl#ruby: ruby_version expected String, received Integer"])
+    end
   end
 end

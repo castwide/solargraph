@@ -1,0 +1,42 @@
+# <!-- rdoc-file=lib/bundler.rb -->
+# Bundler provides a consistent environment for Ruby projects by tracking and
+# installing the exact gems and versions that are needed.
+#
+# Bundler is a part of Ruby's standard library.
+#
+# Bundler is used by creating *gemfiles* listing all the project dependencies
+# and (optionally) their versions and then using
+#
+#     require 'bundler/setup'
+#
+# or Bundler.setup to setup environment where only specified gems and their
+# specified versions could be used.
+#
+# See [Bundler website](https://bundler.io/docs.html) for extensive
+# documentation on gemfiles creation and Bundler usage.
+#
+# As a standard library inside project, Bundler could be used for introspection
+# of loaded and required modules.
+#
+module Bundler
+  module RubyDsl
+    @ruby_version: untyped
+
+    def ruby: (*::String ruby_version) -> void
+
+    # Support the various file formats found in .ruby-version files.
+    #
+    #     3.2.2
+    #     ruby-3.2.2
+    #
+    # Also supports .tool-versions files for asdf. Lines not starting with "ruby" are ignored.
+    #
+    #     ruby 2.5.1 # comment is ignored
+    #     ruby   2.5.1# close comment and extra spaces doesn't confuse
+    #
+    # Intentionally does not support `3.2.1@gemset` since rvm recommends using .ruby-gemset instead
+    #
+    # Loads the file relative to the dirname of the Gemfile itself.
+    def normalize_ruby_file: (::String filename) -> ::String
+  end
+end

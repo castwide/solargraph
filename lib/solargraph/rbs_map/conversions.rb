@@ -476,7 +476,15 @@ module Solargraph
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin, source: :rbs, type_location: type_location)
+          inner_rest_positional_type =
+            ComplexType.try_parse(other_type_to_tag(type.type.rest_positionals.type))
+          rest_positional_type = ComplexType::UniqueType.new('Array',
+                                                             [],
+                                                             [inner_rest_positional_type],
+                                                             rooted: true, parameters_type: :list)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin,
+                                                         source: :rbs, type_location: type_location,
+                                                         return_type: rest_positional_type,)
         end
         type.type.trailing_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
