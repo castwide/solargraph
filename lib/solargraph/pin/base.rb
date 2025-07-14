@@ -51,6 +51,14 @@ module Solargraph
         @docstring = docstring
         @directives = directives
         assert_source_provided
+        assert_location_provided
+      end
+
+      # @return [void]
+      def assert_location_provided
+        return unless best_location.nil? && %i[yardoc source rbs].include?(source)
+
+        Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
       # @param other [self]
@@ -290,6 +298,9 @@ module Solargraph
         choose_pin_attr(other, attr)
       end
 
+      # @param other [self]
+      # @param attr [::Symbol]
+      # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
         val1 = send(attr)
@@ -304,6 +315,7 @@ module Solargraph
         [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 
+      # @return [void]
       def assert_source_provided
         Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
@@ -548,6 +560,7 @@ module Solargraph
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
       end
 
+      # @return [String]
       def desc
         "[#{inner_desc}]"
       end
@@ -557,6 +570,7 @@ module Solargraph
         "#<#{self.class} `#{self.inner_desc}`#{all_location_text} via #{source.inspect}>"
       end
 
+      # @return [String]
       def all_location_text
         if location.nil? && type_location.nil?
           ''
@@ -569,6 +583,7 @@ module Solargraph
         end
       end
 
+      # @return [void]
       def reset_generated!
       end
 

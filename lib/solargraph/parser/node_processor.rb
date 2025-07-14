@@ -9,16 +9,22 @@ module Solargraph
       autoload :Base, 'solargraph/parser/node_processor/base'
 
       class << self
-        # @type [Hash{Symbol => Class<NodeProcessor::Base>}]
+        # @type [Hash<Symbol, Array<Class<NodeProcessor::Base>>>]
         @@processors ||= {}
 
-        # Register a processor for a node type.
+        # Register a processor for a node type. You can register multiple processors for the same type.
+        # If a node processor returns true, it will skip the next processor of the same node type.
         #
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
         # @return [Class<NodeProcessor::Base>]
         def register type, cls
-          @@processors[type] = cls
+          @@processors[type] ||= []
+          @@processors[type] << cls
+        end
+
+        def deregister type, cls
+          @@processors[type].delete(cls)
         end
       end
 
@@ -36,10 +42,16 @@ module Solargraph
           )
         end
         return [pins, locals] unless Parser.is_ast_node?(node)
-        klass = @@processors[node.type] || NodeProcessor::Base
-        processor = klass.new(node, region, pins, locals)
-        processor.process
-        [processor.pins, processor.locals]
+        node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
+
+        node_processor_classes.each do |klass|
+          processor = klass.new(node, region, pins, locals)
+          process_next = processor.process
+
+          break unless process_next
+        end
+
+        [pins, locals]
       end
     end
   end
