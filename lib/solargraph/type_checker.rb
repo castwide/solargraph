@@ -324,10 +324,10 @@ module Solargraph
           end
           break if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
 
-          params = first_param_hash(pins)
 
           all_errors = []
           pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
+            params = first_param_hash([sig])
             errors = []
             sig.parameters.each_with_index do |par, idx|
               # @todo add logic mapping up restarg parameters with
@@ -467,7 +467,7 @@ module Solargraph
       result
     end
 
-    # @param pin [Pin::Method]
+    # @param pin [Pin::Callable]
     # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_hash(pin)
       # @type [Hash{String => Hash{Symbol => String, ComplexType}}]
@@ -494,7 +494,7 @@ module Solargraph
       result
     end
 
-    # @param pins [Array<Pin::Method>]
+    # @param pins [Array<Pin::Callable>]
     # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
       return {} if pins.empty?
