@@ -8,6 +8,8 @@ describe Solargraph::Convention::Gemfile do
       checker = type_checker(%(
         source 'https://rubygems.org'
 
+        ruby "~> 3.3.5"
+
         gemspec name: 'solargraph'
 
         # Local gemfile for development tools, etc.
@@ -16,6 +18,22 @@ describe Solargraph::Convention::Gemfile do
       ))
 
       expect(checker.problems).to be_empty
+    end
+
+    it 'finds bad arguments to DSL methods' do
+      checker = type_checker(%(
+        source File
+
+        gemspec bad_name: 'solargraph'
+
+        # Local gemfile for development tools, etc.
+        local_gemfile = File.expand_path(".Gemfile", __dir__)
+        instance_eval File.read local_gemfile if File.exist? local_gemfile
+      ))
+
+      expect(checker.problems.map(&:message).sort).
+        to eq(["Unrecognized keyword argument bad_name to Bundler::Dsl#gemspec",
+               "Wrong argument type for Bundler::Dsl#source: source expected String, received Class<File>"].sort)
     end
   end
 end
