@@ -24,16 +24,15 @@ module Solargraph
           @pins.replace cache
         else
           @pins.concat conversions.pins
-          Dir.glob(File.join(FILLS_DIRECTORY, '*')).each do |path|
-            next unless File.directory?(path)
-            fill_loader = RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
-            fill_loader.add(path: Pathname(path))
-            fill_conversions = Conversions.new(loader: fill_loader)
-            @pins.concat fill_conversions.pins
-          rescue RBS::DuplicatedDeclarationError => e
-            logger.debug "RBS already contains declarations in #{path}, skipping: #{e.message}"
-          end
+
+          # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+          fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+          fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+          fill_conversions = Conversions.new(loader: fill_loader)
+          @pins.concat fill_conversions.pins
+
           @pins.concat RbsMap::CoreFills::ALL
+
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           @pins.replace processed
 
