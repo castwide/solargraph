@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'yaml'
 
 module Solargraph
   # A workspace consists of the files in a project's directory and the
@@ -49,10 +50,7 @@ module Solargraph
 
     # @return [Solargraph::PinCache]
     def pin_cache
-      @pin_cache ||= Solargraph::PinCache.new(rbs_collection_path: rbs_collection_path,
-                                              rbs_collection_config_path: rbs_collection_config_path,
-                                              yard_plugins: yard_plugins,
-                                              directory: directory)
+      @pin_cache ||= fresh_pincache
     end
 
     # @return [Environ]
@@ -79,6 +77,7 @@ module Solargraph
       pin_cache.uncache_gem(gemspec, out: out)
     end
 
+    # @return [Solargraph::PinCache]
     def fresh_pincache
       PinCache.new(rbs_collection_path: rbs_collection_path,
                    rbs_collection_config_path: rbs_collection_config_path,
@@ -95,7 +94,7 @@ module Solargraph
     # @return [::Array<Gem::Specification>, nil]
     def resolve_path_to_gemspecs path
       return nil if path.empty?
-      # TODO there should be a distinction between everything and the non-require: false stuff
+      # TODO: there should be a distinction between everything and the non-require: false stuff
       return gemspecs_required_from_bundler if path == 'bundler/require'
 
       gemspecs = gemspecs_required_from_bundler
@@ -113,6 +112,7 @@ module Solargraph
           return nil if potential_gemspec.nil?
 
           file = "lib/#{path}.rb"
+          # @sg-ignore Unresolved call to files
           gemspec = potential_gemspec if potential_gemspec&.files&.any? { |gemspec_file| file == gemspec_file }
         rescue Gem::MissingSpecError
           logger.debug { "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}" }
@@ -239,6 +239,8 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    # @return [String, nil]
+    # @sg-ignore Solargraph::Workspace#rbs_collection_config_path return type could not be inferred
     def rbs_collection_config_path
       @rbs_collection_config_path ||=
         begin
@@ -291,7 +293,7 @@ module Solargraph
     def gemspecs_required_from_bundler
       @gemspecs_required_from_bundler ||=
         begin
-          if directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory)
+          if directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
             # Find only the gems bundler is now using
             Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
               logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
@@ -323,6 +325,7 @@ module Solargraph
               'ruby', '-e',
               "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
             ]
+            # @sg-ignore Unresolved call to capture3
             o, e, s = Open3.capture3(*cmd)
             if s.success?
               Solargraph.logger.debug "External bundle: #{o}"
@@ -409,6 +412,7 @@ module Solargraph
         #   workspace code, but this is how Gem::Specification.load does it
         #   anyway.
         cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
+        # @sg-ignore Unresolved call to capture3
         o, e, s = Open3.capture3(*cmd)
         if s.success?
           begin
@@ -453,6 +457,7 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
+      # @sg-ignore Unresolved call to load_file
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)

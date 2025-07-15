@@ -511,6 +511,11 @@ module Solargraph
 
     private
 
+    # @return [PinCache]
+    def pin_cache
+      api_map.pin_cache
+    end
+
     # @return [Hash{String => Set<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
@@ -595,7 +600,7 @@ module Solargraph
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
 
-      if Yardoc.processing?(spec)
+      if pin_cache.yardoc_processing?(spec)
         logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
         queued_gemspec_cache.push(spec)
         return if pending - queued_gemspec_cache.length < 1

@@ -22,6 +22,9 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :missing_docs
 
+    # @return [Solargraph::PinCache]
+    attr_reader :pin_cache
+
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}

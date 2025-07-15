@@ -18,8 +18,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_reader :pins
 
-    attr_reader :pin_cache
-
     attr_reader :global_environ
 
     # @return [Array<Gem::Specification>]
@@ -40,6 +38,7 @@ module Solargraph
       pins.concat global_environ.pins
     end
 
+    # @return [Solargraph::PinCache]
     def pin_cache
       @pin_cache ||= workspace.fresh_pincache
     end
@@ -73,7 +72,9 @@ module Solargraph
       end
       pins_processed = pins.length - existing_pin_count
       milliseconds = (time.real * 1000).round
-      out.puts "Built #{pins.length} gem pins in #{milliseconds} ms" if out && gemspecs.any? if milliseconds > 500
+      if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
+        out.puts "Built #{pins.length} gem pins in #{milliseconds} ms"
+      end
       load_serialized_gem_pins
     end
 
@@ -110,12 +111,15 @@ module Solargraph
                           out: out)
     end
 
+    # @param out [IO, nil]
     # @return [void]
     def load_serialized_gem_pins(out: $stderr)
       @pins = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       missing_paths = Hash[without_gemspecs].keys
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -142,7 +146,9 @@ module Solargraph
       end
       pins_processed = pins.length - existing_pin_count
       milliseconds = (time.real * 1000).round
-      out.puts "Deserialized #{pins.length} gem pins from #{PinCache.base_dir} in #{milliseconds} ms" if out && gemspecs.any? if milliseconds > 500
+      if (milliseconds > 500) && out && gemspecs.any?
+        out.puts "Deserialized #{pins.length} gem pins from #{PinCache.base_dir} in #{milliseconds} ms"
+      end
       uncached_gemspecs.uniq! { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
       nil
     end
