@@ -25,6 +25,7 @@ module Solargraph
       @pins = pins
     end
 
+    # @return [Array<String>]
     def yard_plugins
       @yard_plugins ||= []
     end

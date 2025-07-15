@@ -29,7 +29,7 @@ module Solargraph
     attr_reader :workspace
 
     # @param requires [Array<String>]
-    # @param workspace [Workspace]
+    # @param workspace [Workspace, nil]
     def initialize(requires, workspace)
       @requires = requires.compact
       @workspace = workspace

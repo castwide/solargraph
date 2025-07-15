@@ -14,44 +14,47 @@ module Solargraph
 
       def initialize; end
 
+      # @param out [IO, nil] output stream for logging
       # @return [Array<Pin::Base>]
       def pins(out: $stderr)
         return @pins if @pins
         @pins = cache_core(out: out)
       end
 
+      # @param out [IO, nil] output stream for logging
+      # @return [Array<Pin::Base>]
       def cache_core(out: $stderr)
         new_pins = []
         cache = PinCache.load_core
-        if cache
-          return cache
-        else
-          new_pins.concat conversions.pins
+        return cache if cache
 
-          # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
-          fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
-          fill_loader.add(path: Pathname(FILLS_DIRECTORY))
-          out.puts "Caching RBS pins for Ruby core" if out
-          fill_conversions = Conversions.new(loader: fill_loader)
-          new_pins.concat fill_conversions.pins
+        new_pins.concat conversions.pins
 
-          new_pins.concat RbsMap::CoreFills::ALL
+        # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+        fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+        fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+        out&.puts "Caching RBS pins for Ruby core"
+        fill_conversions = Conversions.new(loader: fill_loader)
+        new_pins.concat fill_conversions.pins
 
-          processed = ApiMap::Store.new(new_pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-          new_pins.replace processed
+        new_pins.concat RbsMap::CoreFills::ALL
 
-          PinCache.serialize_core new_pins
-        end
+        processed = ApiMap::Store.new(new_pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
+        new_pins.replace processed
+
+        PinCache.serialize_core new_pins
+
         new_pins
-
       end
 
       private
 
+      # @return [RBS::EnvironmentLoader]
       def loader
         @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
       end
 
+      # @return [Conversions]
       def conversions
         @conversions ||= Conversions.new(loader: loader)
       end

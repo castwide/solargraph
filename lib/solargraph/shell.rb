@@ -3,6 +3,7 @@
 require 'benchmark'
 require 'thor'
 require 'yard'
+require 'yaml'
 
 module Solargraph
   class Shell < Thor
@@ -36,6 +37,7 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
+        # @sg-ignore https://github.com/castwide/backport/pull/5
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
@@ -52,6 +54,7 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
+        # @sg-ignore https://github.com/castwide/backport/pull/5
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
@@ -64,6 +67,7 @@ module Solargraph
     def config(directory = '.')
       matches = []
       if options[:extensions]
+        # @sg-ignore Unresolved call to each
         Gem::Specification.each do |g|
           if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
             require g.name
@@ -78,6 +82,7 @@ module Solargraph
         end
       end
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
+        # @sg-ignore Unresolved call to to_yaml
         file.puts conf.to_yaml
       end
       STDOUT.puts "Configuration file initialized."
@@ -116,13 +121,8 @@ module Solargraph
       else
         STDERR.puts("Caching these gems: #{names}")
         names.each do |name|
-          if gem == 'core'
+          if name == 'core'
             PinCache.cache_core(out: $stdout)
-            next
-          end
-
-          if gem == 'stdlib'
-            PinCache.cache_stdlib(out: $stdout)
             next
           end
 

@@ -1,5 +1,5 @@
 describe Solargraph::YardMap::Mapper do
-  before :all do
+  before do
     Solargraph::ApiMap.load_with_cache('.', $stderr)
   end
 

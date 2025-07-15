@@ -39,15 +39,18 @@ module Solargraph
     # just caches), please also change `equality_fields` below.
     #
 
+    # @param other [Object]
     def eql?(other)
       self.class == other.class &&
         equality_fields == other.equality_fields
     end
 
+    # @param other [Object]
     def ==(other)
       self.eql?(other)
     end
 
+    # @return [Integer]
     def hash
       equality_fields.hash
     end
@@ -117,9 +120,8 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
-    def doc_map
-      @doc_map ||= DocMap.new([], [])
-    end
+    # @return [DocMap, nil]
+    attr_reader :doc_map
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
@@ -183,7 +185,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_all_for_doc_map!(out)
-      @doc_map.cache_doc_map_gems!(out)
+      @doc_map&.cache_doc_map_gems!(out)
     end
 
     # @param out [IO, nil]
@@ -195,7 +197,7 @@ module Solargraph
 
     # @return [Workspace]
     def workspace
-      @doc_map.workspace
+      @doc_map&.workspace
     end
 
     # @param gemspec [Gem::Specification]
@@ -204,7 +206,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_gem(gemspec, rebuild: false, only_if_used: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out, only_if_used: only_if_used)
+      @doc_map&.cache(gemspec, rebuild: rebuild, out: out, only_if_used: only_if_used)
     end
 
     class << self
@@ -366,6 +368,9 @@ module Solargraph
     end
 
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
+    # @param (see Solargraph::Parser::FlowSensitiveTyping#visible_pins)
+    # @return (see Solargraph::Parser::FlowSensitiveTyping#visible_pins)
+    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
     def visible_pins(*args, **kwargs, &blk)
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
     end
@@ -527,6 +532,9 @@ module Solargraph
     # @param rooted_tag [String] Parameterized namespace, fully qualified
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param preserve_generics [Boolean] True to preserve any
+    #   unresolved generic parameters, false to erase them
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
@@ -824,7 +832,7 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
-    # @param fq_tag [String]
+    # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
       fq_sub_type = ComplexType.try_parse(fq_sub_tag)

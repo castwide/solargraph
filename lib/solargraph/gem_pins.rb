@@ -12,6 +12,7 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
       by_path = method_pins.group_by(&:path)
@@ -21,6 +22,7 @@ module Solargraph
       by_path.values + alias_pins
     end
 
+    # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
       out = pins.reduce(nil) do |memo, pin|
         next pin if memo.nil?
@@ -37,7 +39,7 @@ module Solargraph
     end
 
     # @param yard_pins [Array<Pin::Base>]
-    # @param rbs_map [RbsMap]
+    # @param rbs_pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
     def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new
