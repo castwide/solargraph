@@ -19,12 +19,7 @@ module Solargraph
         # @param spec [Gem::Specification, nil]
         # @return [Solargraph::Pin::Method]
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
-          closure ||= Solargraph::Pin::Namespace.new(
-            name: code_object.namespace.to_s,
-            gates: [code_object.namespace.to_s],
-            type: code_object.namespace.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
-            source: :yardoc,
-          )
+          closure ||= create_closure_namespace_for(code_object, spec)
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
           return_type = ComplexType::SELF if name == 'new'

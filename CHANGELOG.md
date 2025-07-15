@@ -1,3 +1,8 @@
+## 0.56.1 - July 13, 2025
+- Library avoids blocking on pending yardoc caches (#990)
+- DocMap checks for default Gemfile (#989)
+- [Bug fix] Fixed an error in rbs/fills/tuple.rbs (#993)
+
 ## 0.56.0 - July 1, 2025
 -  [regression] Gem caching perf and logging fixes #983
 

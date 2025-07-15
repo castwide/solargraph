@@ -6,11 +6,13 @@ module Solargraph
   # one of its sources.
   #
   module Convention
-    autoload :Base,                 'solargraph/convention/base'
-    autoload :Gemfile,              'solargraph/convention/gemfile'
-    autoload :Gemspec,              'solargraph/convention/gemspec'
-    autoload :Rakefile,             'solargraph/convention/rakefile'
-    autoload :StructDefinition,     'solargraph/convention/struct_definition'
+
+    autoload :Base,    'solargraph/convention/base'
+    autoload :Gemfile, 'solargraph/convention/gemfile'
+    autoload :Gemspec, 'solargraph/convention/gemspec'
+    autoload :Rakefile, 'solargraph/convention/rakefile'
+    autoload :StructDefinition, 'solargraph/convention/struct_definition'
+    autoload :DataDefinition,   'solargraph/convention/data_definition'
     autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
 
     # @type [Set<Convention::Base>]
