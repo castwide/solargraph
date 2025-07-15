@@ -9,12 +9,21 @@ module Solargraph
     class StdlibMap < RbsMap
       include Logging
 
+      def log_level
+        # TODO: track down remaining unfound requires
+        :info
+      end
+
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
+      def log_caching(gemspec, out: $stderr)
+        out.puts("Caching RBS pins for standard library #{gemspec.name}")
+      end
+
       # @param library [String]
-      def initialize library
-        cached_pins = PinCache.deserialize_stdlib_require library
+      def initialize library, out: $stderr
+        cached_pins = PinCache.load_stdlib_require library
         if cached_pins
           @pins = cached_pins
           @resolved = true

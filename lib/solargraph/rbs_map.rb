@@ -24,7 +24,7 @@ module Solargraph
     # @param library [String]
     # @param version [String, nil]
     # @param rbs_collection_paths [Array<Pathname, String>]
-    def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: []
+    def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: [], out: $stderr
       if rbs_collection_config_path.nil? && !rbs_collection_paths.empty?
         raise 'Please provide rbs_collection_config_path if you provide rbs_collection_paths'
       end
@@ -35,8 +35,24 @@ module Solargraph
       add_library loader, library, version
     end
 
-    def loader
-      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
+
+    CACHE_KEY_GEM_EXPORT = 'gem-export'
+    CACHE_KEY_UNRESOLVED = 'unresolved'
+    CACHE_KEY_STDLIB = 'stdlib'
+    CACHE_KEY_LOCAL = 'local'
+
+    def self.rbs_source_desc(cache_key)
+      if cache_key == CACHE_KEY_GEM_EXPORT
+        "RBS gem export"
+      elsif cache_key == CACHE_KEY_UNRESOLVED
+        nil
+      elsif cache_key == CACHE_KEY_STDLIB
+        "RBS standard library"
+      elsif cache_key == CACHE_KEY_LOCAL
+        "local RBS shims"
+      else
+        "RBS collection"
+      end
     end
 
     # @return string representing the version of the RBS info fetched
@@ -46,6 +62,7 @@ module Solargraph
     def cache_key
       @hextdigest ||= begin
         data = nil
+        gem_config = nil
         if rbs_collection_config_path
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
           if lockfile_path.exist?
@@ -54,16 +71,19 @@ module Solargraph
             data = gem_config&.to_s
           end
         end
-        if data.nil? || data.empty?
-          if resolved?
-            # definitely came from the gem itself and not elsewhere -
-            # only one version per gem
-            'gem-export'
-          else
-            'unresolved'
-          end
+        if gem_config.nil?
+          CACHE_KEY_UNRESOLVED
         else
-          Digest::SHA1.hexdigest(data)
+          source = gem_config.fetch('source', {}).fetch('type', nil)
+          if source == 'rubygems'
+            CACHE_KEY_GEM_EXPORT
+          elsif source == 'local'
+            CACHE_KEY_LOCAL
+          elsif source == 'stdlib'
+            CACHE_KEY_STDLIB
+          else
+            Digest::SHA1.hexdigest(data)
+          end
         end
       end
     end
@@ -80,8 +100,14 @@ module Solargraph
                  rbs_collection_config_path: rbs_collection_config_path)
     end
 
-    def pins
-      @pins ||= resolved? ? conversions.pins : []
+    # @return [Array<Pin::Base>]
+    def pins(out: $stderr)
+      @pins ||= if resolved?
+                  loader.libs.each { |lib| log_caching(lib, out: $stderr) }
+                  conversions.pins
+                else
+                  []
+                end
     end
 
     # @generic T
@@ -128,12 +154,17 @@ module Solargraph
       @conversions ||= Conversions.new(loader: loader)
     end
 
+    # @return [void]
+    def log_caching(gemspec, out:); end
+
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]
     # @return [Boolean] true if adding the library succeeded
-    def add_library loader, library, version
+    def add_library loader, library, version, out: $stderr
+      raise "wtf - why was library not a string? #{library}" unless library.is_a?(String)
       @resolved = if loader.has_library?(library: library, version: version)
-        loader.add library: library, version: version
+        # we find our own dependencies from gemfile.lock
+        loader.add library: library, version: version, resolve_dependencies: false
         logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
         true
       else

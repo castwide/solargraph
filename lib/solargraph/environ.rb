@@ -13,7 +13,7 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :domains
 
-    # @return [Array<Pin::Reference::Override>]
+    # @return [Array<Pin::Base>]
     attr_reader :pins
 
     # @param requires [Array<String>]
@@ -23,6 +23,10 @@ module Solargraph
       @requires = requires
       @domains = domains
       @pins = pins
+    end
+
+    def yard_plugins
+      @yard_plugins ||= []
     end
 
     # @return [self]

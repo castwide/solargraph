@@ -94,11 +94,12 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
-                     @doc_map&.uncached_yard_gemspecs&.any? ||
-                     @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
-                     @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
+                        workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
+                        @doc_map.any_uncached?
+
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, bench.workspace) # @todo Implement gem preferences
+        @pin_cache = @doc_map.pin_cache
         @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
@@ -120,16 +121,6 @@ module Solargraph
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_rbs_collection_gemspecs
-      @doc_map.uncached_rbs_collection_gemspecs
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_yard_gemspecs
-      @doc_map.uncached_yard_gemspecs
     end
 
     # @return [Array<Pin::Base>]
@@ -186,12 +177,31 @@ module Solargraph
       api_map
     end
 
-    def cache_all!(out)
-      @doc_map.cache_all!(out)
+    # @param out [IO, nil]
+    # @return [void]
+    def cache_all_for_doc_map!(out)
+      @doc_map.cache_doc_map_gems!(out)
     end
 
-    def cache_gem(gemspec, rebuild: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+    # @param out [IO, nil]
+    # @param rebuild [Boolean]
+    # @return [void]
+    def cache_all_for_workspace!(out, rebuild: false)
+      workspace.cache_all_for_workspace!(out, rebuild: rebuild)
+    end
+
+    # @return [Workspace]
+    def workspace
+      @doc_map.workspace
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @param rebuild [Boolean]
+    # @param only_if_used [Boolean]
+    # @param out [IO, nil]
+    # @return [void]
+    def cache_gem(gemspec, rebuild: false, only_if_used: false, out: nil)
+      @doc_map.cache(gemspec, rebuild: rebuild, out: out, only_if_used: only_if_used)
     end
 
     class << self
@@ -215,7 +225,7 @@ module Solargraph
         return api_map
       end
 
-      api_map.cache_all!(out)
+      api_map.cache_all_for_doc_map!(out)
       load(directory)
     end
 

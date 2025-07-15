@@ -622,8 +622,7 @@ module Solargraph
     end
 
     def cacheable_specs
-      cacheable = api_map.uncached_yard_gemspecs +
-                  api_map.uncached_rbs_collection_gemspecs -
+      cacheable = api_map.uncached_gemspecs +
                   queued_gemspec_cache -
                   cache_errors.to_a
       return cacheable unless cacheable.empty?
@@ -680,8 +679,7 @@ module Solargraph
         api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
-        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
+        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end
