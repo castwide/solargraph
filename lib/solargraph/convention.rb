@@ -6,7 +6,6 @@ module Solargraph
   # one of its sources.
   #
   module Convention
-
     autoload :Base,    'solargraph/convention/base'
     autoload :Gemfile, 'solargraph/convention/gemfile'
     autoload :Gemspec, 'solargraph/convention/gemspec'
