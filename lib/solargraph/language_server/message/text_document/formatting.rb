@@ -19,8 +19,15 @@ module Solargraph
             require_rubocop(config['version'])
             options, paths = ::RuboCop::Options.new.parse(args)
             options[:stdin] = original
-            corrections = redirect_stdout do
-              ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+
+            # Ensure only one instance of RuboCop::Runner is running at
+            # a time - it uses 'chdir' to read config files with ERB,
+            # which can conflict with other chdirs.
+            @@rubocop_mutex ||= Mutex.new
+            corrections = @@rubocop_mutex.synchronize do
+              redirect_stdout do
+                ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+              end
             end
             result = options[:stdin]
 
