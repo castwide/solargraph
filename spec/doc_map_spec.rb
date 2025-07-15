@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 describe Solargraph::DocMap do
-  let(:workspace) do
-    Solargraph::Workspace.new(Dir.pwd)
-  end
-
   subject(:doc_map) do
     dm = Solargraph::DocMap.new(requires, workspace)
     dm.cache_doc_map_gems!($stderr)
     dm
+  end
+
+  let(:workspace) do
+    Solargraph::Workspace.new(Dir.pwd)
   end
 
   let(:plain_doc_map) { Solargraph::DocMap.new([], workspace) }
