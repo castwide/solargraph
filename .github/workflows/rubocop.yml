@@ -5,7 +5,7 @@
 # This workflow will download a prebuilt Ruby version, install dependencies and run tests with rspec.
 # For more information see: https://github.com/marketplace/actions/setup-ruby-jruby-and-truffleruby
 
-name: Typecheck
+name: RuboCop
 
 on:
   push:
@@ -17,8 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
-
+  full:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,11 +27,10 @@ jobs:
       with:
         ruby-version: 3.4
         bundler-cache: false
+
     - name: Install gems
-      run: |
-        bundle install
-        bundle update rbs # use latest available for this Ruby version
-    - name: Install gem types
-      run: bundle exec rbs collection install
-    - name: Typecheck self
-      run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed
+      run: bundle install
+
+    - name: Run RuboCop
+      # Use -c flag so we ignore config files used within rubocop-related fixtures
+      run: bundle exec rubocop -c .rubocop.yml
