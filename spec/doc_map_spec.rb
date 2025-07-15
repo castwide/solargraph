@@ -4,7 +4,7 @@ describe Solargraph::DocMap do
   before :all do
     # We use ast here because it's a known dependency.
     gemspec = Gem::Specification.find_by_name('ast')
-    yard_pins = Solargraph::GemPins.build_yard_pins(gemspec)
+    yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
     Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
   end
 

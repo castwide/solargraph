@@ -28,6 +28,23 @@ module Solargraph
       def global doc_map
         EMPTY_ENVIRON
       end
+
+      # Provides any additional method pins based on e the described object.
+      #
+      # @param api_map [ApiMap]
+      # @param rooted_tag [String] A fully qualified namespace, with
+      #   generic parameter values if applicable
+      # @param scope [Symbol] :class or :instance
+      # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+      # @param deep [Boolean]
+      # @param skip [Set<String>]
+      # @param no_core [Boolean] Skip core classes if true
+      #
+      # @return [Environ]
+      def object api_map, rooted_tag, scope, visibility,
+                 deep, skip, no_core
+        EMPTY_ENVIRON
+      end
     end
   end
 end
