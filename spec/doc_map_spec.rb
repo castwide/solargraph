@@ -10,15 +10,15 @@ describe Solargraph::DocMap do
   let(:pre_cache) { true }
   let(:requires) { [] }
 
-  before do
-    doc_map.cache_doc_map_gems!($stderr) if pre_cache
-  end
-
   let(:workspace) do
     Solargraph::Workspace.new(Dir.pwd)
   end
 
   let(:plain_doc_map) { Solargraph::DocMap.new([], workspace) }
+
+  before do
+    doc_map.cache_doc_map_gems!($stderr) if pre_cache
+  end
 
   context 'with a require in solargraph test bundle' do
     let(:requires) do
