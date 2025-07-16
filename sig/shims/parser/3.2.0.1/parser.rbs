@@ -1,0 +1,199 @@
+module Parser
+  CurrentRuby: Parser::Base
+
+  class SyntaxError < StandardError
+  end
+  class UnknownEncodingInMagicComment < StandardError
+  end
+
+  class Base < Racc::Parser
+    def version: -> Integer
+    def self.parse: (String string, ?String file, ?Integer line) -> Parser::AST::Node?
+    def self.parse_with_comments: (String string, ?String file, ?Integer line) -> [Parser::AST::Node?, Array[Source::Comment]]
+    def parse: (Parser::Source::Buffer source_buffer) -> Parser::AST::Node?
+  end
+
+  class Ruby18 < Base
+  end
+  class Ruby19 < Base
+  end
+  class Ruby20 < Base
+  end
+  class Ruby21 < Base
+  end
+  class Ruby22 < Base
+  end
+  class Ruby23 < Base
+  end
+  class Ruby24 < Base
+  end
+  class Ruby25 < Base
+  end
+  class Ruby26 < Base
+  end
+  class Ruby27 < Base
+  end
+  class Ruby30 < Base
+  end
+  class Ruby31 < Base
+  end
+  class Ruby32 < Base
+  end
+  class Ruby33 < Base
+  end
+
+  module AST
+    class Node < ::AST::Node
+      attr_reader location: Source::Map
+      alias loc location
+    end
+
+    class Processor
+      module Mixin
+        def process: (Node? node) ->  Node?
+      end
+
+      include Mixin
+    end
+  end
+
+  module Source
+    class Range
+      attr_reader source_buffer: Buffer
+      attr_reader begin_pos: Integer
+      attr_reader end_pos: Integer
+      def begin: () -> Range
+      def end: () -> Range
+      def size: () -> Integer
+      alias length size
+      def line: () -> Integer
+      alias first_line line
+      def column: () -> Integer
+      def last_line: () -> Integer
+      def last_column: () -> Integer
+      def column_range: () -> ::Range[Integer]
+      def source_line: () -> String
+      def source: () -> String
+      def with: (?begin_pos: Integer, ?end_pos: Integer) -> Range
+      def adjust: (?begin_pos: Integer, ?end_pos: Integer) -> Range
+      def resize: (Integer new_size) -> Range
+      def join: (Range other) -> Range
+      def intersect: (Range other) -> Range?
+      def disjoint?: (Range other) -> bool
+      def overlaps?: (Range other) -> bool
+      def contains?: (Range other) -> bool
+      def contained?: (Range other) -> bool
+      def crossing?: (Range other) -> bool
+      def empty?: () -> bool
+    end
+
+    ##
+    # A buffer with source code. {Buffer} contains the source code itself,
+    # associated location information (name and first line), and takes care
+    # of encoding.
+    #
+    # A source buffer is immutable once populated.
+    #
+    # @!attribute [r] name
+    #  Buffer name. If the buffer was created from a file, the name corresponds
+    #  to relative path to the file.
+    #  @return [String] buffer name
+    #
+    # @!attribute [r] first_line
+    #  First line of the buffer, 1 by default.
+    #  @return [Integer] first line
+    #
+    # @api public
+    #
+    class Buffer
+      attr_reader name: String
+      attr_reader first_line: Integer
+
+      def self.recognize_encoding: (String) -> Encoding
+      def self.reencode_string: (String) -> String
+
+      def initialize: (untyped name, ?Integer first_line, ?source: untyped) -> void
+      def read: () -> self
+      def source: () -> String
+      def source=: (String) -> String
+      def raw_source: (String) -> String
+      def decompose_position: (Integer) -> [Integer, Integer]
+      def source_lines: () -> Array[String]
+      def source_line: (Integer) -> String
+      def line_range: (Integer) -> ::Range[Integer]
+      def source_range: () -> ::Range[Integer]
+      def last_line: () -> Integer
+    end
+
+    class TreeRewriter
+      def replace: (Range range, String content) -> self
+      def remove: (Range range) -> self
+      def insert_before: (Range range, String content) -> self
+      def insert_after: (Range range, String content) -> self
+    end
+
+    class Map
+      attr_reader node: AST::Node | nil
+      attr_reader expression: Range
+      def line: () -> Integer
+      def first_line: () -> Integer
+      def last_line: () -> Integer
+      def column: () -> Integer
+      def last_column: () -> Integer
+    end
+
+    class Map::Collection < Map
+      attr_reader begin: Range?
+      attr_reader end: Range?
+    end
+
+    class Map::Condition < Map
+      attr_reader keyword: Range
+      attr_reader begin: Range?
+      attr_reader else: Range?
+      attr_reader end: Range
+    end
+
+    class Map::Heredoc < Map
+      attr_reader heredoc_body: Range
+      attr_reader heredoc_end: Range
+    end
+
+    class Map::Keyword < Map
+      attr_reader keyword: Range
+      attr_reader begin: Range?
+      attr_reader end: Range?
+    end
+
+    class Map::MethodDefinition < Map
+      attr_reader keyword: Range
+      attr_reader operator: Range?
+      attr_reader name: Range?
+      attr_reader end: Range?
+      attr_reader assignment: Range?
+    end
+
+    class Map::Operator < Map
+      attr_reader operator: Range?
+    end
+
+    class Map::Send < Map
+      attr_reader dot: Range?
+      attr_reader selector: Range
+      attr_reader operator: Range?
+      attr_reader begin: Range?
+      attr_reader end: Range?
+    end
+
+    class Map::Ternary < Map
+      attr_reader question: Range?
+      attr_reader colon: Range
+    end
+
+    class Comment
+      attr_reader text: String
+      attr_reader location: Map
+      alias loc location
+    end
+  end
+end
