@@ -19,15 +19,16 @@
 PreCommit:
   RuboCop:
     enabled: true
-    on_warn: fail # Treat all warnings as failures
 
   Solargraph:
     enabled: true
+
+  FixMe:
+    enabled: true
     exclude:
-      - 'spec/**/*'
-      - lib/solargraph/rails/annotations/**/*
-      - vendor/**/*
-      - ".bundle/**/*"
+      # don't freak out over line below
+      - '.overcommit.yml'
+    keywords: ['BROKEN', 'BUG', 'FIXME', 'HACK', 'OPTIMIZE', 'REVIEW', 'TODO', 'WTF', 'XXX']
 
   # creates false positives in CI
   AuthorName:
@@ -36,6 +37,19 @@ PreCommit:
   # creates false positives in CI
   AuthorEmail:
     enabled: false
+
+  ALL:
+    # if you make non-trivial changes to a file, please leave it
+    # better than you found it
+    problem_on_unmodified_line: fail
+    on_warn: fail
+    exclude:
+      - 'spec/**/*'
+      - lib/solargraph/rails/annotations/**/*
+      - vendor/**/*
+      - ".bundle/**/*"
+      - 'core.*'
+
 
 #
 #  TrailingWhitespace:
