@@ -46,11 +46,11 @@ describe Solargraph::DocMap do
       Bundler::LazySpecification.new('uncached_gem', '1.0.0', 'ruby')
     end
     let(:requires) { ['uncached_gem'] }
-    let(:workspace) { instance_double(Solargraph::Workspace) }
-    let(:pincache) { instance_double(Solargraph::PinCache) }
     let(:pre_cache) { false }
+    let(:workspace) { instance_double(Solargraph::Workspace) }
 
     before do
+      pincache = instance_double(Solargraph::PinCache)
       allow(workspace).to receive(:resolve_path_to_gemspecs).with('uncached_gem').and_return([uncached_lazy_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_lazy_gemspec).and_return([])
       allow(workspace).to receive(:fresh_pincache).and_return(pincache)
