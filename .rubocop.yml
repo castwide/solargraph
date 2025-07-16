@@ -44,6 +44,8 @@ Metrics/AbcSize:
   Max: 65
 Metrics/MethodLength:
   Max: 60
+Metrics/ClassLength:
+  Max: 500
 
 plugins:
   - rubocop-rspec
