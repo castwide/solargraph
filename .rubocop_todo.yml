@@ -192,12 +192,11 @@ Layout/EndOfLine:
     - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
-# Offense count: 11
+# Offense count: 7
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment, AllowBeforeTrailingComments, ForceEqualSignAlignment.
 Layout/ExtraSpacing:
   Exclude:
-    - 'Steepfile'
     - 'lib/solargraph/parser/parser_gem/node_processors/opasgn_node.rb'
     - 'lib/solargraph/pin/closure.rb'
     - 'lib/solargraph/pin/local_variable.rb'
@@ -1978,7 +1977,7 @@ Style/ConditionalAssignment:
     - 'lib/solargraph/parser/parser_gem/node_processors/defs_node.rb'
     - 'lib/solargraph/source/chain/call.rb'
 
-# Offense count: 142
+# Offense count: 141
 # Configuration parameters: AllowedConstants.
 Style/Documentation:
   Exclude:
@@ -2094,7 +2093,6 @@ Style/Documentation:
     - 'lib/solargraph/pin/while.rb'
     - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/rbs_map.rb'
-    - 'lib/solargraph/repro.rb'
     - 'lib/solargraph/server_methods.rb'
     - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/chain/array.rb'
@@ -2173,7 +2171,7 @@ Style/FloatDivision:
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/pin/search.rb'
 
-# Offense count: 129
+# Offense count: 127
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: always, always_true, never
@@ -2182,7 +2180,6 @@ Style/FrozenStringLiteralComment:
     - '**/*.arb'
     - 'Gemfile'
     - 'Rakefile'
-    - 'Steepfile'
     - 'bin/solargraph'
     - 'lib/solargraph/converters/dd.rb'
     - 'lib/solargraph/converters/dl.rb'
@@ -2197,7 +2194,6 @@ Style/FrozenStringLiteralComment:
     - 'lib/solargraph/pin/breakable.rb'
     - 'lib/solargraph/pin/signature.rb'
     - 'lib/solargraph/pin_cache.rb'
-    - 'lib/solargraph/repro.rb'
     - 'lib/solargraph/source/chain/array.rb'
     - 'lib/solargraph/source/chain/q_call.rb'
     - 'lib/solargraph/yard_map/helpers.rb'
@@ -2678,12 +2674,11 @@ Style/RedundantArgument:
   Exclude:
     - 'lib/solargraph/source_map/mapper.rb'
 
-# Offense count: 3
+# Offense count: 2
 # This cop supports safe autocorrection (--autocorrect).
 Style/RedundantAssignment:
   Exclude:
     - 'lib/solargraph/language_server/host/dispatch.rb'
-    - 'lib/solargraph/repro.rb'
     - 'lib/solargraph/workspace/config.rb'
 
 # Offense count: 8
@@ -2881,7 +2876,7 @@ Style/StringConcatenation:
     - 'lib/solargraph/pin/namespace.rb'
     - 'solargraph.gemspec'
 
-# Offense count: 621
+# Offense count: 613
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
 # SupportedStyles: single_quotes, double_quotes
@@ -2889,7 +2884,6 @@ Style/StringLiterals:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'Steepfile'
     - 'lib/solargraph/api_map/index.rb'
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
@@ -2908,7 +2902,6 @@ Style/StringLiterals:
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/parameter.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
-    - 'lib/solargraph/repro.rb'
     - 'lib/solargraph/server_methods.rb'
     - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/workspace.rb'
