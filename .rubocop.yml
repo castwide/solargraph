@@ -27,6 +27,9 @@ Style/MethodDefParentheses:
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
 
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: true
+
 Metrics/MethodLength:
   Max: 25
 
