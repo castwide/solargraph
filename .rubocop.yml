@@ -17,6 +17,7 @@ AllCops:
     - "spec/fixtures/invalid_byte.rb"
     - "spec/fixtures/invalid_node_comment.rb"
     - "spec/fixtures/invalid_utf8.rb"
+    - "spec/fixtures/rubocop-unused-variable-error/app.rb"
     - "vendor/**/*"
     - "vendor/**/.*"
   TargetRubyVersion: 3.0

@@ -58,12 +58,13 @@ Gemspec/RequiredRubyVersion:
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
     - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
 
-# Offense count: 5
+# Offense count: 8
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, IndentationWidth.
 # SupportedStyles: with_first_argument, with_fixed_indentation
 Layout/ArgumentAlignment:
   Exclude:
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'spec/source/source_chainer_spec.rb'
 
@@ -123,7 +124,7 @@ Layout/EmptyLineBetweenDefs:
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/pin/delegated_method.rb'
 
-# Offense count: 12
+# Offense count: 13
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLines:
   Exclude:
@@ -136,6 +137,7 @@ Layout/EmptyLines:
     - 'lib/solargraph/pin/delegated_method.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'spec/complex_type_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/pin/local_variable_spec.rb'
     - 'spec/pin/symbol_spec.rb'
     - 'spec/type_checker/levels/strict_spec.rb'
@@ -246,7 +248,7 @@ Layout/FirstHashElementIndentation:
     - 'spec/language_server/message/text_document/type_definition_spec.rb'
     - 'spec/language_server/message/workspace/did_change_watched_files_spec.rb'
 
-# Offense count: 1
+# Offense count: 4
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowMultipleStyles, EnforcedHashRocketStyle, EnforcedColonStyle, EnforcedLastArgumentHashStyle.
 # SupportedHashRocketStyles: key, separator, table
@@ -254,6 +256,7 @@ Layout/FirstHashElementIndentation:
 # SupportedLastArgumentHashStyles: always_inspect, always_ignore, ignore_implicit, ignore_explicit
 Layout/HashAlignment:
   Exclude:
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/workspace/config.rb'
 
 # Offense count: 3
@@ -384,7 +387,7 @@ Layout/SpaceAroundOperators:
     - 'spec/library_spec.rb'
     - 'spec/yard_map/mapper_spec.rb'
 
-# Offense count: 108
+# Offense count: 105
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.
 # SupportedStyles: space, no_space
@@ -397,7 +400,6 @@ Layout/SpaceBeforeBlockBraces:
     - 'lib/solargraph/diagnostics/update_errors.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/library.rb'
-    - 'lib/solargraph/parser/node_processor/base.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/and_node.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/if_node.rb'
@@ -430,7 +432,7 @@ Layout/SpaceBeforeComma:
   Exclude:
     - 'spec/source/cursor_spec.rb'
 
-# Offense count: 183
+# Offense count: 177
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SpaceBeforeBlockParameters.
 # SupportedStyles: space, no_space
@@ -441,7 +443,6 @@ Layout/SpaceInsideBlockBraces:
     - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/diagnostics/update_errors.rb'
     - 'lib/solargraph/language_server/host.rb'
-    - 'lib/solargraph/parser/node_processor/base.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/and_node.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/if_node.rb'
@@ -482,13 +483,22 @@ Layout/SpaceInsideParens:
     - 'lib/solargraph/pin/namespace.rb'
     - 'lib/solargraph/source_map.rb'
 
-# Offense count: 3
+# Offense count: 1
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle.
+# SupportedStyles: final_newline, final_blank_line
+Layout/TrailingEmptyLines:
+  Exclude:
+    - 'spec/convention/struct_definition_spec.rb'
+
+# Offense count: 5
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowInHeredoc.
 Layout/TrailingWhitespace:
   Exclude:
     - 'lib/solargraph/language_server/message/client/register_capability.rb'
     - 'spec/api_map/config_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/convention_spec.rb'
 
 # Offense count: 2
@@ -745,7 +755,7 @@ Lint/UselessAccessModifier:
   Exclude:
     - 'lib/solargraph/api_map.rb'
 
-# Offense count: 40
+# Offense count: 39
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AutoCorrect.
 Lint/UselessAssignment:
@@ -765,7 +775,6 @@ Lint/UselessAssignment:
     - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'spec/fixtures/long_squiggly_heredoc.rb'
-    - 'spec/fixtures/rubocop-unused-variable-error/app.rb'
     - 'spec/fixtures/unicode.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
@@ -786,7 +795,7 @@ Lint/UselessMethodDefinition:
   Exclude:
     - 'lib/solargraph/pin/signature.rb'
 
-# Offense count: 227
+# Offense count: 232
 # Configuration parameters: AllowedMethods, AllowedPatterns, CountRepeatedAttributes, Max.
 Metrics/AbcSize:
   Exclude:
@@ -797,6 +806,7 @@ Metrics/AbcSize:
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
     - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/convention/struct_definition/struct_definition_node.rb'
     - 'lib/solargraph/diagnostics/require_not_found.rb'
@@ -875,6 +885,7 @@ Metrics/AbcSize:
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/type_checker/checks.rb'
     - 'lib/solargraph/workspace.rb'
+    - 'lib/solargraph/yard_map/helpers.rb'
     - 'lib/solargraph/yard_map/mapper.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'lib/solargraph/yard_map/to_method.rb'
@@ -934,7 +945,7 @@ Metrics/ClassLength:
     - 'lib/solargraph/workspace.rb'
     - 'lib/solargraph/workspace/config.rb'
 
-# Offense count: 111
+# Offense count: 113
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/CyclomaticComplexity:
   Exclude:
@@ -945,6 +956,8 @@ Metrics/CyclomaticComplexity:
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/data_definition/data_definition_node.rb'
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/convention/struct_definition/struct_definition_node.rb'
     - 'lib/solargraph/diagnostics/require_not_found.rb'
     - 'lib/solargraph/doc_map.rb'
@@ -987,7 +1000,7 @@ Metrics/CyclomaticComplexity:
     - 'lib/solargraph/yard_map/mapper.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
 
-# Offense count: 50
+# Offense count: 52
 # Configuration parameters: CountComments, Max, CountAsOne, AllowedMethods, AllowedPatterns.
 Metrics/MethodLength:
   Exclude:
@@ -995,6 +1008,7 @@ Metrics/MethodLength:
     - 'lib/solargraph/api_map/source_to_yard.rb'
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
     - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/host.rb'
@@ -1041,7 +1055,7 @@ Metrics/ParameterLists:
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'lib/solargraph/yard_map/to_method.rb'
 
-# Offense count: 88
+# Offense count: 89
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/PerceivedComplexity:
   Exclude:
@@ -1051,6 +1065,7 @@ Metrics/PerceivedComplexity:
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/language_server/message/extended/check_gem_version.rb'
@@ -1133,16 +1148,19 @@ Naming/MethodParameterName:
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'lib/solargraph/yard_map/to_method.rb'
 
-# Offense count: 11
+# Offense count: 14
 # Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
 # AllowedMethods: call
 # WaywardPredicates: nonzero?
 Naming/PredicateMethod:
   Exclude:
     - 'lib/solargraph/api_map/store.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/progress.rb'
     - 'lib/solargraph/library.rb'
+    - 'lib/solargraph/parser/node_processor/base.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/pin/local_variable.rb'
@@ -1183,6 +1201,12 @@ RSpec/BeEq:
   Exclude:
     - 'spec/complex_type_spec.rb'
     - 'spec/pin/method_spec.rb'
+
+# Offense count: 2
+# This cop supports unsafe autocorrection (--autocorrect-all).
+RSpec/BeEql:
+  Exclude:
+    - 'spec/convention/struct_definition_spec.rb'
 
 # Offense count: 7
 # This cop supports safe autocorrection (--autocorrect).
@@ -1231,7 +1255,7 @@ RSpec/DescribeClass:
     - 'spec/complex_type_spec.rb'
     - 'spec/source_map/node_processor_spec.rb'
 
-# Offense count: 407
+# Offense count: 412
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: SkipBlocks, EnforcedStyle, OnlyStaticConstants.
 # SupportedStyles: described_class, explicit
@@ -1321,7 +1345,7 @@ RSpec/EmptyLineAfterFinalLet:
   Exclude:
     - 'spec/workspace/config_spec.rb'
 
-# Offense count: 928
+# Offense count: 941
 # Configuration parameters: Max, CountAsOne.
 RSpec/ExampleLength:
   Exclude:
@@ -1330,6 +1354,7 @@ RSpec/ExampleLength:
     - 'spec/api_map/store_spec.rb'
     - 'spec/api_map_spec.rb'
     - 'spec/complex_type_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/diagnostics/rubocop_spec.rb'
     - 'spec/diagnostics/type_check_spec.rb'
     - 'spec/diagnostics/update_errors_spec.rb'
@@ -1397,12 +1422,13 @@ RSpec/ExampleLength:
     - 'spec/yard_map/mapper/to_method_spec.rb'
     - 'spec/yard_map/mapper_spec.rb'
 
-# Offense count: 4
+# Offense count: 10
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: CustomTransform, IgnoredWords, DisallowedExamples.
 # DisallowedExamples: works
 RSpec/ExampleWording:
   Exclude:
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/pin/base_spec.rb'
     - 'spec/pin/method_spec.rb'
 
@@ -1483,7 +1509,7 @@ RSpec/MissingExampleGroupArgument:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
 
-# Offense count: 471
+# Offense count: 481
 # Configuration parameters: Max.
 RSpec/MultipleExpectations:
   Exclude:
@@ -1493,6 +1519,7 @@ RSpec/MultipleExpectations:
     - 'spec/api_map/store_spec.rb'
     - 'spec/api_map_spec.rb'
     - 'spec/complex_type_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/diagnostics/rubocop_spec.rb'
     - 'spec/diagnostics/type_check_spec.rb'
     - 'spec/diagnostics/update_errors_spec.rb'
@@ -1612,7 +1639,7 @@ RSpec/RemoveConst:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
 
-# Offense count: 48
+# Offense count: 50
 RSpec/RepeatedDescription:
   Exclude:
     - 'spec/api_map_spec.rb'
@@ -1641,7 +1668,7 @@ RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Offense count: 88
+# Offense count: 89
 # Configuration parameters: Include, CustomTransform, IgnoreMethods, IgnoreMetadata.
 # Include: **/*_spec.rb
 RSpec/SpecFilePathFormat:
@@ -1652,6 +1679,7 @@ RSpec/SpecFilePathFormat:
     - 'spec/api_map/source_to_yard_spec.rb'
     - 'spec/api_map/store_spec.rb'
     - 'spec/api_map_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/convention_spec.rb'
     - 'spec/diagnostics/base_spec.rb'
     - 'spec/diagnostics/require_not_found_spec.rb'
@@ -1949,7 +1977,7 @@ Style/ConditionalAssignment:
     - 'lib/solargraph/parser/parser_gem/node_processors/defs_node.rb'
     - 'lib/solargraph/source/chain/call.rb'
 
-# Offense count: 140
+# Offense count: 142
 # Configuration parameters: AllowedConstants.
 Style/Documentation:
   Exclude:
@@ -1958,6 +1986,7 @@ Style/Documentation:
     - 'lib/solargraph/api_map/cache.rb'
     - 'lib/solargraph/api_map/index.rb'
     - 'lib/solargraph/api_map/source_to_yard.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
     - 'lib/solargraph/convention/gemfile.rb'
     - 'lib/solargraph/convention/gemspec.rb'
     - 'lib/solargraph/convention/rakefile.rb'
@@ -2143,7 +2172,7 @@ Style/FloatDivision:
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/pin/search.rb'
 
-# Offense count: 128
+# Offense count: 129
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: always, always_true, never
@@ -2177,6 +2206,7 @@ Style/FrozenStringLiteralComment:
     - 'spec/api_map/source_to_yard_spec.rb'
     - 'spec/api_map_spec.rb'
     - 'spec/complex_type_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/convention_spec.rb'
     - 'spec/diagnostics/base_spec.rb'
     - 'spec/diagnostics/require_not_found_spec.rb'
@@ -2385,6 +2415,7 @@ Style/IfUnlessModifier:
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/workspace.rb'
     - 'lib/solargraph/workspace/config.rb'
+    - 'lib/solargraph/yard_map/helpers.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
 
 # Offense count: 2
@@ -2416,7 +2447,7 @@ Style/MapToSet:
     - 'lib/solargraph/library.rb'
     - 'spec/source_map/clip_spec.rb'
 
-# Offense count: 198
+# Offense count: 203
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: require_parentheses, require_no_parentheses, require_no_parentheses_except_multiline
@@ -2430,6 +2461,9 @@ Style/MethodDefParentheses:
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
     - 'lib/solargraph/convention.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
+    - 'lib/solargraph/convention/data_definition/data_assignment_node.rb'
+    - 'lib/solargraph/convention/data_definition/data_definition_node.rb'
     - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/convention/struct_definition/struct_assignment_node.rb'
     - 'lib/solargraph/convention/struct_definition/struct_definition_node.rb'
@@ -2449,7 +2483,6 @@ Style/MethodDefParentheses:
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/args_node.rb'
-    - 'lib/solargraph/parser/parser_gem/node_processors/namespace_node.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/pin/base_variable.rb'
     - 'lib/solargraph/pin/block.rb'
@@ -2471,6 +2504,7 @@ Style/MethodDefParentheses:
     - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/type_checker/checks.rb'
+    - 'lib/solargraph/yard_map/helpers.rb'
     - 'lib/solargraph/yardoc.rb'
     - 'spec/fixtures/rdoc-lib/lib/example.rb'
     - 'spec/source_map_spec.rb'
@@ -2788,12 +2822,13 @@ Style/SafeNavigationChainLength:
   Exclude:
     - 'lib/solargraph/doc_map.rb'
 
-# Offense count: 39
+# Offense count: 40
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
   Exclude:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/data_definition/data_definition_node.rb'
     - 'lib/solargraph/convention/struct_definition/struct_definition_node.rb'
     - 'lib/solargraph/diagnostics/rubocop_helpers.rb'
     - 'lib/solargraph/library.rb'
@@ -2829,13 +2864,14 @@ Style/StderrPuts:
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/shell.rb'
 
-# Offense count: 10
+# Offense count: 11
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: Mode.
 Style/StringConcatenation:
   Exclude:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/api_map/index.rb'
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/closure.rb'
@@ -2844,7 +2880,7 @@ Style/StringConcatenation:
     - 'lib/solargraph/pin/namespace.rb'
     - 'solargraph.gemspec'
 
-# Offense count: 615
+# Offense count: 621
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
 # SupportedStyles: single_quotes, double_quotes
@@ -2856,6 +2892,7 @@ Style/StringLiterals:
     - 'lib/solargraph/api_map/index.rb'
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/language_server/message/extended/document_gems.rb'
@@ -2881,6 +2918,7 @@ Style/StringLiterals:
     - 'spec/api_map/config_spec.rb'
     - 'spec/api_map/source_to_yard_spec.rb'
     - 'spec/complex_type_spec.rb'
+    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/diagnostics/base_spec.rb'
     - 'spec/diagnostics/require_not_found_spec.rb'
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
@@ -2995,7 +3033,7 @@ Style/TernaryParentheses:
   Exclude:
     - 'lib/solargraph/source_map/mapper.rb'
 
-# Offense count: 19
+# Offense count: 16
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyleForMultiline.
 # SupportedStylesForMultiline: comma, consistent_comma, no_comma
@@ -3011,7 +3049,6 @@ Style/TrailingCommaInArguments:
     - 'lib/solargraph/parser/parser_gem/node_processors/while_node.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
-    - 'lib/solargraph/yard_map/mapper/to_constant.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'lib/solargraph/yard_map/mapper/to_namespace.rb'
 
@@ -3097,7 +3134,7 @@ YARD/CollectionType:
   Exclude:
     - 'lib/solargraph/range.rb'
 
-# Offense count: 65
+# Offense count: 60
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStylePrototypeName.
 # SupportedStylesPrototypeName: before, after
@@ -3107,7 +3144,7 @@ YARD/MismatchName:
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
     - 'lib/solargraph/convention.rb'
-    - 'lib/solargraph/convention/struct_definition.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/gem_pins.rb'
     - 'lib/solargraph/language_server/host.rb'
@@ -3133,14 +3170,11 @@ YARD/MismatchName:
     - 'lib/solargraph/pin/while.rb'
     - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/rbs_map.rb'
-    - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/chain.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
     - 'lib/solargraph/type_checker.rb'
-    - 'lib/solargraph/yard_map/mapper/to_constant.rb'
-    - 'lib/solargraph/yard_map/mapper/to_namespace.rb'
 
 # Offense count: 4
 YARD/TagTypeSyntax:
@@ -3149,7 +3183,7 @@ YARD/TagTypeSyntax:
     - 'lib/solargraph/parser/comment_ripper.rb'
     - 'lib/solargraph/type_checker.rb'
 
-# Offense count: 191
+# Offense count: 195
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Max, AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
 # URISchemes: http, https
@@ -3160,6 +3194,7 @@ Layout/LineLength:
     - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/convention/data_definition.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/gem_pins.rb'
     - 'lib/solargraph/language_server/host.rb'
@@ -3176,7 +3211,6 @@ Layout/LineLength:
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
     - 'lib/solargraph/parser/flow_sensitive_typing.rb'
-    - 'lib/solargraph/parser/node_processor/base.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/and_node.rb'
