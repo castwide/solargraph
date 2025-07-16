@@ -837,40 +837,14 @@ Metrics/BlockNesting:
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/type_checker.rb'
 
-# Offense count: 30
+# Offense count: 4
 # Configuration parameters: CountComments, Max, CountAsOne.
 Metrics/ClassLength:
   Exclude:
     - 'lib/solargraph/api_map.rb'
-    - 'lib/solargraph/api_map/index.rb'
-    - 'lib/solargraph/api_map/store.rb'
-    - 'lib/solargraph/complex_type.rb'
-    - 'lib/solargraph/complex_type/unique_type.rb'
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/host.rb'
-    - 'lib/solargraph/language_server/message/initialize.rb'
-    - 'lib/solargraph/library.rb'
-    - 'lib/solargraph/parser/flow_sensitive_typing.rb'
-    - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
-    - 'lib/solargraph/parser/parser_gem/node_methods.rb'
-    - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
-    - 'lib/solargraph/pin/base.rb'
-    - 'lib/solargraph/pin/callable.rb'
-    - 'lib/solargraph/pin/method.rb'
-    - 'lib/solargraph/pin/parameter.rb'
-    - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
-    - 'lib/solargraph/shell.rb'
-    - 'lib/solargraph/source.rb'
-    - 'lib/solargraph/source/chain.rb'
-    - 'lib/solargraph/source/chain/call.rb'
-    - 'lib/solargraph/source/source_chainer.rb'
-    - 'lib/solargraph/source_map.rb'
-    - 'lib/solargraph/source_map/clip.rb'
-    - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
-    - 'lib/solargraph/workspace.rb'
-    - 'lib/solargraph/workspace/config.rb'
 
 # Offense count: 113
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
