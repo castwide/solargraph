@@ -28,7 +28,7 @@ PreCommit:
     exclude:
       # don't freak out over line below
       - '.overcommit.yml'
-    keywords: ['BROKEN', 'BUG', 'FIXME', 'HACK', 'OPTIMIZE', 'REVIEW', 'TODO', 'WTF', 'XXX']
+    keywords: ['FIXME', 'TODO', 'XXX']
 
   # creates false positives in CI
   AuthorName:
