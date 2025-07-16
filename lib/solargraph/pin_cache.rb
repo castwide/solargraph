@@ -205,9 +205,9 @@ module Solargraph
     # @param out [IO, nil]
     # @return [Array<Pin::Base>]
     def cache_yard_pins(gemspec, out)
-      yardoc_dir = yardoc_path(gemspec)
-      Yardoc.build_docs(yardoc_dir, yard_plugins, gemspec) unless Yardoc.docs_built?(yardoc_dir, gemspec)
-      pins = Yardoc.build_pins(yardoc_dir, gemspec, out: out)
+      gem_yardoc_path = yardoc_path(gemspec)
+      Yardoc.build_docs(gem_yardoc_path, yard_plugins, gemspec) unless Yardoc.docs_built?(gem_yardoc_path)
+      pins = Yardoc.build_pins(gem_yardoc_path, gemspec, out: out)
       serialize_yard_gem(gemspec, pins)
       logger.info { "Cached #{pins.length} YARD pins for gem #{gemspec.name}:#{gemspec.version}" } unless pins.empty?
       pins
