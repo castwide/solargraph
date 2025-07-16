@@ -75,7 +75,7 @@ jobs:
           rubocop_version: Gemfile
           level: info
   rubocop_todo:
-    name: Rubocop / .rubocop_todo.yml check
+    name: .rubocop_todo.yml
     runs-on: ubuntu-latest
 
     steps:
