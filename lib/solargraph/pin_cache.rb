@@ -53,8 +53,7 @@ module Solargraph
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param rbs_version_cache_key [String]
     def suppress_yard_cache?(gemspec, rbs_version_cache_key)
-      # TODO: test this - saw: Caching YARD and RBS collection and combined pins for gem parser:3.3.8.0
-      if gemspec == 'parser' && rbs_version_cache_key != RbsMap::CACHE_KEY_UNRESOLVED
+      if gemspec.name == 'parser' && rbs_version_cache_key != RbsMap::CACHE_KEY_UNRESOLVED
         # parser takes forever to build YARD pins, but has excellent RBS collection pins
         return true
       end
