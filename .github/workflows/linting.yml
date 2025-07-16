@@ -17,6 +17,7 @@ on:
 
 permissions:
   pull-requests: write
+  contents: read
 
 jobs:
   overcommit:
@@ -73,3 +74,31 @@ jobs:
           fail_level: info
           rubocop_version: Gemfile
           level: info
+  rubocop_todo:
+    name: Rubocop / .rubocop_todo.yml check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4
+        bundler-cache: false
+
+    - name: Install gems
+      run: bundle install
+
+    - name: Run RuboCop
+      run: bundle exec rubocop
+
+    - name: Run RuboCop against todo file
+      run: |
+        bundle exec rubocop --auto-gen-config
+        if [ -n "$(git status --porcelain)" ]
+        then
+          git status --porcelain
+          git diff -u .
+           >&2 echo "Please fix deltas if bad or run 'bundle exec rubocop --auto-gen-config' and push up changes if good"
+           exit 1
+        fi

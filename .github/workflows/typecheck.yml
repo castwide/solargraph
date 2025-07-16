@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  solargraph_typed:
+    name: Solargraph / typed
 
     runs-on: ubuntu-latest
 
