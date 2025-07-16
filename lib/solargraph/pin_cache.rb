@@ -170,7 +170,8 @@ module Solargraph
                      build_combined: build_combined,
                      out: out)
       cache_yard_pins(gemspec, out) if build_yard
-      yard_pins = deserialize_yard_pin_cache(gemspec)
+      # this can be nil even if we aren't told to build it - see suppress_yard_cache?
+      yard_pins = deserialize_yard_pin_cache(gemspec) || []
       cache_rbs_collection_pins(gemspec, out) if build_rbs_collection
       rbs_collection_pins = deserialize_rbs_collection_cache(gemspec, rbs_version_cache_key)
       cache_combined_pins(gemspec, rbs_version_cache_key, yard_pins, rbs_collection_pins) if build_combined
