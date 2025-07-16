@@ -1,10 +1,17 @@
 # frozen_string_literal: true
 
+require 'bundler'
+
 describe Solargraph::DocMap do
   subject(:doc_map) do
-    dm = Solargraph::DocMap.new(requires, workspace)
-    dm.cache_doc_map_gems!($stderr)
-    dm
+    Solargraph::DocMap.new(requires, workspace)
+  end
+
+  let(:pre_cache) { true }
+  let(:requires) { [] }
+
+  before do
+    doc_map.cache_doc_map_gems!($stderr) if pre_cache
   end
 
   let(:workspace) do
@@ -32,15 +39,26 @@ describe Solargraph::DocMap do
     it 'tracks unresolved requires' do
       expect(doc_map.unresolved_requires).to eq(['not_a_gem'])
     end
+  end
 
-    xit 'tracks uncached_gemspecs' do
-      gemspec = Gem::Specification.new do |spec|
-        spec.name = 'not_a_gem'
-        spec.version = '1.0.0'
-      end
-      allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
-      doc_map = Solargraph::DocMap.new(['not_a_gem'], workspace)
-      expect(doc_map.uncached_gemspecs).to eq([gemspec])
+  context 'with an uncached but valid gemspec' do
+    let(:uncached_lazy_gemspec) do
+      Bundler::LazySpecification.new('uncached_gem', '1.0.0', 'ruby')
+    end
+    let(:requires) { ['uncached_gem'] }
+    let(:workspace) { instance_double(Solargraph::Workspace) }
+    let(:pincache) { instance_double(Solargraph::PinCache) }
+    let(:pre_cache) { false }
+
+    before do
+      allow(workspace).to receive(:resolve_path_to_gemspecs).with('uncached_gem').and_return([uncached_lazy_gemspec])
+      allow(workspace).to receive(:fetch_dependencies).with(uncached_lazy_gemspec).and_return([])
+      allow(workspace).to receive(:fresh_pincache).and_return(pincache)
+      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_lazy_gemspec).and_return(nil)
+    end
+
+    it 'tracks uncached_gemspecs' do
+      expect(doc_map.uncached_gemspecs).to eq([uncached_lazy_gemspec])
     end
   end
 
