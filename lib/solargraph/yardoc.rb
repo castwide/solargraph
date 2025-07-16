@@ -8,16 +8,16 @@ module Solargraph
 
     # Build and save a gem's yardoc into a given path.
     #
-    # @param yardoc_path [String]
+    # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
     # @param yard_plugins [Array<String>]
     # @param gemspec [Gem::Specification]
     #
     # @return [void]
-    def build_docs(yardoc_path, yard_plugins, gemspec)
-      return if docs_built?(yardoc_path, gemspec)
+    def build_docs(gem_yardoc_path, yard_plugins, gemspec)
+      return if docs_built?(gem_yardoc_path)
 
       Solargraph.logger.info "Saving yardoc for #{gemspec.name} #{gemspec.version} into #{yardoc_path}"
-      cmd = "yardoc --db #{yardoc_path} --no-output --plugin solargraph"
+      cmd = "yardoc --db #{gem_yardoc_path} --no-output --plugin solargraph"
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel
@@ -30,29 +30,28 @@ module Solargraph
       Solargraph.logger.info stdout_and_stderr_str
     end
 
-    # @param yardoc_path [String] the path to the yardoc cache
+    # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
     # @param gemspec [Gem::Specification]
     # @param out [IO, nil] where to log messages
     # @return [Array<Pin::Base>]
-    def build_pins(yardoc_path, gemspec, out: $stderr)
-      yardoc = load!(yardoc_path, gemspec)
+    def build_pins(gem_yardoc_path, gemspec, out: $stderr)
+      yardoc = load!(gem_yardoc_path)
       YardMap::Mapper.new(yardoc, gemspec).map
     end
 
     # True if the gem yardoc is cached.
     #
-    # @param yardoc_path [String]
-    # @param gemspec [Gem::Specification]
-    def docs_built?(yardoc_path, gemspec)
-      yardoc = File.join(yardoc_path, 'complete')
+    # @param gem_yardoc_path [String]
+    def docs_built?(gem_yardoc_path)
+      yardoc = File.join(gem_yardoc_path, 'complete')
       File.exist?(yardoc)
     end
 
     # True if another process is currently building the yardoc cache.
     #
-    # @param yardoc_path [String]
-    def processing?(yardoc_path)
-      yardoc = File.join(yardoc_path, 'processing')
+    # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
+    def processing?(gem_yardoc_path)
+      yardoc = File.join(gem_yardoc_path, 'processing')
       File.exist?(yardoc)
     end
 
@@ -60,11 +59,10 @@ module Solargraph
     #
     # @note This method modifies the global YARD registry.
     #
-    # @param yardoc_path [String]
-    # @param gemspec [Gem::Specification]
+    # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
     # @return [Array<YARD::CodeObjects::Base>]
-    def load!(yardoc_path, gemspec)
-      YARD::Registry.load! yardoc_path
+    def load!(gem_yardoc_path)
+      YARD::Registry.load! gem_yardoc_path
       YARD::Registry.all
     end
   end
