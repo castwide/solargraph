@@ -64,16 +64,14 @@ module Solargraph
       logger.debug { "Caching: #{uncached_gemspecs.map(&:name)}" }
       PinCache.cache_core unless PinCache.has_core?
       load_serialized_gem_pins
-      existing_pin_count = pins.length
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
           cache(gemspec, out: out)
         end
       end
-      pins_processed = pins.length - existing_pin_count
       milliseconds = (time.real * 1000).round
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
-        out.puts "Built #{pins_processed} gem pins in #{milliseconds} ms"
+        out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms"
       end
       load_serialized_gem_pins
     end
