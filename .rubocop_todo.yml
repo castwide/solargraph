@@ -755,7 +755,7 @@ Lint/UselessAccessModifier:
   Exclude:
     - 'lib/solargraph/api_map.rb'
 
-# Offense count: 39
+# Offense count: 40
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AutoCorrect.
 Lint/UselessAssignment:
@@ -775,6 +775,7 @@ Lint/UselessAssignment:
     - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'spec/fixtures/long_squiggly_heredoc.rb'
+    - 'spec/fixtures/rubocop-unused-variable-error/app.rb'
     - 'spec/fixtures/unicode.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
