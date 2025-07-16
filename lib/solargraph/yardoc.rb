@@ -16,7 +16,7 @@ module Solargraph
     def build_docs(gem_yardoc_path, yard_plugins, gemspec)
       return if docs_built?(gem_yardoc_path)
 
-      Solargraph.logger.info "Saving yardoc for #{gemspec.name} #{gemspec.version} into #{yardoc_path}"
+      Solargraph.logger.info "Saving yardoc for #{gemspec.name} #{gemspec.version} into #{gem_yardoc_path}"
       cmd = "yardoc --db #{gem_yardoc_path} --no-output --plugin solargraph"
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
