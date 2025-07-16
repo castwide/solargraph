@@ -45,18 +45,18 @@ module Solargraph
 
     # @param cache_key [String]
     # @return [String, nil] a description of the source of the RBS info
-    def self.rbs_source_desc(cache_key)
+    def self.rbs_source_desc cache_key
       case cache_key
       when CACHE_KEY_GEM_EXPORT
-        "RBS gem export"
+        'RBS gem export'
       when CACHE_KEY_UNRESOLVED
         nil
       when CACHE_KEY_STDLIB
-        "RBS standard library"
+        'RBS standard library'
       when CACHE_KEY_LOCAL
-        "local RBS shims"
+        'local RBS shims'
       else
-        "RBS collection"
+        'RBS collection'
       end
     end
 
@@ -115,7 +115,7 @@ module Solargraph
 
     # @param out [IO, nil] where to log messages
     # @return [Array<Pin::Base>]
-    def pins(out: $stderr)
+    def pins out: $stderr
       @pins ||= if resolved?
                   loader.libs.each { |lib| log_caching(lib, out: $stderr) }
                   conversions.pins
@@ -174,7 +174,7 @@ module Solargraph
     # @param gemspec [RBS::EnvironmentLoader::Library]
     # @param out [IO, nil] where to log messages
     # @return [void]
-    def log_caching(gemspec, out:); end
+    def log_caching gemspec, out:; end
 
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]

@@ -2,7 +2,6 @@
 
 describe Solargraph::GemPins do
   it 'can merge YARD and RBS' do
-    gemspec = Gem::Specification.find_by_name('rbs')
     workspace = Solargraph::Workspace.new(Dir.pwd)
     doc_map = Solargraph::DocMap.new(['rbs'], workspace)
     doc_map.cache_doc_map_gems!($stderr)

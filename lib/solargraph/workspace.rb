@@ -65,7 +65,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     #
     # @return [void]
-    def cache_gem(gemspec, out: nil, rebuild: false)
+    def cache_gem gemspec, out: nil, rebuild: false
       pin_cache.cache_gem(gemspec: gemspec, out: out, rebuild: rebuild)
     end
 
@@ -73,7 +73,7 @@ module Solargraph
     # @param out [IO, nil] output stream for logging
     #
     # @return [void]
-    def uncache_gem(gemspec, out: nil)
+    def uncache_gem gemspec, out: nil
       pin_cache.uncache_gem(gemspec, out: out)
     end
 
@@ -254,7 +254,7 @@ module Solargraph
     # @param out [IO, nil] output stream for logging
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
-    def cache_all_for_workspace!(out, rebuild: false)
+    def cache_all_for_workspace! out, rebuild: false
       PinCache.cache_core(out: $stdout) unless PinCache.has_core?
       # @type [Array<Gem::Specification>]
       specs = gemspecs_required_from_bundler

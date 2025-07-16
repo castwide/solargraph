@@ -18,11 +18,12 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
-      def log_caching(gemspec, out: $stderr)
+      def log_caching gemspec, out: $stderr
         out.puts("Caching RBS pins for standard library #{gemspec.name}")
       end
 
       # @param library [String]
+      # @param out [IO, nil] where to log messages
       def initialize library, out: $stderr
         cached_pins = PinCache.load_stdlib_require library
         if cached_pins

@@ -34,36 +34,20 @@ module Solargraph
     # @return [void]
     def cache_gem(gemspec:, rebuild: false, out: nil)
       rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)
-      if rebuild
-        build_yard = true
-        build_rbs_collection = true
-        build_combined = true
-      else
-        build_yard = !has_yard_gem?(gemspec)
-        build_rbs_collection = !has_rbs_collection_pins?(gemspec, rbs_version_cache_key)
-        build_combined = !has_combined_gem?(gemspec, rbs_version_cache_key) || build_yard || build_rbs_collection
-      end
 
-      build_yard = false if suppress_yard_cache?(gemspec, rbs_version_cache_key)
+      build_yard, build_rbs_collection, build_combined =
+        calculate_build_needs(gemspec,
+                              rebuild: rebuild,
+                              rbs_version_cache_key: rbs_version_cache_key)
 
       return unless build_yard || build_rbs_collection || build_combined
 
-      type = []
-      type << 'YARD' if build_yard
-      rbs_source_desc = RbsMap.rbs_source_desc(rbs_version_cache_key)
-      type << rbs_source_desc if build_rbs_collection && !rbs_source_desc.nil?
-      # we'll build it anyway, but it won't take long to build with
-      # only a single source
-      type << 'combined' if build_combined && !rbs_source_desc.nil?
-      out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
-
-      cache_yard_pins(gemspec, out) if build_yard
-      yard_pins = deserialize_yard_pin_cache(gemspec)
-
-      cache_rbs_collection_pins(gemspec, out) if build_rbs_collection
-      rbs_collection_pins = deserialize_rbs_collection_cache(gemspec, rbs_version_cache_key)
-
-      cache_combined_pins(gemspec, rbs_version_cache_key, yard_pins, rbs_collection_pins) if build_combined
+      build_combine_and_cache(gemspec,
+                              rbs_version_cache_key,
+                              build_yard: build_yard,
+                              build_rbs_collection: build_rbs_collection,
+                              build_combined: build_combined,
+                              out: out)
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -146,14 +130,84 @@ module Solargraph
     private
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param rebuild [Boolean] whether to rebuild the cache regardless of whether it already exists
+    # @param rbs_version_cache_key [String, nil] the cache key for the gem in the RBS collection
+    #
+    # @return [Array(Boolean, Boolean, Boolean)] whether to build YARD
+    #   pins, RBS collection pins, and combined pins
+    def calculate_build_needs(gemspec, rebuild:, rbs_version_cache_key:)
+      if rebuild
+        build_yard = true
+        build_rbs_collection = true
+        build_combined = true
+      else
+        build_yard = !has_yard_gem?(gemspec)
+        build_rbs_collection = !has_rbs_collection_pins?(gemspec, rbs_version_cache_key)
+        build_combined = !has_combined_gem?(gemspec, rbs_version_cache_key) || build_yard || build_rbs_collection
+      end
+
+      build_yard = false if suppress_yard_cache?(gemspec, rbs_version_cache_key)
+
+      [build_yard, build_rbs_collection, build_combined]
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param rbs_version_cache_key [String, nil]
+    # @param build_yard [Boolean]
+    # @param build_rbs_collection [Boolean]
+    # @param build_combined [Boolean]
+    # @param out [IO, nil]
+    #
+    # @return [void]
+    def build_combine_and_cache(gemspec,
+                                rbs_version_cache_key,
+                                build_yard:,
+                                build_rbs_collection:,
+                                build_combined:,
+                                out:)
+      log_cache_info(gemspec, rbs_version_cache_key,
+                     build_yard: build_yard,
+                     build_rbs_collection: build_rbs_collection,
+                     build_combined: build_combined,
+                     out: out)
+      cache_yard_pins(gemspec, out) if build_yard
+      yard_pins = deserialize_yard_pin_cache(gemspec)
+      cache_rbs_collection_pins(gemspec, out) if build_rbs_collection
+      rbs_collection_pins = deserialize_rbs_collection_cache(gemspec, rbs_version_cache_key)
+      cache_combined_pins(gemspec, rbs_version_cache_key, yard_pins, rbs_collection_pins) if build_combined
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param rbs_version_cache_key [String, nil]
+    # @param build_yard [Boolean]
+    # @param build_rbs_collection [Boolean]
+    # @param build_combined [Boolean]
+    # @param out [IO, nil]
+    #
+    # @return [void]
+    def log_cache_info(gemspec,
+                       rbs_version_cache_key,
+                       build_yard:,
+                       build_rbs_collection:,
+                       build_combined:,
+                       out:)
+      type = []
+      type << 'YARD' if build_yard
+      rbs_source_desc = RbsMap.rbs_source_desc(rbs_version_cache_key)
+      type << rbs_source_desc if build_rbs_collection && !rbs_source_desc.nil?
+      # we'll build it anyway, but it won't take long to build with
+      # only a single source
+      type << 'combined' if build_combined && !rbs_source_desc.nil?
+      out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param out [IO, nil]
     # @return [Array<Pin::Base>]
     def cache_yard_pins(gemspec, out)
       yardoc_dir = yardoc_path(gemspec)
-      unless Yardoc.docs_built?(yardoc_dir, gemspec)
-        Yardoc.build_docs(yardoc_dir, yard_plugins, gemspec)
-      end
-      pins = Yardoc.build_pins(yardoc_dir, gemspec, out)
+      Yardoc.build_docs(yardoc_dir, yard_plugins, gemspec) unless Yardoc.docs_built?(yardoc_dir, gemspec)
+      pins = Yardoc.build_pins(yardoc_dir, gemspec, out: out)
       serialize_yard_gem(gemspec, pins)
       logger.info { "Cached #{pins.length} YARD pins for gem #{gemspec.name}:#{gemspec.version}" } unless pins.empty?
       pins
@@ -175,16 +229,21 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO, nil]
+    # @param _out [IO, nil]
     # @return [Array<Pin::Base>]
-    def cache_rbs_collection_pins(gemspec, out)
+    def cache_rbs_collection_pins(gemspec, _out)
       rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
       pins = rbs_map.pins
       rbs_version_cache_key = rbs_map.cache_key
       # cache pins even if result is zero, so we don't retry building pins
       pins ||= []
       serialize_rbs_collection_pins(gemspec, rbs_version_cache_key, pins)
-      logger.info { "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with cache_key #{rbs_version_cache_key.inspect}" unless pins.empty? }
+      logger.info do
+        unless pins.empty?
+          "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with " \
+            "cache_key #{rbs_version_cache_key.inspect}"
+        end
+      end
       pins
     end
 
@@ -213,7 +272,11 @@ module Solargraph
       return if rbs_collection_pins_in_memory.key?([gemspec.name, gemspec.version, rbs_version_cache_key])
       cached = load_rbs_collection_pins(gemspec, rbs_version_cache_key)
       if cached
-        logger.info { "Loaded #{cached.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}" } unless cached.empty?
+        unless cached.empty?
+          logger.info do
+            "Loaded #{cached.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}"
+          end
+        end
         rbs_collection_pins_in_memory[[gemspec.name, gemspec.version, rbs_version_cache_key]] = cached
         cached
       else
@@ -359,17 +422,22 @@ module Solargraph
     class << self
       include Logging
 
-      # @return [Hash{Array<String> => Hash{Array(String, String) => Array<Pin::Base>}}] yard plugins, then gemspec name and version
+      # @return [Hash{Array<String> => Hash{Array(String, String) => Array<Pin::Base>}}] yard
+      #   plugins, then gemspec name and version
       def all_yard_pins_in_memory
         @all_yard_pins_in_memory ||= {}
       end
 
-      # @return [Hash{Array(String, String, String) => Array<Pin::Base>}] gemspec name, version and rbs version cache key
+      # @return [Hash{Array(String, String, String) =>
+      #   Array<Pin::Base>}] gemspec name, version and rbs version
+      #   cache key
       def all_rbs_collection_pins_in_memory
         @all_rbs_collection_pins_in_memory ||= {}
       end
 
-      # @return [Hash{Array<String> => Hash{Array(String, String) => Array<Pin::Base>}}] yard plugins, then gemspec name and version
+      # @return [Hash{Array<String> => Hash{Array(String, String) =>
+      #   Array<Pin::Base>}}] yard plugins, then gemspec name and
+      #   version
       def all_combined_pins_in_memory
         @all_combined_pins_in_memory ||= {}
       end
@@ -466,9 +534,8 @@ module Solargraph
       end
 
       # @param pins [Array<Pin::Base>]
-      # @param out [IO, nil]
       # @return [void]
-      def serialize_core pins, out: $stderr
+      def serialize_core pins
         save(core_path, pins)
       end
 

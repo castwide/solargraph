@@ -5,7 +5,7 @@ describe Solargraph::YardMap::Mapper do
 
   let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
 
-  def pins_with(require)
+  def pins_with require
     doc_map = Solargraph::DocMap.new([require], workspace)
     doc_map.cache_doc_map_gems!($stderr)
     doc_map.pins

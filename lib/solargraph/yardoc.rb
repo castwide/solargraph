@@ -34,7 +34,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @param out [IO, nil] where to log messages
     # @return [Array<Pin::Base>]
-    def build_pins(yardoc_path, gemspec, out)
+    def build_pins(yardoc_path, gemspec, out: $stderr)
       yardoc = load!(yardoc_path, gemspec)
       YardMap::Mapper.new(yardoc, gemspec).map
     end

@@ -16,14 +16,14 @@ module Solargraph
 
       # @param out [IO, nil] output stream for logging
       # @return [Array<Pin::Base>]
-      def pins(out: $stderr)
+      def pins out: $stderr
         return @pins if @pins
         @pins = cache_core(out: out)
       end
 
       # @param out [IO, nil] output stream for logging
       # @return [Array<Pin::Base>]
-      def cache_core(out: $stderr)
+      def cache_core out: $stderr
         new_pins = []
         cache = PinCache.load_core
         return cache if cache
@@ -33,7 +33,7 @@ module Solargraph
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
         fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
-        out&.puts "Caching RBS pins for Ruby core"
+        out&.puts 'Caching RBS pins for Ruby core'
         fill_conversions = Conversions.new(loader: fill_loader)
         new_pins.concat fill_conversions.pins
 
