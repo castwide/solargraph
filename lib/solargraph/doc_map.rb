@@ -73,7 +73,7 @@ module Solargraph
       pins_processed = pins.length - existing_pin_count
       milliseconds = (time.real * 1000).round
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
-        out.puts "Built #{pins.length} gem pins in #{milliseconds} ms"
+        out.puts "Built #{pins_processed} gem pins in #{milliseconds} ms"
       end
       load_serialized_gem_pins
     end
