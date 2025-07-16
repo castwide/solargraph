@@ -50,6 +50,9 @@ PreCommit:
       - ".bundle/**/*"
       - 'core.*'
 
+PrePush:
+  RSpec:
+    enabled: true
 
 #
 #  TrailingWhitespace:
