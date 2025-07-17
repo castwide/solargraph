@@ -65,6 +65,7 @@ describe Solargraph::DocMap do
   context 'with require as bundle/require' do
     it 'imports all gems when bundler/require used' do
       doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], workspace)
+      doc_map_with_bundler_require.cache_doc_map_gems!($stderr)
       expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
     end
   end
