@@ -51,7 +51,7 @@ describe Solargraph::DocMap do
 
     before do
       pincache = instance_double(Solargraph::PinCache)
-      allow(workspace).to receive(:resolve_path_to_gemspecs).with('uncached_gem').and_return([uncached_lazy_gemspec])
+      allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_lazy_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_lazy_gemspec).and_return([])
       allow(workspace).to receive(:fresh_pincache).and_return(pincache)
       allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_lazy_gemspec).and_return(nil)

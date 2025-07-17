@@ -4,9 +4,10 @@ require 'pathname'
 require 'benchmark'
 
 module Solargraph
-  # A collection of pins generated from required gems.  Multiple can
-  # be created per workspace, to represent the pins available in
-  # different files based on their 'require' lines.
+  # A collection of pins generated from specific 'require' statements
+  # in code.  Multiple can be created per workspace, to represent the
+  # pins available in different files based on their particular
+  # 'require' lines.
   #
   class DocMap
     include Logging
@@ -125,6 +126,7 @@ module Solargraph
         # this will load from disk if needed; no need to manage
         # uncached_gemspecs to trigger that later
         stdlib_name_guess = path.split('/').first
+        # TODO: this results in pins being generated in real time, not in advance with solargrpah gems
         rbs_pins = pin_cache.cache_stdlib_rbs_map stdlib_name_guess if stdlib_name_guess
         @pins.concat rbs_pins if rbs_pins
       end
@@ -153,7 +155,7 @@ module Solargraph
 
     # @return [Hash{String => Array<Gem::Specification>}]
     def required_gems_map
-      @required_gems_map ||= requires.to_h { |path| [path, workspace.resolve_path_to_gemspecs(path)] }
+      @required_gems_map ||= requires.to_h { |require| [require, workspace.resolve_require(require)] }
     end
 
     def inspect

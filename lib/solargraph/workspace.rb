@@ -13,20 +13,11 @@ module Solargraph
     include Logging
 
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
+    autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
     attr_reader :directory
-
-    attr_reader :preferences
-
-    # The require paths associated with the workspace.
-    #
-    # @return [Array<String>]
-    attr_reader :require_paths
-
-    # @return [Array<String>]
-    attr_reader :gemnames
-    alias source_gems gemnames
 
     # @param directory [String]
     # @param config [Config, nil]
@@ -36,11 +27,14 @@ module Solargraph
       @config = config
       @server = server
       load_sources
-      @gemnames = []
-      @require_paths = generate_require_paths
       require_plugins
-      # @todo implement preferences
-      @preferences = []
+    end
+
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
+    def require_paths
+      @require_paths ||= RequirePaths.new(directory, config).generate
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -48,9 +42,20 @@ module Solargraph
       @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec
+      gemspecs.fetch_dependencies(gemspec)
+    end
+
     # @return [Solargraph::PinCache]
     def pin_cache
       @pin_cache ||= fresh_pincache
+    end
+
+    # @return [Array<Gem::Specification>]
+    def resolve_require require
+      gemspecs.resolve_require(require)
     end
 
     # @return [Environ]
@@ -88,63 +93,6 @@ module Solargraph
     # @return [Array<String>]
     def yard_plugins
       @yard_plugins ||= global_environ.yard_plugins.sort.uniq
-    end
-
-    # @param path [String]
-    # @return [::Array<Gem::Specification>, nil]
-    def resolve_path_to_gemspecs path
-      return nil if path.empty?
-      # TODO: there should be a distinction between everything and the non-require: false stuff
-      return gemspecs_required_from_bundler if path == 'bundler/require'
-
-      gemspecs = gemspecs_required_from_bundler
-      # @type [Gem::Specification, nil]
-      gemspec = gemspecs.find { |gemspec| gemspec.name == path }
-      if gemspec.nil?
-        gem_name_guess = path.split('/').first
-        begin
-          # this can happen when the gem is included via a local path in
-          # a Gemfile; Gem doesn't try to index the paths in that case.
-          #
-          # See if we can make a good guess:
-          potential_gemspec = gemspecs.find { |gemspec| gemspec.name == gem_name_guess }
-
-          return nil if potential_gemspec.nil?
-
-          file = "lib/#{path}.rb"
-          # @sg-ignore Unresolved call to files
-          gemspec = potential_gemspec if potential_gemspec&.files&.any? { |gemspec_file| file == gemspec_file }
-        rescue Gem::MissingSpecError
-          logger.debug { "Require path #{path} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}" }
-          []
-        end
-      end
-      return nil if gemspec.nil?
-      [gemspec_or_preference(gemspec)]
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Gem::Specification>]
-    def fetch_dependencies gemspec
-      gemspecs = gemspecs_required_from_bundler
-
-      # @param spec [Gem::Dependency]
-      only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
-        Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
-        # @type [Gem::Specification, nil]
-        dep = gemspecs.find { |dep| dep.name == spec.name }
-        # @todo is next line necessary?
-        dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
-        deps.merge fetch_dependencies(dep) if deps.add?(dep)
-      rescue Gem::MissingSpecError
-        Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
-      end.to_a
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Gem::Dependency>]
-    def only_runtime_dependencies gemspec
-      gemspec.dependencies - gemspec.development_dependencies
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -217,23 +165,6 @@ module Solargraph
       false
     end
 
-    # True if the workspace contains at least one gemspec file.
-    #
-    # @return [Boolean]
-    def gemspec?
-      !gemspecs.empty?
-    end
-
-    # Get an array of all gemspec files in the workspace.
-    #
-    # @return [Array<String>]
-    def gemspecs
-      return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
-        config.allow? gs
-      end
-    end
-
     # @return [String, nil]
     def rbs_collection_path
       @gem_rbs_collection ||= read_rbs_collection_path
@@ -256,8 +187,10 @@ module Solargraph
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
       PinCache.cache_core(out: $stdout) unless PinCache.has_core?
+      # TODO: This should bring in dependencies as well
+      #
       # @type [Array<Gem::Specification>]
-      specs = gemspecs_required_from_bundler
+      specs = immediate_gemspecs_from_bundler
       specs.each do |spec|
         unless pin_cache.cached?(spec)
           pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out)
@@ -281,95 +214,9 @@ module Solargraph
 
     private
 
-    # True if the workspace has a root Gemfile.
-    #
-    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-    #
-    def gemfile?
-      directory && File.file?(File.join(directory, 'Gemfile'))
-    end
-
-    # @return [Array<Gem::Specification>]
-    def gemspecs_required_from_bundler
-      @gemspecs_required_from_bundler ||=
-        begin
-          if directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
-            # Find only the gems bundler is now using
-            Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
-              logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"
-              [Gem::Specification.find_by_name(lazy_spec.name, lazy_spec.version)]
-            rescue Gem::MissingSpecError => e
-              logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with find_by_name, falling back to guess")
-              # can happen in local filesystem references
-              specs = resolve_path_to_gemspecs lazy_spec.name
-              logger.warn "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
-              next specs
-            end.compact
-          else
-            logger.info 'Fetching gemspecs required from Bundler (bundler/require)'
-            gemspecs_required_from_external_bundle
-          end
-        end
-    end
-
-    # @return [Array<Gem::Specification>]
-    def gemspecs_required_from_external_bundle
-      return [] unless directory
-
-      @gemspecs_required_from_external_bundle ||=
-        begin
-          logger.info 'Fetching gemspecs required from external bundle'
-
-          Solargraph.with_clean_env do
-            cmd = [
-              'ruby', '-e',
-              "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
-            ]
-            # @sg-ignore Unresolved call to capture3
-            o, e, s = Open3.capture3(*cmd)
-            if s.success?
-              Solargraph.logger.debug "External bundle: #{o}"
-              hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-              hash.flat_map do |name, version|
-                Gem::Specification.find_by_name(name, version)
-              rescue Gem::MissingSpecError => e
-                logger.info("Could not find #{name}:#{version} with find_by_name, falling back to guess")
-                # can happen in local filesystem references
-                specs = Gem::Specification.find_by_path(name)
-                specs ||= Gem::Specification.find_by_name(name)
-                logger.warn "Gem #{name} #{version} from bundle not found: #{e}" if specs.nil?
-                next specs
-              end.compact
-            else
-              Solargraph.logger.warn e
-              raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
-            end
-          end
-        end
-    end
-
-    # @return [Hash{String => Gem::Specification}]
-    def preference_map
-      @preference_map ||= preferences.to_h { |gemspec| [gemspec.name, gemspec] }
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @return [Gem::Specification]
-    def gemspec_or_preference gemspec
-      return gemspec unless preference_map.key?(gemspec.name)
-      return gemspec if gemspec.version == preference_map[gemspec.name].version
-
-      change_gemspec_version gemspec, preference_map[by_path.name].version
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @param version [Gem::Version]
-    # @return [Gem::Specification]
-    def change_gemspec_version gemspec, version
-      Gem::Specification.find_by_name(gemspec.name, "= #{version}")
-    rescue Gem::MissingSpecError
-      Solargraph.logger.info "Gem #{gemspec.name} version #{version} not found. Using #{gemspec.version} instead"
-      gemspec
+    # @return [Solargraph::Workspace::Gemspecs]
+    def gemspecs
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory)
     end
 
     # The language server configuration (or an empty hash if the workspace was
@@ -397,49 +244,6 @@ module Solargraph
           end
         end
       end
-    end
-
-    # Generate require paths from gemspecs if they exist or assume the default
-    # lib directory.
-    #
-    # @return [Array<String>]
-    def generate_require_paths
-      return configured_require_paths unless gemspec?
-      result = []
-      gemspecs.each do |file|
-        base = File.dirname(file)
-        # HACK: Evaluating gemspec files violates the goal of not running
-        #   workspace code, but this is how Gem::Specification.load does it
-        #   anyway.
-        cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
-        # @sg-ignore Unresolved call to capture3
-        o, e, s = Open3.capture3(*cmd)
-        if s.success?
-          begin
-            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-            next if hash.empty?
-            @gemnames.push hash['name']
-            result.concat(hash['paths'].map { |path| File.join(base, path) })
-          rescue StandardError => e
-            Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-          end
-        else
-          Solargraph.logger.warn "Error reading #{file}"
-          Solargraph.logger.warn e
-        end
-      end
-      result.concat(config.require_paths.map { |p| File.join(directory, p) })
-      result.push File.join(directory, 'lib') if result.empty?
-      result
-    end
-
-    # Get additional require paths defined in the configuration.
-    #
-    # @return [Array<String>]
-    def configured_require_paths
-      return ['lib'] if directory.empty?
-      return [File.join(directory, 'lib')] if config.require_paths.empty?
-      config.require_paths.map { |p| File.join(directory, p) }
     end
 
     # @return [void]
