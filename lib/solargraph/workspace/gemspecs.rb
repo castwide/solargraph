@@ -132,8 +132,10 @@ module Solargraph
             spec
           elsif spec.is_a?(Bundler::StubSpecification)
             spec.stub.spec
+          else
+            raise "Unexpected type: #{spec.class}"
           end
-        end.flatten
+        end
       end
 
       # @return [Array<Gem::Specification>]
