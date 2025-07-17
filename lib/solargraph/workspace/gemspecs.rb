@@ -43,7 +43,6 @@ module Solargraph
             return nil if potential_gemspec.nil?
 
             file = "lib/#{require}.rb"
-            # @sg-ignore Unresolved call to files
             gemspec = potential_gemspec if potential_gemspec&.files&.any? { |gemspec_file| file == gemspec_file }
           rescue Gem::MissingSpecError
             logger.debug do
@@ -72,20 +71,22 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Specification>]
       def fetch_dependencies gemspec
+        raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
+
         gemspecs = all_gemspecs_from_bundle
 
-        # @param spec [Gem::Dependency]
-        only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
-          Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
-          # @type [Gem::Specification, nil]
-          dep = gemspecs.find { |dep| dep.name == spec.name }
-          # TODO: is next line necessary?
-          dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
+        # @param runtime_dep [Gem::Dependency]
+        # @param deps [Set<Gem::Specification>]
+        only_runtime_dependencies(gemspec).each_with_object(Set.new) do |runtime_dep, deps|
+          Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
+          dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
+          dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
           deps.merge fetch_dependencies(dep) if deps.add?(dep)
         rescue Gem::MissingSpecError
-          Solargraph.logger.warn("Gem dependency #{spec.name} #{spec.requirement} " \
-                                 "for #{gemspec.name} not found in RubyGems.")
-        end.to_a
+          Solargraph.logger.warn("Gem dependency #{runtime_dep.name} #{runtime_dep.requirement} " \
+                                 "for #{gemspec.name} not found in bundle.")
+          nil
+        end.to_a.compact
       end
 
       # @param command [String] The expression to evaluate in the external bundle
@@ -149,11 +150,11 @@ module Solargraph
 
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_this_bundle
-        dependencies = Bundler.definition.locked_gems.dependencies
+        deps = Bundler.definition.locked_gems.dependencies
 
         all_gemspecs_from_bundle.select do |gemspec|
-          dependencies.key?(gemspec.name) &&
-            dependencies[gemspec.name].autorequire != []
+          deps.key?(gemspec.name) &&
+            deps[gemspec.name].autorequire != []
         end
       end
 
@@ -179,6 +180,8 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Dependency>]
       def only_runtime_dependencies gemspec
+        raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
+
         gemspec.dependencies - gemspec.development_dependencies
       end
 

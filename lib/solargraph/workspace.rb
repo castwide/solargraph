@@ -45,6 +45,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec
+      raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
       gemspecs.fetch_dependencies(gemspec)
     end
 
