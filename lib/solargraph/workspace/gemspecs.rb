@@ -130,6 +130,10 @@ module Solargraph
         Bundler.definition.locked_gems.specs.map(&:materialize_for_installation).map do |spec|
           if spec.is_a?(Gem::Specification)
             spec
+          elsif spec.is_a?(Bundler::LazySpecification)
+            # materializing didn't work.  Let's do one last attept at
+            # asking the local installed gems
+            resolve_gem_ignoring_local_bundle spec.name, spec.version
           elsif spec.is_a?(Bundler::StubSpecification)
             spec.stub.spec
           else
