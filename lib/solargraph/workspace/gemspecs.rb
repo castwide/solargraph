@@ -27,7 +27,7 @@ module Solargraph
         return nil if require.empty?
         return auto_required_gemspecs_from_bundler if require == 'bundler/require'
 
-        gemspecs = all_gemspecs_from_bundler
+        gemspecs = all_gemspecs_from_bundle
         # @type [Gem::Specification, nil]
         gemspec = gemspecs.find { |gemspec| gemspec.name == require }
         if gemspec.nil?
@@ -56,10 +56,23 @@ module Solargraph
         [gemspec_or_preference(gemspec)]
       end
 
+      # Returns all gemspecs directly depended on by this workspace's
+      # bundle (does not include transitive dependencies).
+      #
+      # @return [Array<Gem::Specification>]
+      def all_gemspecs_from_bundle
+        @all_gemspecs_from_bundle ||=
+          if in_this_bundle?
+            all_gemspecs_from_this_bundle
+          else
+            all_gemspecs_from_external_bundle
+          end
+      end
+
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Specification>]
       def fetch_dependencies gemspec
-        gemspecs = all_gemspecs_from_bundler
+        gemspecs = all_gemspecs_from_bundle
 
         # @param spec [Gem::Dependency]
         only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
@@ -74,8 +87,6 @@ module Solargraph
                                  "for #{gemspec.name} not found in RubyGems.")
         end.to_a
       end
-
-      private
 
       # @param command [String] The expression to evaluate in the external bundle
       # @sg-ignore Need a JSON type
@@ -112,19 +123,6 @@ module Solargraph
         directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end
 
-      # Returns all gemspecs directly depended on by this workspace's
-      # bundle (does not include transitive dependencies).
-      #
-      # @return [Array<Gem::Specification>]
-      def all_gemspecs_from_bundler
-        @all_gemspecs_from_bundler ||=
-          if in_this_bundle?
-            all_gemspecs_from_this_bundle
-          else
-            all_gemspecs_from_external_bundle
-          end
-      end
-
       # @return [Array<Gem::Specification>]
       def all_gemspecs_from_this_bundle
         # Find only the gems bundler is now using
@@ -151,9 +149,9 @@ module Solargraph
 
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_this_bundle
-        dependencies = Bundler.definition.dependencies
+        dependencies = Bundler.definition.locked_gems.dependencies
 
-        all_gemspecs_from_bundler.select do |gemspec|
+        all_gemspecs_from_bundle.select do |gemspec|
           dependencies.key?(gemspec.name) &&
             dependencies[gemspec.name].autorequire != []
         end

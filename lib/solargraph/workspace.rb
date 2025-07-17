@@ -53,6 +53,7 @@ module Solargraph
       @pin_cache ||= fresh_pincache
     end
 
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
     # @return [Array<Gem::Specification>]
     def resolve_require require
       gemspecs.resolve_require(require)
@@ -190,7 +191,7 @@ module Solargraph
       # TODO: This should bring in dependencies as well
       #
       # @type [Array<Gem::Specification>]
-      specs = immediate_gemspecs_from_bundler
+      specs = gemspecs.all_gemspecs_from_bundle
       specs.each do |spec|
         unless pin_cache.cached?(spec)
           pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out)

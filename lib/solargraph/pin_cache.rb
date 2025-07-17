@@ -197,7 +197,11 @@ module Solargraph
       type << rbs_source_desc if build_rbs_collection && !rbs_source_desc.nil?
       # we'll build it anyway, but it won't take long to build with
       # only a single source
-      type << 'combined' if build_combined && !rbs_source_desc.nil?
+
+      # 'combining' is awkward terminology in this case
+      just_yard = build_yard && rbs_source_desc.nil?
+
+      type << 'combined' if build_combined && !just_yard
       out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
     end
 
