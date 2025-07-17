@@ -464,5 +464,21 @@ describe Solargraph::Parser::NodeMethods do
       calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
       expect(calls.length).to eq(3)
     end
+
+    it 'does not over-report calls' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def something
+          end
+        end
+        class Bar < Foo
+          def something
+            super(1) + 2
+          end
+        end
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls.length).to eq(2)
+    end
   end
 end
