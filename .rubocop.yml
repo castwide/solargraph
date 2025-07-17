@@ -46,6 +46,10 @@ Metrics/MethodLength:
   Max: 60
 Metrics/ClassLength:
   Max: 500
+Metrics/CyclomaticComplexity:
+  Max: 23
+Metrics/PerceivedComplexity:
+  Max: 29
 
 plugins:
   - rubocop-rspec
