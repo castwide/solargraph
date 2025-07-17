@@ -42,8 +42,8 @@ describe Solargraph::DocMap do
   end
 
   context 'with an uncached but valid gemspec' do
-    let(:uncached_lazy_gemspec) do
-      Bundler::LazySpecification.new('uncached_gem', '1.0.0', 'ruby')
+    let(:uncached_gemspec) do
+      Gem::Specification.new('uncached_gem', '1.0.0')
     end
     let(:requires) { ['uncached_gem'] }
     let(:pre_cache) { false }
@@ -51,14 +51,14 @@ describe Solargraph::DocMap do
 
     before do
       pincache = instance_double(Solargraph::PinCache)
-      allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_lazy_gemspec])
-      allow(workspace).to receive(:fetch_dependencies).with(uncached_lazy_gemspec).and_return([])
+      allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_gemspec])
+      allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec).and_return([])
       allow(workspace).to receive(:fresh_pincache).and_return(pincache)
-      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_lazy_gemspec).and_return(nil)
+      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
     end
 
     it 'tracks uncached_gemspecs' do
-      expect(doc_map.uncached_gemspecs).to eq([uncached_lazy_gemspec])
+      expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
     end
   end
 

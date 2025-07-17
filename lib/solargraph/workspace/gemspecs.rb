@@ -127,7 +127,13 @@ module Solargraph
       # @return [Array<Gem::Specification>]
       def all_gemspecs_from_this_bundle
         # Find only the gems bundler is now using
-        Bundler.definition.locked_gems.specs.map(&:materialize_for_installation)
+        Bundler.definition.locked_gems.specs.map(&:materialize_for_installation).map do |spec|
+          if spec.is_a?(Gem::Specification)
+            spec
+          elsif spec.is_a?(Bundler::StubSpecification)
+            spec.stub.spec
+          end
+        end.flatten
       end
 
       # @return [Array<Gem::Specification>]
