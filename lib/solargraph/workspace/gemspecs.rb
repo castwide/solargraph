@@ -144,7 +144,7 @@ module Solargraph
             # turns a Bundler::StubSpecification into a
             # Gem::StubSpecification into a Gem::Specification
             specish = specish.stub
-            if specish.respond_to?(&:spec)
+            if specish.respond_to?(:spec)
               specish.spec
             else
               resolve_gem_ignoring_local_bundle specish.name, specish.version
