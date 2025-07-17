@@ -132,17 +132,23 @@ module Solargraph
           specish_objects = specish_objects.map(&:materialize_for_installation)
         end
         specish_objects.map do |specish|
-          if specish.is_a?(Gem::Specification)
+          case specish
+          when Gem::Specification
             # yay!
             specish
-          elsif specish.is_a?(Bundler::LazySpecification)
+          when Bundler::LazySpecification
             # materializing didn't work.  Let's look in the local
             # rubygems without bundler's help
             resolve_gem_ignoring_local_bundle specish.name, specish.version
-          elsif specish.is_a?(Bundler::StubSpecification)
+          when Bundler::StubSpecification
             # turns a Bundler::StubSpecification into a
             # Gem::StubSpecification into a Gem::Specification
-            specish.stub.spec
+            specish = specish.stub
+            if specish.respond_to?(&:spec)
+              specish.spec
+            else
+              resolve_gem_ignoring_local_bundle specish.name, specish.version
+            end
           else
             @@warned_on_gem_type ||= false
             unless @@warned_on_gem_type
