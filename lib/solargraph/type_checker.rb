@@ -708,8 +708,9 @@ module Solargraph
       (all_sg_ignore_lines - sg_ignore_lines_processed).to_a.sort
     end
 
+    # @return [Array<Problem>]
     def unneeded_sgignore_problems
-      return unless rules.validate_sg_ignores?
+      return [] unless rules.validate_sg_ignores?
 
       unprocessed_sg_ignore_lines.map do |line|
         Problem.new(
