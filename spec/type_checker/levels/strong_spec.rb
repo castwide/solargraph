@@ -4,6 +4,17 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'reports unneeded @sg-ignore tags' do
+      checker = type_checker(%(
+        class Foo
+          # @sg-ignore
+          # @return [void]
+          def bar; end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unneeded @sg-ignore comment'])
+    end
+
     it 'reports missing return tags' do
       checker = type_checker(%(
         class Foo

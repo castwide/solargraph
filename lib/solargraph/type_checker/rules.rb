@@ -57,6 +57,14 @@ module Solargraph
       def require_all_return_types_match_inferred?
         rank >= LEVELS[:alpha]
       end
+
+      # We keep this at strong because if you added an @sg-ignore to
+      # address a strong-level issue, then ran at a lower level, you'd
+      # get a false positive - we don't run stronger level checks than
+      # requested for performance reasons
+      def validate_sg_ignores?
+        rank >= LEVELS[:strong]
+      end
     end
   end
 end

@@ -30,7 +30,7 @@ module Solargraph
       @node
     end
 
-    # @return [Hash{Integer => Array<String>}]
+    # @return [Hash{Integer => Solargraph::Parser::Snippet}]
     def comments
       finalize
       @comments
@@ -235,6 +235,7 @@ module Solargraph
     # @return [Hash{Integer => String}]
     def associated_comments
       @associated_comments ||= begin
+        # @type [Hash{Integer => String}]
         result = {}
         buffer = String.new('')
         # @type [Integer, nil]
