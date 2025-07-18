@@ -24,6 +24,7 @@ module Solargraph
       [start, ending]
     end
 
+    # @param other [Object]
     def <=>(other)
       return nil unless other.is_a?(Range)
       if start == other.start
@@ -78,7 +79,7 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [Parser::AST::Node]
+    # @param node [AST::Node]
     # @return [Range, nil]
     def self.from_node node
       if node&.loc && node.loc.expression

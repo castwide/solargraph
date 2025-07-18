@@ -166,7 +166,17 @@ module Solargraph
         # make sure we get types from up the method
         # inheritance chain if we don't have them on this pin
         ptype = typify api_map
-        ptype.undefined? || ptype.can_assign?(api_map, atype) || ptype.generic?
+        return true if ptype.undefined?
+
+        return true if atype.conforms_to?(api_map,
+                                          ptype,
+                                          :method_call,
+                                          allow_subtype_skew: false,
+                                          allow_reverse_match: false,
+                                          allow_empty_params: true,
+                                          allow_any_match: false)
+
+        ptype.generic?
       end
 
       def documentation

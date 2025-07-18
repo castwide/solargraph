@@ -14,6 +14,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Missing @return tag')
     end
 
+
+    it 'ignores nilable type issues' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'reports missing param tags' do
       checker = type_checker(%(
         class Foo
