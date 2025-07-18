@@ -102,7 +102,7 @@ module Solargraph
     # @param atype [ComplexType] type which may be assigned to this type
     # @param api_map [ApiMap] The ApiMap that performs qualification
     def can_assign?(api_map, atype)
-      any? { |ut| ut.can_assign?(api_map, atype) }
+      atype.conforms_to?(api_map, self, :assignment)
     end
 
     # @return [Integer]
@@ -174,6 +174,61 @@ module Solargraph
 
     def desc
       rooted_tags
+    end
+
+    # @param api_map [ApiMap]
+    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param situation [:method_call, :return_type, :assignment]
+    # @param allow_subtype_skew [Boolean] if false, check if any
+    #   subtypes of the expected type match the inferred type
+    # @param allow_reverse_match [Boolean] if true, check if any subtypes
+    #   of the expected type match the inferred type
+    # @param allow_empty_params [Boolean] if true, allow a general
+    #   inferred type without parameters to allow a more specific
+    #   expcted type
+    # @param allow_any_match [Boolean] if true, any unique type
+    #   matched in the expected qualifies as a match
+    # @return [Boolean]
+    def conforms_to? api_map, expected,
+                     situation,
+                     variance: erased_variance(situation),
+                     allow_subtype_skew: false,
+                     allow_empty_params: false,
+                     allow_reverse_match: false,
+                     allow_any_match: false #,
+#                     allow_undefined_in_expected: false
+      expected = expected.downcast_to_literal_if_possible
+      inferred = downcast_to_literal_if_possible
+
+      return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+
+      if allow_any_match
+        inferred.any? { |inf| inf.conforms_to?(api_map, expected, situation,
+                                               allow_subtype_skew: allow_subtype_skew,
+                                               allow_empty_params: allow_empty_params,
+                                               allow_reverse_match: allow_reverse_match,
+                                               allow_any_match: allow_any_match) }
+      else
+        inferred.all? { |inf| inf.conforms_to?(api_map, expected, situation,
+                                               allow_subtype_skew: allow_subtype_skew,
+                                               allow_empty_params: allow_empty_params,
+                                               allow_reverse_match: allow_reverse_match,
+                                               allow_any_match: allow_any_match) }
+      end
+    end
+
+    # @param api_map [ApiMap]
+    # @param expected [ComplexType]
+    # @param inferred [ComplexType]
+    # @return [Boolean]
+    def duck_types_match? api_map, expected, inferred
+      raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
+      expected.each do |exp|
+        next unless exp.duck_type?
+        quack = exp.to_s[1..-1]
+        return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
+      end
+      true
     end
 
     def rooted_tags

@@ -151,8 +151,165 @@ module Solargraph
         eql?(other)
       end
 
+      # https://www.playfulpython.com/type-hinting-covariance-contra-variance/
+
+      # "[Expected] type variables that are COVARIANT can be substituted with
+      #  a more specific [inferred] type without causing errors"
+      #
+      # "[Expected] type variables that are CONTRAVARIANT can be substituted
+      #   with a more general [inferred] type without causing errors"
+      #
+      # "[Expected] types where neither is possible are INVARIANT"
+      #
+      # @param situation [:method_call]
+      # @param default [Symbol] The default variance to return if the type is not one of the special cases
+      #
+      # @return [:invariant, :covariant, :contravariant]
+      def parameter_variance situation, default = :covariant
+        # @todo RBS can specify variance - maybe we can use that info
+        #   and also let folks specify?
+        #
+        # Array/Set: ideally invariant, since we don't know if user is
+        #   going to add new stuff into it or read it.  But we don't
+        #   have a way to specify, so we use covariant
+        # Enumerable: covariant:  can't be changed, so we can pass
+        #   in more specific subtypes
+        # Hash: read-only would be covariant, read-write would be
+        #   invariant if we could distinguish that - should default to
+        #   covariant
+        # contravariant?: Proc - can be changed, so we can pass
+        #   in less specific super types
+        if ['Hash', 'Tuple', 'Array', 'Set', 'Enumerable'].include?(name) && fixed_parameters?
+          :covariant
+        else
+          default
+        end
+      end
+
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType, ComplexType::UniqueType]
+      # @param situation [:method_call, :return_type]
+      # @param allow_subtype_skew [Boolean] if false, check if any
+      #   subtypes of the expected type match the inferred type
+      # @param allow_empty_params [Boolean] if true, allow a general
+      #   inferred type without parameters to allow a more specific
+      #   expcted type
+      # @param allow_reverse_match [Boolean] if true, check if any subtypes
+      #   of the expected type match the inferred type
+      # @param allow_any_match [Boolean] if true, any unique type
+      #   matched in the expected qualifies as a match
+      def conforms_to_unique_type?(api_map, expected, situation = :method_call,
+                                   variance: erased_variance(situation),
+                                   allow_subtype_skew: allow_subtype_skew,
+                                   allow_empty_params: allow_empty_params,
+                                   allow_reverse_match: allow_reverse_match,
+                                   allow_any_match: allow_any_match)
+        expected = expected.downcast_to_literal_if_possible
+        inferred = downcast_to_literal_if_possible
+
+        if allow_subtype_skew
+          # parameters are not considered in this case
+          expected = expected.erase_parameters
+        end
+
+        if !expected.parameters? && inferred.parameters?
+          inferred = inferred.erase_parameters
+        end
+
+        return true if inferred == expected
+
+        if variance == :invariant
+          return false unless inferred.name == expected.name
+        elsif erased_variance == :covariant
+          # covariant: we can pass in a more specific type
+
+          # we contain the expected mix-in, or we have a more specific type
+          return false unless api_map.type_include?(inferred.name, expected.name) ||
+                              api_map.super_and_sub?(expected.name, inferred.name) ||
+                              inferred.name == expected.name
+
+        elsif erased_variance == :contravariant
+          # contravariant: we can pass in a more general type
+
+          # we contain the expected mix-in, or we have a more general type
+          return false unless api_map.type_include?(inferred.name, expected.name) ||
+                              map.super_and_sub?(inferred.name, expected.name) ||
+                              inferred.name == expected.name
+        else
+          raise "Unknown erased variance: #{erased_variance.inspect}"
+        end
+
+        return true if inferred.all_params.empty? && allow_empty_params
+
+        # at this point we know the erased type is fine - time to look at parameters
+
+        # there's an implicit 'any' on the expectation parameters
+        # if there are none specified
+        return true if expected.all_params.empty?
+
+        unless expected.key_types.empty?
+          return false if inferred.key_types.empty?
+
+          return false unless ComplexType.new(inferred.key_types).conforms_to?(api_map,
+                                                                               ComplexType.new(expected.key_types),
+                                                                               situation,
+                                                                               variance: parameter_variance(situation),
+                                                                               allow_subtype_skew: allow_subtype_skew,
+                                                                                  allow_empty_params: allow_empty_params,
+                                                                               allow_reverse_match: allow_reverse_match,
+                                                                               allow_any_match: allow_any_match)
+        end
+
+        return true if expected.subtypes.empty?
+
+        return false if inferred.subtypes.empty?
+
+        ComplexType.new(inferred.subtypes).conforms_to?(api_map, ComplexType.new(expected.subtypes), situation,
+                                                                            variance: parameter_variance(situation),
+                                                                            allow_subtype_skew: allow_subtype_skew,
+                                                                            allow_empty_params: allow_empty_params,
+                                                                            allow_reverse_match: allow_reverse_match,
+                                                                            allow_any_match: allow_any_match)
+      end
+
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType::UniqueType]
+      # @param situation [:method_call, :assignment, :return]
+      # @param allow_subtype_skew [Boolean] if false, check if any
+      #   subtypes of the expected type match the inferred type
+      # @param allow_empty_params [Boolean] if true, allow a general
+      #   inferred type without parameters to allow a more specific
+      #   expcted type
+      # @param allow_reverse_match [Boolean] if true, check if any subtypes
+      #   of the expected type match the inferred type
+      # @param allow_any_match [Boolean] if true, any unique type
+      #   matched in the expected qualifies as a match
+      def conforms_to?(api_map, expected,
+                       situation = :method_call,
+                       allow_subtype_skew:,
+                       allow_empty_params:,
+                       allow_reverse_match:,
+                       allow_any_match:)
+        # @todo teach this to validate duck types as inferred type
+        return true if duck_type?
+
+        # complex types as expectations are unions - we only need to
+        # match one of their unique types
+        expected.any? do |expected_unique_type|
+          conforms_to_unique_type?(api_map, expected_unique_type, situation,
+                                   allow_subtype_skew: allow_subtype_skew,
+                                   allow_empty_params: allow_empty_params,
+                                   allow_reverse_match: allow_reverse_match,
+                                   allow_any_match: allow_any_match)
+        end
+      end
+
       def hash
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
+      end
+
+      def erase_parameters
+        UniqueType.new(name, rooted: rooted?, parameters_type: parameters_type)
       end
 
       # @return [Array<UniqueType>]
@@ -234,18 +391,6 @@ module Solargraph
 
       def generic?
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
-      end
-
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param atype [ComplexType] type which may be assigned to this type
-      def can_assign?(api_map, atype)
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
-        downcasted_atype = atype.downcast_to_literal_if_possible
-        out = downcasted_atype.all? do |autype|
-          autype.name == name || api_map.super_and_sub?(name, autype.name)
-        end
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
-        out
       end
 
       # @return [UniqueType]
@@ -435,6 +580,10 @@ module Solargraph
           next t if t.name != 'self'
           object_type_dst
         end
+      end
+
+      def any? &block
+        block.yield self
       end
 
       def all_rooted?

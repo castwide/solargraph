@@ -19,7 +19,8 @@ module Solargraph
       YardMap::Mapper.new(yardoc, gemspec).map
     end
 
-    # @param pins [Array<Pin::Base>]
+    # @param pins [Array<Pin::Method>]
+    # @return [Array<Pin::Method>]
     def self.combine_method_pins_by_path(pins)
       # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
