@@ -8,6 +8,7 @@ describe Solargraph::TypeChecker do
       checker = type_checker(%(
         class Foo
           # @sg-ignore
+          # @return [void]
           def bar; end
         end
       ))
