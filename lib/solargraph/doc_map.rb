@@ -39,6 +39,7 @@ module Solargraph
       pins.concat global_environ.pins
     end
 
+    # TODO: Does this need to be public?
     # @return [Solargraph::PinCache]
     def pin_cache
       @pin_cache ||= workspace.fresh_pincache

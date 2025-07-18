@@ -22,6 +22,7 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :missing_docs
 
+    # TODO: Is this needed?
     # @return [Solargraph::PinCache]
     attr_reader :pin_cache
 

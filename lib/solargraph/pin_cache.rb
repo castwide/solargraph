@@ -21,6 +21,7 @@ module Solargraph
       @yard_plugins = yard_plugins
     end
 
+    # TODO: Get Solargraph to tell me that the one below is unneeded
     # @sg-ignore
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     def cached?(gemspec)
