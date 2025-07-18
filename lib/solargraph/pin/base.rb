@@ -28,6 +28,11 @@ module Solargraph
       # @return [::Symbol]
       attr_accessor :source
 
+      # @type [::Numeric, nil] A priority for determining if pins should be combined or not
+      #   A nil priority is considered the be the lowest. All code, yard & rbs pins have nil priority
+      #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
+      attr_reader :combine_priority
+
       def presence_certain?
         true
       end
@@ -40,7 +45,8 @@ module Solargraph
       # @param source [Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
-      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil
+      # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil, combine_priority: nil
         @location = location
         @type_location = type_location
         @closure = closure
@@ -50,6 +56,8 @@ module Solargraph
         @identity = nil
         @docstring = docstring
         @directives = directives
+        @combine_priority = combine_priority
+
         assert_source_provided
         assert_location_provided
       end
@@ -67,6 +75,9 @@ module Solargraph
       # @return [self]
       def combine_with(other, attrs={})
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
+        priority_choice = choose_priority(other)
+        return priority_choice unless priority_choice.nil?
+
         type_location = choose(other, :type_location)
         location = choose(other, :location)
         combined_name = combine_name(other)
@@ -79,12 +90,32 @@ module Solargraph
           source: :combined,
           docstring: choose(other, :docstring),
           directives: combine_directives(other),
+          combine_priority: combine_priority
         }.merge(attrs)
         assert_same_macros(other)
         logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
         out = self.class.new(**new_attrs)
         out.reset_generated!
         out
+      end
+
+      # @param other [self]
+      # @return [self, nil] Returns either the pin chosen based on priority or nil
+      #   A nil return means that the combination process must proceed
+      def choose_priority(other)
+        if combine_priority.nil? && !other.combine_priority.nil?
+          return other
+        elsif other.combine_priority.nil? && !combine_priority.nil?
+          return self
+        elsif !combine_priority.nil? && !other.combine_priority.nil?
+          if combine_priority > other.combine_priority
+            return self
+          elsif combine_priority < other.combine_priority
+            return other
+          end
+        end
+
+        nil
       end
 
       # @param other [self]
