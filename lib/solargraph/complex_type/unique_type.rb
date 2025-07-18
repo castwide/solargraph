@@ -49,11 +49,7 @@ module Solargraph
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
-            # @todo should be able to resolve map; both types have it
-            #   with same return type
-            # @sg-ignore
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            # @sg-ignore
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           elsif parameters_type == :list && name == 'Hash'
             # Treat Hash<A, B> as Hash{A => B}

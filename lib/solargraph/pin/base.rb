@@ -98,7 +98,6 @@ module Solargraph
         val2 = other.send(attr)
         return val1 if val1 == val2
         return val2 if val1.nil?
-        # @sg-ignore
         val1.length > val2.length ? val1 : val2
       end
 
@@ -237,7 +236,6 @@ module Solargraph
         raise "Expected #{attr} on #{other} to be an Enumerable, got #{arr2.class}" unless arr2.is_a?(::Enumerable)
         # @type arr2 [::Enumerable]
 
-        # @sg-ignore
         # @type [undefined]
         values1 = arr1.map(&block)
         # @type [undefined]
