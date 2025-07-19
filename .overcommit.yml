@@ -1,0 +1,71 @@
+---
+# Use this file to configure the Overcommit hooks you wish to use. This will
+# extend the default configuration defined in:
+# https://github.com/sds/overcommit/blob/master/config/default.yml
+#
+# At the topmost level of this YAML file is a key representing type of hook
+# being run (e.g. pre-commit, commit-msg, etc.). Within each type you can
+# customize each hook, such as whether to only run it on certain files (via
+# `include`), whether to only display output if it fails (via `quiet`), etc.
+#
+# For a complete list of hooks, see:
+# https://github.com/sds/overcommit/tree/master/lib/overcommit/hook
+#
+# For a complete list of options that you can use to customize hooks, see:
+# https://github.com/sds/overcommit#configuration
+#
+# Uncomment the following lines to make the configuration take effect.
+
+PreCommit:
+  RuboCop:
+    enabled: true
+
+  Solargraph:
+    enabled: true
+    exclude:
+      - 'spec/**/*'
+
+  FixMe:
+    enabled: true
+    exclude:
+      # don't freak out over line below
+      - '.overcommit.yml'
+    keywords: ['FIXME', 'TODO', 'XXX']
+
+  # creates false positives in CI
+  AuthorName:
+    enabled: false
+
+  # creates false positives in CI
+  AuthorEmail:
+    enabled: false
+
+  ALL:
+    # if you make non-trivial changes to a file, please leave it
+    # better than you found it
+    problem_on_unmodified_line: fail
+    on_warn: fail
+    exclude:
+      - lib/solargraph/rails/annotations/**/*
+      - vendor/**/*
+      - ".bundle/**/*"
+      - 'core.*'
+
+PrePush:
+  RSpec:
+    enabled: true
+
+verify_signatures: false
+
+#
+#  TrailingWhitespace:
+#    enabled: true
+#    exclude:
+#      - '**/db/structure.sql' # Ignore trailing whitespace in generated files
+#
+#PostCheckout:
+#  ALL: # Special hook name that customizes all hooks of this type
+#    quiet: true # Change all post-checkout hooks to only display output on failure
+#
+#  IndexTags:
+#    enabled: true # Generate a tags file with `ctags` each time HEAD changes

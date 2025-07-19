@@ -18,8 +18,14 @@ task :typecheck do
   sh "bundle exec solargraph typecheck --level typed"
 end
 
+desc "Check PR coverage"
+task :undercover do
+  sh 'bundle exec undercover --exclude-files "Rakefile,spec/*,spec/**/*" --compare origin/master'
+end
+
 desc "Run all tests"
 task :test do
   Rake::Task["typecheck"].invoke
   Rake::Task["spec"].invoke
+  Rake::Task["undercover"].invoke
 end

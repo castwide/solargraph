@@ -53,7 +53,7 @@ Solargraph's behavior can be controlled via optional [configuration](https://sol
 
 ### Plugins
 
-Solargraph supports [plugins](https://solargraph.org/guides/plugins) that implements their own Solargraph features, such as diagnostics reporters and conventions to provide LSP features and type-checking, e.g. for frameworks which use metaprogramming and/or DSLs.
+Solargraph supports [plugins](https://solargraph.org/guides/plugins) that implement their own Solargraph features, such as diagnostics reporters and conventions to provide LSP features and type-checking, e.g. for frameworks which use metaprogramming and/or DSLs.
 
 For better Rails support, please consider using [solargraph-rails](https://github.com/iftheshoefritz/solargraph-rails/)
 
