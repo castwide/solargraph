@@ -3192,7 +3192,24 @@ class Bundler::Resolver::SpecGroup
 end
 
 module Bundler::RubyDsl
-  def ruby: (*untyped ruby_version) -> untyped
+  @ruby_version: untyped
+
+  def ruby: (*::String ruby_version) -> void
+
+  # Support the various file formats found in .ruby-version files.
+  #
+  #     3.2.2
+  #     ruby-3.2.2
+  #
+  # Also supports .tool-versions files for asdf. Lines not starting with "ruby" are ignored.
+  #
+  #     ruby 2.5.1 # comment is ignored
+  #     ruby   2.5.1# close comment and extra spaces doesn't confuse
+  #
+  # Intentionally does not support `3.2.1@gemset` since rvm recommends using .ruby-gemset instead
+  #
+  # Loads the file relative to the dirname of the Gemfile itself.
+  def normalize_ruby_file: (::String filename) -> ::String
 end
 
 class Bundler::RubyVersion
