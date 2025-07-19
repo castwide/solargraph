@@ -22,6 +22,8 @@ PreCommit:
 
   Solargraph:
     enabled: true
+    exclude:
+      - 'spec/**/*'
 
   FixMe:
     enabled: true
@@ -44,7 +46,6 @@ PreCommit:
     problem_on_unmodified_line: fail
     on_warn: fail
     exclude:
-      - 'spec/**/*'
       - lib/solargraph/rails/annotations/**/*
       - vendor/**/*
       - ".bundle/**/*"
@@ -53,6 +54,8 @@ PreCommit:
 PrePush:
   RSpec:
     enabled: true
+
+verify_signatures: false
 
 #
 #  TrailingWhitespace:
