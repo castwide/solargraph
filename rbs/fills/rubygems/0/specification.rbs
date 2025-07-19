@@ -1,0 +1,1753 @@
+# <!-- rdoc-file=lib/rubygems/specification.rb -->
+# The Specification class contains the information for a gem.  Typically defined
+# in a .gemspec file or a Rakefile, and looks like this:
+#
+#     Gem::Specification.new do |s|
+#       s.name        = 'example'
+#       s.version     = '0.1.0'
+#       s.licenses    = ['MIT']
+#       s.summary     = "This is an example!"
+#       s.description = "Much longer explanation of the example!"
+#       s.authors     = ["Ruby Coder"]
+#       s.email       = 'rubycoder@example.com'
+#       s.files       = ["lib/example.rb"]
+#       s.homepage    = 'https://rubygems.org/gems/example'
+#       s.metadata    = { "source_code_uri" => "https://github.com/example/example" }
+#     end
+#
+# Starting in RubyGems 2.0, a Specification can hold arbitrary metadata.  See
+# #metadata for restrictions on the format and size of metadata items you may
+# add to a specification.
+#
+class Gem::Specification < Gem::BasicSpecification
+  @@required_attributes: untyped
+
+  @@default_value: untyped
+
+  @@attributes: untyped
+
+  @@array_attributes: untyped
+
+  @@nil_attributes: untyped
+
+  @@non_nil_attributes: untyped
+
+  @@dirs: untyped
+
+  self.@load_cache: untyped
+
+  self.@load_cache_mutex: untyped
+
+  self.@specification_record: untyped
+
+  self.@unresolved_deps: untyped
+
+  @removed_method_calls: untyped
+
+  # DO NOT CHANGE TO ||= ! This is not a normal accessor. (yes, it sucks)
+  # DOC: Why isn't it normal? Why does it suck? How can we fix this?
+  @files: untyped
+
+  @authors: untyped
+
+  @licenses: untyped
+
+  @original_platform: untyped
+
+  @new_platform: untyped
+
+  @platform: untyped
+
+  @require_paths: untyped
+
+  @executables: untyped
+
+  @extensions: untyped
+
+  @extra_rdoc_files: untyped
+
+  @installed_by_version: untyped
+
+  @rdoc_options: untyped
+
+  @required_ruby_version: untyped
+
+  @required_rubygems_version: untyped
+
+  @requirements: untyped
+
+  @test_files: untyped
+
+  @extensions_dir: untyped
+
+  @activated: untyped
+
+  @loaded: untyped
+
+  @bin_dir: untyped
+
+  @cache_dir: untyped
+
+  @cache_file: untyped
+
+  @date: untyped
+
+  @dependencies: untyped
+
+  @description: untyped
+
+  @doc_dir: untyped
+
+  @full_name: untyped
+
+  @gems_dir: untyped
+
+  @has_rdoc: untyped
+
+  @base_dir: untyped
+
+  @loaded_from: untyped
+
+  @ri_dir: untyped
+
+  @spec_dir: untyped
+
+  @spec_file: untyped
+
+  @summary: untyped
+
+  @test_suite_file: untyped
+
+  @version: untyped
+
+  extend Gem::Deprecate
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The version number of a specification that does not specify one (i.e. RubyGems
+  # 0.7 or earlier).
+  #
+  NONEXISTENT_SPECIFICATION_VERSION: -1
+
+  CURRENT_SPECIFICATION_VERSION: 4
+
+  SPECIFICATION_VERSION_HISTORY: { -1 => ::Array["(RubyGems versions up to and including 0.7 did not have versioned specifications)"], 1 => ::Array["Deprecated \"test_suite_file\" in favor of the new, but equivalent, \"test_files\"" | "\"test_file=x\" is a shortcut for \"test_files=[x]\""], 2 => ::Array["Added \"required_rubygems_version\"" | "Now forward-compatible with future versions"], 3 => ::Array["Added Fixnum validation to the specification_version"], 4 => ::Array["Added sandboxed freeform metadata to the specification version."] }
+
+  MARSHAL_FIELDS: { -1 => 16, 1 => 16, 2 => 16, 3 => 17, 4 => 18 }
+
+  TODAY: untyped
+
+  VALID_NAME_PATTERN: ::Regexp
+
+  # rubocop:disable Style/MutableConstant
+  INITIALIZE_CODE_FOR_DEFAULTS: ::Hash[untyped, untyped]
+
+  # Sentinel object to represent "not found" stubs
+  NOT_FOUND: untyped
+
+  # Tracking removed method calls to warn users during build time.
+  REMOVED_METHODS: ::Array[:rubyforge_project= | :mark_version]
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - removed_method_calls()
+  # -->
+  #
+  def removed_method_calls: () -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # This gem's name.
+  #
+  # Usage:
+  #
+  #     spec.name = 'rake'
+  #
+  attr_accessor name: String
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # This gem's version.
+  #
+  # The version string can contain numbers and periods, such as `1.0.0`. A gem is
+  # a 'prerelease' gem if the version has a letter in it, such as `1.0.0.pre`.
+  #
+  # Usage:
+  #
+  #     spec.version = '0.4.1'
+  #
+  attr_reader version: String
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # A short summary of this gem's description.  Displayed in `gem list -d`.
+  #
+  # The #description should be more detailed than the summary.
+  #
+  # Usage:
+  #
+  #     spec.summary = "This is a small summary of my gem"
+  #
+  attr_reader summary: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - files()
+  # -->
+  # Files included in this gem.  You cannot append to this accessor, you must
+  # assign to it.
+  #
+  # Only add files you can require to this list, not directories, etc.
+  #
+  # Directories are automatically stripped from this list when building a gem,
+  # other non-files cause an error.
+  #
+  # Usage:
+  #
+  #     require 'rake'
+  #     spec.files = FileList['lib/**/*.rb',
+  #                           'bin/*',
+  #                           '[A-Z]*'].to_a
+  #
+  #     # or without Rake...
+  #     spec.files = Dir['lib/**/*.rb'] + Dir['bin/*']
+  #     spec.files += Dir['[A-Z]*']
+  #     spec.files.reject! { |fn| fn.include? "CVS" }
+  #
+  def files: () -> Enumerable[String]
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - authors=(value)
+  # -->
+  # A list of authors for this gem.
+  #
+  # Alternatively, a single author can be specified by assigning a string to
+  # `spec.author`
+  #
+  # Usage:
+  #
+  #     spec.authors = ['John Jones', 'Mary Smith']
+  #
+  def authors=: (untyped value) -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The version of Ruby required by this gem
+  #
+  # Usage:
+  #
+  #     spec.required_ruby_version = '>= 2.7.0'
+  #
+  attr_reader required_ruby_version: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # A long description of this gem
+  #
+  # The description should be more detailed than the summary but not excessively
+  # long.  A few paragraphs is a recommended length with no examples or
+  # formatting.
+  #
+  # Usage:
+  #
+  #     spec.description = <<-EOF
+  #       Rake is a Make-like program implemented in Ruby. Tasks and
+  #       dependencies are specified in standard Ruby syntax.
+  #     EOF
+  #
+  attr_reader description: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # A contact email address (or addresses) for this gem
+  #
+  # Usage:
+  #
+  #     spec.email = 'john.jones@example.com'
+  #     spec.email = ['jack@example.com', 'jill@example.com']
+  #
+  attr_accessor email: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The URL of this gem's home page
+  #
+  # Usage:
+  #
+  #     spec.homepage = 'https://github.com/ruby/rake'
+  #
+  attr_accessor homepage: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - license=(o)
+  # -->
+  # The license for this gem.
+  #
+  # The license must be no more than 64 characters.
+  #
+  # This should just be the name of your license. The full text of the license
+  # should be inside of the gem (at the top level) when you build it.
+  #
+  # The simplest way is to specify the standard SPDX ID https://spdx.org/licenses/
+  # for the license. Ideally, you should pick one that is OSI (Open Source
+  # Initiative) http://opensource.org/licenses/alphabetical approved.
+  #
+  # The most commonly used OSI-approved licenses are MIT and Apache-2.0. GitHub
+  # also provides a license picker at http://choosealicense.com/.
+  #
+  # You can also use a custom license file along with your gemspec and specify a
+  # LicenseRef-<idstring>, where idstring is the name of the file containing the
+  # license text.
+  #
+  # You should specify a license for your gem so that people know how they are
+  # permitted to use it and any restrictions you're placing on it.  Not specifying
+  # a license means all rights are reserved; others have no right to use the code
+  # for any purpose.
+  #
+  # You can set multiple licenses with #licenses=
+  #
+  # Usage:
+  #     spec.license = 'MIT'
+  #
+  def license=: (untyped o) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - licenses=(licenses)
+  # -->
+  # The license(s) for the library.
+  #
+  # Each license must be a short name, no more than 64 characters.
+  #
+  # This should just be the name of your license. The full text of the license
+  # should be inside of the gem when you build it.
+  #
+  # See #license= for more discussion
+  #
+  # Usage:
+  #     spec.licenses = ['MIT', 'GPL-2.0']
+  #
+  def licenses=: (untyped licenses) -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The metadata holds extra data for this gem that may be useful to other
+  # consumers and is settable by gem authors.
+  #
+  # Metadata items have the following restrictions:
+  #
+  # *   The metadata must be a Hash object
+  # *   All keys and values must be Strings
+  # *   Keys can be a maximum of 128 bytes and values can be a maximum of 1024
+  #     bytes
+  # *   All strings must be UTF-8, no binary data is allowed
+  #
+  # You can use metadata to specify links to your gem's homepage, codebase,
+  # documentation, wiki, mailing list, issue tracker and changelog.
+  #
+  #     s.metadata = {
+  #       "bug_tracker_uri"   => "https://example.com/user/bestgemever/issues",
+  #       "changelog_uri"     => "https://example.com/user/bestgemever/CHANGELOG.md",
+  #       "documentation_uri" => "https://www.example.info/gems/bestgemever/0.0.1",
+  #       "homepage_uri"      => "https://bestgemever.example.io",
+  #       "mailing_list_uri"  => "https://groups.example.com/bestgemever",
+  #       "source_code_uri"   => "https://example.com/user/bestgemever",
+  #       "wiki_uri"          => "https://example.com/user/bestgemever/wiki"
+  #       "funding_uri"       => "https://example.com/donate"
+  #     }
+  #
+  # These links will be used on your gem's page on rubygems.org and must pass
+  # validation against following regex.
+  #
+  #     %r{\Ahttps?:\/\/([^\s:@]+:[^\s:@]*@)?[A-Za-z\d\-]+(\.[A-Za-z\d\-]+)+\.?(:\d{1,5})?([\/?]\S*)?\z}
+  #
+  attr_accessor metadata: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - author=(o)
+  # -->
+  # Singular (alternative) writer for #authors
+  #
+  # Usage:
+  #
+  #     spec.author = 'John Jones'
+  #
+  def author=: (untyped o) -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The path in the gem for executable scripts.  Usually 'bin'
+  #
+  # Usage:
+  #
+  #     spec.bindir = 'bin'
+  #
+  attr_accessor bindir: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The certificate chain used to sign this gem.  See Gem::Security for details.
+  #
+  attr_accessor cert_chain: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # A message that gets displayed after the gem is installed.
+  #
+  # Usage:
+  #
+  #     spec.post_install_message = "Thanks for installing!"
+  #
+  attr_accessor post_install_message: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - platform=(platform)
+  # -->
+  # The platform this gem runs on.
+  #
+  # This is usually Gem::Platform::RUBY or Gem::Platform::CURRENT.
+  #
+  # Most gems contain pure Ruby code; they should simply leave the default value
+  # in place.  Some gems contain C (or other) code to be compiled into a Ruby
+  # "extension".  The gem should leave the default value in place unless the code
+  # will only compile on a certain type of system.  Some gems consist of
+  # pre-compiled code ("binary gems").  It's especially important that they set
+  # the platform attribute appropriately.  A shortcut is to set the platform to
+  # Gem::Platform::CURRENT, which will cause the gem builder to set the platform
+  # to the appropriate value for the system on which the build is being performed.
+  #
+  # If this attribute is set to a non-default value, it will be included in the
+  # filename of the gem when it is built such as: nokogiri-1.6.0-x86-mingw32.gem
+  #
+  # Usage:
+  #
+  #     spec.platform = Gem::Platform.local
+  #
+  def platform=: (untyped platform) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - require_paths=(val)
+  # -->
+  # Paths in the gem to add to `$LOAD_PATH` when this gem is activated. If you
+  # have an extension you do not need to add `"ext"` to the require path, the
+  # extension build process will copy the extension files into "lib" for you.
+  #
+  # The default value is `"lib"`
+  #
+  # Usage:
+  #
+  #     # If all library files are in the root directory...
+  #     spec.require_paths = ['.']
+  #
+  def require_paths=: (untyped val) -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The RubyGems version required by this gem
+  #
+  attr_reader required_rubygems_version: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The key used to sign this gem.  See Gem::Security for details.
+  #
+  attr_accessor signing_key: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_development_dependency(gem, *requirements)
+  # -->
+  # Adds a development dependency named `gem` with `requirements` to this gem.
+  #
+  # Usage:
+  #
+  #     spec.add_development_dependency 'example', '~> 1.1', '>= 1.1.4'
+  #
+  # Development dependencies aren't installed by default and aren't activated when
+  # a gem is required.
+  #
+  def add_development_dependency: (untyped gem, *untyped requirements) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_dependency(gem, *requirements)
+  # -->
+  #
+  def add_dependency: (untyped gem, *untyped requirements) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - executables()
+  # -->
+  # Executables included in the gem.
+  #
+  # For example, the rake gem has rake as an executable. You don’t specify the
+  # full path (as in bin/rake); all application-style files are expected to be
+  # found in bindir.  These files must be executable Ruby files.  Files that use
+  # bash or other interpreters will not work.
+  #
+  # Executables included may only be ruby scripts, not scripts for other languages
+  # or compiled binaries.
+  #
+  # Usage:
+  #
+  #     spec.executables << 'rake'
+  #
+  def executables: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - extensions()
+  # -->
+  # Extensions to build when installing the gem, specifically the paths to
+  # extconf.rb-style files used to compile extensions.
+  #
+  # These files will be run when the gem is installed, causing the C (or whatever)
+  # code to be compiled on the user’s machine.
+  #
+  # Usage:
+  #
+  #     spec.extensions << 'ext/rmagic/extconf.rb'
+  #
+  # See Gem::Ext::Builder for information about writing extensions for gems.
+  #
+  def extensions: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - extra_rdoc_files()
+  # -->
+  # Extra files to add to RDoc such as README or doc/examples.txt
+  #
+  # When the user elects to generate the RDoc documentation for a gem (typically
+  # at install time), all the library files are sent to RDoc for processing. This
+  # option allows you to have some non-code files included for a more complete set
+  # of documentation.
+  #
+  # Usage:
+  #
+  #     spec.extra_rdoc_files = ['README', 'doc/user-guide.txt']
+  #
+  def extra_rdoc_files: () -> untyped
+
+  def installed_by_version: () -> untyped
+
+  def installed_by_version=: (untyped version) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - rdoc_options()
+  # -->
+  # Specifies the rdoc options to be used when generating API documentation.
+  #
+  # Usage:
+  #
+  #     spec.rdoc_options << '--title' << 'Rake -- Ruby Make' <<
+  #       '--main' << 'README' <<
+  #       '--line-numbers'
+  #
+  def rdoc_options: () -> untyped
+
+  LATEST_RUBY_WITHOUT_PATCH_VERSIONS: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - required_ruby_version=(req)
+  # -->
+  # The version of Ruby required by this gem.  The ruby version can be specified
+  # to the patch-level:
+  #
+  #     $ ruby -v -e 'p Gem.ruby_version'
+  #     ruby 2.0.0p247 (2013-06-27 revision 41674) [x86_64-darwin12.4.0]
+  #     #<Gem::Version "2.0.0.247">
+  #
+  # Prereleases can also be specified.
+  #
+  # Usage:
+  #
+  #     # This gem will work with 1.8.6 or greater...
+  #     spec.required_ruby_version = '>= 1.8.6'
+  #
+  #     # Only with final releases of major version 2 where minor version is at least 3
+  #     spec.required_ruby_version = '~> 2.3'
+  #
+  #     # Only prereleases or final releases after 2.6.0.preview2
+  #     spec.required_ruby_version = '> 2.6.0.preview2'
+  #
+  #     # This gem will work with 2.3.0 or greater, including major version 3, but lesser than 4.0.0
+  #     spec.required_ruby_version = '>= 2.3', '< 4'
+  #
+  def required_ruby_version=: (untyped req) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - required_rubygems_version=(req)
+  # -->
+  # The RubyGems version required by this gem
+  #
+  def required_rubygems_version=: (untyped req) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - requirements()
+  # -->
+  # Lists the external (to RubyGems) requirements that must be met for this gem to
+  # work.  It's simply information for the user.
+  #
+  # Usage:
+  #
+  #     spec.requirements << 'libmagick, v6.0'
+  #     spec.requirements << 'A good graphics card'
+  #
+  def requirements: () -> untyped
+
+  def test_files=: (untyped files) -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The version of RubyGems used to create this gem.
+  #
+  # Do not set this, it is set automatically when the gem is packaged.
+  #
+  attr_accessor rubygems_version: untyped
+
+  def extensions_dir: () -> untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # True when this gemspec has been activated. This attribute is not persisted.
+  #
+  attr_accessor activated: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # True when this gemspec has been activated. This attribute is not persisted.
+  #
+  alias activated? activated
+
+  attr_accessor autorequire: untyped
+
+  attr_writer default_executable: untyped
+
+  attr_writer original_platform: untyped
+
+  # <!-- rdoc-file=lib/rubygems/specification.rb -->
+  # The Gem::Specification version of this gemspec.
+  #
+  # Do not set this, it is set automatically when the gem is packaged.
+  #
+  attr_accessor specification_version: untyped
+
+  def self._all: () -> untyped
+
+  def self.clear_load_cache: () -> untyped
+
+  def self.gem_path: () -> untyped
+
+  def self.each_gemspec: (untyped dirs) { (untyped) -> untyped } -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - gemspec_stubs_in(dir, pattern) { |path| ... }
+  # -->
+  #
+  def self.gemspec_stubs_in: (untyped dir, untyped pattern) { (untyped) -> untyped } -> untyped
+
+  def self.each_spec: (untyped dirs) { (untyped) -> untyped } -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - stubs()
+  # -->
+  # Returns a Gem::StubSpecification for every installed gem
+  #
+  def self.stubs: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - default_stubs(pattern = "*.gemspec")
+  # -->
+  # Returns a Gem::StubSpecification for default gems
+  #
+  def self.default_stubs: (?::String pattern) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - stubs_for(name)
+  # -->
+  # Returns a Gem::StubSpecification for installed gem named `name` only returns
+  # stubs that match Gem.platforms
+  #
+  def self.stubs_for: (untyped name) -> untyped
+
+  #
+  # Finds stub specifications matching a pattern from the standard locations,
+  # optionally filtering out specs not matching the current platform
+  #
+  def self.stubs_for_pattern: (untyped pattern, ?bool match_platform) -> untyped
+
+  def self._resort!: (untyped specs) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - load_defaults()
+  # -->
+  # Loads the default specifications. It should be called only once.
+  #
+  def self.load_defaults: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_spec(spec)
+  # -->
+  # Adds `spec` to the known specifications, keeping the collection properly
+  # sorted.
+  #
+  def self.add_spec: (untyped spec) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - remove_spec(spec)
+  # -->
+  # Removes `spec` from the known specs.
+  #
+  def self.remove_spec: (untyped spec) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - all()
+  # -->
+  # Returns all specifications. This method is discouraged from use. You probably
+  # want to use one of the Enumerable methods instead.
+  #
+  def self.all: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - all=(specs)
+  # -->
+  # Sets the known specs to `specs`. Not guaranteed to work for you in the future.
+  # Use at your own risk. Caveat emptor. Doomy doom doom. Etc etc.
+  #
+  def self.all=: (untyped specs) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - all_names()
+  # -->
+  # Return full names of all specs in sorted order.
+  #
+  def self.all_names: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - array_attributes()
+  # -->
+  # Return the list of all array-oriented instance variables.
+  #
+  def self.array_attributes: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - attribute_names()
+  # -->
+  # Return the list of all instance variables.
+  #
+  def self.attribute_names: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - dirs()
+  # -->
+  # Return the directories that Specification uses to find specs.
+  #
+  def self.dirs: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - dirs=(dirs)
+  # -->
+  # Set the directories that Specification uses to find specs. Setting this resets
+  # the list of known specs.
+  #
+  def self.dirs=: (untyped dirs) -> untyped
+
+  extend Enumerable[Gem::Specification]
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - each() { |x| ... }
+  # -->
+  # Enumerate every known spec.  See ::dirs= and ::add_spec to set the list of
+  # specs.
+  #
+  def self.each: () { (Gem::Specification) -> untyped } -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_all_by_name(name, *requirements)
+  # -->
+  # Returns every spec that matches `name` and optional `requirements`.
+  #
+  def self.find_all_by_name: (untyped name, *untyped requirements) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_all_by_full_name(full_name)
+  # -->
+  # Returns every spec that has the given `full_name`
+  #
+  def self.find_all_by_full_name: (untyped full_name) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_by_name(name, *requirements)
+  # -->
+  # Find the best specification matching a `name` and `requirements`. Raises if
+  # the dependency doesn't resolve to a valid specification.
+  #
+  def self.find_by_name: (untyped name, *untyped requirements) -> instance
+
+  #
+  # Find the best specification matching a +full_name+.
+  def self.find_by_full_name: (untyped full_name) -> instance
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_by_path(path)
+  # -->
+  # Return the best specification that contains the file matching `path`.
+  #
+  def self.find_by_path: (untyped path) -> instance
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_inactive_by_path(path)
+  # -->
+  # Return the best specification that contains the file matching `path` amongst
+  # the specs that are not activated.
+  #
+  def self.find_inactive_by_path: (untyped path) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_active_stub_by_path(path)
+  # -->
+  #
+  def self.find_active_stub_by_path: (untyped path) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_in_unresolved(path)
+  # -->
+  # Return currently unresolved specs that contain the file matching `path`.
+  #
+  def self.find_in_unresolved: (untyped path) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_in_unresolved_tree(path)
+  # -->
+  # Search through all unresolved deps and sub-dependencies and return specs that
+  # contain the file matching `path`.
+  #
+  def self.find_in_unresolved_tree: (untyped path) -> (untyped | ::Array[untyped])
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - unresolved_specs()
+  # -->
+  #
+  def self.unresolved_specs: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - from_yaml(input)
+  # -->
+  # Special loader for YAML files.  When a Specification object is loaded from a
+  # YAML file, it bypasses the normal Ruby object initialization routine
+  # (#initialize).  This method makes up for that and deals with gems of different
+  # ages.
+  #
+  # `input` can be anything that YAML.load() accepts: String or IO.
+  #
+  def self.from_yaml: (untyped input) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - latest_specs(prerelease = false)
+  # -->
+  # Return the latest specs, optionally including prerelease specs if `prerelease`
+  # is true.
+  #
+  def self.latest_specs: (?bool prerelease) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - latest_spec_for(name)
+  # -->
+  # Return the latest installed spec for gem `name`.
+  #
+  def self.latest_spec_for: (untyped name) -> untyped
+
+  def self._latest_specs: (untyped specs, ?bool prerelease) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - load(file)
+  # -->
+  # Loads Ruby format gemspec from `file`.
+  #
+  def self.load: (untyped file) -> (nil | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - non_nil_attributes()
+  # -->
+  # Specification attributes that must be non-nil
+  #
+  def self.non_nil_attributes: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - normalize_yaml_input(input)
+  # -->
+  # Make sure the YAML specification is properly formatted with dashes
+  #
+  def self.normalize_yaml_input: (untyped input) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - outdated()
+  # -->
+  # Return a list of all outdated local gem names.  This method is HEAVY as it
+  # must go fetch specifications from the server.
+  #
+  # Use outdated_and_latest_version if you wish to retrieve the latest remote
+  # version as well.
+  #
+  def self.outdated: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - outdated_and_latest_version() { |local_spec, latest_remote| ... }
+  # -->
+  # Enumerates the outdated local gems yielding the local specification and the
+  # latest remote version.
+  #
+  # This method may take some time to return as it must check each local gem
+  # against the server's index.
+  #
+  def self.outdated_and_latest_version: () ?{ (untyped) -> untyped } -> (untyped | nil)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - required_attribute?(name)
+  # -->
+  # Is `name` a required attribute?
+  #
+  def self.required_attribute?: (untyped name) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - required_attributes()
+  # -->
+  # Required specification attributes
+  #
+  def self.required_attributes: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - reset()
+  # -->
+  # Reset the list of known specs, running pre and post reset hooks registered in
+  # Gem.
+  #
+  def self.reset: () -> untyped
+
+  def self.specification_record: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - unresolved_deps()
+  # -->
+  # DOC: This method needs documented or nodoc'd
+  #
+  def self.unresolved_deps: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - _load(str)
+  # -->
+  # Load custom marshal format, re-initializing defaults as needed
+  #
+  def self._load: (untyped str) -> untyped
+
+  def <=>: (untyped other) -> untyped
+
+  def ==: (untyped other) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - _dump(limit)
+  # -->
+  # Dump only crucial instance variables.
+  #
+  def _dump: (untyped limit) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - activate()
+  # -->
+  # Activate this spec, registering it as a loaded spec and adding it's lib paths
+  # to $LOAD_PATH. Returns true if the spec was activated, false if it was
+  # previously activated. Freaks out if there are conflicts upon activation.
+  #
+  def activate: () -> (false | true)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - activate_dependencies()
+  # -->
+  # Activate all unambiguously resolved runtime dependencies of this spec. Add any
+  # ambiguous dependencies to the unresolved list to be resolved later, as needed.
+  #
+  def activate_dependencies: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - abbreviate()
+  # -->
+  # Abbreviate the spec for downloading.  Abbreviated specs are only used for
+  # searching, downloading and related activities and do not need deployment
+  # specific information (e.g. list of files).  So we abbreviate the spec, making
+  # it much smaller for quicker downloads.
+  #
+  def abbreviate: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - sanitize()
+  # -->
+  # Sanitize the descriptive fields in the spec.  Sometimes non-ASCII characters
+  # will garble the site index.  Non-ASCII characters will be replaced by their
+  # XML entity equivalent.
+  #
+  def sanitize: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - sanitize_string(string)
+  # -->
+  # Sanitize a single string.
+  #
+  def sanitize_string: (untyped string) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_bindir(executables)
+  # -->
+  # Returns an array with bindir attached to each executable in the `executables`
+  # list
+  #
+  def add_bindir: (untyped executables) -> untyped
+
+  private
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_dependency_with_type(dependency, type, requirements)
+  # -->
+  # Adds a dependency on gem `dependency` with type `type` that requires
+  # `requirements`.  Valid types are currently `:runtime` and `:development`.
+  #
+  def add_dependency_with_type: (untyped dependency, untyped type, untyped requirements) -> untyped
+
+  public
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_runtime_dependency(gem, *requirements)
+  # -->
+  # Adds a runtime dependency named `gem` with `requirements` to this gem.
+  #
+  # Usage:
+  #
+  #     spec.add_runtime_dependency 'example', '~> 1.1', '>= 1.1.4'
+  #
+  alias add_runtime_dependency add_dependency
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - add_self_to_load_path()
+  # -->
+  # Adds this spec's require paths to LOAD_PATH, in the proper location.
+  #
+  def add_self_to_load_path: () -> (nil | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - author()
+  # -->
+  # Singular reader for #authors.  Returns the first author in the list
+  #
+  def author: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - authors()
+  # -->
+  # The list of author names who wrote this gem.
+  #
+  #     spec.authors = ['Chad Fowler', 'Jim Weirich', 'Rich Kilmer']
+  #
+  def authors: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - bin_dir()
+  # -->
+  # Returns the full path to installed gem's bin directory.
+  #
+  # NOTE: do not confuse this with `bindir`, which is just 'bin', not a full path.
+  #
+  def bin_dir: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - bin_file(name)
+  # -->
+  # Returns the full path to an executable named `name` in this gem.
+  #
+  def bin_file: (untyped name) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - build_args()
+  # -->
+  # Returns the build_args used to install the gem
+  #
+  def build_args: () -> (untyped | ::Array[untyped])
+
+  def build_extensions: () -> (nil | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - build_info_dir()
+  # -->
+  # Returns the full path to the build info directory
+  #
+  def build_info_dir: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - build_info_file()
+  # -->
+  # Returns the full path to the file containing the build information generated
+  # when the gem was installed
+  #
+  def build_info_file: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - cache_dir()
+  # -->
+  # Returns the full path to the cache directory containing this spec's cached
+  # gem.
+  #
+  def cache_dir: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - cache_file()
+  # -->
+  # Returns the full path to the cached gem for this spec.
+  #
+  def cache_file: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - conflicts()
+  # -->
+  # Return any possible conflicts against the currently loaded specs.
+  #
+  def conflicts: () -> untyped
+
+  def conficts_when_loaded_with?: (untyped list_of_specs) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - has_conflicts?()
+  # -->
+  # Return true if there are possible conflicts against the currently loaded
+  # specs.
+  #
+  def has_conflicts?: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - date()
+  # -->
+  # The date this gem was created.
+  #
+  # If SOURCE_DATE_EPOCH is set as an environment variable, use that to support
+  # reproducible builds; otherwise, default to the current UTC date.
+  #
+  # Details on SOURCE_DATE_EPOCH:
+  # https://reproducible-builds.org/specs/source-date-epoch/
+  #
+  def date: () -> untyped
+
+  DateLike: untyped
+
+  def self.===: (untyped obj) -> untyped
+
+  DateTimeFormat: ::Regexp
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - date=(date)
+  # -->
+  # The date this gem was created
+  #
+  # DO NOT set this, it is set automatically when the gem is packaged.
+  #
+  def date=: (untyped date) -> untyped
+
+  def default_executable: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - default_value(name)
+  # -->
+  # The default value for specification attribute `name`
+  #
+  def default_value: (untyped name) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - dependencies()
+  # -->
+  # A list of Gem::Dependency objects this gem depends on.
+  #
+  # Use #add_dependency or #add_development_dependency to add dependencies to a
+  # gem.
+  #
+  def dependencies: () -> Array[Gem::Dependency]
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - dependent_gems(check_dev=true)
+  # -->
+  # Return a list of all gems that have a dependency on this gemspec.  The list is
+  # structured with entries that conform to:
+  #
+  #     [depending_gem, dependency, [list_of_gems_that_satisfy_dependency]]
+  #
+  def dependent_gems: (?bool check_dev) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - dependent_specs()
+  # -->
+  # Returns all specs that matches this spec's runtime dependencies.
+  #
+  def dependent_specs: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - description=(str)
+  # -->
+  # A detailed description of this gem.  See also #summary
+  #
+  def description=: (untyped str) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - development_dependencies()
+  # -->
+  # List of dependencies that are used for development
+  #
+  def development_dependencies: () -> Array[Gem::Dependency]
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - doc_dir(type = nil)
+  # -->
+  # Returns the full path to this spec's documentation directory.  If `type` is
+  # given it will be appended to the end.  For example:
+  #
+  #     spec.doc_dir      # => "/path/to/gem_repo/doc/a-1"
+  #
+  #     spec.doc_dir 'ri' # => "/path/to/gem_repo/doc/a-1/ri"
+  #
+  def doc_dir: (?untyped? type) -> untyped
+
+  def encode_with: (untyped coder) -> untyped
+
+  def eql?: (untyped other) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - executable()
+  # -->
+  # Singular accessor for #executables
+  #
+  def executable: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - executable=(o)
+  # -->
+  # Singular accessor for #executables
+  #
+  def executable=: (untyped o) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - executables=(value)
+  # -->
+  # Sets executables to `value`, ensuring it is an array.
+  #
+  def executables=: (untyped value) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - extensions=(extensions)
+  # -->
+  # Sets extensions to `extensions`, ensuring it is an array.
+  #
+  def extensions=: (untyped extensions) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - extra_rdoc_files=(files)
+  # -->
+  # Sets extra_rdoc_files to `files`, ensuring it is an array.
+  #
+  def extra_rdoc_files=: (untyped files) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - file_name()
+  # -->
+  # The default (generated) file name of the gem.  See also #spec_name.
+  #
+  #     spec.file_name # => "example-1.0.gem"
+  #
+  def file_name: () -> ::String
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - files=(files)
+  # -->
+  # Sets files to `files`, ensuring it is an array.
+  #
+  def files=: (untyped files) -> untyped
+
+  private
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - find_all_satisfiers(dep) { |spec| ... }
+  # -->
+  # Finds all gems that satisfy `dep`
+  #
+  def find_all_satisfiers: (untyped dep) { (untyped) -> untyped } -> untyped
+
+  public
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - for_cache()
+  # -->
+  # Creates a duplicate spec without large blobs that aren't used at runtime.
+  #
+  def for_cache: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - full_name()
+  # -->
+  #
+  def full_name: () -> untyped
+
+  def gem_dir: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - gems_dir()
+  # -->
+  #
+  def gems_dir: () -> untyped
+
+  def has_rdoc: () -> true
+
+  def has_rdoc=: (untyped ignored) -> untyped
+
+  alias has_rdoc? has_rdoc
+
+  def has_unit_tests?: () -> untyped
+
+  # :stopdoc:
+  alias has_test_suite? has_unit_tests?
+
+  def hash: () -> untyped
+
+  def init_with: (untyped coder) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - new(name = nil, version = nil) { |self| ... }
+  # -->
+  # Specification constructor. Assigns the default values to the attributes and
+  # yields itself for further initialization.  Optionally takes `name` and
+  # `version`.
+  #
+  def initialize: (?untyped? name, ?untyped? version) ?{ (untyped) -> untyped } -> void
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - initialize_copy(other_spec)
+  # -->
+  # Duplicates array_attributes from `other_spec` so state isn't shared.
+  #
+  def initialize_copy: (untyped other_spec) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - base_dir()
+  # -->
+  #
+  def base_dir: () -> untyped
+
+  private
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - invalidate_memoized_attributes()
+  # -->
+  # Expire memoized instance variables that can incorrectly generate, replace or
+  # miss files due changes in certain attributes used to compute them.
+  #
+  def invalidate_memoized_attributes: () -> untyped
+
+  public
+
+  def inspect: () -> (untyped | ::String)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - lib_files()
+  # -->
+  # Files in the Gem under one of the require_paths
+  #
+  def lib_files: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - license()
+  # -->
+  # Singular accessor for #licenses
+  #
+  def license: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - licenses()
+  # -->
+  # Plural accessor for setting licenses
+  #
+  # See #license= for details
+  #
+  def licenses: () -> untyped
+
+  def internal_init: () -> untyped
+
+  def method_missing: (untyped sym, *untyped a) { (?) -> untyped } -> (nil | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - missing_extensions?()
+  # -->
+  # Is this specification missing its extensions?  When this returns true you
+  # probably want to build_extensions
+  #
+  def missing_extensions?: () -> (false | true)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - normalize()
+  # -->
+  # Normalize the list of files so that:
+  # *   All file lists have redundancies removed.
+  # *   Files referenced in the extra_rdoc_files are included in the package file
+  #     list.
+  #
+  def normalize: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - name_tuple()
+  # -->
+  # Return a NameTuple that represents this Specification
+  #
+  def name_tuple: () -> untyped
+
+  def original_name: () -> ::String
+
+  def original_platform: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - platform()
+  # -->
+  # The platform this gem runs on.  See Gem::Platform for details.
+  #
+  def platform: () -> untyped
+
+  def pretty_print: (untyped q) -> untyped
+
+  private
+
+  def check_version_conflict: (untyped other) -> (nil | untyped)
+
+  public
+
+  def raise_if_conflicts: () -> (untyped | nil)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - rdoc_options=(options)
+  # -->
+  # Sets rdoc_options to `value`, ensuring it is an array.
+  #
+  def rdoc_options=: (untyped options) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - require_path()
+  # -->
+  # Singular accessor for #require_paths
+  #
+  def require_path: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - require_path=(path)
+  # -->
+  # Singular accessor for #require_paths
+  #
+  def require_path=: (untyped path) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - requirements=(req)
+  # -->
+  # Set requirements to `req`, ensuring it is an array.
+  #
+  def requirements=: (untyped req) -> untyped
+
+  def respond_to_missing?: (untyped m, ?bool include_private) -> false
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - ri_dir()
+  # -->
+  # Returns the full path to this spec's ri directory.
+  #
+  def ri_dir: () -> untyped
+
+  private
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - ruby_code(obj)
+  # -->
+  # Return a string containing a Ruby code representation of the given object.
+  #
+  def ruby_code: (untyped obj) -> untyped
+
+  public
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - runtime_dependencies()
+  # -->
+  # List of dependencies that will automatically be activated at runtime.
+  #
+  def runtime_dependencies: () -> untyped
+
+  private
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - same_attributes?(spec)
+  # -->
+  # True if this gem has the same attributes as `other`.
+  #
+  def same_attributes?: (untyped spec) -> untyped
+
+  public
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - satisfies_requirement?(dependency)
+  # -->
+  # Checks if this specification meets the requirement of `dependency`.
+  #
+  def satisfies_requirement?: (untyped dependency) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - sort_obj()
+  # -->
+  # Returns an object you can use to sort specifications in #sort_by.
+  #
+  def sort_obj: () -> ::Array[untyped]
+
+  def source: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - spec_dir()
+  # -->
+  # Returns the full path to the directory containing this spec's gemspec file.
+  # eg: /usr/local/lib/ruby/gems/1.8/specifications
+  #
+  def spec_dir: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - spec_file()
+  # -->
+  # Returns the full path to this spec's gemspec file. eg:
+  # /usr/local/lib/ruby/gems/1.8/specifications/mygem-1.0.gemspec
+  #
+  def spec_file: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - spec_name()
+  # -->
+  # The default name of the gemspec.  See also #file_name
+  #
+  #     spec.spec_name # => "example-1.0.gemspec"
+  #
+  def spec_name: () -> ::String
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - summary=(str)
+  # -->
+  # A short summary of this gem's description.
+  #
+  def summary=: (untyped str) -> untyped
+
+  def test_file: () -> untyped
+
+  def test_file=: (untyped file) -> untyped
+
+  def test_files: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - to_ruby()
+  # -->
+  # Returns a Ruby code representation of this specification, such that it can be
+  # eval'ed and reconstruct the same specification later.  Attributes that still
+  # have their default values are omitted.
+  #
+  def to_ruby: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - to_ruby_for_cache()
+  # -->
+  # Returns a Ruby lighter-weight code representation of this specification, used
+  # for indexing only.
+  #
+  # See #to_ruby.
+  #
+  def to_ruby_for_cache: () -> untyped
+
+  def to_s: () -> ::String
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - to_spec()
+  # -->
+  # Returns self
+  #
+  def to_spec: () -> self
+
+  def to_yaml: (?::Hash[untyped, untyped] opts) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - traverse(trail = [], visited = {}, &block)
+  # -->
+  # Recursively walk dependencies of this spec, executing the `block` for each
+  # hop.
+  #
+  def traverse: (?untyped trail, ?::Hash[untyped, untyped] visited) { (?) -> untyped } -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - validate(packaging = true, strict = false)
+  # -->
+  # Checks that the specification contains all required fields, and does a very
+  # basic sanity check.
+  #
+  # Raises InvalidSpecificationException if the spec does not pass the checks..
+  #
+  def validate: (?bool packaging, ?bool strict) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - keep_only_files_and_directories()
+  # -->
+  #
+  def keep_only_files_and_directories: () -> untyped
+
+  def validate_for_resolution: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - validate_metadata()
+  # -->
+  #
+  def validate_metadata: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - validate_dependencies()
+  # -->
+  #
+  def validate_dependencies: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - validate_permissions()
+  # -->
+  #
+  def validate_permissions: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - version=(version)
+  # -->
+  # Set the version to `version`, potentially also setting
+  # required_rubygems_version if `version` indicates it is a prerelease.
+  #
+  def version=: (untyped version) -> (nil | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - stubbed?()
+  # -->
+  #
+  def stubbed?: () -> false
+
+  def yaml_initialize: (untyped tag, untyped vals) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/specification.rb
+  #   - reset_nil_attributes_to_default()
+  # -->
+  # Reset nil attributes to their default values to make the spec valid
+  #
+  def reset_nil_attributes_to_default: () -> nil
+
+  def flatten_require_paths: () -> (nil | untyped)
+
+  def raw_require_paths: () -> untyped
+end
