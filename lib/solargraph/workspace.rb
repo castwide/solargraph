@@ -188,9 +188,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
-      PinCache.cache_core(out: $stdout) unless PinCache.has_core?
-      # TODO: This should bring in dependencies as well
-      #
+      PinCache.cache_core(out: $stdout) unless PinCache.core?
       # @type [Array<Gem::Specification>]
       specs = gemspecs.all_gemspecs_from_bundle
       specs.each do |spec|

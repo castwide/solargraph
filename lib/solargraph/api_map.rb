@@ -40,13 +40,13 @@ module Solargraph
     #
 
     # @param other [Object]
-    def eql?(other)
+    def eql? other
       self.class == other.class &&
         equality_fields == other.equality_fields
     end
 
     # @param other [Object]
-    def ==(other)
+    def == other
       self.eql?(other)
     end
 
@@ -184,14 +184,14 @@ module Solargraph
 
     # @param out [IO, nil]
     # @return [void]
-    def cache_all_for_doc_map!(out)
+    def cache_all_for_doc_map! out
       @doc_map&.cache_doc_map_gems!(out)
     end
 
     # @param out [IO, nil]
     # @param rebuild [Boolean]
     # @return [void]
-    def cache_all_for_workspace!(out, rebuild: false)
+    def cache_all_for_workspace! out, rebuild: false
       workspace.cache_all_for_workspace!(out, rebuild: rebuild)
     end
 
@@ -204,7 +204,7 @@ module Solargraph
     # @param version [String, nil]
     #
     # @return [Gem::Specification, nil]
-    def find_gem(name, version = nil)
+    def find_gem name, version = nil
       gemspecs.find_gem(name, version)
     end
 
@@ -213,7 +213,7 @@ module Solargraph
     # @param only_if_used [Boolean]
     # @param out [IO, nil]
     # @return [void]
-    def cache_gem(gemspec, rebuild: false, only_if_used: false, out: nil)
+    def cache_gem gemspec, rebuild: false, only_if_used: false, out: nil
       @doc_map&.cache(gemspec, rebuild: rebuild, out: out, only_if_used: only_if_used)
     end
 
@@ -344,7 +344,7 @@ module Solargraph
     # @param context_namespace [String] The context namespace in which the
     #   tag was referenced; start from here to resolve the name
     # @return [String, nil] fully qualified namespace
-    def qualify_namespace(namespace, context_namespace = '')
+    def qualify_namespace namespace, context_namespace = ''
       cached = cache.get_qualified_namespace(namespace, context_namespace)
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
@@ -362,7 +362,7 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
-    def get_instance_variable_pins(namespace, scope = :instance)
+    def get_instance_variable_pins namespace, scope = :instance
       result = []
       used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
@@ -387,7 +387,7 @@ module Solargraph
     #
     # @param namespace [String] A fully qualified namespace
     # @return [Enumerable<Solargraph::Pin::ClassVariable>]
-    def get_class_variable_pins(namespace)
+    def get_class_variable_pins namespace
       prefer_non_nil_variables(store.get_class_variables(namespace))
     end
 
@@ -657,7 +657,7 @@ module Solargraph
     # @param sup [String] The superclass
     # @param sub [String] The subclass
     # @return [Boolean]
-    def super_and_sub?(sup, sub)
+    def super_and_sub? sup, sub
       fqsup = qualify(sup)
       cls = qualify(sub)
       tested = []
@@ -676,7 +676,7 @@ module Solargraph
     # @param module_ns [String] The module namespace (no type parameters)
     #
     # @return [Boolean]
-    def type_include?(host_ns, module_ns)
+    def type_include? host_ns, module_ns
       store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
     end
 
@@ -781,7 +781,7 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
+    def inner_get_methods_from_reference fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core
       # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
 
       # Ensure the types returned by the methods in the referenced
@@ -973,7 +973,7 @@ module Solargraph
     # @param rooted_type [ComplexType]
     # @param pins [Enumerable<Pin::Base>]
     # @return [Array<Pin::Base>]
-    def erase_generics(namespace_pin, rooted_type, pins)
+    def erase_generics namespace_pin, rooted_type, pins
       return pins unless should_erase_generics_when_done?(namespace_pin, rooted_type)
 
       logger.debug("Erasing generics on namespace_pin=#{namespace_pin} / rooted_type=#{rooted_type}")
@@ -984,18 +984,18 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def should_erase_generics_when_done?(namespace_pin, rooted_type)
+    def should_erase_generics_when_done? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
     # @param namespace_pin [Pin::Namespace]
-    def has_generics?(namespace_pin)
+    def has_generics? namespace_pin
       namespace_pin && !namespace_pin.generics.empty?
     end
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def can_resolve_generics?(namespace_pin, rooted_type)
+    def can_resolve_generics? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !rooted_type.all_params.empty?
     end
   end

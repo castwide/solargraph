@@ -31,12 +31,17 @@ module Solargraph
 
     # @param requires [Array<String>]
     # @param workspace [Workspace]
-    def initialize(requires, workspace)
+    def initialize requires, workspace
       @requires = requires.compact
       @workspace = workspace
       @global_environ = Convention.for_global(self)
       load_serialized_gem_pins
       pins.concat global_environ.pins
+    end
+
+    # @return [Solargraph::PinCache]
+    def pin_cache
+      @pin_cache ||= workspace.fresh_pincache
     end
 
     # @return [Array<String>]
@@ -51,14 +56,14 @@ module Solargraph
     # Cache all pins needed for the sources in this doc_map
     # @param out [IO, nil] output stream for logging
     # @return [void]
-    def cache_doc_map_gems!(out)
+    def cache_doc_map_gems! out
       # if we log at debug level:
       if logger.info?
         gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
         logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
       end
       logger.debug { "Caching: #{uncached_gemspecs.map(&:name)}" }
-      PinCache.cache_core unless PinCache.has_core?
+      PinCache.cache_core unless PinCache.core?
       load_serialized_gem_pins
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
@@ -77,11 +82,6 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Array<Gem::Specification>]
-    def gemspecs
-      @gemspecs ||= required_gems_map.values.compact.flatten
-    end
-
     # @return [Set<Gem::Specification>]
     def dependencies
       @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec) } - gemspecs).to_set
@@ -95,7 +95,7 @@ module Solargraph
     # @param out [IO, nil] output stream for logging
     #
     # @return [void]
-    def cache(gemspec, rebuild: false, only_if_used: false, out: nil)
+    def cache gemspec, rebuild: false, only_if_used: false, out: nil
       return if only_if_used && !uncached_gemspecs.include?(gemspec)
 
       pin_cache.cache_gem(gemspec: gemspec,
@@ -105,14 +105,14 @@ module Solargraph
 
     private
 
-    # @return [Solargraph::PinCache]
-    def pin_cache
-      @pin_cache ||= workspace.fresh_pincache
+    # @return [Array<Gem::Specification>]
+    def gemspecs
+      @gemspecs ||= required_gems_map.values.compact.flatten
     end
 
     # @param out [IO, nil]
     # @return [void]
-    def load_serialized_gem_pins(out: $stderr)
+    def load_serialized_gem_pins out: $stderr
       @pins = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
       # @sg-ignore Need support for RBS duck interfaces like _ToHash

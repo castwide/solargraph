@@ -21,12 +21,11 @@ module Solargraph
       @yard_plugins = yard_plugins
     end
 
-    # TODO: Get Solargraph to tell me that the one below is unneeded
     # @sg-ignore
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     def cached?(gemspec)
       rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)
-      has_combined_gem?(gemspec, rbs_version_cache_key)
+      combined_gem?(gemspec, rbs_version_cache_key)
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -141,9 +140,9 @@ module Solargraph
         build_rbs_collection = true
         build_combined = true
       else
-        build_yard = !has_yard_gem?(gemspec)
-        build_rbs_collection = !has_rbs_collection_pins?(gemspec, rbs_version_cache_key)
-        build_combined = !has_combined_gem?(gemspec, rbs_version_cache_key) || build_yard || build_rbs_collection
+        build_yard = !yard_gem?(gemspec)
+        build_rbs_collection = !rbs_collection_pins?(gemspec, rbs_version_cache_key)
+        build_combined = !combined_gem?(gemspec, rbs_version_cache_key) || build_yard || build_rbs_collection
       end
 
       build_yard = false if suppress_yard_cache?(gemspec, rbs_version_cache_key)
@@ -203,7 +202,7 @@ module Solargraph
       just_yard = build_yard && rbs_source_desc.nil?
 
       type << 'combined' if build_combined && !just_yard
-      out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
+      out&.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}")
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -325,13 +324,13 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @return [Boolean]
-    def has_yard_gem?(gemspec)
+    def yard_gem?(gemspec)
       exist?(yard_gem_path(gemspec))
     end
 
     # @param gemspec [Gem::Specification]
     # @return [Boolean]
-    def has_yardoc?(gemspec)
+    def yardoc?(gemspec)
       exist?(yardoc_path(gemspec))
     end
 
@@ -387,7 +386,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param hash [String]
-    def has_combined_gem?(gemspec, hash)
+    def combined_gem?(gemspec, hash)
       exist?(combined_path(gemspec, hash))
     end
 
@@ -400,7 +399,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param hash [String]
-    def has_rbs_collection_pins?(gemspec, hash)
+    def rbs_collection_pins?(gemspec, hash)
       exist?(rbs_collection_pins_path(gemspec, hash))
     end
 
@@ -416,11 +415,11 @@ module Solargraph
     def uncache_by_prefix *path_segments, out: nil
       path = File.join(*path_segments)
       glob = "#{path}*"
-      out.puts "Clearing pin cache in #{glob}" unless out.nil?
+      out&.puts "Clearing pin cache in #{glob}"
       Dir.glob(glob).each do |file|
         next unless File.file?(file)
         FileUtils.rm_rf file, secure: true
-        out.puts "Clearing pin cache in #{file}" unless out.nil?
+        out&.puts "Clearing pin cache in #{file}"
       end
     end
 
@@ -464,9 +463,9 @@ module Solargraph
         path = File.join(*path_segments)
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
-          out.puts "Clearing pin cache in #{path}" unless out.nil?
+          out&.puts "Clearing pin cache in #{path}"
         else
-          out.puts "Pin cache file #{path} does not exist" unless out.nil?
+          out&.puts "Pin cache file #{path} does not exist"
         end
       end
 
@@ -523,7 +522,7 @@ module Solargraph
         logger.debug { "Cache#save: Saved #{pins.length} pins to #{file}" }
       end
 
-      def has_core?
+      def core?
         File.file?(core_path)
       end
 
