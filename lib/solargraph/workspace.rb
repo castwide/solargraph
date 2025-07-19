@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'yaml'
 
 module Solargraph
   # A workspace consists of the files in a project's directory and the
@@ -9,36 +10,91 @@ module Solargraph
   # in an associated Library or ApiMap.
   #
   class Workspace
+    include Logging
+
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
+    autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
     attr_reader :directory
-
-    # The require paths associated with the workspace.
-    #
-    # @return [Array<String>]
-    attr_reader :require_paths
-
-    # @return [Array<String>]
-    attr_reader :gemnames
-    alias source_gems gemnames
 
     # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = directory
+      @directory = File.absolute_path(directory)
       @config = config
       @server = server
       load_sources
-      @gemnames = []
-      @require_paths = generate_require_paths
       require_plugins
+    end
+
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
+    def require_paths
+      @require_paths ||= RequirePaths.new(directory, config).generate
     end
 
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec
+      raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
+      gemspecs.fetch_dependencies(gemspec)
+    end
+
+    # @return [Solargraph::PinCache]
+    def pin_cache
+      @pin_cache ||= fresh_pincache
+    end
+
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    # @return [Array<Gem::Specification>]
+    def resolve_require require
+      gemspecs.resolve_require(require)
+    end
+
+    # @return [Environ]
+    def global_environ
+      # empty docmap, since the result needs to work in any possible
+      # context here
+      @environ ||= Convention.for_global(DocMap.new([], self))
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
+    # @return [void]
+    def cache_gem gemspec, out: nil, rebuild: false
+      pin_cache.cache_gem(gemspec: gemspec, out: out, rebuild: rebuild)
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [IO, nil] output stream for logging
+    #
+    # @return [void]
+    def uncache_gem gemspec, out: nil
+      pin_cache.uncache_gem(gemspec, out: out)
+    end
+
+    # @return [Solargraph::PinCache]
+    def fresh_pincache
+      PinCache.new(rbs_collection_path: rbs_collection_path,
+                   rbs_collection_config_path: rbs_collection_config_path,
+                   yard_plugins: yard_plugins,
+                   directory: directory)
+    end
+
+    # @return [Array<String>]
+    def yard_plugins
+      @yard_plugins ||= global_environ.yard_plugins.sort.uniq
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -111,35 +167,36 @@ module Solargraph
       false
     end
 
-    # True if the workspace contains at least one gemspec file.
-    #
-    # @return [Boolean]
-    def gemspec?
-      !gemspecs.empty?
-    end
-
-    # Get an array of all gemspec files in the workspace.
-    #
-    # @return [Array<String>]
-    def gemspecs
-      return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
-        config.allow? gs
-      end
-    end
-
     # @return [String, nil]
     def rbs_collection_path
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    # @return [String, nil]
+    # @sg-ignore Solargraph::Workspace#rbs_collection_config_path return type could not be inferred
     def rbs_collection_config_path
-      @rbs_collection_config_path ||= begin
-        unless directory.empty? || directory == '*'
-          yaml_file = File.join(directory, 'rbs_collection.yaml')
-          yaml_file if File.file?(yaml_file)
+      @rbs_collection_config_path ||=
+        begin
+          unless directory.empty? || directory == '*'
+            yaml_file = File.join(directory, 'rbs_collection.yaml')
+            yaml_file if File.file?(yaml_file)
+          end
+        end
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_all_for_workspace! out, rebuild: false
+      PinCache.cache_core(out: $stdout) unless PinCache.core?
+      # @type [Array<Gem::Specification>]
+      specs = gemspecs.all_gemspecs_from_bundle
+      specs.each do |spec|
+        unless pin_cache.cached?(spec)
+          pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out)
         end
       end
+      out.puts "Documentation cached for all #{specs.length} gems."
     end
 
     # Synchronize the workspace from the provided updater.
@@ -155,12 +212,9 @@ module Solargraph
       server['commandPath'] || 'solargraph'
     end
 
-    # True if the workspace has a root Gemfile.
-    #
-    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-    #
-    def gemfile?
-      directory && File.file?(File.join(directory, 'Gemfile'))
+    # @return [Solargraph::Workspace::Gemspecs]
+    def gemspecs
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory)
     end
 
     private
@@ -192,48 +246,6 @@ module Solargraph
       end
     end
 
-    # Generate require paths from gemspecs if they exist or assume the default
-    # lib directory.
-    #
-    # @return [Array<String>]
-    def generate_require_paths
-      return configured_require_paths unless gemspec?
-      result = []
-      gemspecs.each do |file|
-        base = File.dirname(file)
-        # HACK: Evaluating gemspec files violates the goal of not running
-        #   workspace code, but this is how Gem::Specification.load does it
-        #   anyway.
-        cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
-        o, e, s = Open3.capture3(*cmd)
-        if s.success?
-          begin
-            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-            next if hash.empty?
-            @gemnames.push hash['name']
-            result.concat(hash['paths'].map { |path| File.join(base, path) })
-          rescue StandardError => e
-            Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-          end
-        else
-          Solargraph.logger.warn "Error reading #{file}"
-          Solargraph.logger.warn e
-        end
-      end
-      result.concat(config.require_paths.map { |p| File.join(directory, p) })
-      result.push File.join(directory, 'lib') if result.empty?
-      result
-    end
-
-    # Get additional require paths defined in the configuration.
-    #
-    # @return [Array<String>]
-    def configured_require_paths
-      return ['lib'] if directory.empty?
-      return [File.join(directory, 'lib')] if config.require_paths.empty?
-      config.require_paths.map { |p| File.join(directory, p) }
-    end
-
     # @return [void]
     def require_plugins
       config.plugins.each do |plugin|
@@ -249,6 +261,7 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
+      # @sg-ignore Unresolved call to load_file
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)
