@@ -128,14 +128,6 @@ module Solargraph
         end
       end
 
-      # True if the workspace has a root Gemfile.
-      #
-      # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-      #
-      def gemfile?
-        directory && File.file?(File.join(directory, 'Gemfile'))
-      end
-
       def in_this_bundle?
         directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end
