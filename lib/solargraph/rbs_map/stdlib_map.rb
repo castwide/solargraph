@@ -9,12 +9,6 @@ module Solargraph
     class StdlibMap < RbsMap
       include Logging
 
-      # @return [Symbol]
-      def log_level
-        # TODO: track down remaining unfound requires
-        :info
-      end
-
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 

@@ -44,7 +44,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def gemspec_file_paths
-        # TODO: Document what '*' means and how a user should use it
+        # @todo Document what '*' means and how a user should use it
         return [] if directory.empty? || directory == '*'
         @gemspec_file_paths ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
           config.nil? || config.allow?(gs)
@@ -73,7 +73,6 @@ module Solargraph
       # @param gemspec_file_path [String]
       # @return [Array<String>]
       def require_path_from_gemspec_file gemspec_file_path
-        # TODO: this needs to work with external bundles too
         base = File.dirname(gemspec_file_path)
         # HACK: Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it

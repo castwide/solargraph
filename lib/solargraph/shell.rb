@@ -106,7 +106,7 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      gems(gem + version ? "=#{version}" : '')
+      gems(gem + (version ? "=#{version}" : ''))
       # "
     end
 

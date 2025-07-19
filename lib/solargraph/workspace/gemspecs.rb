@@ -12,7 +12,7 @@ module Solargraph
 
       # @param directory [String]
       def initialize directory
-        @directory = directory
+        @directory = File.absolute_path(directory)
         # @todo implement preferences
         @preferences = []
       end
@@ -25,34 +25,52 @@ module Solargraph
       # @return [::Array<Gem::Specification>, nil]
       def resolve_require require
         return nil if require.empty?
+
+        # This is added in the parser when it sees 'Bundler.require' -
+        # see https://bundler.io/guides/bundler_setup.html '
+        #
+        # @todo handle different arguments to Bundler.require
         return auto_required_gemspecs_from_bundler if require == 'bundler/require'
 
-        gemspecs = all_gemspecs_from_bundle
-        # @type [Gem::Specification, nil]
-        gemspec = gemspecs.find { |gemspec| gemspec.name == require }
-        if gemspec.nil?
-          # TODO: this seems hinky
-          gem_name_guess = require.split('/').first
-          begin
-            # this can happen when the gem is included via a local path in
-            # a Gemfile; Gem doesn't try to index the paths in that case.
-            #
-            # See if we can make a good guess:
-            potential_gemspec = Gem::Specification.find_by_name(gem_name_guess)
-
-            return nil if potential_gemspec.nil?
-
-            file = "lib/#{require}.rb"
-            gemspec = potential_gemspec if potential_gemspec&.files&.any? { |gemspec_file| file == gemspec_file }
-          rescue Gem::MissingSpecError
-            logger.debug do
-              "Require path #{require} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
-            end
-            []
+        # Determine gem name based on the require path
+        file = "lib/#{require}.rb"
+        begin
+          spec_with_path = Gem::Specification.find_by_path(file)
+        rescue Gem::MissingSpecError
+          logger.debug do
+            "Require path #{require} could not be resolved to a gem via find_by_name or guess of #{gem_name_guess}"
           end
+          []
         end
-        return nil if gemspec.nil?
-        [gemspec_or_preference(gemspec)]
+
+        all_gemspecs = all_gemspecs_from_bundle
+
+
+        gem_names_to_try = [
+          spec_with_path&.name,
+          require.tr('/', '-'),
+          require.split('/').first
+        ].compact.uniq
+        gem_names_to_try.each do |gem_name|
+          gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
+          return [gemspec_or_preference(gemspec)] if gemspec
+
+          begin
+            gemspec = Gem::Specification.find_by_name(gem_name)
+            return [gemspec_or_preference(gemspec)] if gemspec
+          rescue Gem::MissingSpecError
+            logger.debug "Gem #{gem_name} not found in the current Ruby environment"
+          end
+
+          # look ourselves just in case this is hanging out somewhere
+          # that find_by_path doesn't index'
+          gemspec = all_gemspecs.find do |spec|
+            spec&.files&.any? { |gemspec_file| file == gemspec_file }
+          end
+          return [gemspec_or_preference(gemspec)] if gemspec
+        end
+
+        nil
       end
 
       # @param name [String]
@@ -109,7 +127,6 @@ module Solargraph
       # @sg-ignore Need a JSON type
       # @yield [undefined]
       def query_external_bundle command, &block
-        # TODO: probably combine with logic in require_paths.rb
         Solargraph.with_clean_env do
           cmd = [
             'ruby', '-e',
@@ -178,21 +195,14 @@ module Solargraph
           end
       end
 
-      # TODO: "Astute readers will notice that the correct way to
-      #   require the rack-cache gem is require 'rack/cache', not
-      #   require 'rack-cache'. To tell bundler to use require
-      #   'rack/cache', update your Gemfile:"
-      #
-      # gem 'rack-cache', require: 'rack/cache'
-
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_this_bundle
-        deps = Bundler.definition.locked_gems.dependencies
-
-        all_gemspecs_from_bundle.select do |gemspec|
-          deps.key?(gemspec.name) &&
-            deps[gemspec.name].autorequire != []
+        # Adapted from require() in lib/bundler/runtime.rb
+        deps = Bundler.definition.dependencies.select do |dep|
+          dep.groups.include?(:default) && dep.should_include?
         end
+
+        all_gemspecs_from_bundle.select { |gemspec| deps.key?(gemspec.name) }
       end
 
       # @sg-ignore
@@ -200,6 +210,7 @@ module Solargraph
       #   return type could not be inferred
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_external_bundle
+        # TODO adjust for logic above
         @auto_required_gemspecs_from_external_bundle ||=
           begin
             logger.info 'Fetching auto-required gemspecs from Bundler (bundler/require)'

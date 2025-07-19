@@ -47,9 +47,17 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'cache' do
+  describe 'gem' do
     it 'caches without erroring out' do
       output = bundle_exec('solargraph', 'gem', 'solargraph')
+
+      expect(output).to include('Caching these gems')
+    end
+  end
+
+  describe 'cache' do
+    it 'caches without erroring out' do
+      output = bundle_exec('solargraph', 'cache', 'solargraph')
 
       expect(output).to include('Caching these gems')
     end
