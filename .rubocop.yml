@@ -50,6 +50,8 @@ Metrics/CyclomaticComplexity:
   Max: 23
 Metrics/PerceivedComplexity:
   Max: 29
+RSpec/ExampleLength:
+  Max: 17
 
 plugins:
   - rubocop-rspec
