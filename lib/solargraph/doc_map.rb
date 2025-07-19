@@ -93,8 +93,6 @@ module Solargraph
       @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec) } - gemspecs).to_set
     end
 
-    private
-
     # Cache gem documentation if needed for this doc_map
     #
     # @param gemspec [Gem::Specification]
@@ -110,6 +108,8 @@ module Solargraph
                           rebuild: rebuild,
                           out: out)
     end
+
+    private
 
     # @param out [IO, nil]
     # @return [void]

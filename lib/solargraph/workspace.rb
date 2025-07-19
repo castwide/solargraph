@@ -214,12 +214,12 @@ module Solargraph
       server['commandPath'] || 'solargraph'
     end
 
-    private
-
     # @return [Solargraph::Workspace::Gemspecs]
     def gemspecs
       @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory)
     end
+
+    private
 
     # The language server configuration (or an empty hash if the workspace was
     # not initialized from a server).

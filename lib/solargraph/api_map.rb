@@ -22,9 +22,8 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :missing_docs
 
-    # TODO: Is this needed?
-    # @return [Solargraph::PinCache]
-    attr_reader :pin_cache
+    # @return [Solargraph::Workspace::Gemspecs]
+    attr_reader :gemspecs
 
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
@@ -106,7 +105,7 @@ module Solargraph
 
       if recreate_docmap
         @doc_map = DocMap.new(unresolved_requires, bench.workspace) # @todo Implement gem preferences
-        @pin_cache = @doc_map.pin_cache
+        @gemspecs = @doc_map.workspace.gemspecs
         @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
@@ -199,6 +198,14 @@ module Solargraph
     # @return [Workspace]
     def workspace
       @doc_map&.workspace
+    end
+
+    # @param name [String]
+    # @param version [String, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem(name, version = nil)
+      gemspecs.find_gem(name, version)
     end
 
     # @param gemspec [Gem::Specification]

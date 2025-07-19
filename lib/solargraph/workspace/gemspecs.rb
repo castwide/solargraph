@@ -55,17 +55,18 @@ module Solargraph
         [gemspec_or_preference(gemspec)]
       end
 
-      # Returns all gemspecs directly depended on by this workspace's
-      # bundle (does not include transitive dependencies).
+      # @param name [String]
+      # @param version [String, nil]
       #
-      # @return [Array<Gem::Specification>]
-      def all_gemspecs_from_bundle
-        @all_gemspecs_from_bundle ||=
-          if in_this_bundle?
-            all_gemspecs_from_this_bundle
-          else
-            all_gemspecs_from_external_bundle
-          end
+      # @return [Gem::Specification, nil]
+      def find_gem name, version
+        gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
+        return gemspec if gemspec
+
+        Gem::Specification.find_by_name(name, version)
+      rescue Gem::MissingSpecError
+        logger.warn "Please install the gem #{name}:#{version} in Solargraph's Ruby environment"
+        nil
       end
 
       # @param gemspec [Gem::Specification]
@@ -88,6 +89,21 @@ module Solargraph
           nil
         end.to_a.compact
       end
+
+      # Returns all gemspecs directly depended on by this workspace's
+      # bundle (does not include transitive dependencies).
+      #
+      # @return [Array<Gem::Specification>]
+      def all_gemspecs_from_bundle
+        @all_gemspecs_from_bundle ||=
+          if in_this_bundle?
+            all_gemspecs_from_this_bundle
+          else
+            all_gemspecs_from_external_bundle
+          end
+      end
+
+      private
 
       # @param command [String] The expression to evaluate in the external bundle
       # @sg-ignore Need a JSON type
@@ -238,7 +254,7 @@ module Solargraph
           begin
             logger.info 'Fetching gemspecs required from external bundle'
 
-            command = 'Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h'
+            command = 'Bundler.definition.locked_gems&.specs&.map { |spec| [spec.name, spec.version] }.to_h'
 
             query_external_bundle command do |names_and_versions|
               names_and_versions.map do |name, version|
