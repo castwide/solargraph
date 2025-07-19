@@ -34,6 +34,10 @@ Metrics/ParameterLists:
   Max: 7
   CountKeywordArgs: false
 
+# we don't use the spec/solargraph directory, instead keeping things
+# directly under spec.
+RSpec/SpecFilePathFormat:
+  Enabled: false
 
 #
 # Set a relaxed standard on harder-to-address item for ease of

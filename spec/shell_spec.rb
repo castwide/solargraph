@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 require 'open3'
 
@@ -26,10 +28,13 @@ describe Solargraph::Shell do
   end
 
   describe '--version' do
-    it 'returns a version when run' do
-      output = bundle_exec('solargraph', '--version')
+    let(:output) { bundle_exec('solargraph', '--version') }
 
+    it 'returns output' do
       expect(output).not_to be_empty
+    end
+
+    it 'returns a version when run' do
       expect(output).to eq("#{Solargraph::VERSION}\n")
     end
   end
