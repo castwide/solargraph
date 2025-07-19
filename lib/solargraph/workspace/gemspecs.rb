@@ -195,6 +195,9 @@ module Solargraph
         end
       end
 
+      # @sg-ignore
+      #   Solargraph::Workspace::Gemspecs#auto_required_gemspecs_from_external_bundle
+      #   return type could not be inferred
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_external_bundle
         @auto_required_gemspecs_from_external_bundle ||=
