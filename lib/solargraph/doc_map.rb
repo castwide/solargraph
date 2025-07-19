@@ -39,12 +39,6 @@ module Solargraph
       pins.concat global_environ.pins
     end
 
-    # TODO: Does this need to be public?
-    # @return [Solargraph::PinCache]
-    def pin_cache
-      @pin_cache ||= workspace.fresh_pincache
-    end
-
     # @return [Array<String>]
     def yard_plugins
       global_environ.yard_plugins
@@ -111,6 +105,11 @@ module Solargraph
 
     private
 
+    # @return [Solargraph::PinCache]
+    def pin_cache
+      @pin_cache ||= workspace.fresh_pincache
+    end
+
     # @param out [IO, nil]
     # @return [void]
     def load_serialized_gem_pins(out: $stderr)
@@ -127,7 +126,7 @@ module Solargraph
         # this will load from disk if needed; no need to manage
         # uncached_gemspecs to trigger that later
         stdlib_name_guess = path.split('/').first
-        # TODO: this results in pins being generated in real time, not in advance with solargrpah gems
+        # @todo this results in pins being generated in real time, not in advance with solargrpah gems
         rbs_pins = pin_cache.cache_stdlib_rbs_map stdlib_name_guess if stdlib_name_guess
         @pins.concat rbs_pins if rbs_pins
       end
