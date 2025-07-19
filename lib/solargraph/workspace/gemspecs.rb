@@ -38,13 +38,12 @@ module Solargraph
           spec_with_path = Gem::Specification.find_by_path(file)
         rescue Gem::MissingSpecError
           logger.debug do
-            "Require path #{require} could not be resolved to a gem via find_by_name or guess of #{gem_name_guess}"
+            "Require path #{require} could not be resolved to a gem via find_by_name or path of #{file}"
           end
           []
         end
 
         all_gemspecs = all_gemspecs_from_bundle
-
 
         gem_names_to_try = [
           spec_with_path&.name,
@@ -198,11 +197,11 @@ module Solargraph
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_this_bundle
         # Adapted from require() in lib/bundler/runtime.rb
-        deps = Bundler.definition.dependencies.select do |dep|
+        dep_names = Bundler.definition.dependencies.select do |dep|
           dep.groups.include?(:default) && dep.should_include?
-        end
+        end.map(&:name)
 
-        all_gemspecs_from_bundle.select { |gemspec| deps.key?(gemspec.name) }
+        all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
       end
 
       # @sg-ignore
@@ -210,21 +209,17 @@ module Solargraph
       #   return type could not be inferred
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_external_bundle
-        # TODO adjust for logic above
         @auto_required_gemspecs_from_external_bundle ||=
           begin
             logger.info 'Fetching auto-required gemspecs from Bundler (bundler/require)'
             command =
-              'dependencies = Bundler.definition.dependencies; ' \
-              'all_specs = Bundler.definition.locked_gems.specs; ' \
-              'autorequired_specs = all_specs.' \
-              'select { |gemspec| dependencies.key?(gemspec.name) && dependencies[gemspec.name].autorequire != [] }; ' \
-              'autorequired_specs.map { |spec| [spec.name, spec.version] }'
-            query_external_bundle command do |dependencies|
-              dependencies.map do |name, requirement|
-                resolve_gem_ignoring_local_bundle name, requirement
-              end.compact
-            end
+              'Bundler.definition.dependencies' \
+              '.select { |dep| dep.groups.include?(:default) && dep.should_include? }.map(&:name)'
+            # @sg-ignore
+            # @type [Array<String>]
+            dep_names = query_external_bundle(command) { |dependency_names| dependency_names }
+
+            all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
           end
       end
 
