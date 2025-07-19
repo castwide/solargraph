@@ -23,7 +23,11 @@ module Solargraph
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = File.absolute_path(directory)
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
