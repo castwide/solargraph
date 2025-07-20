@@ -200,10 +200,10 @@ module Solargraph
       #   matched in the expected qualifies as a match
       def conforms_to_unique_type?(api_map, expected, situation = :method_call,
                                    variance: erased_variance(situation),
-                                   allow_subtype_skew: allow_subtype_skew,
-                                   allow_empty_params: allow_empty_params,
-                                   allow_reverse_match: allow_reverse_match,
-                                   allow_any_match: allow_any_match)
+                                   allow_subtype_skew:,
+                                   allow_empty_params:,
+                                   allow_reverse_match:,
+                                   allow_any_match:)
         expected = expected.downcast_to_literal_if_possible
         inferred = downcast_to_literal_if_possible
 
