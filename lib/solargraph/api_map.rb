@@ -185,7 +185,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_all_for_doc_map! out
-      @doc_map&.cache_doc_map_gems!(out)
+      @doc_map.cache_doc_map_gems!(out)
     end
 
     # @param out [IO, nil]
