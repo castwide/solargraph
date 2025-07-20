@@ -196,8 +196,8 @@ module Solargraph
           specish_objects = specish_objects.map(&:materialize_for_installation)
         end
         specish_objects.map do |specish|
-          if specish.respond_to?(:name) && specish.respond_to?(:version)
-            # good enough for most uses!
+          if specish.respond_to?(:name) && specish.respond_to?(:version) && specish.respond_to?(:gem_dir)
+            # duck type is good enough for outside uses!
             specish
           else
             to_gem_specification(specish)
