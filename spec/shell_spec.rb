@@ -55,6 +55,14 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'gems' do
+    it 'caches all without erroring out' do
+      output = bundle_exec('solargraph', 'gems')
+
+      expect(output).to include('Documentation cached for all')
+    end
+  end
+
   describe 'cache' do
     it 'caches without erroring out' do
       output = bundle_exec('solargraph', 'cache', 'solargraph')
