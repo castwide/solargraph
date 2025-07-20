@@ -58,12 +58,12 @@ module Solargraph
     # @param out [IO, nil] output stream for logging
     # @return [void]
     def cache_doc_map_gems! out
-      # if we log at debug level:
-      if logger.info?
-        gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
-        logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
+      unless uncached_gemspecs.empty?
+        logger.info do
+          gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
+          "Caching pins for gems: #{gem_desc}"
+        end
       end
-      logger.debug { "Caching: #{uncached_gemspecs.map(&:name)}" }
       PinCache.cache_core unless PinCache.core?
       load_serialized_gem_pins(out: out)
       time = Benchmark.measure do
