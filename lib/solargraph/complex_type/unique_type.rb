@@ -204,6 +204,13 @@ module Solargraph
                                    allow_empty_params:,
                                    allow_reverse_match:,
                                    allow_any_match:)
+        if allow_reverse_match
+          reversed_match = expected.conforms_to_unique_type? api_map, self, situation, allow_subtype_skew: allow_subtype_skew,
+                                                             allow_empty_params: allow_empty_params,
+                                                             allow_reverse_match: false,
+                                                             allow_any_match: allow_any_match
+          return true if reversed_match
+        end
         expected = expected.downcast_to_literal_if_possible
         inferred = downcast_to_literal_if_possible
 
