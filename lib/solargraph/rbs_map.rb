@@ -117,7 +117,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def pins out: $stderr
       @pins ||= if resolved?
-                  loader.libs.each { |lib| log_caching(lib, out: $stderr) }
+                  loader.libs.each { |lib| log_caching(lib, out: out) }
                   conversions.pins
                 else
                   []
