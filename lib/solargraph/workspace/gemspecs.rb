@@ -89,8 +89,6 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Specification>]
       def fetch_dependencies gemspec
-        raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
-
         gemspecs = all_gemspecs_from_bundle
 
         # @param runtime_dep [Gem::Dependency]
@@ -122,10 +120,41 @@ module Solargraph
 
       private
 
+      # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+      # @return [Gem::Specification, nil]
+      def to_gem_specification specish
+        # print time including milliseconds
+        case specish
+        when Gem::Specification
+          # yay!
+          specish
+        when Bundler::LazySpecification
+          # materializing didn't work.  Let's look in the local
+          # rubygems without bundler's help
+          resolve_gem_ignoring_local_bundle specish.name, specish.version
+        when Bundler::StubSpecification
+          # turns a Bundler::StubSpecification into a
+          # Gem::StubSpecification into a Gem::Specification
+          specish = specish.stub
+          if specish.respond_to?(:spec)
+            specish.spec
+          else
+            resolve_gem_ignoring_local_bundle specish.name, specish.version
+          end
+        else
+          @@warned_on_gem_type ||= false # rubocop:disable Style/ClassVars
+          unless @@warned_on_gem_type
+            logger.warn "Unexpected type while resolving gem: #{specish.class}"
+            @@warned_on_gem_type = true # rubocop:disable Style/ClassVars
+          end
+          nil
+        end
+      end
+
       # @param command [String] The expression to evaluate in the external bundle
       # @sg-ignore Need a JSON type
-      # @yield [undefined]
-      def query_external_bundle command, &block
+      # @yield [undefined, nil]
+      def query_external_bundle command
         Solargraph.with_clean_env do
           cmd = [
             'ruby', '-e',
@@ -135,8 +164,7 @@ module Solargraph
           o, e, s = Open3.capture3(*cmd)
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
-            data = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-            block.yield data
+            o && !o.empty? ? JSON.parse(o.split("\n").last) : nil
           else
             Solargraph.logger.warn e
             raise BundleNotFoundError, "Failed to load gems from bundle at #{directory}"
@@ -148,7 +176,7 @@ module Solargraph
         directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end
 
-      # @return [Array<Gem::Specification>]
+      # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def all_gemspecs_from_this_bundle
         # Find only the gems bundler is now using
         specish_objects = Bundler.definition.locked_gems.specs
@@ -156,34 +184,16 @@ module Solargraph
           specish_objects = specish_objects.map(&:materialize_for_installation)
         end
         specish_objects.map do |specish|
-          case specish
-          when Gem::Specification
-            # yay!
+          if specish.respond_to?(:name) && specish.respond_to?(:version)
+            # good enough for most uses!
             specish
-          when Bundler::LazySpecification
-            # materializing didn't work.  Let's look in the local
-            # rubygems without bundler's help
-            resolve_gem_ignoring_local_bundle specish.name, specish.version
-          when Bundler::StubSpecification
-            # turns a Bundler::StubSpecification into a
-            # Gem::StubSpecification into a Gem::Specification
-            specish = specish.stub
-            if specish.respond_to?(:spec)
-              specish.spec
-            else
-              resolve_gem_ignoring_local_bundle specish.name, specish.version
-            end
           else
-            @@warned_on_gem_type ||= false # rubocop:disable Style/ClassVars
-            unless @@warned_on_gem_type
-              logger.warn "Unexpected type while resolving gem: #{specish.class}"
-              @@warned_on_gem_type = true # rubocop:disable Style/ClassVars
-            end
+            to_gem_specification(specish)
           end
-        end
+        end.compact
       end
 
-      # @return [Array<Gem::Specification>]
+      # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def auto_required_gemspecs_from_bundler
         logger.info 'Fetching gemspecs autorequired from Bundler (bundler/require)'
         @auto_required_gemspecs_from_bundler ||=
@@ -194,7 +204,7 @@ module Solargraph
           end
       end
 
-      # @return [Array<Gem::Specification>]
+      # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def auto_required_gemspecs_from_this_bundle
         # Adapted from require() in lib/bundler/runtime.rb
         dep_names = Bundler.definition.dependencies.select do |dep|
@@ -207,27 +217,26 @@ module Solargraph
       # @sg-ignore
       #   Solargraph::Workspace::Gemspecs#auto_required_gemspecs_from_external_bundle
       #   return type could not be inferred
-      # @return [Array<Gem::Specification>]
+      # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def auto_required_gemspecs_from_external_bundle
         @auto_required_gemspecs_from_external_bundle ||=
           begin
             logger.info 'Fetching auto-required gemspecs from Bundler (bundler/require)'
             command =
               'Bundler.definition.dependencies' \
-              '.select { |dep| dep.groups.include?(:default) && dep.should_include? }.map(&:name)'
+              '.select { |dep| dep.groups.include?(:default) && dep.should_include? }' \
+              '.map { |dep| [dep.name, dep. version] }'
             # @sg-ignore
-            # @type [Array<String>]
-            dep_names = query_external_bundle(command) { |dependency_names| dependency_names }
+            # @type [Array<Array(String, String)>]
+            dep_details = query_external_bundle command
 
-            all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
+            dep_details.map { |name, version| find_gem(name, version) }.compact
           end
       end
 
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Dependency>]
       def only_runtime_dependencies gemspec
-        raise ArgumentError, 'gemspec must be a Gem::Specification' unless gemspec.is_a?(Gem::Specification)
-
         gemspec.dependencies - gemspec.development_dependencies
       end
 
@@ -257,11 +266,9 @@ module Solargraph
 
             command = 'Bundler.definition.locked_gems&.specs&.map { |spec| [spec.name, spec.version] }.to_h'
 
-            query_external_bundle command do |names_and_versions|
-              names_and_versions.map do |name, version|
-                resolve_gem_ignoring_local_bundle(name, version)
-              end.compact
-            end
+            query_external_bundle(command).map do |name, version|
+              resolve_gem_ignoring_local_bundle(name, version)
+            end.compact
           end
       end
 
