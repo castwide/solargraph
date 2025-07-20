@@ -122,35 +122,45 @@ module Solargraph
 
       private
 
+      # @return [Hash{Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification => Gem::Specification}]
+      private_class_method def self.gem_specification_cache
+        @gem_specification_cache ||= {}
+      end
+
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+      # @sg-ignore
       # @return [Gem::Specification, nil]
       def to_gem_specification specish
         # print time including milliseconds
-        case specish
-        when Gem::Specification
-          # yay!
-          specish
-        when Bundler::LazySpecification
-          # materializing didn't work.  Let's look in the local
-          # rubygems without bundler's help
-          resolve_gem_ignoring_local_bundle specish.name, specish.version
-        when Bundler::StubSpecification
-          # turns a Bundler::StubSpecification into a
-          # Gem::StubSpecification into a Gem::Specification
-          specish = specish.stub
-          if specish.respond_to?(:spec)
-            specish.spec
-          else
-            resolve_gem_ignoring_local_bundle specish.name, specish.version
-          end
-        else
-          @@warned_on_gem_type ||= false # rubocop:disable Style/ClassVars
-          unless @@warned_on_gem_type
-            logger.warn "Unexpected type while resolving gem: #{specish.class}"
-            @@warned_on_gem_type = true # rubocop:disable Style/ClassVars
-          end
-          nil
-        end
+        self.class.gem_specification_cache[specish] ||= case specish
+                                                        when Gem::Specification
+                                                          # yay!
+                                                          specish
+                                                        when Bundler::LazySpecification
+                                                          # materializing didn't work.  Let's look in the local
+                                                          # rubygems without bundler's help
+                                                          resolve_gem_ignoring_local_bundle specish.name,
+                                                                                            specish.version
+                                                        when Bundler::StubSpecification
+                                                          # turns a Bundler::StubSpecification into a
+                                                          # Gem::StubSpecification into a Gem::Specification
+                                                          specish = specish.stub
+                                                          if specish.respond_to?(:spec)
+                                                            specish.spec
+                                                          else
+                                                            resolve_gem_ignoring_local_bundle specish.name,
+                                                                                              specish.version
+                                                          end
+                                                        else
+                                                          @@warned_on_gem_type ||= # rubocop:disable Style/ClassVars
+                                                            false
+                                                          unless @@warned_on_gem_type
+                                                            logger.warn 'Unexpected type while resolving gem: ' \
+                                                                        "#{specish.class}"
+                                                            @@warned_on_gem_type = true # rubocop:disable Style/ClassVars
+                                                          end
+                                                          nil
+                                                        end
       end
 
       # @param command [String] The expression to evaluate in the external bundle
@@ -239,6 +249,9 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @return [Array<Gem::Dependency>]
       def only_runtime_dependencies gemspec
+        unless gemspec.respond_to?(:dependencies) && gemspec.respond_to?(:development_dependencies)
+          gemspec = to_gem_specification(gemspec)
+        end
         gemspec.dependencies - gemspec.development_dependencies
       end
 
