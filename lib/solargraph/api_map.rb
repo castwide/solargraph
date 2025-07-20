@@ -228,7 +228,7 @@ module Solargraph
     # @todo IO::NULL is incorrectly inferred to be a String.
     # @sg-ignore
     #
-    # @param directory [String]
+    # @param directory [String] workspace directory
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
     def self.load_with_cache directory, out
