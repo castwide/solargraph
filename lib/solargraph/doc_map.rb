@@ -31,11 +31,12 @@ module Solargraph
 
     # @param requires [Array<String>]
     # @param workspace [Workspace]
-    def initialize requires, workspace
+    # @param out [IO, nil] output stream for logging
+    def initialize requires, workspace, out: $stderr
       @requires = requires.compact
       @workspace = workspace
       @global_environ = Convention.for_global(self)
-      load_serialized_gem_pins
+      load_serialized_gem_pins(out: out)
       pins.concat global_environ.pins
     end
 
@@ -64,7 +65,7 @@ module Solargraph
       end
       logger.debug { "Caching: #{uncached_gemspecs.map(&:name)}" }
       PinCache.cache_core unless PinCache.core?
-      load_serialized_gem_pins
+      load_serialized_gem_pins(out: out)
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
           cache(gemspec, out: out)
@@ -74,7 +75,7 @@ module Solargraph
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
         out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms"
       end
-      load_serialized_gem_pins
+      load_serialized_gem_pins(out: out)
     end
 
     # @return [Array<String>]

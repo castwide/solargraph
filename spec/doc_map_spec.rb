@@ -4,7 +4,7 @@ require 'bundler'
 
 describe Solargraph::DocMap do
   subject(:doc_map) do
-    Solargraph::DocMap.new(requires, workspace)
+    Solargraph::DocMap.new(requires, workspace, out: nil)
   end
 
   let(:pre_cache) { true }
@@ -14,10 +14,10 @@ describe Solargraph::DocMap do
     Solargraph::Workspace.new(Dir.pwd)
   end
 
-  let(:plain_doc_map) { Solargraph::DocMap.new([], workspace) }
+  let(:plain_doc_map) { Solargraph::DocMap.new([], workspace, out: nil) }
 
   before do
-    doc_map.cache_doc_map_gems!($stderr) if pre_cache
+    doc_map.cache_doc_map_gems!(nil) if pre_cache
   end
 
   context 'with a require in solargraph test bundle' do
@@ -64,8 +64,8 @@ describe Solargraph::DocMap do
 
   context 'with require as bundle/require' do
     it 'imports all gems when bundler/require used' do
-      doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], workspace)
-      doc_map_with_bundler_require.cache_doc_map_gems!($stderr)
+      doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], workspace, out: nil)
+      doc_map_with_bundler_require.cache_doc_map_gems!(nil)
       expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
     end
   end

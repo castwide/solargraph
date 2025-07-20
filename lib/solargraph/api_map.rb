@@ -104,7 +104,7 @@ module Solargraph
                         @doc_map.any_uncached?
 
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, bench.workspace) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
         @gemspecs = @doc_map.workspace.gemspecs
         @unresolved_requires = @doc_map.unresolved_requires
       end
