@@ -120,12 +120,12 @@ module Solargraph
           end
       end
 
-      private
-
       # @return [Hash{Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification => Gem::Specification}]
-      private_class_method def self.gem_specification_cache
+      def self.gem_specification_cache
         @gem_specification_cache ||= {}
       end
+
+      private
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       # @sg-ignore
