@@ -64,6 +64,8 @@ module Solargraph
           # look ourselves just in case this is hanging out somewhere
           # that find_by_path doesn't index'
           gemspec = all_gemspecs.find do |spec|
+            spec = to_gem_specification(spec) unless spec.respond_to?(:files)
+
             spec&.files&.any? { |gemspec_file| file == gemspec_file }
           end
           return [gemspec_or_preference(gemspec)] if gemspec
@@ -108,7 +110,7 @@ module Solargraph
       # Returns all gemspecs directly depended on by this workspace's
       # bundle (does not include transitive dependencies).
       #
-      # @return [Array<Gem::Specification>]
+      # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def all_gemspecs_from_bundle
         @all_gemspecs_from_bundle ||=
           if in_this_bundle?
