@@ -10,6 +10,33 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
+  describe '.load_with_cache' do
+    context 'without core already cached' do
+      before do
+        Solargraph::PinCache.uncache_core(out: nil)
+      end
+
+      it 'automatically caches core' do
+        api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+        pins = api_map.get_methods('String')
+        expect(pins.map(&:path)).to include('String#upcase')
+      end
+    end
+
+    context 'without gem already cached' do
+      before do
+        gemspec = @api_map.find_gem('rubocop')
+        @api_map.workspace.uncache_gem(gemspec)
+      end
+
+      it 'automatically caches gems' do
+        api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+        pins = api_map.get_methods('RuboCop::Cop::Base')
+        expect(pins.map(&:path)).to include('RuboCop::Cop::Base#active_support_extensions_enabled?')
+      end
+    end
+  end
+
   it 'returns core classes' do
     pins = @api_map.get_constants('')
     expect(pins.map(&:path)).to include('String')
