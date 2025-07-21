@@ -272,7 +272,11 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              if closest.defined?
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
+              else
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              end
               @marked_ranges.push rng
             end
           end
