@@ -2075,7 +2075,7 @@ Style/MapToSet:
     - 'lib/solargraph/library.rb'
     - 'spec/source_map/clip_spec.rb'
 
-# Offense count: 202
+# Offense count: 197
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: require_parentheses, require_no_parentheses, require_no_parentheses_except_multiline
@@ -2131,7 +2131,6 @@ Style/MethodDefParentheses:
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/type_checker/checks.rb'
     - 'lib/solargraph/yard_map/helpers.rb'
-    - 'lib/solargraph/yardoc.rb'
     - 'spec/fixtures/rdoc-lib/lib/example.rb'
     - 'spec/source_map_spec.rb'
     - 'spec/spec_helper.rb'

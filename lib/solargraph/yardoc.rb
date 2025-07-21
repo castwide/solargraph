@@ -13,7 +13,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     #
     # @return [void]
-    def build_docs(gem_yardoc_path, yard_plugins, gemspec)
+    def build_docs gem_yardoc_path, yard_plugins, gemspec
       return if docs_built?(gem_yardoc_path)
 
       Solargraph.logger.info "Saving yardoc for #{gemspec.name} #{gemspec.version} into #{gem_yardoc_path}"
@@ -34,7 +34,7 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @param out [IO, nil] where to log messages
     # @return [Array<Pin::Base>]
-    def build_pins(gem_yardoc_path, gemspec, out: $stderr)
+    def build_pins gem_yardoc_path, gemspec, out: $stderr
       yardoc = load!(gem_yardoc_path)
       YardMap::Mapper.new(yardoc, gemspec).map
     end
@@ -42,7 +42,7 @@ module Solargraph
     # True if the gem yardoc is cached.
     #
     # @param gem_yardoc_path [String]
-    def docs_built?(gem_yardoc_path)
+    def docs_built? gem_yardoc_path
       yardoc = File.join(gem_yardoc_path, 'complete')
       File.exist?(yardoc)
     end
@@ -50,7 +50,7 @@ module Solargraph
     # True if another process is currently building the yardoc cache.
     #
     # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
-    def processing?(gem_yardoc_path)
+    def processing? gem_yardoc_path
       yardoc = File.join(gem_yardoc_path, 'processing')
       File.exist?(yardoc)
     end
@@ -61,7 +61,7 @@ module Solargraph
     #
     # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
     # @return [Array<YARD::CodeObjects::Base>]
-    def load!(gem_yardoc_path)
+    def load! gem_yardoc_path
       YARD::Registry.load! gem_yardoc_path
       YARD::Registry.all
     end
