@@ -19,7 +19,7 @@ module Solargraph
             else
               region.closure
             end
-            pins.push Solargraph::Pin::Block.new(
+            block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: parent,
               node: node,
@@ -28,7 +28,8 @@ module Solargraph
               scope: region.scope || region.closure.context.scope,
               source: :parser
             )
-            process_children region.update(closure: pins.last)
+            pins.push block_pin
+            process_children region.update(closure: block_pin)
           end
 
           private

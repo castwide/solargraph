@@ -345,7 +345,7 @@ module Solargraph
       }
 
       # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrAccessor]
-      # @param closure [Pin::Namespace]
+      # @param closure [Pin::Closure]
       # @param context [Context]
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
