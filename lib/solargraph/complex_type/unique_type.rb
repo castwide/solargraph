@@ -353,9 +353,9 @@ module Solargraph
 
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
-      # @param new_key_types [Array<UniqueType>, nil]
+      # @param new_key_types [Array<ComplexType>, nil]
       # @param rooted [Boolean, nil]
-      # @param new_subtypes [Array<UniqueType>, nil]
+      # @param new_subtypes [Array<ComplexType>, nil]
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
         raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')
