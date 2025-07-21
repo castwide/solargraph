@@ -65,7 +65,7 @@ The RSpec framework is supported via [solargraph-rspec](https://github.com/lekem
 
 When editing code, a `require` call that references a gem will pull the documentation into the code maps and include the gem's API in code completion and intellisense.  Solargraph automatically generates code maps from installed gems, based on the YARD or RBS type information inside the gem.  You can also eagerly cache gem documentation with the `solargraph gems` command.
 
-If your project automatically requires bundled gems (e.g., `require 'bundler/require'`), Solargraph will add all of the Gemfile's default dependencies to the map.
+If your project automatically requires bundled gem with the `Bundler.require` statement, Solargraph will add all of the Gemfile's default dependencies to the map.
 
 To ensure you have types for gems which contain neither RBS nor YARD
 information, use
