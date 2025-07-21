@@ -15,6 +15,8 @@ describe Solargraph::Shell do
     raise "Failure installing bundle: #{output}" unless status.success?
   end
 
+  # @type cmd [Array<String>]
+  # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
     output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
@@ -45,6 +47,14 @@ describe Solargraph::Shell do
 
       expect(output).to include('Clearing pin cache in')
     end
+
+    it 'uncaches stdlib without erroring out' do
+      expect { bundle_exec('solargraph', 'uncache', 'stdlib') }.not_to raise_error
+    end
+
+    it 'uncaches core without erroring out' do
+      expect { bundle_exec('solargraph', 'uncache', 'core') }.not_to raise_error
+    end
   end
 
   describe 'gem' do
@@ -56,6 +66,14 @@ describe Solargraph::Shell do
   end
 
   describe 'gems' do
+    it 'caches a stdlib gem without erroring out' do
+      expect { bundle_exec('solargraph', 'cache', 'stringio') }.not_to raise_error
+    end
+
+    it 'caches core without erroring out' do
+      expect { bundle_exec('solargraph', 'cache', 'core') }.not_to raise_error
+    end
+
     it 'caches all without erroring out' do
       output = bundle_exec('solargraph', 'gems')
 
