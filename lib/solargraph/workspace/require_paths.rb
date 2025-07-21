@@ -62,13 +62,6 @@ module Solargraph
         config.require_paths.map { |p| File.join(directory, p) }
       end
 
-      # True if the workspace contains at least one gemspec file.
-      #
-      # @return [Boolean]
-      def gemspec?
-        !gemspec_file_paths.empty?
-      end
-
       # Generate require paths from gemspecs if they exist or assume the default
       # lib directory.
       #
