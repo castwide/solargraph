@@ -81,7 +81,7 @@ Once installed, you can also insert your own local overrides and definitions in 
 
 ### Type Checking
 
-As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.
+As of version 0.33.0, Solargraph includes a [type checker](https://github.com/castwide/solargraph/issues/192) that uses a combination of YARD tags and code analysis to report missing type definitions. In strict mode, it performs type inference to determine whether the tags match the types it detects from code.  In strong mode it will ask you to clarify your intentions by adding annotations for better validation.
 
 ### The Documentation Cache
 
