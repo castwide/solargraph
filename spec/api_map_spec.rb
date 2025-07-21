@@ -1,12 +1,16 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
-  before :all do
-    @api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+  # avoid performance hit of doing this many times
+  # rubocop:disable RSpec/InstanceVariable
+  before :all do # rubocop:disable RSpec/BeforeAfterAll
+    @api_map = described_class.load_with_cache(Dir.pwd, nil)
   end
 
   it 'returns core methods' do
-    pins = @api_map.get_methods('String')
+    pins = @api_map.get_methods('String') # rubocop:disable RSpec/InstanceVariable
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
@@ -17,7 +21,7 @@ describe Solargraph::ApiMap do
       end
 
       it 'automatically caches core' do
-        api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+        api_map = described_class.load_with_cache(Dir.pwd, nil)
         pins = api_map.get_methods('String')
         expect(pins.map(&:path)).to include('String#upcase')
       end
@@ -25,12 +29,12 @@ describe Solargraph::ApiMap do
 
     context 'without gem already cached' do
       before do
-        gemspec = @api_map.find_gem('rubocop')
+        gemspec = @api_map.find_gem('rubocop') # rubocop:disable RSpec/InstanceVariable
         @api_map.workspace.uncache_gem(gemspec)
       end
 
       it 'automatically caches gems' do
-        api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+        api_map = described_class.load_with_cache(Dir.pwd, nil)
         pins = api_map.get_methods('RuboCop::Cop::Base')
         expect(pins.map(&:path)).to include('RuboCop::Cop::Base#active_support_extensions_enabled?')
       end
@@ -220,7 +224,7 @@ describe Solargraph::ApiMap do
   end
 
   it 'adds Object instance methods to duck types' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     type = Solargraph::ComplexType.parse('#foo')
     pins = api_map.get_complex_type_methods(type)
     expect(pins.any? { |p| p.namespace == 'BasicObject' }).to be(true)
@@ -461,14 +465,14 @@ describe Solargraph::ApiMap do
   xit 'understands tuples inherit from regular arrays' do
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
-    expect(method_pin).to_not be_nil
+    expect(method_pin).not_to be_nil
     expect(method_pin.path).to eq('Array#include?')
     parameter_type = method_pin.signatures.first.parameters.first.return_type
     expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
   end
 
   it 'loads workspaces from directories' do
-    api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
+    api_map = described_class.load('spec/fixtures/workspace')
     expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
   end
 
@@ -558,7 +562,7 @@ describe Solargraph::ApiMap do
     expect(fqns).to eq('Foo::Bar')
   end
 
-  it 'handles multiple type parameters without losing cache coherence' do
+  it 'understands type parameters' do
     tag = @api_map.qualify('Array<String>')
     expect(tag).to eq('Array<String>')
     tag = @api_map.qualify('Array<Integer>')
@@ -782,18 +786,18 @@ describe Solargraph::ApiMap do
   end
 
   it 'can qualify "Boolean"' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     expect(api_map.qualify('Boolean')).to eq('Boolean')
   end
 
   it 'knows that true is a "subtype" of Boolean' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
   end
 
   it 'knows that false is a "subtype" of Boolean' do
-    api_map = Solargraph::ApiMap.new
-    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+    api_map = described_class.new
+    expect(api_map.super_and_sub?('Boolean', 'false')).to be(true)
   end
 
   it 'resolves aliases for YARD methods' do
@@ -808,7 +812,7 @@ describe Solargraph::ApiMap do
         alias baz foo
       end
     )).pins
-    # api_map = Solargraph::ApiMap.new(pins: yard_pins + source_pins)
+    # api_map = described_class.new(pins: yard_pins + source_pins)
     @api_map.index yard_pins + source_pins
     baz = @api_map.get_method_stack('Foo', 'baz').first
     expect(baz).to be_a(Solargraph::Pin::Method)
@@ -817,8 +821,10 @@ describe Solargraph::ApiMap do
 
   it 'ignores malformed mixins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
-    mixin = Solargraph::Pin::Reference::Include.new(name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure)
-    api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
+    mixin = Solargraph::Pin::Reference::Include.new(
+      name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure
+    )
+    api_map = described_class.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
   end
 
@@ -839,9 +845,10 @@ describe Solargraph::ApiMap do
       end
     ), 'test.rb')
 
-    api_map = Solargraph::ApiMap.new.map(source)
+    api_map = described_class.new.map(source)
 
     clip = api_map.clip_at('test.rb', [11, 10])
     expect(clip.infer.to_s).to eq('Symbol')
   end
+  # rubocop:enable RSpec/InstanceVariable
 end
