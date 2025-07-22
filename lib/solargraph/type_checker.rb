@@ -36,6 +36,35 @@ module Solargraph
       @source_map ||= api_map.source_map(filename)
     end
 
+    # @return [Source]
+    def source
+      @source_map.source
+    end
+
+    def return_type_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :return_type)
+    end
+
+    def arg_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :method_call)
+    end
+
+    def assignment_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :assignment)
+    end
+
+    def conforms_to?(inferred, expected, scenario)
+      rules_arr = []
+      rules_arr << :allow_empty_params unless rules.require_inferred_type_params?
+      rules_arr << :allow_any_match unless rules.require_all_unique_types_match_declared?
+      rules_arr << :allow_undefined unless rules.require_no_undefined_args?
+      rules_arr << :allow_unresolved_generic unless rules.require_generics_resolved?
+      rules_arr << :allow_unmatched_interface unless rules.require_interfaces_resolved?
+      rules_arr << :allow_reverse_match unless rules.require_downcasts?
+      inferred.conforms_to?(api_map, expected, scenario,
+                            rules_arr)
+    end
+
     # @return [Array<Problem>]
     def problems
       @problems ||= begin
@@ -111,11 +140,7 @@ module Solargraph
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless inferred.conforms_to?(api_map, declared, :return_type,
-                                         allow_subtype_skew: false,
-                                         allow_empty_params: !rules.require_inferred_type_params,
-                                         allow_reverse_match: false,
-                                         allow_any_match: !rules.require_all_unique_types_match_declared?)
+            unless return_type_conforms_to?(inferred, declared)
               result.push Problem.new(pin.location, "Declared return type #{declared.rooted_tags} does not match inferred type #{inferred.rooted_tags} for #{pin.path}", pin: pin)
             end
           end
@@ -204,11 +229,7 @@ module Solargraph
                   result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
                 end
               else
-                unless inferred.conforms_to?(api_map, declared, :assignment,
-                                             allow_subtype_skew: false,
-                                             allow_empty_params: !rules.require_inferred_type_params,
-                                             allow_reverse_match: false,
-                                             allow_any_match: !rules.require_all_unique_types_match_declared?)
+                unless assignment_conforms_to?(inferred, declared)
                   result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
                 end
               end
@@ -389,11 +410,7 @@ module Solargraph
                     # @todo Some level (strong, I guess) should require the param here
                   else
                     argtype = argchain.infer(api_map, block_pin, locals)
-                    if argtype.defined? && ptype.defined? && !argtype.conforms_to?(api_map, ptype, :method_call,
-                                                                                   allow_subtype_skew: false,
-                                                                                   allow_empty_params: !rules.require_inferred_type_params,
-                                                                                   allow_reverse_match: false,
-                                                                                   allow_any_match: !rules.require_all_unique_types_match_declared?)
+                    if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                       errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                       next
                     end
@@ -443,13 +460,8 @@ module Solargraph
           else
             ptype = data[:qualified]
             unless ptype.undefined?
-
               argtype = argchain.infer(api_map, block_pin, locals)
-              if argtype.defined? && ptype && !argtype.conforms_to?(api_map, ptype, :method_call,
-                                                                    allow_subtype_skew: false,
-                                                                    allow_empty_params: !rules.require_inferred_type_params,
-                                                                    allow_reverse_match: false,
-                                                                    allow_any_match: !rules.require_all_unique_types_match_declared?)
+              if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
@@ -475,12 +487,7 @@ module Solargraph
         next unless params.key?(pname.to_s)
         ptype = params[pname.to_s][:qualified]
         argtype = argchain.infer(api_map, block_pin, locals)
-        if argtype.defined? && ptype && !argtype.conforms_to?(api_map, ptype, :method_call,
-                                                              allow_subtype_skew: false,
-                                                              allow_empty_params: !rules.require_inferred_type_params,
-                                                              allow_reverse_match: false,
-                                                              allow_any_match: !rules.require_all_unique_types_match_declared?)
-
+        if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
       end

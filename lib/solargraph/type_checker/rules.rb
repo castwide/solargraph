@@ -54,12 +54,36 @@ module Solargraph
         rank > LEVELS[:normal]
       end
 
-      def require_inferred_type_params
+      def require_inferred_type_params?
         rank >= LEVELS[:alpha]
       end
 
       def require_all_unique_types_match_declared?
         rank >= LEVELS[:alpha]
+      end
+
+      def require_no_undefined_args?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_generics_resolved?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_interfaces_resolved?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_downcasts?
+        rank >= LEVELS[:alpha]
+      end
+
+      # We keep this at strong because if you added an @sg-ignore to
+      # address a strong-level issue, then ran at a lower level, you'd
+      # get a false positive - we don't run stronger level checks than
+      # requested for performance reasons
+      def validate_sg_ignores?
+        rank >= LEVELS[:strong]
       end
     end
   end

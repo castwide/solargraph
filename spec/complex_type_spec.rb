@@ -738,28 +738,28 @@ describe 'YARD type specifier list parsing' do
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('String')
       atype = Solargraph::ComplexType.parse('String')
-      expect(ptype.conforms_to?(api_map, atype, :method_call)).to be(true)
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
 
     it 'recognizes an erased container type conforms with itself' do
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('Hash')
       atype = Solargraph::ComplexType.parse('Hash')
-      expect(ptype.conforms_to?(api_map, atype, :method_call)).to be(true)
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
 
     it 'recognizes an unerased container type conforms with itself' do
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('Array<Integer>')
       atype = Solargraph::ComplexType.parse('Array<Integer>')
-      expect(ptype.conforms_to?(api_map, atype, :method_call)).to be(true)
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
 
     it 'recognizes a literal conforms with its type' do
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('Symbol')
       atype = Solargraph::ComplexType.parse(':foo')
-      expect(ptype.conforms_to?(api_map, atype, :method_call)).to be(true)
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
   end
 end

@@ -25,6 +25,7 @@ module Solargraph
           #     s(:def, :foo,
           #       s(:args),
           #       s(:send, nil, :bar)))
+          # @param node [Parser::AST::Node]
           def match?(node)
             return false unless node&.type == :class
 
@@ -46,7 +47,7 @@ module Solargraph
           end
         end
 
-        # @return [Parser::AST::Node]
+        # @param node [Parser::AST::Node]
         def initialize(node)
           @node = node
         end

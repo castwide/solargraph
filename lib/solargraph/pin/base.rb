@@ -269,9 +269,13 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @return [Object, nil]
+      # @return [undefined]
       def assert_same(other, attr)
-        return false if other.nil?
+        if other.nil?
+          Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+                                   "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
+          return send(attr)
+        end
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2

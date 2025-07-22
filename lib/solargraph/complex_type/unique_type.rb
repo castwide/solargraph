@@ -11,7 +11,6 @@ module Solargraph
 
       attr_reader :all_params, :subtypes, :key_types
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
       protected def equality_fields
         [@name, @all_params, @subtypes, @key_types]
       end
@@ -78,6 +77,7 @@ module Solargraph
         if parameters_type.nil?
           raise "You must supply parameters_type if you provide parameters" unless key_types.empty? && subtypes.empty?
         end
+
         raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
         @parameters_type = parameters_type
@@ -105,6 +105,7 @@ module Solargraph
         tag
       end
 
+      # @return [self]
       def simplify_literals
         transform do |t|
           next t unless t.literal?
@@ -116,10 +117,12 @@ module Solargraph
         non_literal_name != name
       end
 
+      # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
         #
@@ -186,41 +189,47 @@ module Solargraph
         end
       end
 
+      # Whether this is an RBS interface like _ToAry or _Each.
+      def interface?
+        name.start_with?('_')
+      end
+
       # @param api_map [ApiMap]
-      # @param expected [ComplexType, ComplexType::UniqueType]
+      # @param expected [ComplexType::UniqueType]
       # @param situation [:method_call, :return_type]
-      # @param allow_subtype_skew [Boolean] if false, check if any
-      #   subtypes of the expected type match the inferred type
-      # @param allow_empty_params [Boolean] if true, allow a general
-      #   inferred type without parameters to allow a more specific
-      #   expcted type
-      # @param allow_reverse_match [Boolean] if true, check if any subtypes
-      #   of the expected type match the inferred type
-      # @param allow_any_match [Boolean] if true, any unique type
-      #   matched in the expected qualifies as a match
+      # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+      # @param variance [:invariant, :covariant, :contravariant]
       def conforms_to_unique_type?(api_map, expected, situation = :method_call,
-                                   variance: erased_variance(situation),
-                                   allow_subtype_skew:,
-                                   allow_empty_params:,
-                                   allow_reverse_match:,
-                                   allow_any_match:)
-        if allow_reverse_match
-          reversed_match = expected.conforms_to_unique_type? api_map, self, situation, allow_subtype_skew: allow_subtype_skew,
-                                                             allow_empty_params: allow_empty_params,
-                                                             allow_reverse_match: false,
-                                                             allow_any_match: allow_any_match
+                                   rules = [],
+                                   variance: erased_variance(situation))
+        raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}" unless expected.is_a?(UniqueType)
+        if literal? && !expected.literal?
+          return simplify_literals.conforms_to_unique_type?(api_map, expected, situation,
+                                                            rules, variance: variance)
+        end
+        return true if expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)
+        return true if interface? && rules.include?(:allow_unmatched_interface)
+
+        if rules.include? :allow_reverse_match
+          reversed_match = expected.conforms_to?(api_map, self, situation,
+                                                 rules - [:allow_reverse_match],
+                                                 variance: variance)
           return true if reversed_match
         end
         expected = expected.downcast_to_literal_if_possible
         inferred = downcast_to_literal_if_possible
 
-        if allow_subtype_skew
+        if rules.include? :allow_subtype_skew
           # parameters are not considered in this case
           expected = expected.erase_parameters
         end
 
         if !expected.parameters? && inferred.parameters?
           inferred = inferred.erase_parameters
+        end
+
+        if expected.parameters? && !inferred.parameters? && rules.include?(:allow_empty_params)
+          expected = expected.erase_parameters
         end
 
         return true if inferred == expected
@@ -240,13 +249,13 @@ module Solargraph
 
           # we contain the expected mix-in, or we have a more general type
           return false unless api_map.type_include?(inferred.name, expected.name) ||
-                              map.super_and_sub?(inferred.name, expected.name) ||
+                              api_map.super_and_sub?(inferred.name, expected.name) ||
                               inferred.name == expected.name
         else
           raise "Unknown erased variance: #{erased_variance.inspect}"
         end
 
-        return true if inferred.all_params.empty? && allow_empty_params
+        return true if inferred.all_params.empty? && rules.include?(:allow_empty_params)
 
         # at this point we know the erased type is fine - time to look at parameters
 
@@ -260,54 +269,50 @@ module Solargraph
           return false unless ComplexType.new(inferred.key_types).conforms_to?(api_map,
                                                                                ComplexType.new(expected.key_types),
                                                                                situation,
-                                                                               variance: parameter_variance(situation),
-                                                                               allow_subtype_skew: allow_subtype_skew,
-                                                                                  allow_empty_params: allow_empty_params,
-                                                                               allow_reverse_match: allow_reverse_match,
-                                                                               allow_any_match: allow_any_match)
+                                                                               rules,
+                                                                               variance: parameter_variance(situation))
         end
 
         return true if expected.subtypes.empty?
 
+        return true if expected.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
+
+        return true if inferred.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
+
+        return true if inferred.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
+
+        return true if expected.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
+
         return false if inferred.subtypes.empty?
 
-        ComplexType.new(inferred.subtypes).conforms_to?(api_map, ComplexType.new(expected.subtypes), situation,
-                                                                            variance: parameter_variance(situation),
-                                                                            allow_subtype_skew: allow_subtype_skew,
-                                                                            allow_empty_params: allow_empty_params,
-                                                                            allow_reverse_match: allow_reverse_match,
-                                                                            allow_any_match: allow_any_match)
+        ComplexType.new(inferred.subtypes).conforms_to?(api_map,
+                                                        ComplexType.new(expected.subtypes),
+                                                        situation,
+                                                        rules,
+                                                        variance: parameter_variance(situation))
       end
 
       # @param api_map [ApiMap]
-      # @param expected [ComplexType::UniqueType]
+      # @param expected [ComplexType::UniqueType, ComplexType]
       # @param situation [:method_call, :assignment, :return]
-      # @param allow_subtype_skew [Boolean] if false, check if any
-      #   subtypes of the expected type match the inferred type
-      # @param allow_empty_params [Boolean] if true, allow a general
-      #   inferred type without parameters to allow a more specific
-      #   expcted type
-      # @param allow_reverse_match [Boolean] if true, check if any subtypes
-      #   of the expected type match the inferred type
-      # @param allow_any_match [Boolean] if true, any unique type
-      #   matched in the expected qualifies as a match
+      # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
+      # @param variance [:invariant, :covariant, :contravariant]
       def conforms_to?(api_map, expected,
                        situation = :method_call,
-                       allow_subtype_skew:,
-                       allow_empty_params:,
-                       allow_reverse_match:,
-                       allow_any_match:)
+                       rules,
+                       variance:)
+
+        return true if undefined? && rules.include?(:allow_undefined)
+
         # @todo teach this to validate duck types as inferred type
         return true if duck_type?
 
         # complex types as expectations are unions - we only need to
         # match one of their unique types
         expected.any? do |expected_unique_type|
+          raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}" unless expected.is_a?(UniqueType) unless expected_unique_type.instance_of?(UniqueType)
           conforms_to_unique_type?(api_map, expected_unique_type, situation,
-                                   allow_subtype_skew: allow_subtype_skew,
-                                   allow_empty_params: allow_empty_params,
-                                   allow_reverse_match: allow_reverse_match,
-                                   allow_any_match: allow_any_match)
+                                   rules, variance: variance)
         end
       end
 
@@ -315,6 +320,7 @@ module Solargraph
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
       end
 
+      # @return [self]
       def erase_parameters
         UniqueType.new(name, rooted: rooted?, parameters_type: parameters_type)
       end
@@ -335,6 +341,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def desc
         rooted_tags
       end
@@ -407,7 +414,7 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+      # @param resolved_generic_values [Hash{String => ComplexType, UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
@@ -505,9 +512,9 @@ module Solargraph
 
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
-      # @param new_key_types [Array<UniqueType>, nil]
+      # @param new_key_types [Array<ComplexType>, nil]
       # @param rooted [Boolean, nil]
-      # @param new_subtypes [Array<UniqueType>, nil]
+      # @param new_subtypes [Array<ComplexType>, nil]
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
         raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')
@@ -589,6 +596,7 @@ module Solargraph
         end
       end
 
+      # @yieldreturn [Boolean]
       def any? &block
         block.yield self
       end

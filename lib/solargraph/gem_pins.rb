@@ -25,13 +25,14 @@ module Solargraph
       # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
       by_path = method_pins.group_by(&:path)
-      by_path.transform_values! do |pins|
+      combined_by_path = by_path.transform_values do |pins|
         GemPins.combine_method_pins(*pins)
       end
-      by_path.values + alias_pins
+      combined_by_path.values + alias_pins
     end
 
     def self.combine_method_pins(*pins)
+      # @type [Pin::Method, nil]
       out = pins.reduce(nil) do |memo, pin|
         next pin if memo.nil?
         if memo == pin && memo.source != :combined

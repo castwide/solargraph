@@ -34,7 +34,7 @@ module Solargraph
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
+        # @type [Set<generic<T>>]
         s = Set.new
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
@@ -59,7 +59,8 @@ module Solargraph
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @param pins [Array<Pin::Base>]
+      # @param pins [Enumerable<Pin::Base>]
+      # @return [self]
       def merge pins
         deep_clone.catalog pins
       end
@@ -69,8 +70,9 @@ module Solargraph
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references
 
+      # @return [Solargraph::ApiMap::Index]
       def deep_clone
-        Index.allocate.tap do |copy|
+        out = Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
           copy.pins = pins.clone
           %i[
@@ -81,9 +83,11 @@ module Solargraph
             copy.send(sym)&.transform_values!(&:clone)
           end
         end
+        out
       end
 
-      # @param new_pins [Array<Pin::Base>]
+      # @param new_pins [Enumerable<Pin::Base>]
+      # @return [self]
       def catalog new_pins
         @pin_select_cache = {}
         pins.concat new_pins
@@ -104,7 +108,7 @@ module Solargraph
       end
 
       # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
@@ -114,7 +118,7 @@ module Solargraph
 
       # Add references to a map
       #
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @param reference_pin [Pin::Reference]
       #
       # @return [void]
@@ -138,9 +142,12 @@ module Solargraph
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
+            next unless pin.is_a?(Pin::Reference::Override)
+
             new_pin = if pin.path.end_with?('#initialize')
                         path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
                       end
+            next unless new_pin.nil? || new_pin.is_a?(Pin::Method)
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               pin.docstring.delete_tags tag
               new_pin.docstring.delete_tags tag if new_pin

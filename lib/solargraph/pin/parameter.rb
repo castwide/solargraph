@@ -171,11 +171,7 @@ module Solargraph
         return true if atype.conforms_to?(api_map,
                                           ptype,
                                           :method_call,
-                                          allow_subtype_skew: false,
-                                          allow_reverse_match: false,
-                                          allow_empty_params: true,
-                                          allow_any_match: false)
-
+                                          [:allow_empty_params, :allow_undefined])
         ptype.generic?
       end
 

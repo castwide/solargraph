@@ -17,15 +17,15 @@ module Solargraph
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
+
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
-        items.unshift(ComplexType::BOOLEAN)
+        items.unshift(UniqueType::BOOLEAN)
       end
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [self.class, items]
     end
@@ -76,9 +76,13 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
+    # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    def map &block
-      @items.map &block
+    # @sg-ignore Declared return type
+    #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
+    #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
+    def map(&block)
+      @items.map(&block)
     end
 
     # @yieldparam [UniqueType]
@@ -155,10 +159,12 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def tags
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def simple_tags
       simplify_literals.tags
     end
@@ -172,6 +178,7 @@ module Solargraph
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
+    # @return [String]
     def desc
       rooted_tags
     end
@@ -184,36 +191,34 @@ module Solargraph
     # @param allow_reverse_match [Boolean] if true, check if any subtypes
     #   of the expected type match the inferred type
     # @param allow_empty_params [Boolean] if true, allow a general
-    #   inferred type without parameters to allow a more specific
-    #   expcted type
+    #   inferred type without parameters to conform to a more specific
+    #   expected type
     # @param allow_any_match [Boolean] if true, any unique type
-    #   matched in the expected qualifies as a match
+    #   matched in the inferred qualifies as a match
+    # @param allow_undefined [Boolean] if true, treat undefined as a
+    #   wildcard that matches anything
+    # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    # @param variance [:invariant, :covariant, :contravariant]
     # @return [Boolean]
-    def conforms_to? api_map, expected,
+    def conforms_to?(api_map, expected,
                      situation,
-                     variance: erased_variance(situation),
-                     allow_subtype_skew: false,
-                     allow_empty_params: false,
-                     allow_reverse_match: false,
-                     allow_any_match: false #,
-#                     allow_undefined_in_expected: false
+                     rules = [],
+                     variance: erased_variance(situation))
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 
       return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
 
-      if allow_any_match
-        inferred.any? { |inf| inf.conforms_to?(api_map, expected, situation,
-                                               allow_subtype_skew: allow_subtype_skew,
-                                               allow_empty_params: allow_empty_params,
-                                               allow_reverse_match: allow_reverse_match,
-                                               allow_any_match: allow_any_match) }
+      if rules.include? :allow_any_match
+        inferred.any? do |inf|
+          inf.conforms_to?(api_map, expected, situation, rules,
+                           variance: variance)
+        end
       else
-        inferred.all? { |inf| inf.conforms_to?(api_map, expected, situation,
-                                               allow_subtype_skew: allow_subtype_skew,
-                                               allow_empty_params: allow_empty_params,
-                                               allow_reverse_match: allow_reverse_match,
-                                               allow_any_match: allow_any_match) }
+        inferred.all? do |inf|
+          inf.conforms_to?(api_map, expected, situation, rules,
+                           variance: variance)
+        end
       end
     end
 
@@ -231,6 +236,7 @@ module Solargraph
       true
     end
 
+    # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
@@ -255,6 +261,7 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @return [ComplexType]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end

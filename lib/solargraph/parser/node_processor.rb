@@ -23,6 +23,9 @@ module Solargraph
           @@processors[type] << cls
         end
 
+        # @param type [Symbol]
+        # @param cls [Class<NodeProcessor::Base>]
+        # @return [void]
         def deregister type, cls
           @@processors[type].delete(cls)
         end
@@ -31,7 +34,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
-      # @param locals [Array<Pin::BaseVariable>]
+      # @param locals [Array<Pin::LocalVariable>]
       # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
       def self.process node, region = Region.new, pins = [], locals = []
         if pins.empty?

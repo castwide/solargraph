@@ -67,7 +67,7 @@ describe Solargraph::ComplexType do
     api_map = Solargraph::ApiMap.new
     exp = Solargraph::ComplexType.parse('Hash{ Symbol => String}')
     inf = Solargraph::ComplexType.parse('Hash')
-    match = inf.conforms_to?(api_map, exp, :method_call, allow_empty_params: true)
+    match = inf.conforms_to?(api_map, exp, :method_call, [:allow_empty_params])
     expect(match).to be(true)
   end
 
@@ -115,7 +115,7 @@ describe Solargraph::ComplexType do
     api_map = Solargraph::ApiMap.new
     exp = Solargraph::ComplexType.parse('Class<String>')
     inf = Solargraph::ComplexType.parse('Class')
-    match = inf.conforms_to?(api_map, exp, :method_call, allow_empty_params: true)
+    match = inf.conforms_to?(api_map, exp, :method_call, [:allow_empty_params])
     expect(match).to be(true)
   end
 
@@ -136,9 +136,9 @@ describe Solargraph::ComplexType do
     api_map.map source
     sup = Solargraph::ComplexType.parse('Sup')
     sub = Solargraph::ComplexType.parse('Sub')
-    match = sub.conforms_to?(api_map, sup, :method_call, allow_reverse_match: true)
+    match = sub.conforms_to?(api_map, sup, :method_call, [:allow_reverse_match])
     expect(match).to be(true)
-    match = sup.conforms_to?(api_map, sub, :method_call, allow_reverse_match: true)
+    match = sup.conforms_to?(api_map, sub, :method_call, [:allow_reverse_match])
     expect(match).to be(true)
   end
 
@@ -146,9 +146,9 @@ describe Solargraph::ComplexType do
     api_map = Solargraph::ApiMap.new
     sup = Solargraph::ComplexType.parse('String')
     sub = Solargraph::ComplexType.parse('Array')
-    match = sub.conforms_to?(api_map, sup, :method_call, allow_reverse_match: true)
+    match = sub.conforms_to?(api_map, sup, :method_call, [:allow_reverse_match])
     expect(match).to be(false)
-    match = sup.conforms_to?(api_map, sub, :method_call, allow_reverse_match: true)
+    match = sup.conforms_to?(api_map, sub, :method_call, [:allow_reverse_match])
     expect(match).to be(false)
   end
 end
