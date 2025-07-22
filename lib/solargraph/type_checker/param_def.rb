@@ -12,6 +12,8 @@ module Solargraph
       # @return [Symbol]
       attr_reader :type
 
+      # @param name [String]
+      # @param type [Symbol]
       def initialize name, type
         @name = name
         @type = type

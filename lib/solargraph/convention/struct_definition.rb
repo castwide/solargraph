@@ -88,7 +88,7 @@ module Solargraph
 
           private
 
-          # @return [StructDefintionNode, nil]
+          # @return [StructDefintionNode, StructAssignmentNode, nil]
           def struct_definition_node
             @struct_definition_node ||= if StructDefintionNode.match?(node)
                                           StructDefintionNode.new(node)

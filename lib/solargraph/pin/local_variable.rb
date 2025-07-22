@@ -26,7 +26,7 @@ module Solargraph
           assignment: assert_same(other, :assignment),
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        new_attrs[:presence] =  assert_same(other, :presence) unless attrs.key?(:presence)
+        new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         super(other, new_attrs)
       end

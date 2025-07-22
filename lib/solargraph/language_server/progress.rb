@@ -39,6 +39,7 @@ module Solargraph
 
       # @param message [String]
       # @param percentage [Integer]
+      # @return [void]
       def begin message, percentage
         @kind = 'begin'
         @message = message
@@ -47,6 +48,7 @@ module Solargraph
 
       # @param message [String]
       # @param percentage [Integer]
+      # @return [void]
       def report message, percentage
         @kind = 'report'
         @message = message
@@ -54,6 +56,7 @@ module Solargraph
       end
 
       # @param message [String]
+      # @return [void]
       def finish message
         @kind = 'end'
         @message = message
@@ -62,6 +65,7 @@ module Solargraph
       end
 
       # @param host [Solargraph::LanguageServer::Host]
+      # @return [void]
       def send host
         return unless host.client_supports_progress? && !finished?
 
@@ -91,6 +95,7 @@ module Solargraph
         @status = CREATED
       end
 
+      # @return [Hash]
       def build
         {
           token: uuid,
@@ -101,6 +106,7 @@ module Solargraph
         }
       end
 
+      # @return [Hash]
       def build_value
         case kind
         when 'begin'
@@ -115,6 +121,7 @@ module Solargraph
       end
 
       # @param host [Host]
+      # @return [void]
       def keep_alive host
         mutex.synchronize { @last = Time.now }
         @keep_alive ||= Thread.new do
@@ -127,6 +134,7 @@ module Solargraph
         end
       end
 
+      # @return [Mutex]
       def mutex
         @mutex ||= Mutex.new
       end

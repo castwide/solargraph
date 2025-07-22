@@ -151,6 +151,7 @@ module Solargraph
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
       paths = Hash[without_gemspecs].keys
+      # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
       paths.each do |path|
