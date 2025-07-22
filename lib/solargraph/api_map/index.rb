@@ -39,22 +39,22 @@ module Solargraph
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      # @return [Hash{String => Array<String>}]
       def include_references
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      # @return [Hash{String => Array<String>}]
       def extend_references
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
+      # @return [Hash{String => Array<String>}]
       def superclass_references
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
@@ -142,12 +142,9 @@ module Solargraph
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
-            next unless pin.is_a?(Pin::Reference::Override)
-
             new_pin = if pin.path.end_with?('#initialize')
                         path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
                       end
-            next unless new_pin.nil? || new_pin.is_a?(Pin::Method)
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               pin.docstring.delete_tags tag
               new_pin.docstring.delete_tags tag if new_pin
