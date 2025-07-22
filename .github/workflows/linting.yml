@@ -51,10 +51,13 @@ jobs:
           path: |
             /home/runner/.cache/solargraph
 
+      - name: Install gem types
+        run: bundle exec rbs collection install
+
       - name: Overcommit
         run: |
           bundle exec overcommit --sign
-          bundle exec overcommit --run --diff origin/master
+          SOLARGRAPH_ASSERTS=on bundle exec overcommit --run --diff origin/master
   rubocop:
     name: rubocop
     runs-on: ubuntu-latest
