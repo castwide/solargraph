@@ -77,6 +77,23 @@ jobs:
           fail_level: info
           rubocop_version: Gemfile
           level: info
+  rbs_validate:
+    name: rbs validate
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4
+        bundler-cache: false
+
+    - name: Install gems
+      run: bundle install
+
+    - name: Run rbs validate
+      run: bundle exec rbs validate
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
