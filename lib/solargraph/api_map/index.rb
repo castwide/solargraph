@@ -72,7 +72,7 @@ module Solargraph
 
       # @return [Solargraph::ApiMap::Index]
       def deep_clone
-        out = Index.allocate.tap do |copy|
+        Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
           copy.pins = pins.clone
           %i[
@@ -83,7 +83,6 @@ module Solargraph
             copy.send(sym)&.transform_values!(&:clone)
           end
         end
-        out
       end
 
       # @param new_pins [Enumerable<Pin::Base>]

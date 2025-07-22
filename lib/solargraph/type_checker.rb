@@ -41,18 +41,27 @@ module Solargraph
       @source_map.source
     end
 
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
     def return_type_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :return_type)
     end
 
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
     def arg_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :method_call)
     end
 
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
     def assignment_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :assignment)
     end
 
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
+    # @param scenario [Symbol]
     def conforms_to?(inferred, expected, scenario)
       rules_arr = []
       rules_arr << :allow_empty_params unless rules.require_inferred_type_params?
@@ -486,7 +495,9 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
         ptype = params[pname.to_s][:qualified]
+        ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, block_pin, locals)
+        argtype = argtype.self_to_type(block_pin.context)
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
