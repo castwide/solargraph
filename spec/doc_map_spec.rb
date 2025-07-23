@@ -58,4 +58,23 @@ describe Solargraph::DocMap do
     doc_map = Solargraph::DocMap.new(['rspec'], [])
     expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
   end
+
+  it 'includes convention requires from environ' do
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def global(doc_map)
+        Solargraph::Environ.new(
+          requires: ['convention_gem1', 'convention_gem2']
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    doc_map = Solargraph::DocMap.new(['original_gem'], [])
+
+    expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
+
+    # Clean up the registered convention
+    Solargraph::Convention.deregister dummy_convention
+  end
 end
