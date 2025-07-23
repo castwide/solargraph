@@ -115,6 +115,39 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
+    it 'reports mismatched argument types in chained calls' do
+      checker = type_checker(%(
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        bar('string').upcase
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'reports mismatched argument types in calls inside array literals' do
+      checker = type_checker(%(
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        [ bar('string') ]
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'reports mismatched argument types in calls inside array literals used in a chain' do
+      checker = type_checker(%(
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        [ bar('string') ].compact
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
     xit 'complains about calling a private method from an illegal place'
 
     xit 'complains about calling a non-existent method'
@@ -126,7 +159,7 @@ describe Solargraph::TypeChecker do
           a[0] = :something
         end
       ))
-      expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type'])
     end
 
     it 'complains about dereferencing a non-existent tuple slot'
