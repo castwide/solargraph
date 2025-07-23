@@ -1231,12 +1231,6 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Offense count: 3
-# Configuration parameters: .
-# SupportedStyles: have_received, receive
-RSpec/MessageSpies:
-  EnforcedStyle: receive
-
 # Offense count: 2
 RSpec/MissingExampleGroupArgument:
   Exclude:
