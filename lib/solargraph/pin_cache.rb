@@ -110,12 +110,16 @@ module Solargraph
         exist?(rbs_collection_path(gemspec, hash))
       end
 
-      def uncache_core
-        uncache(core_path)
+      # @param out [IO, nil]
+      # @return [void]
+      def uncache_core(out: nil)
+        uncache(core_path, out: out)
       end
 
-      def uncache_stdlib
-        uncache(stdlib_path)
+      # @param out [IO, nil]
+      # @return [void]
+      def uncache_stdlib(out: nil)
+        uncache(stdlib_path, out: out)
       end
 
       def uncache_gem(gemspec, out: nil)
@@ -165,6 +169,8 @@ module Solargraph
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
           out.puts "Clearing pin cache in #{path}" unless out.nil?
+        else
+          out.puts "Pin cache file #{path} does not exist" unless out.nil?
         end
       end
 

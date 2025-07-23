@@ -1,0 +1,5 @@
+module ::AST
+  class Node
+     def children: () -> [self, Integer, String, Symbol, nil]
+  end
+end
