@@ -16,7 +16,7 @@ module Solargraph
         index.pins
       end
 
-      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @param pinsets [Array<Array<Pin::Base>>]
       # @return [Boolean] True if the index was updated
       def update *pinsets
         return catalog(pinsets) if pinsets.length != @pinsets.length
@@ -205,12 +205,17 @@ module Solargraph
 
       private
 
+      # @return [Index]
       def index
         @indexes.last
       end
 
+      # @param pinsets [Array<Array<Pin::Base>>]
+      #
+      # @return [void]
       def catalog pinsets
         @pinsets = pinsets
+        # @type [Array<Index>]
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?
