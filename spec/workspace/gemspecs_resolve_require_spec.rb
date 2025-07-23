@@ -83,6 +83,15 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
+    context 'with external bundle that does not exist' do
+      let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
+      let(:require) { 'bundler/require' }
+
+      it 'raises' do
+        expect { specs }.to raise_error(Solargraph::BundleNotFoundError)
+      end
+    end
+
     # find_or_install helper doesn't seem to work on older versions
     if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
       context 'with a gem preference' do
@@ -108,6 +117,47 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
           expect(backport.version.to_s).to eq('1.0.0')
         end
       end
+
+      context 'with a gem preference that does not exist' do
+        let(:preferences) do
+          [
+            Gem::Specification.new.tap do |spec|
+              spec.name = 'backport'
+              spec.version = '99.0.0'
+            end
+          ]
+        end
+
+        it 'returns the gemspec we do have' do
+          gemspecs = described_class.new(dir_path, preferences: preferences)
+          specs = gemspecs.resolve_require('backport')
+          backport = specs.find { |spec| spec.name == 'backport' }
+
+          expect(backport.version.to_s).to eq('1.2.0')
+        end
+      end
+
+      context 'with a gem preference already set to the version we use' do
+        let(:version) { Gem::Specification.find_by_name('backport').version.to_s }
+
+        let(:preferences) do
+          [
+            Gem::Specification.new.tap do |spec|
+              spec.name = 'backport'
+              spec.version = version
+            end
+          ]
+        end
+
+        it 'returns the gemspec we do have' do
+          gemspecs = described_class.new(dir_path, preferences: preferences)
+          specs = gemspecs.resolve_require('backport')
+          backport = specs.find { |spec| spec.name == 'backport' }
+
+          expect(backport.version.to_s).to eq(version)
+        end
+      end
+
     end
   end
 end
