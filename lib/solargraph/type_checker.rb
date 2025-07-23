@@ -7,9 +7,7 @@ module Solargraph
     autoload :Problem,  'solargraph/type_checker/problem'
     autoload :ParamDef, 'solargraph/type_checker/param_def'
     autoload :Rules,    'solargraph/type_checker/rules'
-    autoload :Checks,   'solargraph/type_checker/checks'
 
-    include Checks
     include Parser::NodeMethods
 
     # @return [String]
@@ -36,6 +34,44 @@ module Solargraph
     # @return [SourceMap]
     def source_map
       @source_map ||= api_map.source_map(filename)
+    end
+
+    # @return [Source]
+    def source
+      @source_map.source
+    end
+
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
+    def return_type_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :return_type)
+    end
+
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
+    def arg_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :method_call)
+    end
+
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
+    def assignment_conforms_to?(inferred, expected)
+      conforms_to?(inferred, expected, :assignment)
+    end
+
+    # @param inferred [ComplexType]
+    # @param expected [ComplexType]
+    # @param scenario [Symbol]
+    def conforms_to?(inferred, expected, scenario)
+      rules_arr = []
+      rules_arr << :allow_empty_params unless rules.require_inferred_type_params?
+      rules_arr << :allow_any_match unless rules.require_all_unique_types_match_declared?
+      rules_arr << :allow_undefined unless rules.require_no_undefined_args?
+      rules_arr << :allow_unresolved_generic unless rules.require_generics_resolved?
+      rules_arr << :allow_unmatched_interface unless rules.require_interfaces_resolved?
+      rules_arr << :allow_reverse_match unless rules.require_downcasts?
+      inferred.conforms_to?(api_map, expected, scenario,
+                            rules_arr)
     end
 
     # @return [Array<Problem>]
@@ -113,7 +149,7 @@ module Solargraph
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
-            unless (rules.require_all_return_types_match_inferred? ? all_types_match?(api_map, inferred, declared) : any_types_match?(api_map, declared, inferred))
+            unless return_type_conforms_to?(inferred, declared)
               result.push Problem.new(pin.location, "Declared return type #{declared.rooted_tags} does not match inferred type #{inferred.rooted_tags} for #{pin.path}", pin: pin)
             end
           end
@@ -202,7 +238,7 @@ module Solargraph
                   result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
                 end
               else
-                unless any_types_match?(api_map, declared, inferred)
+                unless assignment_conforms_to?(inferred, declared)
                   result.push Problem.new(pin.location, "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
                 end
               end
@@ -284,8 +320,8 @@ module Solargraph
 
     # @param chain [Solargraph::Source::Chain]
     # @param api_map [Solargraph::ApiMap]
-    # @param block_pin [Solargraph::Pin::Base]
-    # @param locals [Array<Solargraph::Pin::Base>]
+    # @param closure_pin [Solargraph::Pin::Closure]
+    # @param locals [Array<Solargraph::Pin::LocalVariable>]
     # @param location [Solargraph::Location]
     # @return [Array<Problem>]
     def argument_problems_for chain, api_map, block_pin, locals, location
@@ -383,7 +419,7 @@ module Solargraph
                     # @todo Some level (strong, I guess) should require the param here
                   else
                     argtype = argchain.infer(api_map, block_pin, locals)
-                    if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
+                    if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                       errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                       next
                     end
@@ -434,7 +470,7 @@ module Solargraph
             ptype = data[:qualified]
             unless ptype.undefined?
               argtype = argchain.infer(api_map, block_pin, locals)
-              if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+              if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
             end
@@ -459,8 +495,10 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
         ptype = params[pname.to_s][:qualified]
+        ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, block_pin, locals)
-        if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
+        argtype = argtype.self_to_type(block_pin.context)
+        if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
       end
@@ -495,6 +533,8 @@ module Solargraph
     end
 
     # @param pins [Array<Pin::Method>]
+    # @param method_pin_stack [Array<Pin::Method>]
+    #
     # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def first_param_hash(pins)
       return {} if pins.empty?

@@ -666,6 +666,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+
+    it 'validates parameters in function calls' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar); end
+
+        def baz
+          foo(123)
+        end
+        ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received 123'])
+    end
+
     it 'validates inferred return types with complex tags' do
       checker = type_checker(%(
         # @param foo [Numeric, nil] a foo

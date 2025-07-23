@@ -69,6 +69,17 @@ module Solargraph
         name == 'undefined'
       end
 
+      # Variance of the type ignoring any type parameters
+      # @return [Symbol]
+      # @param situation [Symbol] The situation in which the variance is being considered.
+      def erased_variance situation = :method_call
+        if [:method_call, :return_type, :assignment].include?(situation)
+          :covariant
+        else
+          raise "Unknown situation: #{situation.inspect}"
+        end
+      end
+
       # @param generics_to_erase [Enumerable<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
