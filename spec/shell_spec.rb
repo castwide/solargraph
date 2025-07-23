@@ -57,11 +57,40 @@ describe Solargraph::Shell do
     end
   end
 
+  def capture_stdout(&block)
+    original_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      block.call
+      $stdout.string
+    ensure
+      $stdout = original_stdout
+    end
+  end
+
   describe 'gem' do
     it 'caches without erroring out' do
       output = bundle_exec('solargraph', 'gem', 'solargraph')
 
       expect(output).to include('Caching these gems')
+    end
+
+    it 'caches a YARD-using gem and loads pins' do
+      shell = Solargraph::Shell.new
+      output = capture_stdout do
+        shell.uncache('backport')
+      end
+      expect(output).to include('Clearing pin cache in')
+
+      output = capture_stdout do
+        shell.gems('backport')
+      end
+
+      expect(output).to include('Caching YARD pins for gem backport')
+
+      api_map = Solargraph::ApiMap.load(Dir.pwd)
+      methods = api_map.get_method_stack('Backport::Adapter', 'remote')
+      expect(methods.first.return_type.tag).to eq('Hash{Symbol => String, Integer}')
     end
   end
 

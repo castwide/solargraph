@@ -17,6 +17,16 @@ describe Solargraph::Workspace::RequirePaths do
     end
   end
 
+  context 'with config and no gemspec' do
+    let(:dir_path) { File.realpath(Dir.pwd) }
+
+    let(:config) { instance_double(Solargraph::Workspace::Config, require_paths: [], allow?: true) }
+
+    it 'includes the lib directory' do
+      expect(paths).to include(File.join(dir_path, 'lib'))
+    end
+  end
+
   context 'with current bundle' do
     let(:dir_path) { Dir.pwd }
 
@@ -30,6 +40,40 @@ describe Solargraph::Workspace::RequirePaths do
       paths
 
       expect(Open3).to have_received(:capture3)
+    end
+  end
+
+  context 'with an invalid gemspec file' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:gemspec_file) { File.join(dir_path, 'invalid.gemspec') }
+
+    before do
+      File.write(gemspec_file, "bogus")
+    end
+
+    it 'includes the lib directory' do
+      expect(paths).to include(File.join(dir_path, 'lib'))
+    end
+
+    it 'does not raise an error' do
+      expect { paths }.not_to raise_error
+    end
+  end
+
+  context 'with a valid gemspec file that outputs to stdout' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:gemspec_file) { File.join(dir_path, 'invalid.gemspec') }
+
+    before do
+      File.write(gemspec_file, "print '{'; Gem::Specification.new")
+    end
+
+    it 'includes the lib directory' do
+      expect(paths).to include(File.join(dir_path, 'lib'))
+    end
+
+    it 'does not raise an error' do
+      expect { paths }.not_to raise_error
     end
   end
 

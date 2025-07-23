@@ -31,6 +31,12 @@ describe Solargraph::Yardoc do
     end
   end
 
+  describe '#load!' do
+    it 'does not blow up when called on empty directory' do
+      expect { described_class.load!(gem_yardoc_path) }.not_to raise_error
+    end
+  end
+
   describe '#build_docs' do
     let(:api_map) { Solargraph::ApiMap.load(Dir.pwd) }
     let(:gemspec) { api_map.find_gem('rubocop') }
