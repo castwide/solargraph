@@ -90,7 +90,6 @@ module Solargraph
     # @param rbs_collection_pins [Array<Pin::Base>]
     # @return [void]
     def cache_combined_pins(gemspec, rbs_version_cache_key, yard_pins, rbs_collection_pins)
-      raise "rbs_pins must be provided" unless rbs_pins
       combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
       serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
     end
