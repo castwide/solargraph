@@ -152,6 +152,10 @@ module Solargraph
           other.return_type
         elsif other.return_type.undefined?
           return_type
+        elsif return_type.erased_version_of?(other.return_type)
+          other.return_type
+        elsif other.return_type.erased_version_of?(return_type)
+          return_type
         elsif dodgy_return_type_source? && !other.dodgy_return_type_source?
           other.return_type
         elsif other.dodgy_return_type_source? && !dodgy_return_type_source?

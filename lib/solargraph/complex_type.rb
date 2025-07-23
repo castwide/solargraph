@@ -315,6 +315,13 @@ module Solargraph
       all?(&:all_rooted?)
     end
 
+    # @param other [ComplexType, UniqueType]
+    def erased_version_of?(other)
+      return false if items.length != 1 || other.items.length != 1
+
+      @items.first.erased_version_of?(other.items.first)
+    end
+
     # every top-level type has resolved to be fully qualified; see
     # #all_rooted? to check their subtypes as well
     def rooted?

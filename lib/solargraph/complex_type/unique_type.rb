@@ -194,6 +194,11 @@ module Solargraph
         name.start_with?('_')
       end
 
+      # @param other [UniqueType]
+      def erased_version_of?(other)
+        return name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
+      end
+
       # @param api_map [ApiMap]
       # @param expected [ComplexType::UniqueType]
       # @param situation [:method_call, :return_type]
