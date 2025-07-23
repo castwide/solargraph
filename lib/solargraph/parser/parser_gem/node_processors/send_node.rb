@@ -8,32 +8,39 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore
+            # @type [Symbol]
+            method_name = node.children[1]
+            unless method_name.instance_of?(Symbol)
+              Solargraph.assert_or_log(:parser_method_name, "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
+              return process_children
+            end
             if node.children[0].nil?
-              if [:private, :public, :protected].include?(node.children[1])
+              if [:private, :public, :protected].include?(method_name)
                 process_visibility
-              elsif node.children[1] == :module_function
+              elsif method_name == :module_function
                 process_module_function
-              elsif [:attr_reader, :attr_writer, :attr_accessor].include?(node.children[1])
+              elsif [:attr_reader, :attr_writer, :attr_accessor].include?(method_name)
                 process_attribute
-              elsif node.children[1] == :include
+              elsif method_name == :include
                 process_include
-              elsif node.children[1] == :extend
+              elsif method_name == :extend
                 process_extend
-              elsif node.children[1] == :prepend
+              elsif method_name == :prepend
                 process_prepend
-              elsif node.children[1] == :require
+              elsif method_name == :require
                 process_require
-              elsif node.children[1] == :autoload
+              elsif method_name == :autoload
                 process_autoload
-              elsif node.children[1] == :private_constant
+              elsif method_name == :private_constant
                 process_private_constant
-              elsif node.children[1] == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+              elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
-              elsif node.children[1] == :private_class_method && node.children[2].is_a?(AST::Node)
+              elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
-            elsif node.children[1] == :require && node.children[0].to_s == '(const nil :Bundler)'
+            elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
               pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser)
             end
             process_children
@@ -48,12 +55,19 @@ module Solargraph
                 if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
+                  # @sg-ignore
+                  # @type [Symbol]
+                  visibility = node.children[1]
+                  unless visibility.instance_of?(Symbol)
+                    Solargraph.assert_or_log(:parser_visibility, "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
+                    return process_children
+                  end
                   matches.each do |pin|
                     # @todo Smelly instance variable access
-                    pin.instance_variable_set(:@visibility, node.children[1])
+                    pin.instance_variable_set(:@visibility, visibility)
                   end
                 else
-                  process_children region.update(visibility: node.children[1])
+                  process_children region.update(visibility: visibility)
                 end
               end
             else
