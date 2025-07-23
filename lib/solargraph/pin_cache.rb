@@ -59,6 +59,15 @@ module Solargraph
       false
     end
 
+    # @param out [IO, nil] output stream for logging
+    #
+    # @return [void]
+    def cache_all_stdlibs(out: $stderr)
+      possible_stdlibs.each do |stdlib|
+        RbsMap::StdlibMap.new(stdlib, out: out)
+      end
+    end
+
     # @param path [String] require path that might be in the RBS stdlib collection
     # @return [void]
     def cache_stdlib_rbs_map path
@@ -123,6 +132,21 @@ module Solargraph
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     def yardoc_processing?(gemspec)
       Yardoc.processing?(yardoc_path(gemspec))
+    end
+
+    # @return [Array<String>] a list of possible standard library names
+    def possible_stdlibs
+      # all dirs and .rb files in Gem::RUBYGEMS_DIR
+      Dir.glob(File.join(Gem::RUBYGEMS_DIR, '*')).map do |file_or_dir|
+        basename = File.basename(file_or_dir)
+        # remove .rb
+        basename = basename[0..-4] if basename.end_with?('.rb')
+        basename
+      end.sort.uniq
+    rescue StandardError => e
+      logger.info { "Failed to get possible stdlibs: #{e.message}" }
+      logger.debug { e.backtrace.join("\n") }
+      []
     end
 
     private

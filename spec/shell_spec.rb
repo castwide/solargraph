@@ -57,7 +57,7 @@ describe Solargraph::Shell do
     end
   end
 
-  def capture_stdout(&block)
+  def capture_stdout &block
     original_stdout = $stdout
     $stdout = StringIO.new
     begin
@@ -75,8 +75,8 @@ describe Solargraph::Shell do
       expect(output).to include('Caching these gems')
     end
 
-    it 'caches a YARD-using gem and loads pins' do
-      shell = Solargraph::Shell.new
+    it 'caches a YARD-using gem and loads pins' do # rubocop:disable RSpec/MultipleExpectations
+      shell = described_class.new
       output = capture_stdout do
         shell.uncache('backport')
       end

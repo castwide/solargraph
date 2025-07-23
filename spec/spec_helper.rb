@@ -14,7 +14,9 @@ unless ENV['SIMPLECOV_DISABLED']
   end
 end
 require 'solargraph'
-# Suppress logger output in specs (if possible)
+# execute any logging blocks to make sure they don't blow up
+Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
+# ...but still suppress logger output in specs (if possible)
 Solargraph::Logging.logger.reopen(File::NULL) if Solargraph::Logging.logger.respond_to?(:reopen)
 
 # @param name [String]
