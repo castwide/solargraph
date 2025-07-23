@@ -193,7 +193,9 @@ module Solargraph
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+          puts problems.map { |prob|
+            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
+          }.join("\n")
           filecount += 1
           probcount += problems.length
         end
@@ -253,11 +255,11 @@ module Solargraph
     # @return [String]
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
-        if pin.closure
-          "#{pin.closure.path} | #{pin.name}"
-        else
-          "#{pin.context.namespace} | #{pin.name}"
-        end
+               if pin.closure
+                 "#{pin.closure.path} | #{pin.name}"
+               else
+                 "#{pin.context.namespace} | #{pin.name}"
+               end
       else
         pin.path
       end

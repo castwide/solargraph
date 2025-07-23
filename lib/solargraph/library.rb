@@ -249,7 +249,7 @@ module Solargraph
       return [] unless pin
       result = []
       files = if only
-        [api_map.source_map(filename)]
+                [api_map.source_map(filename)]
       else
         (workspace.sources + (@current ? [@current] : []))
       end
@@ -274,12 +274,12 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
-            Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+            Solargraph::Location.new(loc.filename,
+                                     Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line,
+                                                               loc.range.ending.column))
           end
         end
-        result.concat(found.sort do |a, b|
-          a.range.start.line <=> b.range.start.line
-        end)
+        result.concat(found.sort { |a, b| a.range.start.line <=> b.range.start.line })
       end
       result.uniq
     end
@@ -304,9 +304,7 @@ module Solargraph
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
-        if source_map_hash.key?(full)
-          return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
-        end
+        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0)) if source_map_hash.key?(full)
       end
       workspace.require_paths.each do |path|
         full = File.join path, pin.name
@@ -657,7 +655,7 @@ module Solargraph
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?
-        0
+              0
       else
         ((finished.to_f / @total.to_f) * 100).to_i
       end

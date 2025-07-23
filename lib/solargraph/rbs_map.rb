@@ -189,10 +189,10 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version, out: $stderr
       @resolved = if loader.has_library?(library: library, version: version)
-        # we find our own dependencies from gemfile.lock
-        loader.add library: library, version: version, resolve_dependencies: false
-        logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
-        true
+                    # we find our own dependencies from gemfile.lock
+                    loader.add library: library, version: version, resolve_dependencies: false
+                    logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
+                    true
       else
         logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
         false

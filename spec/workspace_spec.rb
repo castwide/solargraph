@@ -122,7 +122,8 @@ describe Solargraph::Workspace do
   end
 
   it 'rescues errors loading files into sources' do
-    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
+    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000,
+                             require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('./path', config)
     }.not_to raise_error

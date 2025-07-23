@@ -264,22 +264,18 @@ Layout/HeredocIndentation:
     - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/yard_map/mapper/to_method_spec.rb'
 
-# Offense count: 24
+# Offense count: 19
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Width, AllowedPatterns.
 Layout/IndentationWidth:
   Exclude:
     - 'lib/solargraph.rb'
-    - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/diagnostics/rubocop.rb'
     - 'lib/solargraph/language_server/message/extended/check_gem_version.rb'
-    - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/block_node.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/namespace.rb'
-    - 'lib/solargraph/rbs_map.rb'
-    - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/source_map/mapper.rb'
@@ -1392,11 +1388,6 @@ RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Offense count: 1
-RSpec/StubbedMock:
-  Exclude:
-    - 'spec/language_server/host/message_worker_spec.rb'
-
 # Offense count: 23
 # Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
 RSpec/VerifiedDoubles:
@@ -2001,20 +1992,16 @@ Style/IfInsideElse:
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/type_checker.rb'
 
-# Offense count: 62
+# Offense count: 56
 # This cop supports safe autocorrection (--autocorrect).
 Style/IfUnlessModifier:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
-    - 'lib/solargraph/api_map/index.rb'
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
     - 'lib/solargraph/language_server/message/completion_item/resolve.rb'
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/language_server/message/text_document/completion.rb'
     - 'lib/solargraph/language_server/message/text_document/hover.rb'
-    - 'lib/solargraph/library.rb'
-    - 'lib/solargraph/parser/parser_gem/class_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/sclass_node.rb'
@@ -2035,7 +2022,6 @@ Style/IfUnlessModifier:
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
-    - 'lib/solargraph/workspace.rb'
     - 'lib/solargraph/workspace/config.rb'
     - 'lib/solargraph/yard_map/helpers.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
@@ -2777,7 +2763,7 @@ YARD/TagTypeSyntax:
     - 'lib/solargraph/parser/comment_ripper.rb'
     - 'lib/solargraph/type_checker.rb'
 
-# Offense count: 185
+# Offense count: 178
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Max, AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
 # URISchemes: http, https
@@ -2833,7 +2819,6 @@ Layout/LineLength:
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/source_map/mapper.rb'
     - 'lib/solargraph/type_checker.rb'
-    - 'lib/solargraph/workspace.rb'
     - 'lib/solargraph/workspace/config.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'spec/complex_type_spec.rb'
@@ -2845,4 +2830,3 @@ Layout/LineLength:
     - 'spec/source/chain_spec.rb'
     - 'spec/source_map/clip_spec.rb'
     - 'spec/source_map_spec.rb'
-    - 'spec/workspace_spec.rb'
