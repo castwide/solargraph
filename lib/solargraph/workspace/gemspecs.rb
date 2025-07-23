@@ -107,7 +107,7 @@ module Solargraph
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
-        (gem_dep_gemspecs + stdlib_dep_gemspecs).sort.uniq
+        (gem_dep_gemspecs + stdlib_dep_gemspecs).uniq(&:name)
       end
 
       # Returns all gemspecs directly depended on by this workspace's
