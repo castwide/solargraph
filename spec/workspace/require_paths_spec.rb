@@ -4,7 +4,6 @@ require 'fileutils'
 require 'tmpdir'
 
 describe Solargraph::Workspace::RequirePaths do
-
   subject(:paths) { described_class.new(dir_path, config).generate }
 
   let(:config) { Solargraph::Workspace::Config.new(dir_path) }

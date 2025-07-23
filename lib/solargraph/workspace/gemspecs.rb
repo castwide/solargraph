@@ -266,7 +266,7 @@ module Solargraph
           Gem::Specification.find_by_name(name)
         rescue Gem::MissingSpecError
           stdlibmap = RbsMap::StdlibMap.new(name)
-          if !stdlibmap.resolved?
+          unless stdlibmap.resolved?
             logger.warn "Please install the gem #{name}:#{version} in Solargraph's Ruby environment"
           end
           nil # either not here or in stdlib
