@@ -67,7 +67,7 @@ module Solargraph
                     pin.instance_variable_set(:@visibility, visibility)
                   end
                 else
-                  process_children region.update(visibility: node.children[1])
+                  process_children region.update(visibility: visibility)
                 end
               end
             else
