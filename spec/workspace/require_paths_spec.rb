@@ -48,7 +48,7 @@ describe Solargraph::Workspace::RequirePaths do
     let(:gemspec_file) { File.join(dir_path, 'invalid.gemspec') }
 
     before do
-      File.write(gemspec_file, "bogus")
+      File.write(gemspec_file, 'bogus')
     end
 
     it 'includes the lib directory' do
