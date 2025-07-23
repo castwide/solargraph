@@ -49,7 +49,7 @@ module Solargraph
 
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
@@ -140,6 +140,11 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
+      end
+
+      # @return [Enumerable<Solargraph::Pin::Constant>]
+      def constant_pins
+        pins_by_class(Solargraph::Pin::Constant)
       end
 
       # @return [Enumerable<Solargraph::Pin::Method>]

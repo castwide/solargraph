@@ -550,6 +550,11 @@ module Solargraph
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
       methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
+      if methods.empty? && namespace_pin.nil?
+        # namespace may be set by an alias
+        constant = store.constant_pins.find { |c| c.name == fqns && visibility.include?(c.visibility) }
+        return get_method_stack(constant.return_type.tag, name, scope: scope, visibility: visibility, preserve_generics: preserve_generics) if constant
+      end
       methods
     end
 
@@ -558,7 +563,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -567,7 +572,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Enumerable<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end

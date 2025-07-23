@@ -29,12 +29,25 @@ module Solargraph
           super
           unless resolved?
             @pins = []
-            logger.info { "Could not resolve #{library.inspect}" }
+            logger.debug { "StdlibMap could not resolve #{library.inspect}" }
             return
           end
           generated_pins = pins
           logger.debug { "Found #{generated_pins.length} pins for stdlib library #{library}" }
           PinCache.serialize_stdlib_require library, generated_pins
+        end
+      end
+
+      def self.source
+        @source ||= RBS::Collection::Sources::Stdlib.instance
+      end
+
+      # @return [Array<Hash{String => String}>, nil]
+      def self.stdlib_dependencies(name, version)
+        if source.has?(name, version)
+          source.dependencies_of(name, version)
+        else
+          []
         end
       end
 

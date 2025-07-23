@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rubygems'
 require 'bundler'
 
 module Solargraph
@@ -82,10 +83,7 @@ module Solargraph
         gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
         return gemspec if gemspec
 
-        Gem::Specification.find_by_name(name, version)
-      rescue Gem::MissingSpecError
-        logger.warn "Please install the gem #{name}:#{version} in Solargraph's Ruby environment"
-        nil
+        resolve_gem_ignoring_local_bundle name, version
       end
 
       # @param gemspec [Gem::Specification]
@@ -95,7 +93,7 @@ module Solargraph
 
         # @param runtime_dep [Gem::Dependency]
         # @param deps [Set<Gem::Specification>]
-        only_runtime_dependencies(gemspec).each_with_object(Set.new) do |runtime_dep, deps|
+        gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(Set.new) do |runtime_dep, deps|
           Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
           dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
           dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
@@ -105,6 +103,11 @@ module Solargraph
                                  "for #{gemspec.name} not found in bundle.")
           nil
         end.to_a.compact
+        # RBS tracks implicit dependencies, like how the YAML standard
+        # library implies pulling in the psych library.
+        stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+        stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
+        (gem_dep_gemspecs + stdlib_dep_gemspecs).sort.uniq
       end
 
       # Returns all gemspecs directly depended on by this workspace's
@@ -127,6 +130,7 @@ module Solargraph
 
       private
 
+      # @sg-ignore
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       # @return [Gem::Specification, nil]
       def to_gem_specification specish
@@ -261,8 +265,11 @@ module Solargraph
         begin
           Gem::Specification.find_by_name(name)
         rescue Gem::MissingSpecError
-          logger.warn "Please install the gem #{name}:#{version} in Solargraph's Ruby environment"
-          nil
+          stdlibmap = RbsMap::StdlibMap.new(name)
+          if !stdlibmap.resolved?
+            logger.warn "Please install the gem #{name}:#{version} in Solargraph's Ruby environment"
+          end
+          nil # either not here or in stdlib
         end
       end
 

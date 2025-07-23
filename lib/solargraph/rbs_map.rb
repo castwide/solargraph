@@ -64,9 +64,10 @@ module Solargraph
     #   for the given library.  Must change when the RBS info is
     #   updated upstream for the same library and version.  May change
     #   if the config for where information comes form changes.
-    # @sg-ignore Solargraph::RbsMap#cache_key return type could not be inferred
     def cache_key
       @hextdigest ||= begin
+        return CACHE_KEY_UNRESOLVED unless resolved?
+
         data = nil
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
         gem_config = nil
@@ -79,7 +80,7 @@ module Solargraph
           end
         end
         if gem_config.nil?
-          CACHE_KEY_UNRESOLVED
+          CACHE_KEY_STDLIB
         else
           # @type [String]
           source = gem_config.dig('source', 'type')
@@ -108,9 +109,13 @@ module Solargraph
       return rbs_map if rbs_map.resolved?
 
       # try any version of the gem in the collection
-      RbsMap.new(gemspec.name, nil,
-                 rbs_collection_paths: [rbs_collection_path].compact,
-                 rbs_collection_config_path: rbs_collection_config_path)
+      rbs_map = RbsMap.new(gemspec.name, nil,
+                           rbs_collection_paths: [rbs_collection_path].compact,
+                           rbs_collection_config_path: rbs_collection_config_path)
+
+      return rbs_map if rbs_map.resolved?
+
+      StdlibMap.new(gemspec.name)
     end
 
     # @param out [IO, nil] where to log messages
