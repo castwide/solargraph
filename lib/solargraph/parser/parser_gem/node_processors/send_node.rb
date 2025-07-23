@@ -52,22 +52,22 @@ module Solargraph
           def process_visibility
             if (node.children.length > 2)
               node.children[2..-1].each do |child|
+                # @sg-ignore
+                # @type [Symbol]
+                visibility = node.children[1]
+                unless visibility.instance_of?(Symbol)
+                  Solargraph.assert_or_log(:parser_visibility, "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
+                  return process_children
+                end
                 if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
-                  # @sg-ignore
-                  # @type [Symbol]
-                  visibility = node.children[1]
-                  unless visibility.instance_of?(Symbol)
-                    Solargraph.assert_or_log(:parser_visibility, "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
-                    return process_children
-                  end
                   matches.each do |pin|
                     # @todo Smelly instance variable access
                     pin.instance_variable_set(:@visibility, visibility)
                   end
                 else
-                  process_children region.update(visibility: visibility)
+                  process_children region.update(visibility: node.children[1])
                 end
               end
             else
