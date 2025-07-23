@@ -466,7 +466,7 @@ module Solargraph
       result
     end
 
-    # @param pin [Pin::Method]
+    # @param pin [Pin::Method, Pin::Signature]
     # @return [void]
     def add_restkwarg_param_tag_details(param_details, pin)
       # see if we have additional tags to pay attention to from YARD -
