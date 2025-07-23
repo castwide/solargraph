@@ -27,7 +27,6 @@ module Solargraph
         result = require_paths_from_gemspec_files
         return configured_require_paths if result.empty?
         result.concat(config.require_paths.map { |p| File.join(directory, p) }) if config
-        result.push File.join(directory, 'lib') if result.empty?
         result
       end
 
