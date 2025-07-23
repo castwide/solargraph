@@ -36,6 +36,7 @@ module Solargraph
         []
       end
 
+      # @return [::Symbol]
       def visibility
         :public
       end

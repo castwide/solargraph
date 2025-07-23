@@ -232,6 +232,7 @@ module Solargraph
           else
             source.tree_at(position.line, position.column - 1)
           end
+          # @type [AST::Node, nil]
           prev = nil
           tree.each do |node|
             if node.type == :send

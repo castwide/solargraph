@@ -5,6 +5,7 @@ module Solargraph
     class Constant < BaseVariable
       attr_reader :visibility
 
+      # @param visibility [::Symbol] The visibility of the constant (:public, :protected, or :private)
       def initialize visibility: :public, **splat
         super(**splat)
         @visibility = visibility

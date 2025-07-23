@@ -3,6 +3,13 @@ require 'ripper'
 module Solargraph
   module Parser
     class CommentRipper < Ripper::SexpBuilderPP
+      # @!override Ripper::SexpBuilder#on_embdoc_beg
+      #   @return [Array(Symbol, String, Array)]
+      # @!override Ripper::SexpBuilder#on_embdoc
+      #   @return [Array(Symbol, String, Array)]
+      # @!override Ripper::SexpBuilder#on_embdoc_end
+      #   @return [Array(Symbol, String, Array)]
+
       # @param src [String]
       # @param filename [String]
       # @param lineno [Integer]

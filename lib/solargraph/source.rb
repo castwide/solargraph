@@ -386,6 +386,7 @@ module Solargraph
     # @return [Integer]
     attr_writer :version
 
+    # @return [void]
     def finalize
       return if @finalized && changes.empty?
 
@@ -440,6 +441,7 @@ module Solargraph
     # @return [String]
     attr_writer :repaired
 
+    # @return [String]
     def repaired
       finalize
       @repaired

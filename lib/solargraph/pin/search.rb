@@ -12,6 +12,8 @@ module Solargraph
         # @return [Pin::Base]
         attr_reader :pin
 
+        # @param match [Float] The match score for the pin
+        # @param pin [Pin::Base]
         def initialize match, pin
           @match = match
           @pin = pin

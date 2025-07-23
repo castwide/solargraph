@@ -30,8 +30,12 @@ module Solargraph
       by_path.values + alias_pins
     end
 
+    # @param pins [Array<Pin::Method>]
+    # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
-      out = pins.reduce(nil) do |memo, pin|
+      # @type [Pin::Method, nil]
+      combined_pin = nil
+      out = pins.reduce(combined_pin) do |memo, pin|
         next pin if memo.nil?
         if memo == pin && memo.source != :combined
           # @todo we should track down situations where we are handled

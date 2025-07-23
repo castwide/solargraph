@@ -10,6 +10,7 @@ module Solargraph::LanguageServer::Message::TextDocument
 
     private
 
+    # @return [Array<Hash>]
     def code_location
       suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column)
       return nil if suggestions.empty?
@@ -21,6 +22,7 @@ module Solargraph::LanguageServer::Message::TextDocument
       end
     end
 
+    # @return [Array<Hash>]
     def require_location
       # @todo Terrible hack
       lib = host.library_for(params['textDocument']['uri'])

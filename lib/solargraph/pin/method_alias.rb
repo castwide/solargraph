@@ -13,6 +13,8 @@ module Solargraph
       # @return [String]
       attr_reader :original
 
+      # @param scope [::Symbol]
+      # @param original [String, nil] The name of the original method
       def initialize scope: :instance, original: nil, **splat
         super(**splat)
         @scope = scope

@@ -10,6 +10,7 @@ module Solargraph::LanguageServer::Message::TextDocument
 
     private
 
+    # @return [Array<Hash>]
     def code_location
       suggestions = host.type_definitions_at(params['textDocument']['uri'], @line, @column)
       return nil if suggestions.empty?
