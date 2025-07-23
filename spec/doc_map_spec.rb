@@ -76,8 +76,9 @@ describe Solargraph::DocMap do
     it 'does not warn' do
       # Requiring 'set' is unnecessary because it's already included in core. It
       # might make sense to log redundant requires, but a warning is overkill.
-      expect(Solargraph.logger).not_to receive(:warn).with(/path set/)
+      allow(Solargraph.logger).to receive(:warn)
       doc_map
+      expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
     end
   end
 
