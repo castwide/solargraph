@@ -502,7 +502,9 @@ module Solargraph
     # signatures and method pins can help by adding type information
     #
     # @param param_details [Hash{String => Hash{Symbol => String, ComplexType}}]
+    # @param param_names [Array<String>]
     # @param new_param_details [Hash{String => Hash{Symbol => String, ComplexType}}]
+    #
     # @return [void]
     def add_to_param_details(param_details, param_names, new_param_details)
       new_param_details.each do |param_name, details|
