@@ -466,6 +466,7 @@ module Solargraph
       result
     end
 
+    # @param param_details [Hash{String => Hash{Symbol => String, ComplexType}}]
     # @param pin [Pin::Method, Pin::Signature]
     # @return [void]
     def add_restkwarg_param_tag_details(param_details, pin)
