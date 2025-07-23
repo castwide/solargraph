@@ -61,6 +61,13 @@ module Solargraph
         Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
+      # @return [Pin::Closure, nil]
+      def closure
+        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        # @type [Pin::Closure, nil]
+        @closure
+      end
+
       # @param other [self]
       # @param attrs [Hash{::Symbol => Object}]
       #
