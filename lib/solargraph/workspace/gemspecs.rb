@@ -128,7 +128,6 @@ module Solargraph
       private
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
-      # @sg-ignore
       # @return [Gem::Specification, nil]
       def to_gem_specification specish
         # print time including milliseconds
@@ -172,7 +171,6 @@ module Solargraph
             'ruby', '-e',
             "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts #{command}.to_json }"
           ]
-          # @sg-ignore Unresolved call to capture3
           o, e, s = Open3.capture3(*cmd)
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
@@ -226,9 +224,6 @@ module Solargraph
         all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
       end
 
-      # @sg-ignore
-      #   Solargraph::Workspace::Gemspecs#auto_required_gemspecs_from_external_bundle
-      #   return type could not be inferred
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def auto_required_gemspecs_from_external_bundle
         @auto_required_gemspecs_from_external_bundle ||=

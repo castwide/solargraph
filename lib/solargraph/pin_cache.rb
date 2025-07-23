@@ -21,7 +21,6 @@ module Solargraph
       @yard_plugins = yard_plugins
     end
 
-    # @sg-ignore
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     def cached?(gemspec)
       rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)

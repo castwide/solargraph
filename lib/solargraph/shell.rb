@@ -67,7 +67,6 @@ module Solargraph
     def config(directory = '.')
       matches = []
       if options[:extensions]
-        # @sg-ignore Unresolved call to each
         Gem::Specification.each do |g|
           if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
             require g.name
@@ -82,7 +81,6 @@ module Solargraph
         end
       end
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
-        # @sg-ignore Unresolved call to to_yaml
         file.puts conf.to_yaml
       end
       STDOUT.puts "Configuration file initialized."

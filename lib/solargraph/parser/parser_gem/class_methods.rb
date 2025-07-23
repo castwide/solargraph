@@ -59,9 +59,6 @@ module Solargraph
             # @return [Array(Integer, Integer), Array(nil, nil)]
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::Parser::ParserGem::ClassMethods#inner_node_references:
-          #   top expected AST::Node, received Parser::AST::Node, nil
           inner_node_references(name, source.node).map do |n|
             rng = Range.from_node(n)
             offset = Position.to_offset(source.code, rng.start)
@@ -131,9 +128,6 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Array<Range>]
         def string_ranges node
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::Parser::ParserGem::ClassMethods#is_ast_node?:
-          #   node expected Object, received Parser::AST::Node
           return [] unless is_ast_node?(node)
           result = []
           if node.type == :str
@@ -144,7 +138,6 @@ module Solargraph
           end
           if node.type == :dstr && node.children.last.nil?
             last = node.children[-2]
-            # @sg-ignore Unresolved call to nil?
             unless last.nil?
               rng = Range.from_node(last)
               pos = Position.new(rng.ending.line, rng.ending.column - 1)

@@ -264,7 +264,6 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
-      # @sg-ignore Unresolved call to load_file
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)
