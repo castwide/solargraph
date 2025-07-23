@@ -60,14 +60,15 @@ module Solargraph
       end
     end
 
+    # @sg-ignore
     # @return [String] representing the version of the RBS info fetched
     #   for the given library.  Must change when the RBS info is
     #   updated upstream for the same library and version.  May change
     #   if the config for where information comes form changes.
     def cache_key
-      @hextdigest ||= begin
-        return CACHE_KEY_UNRESOLVED unless resolved?
+      return CACHE_KEY_UNRESOLVED unless resolved?
 
+      @hextdigest ||= begin
         data = nil
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
         gem_config = nil
