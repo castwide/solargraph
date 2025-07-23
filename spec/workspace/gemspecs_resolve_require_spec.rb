@@ -83,27 +83,30 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
-    context 'with a gem preference' do
-      before do
-        find_or_install('backport', '1.0.0')
-        Gem::Specification.find_by_name('backport', '= 1.0.0')
-      end
+    # find_or_install helper doesn't seem to work on older versions
+    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+      context 'with a gem preference' do
+        before do
+          find_or_install('backport', '1.0.0')
+          Gem::Specification.find_by_name('backport', '= 1.0.0')
+        end
 
-      let(:preferences) do
-        [
-          Gem::Specification.new.tap do |spec|
-            spec.name = 'backport'
-            spec.version = '1.0.0'
-          end
-        ]
-      end
+        let(:preferences) do
+          [
+            Gem::Specification.new.tap do |spec|
+              spec.name = 'backport'
+              spec.version = '1.0.0'
+            end
+          ]
+        end
 
-      it 'returns the preferred gemspec' do
-        gemspecs = described_class.new(dir_path, preferences: preferences)
-        specs = gemspecs.resolve_require('backport')
-        backport = specs.find { |spec| spec.name == 'backport' }
+        it 'returns the preferred gemspec' do
+          gemspecs = described_class.new(dir_path, preferences: preferences)
+          specs = gemspecs.resolve_require('backport')
+          backport = specs.find { |spec| spec.name == 'backport' }
 
-        expect(backport.version.to_s).to eq('1.0.0')
+          expect(backport.version.to_s).to eq('1.0.0')
+        end
       end
     end
   end
