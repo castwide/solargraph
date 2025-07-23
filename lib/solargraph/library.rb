@@ -402,8 +402,8 @@ module Solargraph
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
-          Diagnostics.reporters.each do |reporter|
-            repargs[reporter] ||= []
+          Diagnostics.reporters.each do |reporter_name|
+            repargs[Diagnostics.reporter(reporter_name)] ||= []
           end
         else
           args = line.split(':').map(&:strip)
