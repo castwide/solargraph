@@ -700,6 +700,11 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
+    # @return [Workspace, nil]
+    def workspace
+      @doc_map&.workspace
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -974,13 +979,6 @@ module Solargraph
     end
 
     include Logging
-
-    # @return [Workspace, nil]
-    def workspace
-      @doc_map&.workspace
-    end
-
-    private
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
