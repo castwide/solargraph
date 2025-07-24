@@ -11,17 +11,21 @@ describe Solargraph::Shell do
       file.puts "source 'https://rubygems.org'"
       file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
     end
-    output, status = Open3.capture2e('bundle install', chdir: temp_dir)
-    raise "Failure installing bundle: #{output}" unless status.success?
+    Bundler.with_unbundled_env do
+      output, status = Open3.capture2e('bundle install', chdir: temp_dir)
+      raise "Failure installing bundle: #{output}" unless status.success?
+    end
   end
 
   # @type cmd [Array<String>]
   # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
-    output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
-    expect(status.success?).to be(true), "Command failed: #{output}"
-    output
+    Bundler.with_unbundled_env do
+      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
+      expect(status.success?).to be(true), "Command failed: #{output}"
+      output
+    end
   end
 
   after do
@@ -69,8 +73,20 @@ describe Solargraph::Shell do
   end
 
   describe 'gem' do
+    it 'has a well set up test enviornment' do
+      output = bundle_exec('bundle', 'list')
+
+      expect(output).to include('language_server-protocol')
+    end
+
     it 'caches without erroring out' do
       output = bundle_exec('solargraph', 'gem', 'solargraph')
+
+      expect(output).to include('Caching these gems')
+    end
+
+    it 'gives sensible error for gem that does not exist' do
+      output = bundle_exec('solargraph', 'gem', 'solargraph123')
 
       expect(output).to include('Caching these gems')
     end

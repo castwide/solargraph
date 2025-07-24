@@ -12,8 +12,8 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
-      def log_caching gemspec, out: $stderr
-        out&.puts("Caching RBS pins for standard library #{gemspec.name}")
+      def log_caching lib, out: $stderr
+        out&.puts("Caching RBS pins for standard library #{lib.name}")
       end
 
       # @param library [String]

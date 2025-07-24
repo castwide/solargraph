@@ -46,6 +46,7 @@ module Solargraph
         # Determine gem name based on the require path
         file = "lib/#{require}.rb"
         begin
+          # @sg-ignore
           spec_with_path = Gem::Specification.find_by_path(file)
         rescue Gem::MissingSpecError
           logger.debug do
@@ -199,7 +200,7 @@ module Solargraph
         Solargraph.with_clean_env do
           cmd = [
             'ruby', '-e',
-            "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts #{command}.to_json }"
+            "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts begin; #{command}; end.to_json }"
           ]
           # @sg-ignore
           o, e, s = Open3.capture3(*cmd)
@@ -213,6 +214,7 @@ module Solargraph
         end
       end
 
+      # @sg-ignore
       def in_this_bundle?
         Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end
@@ -265,12 +267,12 @@ module Solargraph
             command =
               'Bundler.definition.dependencies' \
               '.select { |dep| dep.groups.include?(:default) && dep.should_include? }' \
-              '.map { |dep| [dep.name, dep. version] }'
+              '.map(&:name)'
             # @sg-ignore
             # @type [Array<Array(String, String)>]
-            dep_details = query_external_bundle command
+            dep_names = query_external_bundle command
 
-            dep_details.map { |name, version| find_gem(name, version) }.compact
+            all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
           end
       end
 
@@ -313,8 +315,11 @@ module Solargraph
           begin
             logger.info 'Fetching gemspecs required from external bundle'
 
-            command = 'Bundler.definition.locked_gems&.specs&.map { |spec| [spec.name, spec.version.to_s] }.to_h'
-
+            command = 'specish_objects = Bundler.definition.locked_gems&.specs; ' \
+                      'if specish_objects.first.respond_to?(:materialize_for_installation);' \
+                      'specish_objects = specish_objects.map(&:materialize_for_installation);' \
+                      'end;' \
+                      'specish_objects.map { |specish| [specish.name, specish.version] }'
             query_external_bundle(command).map do |name, version|
               resolve_gem_ignoring_local_bundle(name, version)
             end.compact

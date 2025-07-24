@@ -84,27 +84,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
   context 'with external bundle' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
-    before do
-      # write out Gemfile
-      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-        source 'https://rubygems.org'
-        gem 'backport'
-      GEMFILE
-
-      # run bundle install
-      output, status = Solargraph.with_clean_env do
-        Open3.capture2e('bundle install --verbose', chdir: dir_path)
-      end
-      raise "Failure installing bundle: #{output}" unless status.success?
-
-      # ensure Gemfile.lock exists
-      unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
-        raise "Gemfile.lock not found after bundle install in #{dir_path}"
-      end
-    end
-
-    context 'with external bundle that does not exist' do
-      let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
+    context 'with no actual bundle' do
       let(:require) { 'bundler/require' }
 
       it 'raises' do
@@ -112,69 +92,100 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
-    # find_or_install helper doesn't seem to work on older versions
-    if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
-      context 'with a gem preference' do
-        before do
-          find_or_install('backport', '1.0.0')
-          Gem::Specification.find_by_name('backport', '= 1.0.0')
+    context 'with Gemfile' do
+      before do
+        # write out Gemfile
+        File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+          source 'https://rubygems.org'
+          gem 'backport'
+        GEMFILE
+
+        # run bundle install
+        output, status = Solargraph.with_clean_env do
+          Open3.capture2e('bundle install --verbose', chdir: dir_path)
         end
+        raise "Failure installing bundle: #{output}" unless status.success?
 
-        let(:preferences) do
-          [
-            Gem::Specification.new.tap do |spec|
-              spec.name = 'backport'
-              spec.version = '1.0.0'
-            end
-          ]
-        end
-
-        it 'returns the preferred gemspec' do
-          gemspecs = described_class.new(dir_path, preferences: preferences)
-          specs = gemspecs.resolve_require('backport')
-          backport = specs.find { |spec| spec.name == 'backport' }
-
-          expect(backport.version.to_s).to eq('1.0.0')
+        # ensure Gemfile.lock exists
+        unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
+          raise "Gemfile.lock not found after bundle install in #{dir_path}"
         end
       end
 
-      context 'with a gem preference that does not exist' do
-        let(:preferences) do
-          [
-            Gem::Specification.new.tap do |spec|
-              spec.name = 'backport'
-              spec.version = '99.0.0'
-            end
-          ]
-        end
+      let(:require) { 'bundler/require' }
 
-        it 'returns the gemspec we do have' do
-          gemspecs = described_class.new(dir_path, preferences: preferences)
-          specs = gemspecs.resolve_require('backport')
-          backport = specs.find { |spec| spec.name == 'backport' }
-
-          expect(backport.version.to_s).to eq('1.2.0')
-        end
+      it 'does not raise' do
+        expect { specs }.not_to raise_error
       end
 
-      context 'with a gem preference already set to the version we use' do
-        let(:version) { Gem::Specification.find_by_name('backport').version.to_s }
+      it 'returns gems' do
+        expect(specs.map(&:name)).to include('backport')
+      end
 
-        let(:preferences) do
-          [
-            Gem::Specification.new.tap do |spec|
-              spec.name = 'backport'
-              spec.version = version
-            end
-          ]
+      # find_or_install helper doesn't seem to work on older versions
+      if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+        context 'with a gem preference' do
+          before do
+            find_or_install('backport', '1.0.0')
+            Gem::Specification.find_by_name('backport', '= 1.0.0')
+          end
+
+          let(:preferences) do
+            [
+              Gem::Specification.new.tap do |spec|
+                spec.name = 'backport'
+                spec.version = '1.0.0'
+              end
+            ]
+          end
+
+          it 'returns the preferred gemspec' do
+            gemspecs = described_class.new(dir_path, preferences: preferences)
+            specs = gemspecs.resolve_require('backport')
+            backport = specs.find { |spec| spec.name == 'backport' }
+
+            expect(backport.version.to_s).to eq('1.0.0')
+          end
         end
 
-        it 'returns the gemspec we do have' do
-          gemspecs = described_class.new(dir_path, preferences: preferences)
-          specs = gemspecs.resolve_require('backport')
-          backport = specs.find { |spec| spec.name == 'backport' }
+        context 'with a gem preference that does not exist' do
+          let(:preferences) do
+            [
+              Gem::Specification.new.tap do |spec|
+                spec.name = 'backport'
+                spec.version = '99.0.0'
+              end
+            ]
+          end
 
-          expect(backport.version.to_s).to eq(version)
+          it 'returns the gemspec we do have' do
+            gemspecs = described_class.new(dir_path, preferences: preferences)
+            specs = gemspecs.resolve_require('backport')
+            backport = specs.find { |spec| spec.name == 'backport' }
+
+            expect(backport.version.to_s).to eq('1.2.0')
+          end
+        end
+
+        context 'with a gem preference already set to the version we use' do
+          let(:version) { Gem::Specification.find_by_name('backport').version.to_s }
+
+          let(:preferences) do
+            [
+              Gem::Specification.new.tap do |spec|
+                spec.name = 'backport'
+                spec.version = version
+              end
+            ]
+          end
+
+          it 'returns the gemspec we do have' do
+            gemspecs = described_class.new(dir_path, preferences: preferences)
+            specs = gemspecs.resolve_require('backport')
+            backport = specs.find { |spec| spec.name == 'backport' }
+
+            expect(backport.version.to_s).to eq(version)
+          end
         end
       end
     end

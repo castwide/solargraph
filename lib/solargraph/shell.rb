@@ -67,6 +67,7 @@ module Solargraph
     def config(directory = '.')
       matches = []
       if options[:extensions]
+        # @sg-ignore
         Gem::Specification.each do |g|
           if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
             require g.name
@@ -125,7 +126,11 @@ module Solargraph
           end
 
           gemspec = api_map.find_gem(*name.split('='))
-          api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+          if gemspec.nil?
+            warn "Gem '#{name}' not found"
+          else
+            api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+          end
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
