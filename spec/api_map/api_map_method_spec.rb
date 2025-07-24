@@ -60,7 +60,7 @@ describe Solargraph::ApiMap do
 
   describe '#get_method_stack' do
     let(:out) { StringIO.new }
-    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
+    let(:api_map) { described_class.load_with_cache(Dir.pwd, out: out) }
     let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
     it 'handles the YAML gem aliased to Psych' do

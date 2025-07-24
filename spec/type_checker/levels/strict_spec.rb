@@ -59,7 +59,7 @@ describe Solargraph::TypeChecker do
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.load_with_cache('.', nil)
+      api_map = Solargraph::ApiMap.load_with_cache('.', out: nil)
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty

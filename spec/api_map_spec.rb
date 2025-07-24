@@ -6,7 +6,7 @@ describe Solargraph::ApiMap do
   # avoid performance hit of doing this many times
   # rubocop:disable RSpec/InstanceVariable
   before :all do # rubocop:disable RSpec/BeforeAfterAll
-    @api_map = described_class.load_with_cache(Dir.pwd, nil)
+    @api_map = described_class.load_with_cache(Dir.pwd, out: nil)
   end
 
   it 'returns core methods' do
@@ -21,7 +21,7 @@ describe Solargraph::ApiMap do
       end
 
       it 'automatically caches core' do
-        api_map = described_class.load_with_cache(Dir.pwd, nil)
+        api_map = described_class.load_with_cache(Dir.pwd, out: nil)
         pins = api_map.get_methods('String')
         expect(pins.map(&:path)).to include('String#upcase')
       end
@@ -34,7 +34,7 @@ describe Solargraph::ApiMap do
       end
 
       it 'automatically caches gems' do
-        api_map = described_class.load_with_cache(Dir.pwd, nil)
+        api_map = described_class.load_with_cache(Dir.pwd, out: nil)
         pins = api_map.get_methods('RuboCop::Cop::Base')
         expect(pins.map(&:path)).to include('RuboCop::Cop::Base#active_support_extensions_enabled?')
       end
