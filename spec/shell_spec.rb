@@ -50,7 +50,7 @@ describe Solargraph::Shell do
   describe 'uncache' do
     it 'uncaches without erroring out' do
       output = capture_stdout do
-        shell.uncache('solargraph')
+        shell.uncache('backport')
       end
 
       expect(output).to include('Clearing pin cache in')
@@ -93,7 +93,7 @@ describe Solargraph::Shell do
 
   describe 'gems' do
     it 'caches core without erroring out' do
-      expect { bundle_exec('solargraph', 'cache', 'core') }.not_to raise_error
+      expect { shell.cache('core') }.not_to raise_error
     end
 
     it 'has a well set up test environment' do
@@ -109,15 +109,23 @@ describe Solargraph::Shell do
     end
 
     it 'caches single gem without erroring out' do
-      output = bundle_exec('solargraph', 'gems', 'solargraph')
+      capture_both do
+        shell.uncache('backport')
+      end
 
-      expect(output).to include('Caching these gems')
+      output = capture_both do
+        shell.gems('backport')
+      end
+
+      expect(output).to include('Caching').and include('backport')
     end
 
     it 'gives sensible error for gem that does not exist' do
-      output = bundle_exec('solargraph', 'gems', 'solargraph123')
+      output = capture_both do
+        shell.gems('solargraph123')
+      end
 
-      expect(output).to include('Caching these gems')
+      expect(output).to include("Gem 'solargraph123' not found")
     end
 
     it 'caches all gems as needed' do
@@ -153,13 +161,19 @@ describe Solargraph::Shell do
 
   describe 'cache' do
     it 'caches a stdlib gem without erroring out' do
-      expect { bundle_exec('solargraph', 'cache', 'stringio') }.not_to raise_error
+      expect { shell.cache('stringio') }.not_to raise_error
     end
 
-    it 'caches without erroring out' do
-      output = bundle_exec('solargraph', 'cache', 'solargraph')
+    it 'caches gem without erroring out' do
+      _output = capture_stdout do
+        shell.uncache('backport')
+      end
 
-      expect(output).to include('Caching these gems')
+      output = capture_both do
+        shell.cache('backport')
+      end
+
+      expect(output).to include('Caching').and include('backport')
     end
   end
 end
