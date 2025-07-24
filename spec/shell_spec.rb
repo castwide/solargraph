@@ -78,7 +78,7 @@ describe Solargraph::Shell do
 
     it 'caches a gem if needed before typechecking' do
       capture_stdout do
-        shell.uncache('core')
+        shell.uncache('backport')
       end
 
       output = capture_both do
@@ -87,7 +87,7 @@ describe Solargraph::Shell do
         shell.typecheck('Gemfile')
       end
 
-      expect(output).to include('Caching ')
+      expect(output).to include('Caching ').and include('backport')
     end
   end
 
