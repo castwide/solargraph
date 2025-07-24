@@ -975,12 +975,12 @@ module Solargraph
 
     include Logging
 
-    private
-
     # @return [Workspace, nil]
     def workspace
       @doc_map&.workspace
     end
+
+    private
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
