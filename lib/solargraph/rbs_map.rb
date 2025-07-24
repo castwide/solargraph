@@ -177,10 +177,10 @@ module Solargraph
       @conversions ||= Conversions.new(loader: loader)
     end
 
-    # @param gemspec [RBS::EnvironmentLoader::Library]
+    # @param lib [RBS::EnvironmentLoader::Library]
     # @param out [IO, nil] where to log messages
     # @return [void]
-    def log_caching gemspec, out:; end
+    def log_caching lib, out:; end
 
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]

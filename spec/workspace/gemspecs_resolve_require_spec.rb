@@ -177,7 +177,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
           expect(backport.version.to_s).to eq(version)
         end
       end
-
     end
   end
 end
