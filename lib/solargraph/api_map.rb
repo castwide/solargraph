@@ -135,6 +135,7 @@ module Solargraph
 
     # @param name [String]
     # @return [YARD::Tags::MacroDirective, nil]
+    # @sg-ignore Solargraph::ApiMap#named_macro return type could not be inferred
     def named_macro name
       store.named_macros[name]
     end
@@ -192,12 +193,7 @@ module Solargraph
     # @param rebuild [Boolean]
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
-      workspace.cache_all_for_workspace!(out, rebuild: rebuild)
-    end
-
-    # @return [Workspace]
-    def workspace
-      @doc_map&.workspace
+      workspace&.cache_all_for_workspace!(out, rebuild: rebuild)
     end
 
     # @param name [String]
@@ -980,6 +976,11 @@ module Solargraph
     include Logging
 
     private
+
+    # @return [Workspace, nil]
+    def workspace
+      @doc_map&.workspace
+    end
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]

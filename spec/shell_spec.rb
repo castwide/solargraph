@@ -72,21 +72,39 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'gem' do
-    it 'has a well set up test enviornment' do
+  describe 'typecheck' do
+    it 'typechecks without erroring out' do
+      output = bundle_exec('solargraph', 'typecheck', 'Gemfile', '--level=normal')
+
+      expect(output).to include('Typecheck finished in')
+    end
+  end
+
+  describe 'gems' do
+    it 'caches core without erroring out' do
+      expect { bundle_exec('solargraph', 'cache', 'core') }.not_to raise_error
+    end
+
+    it 'has a well set up test environment' do
       output = bundle_exec('bundle', 'list')
 
       expect(output).to include('language_server-protocol')
     end
 
-    it 'caches without erroring out' do
-      output = bundle_exec('solargraph', 'gem', 'solargraph')
+    it 'caches all without erroring out' do
+      output = bundle_exec('solargraph', 'gems')
+
+      expect(output).to include('Documentation cached for all')
+    end
+
+    it 'caches single gem without erroring out' do
+      output = bundle_exec('solargraph', 'gems', 'solargraph')
 
       expect(output).to include('Caching these gems')
     end
 
     it 'gives sensible error for gem that does not exist' do
-      output = bundle_exec('solargraph', 'gem', 'solargraph123')
+      output = bundle_exec('solargraph', 'gems', 'solargraph123')
 
       expect(output).to include('Caching these gems')
     end
@@ -110,23 +128,11 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'gems' do
+  describe 'cache' do
     it 'caches a stdlib gem without erroring out' do
       expect { bundle_exec('solargraph', 'cache', 'stringio') }.not_to raise_error
     end
 
-    it 'caches core without erroring out' do
-      expect { bundle_exec('solargraph', 'cache', 'core') }.not_to raise_error
-    end
-
-    it 'caches all without erroring out' do
-      output = bundle_exec('solargraph', 'gems')
-
-      expect(output).to include('Documentation cached for all')
-    end
-  end
-
-  describe 'cache' do
     it 'caches without erroring out' do
       output = bundle_exec('solargraph', 'cache', 'solargraph')
 
