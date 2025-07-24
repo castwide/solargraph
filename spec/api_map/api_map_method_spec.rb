@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::ApiMap do
-  describe 'cache_all_for_workspace!' do
+  describe '#cache_all_for_workspace!' do
     context 'with workspace' do
       subject(:api_map) { described_class.load(Dir.pwd) }
 
@@ -23,7 +23,7 @@ describe Solargraph::ApiMap do
     end
   end
 
-  describe 'cache_gem' do
+  describe '#cache_gem' do
     context 'with no workspace' do
       subject(:api_map) { described_class.new }
 
@@ -46,7 +46,15 @@ describe Solargraph::ApiMap do
     end
   end
 
-  describe 'get_method_stack' do
+  describe '.load_with_cache' do
+    let(:out) { StringIO.new }
+
+    it 'loads the API map with cache' do
+      expect(out.string).to include('Documentation cached for all')
+    end
+  end
+
+  describe '#get_method_stack' do
     let(:out) { StringIO.new }
     let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
     let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }

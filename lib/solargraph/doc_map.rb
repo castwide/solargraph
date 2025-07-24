@@ -64,7 +64,7 @@ module Solargraph
           "Caching pins for gems: #{gem_desc}"
         end
       end
-      PinCache.cache_core unless PinCache.core?
+      PinCache.cache_core(out: out) unless PinCache.core?
       load_serialized_gem_pins(out: out)
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|

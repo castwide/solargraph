@@ -4,6 +4,8 @@ require 'tmpdir'
 require 'open3'
 
 describe Solargraph::Shell do
+  let(:shell) {  described_class.new }
+
   let(:temp_dir) { Dir.mktmpdir }
 
   before do
@@ -47,17 +49,19 @@ describe Solargraph::Shell do
 
   describe 'uncache' do
     it 'uncaches without erroring out' do
-      output = bundle_exec('solargraph', 'uncache', 'solargraph')
+      output = capture_stdout do
+        shell.uncache('solargraph')
+      end
 
       expect(output).to include('Clearing pin cache in')
     end
 
     it 'uncaches stdlib without erroring out' do
-      expect { bundle_exec('solargraph', 'uncache', 'stdlib') }.not_to raise_error
+      expect { shell.uncache('stdlib') }.not_to raise_error
     end
 
     it 'uncaches core without erroring out' do
-      expect { bundle_exec('solargraph', 'uncache', 'core') }.not_to raise_error
+      expect { shell.uncache('core') }.not_to raise_error
     end
   end
 
@@ -72,16 +76,42 @@ describe Solargraph::Shell do
     end
   end
 
+  def capture_both &block
+    original_stdout = $stdout
+    original_stderr = $stderr
+    stringio = StringIO.new
+    $stdout = stringio
+    $stderr = stringio
+    begin
+      block.call
+      stringio.string
+    ensure
+      $stdout = original_stdout
+      $stderr = original_stderr
+    end
+  end
+
   describe 'typecheck' do
     it 'typechecks without erroring out' do
-      output = bundle_exec('solargraph', 'typecheck', 'Gemfile', '--level=normal')
+      output = capture_stdout do
+        old_options = shell.options
+        shell.options = { level: 'normal', directory: '.', **old_options }
+        shell.typecheck('Gemfile')
+      end
 
       expect(output).to include('Typecheck finished in')
     end
 
     it 'caches a gem if needed before typechecking' do
-      bundle_exec('solargraph', 'uncache', 'core')
-      output = bundle_exec('solargraph', 'typecheck', 'Gemfile', '--level=normal')
+      capture_stdout do
+        shell.uncache('core')
+      end
+
+      output = capture_both do
+        old_options = shell.options
+        shell.options = { level: 'normal', directory: '.', **old_options }
+        shell.typecheck('Gemfile')
+      end
 
       expect(output).to include('Caching ')
     end
