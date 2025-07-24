@@ -78,6 +78,13 @@ describe Solargraph::Shell do
 
       expect(output).to include('Typecheck finished in')
     end
+
+    it 'caches a gem if needed before typechecking' do
+      bundle_exec('solargraph', 'uncache', 'core')
+      output = bundle_exec('solargraph', 'typecheck', 'Gemfile', '--level=normal')
+
+      expect(output).to include('Caching ')
+    end
   end
 
   describe 'gems' do
