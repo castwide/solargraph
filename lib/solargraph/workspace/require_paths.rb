@@ -12,7 +12,7 @@ module Solargraph
     class RequirePaths
       attr_reader :directory, :config
 
-      # @param directory [String]
+      # @param directory [String, nil]
       # @param config [Config, nil]
       def initialize directory, config
         @directory = directory
@@ -45,8 +45,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def gemspec_file_paths
-        # @todo Document what '*' means and how a user should use it
-        return [] if directory.empty? || directory == '*'
+        return [] if directory.nil?
         @gemspec_file_paths ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
           config.nil? || config.allow?(gs)
         end
@@ -56,7 +55,7 @@ module Solargraph
       #
       # @return [Array<String>]
       def configured_require_paths
-        return ['lib'] if directory.empty?
+        return ['lib'] unless directory
         return [File.join(directory, 'lib')] if !config || config.require_paths.empty?
         config.require_paths.map { |p| File.join(directory, p) }
       end

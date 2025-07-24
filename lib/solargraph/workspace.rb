@@ -19,10 +19,12 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
-    # @param directory [String]
+    # @param directory [String] TODO: Document and test '' and '*' semantics
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
+      raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
+
       @directory = if ['*', ''].include?(directory)
                      directory
                    else
@@ -38,7 +40,8 @@ module Solargraph
     #
     # @return [Array<String>]
     def require_paths
-      @require_paths ||= RequirePaths.new(directory, config).generate
+      # @todo are the semantics of '*' the same as '', meaning 'don't send back any require paths'?
+      @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -223,9 +226,15 @@ module Solargraph
       server['commandPath'] || 'solargraph'
     end
 
+    # @return [String, nil]
+    def directory_or_nil
+      return nil if directory.empty? || directory == '*'
+      directory
+    end
+
     # @return [Solargraph::Workspace::Gemspecs]
     def gemspecs
-      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory)
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory_or_nil)
     end
 
     private

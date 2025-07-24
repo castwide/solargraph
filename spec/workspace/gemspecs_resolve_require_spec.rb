@@ -61,6 +61,26 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
   end
 
+  context 'with nil as directory' do
+    let(:dir_path) { nil }
+
+    context 'with simple require' do
+      let(:require) { 'solargraph' }
+
+      it 'finds solargraph' do
+        expect(specs.map(&:name)).to eq(['solargraph'])
+      end
+    end
+
+    context 'with Bundler.require' do
+      let(:require) { 'bundler/require' }
+
+      it 'finds nothing' do
+        expect(specs).to be_empty
+      end
+    end
+  end
+
   context 'with external bundle' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 

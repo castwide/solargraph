@@ -11,7 +11,7 @@ module Solargraph
 
       attr_reader :directory, :preferences
 
-      # @param directory [String]
+      # @param directory [String, nil] If nil, assume no bundle is present
       # @param preferences [Array<Gem::Specification>]
       def initialize directory, preferences: []
         # @todo an issue with both external bundles and the potential
@@ -23,7 +23,7 @@ module Solargraph
         #      and treat all bundles as external
         #   *) reinstall the needed gems dynamically each time
         #   *) manipulate the rubygems/bundler environment
-        @directory = File.absolute_path(directory)
+        @directory = directory && File.absolute_path(directory)
         # @todo implement preferences as a config-exposed feature
         @preferences = preferences
       end
@@ -139,6 +139,8 @@ module Solargraph
       #
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def all_gemspecs_from_bundle
+        return [] unless directory
+
         @all_gemspecs_from_bundle ||=
           if in_this_bundle?
             all_gemspecs_from_this_bundle
@@ -212,7 +214,7 @@ module Solargraph
       end
 
       def in_this_bundle?
-        directory && Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
+        Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
@@ -234,6 +236,8 @@ module Solargraph
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def auto_required_gemspecs_from_bundler
+        return [] unless directory
+
         logger.info 'Fetching gemspecs autorequired from Bundler (bundler/require)'
         @auto_required_gemspecs_from_bundler ||=
           if in_this_bundle?
@@ -303,9 +307,8 @@ module Solargraph
       end
 
       # @return [Array<Gem::Specification>]
+      # @sg-ignore
       def all_gemspecs_from_external_bundle
-        return [] unless directory
-
         @all_gemspecs_from_external_bundle ||=
           begin
             logger.info 'Fetching gemspecs required from external bundle'
