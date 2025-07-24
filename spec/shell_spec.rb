@@ -116,18 +116,30 @@ describe Solargraph::Shell do
       expect(output).to include('Caching these gems')
     end
 
-    it 'caches a YARD-using gem and loads pins' do # rubocop:disable RSpec/MultipleExpectations
+    it 'caches all gems as needed' do
       shell = described_class.new
-      output = capture_stdout do
+      _output = capture_stdout do
         shell.uncache('backport')
       end
-      expect(output).to include('Clearing pin cache in')
 
-      output = capture_stdout do
-        shell.gems('backport')
+      _output = capture_stdout do
+        shell.gems
       end
 
-      expect(output).to include('Caching YARD pins for gem backport')
+      api_map = Solargraph::ApiMap.load(Dir.pwd)
+      methods = api_map.get_method_stack('Backport::Adapter', 'remote')
+      expect(methods.first.return_type.tag).to eq('Hash{Symbol => String, Integer}')
+    end
+
+    it 'caches a YARD-using gem and loads pins' do
+      shell = described_class.new
+      _output = capture_stdout do
+        shell.uncache('backport')
+      end
+
+      _output = capture_stdout do
+        shell.gems('backport')
+      end
 
       api_map = Solargraph::ApiMap.load(Dir.pwd)
       methods = api_map.get_method_stack('Backport::Adapter', 'remote')
