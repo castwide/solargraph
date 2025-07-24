@@ -132,7 +132,7 @@ module Solargraph
       rbs_collection_pins_in_memory.delete([gemspec.name, gemspec.version, rbs_version_cache_key])
 
       uncache_by_prefix(combined_path_prefix(gemspec), out: out)
-      combined_pins_in_memory.delete([gemspec.name, gemspec.version, rbs_version_cache_key])
+      combined_pins_in_memory.delete([gemspec.name, gemspec.version])
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]

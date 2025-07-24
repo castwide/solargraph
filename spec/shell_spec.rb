@@ -77,13 +77,12 @@ describe Solargraph::Shell do
     end
 
     it 'caches a gem if needed before typechecking' do
-      capture_stdout do
+      capture_both do
         shell.uncache('backport')
       end
 
       output = capture_both do
-        old_options = shell.options
-        shell.options = { level: 'normal', directory: '.', **old_options }
+        shell.options = { level: 'normal', directory: Dir.pwd }
         shell.typecheck('Gemfile')
       end
 

@@ -118,7 +118,7 @@ module Solargraph
       if names.empty?
         api_map.cache_all_for_workspace!($stdout, rebuild: options.rebuild)
       else
-        STDERR.puts("Caching these gems: #{names}")
+        $stderr.puts("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
             PinCache.cache_core(out: $stdout)
@@ -134,7 +134,7 @@ module Solargraph
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
-        STDERR.puts "Documentation cached for #{names.count} gems."
+        $stderr.puts "Documentation cached for #{names.count} gems."
       end
     end
 
