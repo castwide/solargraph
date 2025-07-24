@@ -178,6 +178,7 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    #
     # @return [ApiMap]
     def self.load directory
       api_map = new
@@ -233,7 +234,7 @@ module Solargraph
     # @param directory [String] workspace directory
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory, out
+    def self.load_with_cache directory, out: $stderr
       api_map = load(directory)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }

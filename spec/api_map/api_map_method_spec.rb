@@ -47,10 +47,14 @@ describe Solargraph::ApiMap do
   end
 
   describe '.load_with_cache' do
-    let(:out) { StringIO.new }
-
     it 'loads the API map with cache' do
-      expect(out.string).to include('Documentation cached for all')
+      Solargraph::PinCache.uncache_core
+
+      output = capture_both do
+        described_class.load_with_cache(Dir.pwd)
+      end
+
+      expect(output).to include('aching RBS pins for Ruby core')
     end
   end
 
