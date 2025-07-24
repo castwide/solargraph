@@ -33,6 +33,12 @@ module Solargraph
       index pins
     end
 
+    # @param out [IO, nil] output stream for logging
+    # @return [void]
+    def self.reset_core out: nil
+      @@core_map = RbsMap::CoreMap.new
+    end
+
     #
     # This is a mutable object, which is cached in the Chain class -
     # if you add any fields which change the results of calls (not

@@ -124,9 +124,15 @@ module Solargraph
     # @return [void]
     def uncache_gem(gemspec, out: nil)
       PinCache.uncache(yardoc_path(gemspec), out: out)
-      uncache_by_prefix(rbs_collection_pins_path_prefix(gemspec), out: out)
+      yard_pins_in_memory.delete([gemspec.name, gemspec.version])
       PinCache.uncache(yard_gem_path(gemspec), out: out)
+
+      rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)
+      uncache_by_prefix(rbs_collection_pins_path_prefix(gemspec), out: out)
+      rbs_collection_pins_in_memory.delete([gemspec.name, gemspec.version, rbs_version_cache_key])
+
       uncache_by_prefix(combined_path_prefix(gemspec), out: out)
+      combined_pins_in_memory.delete([gemspec.name, gemspec.version, rbs_version_cache_key])
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -496,6 +502,8 @@ module Solargraph
       # @return [void]
       def uncache_core(out: nil)
         uncache(core_path, out: out)
+        # ApiMap keep this in memory
+        ApiMap.reset_core(out: out)
       end
 
       # @param out [IO, nil]

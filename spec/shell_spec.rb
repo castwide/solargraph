@@ -84,11 +84,11 @@ describe Solargraph::Shell do
     $stderr = stringio
     begin
       block.call
-      stringio.string
     ensure
       $stdout = original_stdout
       $stderr = original_stderr
     end
+    stringio.string
   end
 
   describe 'typecheck' do
