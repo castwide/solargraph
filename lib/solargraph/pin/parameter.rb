@@ -35,6 +35,7 @@ module Solargraph
           presence: choose(other, :presence),
           asgn_code: choose(other, :asgn_code),
         }.merge(attrs)
+        # @sg-ignore Wrong argument type for Solargraph::Pin::LocalVariable#combine_with: other expected Solargraph::Pin::LocalVariable, received self
         super(other, new_attrs)
       end
 
@@ -43,6 +44,7 @@ module Solargraph
       end
 
       def kwrestarg?
+        # @sg-ignore Unresolved call to type
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
@@ -123,6 +125,11 @@ module Solargraph
         else
           name
         end
+      end
+
+      def reset_generated!
+        super
+        @return_type = nil if @return_type&.undefined?
       end
 
       # @return [ComplexType]
