@@ -45,11 +45,6 @@ module Solargraph
       @pin_cache ||= workspace.fresh_pincache
     end
 
-    # @return [Array<String>]
-    def yard_plugins
-      global_environ.yard_plugins
-    end
-
     def any_uncached?
       uncached_gemspecs.any?
     end
