@@ -39,6 +39,10 @@ Metrics/ParameterLists:
 RSpec/SpecFilePathFormat:
   Enabled: false
 
+# we tend to use @@ and the risk doesn't seem high
+Style/ClassVars:
+  Enabled: false
+
 #
 # Set a relaxed standard on harder-to-address item for ease of
 # contribution - if you are good at refactoring, we welcome PRs to

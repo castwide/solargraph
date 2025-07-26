@@ -1543,16 +1543,6 @@ Style/ClassEqualityComparison:
     - 'lib/solargraph/gem_pins.rb'
     - 'lib/solargraph/pin/base.rb'
 
-# Offense count: 13
-Style/ClassVars:
-  Exclude:
-    - 'lib/solargraph/api_map.rb'
-    - 'lib/solargraph/convention.rb'
-    - 'lib/solargraph/logging.rb'
-    - 'lib/solargraph/parser/node_processor.rb'
-    - 'lib/solargraph/rbs_map.rb'
-    - 'lib/solargraph/source/chain.rb'
-
 # Offense count: 2
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: AllowedReceivers.
