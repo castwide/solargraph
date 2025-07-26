@@ -12,9 +12,14 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
+      def log_caching lib, out: $stderr
+        out&.puts("Caching RBS pins for standard library #{lib.name}")
+      end
+
       # @param library [String]
-      def initialize library
-        cached_pins = PinCache.deserialize_stdlib_require library
+      # @param out [IO, nil] where to log messages
+      def initialize library, out: $stderr
+        cached_pins = PinCache.load_stdlib_require library
         if cached_pins
           @pins = cached_pins
           @resolved = true
@@ -24,12 +29,28 @@ module Solargraph
           super
           unless resolved?
             @pins = []
-            logger.info { "Could not resolve #{library.inspect}" }
+            logger.debug { "StdlibMap could not resolve #{library.inspect}" }
             return
           end
           generated_pins = pins
           logger.debug { "Found #{generated_pins.length} pins for stdlib library #{library}" }
           PinCache.serialize_stdlib_require library, generated_pins
+        end
+      end
+
+      # @return [RBS::Collection::Sources::Stdlib]
+      def self.source
+        @source ||= RBS::Collection::Sources::Stdlib.instance
+      end
+
+      # @param name [String]
+      # @param version [String]
+      # @return [Array<Hash{String => String}>, nil]
+      def self.stdlib_dependencies name, version
+        if source.has?(name, version)
+          source.dependencies_of(name, version)
+        else
+          []
         end
       end
 

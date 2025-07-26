@@ -7,6 +7,7 @@ module Solargraph
       #
       class NodeChainer
         include NodeMethods
+
         Chain = Source::Chain
 
         # @param node [Parser::AST::Node]

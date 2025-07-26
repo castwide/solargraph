@@ -7,13 +7,13 @@ module Solargraph
   class Location
     include Equality
 
-    # @return [String]
+    # @return [String, nil]
     attr_reader :filename
 
     # @return [Solargraph::Range]
     attr_reader :range
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param range [Solargraph::Range]
     def initialize filename, range
       @filename = filename
@@ -25,11 +25,14 @@ module Solargraph
       [filename, range]
     end
 
+    # @param other [self]
     def <=>(other)
       return nil unless other.is_a?(Location)
       if filename == other.filename
         range <=> other.range
       else
+        return -1 if filename.nil?
+        return 1 if other.filename.nil?
         filename <=> other.filename
       end
     end
@@ -60,6 +63,7 @@ module Solargraph
     end
 
     # @param node [Parser::AST::Node, nil]
+    # @return [self]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
       range = Range.from_node(node)

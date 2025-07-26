@@ -1,15 +1,8 @@
 # frozen_string_literal: true
 
 require 'prism'
-
-# Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
-#
-# @!parse
-#   class ::Parser::Base < ::Parser::Builder
-#     # @return [Integer]
-#     def version; end
-#   end
-#   class ::Parser::CurrentRuby < ::Parser::Base; end
+require 'ast'
+require 'parser'
 
 module Solargraph
   module Parser
@@ -81,12 +74,14 @@ module Solargraph
         end
 
         # @param name [String]
-        # @param top [AST::Node]
-        # @return [Array<AST::Node>]
+        # @param top [Parser::AST::Node]
+        # @return [Array<Parser::AST::Node>]
         def inner_node_references name, top
+          # @type [Array<Parser::AST::Node>]
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
+            # @sg-ignore
             top.children.each { |c| result.concat inner_node_references(name, c) }
           end
           result
@@ -118,7 +113,7 @@ module Solargraph
           parser.version
         end
 
-        # @param node [BasicObject]
+        # @param node [Object]
         # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
@@ -135,16 +130,16 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Array<Range>]
         def string_ranges node
+          # @sg-ignore
           return [] unless is_ast_node?(node)
           result = []
-          if node.type == :str
-            result.push Range.from_node(node)
-          end
+          result.push Range.from_node(node) if node.type == :str
           node.children.each do |child|
             result.concat string_ranges(child)
           end
           if node.type == :dstr && node.children.last.nil?
             last = node.children[-2]
+            # @sg-ignore
             unless last.nil?
               rng = Range.from_node(last)
               pos = Position.new(rng.ending.line, rng.ending.column - 1)

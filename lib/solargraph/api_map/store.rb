@@ -16,7 +16,7 @@ module Solargraph
         index.pins
       end
 
-      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @param pinsets [Array<Array<Pin::Base>>]
       # @return [Boolean] True if the index was updated
       def update *pinsets
         return catalog(pinsets) if pinsets.length != @pinsets.length
@@ -31,7 +31,7 @@ module Solargraph
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
-            @indexes[changed + idx - 1]
+                                      @indexes[changed + idx - 1]
           else
             @indexes[changed + idx - 1].merge(pins)
           end
@@ -49,7 +49,7 @@ module Solargraph
 
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
@@ -116,7 +116,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::ClassVariable>]
       def get_class_variables(fqns)
         namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
@@ -140,6 +140,11 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
+      end
+
+      # @return [Enumerable<Solargraph::Pin::Constant>]
+      def constant_pins
+        pins_by_class(Solargraph::Pin::Constant)
       end
 
       # @return [Enumerable<Solargraph::Pin::Method>]
@@ -200,12 +205,17 @@ module Solargraph
 
       private
 
+      # @return [Index]
       def index
         @indexes.last
       end
 
+      # @param pinsets [Array<Array<Pin::Base>>]
+      #
+      # @return [void]
       def catalog pinsets
         @pinsets = pinsets
+        # @type [Array<Index>]
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?

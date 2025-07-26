@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'rubygems'
 require 'pathname'
 require 'observer'
 require 'open3'
@@ -248,7 +249,7 @@ module Solargraph
       return [] unless pin
       result = []
       files = if only
-        [api_map.source_map(filename)]
+                [api_map.source_map(filename)]
       else
         (workspace.sources + (@current ? [@current] : []))
       end
@@ -273,12 +274,12 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
-            Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+            Solargraph::Location.new(loc.filename,
+                                     Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line,
+                                                               loc.range.ending.column))
           end
         end
-        result.concat(found.sort do |a, b|
-          a.range.start.line <=> b.range.start.line
-        end)
+        result.concat(found.sort { |a, b| a.range.start.line <=> b.range.start.line })
       end
       result.uniq
     end
@@ -303,9 +304,7 @@ module Solargraph
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
-        if source_map_hash.key?(full)
-          return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
-        end
+        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0)) if source_map_hash.key?(full)
       end
       workspace.require_paths.each do |path|
         full = File.join path, pin.name
@@ -511,6 +510,11 @@ module Solargraph
 
     private
 
+    # @return [PinCache]
+    def pin_cache
+      workspace.pin_cache
+    end
+
     # @return [Hash{String => Set<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
@@ -590,12 +594,14 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
+      # @type [Gem::Specification]
       spec = cacheable_specs.first
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
 
-      if Yardoc.processing?(spec)
+      if pin_cache.yardoc_processing?(spec)
+        # @sg-ignore Unresolved call to name
         logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
         queued_gemspec_cache.push(spec)
         return if pending - queued_gemspec_cache.length < 1
@@ -603,14 +609,19 @@ module Solargraph
         catalog
         sync_catalog
       else
+        # @sg-ignore Unresolved call to name
         logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
+          # @sg-ignore Unresolved call to name
           report_cache_progress spec.name, pending
+          # @sg-ignore Unresolved call to capture3
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
           if s.success?
+            # @sg-ignore Unresolved call to name
             logger.info "Cached #{spec.name} #{spec.version}"
           else
             cache_errors.add spec
+            # @sg-ignore Unresolved call to name
             logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
             logger.warn e
           end
@@ -621,9 +632,9 @@ module Solargraph
       end
     end
 
+    # @return [Array<Gem::Specification>]
     def cacheable_specs
-      cacheable = api_map.uncached_yard_gemspecs +
-                  api_map.uncached_rbs_collection_gemspecs -
+      cacheable = api_map.uncached_gemspecs +
                   queued_gemspec_cache -
                   cache_errors.to_a
       return cacheable unless cacheable.empty?
@@ -631,6 +642,7 @@ module Solargraph
       queued_gemspec_cache
     end
 
+    # @return [Array<Gem::Specification>]
     def queued_gemspec_cache
       @queued_gemspec_cache ||= []
     end
@@ -643,7 +655,7 @@ module Solargraph
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?
-        0
+              0
       else
         ((finished.to_f / @total.to_f) * 100).to_i
       end
@@ -672,6 +684,7 @@ module Solargraph
       @total = nil
     end
 
+    # @return [void]
     def sync_catalog
       return if @sync_count == 0
 
@@ -680,8 +693,7 @@ module Solargraph
         api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
-        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
+        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end
