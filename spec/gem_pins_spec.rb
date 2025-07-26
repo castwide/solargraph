@@ -1,13 +1,56 @@
 # frozen_string_literal: true
 
 describe Solargraph::GemPins do
-  it 'can merge YARD and RBS' do
-    workspace = Solargraph::Workspace.new(Dir.pwd)
-    doc_map = Solargraph::DocMap.new(['rbs'], workspace, out: nil)
-    doc_map.cache_doc_map_gems!(nil)
+  let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
+  let(:doc_map) { Solargraph::DocMap.new(requires, workspace, out: nil) }
+  let(:pin) { doc_map.pins.find { |pin| pin.path == path } }
 
-    core_root = doc_map.pins.find { |pin| pin.path == 'RBS::EnvironmentLoader#core_root' }
-    expect(core_root.return_type.to_s).to eq('Pathname, nil')
-    expect(core_root.location.filename).to end_with('environment_loader.rb')
+  before do
+    doc_map.cache_doc_map_gems!(STDERR) # rubocop:disable Style/GlobalStdStream
+  end
+
+  context 'with a combined method pin' do
+    let(:path) { 'RBS::EnvironmentLoader#core_root' }
+    let(:requires) { ['rbs'] }
+
+    it 'can merge YARD and RBS' do
+      expect(pin.source).to eq(:combined)
+    end
+
+    it 'finds types from RBS' do
+      expect(pin.return_type.to_s).to eq('Pathname, nil')
+    end
+
+    it 'finds locations from YARD' do
+      expect(pin.location.filename).to end_with('environment_loader.rb')
+    end
+  end
+
+  context 'with a YARD-only pin' do
+    let(:requires) { ['rake'] }
+    let(:path) { 'Rake::Task#prerequisites' }
+
+    before do
+      workspace = doc_map.workspace
+      gemspecs = workspace.gemspecs
+      gemspec = gemspecs.find_gem('rake')
+      workspace.uncache_gem(gemspec)
+    end
+
+    it 'found a pin' do
+      expect(pin.source).not_to be_nil
+    end
+
+    it 'can merge YARD and RBS' do
+      expect(pin.source).to eq(:yardoc)
+    end
+
+    it 'does not find types from YARD in this case' do
+      expect(pin.return_type.to_s).to eq('undefined')
+    end
+
+    it 'finds locations from YARD' do
+      expect(pin.location.filename).to end_with('task.rb')
+    end
   end
 end

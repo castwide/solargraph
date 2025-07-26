@@ -34,7 +34,7 @@ class Protocol
   end
 end
 
-describe Protocol do
+describe Protocol, order: :defined do
   before :all do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
   end
