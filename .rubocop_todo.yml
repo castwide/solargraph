@@ -1027,7 +1027,7 @@ RSpec/DescribeClass:
     - 'spec/complex_type_spec.rb'
     - 'spec/source_map/node_processor_spec.rb'
 
-# Offense count: 388
+# Offense count: 387
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: SkipBlocks, EnforcedStyle, OnlyStaticConstants.
 # SupportedStyles: described_class, explicit
@@ -1043,7 +1043,6 @@ RSpec/DescribedClass:
     - 'spec/diagnostics/type_check_spec.rb'
     - 'spec/diagnostics/update_errors_spec.rb'
     - 'spec/diagnostics_spec.rb'
-    - 'spec/doc_map_spec.rb'
     - 'spec/language_server/host/diagnoser_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/host/message_worker_spec.rb'
