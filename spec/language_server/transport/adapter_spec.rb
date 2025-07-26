@@ -1,5 +1,6 @@
 class AdapterTester
   include Solargraph::LanguageServer::Transport::Adapter
+
   attr_reader :host
 
   def write data
