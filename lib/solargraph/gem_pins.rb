@@ -49,6 +49,11 @@ module Solargraph
         rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
         next yard_pin unless rbs_pin && yard_pin.class == Pin::Method
 
+        unless rbs_pin
+          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
+          next yard_pin
+        end
+
         out = combine_method_pins(rbs_pin, yard_pin)
         logger.debug do
           "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}"
