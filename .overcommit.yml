@@ -66,3 +66,5 @@ verify_signatures: false
 #
 #  IndexTags:
 #    enabled: true # Generate a tags file with `ctags` each time HEAD changes
+
+gemfile: Gemfile
