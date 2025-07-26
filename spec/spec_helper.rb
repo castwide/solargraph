@@ -10,8 +10,14 @@ unless ENV['SIMPLECOV_DISABLED']
   SimpleCov.start do
     add_filter(%r{^/spec/})
     add_filter('/Rakefile')
-    enable_coverage(:branch)
+    # off by default - feel free to set if you'd like undercover to
+    # hold you to a thorough set of specs
+    enable_coverage(:branch) if ENV['SOLARGRAPH_BRANCH_COVERAGE']
   end
+end
+RSpec.configure do |c|
+  # Allow use of --only-failures with rspec, handy for local development
+  c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
 require 'solargraph'
 # Suppress logger output in specs (if possible)

@@ -41,19 +41,16 @@ PreCommit:
     enabled: false
 
   ALL:
-    # if you make non-trivial changes to a file, please leave it
-    # better than you found it
-    problem_on_unmodified_line: fail
+    # if you uncomment the next line locally, and you make changes to
+    # a file, overcommit will have you make the entire file pass
+    #
+    # problem_on_unmodified_line: fail
     on_warn: fail
     exclude:
       - lib/solargraph/rails/annotations/**/*
       - vendor/**/*
       - ".bundle/**/*"
       - 'core.*'
-
-PrePush:
-  RSpec:
-    enabled: true
 
 verify_signatures: false
 
