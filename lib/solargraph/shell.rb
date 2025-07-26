@@ -16,7 +16,7 @@ module Solargraph
 
     map %w[--version -v] => :version
 
-    desc "--version, -v", "Print the version"
+    desc '--version, -v', 'Print the version'
     # @return [void]
     def version
       puts Solargraph::VERSION
@@ -31,10 +31,10 @@ module Solargraph
       port = options[:port]
       port = available_port if port.zero?
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore https://github.com/castwide/backport/pull/5
@@ -48,10 +48,10 @@ module Solargraph
     def stdio
       require 'backport'
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore https://github.com/castwide/backport/pull/5
@@ -64,7 +64,7 @@ module Solargraph
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     # @param directory [String]
     # @return [void]
-    def config(directory = '.')
+    def config directory = '.'
       matches = []
       if options[:extensions]
         # @sg-ignore
@@ -84,7 +84,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      STDOUT.puts "Configuration file initialized."
+      STDOUT.puts 'Configuration file initialized.'
     end
 
     desc 'clear', 'Delete all cached documentation'
@@ -93,7 +93,7 @@ module Solargraph
     )
     # @return [void]
     def clear
-      puts "Deleting all cached documentation (gems, core and stdlib)"
+      puts 'Deleting all cached documentation (gems, core and stdlib)'
       Solargraph::PinCache.clear
     end
     map 'clear-cache' => :clear
@@ -138,7 +138,7 @@ module Solargraph
       end
     end
 
-    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.
@@ -274,7 +274,7 @@ module Solargraph
 
     # @param type [ComplexType]
     # @return [void]
-    def print_type(type)
+    def print_type type
       if options[:rbs]
         puts type.to_rbs
       else
@@ -284,7 +284,7 @@ module Solargraph
 
     # @param pin [Solargraph::Pin::Base]
     # @return [void]
-    def print_pin(pin)
+    def print_pin pin
       if options[:rbs]
         puts pin.to_rbs
       else
