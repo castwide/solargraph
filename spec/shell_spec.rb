@@ -106,7 +106,7 @@ describe Solargraph::Shell do
         shell.typecheck('Gemfile')
       end
 
-      expect(output).to include(' built in ').and include(' ms')
+      expect(output).to include('Built ').and include(' ms')
     end
   end
 
