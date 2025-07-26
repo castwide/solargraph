@@ -737,13 +737,6 @@ Lint/UnusedMethodArgument:
     - 'lib/solargraph/source/chain/variable.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
 
-# Offense count: 1
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AutoCorrect, ContextCreatingMethods, MethodCreatingMethods.
-Lint/UselessAccessModifier:
-  Exclude:
-    - 'lib/solargraph/api_map.rb'
-
 # Offense count: 41
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AutoCorrect.
@@ -1233,7 +1226,7 @@ RSpec/MissingExampleGroupArgument:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
 
-# Offense count: 480
+# Offense count: 479
 # Configuration parameters: Max.
 RSpec/MultipleExpectations:
   Exclude:
@@ -1248,7 +1241,6 @@ RSpec/MultipleExpectations:
     - 'spec/diagnostics/type_check_spec.rb'
     - 'spec/diagnostics/update_errors_spec.rb'
     - 'spec/diagnostics_spec.rb'
-    - 'spec/gem_pins_spec.rb'
     - 'spec/language_server/host/message_worker_spec.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/language_server/message/completion_item/resolve_spec.rb'
@@ -1924,7 +1916,7 @@ Style/FrozenStringLiteralComment:
     - 'spec/yard_map/mapper/to_method_spec.rb'
     - 'spec/yard_map/mapper_spec.rb'
 
-# Offense count: 11
+# Offense count: 9
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/GlobalStdStream:
   Exclude:
@@ -2480,7 +2472,6 @@ Style/StringLiterals:
     - 'lib/solargraph/complex_type.rb'
     - 'lib/solargraph/complex_type/unique_type.rb'
     - 'lib/solargraph/convention/struct_definition.rb'
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/language_server/message/extended/document_gems.rb'
     - 'lib/solargraph/language_server/message/extended/download_core.rb'
