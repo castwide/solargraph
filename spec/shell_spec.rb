@@ -88,10 +88,34 @@ describe Solargraph::Shell do
 
       expect(output).to include('Caching ').and include('backport')
     end
+
+    it 'logs if it takes a certain amount of time to cache gems' do
+      capture_both do
+        shell.uncache('backport')
+      end
+
+      allow_any_instance_of(Solargraph::PinCache) # rubocop:disable RSpec/AnyInstance
+        .to receive(:cache_gem)
+        .and_wrap_original do |original, *args, **kwargs|
+        sleep(0.5) # simulate a slow cache
+        original.call(*args, **kwargs)
+      end
+
+      output = capture_both do
+        shell.options = { level: 'normal', directory: Dir.pwd }
+        shell.typecheck('Gemfile')
+      end
+
+      expect(output).to include(' built in ').and include(' ms')
+    end
   end
 
   describe 'gems' do
     it 'caches core without erroring out' do
+      capture_both do
+        shell.uncache('core')
+      end
+
       expect { shell.cache('core') }.not_to raise_error
     end
 
