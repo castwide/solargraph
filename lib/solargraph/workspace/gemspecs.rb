@@ -182,12 +182,12 @@ module Solargraph
                                                                                               specish.version
                                                           end
                                                         else
-                                                          @@warned_on_gem_type ||= # rubocop:disable Style/ClassVars
+                                                          @@warned_on_gem_type ||=
                                                             false
                                                           unless @@warned_on_gem_type
                                                             logger.warn 'Unexpected type while resolving gem: ' \
                                                                         "#{specish.class}"
-                                                            @@warned_on_gem_type = true # rubocop:disable Style/ClassVars
+                                                            @@warned_on_gem_type = true
                                                           end
                                                           nil
                                                         end
