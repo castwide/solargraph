@@ -67,6 +67,7 @@ module Solargraph
       # @return [self]
       def combine_with(other, attrs={})
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
+
         type_location = choose(other, :type_location)
         location = choose(other, :location)
         combined_name = combine_name(other)
@@ -300,6 +301,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
+      # @sg-ignore Missing @return tag for Solargraph::Pin::Base#choose_pin_attr
       # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
@@ -312,6 +314,7 @@ module Solargraph
           return val1
         end
         # arbitrary way of choosing a pin
+        # @sg-ignore Unresolved call to _1
         [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 
