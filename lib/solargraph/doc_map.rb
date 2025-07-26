@@ -118,12 +118,10 @@ module Solargraph
         # this will load from disk if needed; no need to manage
         # uncached_gemspecs to trigger that later
         stdlib_name_guess = path.split('/').first
-        # @todo this results in pins being generated in real time, not in advance with solargrpah gems
         rbs_pins = pin_cache.cache_stdlib_rbs_map stdlib_name_guess if stdlib_name_guess
         @pins.concat rbs_pins if rbs_pins
       end
 
-      logger.debug { "DocMap#load_serialized_gem_pins: Combining pins..." }
       existing_pin_count = pins.length
       time = Benchmark.measure do
         gemspecs.each do |gemspec|

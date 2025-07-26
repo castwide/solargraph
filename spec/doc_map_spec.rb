@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require 'bundler'
+require 'benchmark'
 
 describe Solargraph::DocMap do
   subject(:doc_map) do
-    Solargraph::DocMap.new(requires, workspace, out: nil)
+    Solargraph::DocMap.new(requires, workspace, out: out)
   end
 
+  let(:out) { StringIO.new }
   let(:pre_cache) { true }
   let(:requires) { [] }
 
@@ -41,23 +43,37 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'with an uncached but valid gemspec' do
-    let(:uncached_gemspec) do
-      Gem::Specification.new('uncached_gem', '1.0.0')
+  context 'when deserialization takes a while' do
+    let(:pre_cache) { false }
+    let(:requires) { ['backport'] }
+
+    before do
+      # proxy this method to simulate a long-running deserialization
+      allow(Benchmark).to receive(:measure) do |&block|
+        block.call
+        5.0
+      end
     end
+
+    it 'logs timing' do
+      doc_map
+      expect(out.string).to include('Deserialized ').and include(' gem pins ').and include(' ms')
+    end
+  end
+
+  context 'with an uncached but valid gemspec' do
     let(:requires) { ['uncached_gem'] }
     let(:pre_cache) { false }
     let(:workspace) { instance_double(Solargraph::Workspace) }
 
-    before do
+    it 'tracks uncached_gemspecs' do
       pincache = instance_double(Solargraph::PinCache)
+      uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
       allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec).and_return([])
       allow(workspace).to receive(:fresh_pincache).and_return(pincache)
       allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
-    end
 
-    it 'tracks uncached_gemspecs' do
       expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
     end
   end
@@ -100,10 +116,9 @@ describe Solargraph::DocMap do
 
   context 'with a require that has dependencies' do
     let(:requires) { ['rspec'] }
-    let(:example_dependency) { 'rspec-core' }
 
     it 'collects dependencies' do
-      expect(doc_map.dependencies.map(&:name)).to include(example_dependency)
+      expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
     end
   end
 end
