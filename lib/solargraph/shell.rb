@@ -116,7 +116,7 @@ module Solargraph
     def gems *names
       api_map = ApiMap.load('.')
       if names.empty?
-        api_map.cache_all_for_workspace!($stdout, rebuild: options.rebuild)
+        api_map.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
       else
         $stderr.puts("Caching these gems: #{names}")
         names.each do |name|
@@ -129,7 +129,7 @@ module Solargraph
           if gemspec.nil?
             warn "Gem '#{name}' not found"
           else
-            api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+            api_map.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
           end
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"

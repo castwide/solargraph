@@ -173,7 +173,8 @@ describe Solargraph::Shell do
       end
 
       _output = capture_stdout do
-        shell.gems('backport')
+        shell.options = { rebuild: true }
+        shell.gems('backport', 'thor')
       end
 
       api_map = Solargraph::ApiMap.load(Dir.pwd)

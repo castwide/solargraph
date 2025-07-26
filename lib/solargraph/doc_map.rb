@@ -59,7 +59,6 @@ module Solargraph
           "Caching pins for gems: #{gem_desc}"
         end
       end
-      PinCache.cache_core(out: out) unless PinCache.core?
       load_serialized_gem_pins(out: out)
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
@@ -87,13 +86,10 @@ module Solargraph
     #
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
-    # @param only_if_used [Boolean]
     # @param out [IO, nil] output stream for logging
     #
     # @return [void]
-    def cache gemspec, rebuild: false, only_if_used: false, out: nil
-      return if only_if_used && !uncached_gemspecs.include?(gemspec)
-
+    def cache gemspec, rebuild: false, out: nil
       pin_cache.cache_gem(gemspec: gemspec,
                           rebuild: rebuild,
                           out: out)

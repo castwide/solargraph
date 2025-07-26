@@ -213,11 +213,10 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean]
-    # @param only_if_used [Boolean]
     # @param out [IO, nil]
     # @return [void]
-    def cache_gem gemspec, rebuild: false, only_if_used: false, out: nil
-      @doc_map&.cache(gemspec, rebuild: rebuild, out: out, only_if_used: only_if_used)
+    def cache_gem gemspec, rebuild: false, out: nil
+      @doc_map&.cache(gemspec, rebuild: rebuild, out: out)
     end
 
     class << self
