@@ -207,7 +207,7 @@ module Solargraph
         # '
       }
       puts 'Typecheck finished in #{time.real} seconds.'
-      puts '#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? ' in #{filecount} of #{files.length} files' : ''}.'
+      puts "{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? ' in #{filecount} of #{files.length} files' : ''}."
       # '
       exit 1 if probcount > 0
     end
@@ -234,7 +234,7 @@ module Solargraph
             pin.typify api_map
             pin.probe api_map
           rescue StandardError => e
-            STDERR.puts 'Error testing #{pin_description(pin)} #{pin.location ? 'at #{pin.location.filename}:#{pin.location.range.start.line + 1}' : ''}'
+            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? 'at #{pin.location.filename}:#{pin.location.range.start.line + 1}' : ''}"
             STDERR.puts '[#{e.class}]: #{e.message}'
             STDERR.puts e.backtrace.join('\n')
             exit 1
