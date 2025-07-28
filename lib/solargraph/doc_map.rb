@@ -121,7 +121,7 @@ module Solargraph
 
         # try to resolve the stdlib name
         deps = workspace.stdlib_dependencies(stdlib_name_guess) || []
-        [stdlib_name_guess, *deps].each do |potential_stdlib_name|
+        [stdlib_name_guess, *deps].compact.each do |potential_stdlib_name|
           rbs_pins = pin_cache.cache_stdlib_rbs_map potential_stdlib_name
           @pins.concat rbs_pins if rbs_pins
         end
