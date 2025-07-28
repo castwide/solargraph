@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-require "benchmark"
-require "thor"
-require "yard"
-require "yaml"
+require 'benchmark'
+require 'thor'
+require 'yard'
+require 'yaml'
 
 module Solargraph
   class Shell < Thor
@@ -16,7 +16,7 @@ module Solargraph
 
     map %w[--version -v] => :version
 
-    desc "--version, -v", "Print the version"
+    desc '--version, -v', 'Print the version'
     # @return [void]
     def version
       puts Solargraph::VERSION
@@ -39,7 +39,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/5
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts 'Solargraph is listening PORT=#{port} PID=#{Process.pid}'
+        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -64,7 +64,7 @@ module Solargraph
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     # @param directory [String]
     # @return [void]
-    def config directory = '.'
+    def config(directory = '.')
       matches = []
       if options[:extensions]
         # @sg-ignore
@@ -93,7 +93,7 @@ module Solargraph
     )
     # @return [void]
     def clear
-      puts 'Deleting all cached documentation (gems, core and stdlib)'
+      puts "Deleting all cached documentation (gems, core and stdlib)"
       Solargraph::PinCache.clear
     end
     map 'clear-cache' => :clear
