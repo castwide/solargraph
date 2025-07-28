@@ -321,12 +321,6 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Boolean]
-    def yardoc? gemspec
-      exist?(yardoc_path(gemspec))
-    end
-
-    # @param gemspec [Gem::Specification]
     # @param hash [String, nil]
     # @return [String]
     def rbs_collection_pins_path gemspec, hash
