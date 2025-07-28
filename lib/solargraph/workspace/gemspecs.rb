@@ -118,7 +118,7 @@ module Solargraph
           # Can happen on system gems in Ruby 3.0, it seems:
           #
           # https://github.com/castwide/solargraph/actions/runs/16480452864/job/46593077954?pr=1006
-          log.debug do
+          logger.debug do
             "Skipping dependency #{runtime_dep.name} for #{gemspec.name} due to NoMethodError: #{e.message}"
           end
 
