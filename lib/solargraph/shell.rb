@@ -84,7 +84,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      STDOUT.puts 'Configuration file initialized.'
+      STDOUT.puts "Configuration file initialized."
     end
 
     desc 'clear', 'Delete all cached documentation'
