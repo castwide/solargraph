@@ -111,6 +111,14 @@ describe Solargraph::Shell do
   end
 
   describe 'gems' do
+    it 'complains when gem does not exist' do
+      output = capture_both do
+        shell.gems('nonexistentgem')
+      end
+
+      expect(output).to include("Gem 'nonexistentgem' not found")
+    end
+
     it 'caches core without erroring out' do
       capture_both do
         shell.uncache('core')

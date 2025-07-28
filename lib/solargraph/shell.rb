@@ -198,9 +198,7 @@ module Solargraph
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-          puts problems.map { |prob|
-            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
-          }.join('\n')
+          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
           filecount += 1
           probcount += problems.length
         end
@@ -208,7 +206,7 @@ module Solargraph
       }
       puts "Typecheck finished in #{time.real} seconds."
       puts "{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
-      # '
+      # "
       exit 1 if probcount > 0
     end
 
@@ -236,7 +234,7 @@ module Solargraph
           rescue StandardError => e
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
-            STDERR.puts e.backtrace.join('\n')
+            STDERR.puts e.backtrace.join("\n")
             exit 1
           end
         end
@@ -260,36 +258,16 @@ module Solargraph
     # @return [String]
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
-               if pin.closure
-                 "#{pin.closure.path} | #{pin.name}"
-               else
-                 "#{pin.context.namespace} | #{pin.name}"
-               end
+        if pin.closure
+          "#{pin.closure.path} | #{pin.name}"
+        else
+          "#{pin.context.namespace} | #{pin.name}"
+        end
       else
         pin.path
       end
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
-    end
-
-    # @param type [ComplexType]
-    # @return [void]
-    def print_type type
-      if options[:rbs]
-        puts type.to_rbs
-      else
-        puts type.rooted_tag
-      end
-    end
-
-    # @param pin [Solargraph::Pin::Base]
-    # @return [void]
-    def print_pin pin
-      if options[:rbs]
-        puts pin.to_rbs
-      else
-        puts pin.inspect
-      end
     end
   end
 end
