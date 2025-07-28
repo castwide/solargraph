@@ -91,7 +91,7 @@ module Solargraph
       # @return [Array<String>]
       def stdlib_dependencies stdlib_name
         deps = RbsMap::StdlibMap.stdlib_dependencies(stdlib_name, nil) || []
-        deps.map { |dep| dep['name'] }
+        deps.map { |dep| dep['name'] }.compact
       end
 
       # @param name [String]
