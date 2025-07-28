@@ -3,7 +3,13 @@ describe Solargraph::RbsMap do
     spec = Gem::Specification.find_by_name('rbs')
     rbs_map = Solargraph::RbsMap.from_gemspec(spec, nil, nil)
     pin = rbs_map.path_pin('RBS::EnvironmentLoader#add_collection')
-    expect(pin).to be
+    expect(pin).not_to be_nil
+  end
+
+  it 'fails if it does not find data' do
+    spec = Gem::Specification.find_by_name('backport')
+    rbs_map = Solargraph::RbsMap.from_gemspec(spec, nil, nil)
+    expect(rbs_map.pins).to be_empty
   end
 
   it 'converts constants and aliases to correct types' do
