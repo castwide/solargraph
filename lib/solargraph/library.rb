@@ -690,8 +690,8 @@ module Solargraph
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
+        api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
         logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
         cache_next_gemspec
