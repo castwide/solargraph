@@ -34,6 +34,8 @@ jobs:
       run: |
         bundle install
         bundle update rbs # use latest available for this Ruby version
+    - name: Install types
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rspec
   undercover:
@@ -51,6 +53,8 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: bundle install
+    - name: Install types
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rspec
     - name: Check PR coverage
