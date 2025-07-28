@@ -367,7 +367,7 @@ module Solargraph
     # @param hash [String, nil]
     # @return [String]
     def rbs_collection_pins_path gemspec, hash
-      rbs_collection_pins_path_prefix(gemspec) + "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser"
+      rbs_collection_pins_path_prefix(gemspec) + "#{hash || 0}.ser"
     end
 
     # @param gemspec [Gem::Specification]
