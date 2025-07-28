@@ -127,12 +127,12 @@ module Solargraph
 
           gemspec = api_map.find_gem(*name.split('='))
           if gemspec.nil?
-            warn 'Gem '#{name}' not found'
+            warn "Gem '#{name}' not found"
           else
             api_map.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
           end
         rescue Gem::MissingSpecError
-          warn 'Gem '#{name}' not found'
+          warn "Gem '#{name}' not found"
         end
         $stderr.puts 'Documentation cached for #{names.count} gems.'
       end
