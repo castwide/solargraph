@@ -655,7 +655,7 @@ module Solargraph
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?
-              0
+        0
       else
         ((finished.to_f / @total.to_f) * 100).to_i
       end

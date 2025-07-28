@@ -271,20 +271,14 @@ module Solargraph
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param rbs_version_cache_key [String]
-    # @return [Array<Pin::Base>, nil]
+    # @return [Array<Pin::Base>]
     def deserialize_rbs_collection_cache gemspec, rbs_version_cache_key
       cached = load_rbs_collection_pins(gemspec, rbs_version_cache_key)
-      if cached
-        unless cached.empty?
-          logger.info do
-            "Loaded #{cached.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}"
-          end
-        end
-        cached
-      else
-        logger.debug "No RBS collection pin cache for #{gemspec.name} #{gemspec.version}"
-        nil
+      Solargraph.assert_or_log(:pin_cache_rbs_collection, 'Asked for non-existent rbs collection') if cached.nil?
+      logger.info do
+        "Loaded #{cached&.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}"
       end
+      cached
     end
 
     # @return [Array<String>]
@@ -308,7 +302,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def load_yard_gem gemspec
       PinCache.load(yard_gem_path(gemspec))
     end
@@ -348,14 +342,14 @@ module Solargraph
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param hash [String]
     #
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def load_rbs_collection_pins gemspec, hash
       PinCache.load(rbs_collection_pins_path(gemspec, hash))
     end
 
     # @param gemspec [Gem::Specification]
     # @param hash [String, nil]
-    # @param pins [Array<Pin::Base>]n
+    # @param pins [Array<Pin::Base>]
     # @return [void]
     def serialize_rbs_collection_pins gemspec, hash, pins
       PinCache.save(rbs_collection_pins_path(gemspec, hash), pins)
@@ -390,7 +384,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param hash [String, nil]
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def load_combined_gem gemspec, hash
       PinCache.load(combined_path(gemspec, hash))
     end
@@ -519,7 +513,7 @@ module Solargraph
         RbsMap::CoreMap.new.cache_core(out: out)
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def load_core
         load(core_path)
       end
@@ -542,7 +536,7 @@ module Solargraph
       end
 
       # @param require [String]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def load_stdlib_require require
         load(stdlib_require_path(require))
       end
