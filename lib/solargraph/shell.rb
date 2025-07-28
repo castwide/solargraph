@@ -48,10 +48,10 @@ module Solargraph
     def stdio
       require 'backport'
       Backport.run do
-        Signal.trap('INT') do
+        Signal.trap("INT") do
           Backport.stop
         end
-        Signal.trap('TERM') do
+        Signal.trap("TERM") do
           Backport.stop
         end
         # @sg-ignore https://github.com/castwide/backport/pull/5
