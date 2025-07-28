@@ -44,9 +44,9 @@ module Solargraph
       end
 
       # @param name [String]
-      # @param version [String]
+      # @param version [String, nil]
       # @return [Array<Hash{String => String}>, nil]
-      def self.stdlib_dependencies name, version
+      def self.stdlib_dependencies name, version = nil
         if source.has?(name, version)
           source.dependencies_of(name, version)
         else

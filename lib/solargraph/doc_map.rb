@@ -118,8 +118,13 @@ module Solargraph
         # this will load from disk if needed; no need to manage
         # uncached_gemspecs to trigger that later
         stdlib_name_guess = path.split('/').first
-        rbs_pins = pin_cache.cache_stdlib_rbs_map stdlib_name_guess if stdlib_name_guess
-        @pins.concat rbs_pins if rbs_pins
+
+        # try to resolve the stdlib name
+        deps = workspace.stdlib_dependencies(stdlib_name_guess) || []
+        [stdlib_name_guess, *deps].each do |potential_stdlib_name|
+          rbs_pins = pin_cache.cache_stdlib_rbs_map potential_stdlib_name
+          @pins.concat rbs_pins if rbs_pins
+        end
       end
 
       existing_pin_count = pins.length

@@ -66,6 +66,13 @@ module Solargraph
       gemspecs.resolve_require(require)
     end
 
+    # @param stdlib_name [String]
+    #
+    # @return [Array<String>]
+    def stdlib_dependencies stdlib_name
+      gemspecs.stdlib_dependencies(stdlib_name)
+    end
+
     # @return [Environ]
     def global_environ
       # empty docmap, since the result needs to work in any possible
