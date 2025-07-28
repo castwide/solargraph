@@ -56,7 +56,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/5
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts 'Solargraph is listening on stdio PID=#{Process.pid}'
+        STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
 
@@ -105,7 +105,7 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      gems(gem + (version ? '=#{version}' : ''))
+      gems(gem + (version ? "=#{version}" : ''))
       # '
     end
 
@@ -118,7 +118,7 @@ module Solargraph
       if names.empty?
         api_map.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
       else
-        $stderr.puts('Caching these gems: #{names}')
+        $stderr.puts("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
             PinCache.cache_core(out: $stdout)
@@ -134,7 +134,7 @@ module Solargraph
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
-        $stderr.puts 'Documentation cached for #{names.count} gems.'
+        $stderr.puts "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -199,15 +199,15 @@ module Solargraph
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
           puts problems.map { |prob|
-            '#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}'
+            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
           }.join('\n')
           filecount += 1
           probcount += problems.length
         end
         # '
       }
-      puts 'Typecheck finished in #{time.real} seconds.'
-      puts "{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? ' in #{filecount} of #{files.length} files' : ''}."
+      puts "Typecheck finished in #{time.real} seconds."
+      puts "{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
       # '
       exit 1 if probcount > 0
     end
@@ -234,14 +234,14 @@ module Solargraph
             pin.typify api_map
             pin.probe api_map
           rescue StandardError => e
-            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? 'at #{pin.location.filename}:#{pin.location.range.start.line + 1}' : ''}"
-            STDERR.puts '[#{e.class}]: #{e.message}'
+            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
+            STDERR.puts "[#{e.class}]: #{e.message}"
             STDERR.puts e.backtrace.join('\n')
             exit 1
           end
         end
       }
-      puts 'Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds.'
+      puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
     desc 'list', 'List the files in the workspace and the total count'
@@ -251,7 +251,7 @@ module Solargraph
     def list
       workspace = Solargraph::Workspace.new(options[:directory])
       puts workspace.filenames unless options[:count]
-      puts '#{workspace.filenames.length} files total.'
+      puts "#{workspace.filenames.length} files total."
     end
 
     private
@@ -261,14 +261,14 @@ module Solargraph
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
                if pin.closure
-                 '#{pin.closure.path} | #{pin.name}'
+                 "#{pin.closure.path} | #{pin.name}"
                else
-                 '#{pin.context.namespace} | #{pin.name}'
+                 "#{pin.context.namespace} | #{pin.name}"
                end
       else
         pin.path
       end
-      desc += ' (#{pin.location.filename} #{pin.location.range.start.line})' if pin.location
+      desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
 
