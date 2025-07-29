@@ -45,15 +45,8 @@ module Solargraph
 
         # Determine gem name based on the require path
         file = "lib/#{require}.rb"
-        begin
-          # @sg-ignore
-          spec_with_path = Gem::Specification.find_by_path(file)
-        rescue Gem::MissingSpecError
-          logger.debug do
-            "Require #{require.inspect} could not be resolved to a gem via find_by_name or path of #{file}"
-          end
-          []
-        end
+        # @sg-ignore
+        spec_with_path = Gem::Specification.find_by_path(file)
 
         all_gemspecs = all_gemspecs_from_bundle
 
@@ -121,17 +114,6 @@ module Solargraph
           dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
           dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
           deps.merge fetch_dependencies(dep) if deps.add?(dep)
-# TODO: See if this is needed
-#        rescue NoMethodError => e
-#          raise unless e.message.include?('identifier') && e.message.include?('lib/ruby/gems')
-#          # Can happen on system gems in Ruby 3.0, it seems:
-#          #
-#          # https://github.com/castwide/solargraph/actions/runs/16480452864/job/46593077954?pr=1006
-#          logger.debug do
-#            "Skipping dependency #{runtime_dep.name} for #{gemspec.name} due to NoMethodError: #{e.message}"
-#          end
-
-#          nil
         rescue Gem::MissingSpecError
           Solargraph.logger.warn("Gem dependency #{runtime_dep.name} #{runtime_dep.requirement} " \
                                  "for #{gemspec.name} not found in bundle.")
