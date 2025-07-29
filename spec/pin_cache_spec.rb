@@ -51,7 +51,7 @@ describe Solargraph::PinCache do
     end
 
     context 'with a stdlib gem' do
-      let(:gem_name) { 'abbrev' }
+      let(:gem_name) { 'logger' }
 
       before do
         Solargraph::Shell.new.uncache(gem_name)
@@ -64,7 +64,7 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
 
         # match arguments with regexp using rspec-matchers syntax
-        expect(File).to have_received(:write).with(%r{combined/abbrev-.*-stdlib.ser$}, any_args).once
+        expect(File).to have_received(:write).with(%r{combined/logger-.*-stdlib.ser$}, any_args).once
       end
     end
 
