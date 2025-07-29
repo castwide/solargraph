@@ -59,9 +59,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     context 'with an unknown type from Bundler / RubyGems' do
       let(:require) { 'solargraph' }
 
-      let(:specish_objects) { [double()] }
+      let(:specish_objects) { [double] }
 
-      let(:locked_gems) { double(specs: specish_objects) }
+      let(:locked_gems) { double(specs: specish_objects) } # rubocop:disable RSpec/VerifiedDoubles
 
       before do
         # specish_objects = Bundler.definition.locked_gems.specs
@@ -156,7 +156,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     context 'with a Gemfile and a gem preference' do
       # find_or_install helper doesn't seem to work on older versions
       if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
-        warn 'running the cool kid tests'
         before do
           add_bundle
           find_or_install('backport', '1.0.0')
