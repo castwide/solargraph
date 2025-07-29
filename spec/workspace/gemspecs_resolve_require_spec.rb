@@ -62,10 +62,61 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       let(:specish_objects) { [double] }
 
       let(:locked_gems) { double(specs: specish_objects) } # rubocop:disable RSpec/VerifiedDoubles
+      let(:lockfile) { instance_double(Bundler::LockfileParser, specs: specish_objects) }
+      let(:definition) { instance_double(Bundler::Definition,
+                                         locked_gems: locked_gems,
+                                         lockfile: lockfile) }
 
       before do
         # specish_objects = Bundler.definition.locked_gems.specs
-        allow(Bundler.definition).to receive(:locked_gems).and_return(locked_gems)
+        allow(Bundler).to receive(:definition).and_return(definition)
+        allow(lockfile).to receive(:to_s).and_return(dir_path)
+      end
+
+      it 'returns a single spec' do
+        expect(specs.size).to eq(1)
+      end
+
+      it 'resolves to the right known gem' do
+        expect(specs.map(&:name)).to eq(['solargraph'])
+      end
+    end
+
+    context 'with a Bundler::StubSpecification from Bundler / RubyGems' do
+      # this can happen from local gems, which is hard to test
+      # organically
+
+      let(:require) { 'solargraph' }
+
+      let(:spec_fetcher) { instance_double(Gem::SpecFetcher) }
+      let(:platform) { Gem::Platform::RUBY }
+      let(:bundler_stub_spec) { Bundler::StubSpecification.new('solargraph', '123', platform, spec_fetcher) }
+      let(:gem_stub_spec) { Gem::StubSpecification.new('solargraph', '123', platform, spec_fetcher) }
+
+      let(:specish_objects) { [bundler_stub_spec] }
+
+      let(:real_spec) { instance_double(Gem::Specification) }
+
+      let(:locked_gems) { double(specs: specish_objects) } # rubocop:disable RSpec/VerifiedDoubles
+      let(:lockfile) { instance_double(Bundler::LockfileParser, specs: specish_objects) }
+      let(:definition) { instance_double(Bundler::Definition,
+                                         locked_gems: locked_gems,
+                                         lockfile: lockfile) }
+
+      before do
+        # specish_objects = Bundler.definition.locked_gems.specs
+        allow(Bundler).to receive(:definition).and_return(definition)
+        allow(lockfile).to receive(:to_s).and_return(dir_path)
+        allow(bundler_stub_spec).to receive(:name).and_return('solargraph')
+        allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
+        allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
+        allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
+        allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
+        allow(bundler_stub_spec).to receive(:stub).and_return(gem_stub_spec)
+        allow(gem_stub_spec).to receive(:name).and_return('solargraph')
+        allow(gem_stub_spec).to receive(:version).and_return('123')
+        allow(gem_stub_spec).to receive(:spec).and_return(real_spec)
+        allow(real_spec).to receive(:name).and_return('solargraph')
       end
 
       it 'returns a single spec' do
