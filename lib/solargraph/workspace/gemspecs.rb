@@ -170,8 +170,8 @@ module Solargraph
                                                           if specish.respond_to?(:spec)
                                                             specish.spec
                                                           else
-                                                            resolve_gem_ignoring_local_bundle specish.name,
-                                                                                              specish.version
+                                                            # turn the crank again
+                                                            to_gem_specification(specish)
                                                           end
                                                         else
                                                           @@warned_on_gem_type ||=

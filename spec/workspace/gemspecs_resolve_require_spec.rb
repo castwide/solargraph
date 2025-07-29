@@ -63,6 +63,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       before do
         lockfile = instance_double(Pathname)
         locked_gems = instance_double(Bundler::LockfileParser, specs: specish_objects)
+
         definition = instance_double(Bundler::Definition,
                                      locked_gems: locked_gems,
                                      lockfile: lockfile)
@@ -79,6 +80,25 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
+    def configure_bundler_spec stub_value
+      platform = Gem::Platform::RUBY
+      bundler_stub_spec = Bundler::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
+      specish_objects = [bundler_stub_spec]
+      lockfile = instance_double(Pathname)
+      locked_gems = instance_double(Bundler::LockfileParser, specs: specish_objects)
+      definition = instance_double(Bundler::Definition,
+                                   locked_gems: locked_gems,
+                                   lockfile: lockfile)
+      # specish_objects = Bundler.definition.locked_gems.specs
+      allow(Bundler).to receive(:definition).and_return(definition)
+      allow(lockfile).to receive(:to_s).and_return(dir_path)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
+      allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: stub_value)
+    end
+
     context 'with a Bundler::StubSpecification from Bundler / RubyGems' do
       # this can happen from local gems, which is hard to test
       # organically
@@ -88,25 +108,32 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
       before do
         platform = Gem::Platform::RUBY
-        gem_stub_spec = Gem::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
         real_spec = instance_double(Gem::Specification)
-        bundler_stub_spec = Bundler::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
-        specish_objects = [bundler_stub_spec]
-        lockfile = instance_double(Pathname)
-        locked_gems = instance_double(Bundler::LockfileParser, specs: specish_objects)
-        definition = instance_double(Bundler::Definition,
-                                     locked_gems: locked_gems,
-                                     lockfile: lockfile)
-        # specish_objects = Bundler.definition.locked_gems.specs
-        allow(Bundler).to receive(:definition).and_return(definition)
-        allow(lockfile).to receive(:to_s).and_return(dir_path)
-        allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
-        allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
-        allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
-        allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
-        allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: gem_stub_spec)
-        allow(gem_stub_spec).to receive_messages(name: 'solargraph', version: '123', spec: real_spec)
         allow(real_spec).to receive(:name).and_return('solargraph')
+        gem_stub_spec = Gem::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
+        configure_bundler_spec(gem_stub_spec)
+        allow(gem_stub_spec).to receive_messages(name: 'solargraph', version: '123', spec: real_spec)
+      end
+
+      it 'returns a single spec' do
+        expect(specs.size).to eq(1)
+      end
+
+      it 'resolves to the right known gem' do
+        expect(specs.map(&:name)).to eq(['solargraph'])
+      end
+    end
+
+    context 'with a Bundler::StubSpecification that resolves straight to Gem::Specification' do
+      # have seen different behavior with different versions of rubygems/bundler
+
+      let(:require) { 'solargraph' }
+      let(:spec_fetcher) { instance_double(Gem::SpecFetcher) }
+      let(:real_spec) { instance_double(Gem::Specification, name: 'solargraph', version: '123') }
+
+      before do
+        allow(real_spec).to receive(:name).and_return('solargraph')
+        configure_bundler_spec(real_spec)
       end
 
       it 'returns a single spec' do
