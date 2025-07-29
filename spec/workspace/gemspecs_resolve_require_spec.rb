@@ -129,10 +129,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
       let(:require) { 'solargraph' }
       let(:spec_fetcher) { instance_double(Gem::SpecFetcher) }
-      let(:real_spec) { instance_double(Gem::Specification, name: 'solargraph', version: '123') }
+      let(:real_spec) { Gem::Specification.new('solargraph', '123') }
 
       before do
-        allow(real_spec).to receive(:name).and_return('solargraph')
         configure_bundler_spec(real_spec)
       end
 
