@@ -68,7 +68,7 @@ describe Solargraph::PinCache do
       end
     end
 
-    context 'with a gem packaged with its own RBS' do
+    context 'with gem packaged with its own RBS gem' do
       let(:gem_name) { 'base64' }
 
       before do
@@ -83,6 +83,46 @@ describe Solargraph::PinCache do
 
         # match arguments with regexp using rspec-matchers syntax
         expect(File).to have_received(:write).with(%r{combined/base64-.*-export.ser$}, any_args).once
+      end
+    end
+  end
+
+  describe '#uncache_gem' do
+    subject(:call) { pin_cache.uncache_gem(gemspec, out: out) }
+
+    let(:out) { StringIO.new }
+
+    before do
+      allow(FileUtils).to receive(:rm_rf)
+    end
+
+    context 'with an already cached gem' do
+      let(:gemspec) { Gem::Specification.find_by_name('backport') }
+
+      it 'deletes files' do
+        call
+
+        expect(FileUtils).to have_received(:rm_rf).at_least(:once)
+      end
+    end
+
+    context 'with a non-existent gem' do
+      let(:gemspec) { instance_double(Gem::Specification, name: 'nonexistent', version: '0.0.1') }
+
+      it 'does not raise an error' do
+        expect { call }.not_to raise_error
+      end
+
+      it 'logs a message' do
+        call
+
+        expect(out.string).to include('does not exist')
+      end
+
+      it 'does not delete files' do
+        call
+
+        expect(FileUtils).not_to have_received(:rm_rf)
       end
     end
   end
