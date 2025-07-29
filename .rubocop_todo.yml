@@ -246,6 +246,7 @@ Layout/HeredocIndentation:
 Layout/IndentationWidth:
   Exclude:
     - 'lib/solargraph.rb'
+    - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/diagnostics/rubocop.rb'
     - 'lib/solargraph/language_server/message/extended/check_gem_version.rb'
     - 'lib/solargraph/library.rb'
