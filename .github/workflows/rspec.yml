@@ -21,7 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', 'head']
+        ruby-version:
+          - '3.0'
+          - '3.1'
+          - '3.2'
+          - '3.3'
+          - '3.4'
+          # - 'head' - see https://github.com/castwide/solargraph/issues/1022
 
     steps:
     - uses: actions/checkout@v3
