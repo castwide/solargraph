@@ -248,10 +248,12 @@ Layout/IndentationWidth:
     - 'lib/solargraph.rb'
     - 'lib/solargraph/diagnostics/rubocop.rb'
     - 'lib/solargraph/language_server/message/extended/check_gem_version.rb'
+    - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/block_node.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/namespace.rb'
+    - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/source_map/mapper.rb'
@@ -881,7 +883,6 @@ Naming/VariableName:
 RSpec/Be:
   Exclude:
     - 'spec/rbs_map/stdlib_map_spec.rb'
-    - 'spec/rbs_map_spec.rb'
     - 'spec/source/source_chainer_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1777,7 +1778,6 @@ Style/GuardClause:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
-    - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/range.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/source.rb'
@@ -1927,6 +1927,7 @@ Style/MethodDefParentheses:
     - 'lib/solargraph/position.rb'
     - 'lib/solargraph/range.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
+    - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source/chain/constant.rb'
@@ -2282,6 +2283,7 @@ Style/StringLiterals:
     - 'lib/solargraph/pin/parameter.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/server_methods.rb'
+    - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/workspace.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
     - 'lib/solargraph/yard_tags.rb'
