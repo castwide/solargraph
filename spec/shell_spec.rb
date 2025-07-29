@@ -196,6 +196,15 @@ describe Solargraph::Shell do
       expect { shell.cache('stringio') }.not_to raise_error
     end
 
+    context 'when gem does not exist' do
+      subject(:call) { shell.cache('nonexistentgem8675309') }
+
+      it 'gives a good error message' do
+        # capture stderr output
+        expect { call }.to output(/not found/).to_stderr
+      end
+    end
+
     it 'caches gem without erroring out' do
       _output = capture_stdout do
         shell.uncache('backport')
