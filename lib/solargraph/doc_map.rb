@@ -77,9 +77,10 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
+    # @param out [IO, nil] output stream for logging
     # @return [Set<Gem::Specification>]
-    def dependencies
-      @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec) } - gemspecs).to_set
+    def dependencies out: $stderr
+      @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec, out: out) } - gemspecs).to_set
     end
 
     # Cache gem documentation if needed for this doc_map
@@ -112,7 +113,7 @@ module Solargraph
       missing_paths = Hash[without_gemspecs].keys
       # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
-      gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
+      gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies(out: out).to_a
 
       missing_paths.each do |path|
         # this will load from disk if needed; no need to manage

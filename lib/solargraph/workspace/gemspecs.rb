@@ -103,8 +103,10 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
+      # @param out[IO, nil] output stream for logging
+      #
       # @return [Array<Gem::Specification>]
-      def fetch_dependencies gemspec
+      def fetch_dependencies gemspec, out: $stderr
         gemspecs = all_gemspecs_from_bundle
 
         # @param runtime_dep [Gem::Dependency]
@@ -113,11 +115,10 @@ module Solargraph
           Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
           dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
           dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
-          deps.merge fetch_dependencies(dep) if deps.add?(dep)
         rescue Gem::MissingSpecError
-          Solargraph.logger.warn("Gem dependency #{runtime_dep.name} #{runtime_dep.requirement} " \
-                                 "for #{gemspec.name} not found in bundle.")
-          nil
+          dep = resolve_gem_ignoring_local_bundle runtime_dep.name, out: out
+        ensure
+          deps.merge fetch_dependencies(dep, out: out) if dep && deps.add?(dep)
         end.to_a.compact
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
@@ -281,11 +282,11 @@ module Solargraph
       # @todo Should this be using Gem::SpecFetcher and pull them automatically?
       #
       # @param name [String]
-      # @param version [String]
+      # @param version [String, nil]
       # @param out [IO, nil] output stream for logging
       #
       # @return [Gem::Specification, nil]
-      def resolve_gem_ignoring_local_bundle name, version, out: $stderr
+      def resolve_gem_ignoring_local_bundle name, version = nil, out: $stderr
         Gem::Specification.find_by_name(name, version)
       rescue Gem::MissingSpecError
         begin

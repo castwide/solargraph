@@ -10,13 +10,31 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
   let(:gemspecs) { described_class.new(dir_path) }
   let(:dir_path) { Dir.pwd }
 
-  context 'with a Bundler::LazySpecification in bundle' do
-    let(:gemspec) do
-      Bundler::LazySpecification.new('solargraph', nil, nil)
+  context 'when in our bundle' do
+    context 'with a Bundler::LazySpecification' do
+      let(:gemspec) do
+        Bundler::LazySpecification.new('solargraph', nil, nil)
+      end
+
+      it 'finds a known dependency' do
+        expect(deps.map(&:name)).to include('backport')
+      end
     end
 
-    it 'finds a known dependency' do
-      expect(deps.map(&:name)).to include('backport')
+    context 'with gem whose dependency does not exist in our bundle' do
+      let(:gemspec) do
+        instance_double(Gem::Specification,
+                        dependencies: [Gem::Dependency.new('activerecord')],
+                        development_dependencies: [],
+                        name: 'my_fake_gem',
+                        version: '123')
+      end
+      let(:gem_name) { 'my_fake_gem' }
+
+      it 'gives a useful message' do
+        output = capture_both { deps.map(&:name) }
+        expect(output).to include('Please install the gem activerecord')
+      end
     end
   end
 
@@ -54,7 +72,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
     end
 
-    context 'with gem does not hat eists in our bundle' do
+    context 'with gem does not exist in our bundle' do
       let(:gem_name) { 'activerecord' }
 
       it 'gives a useful message' do
