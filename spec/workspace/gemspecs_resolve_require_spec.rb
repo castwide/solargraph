@@ -56,6 +56,27 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
+    context 'with an unknown type from Bundler / RubyGems' do
+      let(:require) { 'solargraph' }
+
+      let(:specish_objects) { [double()] }
+
+      let(:locked_gems) { double(specs: specish_objects) }
+
+      before do
+        # specish_objects = Bundler.definition.locked_gems.specs
+        allow(Bundler.definition).to receive(:locked_gems).and_return(locked_gems)
+      end
+
+      it 'returns a single spec' do
+        expect(specs.size).to eq(1)
+      end
+
+      it 'resolves to the right known gem' do
+        expect(specs.map(&:name)).to eq(['solargraph'])
+      end
+    end
+
     context 'with a less usual require mapping' do
       let(:require) { 'diff/lcs' }
 
