@@ -31,7 +31,7 @@ module Solargraph
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
-                                      @indexes[changed + idx - 1]
+            @indexes[changed + idx - 1]
           else
             @indexes[changed + idx - 1].merge(pins)
           end
@@ -130,11 +130,6 @@ module Solargraph
       # @return [Boolean]
       def namespace_exists?(fqns)
         fqns_pins(fqns).any?
-      end
-
-      # @return [Set<String>]
-      def namespaces
-        index.namespaces
       end
 
       # @return [Enumerable<Solargraph::Pin::Namespace>]
