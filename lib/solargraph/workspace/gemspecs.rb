@@ -273,6 +273,8 @@ module Solargraph
         unless gemspec.respond_to?(:dependencies) && gemspec.respond_to?(:development_dependencies)
           gemspec = to_gem_specification(gemspec)
         end
+        return [] if gemspec.nil?
+
         gemspec.dependencies - gemspec.development_dependencies
       end
 

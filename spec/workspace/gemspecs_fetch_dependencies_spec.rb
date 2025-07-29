@@ -24,14 +24,14 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
     let(:gemspec) do
-      Bundler::LazySpecification.new('undercover', nil, nil)
+      Bundler::LazySpecification.new(gem_name, nil, nil)
     end
 
     before do
       # write out Gemfile
       File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
         source 'https://rubygems.org'
-        gem 'undercover'
+        gem '#{gem_name}'
       GEMFILE
 
       # run bundle install
@@ -46,8 +46,22 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
     end
 
-    it 'finds dependencies' do
-      expect(deps.map(&:name)).to include('ast')
+    context 'with gem that exists in our bundle' do
+      let(:gem_name) { 'undercover' }
+
+      it 'finds dependencies' do
+        expect(deps.map(&:name)).to include('ast')
+      end
+    end
+
+    context 'with gem does not hat eists in our bundle' do
+      let(:gem_name) { 'activerecord' }
+
+      it 'gives a useful message' do
+        dep_names = nil
+        output = capture_both { dep_names = deps.map(&:name) }
+        expect(output).to include('Please install the gem activerecord')
+      end
     end
   end
 end
