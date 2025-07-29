@@ -58,17 +58,14 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
     context 'with an unknown type from Bundler / RubyGems' do
       let(:require) { 'solargraph' }
-
       let(:specish_objects) { [double] }
 
-      let(:locked_gems) { double(specs: specish_objects) } # rubocop:disable RSpec/VerifiedDoubles
-      let(:lockfile) { instance_double(Bundler::LockfileParser, specs: specish_objects) }
-      let(:definition) { instance_double(Bundler::Definition,
-                                         locked_gems: locked_gems,
-                                         lockfile: lockfile) }
-
       before do
-        # specish_objects = Bundler.definition.locked_gems.specs
+        lockfile = instance_double(Pathname)
+        locked_gems = instance_double(Bundler::LockfileParser, specs: specish_objects)
+        definition = instance_double(Bundler::Definition,
+                                     locked_gems: locked_gems,
+                                     lockfile: lockfile)
         allow(Bundler).to receive(:definition).and_return(definition)
         allow(lockfile).to receive(:to_s).and_return(dir_path)
       end
@@ -87,35 +84,28 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       # organically
 
       let(:require) { 'solargraph' }
-
       let(:spec_fetcher) { instance_double(Gem::SpecFetcher) }
-      let(:platform) { Gem::Platform::RUBY }
-      let(:bundler_stub_spec) { Bundler::StubSpecification.new('solargraph', '123', platform, spec_fetcher) }
-      let(:gem_stub_spec) { Gem::StubSpecification.new('solargraph', '123', platform, spec_fetcher) }
-
-      let(:specish_objects) { [bundler_stub_spec] }
-
-      let(:real_spec) { instance_double(Gem::Specification) }
-
-      let(:locked_gems) { double(specs: specish_objects) } # rubocop:disable RSpec/VerifiedDoubles
-      let(:lockfile) { instance_double(Bundler::LockfileParser, specs: specish_objects) }
-      let(:definition) { instance_double(Bundler::Definition,
-                                         locked_gems: locked_gems,
-                                         lockfile: lockfile) }
 
       before do
+        platform = Gem::Platform::RUBY
+        gem_stub_spec = Gem::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
+        real_spec = instance_double(Gem::Specification)
+        bundler_stub_spec = Bundler::StubSpecification.new('solargraph', '123', platform, spec_fetcher)
+        specish_objects = [bundler_stub_spec]
+        lockfile = instance_double(Pathname)
+        locked_gems = instance_double(Bundler::LockfileParser, specs: specish_objects)
+        definition = instance_double(Bundler::Definition,
+                                     locked_gems: locked_gems,
+                                     lockfile: lockfile)
         # specish_objects = Bundler.definition.locked_gems.specs
         allow(Bundler).to receive(:definition).and_return(definition)
         allow(lockfile).to receive(:to_s).and_return(dir_path)
-        allow(bundler_stub_spec).to receive(:name).and_return('solargraph')
         allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
         allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
         allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
         allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
-        allow(bundler_stub_spec).to receive(:stub).and_return(gem_stub_spec)
-        allow(gem_stub_spec).to receive(:name).and_return('solargraph')
-        allow(gem_stub_spec).to receive(:version).and_return('123')
-        allow(gem_stub_spec).to receive(:spec).and_return(real_spec)
+        allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: gem_stub_spec)
+        allow(gem_stub_spec).to receive_messages(name: 'solargraph', version: '123', spec: real_spec)
         allow(real_spec).to receive(:name).and_return('solargraph')
       end
 
