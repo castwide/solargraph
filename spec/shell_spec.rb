@@ -65,6 +65,17 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'scan' do
+    it 'scans without erroring out' do
+      output = capture_stdout do
+        shell.options = { directory: 'spec/fixtures/workspace' }
+        shell.scan
+      end
+
+      expect(output).to include('Scanned ').and include(' seconds.')
+    end
+  end
+
   describe 'typecheck' do
     it 'typechecks without erroring out' do
       output = capture_stdout do

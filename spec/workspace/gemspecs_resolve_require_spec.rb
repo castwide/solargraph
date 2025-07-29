@@ -15,6 +15,22 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     install_gem(gem_name, version)
   end
 
+  def add_bundle
+    # write out Gemfile
+    File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+      source 'https://rubygems.org'
+      gem 'backport'
+    GEMFILE
+    # run bundle install
+    output, status = Solargraph.with_clean_env do
+      Open3.capture2e('bundle install --verbose', chdir: dir_path)
+    end
+    raise "Failure installing bundle: #{output}" unless status.success?
+    # ensure Gemfile.lock exists
+    return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
+    raise "Gemfile.lock not found after bundle install in #{dir_path}"
+  end
+
   def install_gem gem_name, version
     Bundler.with_unbundled_env do
       cmd = Gem::Commands::InstallCommand.new
@@ -92,25 +108,8 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
-    context 'with Gemfile' do
-      before do
-        # write out Gemfile
-        File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-          source 'https://rubygems.org'
-          gem 'backport'
-        GEMFILE
-
-        # run bundle install
-        output, status = Solargraph.with_clean_env do
-          Open3.capture2e('bundle install --verbose', chdir: dir_path)
-        end
-        raise "Failure installing bundle: #{output}" unless status.success?
-
-        # ensure Gemfile.lock exists
-        unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
-          raise "Gemfile.lock not found after bundle install in #{dir_path}"
-        end
-      end
+    context 'with Gemfile and Bundler.require' do
+      before { add_bundle }
 
       let(:require) { 'bundler/require' }
 
@@ -121,31 +120,43 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       it 'returns gems' do
         expect(specs.map(&:name)).to include('backport')
       end
+    end
 
+    context 'with Gemfile but an unknown gem' do
+      before { add_bundle }
+
+      let(:require) { 'unknown_gemlaksdflkdf' }
+
+      it 'returns nil' do
+        expect(specs).to be_nil
+      end
+    end
+
+    context 'with a Gemfile and a gem preference' do
       # find_or_install helper doesn't seem to work on older versions
       if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
-        context 'with a gem preference' do
-          before do
-            find_or_install('backport', '1.0.0')
-            Gem::Specification.find_by_name('backport', '= 1.0.0')
-          end
+        warn 'running the cool kid tests'
+        before do
+          add_bundle
+          find_or_install('backport', '1.0.0')
+          Gem::Specification.find_by_name('backport', '= 1.0.0')
+        end
 
-          let(:preferences) do
-            [
-              Gem::Specification.new.tap do |spec|
-                spec.name = 'backport'
-                spec.version = '1.0.0'
-              end
-            ]
-          end
+        let(:preferences) do
+          [
+            Gem::Specification.new.tap do |spec|
+              spec.name = 'backport'
+              spec.version = '1.0.0'
+            end
+          ]
+        end
 
-          it 'returns the preferred gemspec' do
-            gemspecs = described_class.new(dir_path, preferences: preferences)
-            specs = gemspecs.resolve_require('backport')
-            backport = specs.find { |spec| spec.name == 'backport' }
+        it 'returns the preferred gemspec' do
+          gemspecs = described_class.new(dir_path, preferences: preferences)
+          specs = gemspecs.resolve_require('backport')
+          backport = specs.find { |spec| spec.name == 'backport' }
 
-            expect(backport.version.to_s).to eq('1.0.0')
-          end
+          expect(backport.version.to_s).to eq('1.0.0')
         end
 
         context 'with a gem preference that does not exist' do
