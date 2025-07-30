@@ -55,7 +55,7 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with standard loads for solargraph project' do
-    let(:api_map) { Solargraph::ApiMap.load('.') }
+    let(:api_map) { Solargraph::ApiMap.load_with_cache('.') }
 
     let(:superclass_pin) do
       api_map.pins.find do |pin|
