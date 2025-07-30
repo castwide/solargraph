@@ -141,7 +141,7 @@ describe Solargraph::Shell do
     it 'has a well set up test environment' do
       output = bundle_exec('bundle', 'list')
 
-      expect(output).to include('language_server-protocol')
+      expect(output).to include('reverse_markdown')
     end
 
     it 'caches all without erroring out' do
