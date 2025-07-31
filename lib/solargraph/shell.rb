@@ -109,7 +109,30 @@ module Solargraph
       # '
     end
 
-    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
+    desc 'gems [GEM[=VERSION]...] [STDLIB...] [core]', 'Cache documentation for
+         installed libraries'
+    long_desc %( This command will cache the
+    generated type documentation for the specified libraries.  While
+    Solargraph will generate this on the fly when needed, it takes
+    time.  This command will generate it in advance, which can be
+    useful for CI scenarios.
+
+        With no arguments, it will cache all libraries in the current
+        workspace.  If a gem or standard library name is specified, it
+        will cache that library's type documentation.
+
+        An equals sign after a gem will allow a specific gem version
+        to be cached.
+
+        The 'core' argument can be used to cache the type
+        documentation for the core Ruby libraries.
+
+        If the library is already cached, it will be rebuilt if the
+        --rebuild option is set.
+
+        Cached documentation is stored in #{PinCache.base_dir}, which
+        can be stored between CI runs.
+    )
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
