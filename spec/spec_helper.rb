@@ -43,3 +43,8 @@ def with_env_var(name, value)
     ENV[name] = old_value  # Restore the old value
   end
 end
+
+RSpec.configure do |config|
+  # Enable flags like --only-failures and --next-failure
+  config.example_status_persistence_file_path = 'tmp/rspec_status.txt'
+end
