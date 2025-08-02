@@ -97,12 +97,12 @@ module Solargraph
 
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data..offset-1]
+        @phrase ||= source.code[signature_data..offset - 1]
       end
 
       # @return [String]
       def fixed_phrase
-        @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
+        @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
       end
 
       # @return [Position]
@@ -153,7 +153,7 @@ module Solargraph
         brackets = 0
         squares = 0
         parens = 0
-        index -=1
+        index -= 1
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
@@ -164,18 +164,16 @@ module Solargraph
           if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-              unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
-                old = @source.code[index+1..-1]
-                nxt = @source.code[index+1..-1].lstrip
-                index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
-                break
-              end
+            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace && !(char == '.' or @source.code[index + 1..-1].strip.start_with?('.'))
+              @source.code[index + 1..-1]
+              @source.code[index + 1..-1].lstrip
+              index += (@source.code[index + 1..-1].length - @source.code[index + 1..-1].lstrip.length)
+              break
             end
             if char == ')'
-              parens -=1
+              parens -= 1
             elsif char == ']'
-              squares -=1
+              squares -= 1
             elsif char == '}'
               brackets -= 1
             elsif char == '('
@@ -191,9 +189,7 @@ module Solargraph
               break if char == '$'
               if char == '@'
                 index -= 1
-                if @source.code[index, 1] == '@'
-                  index -= 1
-                end
+                index -= 1 if @source.code[index, 1] == '@'
                 break
               end
             elsif parens == 1 || brackets == 1 || squares == 1
