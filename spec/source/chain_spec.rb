@@ -48,6 +48,13 @@ describe Solargraph::Source::Chain do
     expect(chain.literal?).to be(true)
   end
 
+  it "recognizes parameters as literals" do
+    method_call_source = Solargraph::Source.load_string('method_call("String")')
+    chain = Solargraph::Source::SourceChainer.chain(method_call_source, Solargraph::Position.new(0, 13))
+    expect(chain.links.last).to be_a(Solargraph::Source::Chain::Parameter)
+    expect(chain.literal?).to be(true)
+  end
+
   it "recognizes constants" do
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
     expect(chain.constant?).to be(true)

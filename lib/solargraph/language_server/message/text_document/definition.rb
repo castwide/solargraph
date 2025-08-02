@@ -24,7 +24,10 @@ module Solargraph::LanguageServer::Message::TextDocument
 
     # @return [Array<Hash>]
     def require_location
-      # @todo Terrible hack
+      # @todo Terrible hack - move this logic to [Solargraph::Source::Chain::Parameter]
+      #   @example
+      #     require 'click_me'
+      #             ^^^^^^^^^^
       lib = host.library_for(params['textDocument']['uri'])
       rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']), Solargraph::Range.from_to(@line, @column, @line, @column))
       dloc = lib.locate_ref(rloc)
