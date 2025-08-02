@@ -12,9 +12,14 @@ module Solargraph
 
         attr_reader :value
 
+        # @return [Parser::AST::Node]
+        attr_reader :node
+
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
+          @node = node
+
           if node.is_a?(::Parser::AST::Node)
             if node.type == :true
               @value = true

@@ -11,10 +11,14 @@ module Solargraph
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
+      # @return [String, Symbol] The literal value
+      attr_reader :value
       # @return decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       attr_reader :decl
       # @return [ComplexType]
       attr_reader :return_type
+      # @return [Location, nil]
+      attr_reader :location
 
       # @param method_name [String] The name of the method that this parameter belongs to
       # @param method_namespace [String] The class of the method that this parameter belongs to
@@ -22,7 +26,17 @@ module Solargraph
       # @param param_name [String, nil] The name of the parameter
       # @param value [String, Symbol] The value of the parameter
       # @param decl [::Symbol] :arg, :kwarg
-      def initialize(method_name:, method_namespace:, method_scope:, param_name:, value:, return_type:, decl: :arg)
+      # @param location [Location, nil] The location of the parameter in the source code
+      def initialize(
+        method_name:,
+        method_namespace:,
+        method_scope:,
+        param_name:,
+        value:,
+        return_type:,
+        decl: :arg,
+        location: nil
+      )
         @method_name = method_name
         @method_namespace = method_namespace
         @method_scope = method_scope
@@ -30,6 +44,7 @@ module Solargraph
         @value = value
         @decl = decl
         @return_type = return_type
+        @location = location
       end
 
       def name

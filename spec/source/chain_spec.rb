@@ -117,7 +117,49 @@ describe Solargraph::Source::Chain do
     chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(8, 20))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.name).to eq('MyModel')
+    Solargraph::Convention.deregister dummy_convention
+  end
+
+  it "defines factory parameters" do
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local(_source_map)
+        Solargraph::Environ.new(
+          pins: [
+            Solargraph::Pin::FactoryParameter.new(
+              method_name: 'create',
+              method_namespace: 'FactoryBot',
+              method_scope: :class,
+              param_name: 'klass',
+              value: :my_model,
+              return_type: Solargraph::ComplexType.parse('MyModel'),
+              location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 6, 0, 18)) # eg. class MyModel
+            )
+          ]
+        )
+      end
+    end
+
     Solargraph::Convention.register dummy_convention
+
+    source = Solargraph::Source.new(%(
+      class MyModel
+      end
+      module FactoryBot
+        def self.create(klass, **args)
+        end
+      end
+
+      FactoryBot.create(:my_model, name: 'test')
+    ), 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+
+    api_map = Solargraph::ApiMap.new
+    api_map.index source_map.pins + source_map.convention_pins
+    chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(8, 30))
+    pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(pins.length).to eq(1)
+    expect(pins.first).to be_a(Solargraph::Pin::FactoryParameter)
+    Solargraph::Convention.deregister dummy_convention
   end
 
   it "follows constant chains" do

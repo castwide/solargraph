@@ -34,6 +34,7 @@ module Solargraph
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
       autoload :Array,            'solargraph/source/chain/array'
+      autoload :Parameter,        'solargraph/source/chain/parameter'
 
       @@inference_stack = []
       @@inference_depth = 0

@@ -80,6 +80,21 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain).to be_undefined
   end
 
+  it "recognizes method literal parameters" do
+    source = Solargraph::Source.load_string(<<~RUBY)
+      SomeClass
+        .instance
+        .foo(:bar, "baz", 1)
+    RUBY
+    map = Solargraph::SourceMap.map(source)
+    cursor = map.cursor_at(Solargraph::Position.new(2, 10)) # :bar
+    expect(cursor.chain.links.last).to be_a(Solargraph::Source::Chain::Parameter)
+    expect(cursor.chain.links.map(&:word)).to eq(['foo(.., <::Symbol>, ..)'])
+    cursor = map.cursor_at(Solargraph::Position.new(2, 16)) # "baz"
+    expect(cursor.chain.links.last).to be_a(Solargraph::Source::Chain::Parameter)
+    expect(cursor.chain.links.map(&:word)).to eq(['foo(.., <::String>, ..)'])
+  end
+
   it "chains signatures with square brackets" do
     map = Solargraph::SourceMap.load_string('foo[0].bar')
     cursor = map.cursor_at(Solargraph::Position.new(0, 8))

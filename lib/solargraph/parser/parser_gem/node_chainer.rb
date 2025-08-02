@@ -13,10 +13,12 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @param filename [String, nil]
         # @param parent [Parser::AST::Node, nil]
-        def initialize node, filename = nil, parent = nil
+        # @param tree [Array<Parser::AST::Node>, nil]
+        def initialize node, filename = nil, parent = nil, tree = nil
           @node = node
           @filename = filename
           @parent = parent
+          @tree = tree
         end
 
         # @return [Source::Chain]
@@ -29,9 +31,10 @@ module Solargraph
           # @param node [Parser::AST::Node]
           # @param filename [String, nil]
           # @param parent [Parser::AST::Node, nil]
+          # @param tree [Parser::AST::Node, nil]
           # @return [Source::Chain]
-          def chain node, filename = nil, parent = nil
-            NodeChainer.new(node, filename, parent).chain
+          def chain node, filename = nil, parent = nil, tree = nil
+            NodeChainer.new(node, filename, parent, tree).chain
           end
 
           # @param code [String]
@@ -130,11 +133,28 @@ module Solargraph
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
+          elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
+            lit = infer_literal_node_type(n)
+            if lit
+              method_call_chain = NodeChainer.chain(send_node, @filename, nil, [])
+              literal = Chain::Literal.new(lit, n)
+              arg_index = send_node.children[2..-1].index(n)
+              result.push Chain::Parameter.new(literal, method_call_chain)
+            end
           else
             lit = infer_literal_node_type(n)
             result.push (lit ? Chain::Literal.new(lit, n) : Chain::Link.new)
           end
           result
+        end
+
+        def inside_method_call?
+          send_node != nil && send_node != @node
+        end
+
+        # @return [Parser::AST::Node, nil]
+        def send_node
+          @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
         # @param node [Parser::AST::Node]

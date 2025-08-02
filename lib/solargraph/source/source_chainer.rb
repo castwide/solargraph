@@ -31,34 +31,18 @@ module Solargraph
 
       # @return [Source::Chain]
       def chain
-        # Special handling for files that end with an integer and a period
-        return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])), Chain::UNDEFINED_CALL]) if phrase =~ /^[0-9]+\.$/
-        return Chain.new([Chain::Literal.new('Symbol', phrase[1..].to_sym)]) if phrase.start_with?(':') && !phrase.start_with?('::')
         return SourceChainer.chain(source, Position.new(position.line, position.character + 1)) if end_of_phrase.strip == '::' && source.code[Position.to_offset(source.code, position)].to_s.match?(/[a-z]/i)
+
         begin
-          return Chain.new([]) if phrase.end_with?('..')
-          node = nil
-          parent = nil
-          if !source.repaired? && source.parsed? && source.synchronized?
-            tree = source.tree_at(position.line, position.column)
-            node, parent = tree[0..2]
-          elsif source.parsed? && source.repaired? && end_of_phrase == '.'
-            node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
-            node = Parser.parse(fixed_phrase) if node.nil?
-          elsif source.repaired?
-            node = Parser.parse(fixed_phrase)
-          else
-            node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
-            # Exception for positions that chain literal nodes in unsynchronized sources
-            node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
-            node = Parser.parse(fixed_phrase) if node.nil?
-          end
+          node, parent, tree = node_from_position
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
+
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
-        # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
-        chain = Parser.chain(node, source.filename, parent)
+
+        chain = Parser.chain(node, source.filename, parent, tree)
+
         if source.repaired? || !source.parsed? || !source.synchronized?
           if end_of_phrase.strip == '.'
             chain.links.push Chain::UNDEFINED_CALL
@@ -72,6 +56,38 @@ module Solargraph
       end
 
       private
+
+      # @return [Array(Parser::AST::Node, Parser::AST::Node, Array<Parser::AST::Node>)]
+      #   parent node, child node, and the tree at the position
+      def node_from_position
+        node = nil
+        parent = nil
+        tree = nil
+
+        if source.parsed? && !source.repaired? && source.synchronized?
+          tree = source.tree_at(position.line, position.column)
+          node, parent = tree[0..2]
+        elsif source.parsed? && source.repaired? && end_of_phrase == '.'
+          tree = source.tree_at(fixed_position.line, fixed_position.column)
+          node, parent = tree[0..2]
+          node = Parser.parse(fixed_phrase) if node.nil?
+          tree = source.tree_at(fixed_position.line, fixed_position.column) if node
+        elsif source.repaired?
+          node = Parser.parse(fixed_phrase)
+          tree = source.tree_at(fixed_position.line, fixed_position.column) if node
+        else
+          unless source.error_ranges.any? { |r| r.nil? || r.include?(fixed_position) }
+            tree = source.tree_at(fixed_position.line, fixed_position.column)
+            node, parent = tree[0..2]
+          end
+          # Exception for positions that chain literal nodes in unsynchronized sources
+          node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
+          node = Parser.parse(fixed_phrase) if node.nil?
+          tree = source.tree_at(fixed_position.line, fixed_position.column) if node
+        end
+
+        [node, parent, tree]
+      end
 
       # @return [Position]
       attr_reader :position
