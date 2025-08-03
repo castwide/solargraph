@@ -31,6 +31,11 @@ module Solargraph
           end
         end
 
+        # @return [Boolean] true if this is a parameter of Kernel#require
+        def require_parameter?
+          method_call_chain.links.last.word == 'require'
+        end
+
         private
 
         # @return [Chain::Literal]

@@ -18,7 +18,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
-        return [] if cursor.comment? || cursor.chain.literal?
+        return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
         result = cursor.chain.define(api_map, block, locals)
         result.concat file_global_methods
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?

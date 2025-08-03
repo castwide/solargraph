@@ -170,7 +170,11 @@ module Solargraph
 
       # @return [Boolean]
       def literal?
-        links.last.is_a?(Chain::Literal) || links.last.is_a?(Chain::Parameter)
+        links.last.is_a?(Chain::Literal)
+      end
+
+      def require_parameter?
+        links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
       end
 
       def undefined?
