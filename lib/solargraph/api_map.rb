@@ -228,11 +228,6 @@ module Solargraph
       load(directory)
     end
 
-    # @return [Array<String>]
-    def yard_plugins
-      @doc_map.yard_plugins
-    end
-
     # @return [Array<Solargraph::Pin::Base>]
     def pins
       store.pins.clone.freeze
@@ -772,7 +767,6 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
-      methods = methods.map(&:as_virtual_class_method) if store.get_includes(fqns).include?('ActiveSupport::Concern') && scope == :class
       logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep

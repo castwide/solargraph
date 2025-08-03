@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::Convention::ActiveSupportConcern do
-  it 'handles block method super scenarios' do
-    source = Solargraph::Source.load_string(%(
+  let :source do
+    Solargraph::Source.load_string(%(
       # Example from here: https://api.rubyonrails.org/v7.0/classes/ActiveSupport/Concern.html
       require "active_support/concern"
 
@@ -28,11 +30,12 @@ describe Solargraph::Convention::ActiveSupportConcern do
 
       # this should print 'test'
     ), 'test.rb')
+  end
 
+  it 'handles block method super scenarios' do
     api_map = Solargraph::ApiMap.new.map(source)
 
     pin = api_map.get_method_stack('Host', 'method_injected_by_foo', scope: :class)
-    expect(pin.length).to eq(1)
-    expect(pin.first.name).to eq('method_injected_by_foo')
+    expect(pin.map(&:name)).to eq(['method_injected_by_foo'])
   end
 end
