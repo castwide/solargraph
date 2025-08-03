@@ -22,17 +22,12 @@ module Solargraph
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
           return [] unless method_pin
 
-          # TODO: Utilize some form of indexing to speed this up
-          # @see [Solargraph::ApiMap::Index]
-          api_map.factory_parameter_pins.select do |fp|
+          # Use indexed lookup for better performance
+          api_map.factory_parameters_for_method(method_pin).select do |fp|
             param_index = method_pin.parameters.find_index { |param| param.name == fp.param_name }
             next if param_index.nil?
 
-            fp.method_namespace == method_pin.namespace &&
-              fp.method_name == method_pin.name &&
-              fp.method_scope == method_pin.scope &&
-              fp.value == literal.value &&
-              current_index == param_index
+            fp.value == literal.value && current_index == param_index
           end
         end
 

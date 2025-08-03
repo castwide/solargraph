@@ -11,7 +11,7 @@ module Solargraph
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
-      # @return [String, Symbol] The literal value
+      # @return [::String, ::Symbol] The literal value
       attr_reader :value
       # @return decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       attr_reader :decl
@@ -49,6 +49,17 @@ module Solargraph
 
       def name
         param_name
+      end
+
+      # @return [String]
+      def method_path
+        @method_path ||= "#{method_namespace}#{(method_scope == :instance ? '#' : '.')}#{method_name}"
+      end
+
+      private
+
+      def inner_desc
+        "method_path=#{method_path}, value=#{value.inspect}, decl=#{decl.inspect}, return_type=#{return_type&.to_s || 'nil'}"
       end
     end
   end

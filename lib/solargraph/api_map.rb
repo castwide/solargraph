@@ -244,6 +244,14 @@ module Solargraph
       store.pins_by_class(Pin::FactoryParameter)
     end
 
+    # Get factory parameters for a method pin.
+    #
+    # @param method_pin [Solargraph::Pin::Method]
+    # @return [Array<Solargraph::Pin::FactoryParameter>]
+    def factory_parameters_for_method(method_pin)
+      store.factory_parameters_for_method(method_pin)
+    end
+
     # An array of namespace names defined in the ApiMap.
     #
     # @return [Set<String>]

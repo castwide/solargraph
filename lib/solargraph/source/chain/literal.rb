@@ -10,6 +10,7 @@ module Solargraph
           @word ||= "<#{@type}>"
         end
 
+        # @return [::String, ::Symbol]
         attr_reader :value
 
         # @return [Parser::AST::Node]
