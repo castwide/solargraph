@@ -38,8 +38,8 @@ describe Solargraph::Yardoc do
   end
 
   describe '#build_docs' do
-    let(:api_map) { Solargraph::ApiMap.load(Dir.pwd) }
-    let(:gemspec) { api_map.find_gem('rubocop') }
+    let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
+    let(:gemspec) { workspace.find_gem('rubocop') }
     let(:output) { '' }
 
     before do

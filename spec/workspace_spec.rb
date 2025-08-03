@@ -128,4 +128,41 @@ describe Solargraph::Workspace do
       Solargraph::Workspace.new('./path', config)
     }.not_to raise_error
   end
+
+  describe '#cache_all_for_workspace!' do
+    let(:pin_cache) { instance_double(Solargraph::PinCache) }
+    let(:gemspecs) { instance_double(Solargraph::Workspace::Gemspecs) }
+
+    before do
+      allow(Solargraph::Workspace::Gemspecs).to receive(:new).and_return(gemspecs)
+      allow(Solargraph::PinCache).to receive(:cache_core)
+      allow(Solargraph::PinCache).to receive(:possible_stdlibs)
+      allow(Solargraph::PinCache).to receive(:new).and_return(pin_cache)
+      allow(pin_cache).to receive(:cache_gem)
+      allow(pin_cache).to receive(:cache_all_stdlibs)
+    end
+
+    it 'caches core pins' do
+      allow(Solargraph::PinCache).to receive(:core?).and_return(false)
+      allow(gemspecs).to receive(:all_gemspecs_from_bundle).and_return([])
+      allow(pin_cache).to receive(:possible_stdlibs).and_return([])
+
+      workspace.cache_all_for_workspace!(nil, rebuild: false)
+
+      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
+    end
+
+    it 'caches gems' do
+      gemspec = instance_double(Gem::Specification, name: 'test_gem', version: '1.0.0')
+      allow(Solargraph::PinCache).to receive(:core?).and_return(true)
+      allow(gemspecs).to receive(:all_gemspecs_from_bundle).and_return([gemspec])
+      allow(pin_cache).to receive(:cached?).with(gemspec).and_return(false)
+      allow(pin_cache).to receive(:possible_stdlibs).and_return([])
+
+      workspace.cache_all_for_workspace!(nil, rebuild: false)
+
+      expect(pin_cache).to have_received(:cache_gem)
+        .with(gemspec: gemspec, rebuild: false, out: nil)
+    end
+  end
 end

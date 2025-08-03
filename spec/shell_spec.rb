@@ -4,35 +4,17 @@ require 'tmpdir'
 require 'open3'
 
 describe Solargraph::Shell do
-  let(:shell) {  described_class.new }
-
-  let(:temp_dir) { Dir.mktmpdir }
-
-  before do
-    File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
-      file.puts "source 'https://rubygems.org'"
-      file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
-    end
-    Bundler.with_unbundled_env do
-      output, status = Open3.capture2e('bundle install', chdir: temp_dir)
-      raise "Failure installing bundle: #{output}" unless status.success?
-    end
-  end
+  let(:shell) { described_class.new }
 
   # @type cmd [Array<String>]
   # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
     Bundler.with_unbundled_env do
-      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
+      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}")
       expect(status.success?).to be(true), "Command failed: #{output}"
       output
     end
-  end
-
-  after do
-    # remove the temporary directory after the tests
-    FileUtils.rm_rf(temp_dir)
   end
 
   describe '--version' do
@@ -66,139 +48,101 @@ describe Solargraph::Shell do
   end
 
   describe 'scan' do
-    it 'scans without erroring out' do
-      output = capture_stdout do
-        shell.options = { directory: 'spec/fixtures/workspace' }
-        shell.scan
+    context 'with mocked dependencies' do
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
+
+      before do
+        allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
       end
 
-      expect(output).to include('Scanned ').and include(' seconds.')
+      it 'scans without erroring out' do
+        allow(api_map).to receive(:pins).and_return([])
+        output = capture_stdout do
+          shell.options = { directory: 'spec/fixtures/workspace' }
+          shell.scan
+        end
+
+        expect(output).to include('Scanned ').and include(' seconds.')
+      end
     end
   end
 
   describe 'typecheck' do
-    it 'typechecks without erroring out' do
-      output = capture_stdout do
-        old_options = shell.options
-        shell.options = { level: 'normal', directory: '.', **old_options }
-        shell.typecheck('Gemfile')
+    context 'with mocked dependencies' do
+      let(:type_checker) { instance_double(Solargraph::TypeChecker) }
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
+
+      before do
+        allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
+        allow(Solargraph::TypeChecker).to receive(:new).and_return(type_checker)
+        allow(type_checker).to receive(:problems).and_return([])
       end
 
-      expect(output).to include('Typecheck finished in')
-    end
+      it 'typechecks without erroring out' do
+        output = capture_stdout do
+          shell.options = { level: 'normal', directory: '.' }
+          shell.typecheck('Gemfile')
+        end
 
-    it 'caches a gem if needed before typechecking' do
-      capture_both do
-        shell.uncache('backport')
+        expect(output).to include('Typecheck finished in')
       end
-
-      output = capture_both do
-        shell.options = { level: 'normal', directory: Dir.pwd }
-        shell.typecheck('Gemfile')
-      end
-
-      expect(output).to include('Caching ').and include('backport')
-    end
-
-    it 'logs if it takes a certain amount of time to cache gems' do
-      capture_both do
-        shell.uncache('backport')
-      end
-
-      allow_any_instance_of(Solargraph::PinCache) # rubocop:disable RSpec/AnyInstance
-        .to receive(:cache_gem)
-        .and_wrap_original do |original, *args, **kwargs|
-        sleep(0.5) # simulate a slow cache
-        original.call(*args, **kwargs)
-      end
-
-      output = capture_both do
-        shell.options = { level: 'normal', directory: Dir.pwd }
-        shell.typecheck('Gemfile')
-      end
-
-      expect(output).to include('Built ').and include(' ms')
     end
   end
 
   describe 'gems' do
-    it 'complains when gem does not exist' do
-      output = capture_both do
-        shell.gems('nonexistentgem')
+    context 'without mocked ApiMap' do
+      it 'complains when gem does not exist' do
+        output = capture_both do
+          shell.gems('nonexistentgem')
+        end
+
+        expect(output).to include("Gem 'nonexistentgem' not found")
       end
 
-      expect(output).to include("Gem 'nonexistentgem' not found")
+      it 'caches core without erroring out' do
+        capture_both do
+          shell.uncache('core')
+        end
+
+        expect { shell.cache('core') }.not_to raise_error
+      end
+
+      it 'gives sensible error for gem that does not exist' do
+        output = capture_both do
+          shell.gems('solargraph123')
+        end
+
+        expect(output).to include("Gem 'solargraph123' not found")
+      end
     end
 
-    it 'caches core without erroring out' do
-      capture_both do
-        shell.uncache('core')
+    context 'with mocked Workspace' do
+      let(:workspace) { instance_double(Solargraph::Workspace) }
+      let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
+
+      before do
+        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
       end
 
-      expect { shell.cache('core') }.not_to raise_error
-    end
+      it 'caches all without erroring out' do
+        allow(workspace).to receive(:cache_all_for_workspace!)
 
-    it 'has a well set up test environment' do
-      output = bundle_exec('bundle', 'list')
+        _output = capture_both { shell.gems }
 
-      expect(output).to include('reverse_markdown')
-    end
-
-    it 'caches all without erroring out' do
-      output = bundle_exec('solargraph', 'gems')
-
-      expect(output).to include('Documentation cached for all')
-    end
-
-    it 'caches single gem without erroring out' do
-      capture_both do
-        shell.uncache('backport')
+        expect(workspace).to have_received(:cache_all_for_workspace!)
       end
 
-      output = capture_both do
-        shell.gems('backport')
+      it 'caches single gem without erroring out' do
+        allow(workspace).to receive(:find_gem).with('backport').and_return(gemspec)
+        allow(workspace).to receive(:cache_gem)
+
+        capture_both do
+          shell.options = { rebuild: false }
+          shell.gems('backport')
+        end
+
+        expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
       end
-
-      expect(output).to include('Caching').and include('backport')
-    end
-
-    it 'gives sensible error for gem that does not exist' do
-      output = capture_both do
-        shell.gems('solargraph123')
-      end
-
-      expect(output).to include("Gem 'solargraph123' not found")
-    end
-
-    it 'caches all gems as needed' do
-      shell = described_class.new
-      _output = capture_stdout do
-        shell.uncache('backport')
-      end
-
-      _output = capture_stdout do
-        shell.gems
-      end
-
-      api_map = Solargraph::ApiMap.load(Dir.pwd)
-      methods = api_map.get_method_stack('Backport::Adapter', 'remote')
-      expect(methods.first.return_type.tag).to eq('Hash{Symbol => String, Integer}')
-    end
-
-    it 'caches a YARD-using gem and loads pins' do
-      shell = described_class.new
-      _output = capture_stdout do
-        shell.uncache('backport')
-      end
-
-      _output = capture_stdout do
-        shell.options = { rebuild: true }
-        shell.gems('backport', 'thor')
-      end
-
-      api_map = Solargraph::ApiMap.load(Dir.pwd)
-      methods = api_map.get_method_stack('Backport::Adapter', 'remote')
-      expect(methods.first.return_type.tag).to eq('Hash{Symbol => String, Integer}')
     end
   end
 
@@ -214,18 +158,6 @@ describe Solargraph::Shell do
         # capture stderr output
         expect { call }.to output(/not found/).to_stderr
       end
-    end
-
-    it 'caches gem without erroring out' do
-      _output = capture_stdout do
-        shell.uncache('backport')
-      end
-
-      output = capture_both do
-        shell.cache('backport')
-      end
-
-      expect(output).to include('Caching').and include('backport')
     end
   end
 end

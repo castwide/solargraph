@@ -11,11 +11,50 @@ describe Solargraph::PinCache do
                         yard_plugins: [])
   end
 
+  describe '#cached?' do
+    it 'returns true for a gem that is cached' do
+      gemspec = Gem::Specification.find_by_name('backport')
+      expect(pin_cache.cached?(gemspec)).to be true
+    end
+
+    it 'returns false for a gem that is not cached' do
+      gemspec = Gem::Specification.new.tap do |spec|
+        spec.name = 'nonexistent'
+        spec.version = '0.0.1'
+      end
+      expect(pin_cache.cached?(gemspec)).to be false
+    end
+  end
+
+  describe '.core?' do
+    it 'returns true when core pins exist' do
+      allow(File).to receive(:file?).with(%r{.*/core.ser$}).and_return(true)
+
+      expect(described_class.core?).to be true
+    end
+
+    it "returns true when core pins don't" do
+      allow(File).to receive(:file?).with(%r{.*/core.ser$}).and_return(false)
+
+      expect(described_class.core?).to be false
+    end
+  end
+
   describe '#possible_stdlibs' do
     it 'is tolerant of less usual Ruby installations' do
       stub_const('Gem::RUBYGEMS_DIR', nil)
 
       expect(pin_cache.possible_stdlibs).to eq([])
+    end
+  end
+
+  describe '#cache_all_stdlibs' do
+    it 'creates stdlibmaps' do
+      allow(Solargraph::RbsMap::StdlibMap).to receive(:new).and_return(instance_double(Solargraph::RbsMap::StdlibMap))
+
+      pin_cache.cache_all_stdlibs
+
+      expect(Solargraph::RbsMap::StdlibMap).to have_received(:new).at_least(:once)
     end
   end
 
@@ -45,6 +84,19 @@ describe Solargraph::PinCache do
       it 'chooses not to use YARD' do
         parser_gemspec = Gem::Specification.find_by_name('parser')
         pin_cache.cache_gem(gemspec: parser_gemspec, out: nil)
+        # if this fails, you may not have run `bundle exec rbs collection update`
+        expect(Solargraph::Yardoc).not_to have_received(:build_docs)
+      end
+    end
+
+    context 'with the rebuild flag' do
+      before do
+        allow(Solargraph::Yardoc).to receive(:build_docs)
+      end
+
+      it 'chooses not to use YARD' do
+        parser_gemspec = Gem::Specification.find_by_name('parser')
+        pin_cache.cache_gem(gemspec: parser_gemspec, rebuild: true, out: nil)
         # if this fails, you may not have run `bundle exec rbs collection update`
         expect(Solargraph::Yardoc).not_to have_received(:build_docs)
       end

@@ -198,6 +198,14 @@ module Solargraph
         end
     end
 
+    # @param name [String]
+    # @param version [String, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem name, version = nil
+      gemspecs.find_gem(name, version)
+    end
+
     # @param out [IO, nil] output stream for logging
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
@@ -212,13 +220,13 @@ module Solargraph
       specs.each do |spec|
         pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
       end
-      out.puts "Documentation cached for all #{specs.length} gems."
+      out&.puts "Documentation cached for all #{specs.length} gems."
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
       pin_cache.cache_all_stdlibs(out: out)
 
-      out.puts "Documentation cached for core, standard library and gems."
+      out&.puts "Documentation cached for core, standard library and gems."
     end
 
     # Synchronize the workspace from the provided updater.
@@ -292,7 +300,6 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
-      # @sg-ignore
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)
