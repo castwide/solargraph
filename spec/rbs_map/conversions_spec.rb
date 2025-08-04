@@ -63,7 +63,7 @@ describe Solargraph::RbsMap::Conversions do
       end
 
       let(:chdir_param) do
-        method_pin&.signatures&.flat_map(&:parameters)&.find do |param|
+        method_pin&.signatures&.flat_map(&:parameters)&.find do |param| # rubocop:disable Style/SafeNavigationChainLength
           param.name == 'chdir'
         end
       end
