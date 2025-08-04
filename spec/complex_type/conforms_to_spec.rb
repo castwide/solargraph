@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 describe Solargraph::ComplexType do
+  let(:api_map) do
+    Solargraph::ApiMap.new
+  end
+
   it 'validates simple core types' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('String')
     inf = described_class.parse('String')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -10,7 +13,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'invalidates simple core types' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('String')
     inf = described_class.parse('Integer')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -18,7 +20,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'allows subtype skew if told' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Array<Integer>')
     inf = described_class.parse('Array<String>')
     match = inf.conforms_to?(api_map, exp, :method_call, [:allow_subtype_skew])
@@ -26,7 +27,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'accepts valid tuple conformance' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Array(Integer, Integer)')
     inf = described_class.parse('Array(Integer, Integer)')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -34,7 +34,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'rejects invalid tuple conformance' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Array(Integer, Integer)')
     inf = described_class.parse('Array(Integer, String)')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -42,7 +41,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'allows empty params when specified' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Array(Integer, Integer)')
     inf = described_class.parse('Array')
     match = inf.conforms_to?(api_map, exp, :method_call, [:allow_empty_params])
@@ -54,7 +52,6 @@ describe Solargraph::ComplexType do
       class Sup; end
       class Sub < Sup; end
     ))
-    api_map = Solargraph::ApiMap.new
     api_map.map source
     sup = described_class.parse('Sup')
     sub = described_class.parse('Sub')
@@ -70,7 +67,6 @@ describe Solargraph::ComplexType do
   # #   class Sup; end
   # #   class Sub < Sup; end
   # # ))
-  # # api_map = Solargraph::ApiMap.new
   # # api_map.map source
   # # sup = described_class.parse('Sup')
   # # sub = described_class.parse('Sub')
@@ -79,7 +75,6 @@ describe Solargraph::ComplexType do
   # end
 
   it 'fuzzy matches arrays with parameters' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Array')
     inf = described_class.parse('Array<String>')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -89,7 +84,6 @@ describe Solargraph::ComplexType do
   it 'fuzzy matches sets with parameters' do
     source = Solargraph::Source.load_string("require 'set'")
     source_map = Solargraph::SourceMap.map(source)
-    api_map = Solargraph::ApiMap.new
     api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['set'])
     exp = described_class.parse('Set')
     inf = described_class.parse('Set<String>')
@@ -98,7 +92,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'fuzzy matches hashes with parameters' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Hash{ Symbol => String}')
     inf = described_class.parse('Hash')
     match = inf.conforms_to?(api_map, exp, :method_call, [:allow_empty_params])
@@ -106,7 +99,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'matches multiple types' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('String, Integer')
     inf = described_class.parse('String, Integer')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -114,7 +106,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'matches multiple types out of order' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('String, Integer')
     inf = described_class.parse('Integer, String')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -122,7 +113,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'invalidates inferred types missing from expected' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('String')
     inf = described_class.parse('String, Integer')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -130,7 +120,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'matches nil' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('nil')
     inf = described_class.parse('nil')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -138,7 +127,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'validates classes with expected superclasses' do
-    api_map = Solargraph::ApiMap.new
     exp = described_class.parse('Class<Object>')
     inf = described_class.parse('Class<String>')
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -146,11 +134,56 @@ describe Solargraph::ComplexType do
   end
 
   it 'validates generic classes with expected Class' do
-    api_map = Solargraph::ApiMap.new
     inf = described_class.parse('Class<String>')
     exp = described_class.parse('Class')
     match = inf.conforms_to?(api_map, exp, :method_call)
     expect(match).to be(true)
+  end
+
+  context 'with invariant matching' do
+    it 'rejects String matching an Object' do
+      inf = described_class.parse('String')
+      exp = described_class.parse('Object')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :invariant)
+      expect(match).to be(false)
+    end
+
+    it 'rejects Object matching an String' do
+      inf = described_class.parse('Object')
+      exp = described_class.parse('String')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :invariant)
+      expect(match).to be(false)
+    end
+
+    it 'accepts String matching a String' do
+      inf = described_class.parse('String')
+      exp = described_class.parse('String')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :invariant)
+      expect(match).to be(true)
+    end
+  end
+
+  context 'with contravariant matching' do
+    it 'rejects String matching an Objet' do
+      inf = described_class.parse('String')
+      exp = described_class.parse('Object')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :contravariant)
+      expect(match).to be(false)
+    end
+
+    it 'accepts Object matching an String' do
+      inf = described_class.parse('Object')
+      exp = described_class.parse('String')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :contravariant)
+      expect(match).to be(true)
+    end
+
+    it 'accepts String matching a String' do
+      inf = described_class.parse('String')
+      exp = described_class.parse('String')
+      match = inf.conforms_to?(api_map, exp, :method_call, variance: :contravariant)
+      expect(match).to be(true)
+    end
   end
 
   context 'with an inheritence relationship' do
@@ -162,7 +195,6 @@ describe Solargraph::ComplexType do
     end
     let(:sup) { described_class.parse('Sup') }
     let(:sub) { described_class.parse('Sub') }
-    let(:api_map) { Solargraph::ApiMap.new }
 
     before do
       api_map.map source
