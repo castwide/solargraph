@@ -52,7 +52,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rubocop-yard', '~> 1.0'
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
-  s.add_development_dependency 'undercover', '~> 0.6'
+  s.add_development_dependency 'undercover', '~> 0.7'
   s.add_development_dependency 'overcommit', '~> 0.68.0'
   s.add_development_dependency 'webmock', '~> 3.6'
   # work around missing yard dependency needed as of Ruby 3.5

@@ -42,22 +42,33 @@ task :spec do
   FileUtils.mv('coverage/full-new', 'coverage/full')
 end
 
-# @return [void]
+# @return [Boolean, nil] returns `true` if the command exits with
+#  status zero.  `false` if the exit status is a non-zero integer.
+#  `nil` if the command could not execute.
 def undercover
   simplecov_collate
   cmd = 'bundle exec undercover ' \
         '--simplecov coverage/combined/coverage.json ' \
         '--exclude-files "Rakefile,spec/*,spec/**/*,lib/solargraph/version.rb" ' \
         '--compare origin/master'
-  output, _status = Bundler.with_unbundled_env do
-    Open3.capture2e(cmd)
+  output, status = Bundler.with_unbundled_env do
+    Process.spawn(cmd)
   end
   puts output
+  $stdout.flush
+  status
+rescue StandardError => e
+  warn "hit error: #{e.message}"
+  warn "Backtrace:\n#{e.backtrace.join("\n")}"
+  warn "output: #{output}"
+  puts "Flushing"
+  $stdout.flush
+  raise
 end
 
 desc "Check PR coverage"
 task :undercover do
-  undercover
+  raise "Undercover failed" unless undercover
 end
 
 desc "Branch-focused fast-feedback quality/spec/coverage checks"
