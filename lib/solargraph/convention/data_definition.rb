@@ -35,7 +35,7 @@ module Solargraph
               comments: comments_for(node)
             )
 
-            # TODO: Support both arg and kwarg initializers for Data.define
+            # @todo Support both arg and kwarg initializers for Data.define
             # Solargraph::SourceMap::Clip#complete_keyword_parameters does not seem to currently take into account [Pin::Method#signatures] hence we only one for :kwarg
             pins.push initialize_method_pin
 
