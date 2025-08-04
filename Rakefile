@@ -52,6 +52,7 @@ def undercover
   output, _status = Bundler.with_unbundled_env do
     Open3.capture2e(cmd)
   end
+  puts output
 end
 
 desc "Check PR coverage"
@@ -105,6 +106,11 @@ def simplecov_collate
              ])
     SimpleCov::Formatter::LcovFormatter.config.report_with_single_file = true
   end
+  puts "Simplecov collated results into coverage/combined/.resultset.json"
+rescue StandardError => e
+  puts "Simplecov collate failed: #{e.message}"
+ensure
+  $stdout.flush
 end
 
 desc 'Add incremental coverage for rapid iteration with undercover'
