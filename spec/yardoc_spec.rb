@@ -60,7 +60,6 @@ describe Solargraph::Yardoc do
       end.not_to raise_error
     end
 
-
     it 'is idempotent' do
       described_class.build_docs(gem_yardoc_path, [], gemspec)
       described_class.build_docs(gem_yardoc_path, [], gemspec) # second time
