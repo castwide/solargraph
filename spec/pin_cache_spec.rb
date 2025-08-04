@@ -13,6 +13,9 @@ describe Solargraph::PinCache do
 
   describe '#cached?' do
     it 'returns true for a gem that is cached' do
+      allow(File).to receive(:file?).with(%r{.*stdlib/backport.ser$}).and_return(false)
+      allow(File).to receive(:file?).with(%r{.*combined/backport-.*.ser$}).and_return(true)
+
       gemspec = Gem::Specification.find_by_name('backport')
       expect(pin_cache.cached?(gemspec)).to be true
     end
