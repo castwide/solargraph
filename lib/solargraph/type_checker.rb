@@ -715,7 +715,7 @@ module Solargraph
       unprocessed_sg_ignore_lines.map do |line|
         Problem.new(
           Location.new(filename, Range.from_to(line, 0, line, 0)),
-          "Unneeded @sg-ignore comment"
+          'Unneeded @sg-ignore comment'
         )
       end
     end
@@ -726,9 +726,11 @@ module Solargraph
       problems.reject do |problem|
         node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
+        # :nocov:
         unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }
         end
+        # :nocov:
         sg_ignore_lines_processed.add problem.location.range.start.line if ignored
         ignored
       end
