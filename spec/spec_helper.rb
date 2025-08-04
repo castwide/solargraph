@@ -7,7 +7,9 @@ unless ENV['SIMPLECOV_DISABLED']
 end
 require 'solargraph'
 # Suppress logger output in specs (if possible)
-Solargraph::Logging.logger.reopen(File::NULL) if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+  Solargraph::Logging.logger.reopen(File::NULL)
+end
 
 def with_env_var(name, value)
   old_value = ENV[name]  # Store the old value
