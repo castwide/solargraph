@@ -9,6 +9,7 @@ module Solargraph
     #   include TypeMethods
     include Equality
 
+    autoload :Conformance, 'solargraph/complex_type/conformance'
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
