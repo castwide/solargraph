@@ -206,7 +206,7 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
-      api_map = Solargraph::ApiMap.load_with_cache(directory, out: $stdout)
+      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
