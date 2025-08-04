@@ -30,6 +30,8 @@ PreCommit:
     exclude:
       # don't freak out over line below
       - '.overcommit.yml'
+      # from upstream
+      - 'rbs/fills/rubygems/0/basic_specification.rbs'
     keywords: ['FIXME', 'TODO', 'XXX']
 
   # creates false positives in CI
