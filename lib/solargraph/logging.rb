@@ -15,7 +15,10 @@ module Solargraph
     level = if LOG_LEVELS.keys.include?(configured_level)
               LOG_LEVELS.fetch(configured_level)
             else
-              warn "Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - valid values are #{LOG_LEVELS.keys}" if configured_level
+              if configured_level
+                warn "Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - " \
+                     "valid values are #{LOG_LEVELS.keys}"
+              end
               DEFAULT_LOG_LEVEL
             end
     # @sg-ignore Fix cvar issue
