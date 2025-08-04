@@ -25,6 +25,7 @@ module Solargraph
         unless expected.is_a?(UniqueType)
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
+        # :nocov:
         return if inferred.is_a?(UniqueType)
         # :nocov:
         raise "Inferred type must be a UniqueType, got #{inferred.class} in #{inferred.inspect}"
@@ -32,7 +33,6 @@ module Solargraph
       end
 
       def conforms_to_unique_type?
-        # :nocov:
         unless expected.is_a?(UniqueType)
           # :nocov:
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
