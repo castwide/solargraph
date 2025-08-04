@@ -31,9 +31,11 @@ module Solargraph
       end
 
       def conforms_to_unique_type?
+        # :nocov:
         unless expected.is_a?(UniqueType)
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
+        # :nocov:
         if inferred.simplifyable_literal? && !expected.literal?
           return with_new_types(inferred.simplify_literals, expected).conforms_to_unique_type?
         end
