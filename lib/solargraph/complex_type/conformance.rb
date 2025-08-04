@@ -9,7 +9,8 @@ module Solargraph
       # @param expected [ComplexType::UniqueType]
       # @param situation [:method_call, :return_type]
       # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match,
-      #   :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+      #   :allow_any_match, :allow_undefined, :allow_unresolved_generic,
+      #   :allow_unmatched_interface>]
       # @param variance [:invariant, :covariant, :contravariant]
       def initialize api_map, inferred, expected,
                      situation = :method_call, rules = [],
@@ -33,65 +34,35 @@ module Solargraph
       def conforms_to_unique_type?
         # :nocov:
         unless expected.is_a?(UniqueType)
+          # :nocov:
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
+          # :nocov:
         end
-        # :nocov:
-        if inferred.simplifyable_literal? && !expected.literal?
+
+        if use_simplified_inferred_type?
           return with_new_types(inferred.simplify_literals, expected).conforms_to_unique_type?
         end
-        return true if expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)
-        return true if inferred.interface? && rules.include?(:allow_unmatched_interface)
+        return true if ignore_interface?
+        return true if conforms_via_reverse_match?
 
-        if rules.include? :allow_reverse_match
-          reversed_match = expected.conforms_to?(api_map, inferred, situation,
-                                                 rules - [:allow_reverse_match],
-                                                 variance: variance)
-          return true if reversed_match
-        end
-        if expected != expected.downcast_to_literal_if_possible ||
-           inferred != inferred.downcast_to_literal_if_possible
-          return with_new_types(inferred.downcast_to_literal_if_possible,
-                                expected.downcast_to_literal_if_possible).conforms_to_unique_type?
+        downcast_inferred = inferred.downcast_to_literal_if_possible
+        downcast_expected = expected.downcast_to_literal_if_possible
+        if (downcast_inferred.name != inferred.name) || (downcast_expected.name != expected.name)
+          return with_new_types(downcast_inferred, downcast_expected).conforms_to_unique_type?
         end
 
-        if rules.include?(:allow_subtype_skew) && !expected.parameters.empty?
+        if rules.include?(:allow_subtype_skew) && !expected.all_params.empty?
           # parameters are not considered in this case
           return with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
         end
 
-        if !expected.parameters? && inferred.parameters?
-          return with_new_types(inferred.erase_parameters, expected).conforms_to_unique_type?
-        end
+        return with_new_types(inferred.erase_parameters, expected).conforms_to_unique_type? if only_inferred_parameters?
 
-        if expected.parameters? && !inferred.parameters? && rules.include?(:allow_empty_params)
-          return with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
-        end
+        return conforms_via_stripped_expected_parameters? if can_strip_expected_parameters?
 
         return true if inferred == expected
 
-        case variance
-        when :invariant
-          return false unless inferred.name == expected.name
-        when :covariant
-          # covariant: we can pass in a more specific type
-
-          # we contain the expected mix-in, or we have a more specific type
-          return false unless api_map.type_include?(inferred.name, expected.name) ||
-                              api_map.super_and_sub?(expected.name, inferred.name) ||
-                              inferred.name == expected.name
-
-        when :contravariant
-          # contravariant: we can pass in a more general type
-
-          # we contain the expected mix-in, or we have a more general type
-          return false unless api_map.type_include?(inferred.name, expected.name) ||
-                              api_map.super_and_sub?(inferred.name, expected.name) ||
-                              inferred.name == expected.name
-        else
-          # :nocov:
-          raise "Unknown variance: #{variance.inspect}"
-          # :nocov:
-        end
+        return false unless erased_type_conforms?
 
         return true if inferred.all_params.empty? && rules.include?(:allow_empty_params)
 
@@ -101,18 +72,83 @@ module Solargraph
         # if there are none specified
         return true if expected.all_params.empty?
 
-        unless expected.key_types.empty?
-          return false if inferred.key_types.empty?
+        return false unless key_types_conform?
 
-          unless ComplexType.new(inferred.key_types).conforms_to?(api_map,
-                                                                  ComplexType.new(expected.key_types),
-                                                                  situation,
-                                                                  rules,
-                                                                  variance: inferred.parameter_variance(situation))
-            return false
-          end
+        subtypes_conform?
+      end
+
+      private
+
+      def use_simplified_inferred_type?
+        inferred.simplifyable_literal? && !expected.literal?
+      end
+
+      def only_inferred_parameters?
+        !expected.parameters? && inferred.parameters?
+      end
+
+      def conforms_via_stripped_expected_parameters?
+        with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
+      end
+
+      def ignore_interface?
+        (expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)) ||
+          (inferred.interface? && rules.include?(:allow_unmatched_interface))
+      end
+
+      def can_strip_expected_parameters?
+        expected.parameters? && !inferred.parameters? && rules.include?(:allow_empty_params)
+      end
+
+      def conforms_via_reverse_match?
+        return false unless rules.include? :allow_reverse_match
+
+        expected.conforms_to?(api_map, inferred, situation,
+                              rules - [:allow_reverse_match],
+                              variance: variance)
+      end
+
+      def erased_type_conforms?
+        case variance
+        when :invariant
+          return false unless inferred.name == expected.name
+        when :covariant
+          # covariant: we can pass in a more specific type
+          # we contain the expected mix-in, or we have a more specific type
+          return false unless api_map.type_include?(inferred.name, expected.name) ||
+                              api_map.super_and_sub?(expected.name, inferred.name) ||
+                              inferred.name == expected.name
+        when :contravariant
+          # contravariant: we can pass in a more general type
+          # we contain the expected mix-in, or we have a more general type
+          return false unless api_map.type_include?(inferred.name, expected.name) ||
+                              api_map.super_and_sub?(inferred.name, expected.name) ||
+                              inferred.name == expected.name
+        else
+          # :nocov:
+          raise "Unknown variance: #{variance.inspect}"
+          # :nocov:
+        end
+        true
+      end
+
+      def key_types_conform?
+        return true if expected.key_types.empty?
+
+        return false if inferred.key_types.empty?
+
+        unless ComplexType.new(inferred.key_types).conforms_to?(api_map,
+                                                                ComplexType.new(expected.key_types),
+                                                                situation,
+                                                                rules,
+                                                                variance: inferred.parameter_variance(situation))
+          return false
         end
 
+        true
+      end
+
+      def subtypes_conform?
         return true if expected.subtypes.empty?
 
         return true if expected.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
@@ -131,8 +167,6 @@ module Solargraph
                                                         rules,
                                                         variance: inferred.parameter_variance(situation))
       end
-
-      private
 
       # @return [self]
       # @param inferred [ComplexType::UniqueType]
