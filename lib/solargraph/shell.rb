@@ -247,7 +247,7 @@ module Solargraph
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def method_pin path
-      api_map = Solargraph::ApiMap.load_with_cache('.', STDERR)
+      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
 
       pins = if options[:stack]
                scope, ns, meth = if path.include? '#'
@@ -260,7 +260,7 @@ module Solargraph
                api_map.get_path_pins path
              end
       if pins.empty?
-        STDERR.puts "Pin not found for path '#{path}'"
+        $stderr.puts "Pin not found for path '#{path}'"
         exit 1
       end
       pins.each do |pin|
