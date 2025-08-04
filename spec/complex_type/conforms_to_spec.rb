@@ -56,6 +56,7 @@ describe Solargraph::ComplexType do
     sup = described_class.parse('Sup')
     sub = described_class.parse('Sub')
     match = sub.conforms_to?(api_map, sup, :method_call)
+    expect(match).to be(true)
   end
 
   it 'handles singleton types compared against their literals' do
