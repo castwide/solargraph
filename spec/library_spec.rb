@@ -155,6 +155,42 @@ describe Solargraph::Library do
   end
 
   describe '#references_from' do
+    it "collects references to a new method on a constant from assignment of Class.new" do
+      workspace = Solargraph::Workspace.new('*')
+      library = Solargraph::Library.new(workspace)
+      src1 = Solargraph::Source.load_string(%(
+        Foo.new
+      ), 'file1.rb', 0)
+      library.merge src1
+      src2 = Solargraph::Source.load_string(%(
+        Foo = Class.new
+      ), 'file2.rb', 0)
+      library.merge src2
+      library.catalog
+      locs = library.references_from('file1.rb', 1, 12)
+      expect(locs.map { |l| [l.filename, l.range.start.line] })
+        .to eq([["file1.rb", 1]])
+    end
+
+    it "collects references to a new method to a constant from assignment" do
+      workspace = Solargraph::Workspace.new('*')
+      library = Solargraph::Library.new(workspace)
+      src1 = Solargraph::Source.load_string(%(
+        Foo.new
+      ), 'file1.rb', 0)
+      library.merge src1
+      src2 = Solargraph::Source.load_string(%(
+        class Foo
+        end
+        blah = Foo.new
+      ), 'file2.rb', 0)
+      library.merge src2
+      library.catalog
+      locs = library.references_from('file2.rb', 3, 21)
+      expect(locs.map { |l| [l.filename, l.range.start.line] })
+        .to eq([["file1.rb", 1], ["file2.rb", 3]])
+    end
+
     it "collects references to an instance method symbol" do
       workspace = Solargraph::Workspace.new('*')
       library = Solargraph::Library.new(workspace)
