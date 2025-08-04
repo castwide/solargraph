@@ -26,6 +26,27 @@ describe Solargraph::ComplexType do
     expect(match).to be(true)
   end
 
+  it 'allows covariant behavior in parameters of Array' do
+    exp = described_class.parse('Array<Object>')
+    inf = described_class.parse('Array<Integer>')
+    match = inf.conforms_to?(api_map, exp, :method_call)
+    expect(match).to be(true)
+  end
+
+  it 'does not allow contravariant behavior in parameters of Array' do
+    exp = described_class.parse('Array<Integer>')
+    inf = described_class.parse('Array<Object>')
+    match = inf.conforms_to?(api_map, exp, :method_call)
+    expect(match).to be(false)
+  end
+
+  it 'allows covariant behavior in key types of Hash' do
+    exp = described_class.parse('Hash{Object => String}')
+    inf = described_class.parse('Hash{Integer => String}')
+    match = inf.conforms_to?(api_map, exp, :method_call)
+    expect(match).to be(true)
+  end
+
   it 'accepts valid tuple conformance' do
     exp = described_class.parse('Array(Integer, Integer)')
     inf = described_class.parse('Array(Integer, Integer)')
