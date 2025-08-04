@@ -31,11 +31,8 @@ module Solargraph
         unless expected.is_a?(UniqueType)
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
-        if inferred.literal? && !expected.literal?
-          conformance =
-            self.class.new(api_map, inferred.simplify_literals, expected, situation, rules,
-                           variance: variance)
-          return conformance.conforms_to_unique_type?
+        if inferred.simplifyable_literal? && !expected.literal?
+          return with_new_types(inferred.simplify_literals, expected).conforms_to_unique_type?
         end
         return true if expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)
         return true if inferred.interface? && rules.include?(:allow_unmatched_interface)
@@ -46,18 +43,23 @@ module Solargraph
                                                  variance: variance)
           return true if reversed_match
         end
-        expected = self.expected.downcast_to_literal_if_possible
-        inferred = self.inferred.downcast_to_literal_if_possible
-
-        if rules.include? :allow_subtype_skew
-          # parameters are not considered in this case
-          expected = expected.erase_parameters
+        if expected != expected.downcast_to_literal_if_possible ||
+           inferred != inferred.downcast_to_literal_if_possible
+          return with_new_types(inferred.downcast_to_literal_if_possible,
+                                expected.downcast_to_literal_if_possible).conforms_to_unique_type?
         end
 
-        inferred = inferred.erase_parameters if !expected.parameters? && inferred.parameters?
+        if rules.include?(:allow_subtype_skew) && !expected.parameters.empty?
+          # parameters are not considered in this case
+          return with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
+        end
+
+        if !expected.parameters? && inferred.parameters?
+          return with_new_types(inferred.erase_parameters, expected).conforms_to_unique_type?
+        end
 
         if expected.parameters? && !inferred.parameters? && rules.include?(:allow_empty_params)
-          expected = expected.erase_parameters
+          return with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
         end
 
         return true if inferred == expected
@@ -126,6 +128,13 @@ module Solargraph
       end
 
       private
+
+      # @return [self]
+      # @param inferred [ComplexType::UniqueType]
+      # @param expected [ComplexType::UniqueType]
+      def with_new_types inferred, expected
+        self.class.new(api_map, inferred, expected, situation, rules, variance: variance)
+      end
 
       attr_reader :api_map, :inferred, :expected, :situation, :rules, :variance
     end
