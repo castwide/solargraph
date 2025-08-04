@@ -224,7 +224,7 @@ module Solargraph
       raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
       expected.each do |exp|
         next unless exp.duck_type?
-        quack = exp.to_s[1..-1]
+        quack = exp.to_s[1..]
         return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
       end
       true
