@@ -20,11 +20,14 @@ module Solargraph
         @situation = situation
         @rules = rules
         @variance = variance
+        # :nocov:
         unless expected.is_a?(UniqueType)
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
         return if inferred.is_a?(UniqueType)
+        # :nocov:
         raise "Inferred type must be a UniqueType, got #{inferred.class} in #{inferred.inspect}"
+        # :nocov:
       end
 
       def conforms_to_unique_type?
