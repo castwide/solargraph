@@ -266,12 +266,8 @@ module Solargraph
       pins.each do |pin|
         if options[:typify] || options[:probe]
           type = ComplexType::UNDEFINED
-          if options[:typify]
-            type = pin.typify(api_map)
-          end
-          if options[:probe] && type.undefined?
-            type = pin.probe(api_map)
-          end
+          type = pin.typify(api_map) if options[:typify]
+          type = pin.probe(api_map) if options[:probe] && type.undefined?
           print_type(type)
           next
         end
