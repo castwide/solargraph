@@ -3,10 +3,13 @@
 require 'benchmark'
 require 'thor'
 require 'yard'
+require 'sord'
+require 'tmpdir'
 
 module Solargraph
   class Shell < Thor
     include Solargraph::ServerMethods
+    include ApiMap::SourceToYard
 
     # Tell Thor to ensure the process exits with status 1 if any error happens.
     def self.exit_on_failure?
@@ -237,6 +240,75 @@ module Solargraph
       workspace = Solargraph::Workspace.new(options[:directory])
       puts workspace.filenames unless options[:count]
       puts "#{workspace.filenames.length} files total."
+    end
+
+    desc 'cache', 'Cache a gem', hide: true
+    # @return [void]
+    # @param gem [String]
+    # @param version [String, nil]
+    def cache gem, version = nil
+      spec = Gem::Specification.find_by_name(gem, version)
+      pins = GemPins.build(spec)
+      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+    end
+
+    desc 'gems', 'Cache documentation for installed gems'
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @return [void]
+    def gems *names
+      if names.empty?
+        Gem::Specification.to_a.each do |spec|
+          next unless options.rebuild || !Yardoc.cached?(spec)
+
+          puts "Processing gem: #{spec.name} #{spec.version}"
+          pins = GemPins.build(spec)
+          Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+        end
+      else
+        names.each do |name|
+          spec = Gem::Specification.find_by_name(name)
+          if spec
+            next unless options.rebuild || !Yardoc.cached?(spec)
+
+            puts "Processing gem: #{spec.name} #{spec.version}"
+            pins = GemPins.build(spec)
+            Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+          else
+            warn "Gem '#{name}' not found"
+          end
+        end
+      end
+    end
+
+    desc 'rbs', 'Generate RBS definitions'
+    option :filename, type: :string, alias: :f, desc: 'Generated file name', default: 'sig.rbs'
+    option :inference, type: :boolean, desc: 'Enhance definitions with type inference', default: true
+    def rbs
+      api_map = Solargraph::ApiMap.load('.')
+      pins = api_map.source_maps.flat_map(&:pins)
+      store = Solargraph::ApiMap::Store.new(pins)
+      if options[:inference]
+        store.method_pins.each do |pin|
+          if pin.return_type.undefined?
+            type = pin.typify(api_map)
+            type = pin.probe(api_map) if type.undefined?
+            pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
+            pin.instance_variable_set(:@return_type, type)
+          end
+        end
+      end
+      rake_yard(store)
+      work_dir = Dir.pwd
+      Dir.mktmpdir do |tmpdir|
+        Dir.chdir tmpdir do
+          yardoc = File.join(tmpdir, '.yardoc')
+          YARD::Registry.save(false, yardoc)
+          YARD::Registry.load(yardoc)
+          target = File.join(work_dir, 'sig', options[:filename])
+          FileUtils.mkdir_p(File.join(work_dir, 'sig'))
+          `sord #{target} --rbs --no-regenerate`
+        end
+      end
     end
 
     private

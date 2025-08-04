@@ -133,6 +133,8 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version
       @resolved = if loader.has_library?(library: library, version: version)
+        # @todo Typecheck thinks path keyword param is required
+        # @sg-ignore
         loader.add library: library, version: version
         logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
         true
