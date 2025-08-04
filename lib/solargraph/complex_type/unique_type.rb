@@ -239,9 +239,10 @@ module Solargraph
 
         return true if inferred == expected
 
-        if variance == :invariant
+        case variance
+        when :invariant
           return false unless inferred.name == expected.name
-        elsif variance == :covariant
+        when :covariant
           # covariant: we can pass in a more specific type
 
           # we contain the expected mix-in, or we have a more specific type
@@ -249,7 +250,7 @@ module Solargraph
                               api_map.super_and_sub?(expected.name, inferred.name) ||
                               inferred.name == expected.name
 
-        elsif variance == :contravariant
+        when :contravariant
           # contravariant: we can pass in a more general type
 
           # we contain the expected mix-in, or we have a more general type
