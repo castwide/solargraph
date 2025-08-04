@@ -279,10 +279,12 @@ module Solargraph
       # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
+        # :nocov:
         if other.nil?
           Solargraph.assert_or_log("combine_with_#{attr}".to_sym, "Sent nil for comparison")
           return send(attr)
         end
+        # :nocov:
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
@@ -320,9 +322,11 @@ module Solargraph
         # @type [Pin::Base, nil]
         val2 = other.send(attr)
         if val1.class != val2.class
+          # :nocov:
           Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
                                    "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
           return val1
+          # :nocov:
         end
         # arbitrary way of choosing a pin
         # @sg-ignore Need _1 support

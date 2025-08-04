@@ -11,10 +11,12 @@ module Solargraph
             # @sg-ignore
             # @type [Symbol]
             method_name = node.children[1]
+            # :nocov:
             unless method_name.instance_of?(Symbol)
               Solargraph.assert_or_log(:parser_method_name, "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
               return process_children
             end
+            # :nocov:
             if node.children[0].nil?
               if [:private, :public, :protected].include?(method_name)
                 process_visibility
@@ -55,10 +57,12 @@ module Solargraph
                 # @sg-ignore
                 # @type [Symbol]
                 visibility = node.children[1]
+                # :nocov:
                 unless visibility.instance_of?(Symbol)
                   Solargraph.assert_or_log(:parser_visibility, "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
                   return process_children
                 end
+                # :nocov:
                 if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
