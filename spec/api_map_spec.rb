@@ -6,7 +6,7 @@ describe Solargraph::ApiMap do
   # avoid performance hit of doing this many times
   # rubocop:disable RSpec/InstanceVariable
   before :all do # rubocop:disable RSpec/BeforeAfterAll
-    @api_map = described_class.load_with_cache(Dir.pwd, out: nil)
+    @api_map = described_class.load_with_cache(Dir.pwd, nil)
   end
 
   it 'returns core methods' do
