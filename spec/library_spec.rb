@@ -113,9 +113,7 @@ describe Solargraph::Library do
   it 'diagnoses using all reporters' do
     directory = ''
     config = instance_double(Solargraph::Workspace::Config)
-    allow(config).to receive(:plugins).and_return([])
-    allow(config).to receive(:required).and_return([])
-    allow(config).to receive(:reporters).and_return(['all!'])
+    allow(config).to receive_messages(plugins: [], required: [], reporters: ['all!'])
     workspace = Solargraph::Workspace.new directory, config
     library = Solargraph::Library.new workspace
     src = Solargraph::Source.load_string(%(
@@ -125,7 +123,6 @@ describe Solargraph::Library do
     result = library.diagnose 'file.rb'
     expect(result.to_s).to include('rubocop')
   end
-
 
   it "documents symbols" do
     library = Solargraph::Library.new
