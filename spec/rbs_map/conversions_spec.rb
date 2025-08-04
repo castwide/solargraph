@@ -55,21 +55,23 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with standard loads for solargraph project' do
-    let(:api_map) { Solargraph::ApiMap.load_with_cache('.') }
+    before :all do # rubocop:disable RSpec/BeforeAfterAll
+      @api_map = Solargraph::ApiMap.load_with_cache('.')
+    end
 
-    let(:superclass_pin) do
-      api_map.pins.find do |pin|
-        pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
+    let(:api_map) { @api_map } # rubocop:disable RSpec/InstanceVariable
+
+    context 'with superclass pin for Parser::AST::Node' do
+      let(:superclass_pin) do
+        api_map.pins.find do |pin|
+          pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
+        end
       end
-    end
 
-    it 'finds a superclass pin for Parser::AST::Node' do
-      expect(superclass_pin).not_to be_nil
-    end
-
-    it 'generates a rooted pin for superclass of Parser::AST::Node' do
-      # rooted!
-      expect(superclass_pin.name) .to eq('::AST::Node')
+      it 'generates a rooted pin' do
+        # rooted!
+        expect(superclass_pin&.name).to eq('::AST::Node')
+      end
     end
   end
 end
