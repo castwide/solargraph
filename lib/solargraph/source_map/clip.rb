@@ -56,8 +56,9 @@ module Solargraph
           dfn = cursor.chain.define(api_map, closure, locals).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
         end
-        return result unless result.tag == 'self'
-        cursor.chain.base.infer(api_map, closure, locals)
+        # should receive result with selfs resolved from infer()
+        Solargraph.assert_or_log(:clip_infer_self, 'Received selfy inference') if result.selfy?
+        result
       end
 
       # Get an array of all the locals that are visible from the cursors's
