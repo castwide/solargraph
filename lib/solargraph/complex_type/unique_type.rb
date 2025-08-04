@@ -208,8 +208,8 @@ module Solargraph
       # @param situation [:method_call, :assignment, :return]
       # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
       # @param variance [:invariant, :covariant, :contravariant]
-      def conforms_to?(api_map, expected, situation, rules,
-                       variance:)
+      def conforms_to?(api_map, expected, situation, rules = [],
+                       variance: erased_variance(situation))
         return true if undefined? && rules.include?(:allow_undefined)
 
         # @todo teach this to validate duck types as inferred type
