@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::Convention::Gemfile do
   describe 'parsing Gemfiles' do
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'Gemfile', :strong)
     end
 
@@ -32,8 +34,8 @@ describe Solargraph::Convention::Gemfile do
       ))
 
       expect(checker.problems.map(&:message).sort)
-        .to eq(["Unrecognized keyword argument bad_name to Bundler::Dsl#gemspec",
-                "Wrong argument type for Bundler::Dsl#source: source expected String, received Class<File>"].sort)
+        .to eq(['Unrecognized keyword argument bad_name to Bundler::Dsl#gemspec',
+                'Wrong argument type for Bundler::Dsl#source: source expected String, received Class<File>'].sort)
     end
 
     it 'finds bad arguments to DSL ruby method' do
@@ -44,7 +46,7 @@ describe Solargraph::Convention::Gemfile do
       ))
 
       expect(checker.problems.map(&:message))
-        .to eq(["Wrong argument type for Bundler::Dsl#ruby: ruby_version expected String, received Integer"])
+        .to eq(['Wrong argument type for Bundler::Dsl#ruby: ruby_version expected String, received Integer'])
     end
   end
 end
