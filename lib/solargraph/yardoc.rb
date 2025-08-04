@@ -21,7 +21,12 @@ module Solargraph
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel
-      #
+      unless File.exist?(gemspec.gem_dir)
+        Solargraph.logger.info { "Bad info from gemspec - #{gemspec.gem_dir} does not exist" }
+        Solargraph.logger.info stdout_and_stderr_str
+        return
+      end
+
       # @sg-ignore
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       return if status.success?
