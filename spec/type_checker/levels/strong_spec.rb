@@ -226,7 +226,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'ignores generic resolution failures' do
+    it 'ignores generic resolution failure with no generic tag' do
       checker = type_checker(%(
         class Foo
           # @param foo [Class<String>]
@@ -262,8 +262,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-
-    it 'ignores generic resolution failures' do
+    it 'ignores generic resolution failures from current Solargraph limitation' do
       checker = type_checker(%(
         class Foo
           # @generic T
