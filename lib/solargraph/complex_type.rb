@@ -103,12 +103,6 @@ module Solargraph
       end
     end
 
-    # @param atype [ComplexType] type which may be assigned to this type
-    # @param api_map [ApiMap] The ApiMap that performs qualification
-    def can_assign?(api_map, atype)
-      atype.conforms_to?(api_map, self, :assignment)
-    end
-
     # @return [Integer]
     def length
       @items.length

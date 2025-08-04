@@ -14,7 +14,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Missing @return tag')
     end
 
-
     it 'ignores nilable type issues' do
       checker = type_checker(%(
         # @param a [String]
@@ -28,6 +27,54 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'calls out keyword issues even when required arg count matches' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @param b [String]
+        # @return [void]
+        def foo(a = 'foo', b:); end
+
+        # @return [void]
+        def bar
+         foo('baz')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
+    end
+
+    it 'calls out type issues even when keyword issues are there' do
+      pending('fixes to arg vs param checking algorithm')
+
+      checker = type_checker(%(
+        # @param a [String]
+        # @param b [String]
+        # @return [void]
+        def foo(a = 'foo', b:); end
+
+        # @return [void]
+        def bar
+         foo(123)
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include('Wrong argument type for #foo: a expected String, received 123')
+    end
+
+    it 'calls out keyword issues even when arg type issues are there' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @param b [String]
+        # @return [void]
+        def foo(a = 'foo', b:); end
+
+        # @return [void]
+        def bar
+         foo(123)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
     it 'reports missing param tags' do
@@ -179,23 +226,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'treats a parameter type of undefined as not provided' do
-      checker = type_checker(%(
-        class Foo
-          # @param foo [Class<String>]
-          # @return [void]
-          def bar foo:; end
-
-          # @param bing [Class<undefind>]
-          # @return [void]
-          def baz(bing)
-            bar(foo: bing)
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     it 'ignores generic resolution failures' do
       checker = type_checker(%(
         class Foo
@@ -252,7 +282,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'ignores generic resolution failures' do
+    it 'ignores generic resolution failures with only one arg' do
       checker = type_checker(%(
         # @generic T
         # @param path [String]

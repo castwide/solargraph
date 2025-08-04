@@ -5,7 +5,6 @@ module Solargraph
   #
   class TypeChecker
     autoload :Problem,  'solargraph/type_checker/problem'
-    autoload :ParamDef, 'solargraph/type_checker/param_def'
     autoload :Rules,    'solargraph/type_checker/rules'
 
     include Parser::NodeMethods
@@ -100,10 +99,10 @@ module Solargraph
       # @param code [String]
       # @param filename [String, nil]
       # @param level [Symbol]
+      # @param api_map [Solargraph::ApiMap]
       # @return [self]
-      def load_string code, filename = nil, level = :normal
+      def load_string code, filename = nil, level = :normal, api_map: Solargraph::ApiMap.new
         source = Solargraph::Source.load_string(code, filename)
-        api_map = Solargraph::ApiMap.new
         api_map.map(source)
         new(filename, api_map: api_map, level: level)
       end

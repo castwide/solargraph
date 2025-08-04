@@ -38,7 +38,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match')
     end
 
-    it 'reports mismatched key and subtypes ' do
+    it 'reports mismatched key and subtypes' do
       checker = type_checker(%(
         # @return [Hash{String => String}]
         def foo
@@ -207,7 +207,8 @@ describe Solargraph::TypeChecker do
         # @param bar [String]
         def foo(bar = 123); end
         ))
-      expect(checker.problems.map(&:message)).to eq(['Declared type String does not match inferred type 123 for variable bar'])
+      expect(checker.problems.map(&:message))
+        .to eq(['Declared type String does not match inferred type 123 for variable bar'])
     end
 
     it 'validates string default values of parameters' do

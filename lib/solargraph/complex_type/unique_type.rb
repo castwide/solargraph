@@ -164,11 +164,11 @@ module Solargraph
       #
       # "[Expected] types where neither is possible are INVARIANT"
       #
-      # @param situation [:method_call]
+      # @param _situation [:method_call]
       # @param default [Symbol] The default variance to return if the type is not one of the special cases
       #
       # @return [:invariant, :covariant, :contravariant]
-      def parameter_variance situation, default = :covariant
+      def parameter_variance _situation, default = :covariant
         # @todo RBS can specify variance - maybe we can use that info
         #   and also let folks specify?
         #
@@ -196,7 +196,7 @@ module Solargraph
 
       # @param other [UniqueType]
       def erased_version_of?(other)
-        return name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
+        name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
       end
 
       # @param api_map [ApiMap]
@@ -257,7 +257,9 @@ module Solargraph
                               api_map.super_and_sub?(inferred.name, expected.name) ||
                               inferred.name == expected.name
         else
+          # :nocov:
           raise "Unknown erased variance: #{erased_variance.inspect}"
+          # :nocov:
         end
 
         return true if inferred.all_params.empty? && rules.include?(:allow_empty_params)
@@ -302,11 +304,8 @@ module Solargraph
       # @param situation [:method_call, :assignment, :return]
       # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
       # @param variance [:invariant, :covariant, :contravariant]
-      def conforms_to?(api_map, expected,
-                       situation = :method_call,
-                       rules,
+      def conforms_to?(api_map, expected, situation, rules,
                        variance:)
-
         return true if undefined? && rules.include?(:allow_undefined)
 
         # @todo teach this to validate duck types as inferred type
@@ -315,7 +314,11 @@ module Solargraph
         # complex types as expectations are unions - we only need to
         # match one of their unique types
         expected.any? do |expected_unique_type|
-          raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}" unless expected.is_a?(UniqueType) unless expected_unique_type.instance_of?(UniqueType)
+          # :nocov:
+          unless expected_unique_type.instance_of?(UniqueType)
+            raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
+          end
+          # :nocov:
           conforms_to_unique_type?(api_map, expected_unique_type, situation,
                                    rules, variance: variance)
         end
@@ -360,7 +363,7 @@ module Solargraph
         elsif name.downcase == 'nil'
           'nil'
         elsif name == GENERIC_TAG_NAME
-          all_params.first.name
+          all_params.first&.name
         elsif ['Class', 'Module'].include?(name)
           rbs_name
         elsif ['Tuple', 'Array'].include?(name) && fixed_parameters?

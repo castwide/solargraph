@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
-  context 'alpha level' do
-    def type_checker(code)
+  context 'when at alpha level' do
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
 
@@ -16,7 +18,8 @@ describe Solargraph::TypeChecker do
          foo(b)
         end
       ))
-      expect(checker.problems.map(&:message)).to eq(["Wrong argument type for #foo: a expected String, received String, nil"])
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for #foo: a expected String, received String, nil'])
     end
   end
 end
