@@ -23,7 +23,6 @@ module Solargraph
       # @todo set these up to run in parallel
       unless File.exist?(gemspec.gem_dir)
         Solargraph.logger.info { "Bad info from gemspec - #{gemspec.gem_dir} does not exist" }
-        Solargraph.logger.info stdout_and_stderr_str
         return
       end
 
