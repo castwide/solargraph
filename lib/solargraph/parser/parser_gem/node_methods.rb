@@ -120,7 +120,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @return [Hash{Parser::AST::Node => Chain}]
+        # @return [Hash{Parser::AST::Node, Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           return convert_hash(node.children[0]) if node.type == :kwsplat
@@ -345,7 +345,7 @@ module Solargraph
             # Look at known control statements and use them to find
             # more specific return nodes.
             #
-            # @param node [Parser::AST::Node] Statement which is in
+            # @param node [AST::Node] Statement which is in
             #    value position for a method body
             # @param include_explicit_returns [Boolean] If true,
             #    include the value nodes of the parameter of the

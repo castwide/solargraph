@@ -299,6 +299,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def command_path
         options['commandPath'] || 'solargraph'
       end
@@ -716,7 +717,7 @@ module Solargraph
       # A hash of client requests by ID. The host uses this to keep track of
       # pending responses.
       #
-      # @return [Hash{Integer => Solargraph::LanguageServer::Host}]
+      # @return [Hash{Integer => Request}]
       def requests
         @requests ||= {}
       end
