@@ -367,15 +367,7 @@ module Solargraph
               argchain = final_arg
               return errors
             else
-              # :nocov:
-              #
-              # if this fires, add a test case - otherwise I believe
-              # it's handled by arity_problems_for before reaching
-              # here
-              Solargraph.assert_or_log(:type_checker_not_enough_arguments,
-                                       'Encountered unexpected path')
               errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-              # :nocov:
             end
           else
             final_arg = arguments.last
