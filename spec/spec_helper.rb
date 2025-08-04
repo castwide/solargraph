@@ -4,14 +4,20 @@ WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   # set up lcov reporting for undercover
   require 'simplecov'
-  require 'simplecov-lcov'
-  SimpleCov::Formatter::LcovFormatter.config.report_with_single_file = true
-  SimpleCov.formatter = SimpleCov::Formatter::LcovFormatter
+  require 'undercover/simplecov_formatter'
+
   SimpleCov.start do
+    cname = ENV.fetch('TEST_COVERAGE_COMMAND_NAME', 'ad-hoc')
+    command_name cname
+    new_dir = File.join('coverage', cname)
+    coverage_dir new_dir
+
     add_filter(%r{^/spec/})
     add_filter('/Rakefile')
+    # included via gemspec before we start, so can never be covered
+    add_filter('lib/solargraph/version.rb')
     # off by default - feel free to set if you'd like undercover to
-    # hold you to a thorough set of specs
+    # hold you to making a more thorough set of specs
     enable_coverage(:branch) if ENV['SOLARGRAPH_BRANCH_COVERAGE']
   end
 end
