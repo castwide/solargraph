@@ -42,6 +42,7 @@ task :spec do
   FileUtils.mv('coverage/full-new', 'coverage/full')
 end
 
+# @sg-ignore #undercover return type could not be inferred
 # @return [Process::Status]
 def undercover
   simplecov_collate
