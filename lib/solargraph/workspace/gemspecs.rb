@@ -109,22 +109,30 @@ module Solargraph
       def fetch_dependencies gemspec, out: $stderr
         gemspecs = all_gemspecs_from_bundle
 
+        # @type [Hash{String => Gem::Specification}]
+        deps_so_far = {}
+
         # @param runtime_dep [Gem::Dependency]
-        # @param deps [Set<Gem::Specification>]
-        gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(Set.new) do |runtime_dep, deps|
+        # @param deps [Hash{String => Gem::Specification}]
+        gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
+          next if deps[runtime_dep.name]
+
           Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
           dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
           dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
         rescue Gem::MissingSpecError
           dep = resolve_gem_ignoring_local_bundle runtime_dep.name, out: out
         ensure
-          deps.merge fetch_dependencies(dep, out: out) if dep && deps.add?(dep)
-        end.to_a.compact
+          next unless dep
+
+          fetch_dependencies(dep, out: out).each { |sub_dep| deps[sub_dep.name] ||= sub_dep }
+          deps[dep.name] ||= dep
+        end
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
-        (gem_dep_gemspecs + stdlib_dep_gemspecs).uniq(&:name)
+        (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end
 
       # Returns all gemspecs directly depended on by this workspace's
