@@ -17,6 +17,13 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'does not complain on Class.new' do
+      checker = type_checker(%(
+        Class.new
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'reports missing return tags' do
       checker = type_checker(%(
         class Foo
