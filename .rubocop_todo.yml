@@ -616,11 +616,6 @@ Lint/RedundantWithIndex:
   Exclude:
     - 'lib/solargraph/language_server/message/completion_item/resolve.rb'
 
-# Configuration parameters: AllowComments, AllowNil.
-Lint/SuppressedException:
-  Exclude:
-    - 'Rakefile'
-
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: strict, consistent
