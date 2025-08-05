@@ -94,7 +94,6 @@ jobs:
     - name: Install gems
       run: |
        set -x
-       bundle update rbs
        BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
        export BUNDLE_PATH
        cd ../solargraph-rails
