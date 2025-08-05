@@ -23,8 +23,7 @@ module Solargraph
             # Ensure only one instance of RuboCop::Runner is running at
             # a time - it uses 'chdir' to read config files with ERB,
             # which can conflict with other chdirs.
-            @@rubocop_mutex ||= Mutex.new
-            corrections = @@rubocop_mutex.synchronize do
+            corrections = Solargraph::CHDIR_MUTEX.synchronize do
               redirect_stdout do
                 ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
               end
