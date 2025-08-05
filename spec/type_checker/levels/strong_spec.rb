@@ -17,9 +17,31 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'does not complain on Class.new' do
+    it 'complains on bad @type assignment' do
       checker = type_checker(%(
-        Class.new
+        # @type [Integer]
+        c = Class.new
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Declared type Integer does not match inferred type Class for variable c']
+    end
+
+    it 'does not complain on another variant of Class.new' do
+      checker = type_checker(%(
+        class Class
+          # @return [self]
+          def self.blah
+            new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not complain on indirect Class.new', skip: 'hangs in a loop currently' do
+      checker = type_checker(%(
+        class Foo < Class; end
+        Foo.new
       ))
       expect(checker.problems.map(&:message)).to be_empty
     end

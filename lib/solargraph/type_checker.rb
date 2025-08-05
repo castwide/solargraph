@@ -301,10 +301,8 @@ module Solargraph
       pins = base.define(api_map, closure_pin, locals)
 
       first_pin = pins.first
-      if first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
-        # Do nothing, as we can't find the actual method implementation
-        return []
-      elsif first_pin.is_a?(Pin::Method)
+      unresolvable = first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
+      if !unresolvable && first_pin.is_a?(Pin::Method)
         # @type [Pin::Method]
         pin = first_pin
         ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
