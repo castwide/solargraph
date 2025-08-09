@@ -91,7 +91,7 @@ module Solargraph
           copy.pins = pins.clone
           %i[
             namespace_hash pin_class_hash path_pin_hash include_references extend_references prepend_references
-            superclass_references factory_parameter_hash
+            superclass_references
           ].each do |sym|
             copy.send("#{sym}=", send(sym).clone)
             copy.send(sym)&.transform_values!(&:clone)
