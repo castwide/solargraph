@@ -13,26 +13,31 @@ task typecheck: [:typecheck_typed]
 
 desc "Run the type checker at typed level - return code issues provable without annotations being correct"
 task :typecheck_typed do
-  sh "bundle exec solargraph typecheck --level typed"
+  sh "SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed"
 end
 
 desc "Run the type checker at strict level - report issues using type annotations"
 task :typecheck_strict do
-  sh "bundle exec solargraph typecheck --level strict"
+  sh "SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level strict"
 end
 
 desc "Run the type checker at strong level - enforce that type annotations exist"
 task :typecheck_strong do
-  sh "bundle exec solargraph typecheck --level strong"
+  sh "SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level strong"
 end
 
 desc "Run the type checker at alpha level - run high-false-alarm checks"
 task :typecheck_alpha do
-  sh "bundle exec solargraph typecheck --level alpha"
+  sh "SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level alpha"
 end
 
-desc "Run RSpec tests"
-task :spec do
+desc "Run RSpec tests, starting with the ones that failed last time"
+task spec: %i[spec_failed undercover_no_fail full_spec] do
+  undercover
+end
+
+desc "Run all RSpec tests"
+task :full_spec do
   warn 'starting spec'
   sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec rspec' #  --profile'
   warn 'ending spec'
@@ -71,21 +76,16 @@ task :undercover do
 end
 
 desc "Branch-focused fast-feedback quality/spec/coverage checks"
-task test: %i[overcommit spec_failed undercover_no_fail] do
-  # run these last tasks manually so that rake doesn't optimize
-  # undercover away
-  Rake::Task['spec'].invoke
-  undercover
-  Rake::Task['overcommit'].invoke
-  Rake::Task['typecheck'].invoke
+task test: %i[overcommit spec typecheck] do
+  # do these in order
   Rake::Task['typecheck_strict'].invoke
   Rake::Task['typecheck_strong'].invoke
   Rake::Task['typecheck_alpha'].invoke
 end
 
-desc "Re-run failed specs"
+desc "Re-run failed specs.  Add --fail-fast in your .rspec-local file if desired."
 task :spec_failed do
-  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --next-failure'
+  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --only-failures'
 end
 
 desc "Run undercover and show output without failing the task if it fails"
