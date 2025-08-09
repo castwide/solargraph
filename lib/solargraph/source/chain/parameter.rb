@@ -27,7 +27,7 @@ module Solargraph
             param_index = method_pin.parameters.find_index { |param| param.name == fp.param_name }
             next if param_index.nil?
 
-            fp.value == literal.value && current_index == param_index
+            fp.value == literal_value && current_index == param_index
           end
         end
 
@@ -56,6 +56,11 @@ module Solargraph
         # @return [Integer]
         def current_index
           @current_index ||= method_call_chain.node.children[2..].index(literal.node)
+        end
+
+        # @return [::String, ::Symbol] The literal value of the parameter
+        def literal_value
+          literal.node.children.first
         end
       end
     end
