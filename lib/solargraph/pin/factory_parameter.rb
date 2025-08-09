@@ -15,8 +15,6 @@ module Solargraph
       attr_reader :value
       # @return decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       attr_reader :decl
-      # @return [ComplexType]
-      attr_reader :return_type
       # @return [Location, nil]
       attr_reader :location
 
@@ -37,6 +35,7 @@ module Solargraph
         decl: :arg,
         location: nil
       )
+        super(location: location)
         @method_name = method_name
         @method_namespace = method_namespace
         @method_scope = method_scope
@@ -44,11 +43,14 @@ module Solargraph
         @value = value
         @decl = decl
         @return_type = return_type
-        @location = location
       end
 
       def name
         param_name
+      end
+
+      def text_documentation
+        "#{method_path}(#{param_name}) = #{value.inspect}"
       end
 
       # @return [String]
