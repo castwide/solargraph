@@ -85,7 +85,9 @@ end
 
 desc "Re-run failed specs.  Add --fail-fast in your .rspec-local file if desired."
 task :spec_failed do
-  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --only-failures'
+  # allow user to check out any persistent failures while looking for
+  # more in the whole test suite
+  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --only-failures || true'
 end
 
 desc "Run undercover and show output without failing the task if it fails"
