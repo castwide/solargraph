@@ -302,11 +302,10 @@ module Solargraph
       return unless type
       return tag if type.literal?
 
-      context_type = ComplexType.try_parse(context_tag)
-      return unless context_type
-
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
+
+      return fqns if %w[Class Module].include? type
 
       fqns + type.substring
     end
@@ -388,16 +387,18 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
+      rooted_tag = qualify(rooted_tag, '')
+      return [] unless rooted_tag
       if rooted_tag.start_with? 'Array('
         # Array() are really tuples - use our fill, as the RBS repo
         # does not give us definitions for it
         rooted_tag = "Solargraph::Fills::Tuple(#{rooted_tag[6..-2]})"
       end
-      rooted_type = ComplexType.try_parse(rooted_tag)
-      fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
       cached = cache.get_methods(rooted_tag, scope, visibility, deep)
       return cached.clone unless cached.nil?
+      rooted_type = ComplexType.try_parse(rooted_tag)
+      fqns = rooted_type.namespace
+      namespace_pin = get_namespace_pin(fqns)
       # @type [Array<Solargraph::Pin::Method>]
       result = []
       skip = Set.new
@@ -515,10 +516,20 @@ module Solargraph
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::Method>]
-    def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
-      rooted_type = ComplexType.parse(rooted_tag)
+    def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public],
+                         preserve_generics: false
+      rooted_tag = qualify(rooted_tag, '')
+      return [] unless rooted_tag
+      rooted_type = ComplexType.try_parse(rooted_tag)
+      return [] if rooted_type.nil?
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      namespace_pin = get_namespace_pin(fqns)
+      if namespace_pin.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:api_map_namespace_pin_stack, "Could not find namespace pin for #{fqns} while looking for method #{name}")
+        return []
+        # :nocov:
+      end
       methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
@@ -664,6 +675,46 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
+    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
+    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    #   parameter - used to pull generics information
+    # @param type [ComplexType] The type which is having its
+    #   methods supplemented from fq_reference_tag
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean]
+    # @param skip [Set<String>]
+    # @param no_core [Boolean] Skip core classes if true
+    # @return [Array<Pin::Base>]
+    def inner_get_methods_from_reference fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core
+      logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
+
+      # Ensure the types returned by the methods in the referenced
+      # type are relative to the generic values passed in the
+      # reference.  e.g., Foo<String> might include Enumerable<String>
+      #
+      # @todo perform the same translation in the other areas
+      #  here after adding a spec and handling things correctly
+      #  in ApiMap::Store and RbsMap::Conversions for each
+      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
+      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
+      if namespace_pin && !resolved_reference_type.all_params.empty?
+        reference_pin = get_namespace_pin(resolved_reference_type.namespace)
+        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
+        methods = methods.map do |method_pin|
+          method_pin.resolve_generics(reference_pin, resolved_reference_type)
+        end
+      end
+      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
+      methods
+    end
+
+    # @return [Workspace, nil]
+    def workspace
+      @doc_map&.workspace
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -679,6 +730,13 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache
 
+    # @param fqns [String]
+    # @return [Pin::Namespace, nil]
+    def get_namespace_pin fqns
+      # fqns = ComplexType.parse(fqns).namespace
+      store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+    end
+
     # @param rooted_tag [String] A fully qualified namespace, with
     #   generic parameter values if applicable
     # @param scope [Symbol] :class or :instance
@@ -688,11 +746,20 @@ module Solargraph
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
+      rooted_tag = qualify(rooted_tag, '')
+      return [] if rooted_tag.nil?
+      return [] unless rooted_tag
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
-      fqns_generic_params = rooted_type.all_params
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      namespace_pin = get_namespace_pin(fqns)
+      if namespace_pin.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:api_map_namespace_pin_inner, "Could not find namespace pin for #{fqns}")
+        return []
+        # :nocov:
+      end
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
+      # @todo should this by by rooted_tag_?
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
       skip.add reqstr
@@ -712,7 +779,10 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |include_tag|
             rooted_include_tag = qualify(include_tag, rooted_tag)
-            result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            if rooted_include_tag
+              result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope,
+                                                             visibility, deep, skip, true)
+            end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
@@ -739,41 +809,6 @@ module Solargraph
         end
       end
       result
-    end
-
-    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
-    #   parameter - used to pull generics information
-    # @param type [ComplexType] The type which is having its
-    #   methods supplemented from fq_reference_tag
-    # @param scope [Symbol] :class or :instance
-    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param deep [Boolean]
-    # @param skip [Set<String>]
-    # @param no_core [Boolean] Skip core classes if true
-    # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
-
-      # Ensure the types returned by the methods in the referenced
-      # type are relative to the generic values passed in the
-      # reference.  e.g., Foo<String> might include Enumerable<String>
-      #
-      # @todo perform the same translation in the other areas
-      #  here after adding a spec and handling things correctly
-      #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
-      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
-      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
-      if namespace_pin && !resolved_reference_type.all_params.empty?
-        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
-        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
-        methods = methods.map do |method_pin|
-          method_pin.resolve_generics(reference_pin, resolved_reference_type)
-        end
-      end
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
-      methods
     end
 
     # @param fqns [String]
@@ -840,16 +875,21 @@ module Solargraph
         if root == ''
           return ''
         else
+          root = root[2..-1] if root&.start_with?('::')
           return inner_qualify(root, '', skip)
         end
       else
-        return name if root == '' && store.namespace_exists?(name)
         roots = root.to_s.split('::')
         while roots.length > 0
-          fqns = roots.join('::') + '::' + name
-          return fqns if store.namespace_exists?(fqns)
-          incs = store.get_includes(roots.join('::'))
+          potential_root = roots.join('::')
+          potential_root = potential_root[2..-1] if potential_root.start_with?('::')
+          potential_fqns = potential_root + '::' + name
+          potential_fqns = potential_fqns[2..-1] if potential_fqns.start_with?('::')
+          fqns = resolve_fqns(potential_fqns)
+          return fqns if fqns
+          incs = store.get_includes(potential_root)
           incs.each do |inc|
+            next if potential_root == root && inc == name
             foundinc = inner_qualify(name, inc, skip)
             possibles.push foundinc unless foundinc.nil?
           end
@@ -862,9 +902,49 @@ module Solargraph
             possibles.push foundinc unless foundinc.nil?
           end
         end
-        return name if store.namespace_exists?(name)
+        resolved_fqns = resolve_fqns(name)
+        return resolved_fqns if resolved_fqns
+
         return possibles.last
       end
+    end
+
+    # @param fqns [String]
+    # @return [String, nil]
+    def resolve_fqns fqns
+      return fqns if store.namespace_exists?(fqns)
+
+      constant_namespace = nil
+      constant = store.constant_pins.find do |c|
+        constant_fqns = if c.namespace.empty?
+                          c.name
+                        else
+                          c.namespace + '::' + c.name
+                        end
+        constant_namespace = c.namespace
+        constant_fqns == fqns
+      end
+      return nil unless constant
+
+      return constant.return_type.namespace if constant.return_type.defined?
+
+      target_ns = resolve_trivial_constant(constant.assignment)
+      return nil unless target_ns
+      qualify_namespace target_ns, constant_namespace
+    end
+
+    # @param node [AST::Node]
+    # @return [String, nil]
+    def resolve_trivial_constant node
+      return nil unless node.is_a?(::Parser::AST::Node)
+      return nil unless node.type == :const
+      return nil if node.children.empty?
+      prefix_node = node.children[0]
+      prefix = ''
+      prefix = resolve_trivial_constant(prefix_node) + '::' unless prefix_node.nil? || prefix_node.children.empty?
+      const_name = node.children[1].to_s
+      return nil if const_name.empty?
+      return prefix + const_name
     end
 
     # Get the namespace's type (Class or Module).
@@ -874,7 +954,7 @@ module Solargraph
     def get_namespace_type fqns
       return nil if fqns.nil?
       # @type [Pin::Namespace, nil]
-      pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
+      pin = get_namespace_pin(fqns)
       return nil if pin.nil?
       pin.type
     end

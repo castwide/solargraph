@@ -240,6 +240,7 @@ module Solargraph
       #
       # @return [Solargraph::Pin::Constant]
       def create_constant(name, tag, comments, decl, base = nil)
+        tag = "#{base}<#{tag}>" if base
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
@@ -255,7 +256,6 @@ module Solargraph
           comments: comments,
           source: :rbs
         )
-        tag = "#{base}<#{tag}>" if base
         rooted_tag = ComplexType.parse(tag).force_rooted.rooted_tags
         constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         constant_pin

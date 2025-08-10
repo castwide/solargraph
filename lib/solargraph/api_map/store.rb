@@ -72,13 +72,13 @@ module Solargraph
       def get_superclass fq_tag
         raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
         sub = ComplexType.parse(fq_tag)
+        return sub.simplify_literals.name if sub.literal?
+        return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
         return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
-        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
-        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -140,6 +140,11 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
+      end
+
+      # @return [Enumerable<Solargraph::Pin::Constant>]
+      def constant_pins
+        pins_by_class(Solargraph::Pin::Constant)
       end
 
       # @return [Enumerable<Solargraph::Pin::Method>]
