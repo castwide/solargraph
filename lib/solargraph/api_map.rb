@@ -74,10 +74,11 @@ module Solargraph
     # Map a single source.
     #
     # @param source [Source]
+    # @param live [Boolean] True for live source map (active editor file)
     # @return [self]
-    def map source
+    def map source, live: false
       map = Solargraph::SourceMap.map(source)
-      catalog Bench.new(source_maps: [map])
+      catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end
 
@@ -88,7 +89,7 @@ module Solargraph
     def catalog bench
       @source_map_hash = bench.source_map_hash
       iced_pins = bench.icebox.flat_map(&:pins)
-      live_pins = bench.live_map&.pins || []
+      live_pins = bench.live_map&.all_pins || []
       conventions_environ.clear
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
@@ -102,7 +103,7 @@ module Solargraph
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins.dup, iced_pins, live_pins)
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
     end

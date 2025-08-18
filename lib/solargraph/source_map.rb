@@ -21,6 +21,11 @@ module Solargraph
       data.pins
     end
 
+    # @return [Array<Pin::Base>]
+    def all_pins
+      pins + convention_pins
+    end
+
     # @return [Array<Pin::LocalVariable>]
     def locals
       data.locals
