@@ -89,8 +89,8 @@ describe Solargraph::Convention do
 
     # Update the source
     updated_source = source.synchronize(updater)
-    # Re-map the updated source to refresh the API map - this tests the fix from 4d091c5c
-    api_map.map(updated_source)
+    # Re-map the updated live source to refresh the API map - this tests the fix from 4d091c5c
+    api_map.map(updated_source, live: true)
 
     # Now check that both methods are available
     pins = api_map.get_path_pins('MyModel#existing_field')
