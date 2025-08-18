@@ -21,6 +21,21 @@ describe Solargraph::Convention::StructDefinition do
       expect(param_baz.return_type.tag).to eql('Integer')
     end
 
+    it 'should set closure to method on assignment operator parameters' do
+      source = Solargraph::SourceMap.load_string(%(
+        # @param bar [String]
+        # @param baz [Integer]
+        Foo = Struct.new(:bar, :baz, keyword_init: true)
+      ), 'test.rb')
+
+      # @type [Array<Solargraph::Pin::Parameter>]
+      parameters = source.pins.find { |p| p.path == 'Foo#bar=' }.parameters
+
+      parameters.each do |param|
+        expect(param.closure).to be_instance_of(Solargraph::Pin::Callable)
+      end
+    end
+
     it 'should support positional args' do
       source = Solargraph::SourceMap.load_string(%(
         # @param bar [String]
@@ -101,17 +116,30 @@ describe Solargraph::Convention::StructDefinition do
           # @param baz [Integer]
           Foo = Struct.new(:bar, :baz, keyword_init: #{kw_args})
         ), 'test.rb')
-  
+
         params_bar = source.pins.find { |p| p.path == "Foo#bar=" }.parameters
         expect(params_bar.length).to eql(1)
         expect(params_bar.first.return_type.tag).to eql("String")
         expect(params_bar.first.arg?).to be(true)
-  
+
         params_baz = source.pins.find { |p| p.path == "Foo#baz=" }.parameters
         expect(params_baz.length).to eql(1)
         expect(params_baz.first.return_type.tag).to eql("Integer")
         expect(params_baz.first.arg?).to be(true)
       end
+    end
+  end
+
+  context 'with typechecking' do
+    def type_checker(code)
+      Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
+    end
+
+    it 'should not crash' do
+      checker = type_checker(%(
+        Foo = Struct.new(:bar, :baz)
+      ))
+      expect {  checker.problems }.not_to raise_error
     end
   end
 end

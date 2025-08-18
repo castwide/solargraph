@@ -68,7 +68,7 @@ module Solargraph
                   method_pin.parameters << Pin::Parameter.new(
                     name: attribute_name,
                     location: get_node_location(attribute_node),
-                    closure: nspin,
+                    closure: method_pin,
                     comments: attribute_comment(docs, true)
                   )
 
