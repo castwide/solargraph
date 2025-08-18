@@ -53,10 +53,9 @@ module Solargraph
               [attribute_name, "#{attribute_name}="].each do |name|
                 docs = docstring.tags.find { |t| t.tag_name == 'param' && t.name == attribute_name }
 
-                type = name.end_with?('=') ? :writer : :reader
-
-                reader_comment = attribute_comment(docs, false)
-                comment = attribute_comment(docs, type == :writer)
+                attribute_type = ComplexType.parse(tag_string(docs))
+                return_type_comment = attribute_comment(docs, false)
+                param_comment = attribute_comment(docs, true)
 
                 method_pin = Pin::Method.new(
                   name: name,
@@ -64,9 +63,10 @@ module Solargraph
                   scope: :instance,
                   location: get_node_location(attribute_node),
                   closure: nspin,
-                  docstring: YARD::Docstring.new(comment),
+                  docstring: YARD::Docstring.new(return_type_comment),
                   # even assignments return the value
-                  comments: comment,
+                  comments: return_type_comment,
+                  return_type: attribute_type,
                   visibility: :public
                 )
 
@@ -75,14 +75,15 @@ module Solargraph
                     name: attribute_name,
                     location: get_node_location(attribute_node),
                     closure: method_pin,
-                    comments: comment,
+                    return_type: attribute_type,
+                    comments: param_comment,
                   )
 
                   pins.push Pin::InstanceVariable.new(name: "@#{attribute_name}",
                                                       closure: method_pin,
                                                       location: get_node_location(attribute_node),
-                                                      return_type: ComplexType.parse(tag_string(docs)),
-                                                      comments: reader_comment)
+                                                      return_type: attribute_type,
+                                                      comments: "@type [#{attribute_type.rooted_tags}]")
                 end
 
                 pins.push method_pin
