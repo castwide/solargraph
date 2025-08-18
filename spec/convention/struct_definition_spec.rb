@@ -32,7 +32,7 @@ describe Solargraph::Convention::StructDefinition do
       parameters = source.pins.find { |p| p.path == 'Foo#bar=' }.parameters
 
       parameters.each do |param|
-        expect(param.closure).to be_instance_of(Solargraph::Pin::Callable)
+        expect(param.closure).to be_instance_of(Solargraph::Pin::Method)
       end
     end
 
@@ -126,6 +126,12 @@ describe Solargraph::Convention::StructDefinition do
         expect(params_baz.length).to eql(1)
         expect(params_baz.first.return_type.tag).to eql("Integer")
         expect(params_baz.first.arg?).to be(true)
+
+        iv_bar = source.pins.find { |p| p.name == "@bar" }
+        expect(iv_bar.return_type.tag).to eql("String")
+
+        iv_baz = source.pins.find { |p| p.name == "@baz" }
+        expect(iv_baz.return_type.tag).to eql("Integer")
       end
     end
   end
