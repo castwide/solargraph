@@ -17,8 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
-
+  rspec:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,7 +38,34 @@ jobs:
         bundler-cache: false
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
+    #  /home/runner/.rubies/ruby-head/lib/ruby/gems/3.5.0+2/gems/rbs-3.9.4/lib/rbs.rb:11:
+    #    warning: tsort was loaded from the standard library,
+    #    but will no longer be part of the default gems
+    #    starting from Ruby 3.6.0
+    - name: Work around legacy rbs deprecation on ruby > 3.4
+      run: echo "gem 'tsort'" >> .Gemfile
+    - name: Install gems
+      run: |
+        bundle install
+        bundle update rbs # use latest available for this Ruby version
+    - name: Run tests
+      run: bundle exec rake spec
+  undercover:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        # fetch all history for all branches and tags so we can
+        # compare against origin/master
+        fetch-depth: 0
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.4'
+        bundler-cache: false
     - name: Install gems
       run: bundle install
     - name: Run tests
-      run: bundle exec rspec
+      run: bundle exec rake spec
+    - name: Check PR coverage
+      run: bundle exec rake undercover
