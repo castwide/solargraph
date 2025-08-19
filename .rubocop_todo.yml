@@ -2130,13 +2130,6 @@ Style/NegatedIfElseCondition:
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: be, be_a, be_an, be_between, be_falsey, be_kind_of, be_instance_of, be_truthy, be_within, eq, eql, end_with, include, match, raise_error, respond_to, start_with
-Style/NestedParenthesizedCalls:
-  Exclude:
-    - 'lib/solargraph/type_checker.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
 Style/NestedTernaryOperator:
   Exclude:
     - 'lib/solargraph/pin/conversions.rb'
@@ -2231,7 +2224,6 @@ Style/RedundantBegin:
     - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/cursor.rb'
     - 'lib/solargraph/source/encoding_fixes.rb'
-    - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/workspace.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
