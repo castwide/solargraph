@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'digest'
 require 'pathname'
 require 'rbs'
 
@@ -22,7 +23,8 @@ module Solargraph
     attr_reader :rbs_collection_config_path
 
     # @param library [String]
-    # @param version [String, nil]
+    # @param version [String, nil
+    # @param rbs_collection_config_path [String, Pathname, nil]
     # @param rbs_collection_paths [Array<Pathname, String>]
     def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: []
       if rbs_collection_config_path.nil? && !rbs_collection_paths.empty?
@@ -35,11 +37,13 @@ module Solargraph
       add_library loader, library, version
     end
 
+    # @return [RBS::EnvironmentLoader]
     def loader
       @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
     end
 
-    # @return string representing the version of the RBS info fetched
+    # @sg-ignore
+    # @return [String] representing the version of the RBS info fetched
     #   for the given library.  Must change when the RBS info is
     #   updated upstream for the same library and version.  May change
     #   if the config for where information comes form changes.
@@ -68,6 +72,10 @@ module Solargraph
       end
     end
 
+    # @param gemspec [Gem::Specification]
+    # @param rbs_collection_path [String, Pathname, nil]
+    # @param rbs_collection_config_path [String, Pathname, nil]
+    # @return [RbsMap]
     def self.from_gemspec gemspec, rbs_collection_path, rbs_collection_config_path
       rbs_map = RbsMap.new(gemspec.name, gemspec.version,
                            rbs_collection_paths: [rbs_collection_path].compact,
@@ -80,6 +88,7 @@ module Solargraph
                  rbs_collection_config_path: rbs_collection_config_path)
     end
 
+    # @return [Array<Pin::Base>]
     def pins
       @pins ||= resolved? ? conversions.pins : []
     end
@@ -103,6 +112,7 @@ module Solargraph
       @resolved
     end
 
+    # @return [RBS::Repository]
     def repository
       @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|
         @rbs_collection_paths.each do |dir|
@@ -120,16 +130,19 @@ module Solargraph
 
     private
 
+    # @return [RBS::EnvironmentLoader]
     def loader
       @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
     end
 
+    # @return [Conversions]
     def conversions
       @conversions ||= Conversions.new(loader: loader)
     end
 
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]
+    # @param version [String, nil]
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version
       @resolved = if loader.has_library?(library: library, version: version)

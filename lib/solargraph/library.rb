@@ -2,6 +2,7 @@
 
 require 'pathname'
 require 'observer'
+require 'open3'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
@@ -604,16 +605,15 @@ module Solargraph
       else
         logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
-          cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
           report_cache_progress spec.name, pending
-          Process.wait(cache_pid)
-          logger.info "Cached #{spec.name} #{spec.version}"
-        rescue Errno::EINVAL => _e
-          logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
-        rescue StandardError => e
-          cache_errors.add spec
-          Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
-        ensure
+          _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+          if s.success?
+            logger.info "Cached #{spec.name} #{spec.version}"
+          else
+            cache_errors.add spec
+            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+            logger.warn e
+          end
           end_cache_progress
           catalog
           sync_catalog
@@ -621,6 +621,7 @@ module Solargraph
       end
     end
 
+    # @return [Array<Gem::Specification>]
     def cacheable_specs
       cacheable = api_map.uncached_yard_gemspecs +
                   api_map.uncached_rbs_collection_gemspecs -
@@ -631,6 +632,7 @@ module Solargraph
       queued_gemspec_cache
     end
 
+    # @return [Array<Gem::Specification>]
     def queued_gemspec_cache
       @queued_gemspec_cache ||= []
     end
@@ -672,6 +674,7 @@ module Solargraph
       @total = nil
     end
 
+    # @return [void]
     def sync_catalog
       return if @sync_count == 0
 

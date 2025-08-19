@@ -53,6 +53,8 @@ module Solargraph
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 
+  CHDIR_MUTEX = Mutex.new
+
   # @param type [Symbol] Type of assert.
   def self.asserts_on?(type)
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
@@ -97,3 +99,7 @@ module Solargraph
     Bundler.send meth, &block
   end
 end
+
+# Ensure that ParserGem node processors are properly loaded to avoid conflicts
+# with Convention node processors
+require 'solargraph/parser/parser_gem/node_processors'

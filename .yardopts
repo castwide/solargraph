@@ -1,2 +1,3 @@
 lib/**/*.rb
 --plugin yard-solargraph
+--plugin activesupport-concern
