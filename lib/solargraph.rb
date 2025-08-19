@@ -53,6 +53,8 @@ module Solargraph
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 
+  CHDIR_MUTEX = Mutex.new
+
   def self.asserts_on?
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
