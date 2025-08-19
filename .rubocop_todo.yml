@@ -538,7 +538,6 @@ Lint/EmptyClass:
 # Configuration parameters: AllowComments.
 Lint/EmptyFile:
   Exclude:
-    - '.pryrc'
     - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
