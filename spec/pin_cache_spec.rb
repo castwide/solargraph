@@ -8,7 +8,7 @@ describe Solargraph::PinCache do
     described_class.new(rbs_collection_path: '.gem_rbs_collection',
                         rbs_collection_config_path: 'rbs_collection.yaml',
                         directory: Dir.pwd,
-                        yard_plugins: [])
+                        yard_plugins: ['activesupport-concern'])
   end
 
   describe '#cached?' do
@@ -89,6 +89,19 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: parser_gemspec, out: nil)
         # if this fails, you may not have run `bundle exec rbs collection update`
         expect(Solargraph::Yardoc).not_to have_received(:build_docs).with(any_args)
+      end
+    end
+
+    context 'with an installed gem' do
+      before do
+        Solargraph::Shell.new.gems('kramdown')
+      end
+
+      it 'uncaches when asked' do
+        gemspec = Gem::Specification.find_by_name('kramdown')
+        expect do
+          pin_cache.uncache_gem(gemspec, out: nil)
+        end.not_to raise_error
       end
     end
 

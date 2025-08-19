@@ -1,4 +1,3 @@
-require 'yard-activesupport-concern'
 require 'fileutils'
 require 'rbs'
 require 'rubygems'
@@ -464,15 +463,6 @@ module Solargraph
         # The directory is not stored in a variable so it can be overridden
         # in specs.
         File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
-      end
-
-      # @param gemspec [Gem::Specification]
-      # @return [String]
-      def yardoc_path gemspec
-        File.join(base_dir,
-                  "yard-#{YARD::VERSION}",
-                  "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",
-                  "#{gemspec.name}-#{gemspec.version}.yardoc")
       end
 
       # @return [String]
