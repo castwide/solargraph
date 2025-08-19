@@ -1772,7 +1772,6 @@ Style/FrozenStringLiteralComment:
     - 'lib/solargraph/pin/breakable.rb'
     - 'lib/solargraph/pin/signature.rb'
     - 'lib/solargraph/pin_cache.rb'
-    - 'lib/solargraph/repro.rb'
     - 'lib/solargraph/source/chain/array.rb'
     - 'lib/solargraph/source/chain/q_call.rb'
     - 'lib/solargraph/yard_map/helpers.rb'
