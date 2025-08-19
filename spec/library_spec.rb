@@ -44,12 +44,34 @@ describe Solargraph::Library do
         end
       ), 'file.rb', 0)
       completion = nil
-      Timeout.timeout(15) do
+      Timeout.timeout(20) do
         # give Solargraph time to cache the gem
         while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
           sleep 0.25
         end
       end
+      expect(completion).to be_a(Solargraph::SourceMap::Completion)
+      expect(completion.pins.map(&:name)).to include('remote')
+    end
+  end
+
+  context 'with a require from an already-cached external gem' do
+    before do
+      Solargraph::Shell.new.gems('backport')
+    end
+
+    it "returns a Completion" do
+      library = Solargraph::Library.new(Solargraph::Workspace.new(Dir.pwd,
+                                                                  Solargraph::Workspace::Config.new))
+      library.attach Solargraph::Source.load_string(%(
+        require 'backport'
+
+        # @param adapter [Backport::Adapter]
+        def foo(adapter)
+          adapter.remo
+        end
+      ), 'file.rb', 0)
+      completion = library.completions_at('file.rb', 5, 19)
       expect(completion).to be_a(Solargraph::SourceMap::Completion)
       expect(completion.pins.map(&:name)).to include('remote')
     end

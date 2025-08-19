@@ -10,7 +10,7 @@ module Solargraph
       module ClassMethods
         # @param code [String]
         # @param filename [String, nil]
-        # @return [Array(Parser::AST::Node, Hash{Integer => String})]
+        # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet})]
         def parse_with_comments code, filename = nil
           node = parse(code, filename)
           comments = CommentRipper.new(code, filename, 0).parse

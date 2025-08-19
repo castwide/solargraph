@@ -45,7 +45,6 @@ module Solargraph
 
         # Determine gem name based on the require path
         file = "lib/#{require}.rb"
-        # @sg-ignore
         spec_with_path = Gem::Specification.find_by_path(file)
 
         all_gemspecs = all_gemspecs_from_bundle
@@ -214,7 +213,6 @@ module Solargraph
         end
       end
 
-      # @sg-ignore
       def in_this_bundle?
         Bundler.definition&.lockfile&.to_s&.start_with?(directory) # rubocop:disable Style/SafeNavigationChainLength
       end

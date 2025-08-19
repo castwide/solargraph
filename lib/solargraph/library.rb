@@ -436,17 +436,6 @@ module Solargraph
       )
     end
 
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
-    end
-
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
@@ -601,7 +590,6 @@ module Solargraph
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
 
       if pin_cache.yardoc_processing?(spec)
-        # @sg-ignore Unresolved call to name
         logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
         queued_gemspec_cache.push(spec)
         return if pending - queued_gemspec_cache.length < 1
@@ -609,19 +597,15 @@ module Solargraph
         catalog
         sync_catalog
       else
-        # @sg-ignore Unresolved call to name
         logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
-          # @sg-ignore Unresolved call to name
           report_cache_progress spec.name, pending
           # @sg-ignore Unresolved call to capture3
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
           if s.success?
-            # @sg-ignore Unresolved call to name
             logger.info "Cached #{spec.name} #{spec.version}"
           else
             cache_errors.add spec
-            # @sg-ignore Unresolved call to name
             logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
             logger.warn e
           end

@@ -141,7 +141,6 @@ module Solargraph
 
     # @param name [String]
     # @return [YARD::Tags::MacroDirective, nil]
-    # @sg-ignore Solargraph::ApiMap#named_macro return type could not be inferred
     def named_macro name
       store.named_macros[name]
     end
@@ -212,10 +211,7 @@ module Solargraph
     # any missing gems.
     #
     #
-    # @todo IO::NULL is incorrectly inferred to be a String.
-    # @sg-ignore
-    #
-    # @param directory [String] workspace directory
+    # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
     def self.load_with_cache directory, out = $stderr

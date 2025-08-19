@@ -21,14 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version:
-          - '3.0'
-          - '3.1'
-          - '3.2'
-          - '3.3'
-          - '3.4'
-          # - 'head' - see https://github.com/castwide/solargraph/issues/1022
-
+        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', 'head']
+        rbs-version: ['3.6.1', '3.9.4', '4.0.0.dev.4']
+        # Ruby 3.0 doesn't work with RBS 3.9.4 or 4.0.0.dev.4
+        exclude:
+          - ruby-version: '3.0'
+            rbs-version: '3.9.4'
+          - ruby-version: '3.0'
+            rbs-version: '4.0.0.dev.4'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -36,6 +36,8 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: false
+    - name: Set rbs version
+      run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     #  /home/runner/.rubies/ruby-head/lib/ruby/gems/3.5.0+2/gems/rbs-3.9.4/lib/rbs.rb:11:
     #    warning: tsort was loaded from the standard library,
     #    but will no longer be part of the default gems
