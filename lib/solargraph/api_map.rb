@@ -955,7 +955,9 @@ module Solargraph
 
       return constant.return_type.namespace if constant.return_type.defined?
 
-      target_ns = resolve_trivial_constant(constant.assignment)
+      assignment = constant.assignment
+
+      target_ns = resolve_trivial_constant(assignment) if assignment
       return nil unless target_ns
       qualify_namespace target_ns, constant_namespace
     end
