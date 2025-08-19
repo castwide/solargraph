@@ -639,18 +639,6 @@ module Solargraph
       def cache_core out: $stderr
         RbsMap::CoreMap.new.cache_core(out: out)
       end
-
-      # @return [Array<Pin::Base>, nil]
-      def load_core
-        load(core_path)
-      end
-
-      private
-
-      # @param path [String]
-      def exist? *path
-        File.file? File.join(*path)
-      end
     end
   end
 end
