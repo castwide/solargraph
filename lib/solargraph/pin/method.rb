@@ -22,7 +22,8 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
+                     **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -76,6 +77,9 @@ module Solargraph
       end
 
       def combine_with(other, attrs = {})
+        priority_choice = choose_priority(other)
+        return priority_choice unless priority_choice.nil?
+
         sigs = combine_signatures(other)
         parameters = if sigs.length > 0
           [].freeze

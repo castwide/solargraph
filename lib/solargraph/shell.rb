@@ -295,6 +295,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
+    # @param api_map [ApiMap]
     # @return [void]
     def do_cache gemspec, api_map
       # @todo if the rebuild: option is passed as a positional arg,

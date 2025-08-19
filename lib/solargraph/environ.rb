@@ -13,16 +13,21 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :domains
 
-    # @return [Array<Pin::Reference::Override>]
+    # @return [Array<Pin::Base>]
     attr_reader :pins
+
+    # @return [Array<String>]
+    attr_reader :yard_plugins
 
     # @param requires [Array<String>]
     # @param domains [Array<String>]
     # @param pins [Array<Pin::Base>]
-    def initialize requires: [], domains: [], pins: []
+    # @param yard_plugins[Array<String>]
+    def initialize requires: [], domains: [], pins: [], yard_plugins: []
       @requires = requires
       @domains = domains
       @pins = pins
+      @yard_plugins = yard_plugins
     end
 
     # @return [self]
@@ -30,6 +35,7 @@ module Solargraph
       domains.clear
       requires.clear
       pins.clear
+      yard_plugins.clear
       self
     end
 
@@ -39,6 +45,7 @@ module Solargraph
       domains.concat other.domains
       requires.concat other.requires
       pins.concat other.pins
+      yard_plugins.concat other.yard_plugins
       self
     end
   end
