@@ -5,7 +5,7 @@ require 'tmpdir'
 describe Solargraph::ApiMap do
   # avoid performance hit of doing this many times
   # rubocop:disable RSpec/InstanceVariable
-  before :all do # rubocop:disable RSpec/BeforeAfterAll
+  before :all do
     @api_map = described_class.load_with_cache(Dir.pwd, nil)
   end
 
@@ -403,7 +403,7 @@ describe Solargraph::ApiMap do
       require 'invalid'
     ), 'app.rb')
     @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
-    expect(@api_map.unresolved_requires).to eq(['invalid'])
+    expect(@api_map.unresolved_requires).to include('invalid')
   end
 
   it 'gets instance variables from superclasses' do

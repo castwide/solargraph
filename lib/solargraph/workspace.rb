@@ -78,7 +78,7 @@ module Solargraph
     def global_environ
       # empty docmap, since the result needs to work in any possible
       # context here
-      @environ ||= Convention.for_global(DocMap.new([], self, out: nil))
+      @global_environ ||= Convention.for_global(DocMap.new([], self, out: nil))
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]

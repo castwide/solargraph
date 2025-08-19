@@ -2,6 +2,7 @@
 
 require 'pathname'
 require 'benchmark'
+require 'open3'
 
 module Solargraph
   # A collection of pins generated from specific 'require' statements
@@ -16,17 +17,19 @@ module Solargraph
     attr_reader :requires
     alias required requires
 
-    # @return [Array<Pin::Base>]
-    attr_reader :pins
-
     attr_reader :global_environ
 
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
-      @uncached_gemspecs ||= []
+      if @uncached_gemspecs.nil?
+        @uncached_gemspecs = []
+        pins # force lazy-loaded pin lookup
+      end
+      @uncached_gemspecs
     end
 
     # @return [Workspace]
+    # @return [Workspace, nil]
     attr_reader :workspace
 
     # @param requires [Array<String>]
@@ -36,8 +39,13 @@ module Solargraph
       @requires = requires.compact
       @workspace = workspace
       @global_environ = Convention.for_global(self)
-      load_serialized_gem_pins(out: out)
-      pins.concat global_environ.pins
+      @requires.concat @global_environ.requires if @global_environ
+      @out = out
+    end
+
+    # @return [Array<Pin::Base>]
+    def pins
+      @pins ||= load_serialized_gem_pins + global_environ.pins
     end
 
     # @return [Solargraph::PinCache]
@@ -59,7 +67,6 @@ module Solargraph
           "Caching pins for gems: #{gem_desc}"
         end
       end
-      load_serialized_gem_pins(out: out)
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
           cache(gemspec, out: out)
@@ -69,7 +76,8 @@ module Solargraph
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
         out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms"
       end
-      load_serialized_gem_pins(out: out)
+      @uncached_gemspecs = nil
+      @pins = nil
     end
 
     # @return [Array<String>]
@@ -79,6 +87,7 @@ module Solargraph
 
     # @param out [IO, nil] output stream for logging
     # @return [Set<Gem::Specification>]
+    # @param out [IO]
     def dependencies out: $stderr
       @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec, out: out) } - gemspecs).to_set
     end
@@ -104,9 +113,9 @@ module Solargraph
     end
 
     # @param out [IO, nil]
-    # @return [void]
-    def load_serialized_gem_pins out: $stderr
-      @pins = []
+    # @return [Array<Pin::Base>]
+    def load_serialized_gem_pins out: @out
+      serialized_pins = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
       # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
@@ -124,29 +133,29 @@ module Solargraph
         deps = workspace.stdlib_dependencies(stdlib_name_guess) || []
         [stdlib_name_guess, *deps].compact.each do |potential_stdlib_name|
           rbs_pins = pin_cache.cache_stdlib_rbs_map potential_stdlib_name
-          @pins.concat rbs_pins if rbs_pins
+          serialized_pins.concat rbs_pins if rbs_pins
         end
       end
 
-      existing_pin_count = pins.length
+      existing_pin_count = serialized_pins.length
       time = Benchmark.measure do
         gemspecs.each do |gemspec|
           # only deserializes already-cached gems
-          pins = pin_cache.deserialize_combined_pin_cache gemspec
-          if pins
-            @pins.concat pins
+          gemspec_pins = pin_cache.deserialize_combined_pin_cache gemspec
+          if gemspec_pins
+            serialized_pins.concat gemspec_pins
           else
             uncached_gemspecs << gemspec
           end
         end
       end
-      pins_processed = pins.length - existing_pin_count
+      pins_processed = serialized_pins.length - existing_pin_count
       milliseconds = (time.real * 1000).round
       if (milliseconds > 500) && out && gemspecs.any?
-        out.puts "Deserialized #{pins.length} gem pins from #{PinCache.base_dir} in #{milliseconds} ms"
+        out.puts "Deserialized #{serialized_pins.length} gem pins from #{PinCache.base_dir} in #{milliseconds} ms"
       end
       uncached_gemspecs.uniq! { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
-      nil
+      serialized_pins
     end
 
     # @return [Hash{String => Array<Gem::Specification>}]

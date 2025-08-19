@@ -25,7 +25,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def cache_core out: $stderr
         new_pins = []
-        cache = PinCache.load_core
+        cache = PinCache.deserialize_core
         return cache if cache
 
         new_pins.concat conversions.pins

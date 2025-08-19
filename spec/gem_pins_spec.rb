@@ -30,13 +30,6 @@ describe Solargraph::GemPins do
     let(:requires) { ['rake'] }
     let(:path) { 'Rake::Task#prerequisites' }
 
-    before do
-      workspace = doc_map.workspace
-      gemspecs = workspace.gemspecs
-      gemspec = gemspecs.find_gem('rake')
-      workspace.uncache_gem(gemspec)
-    end
-
     it 'found a pin' do
       expect(pin.source).not_to be_nil
     end

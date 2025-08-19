@@ -10,3 +10,7 @@ doc
 coverage
 /tmp/
 /rspec-examples.txt
+/.ruby-version
+/Makefile
+/.pryrc
+/.rspec-local

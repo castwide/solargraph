@@ -19,8 +19,14 @@ module Solargraph
             require_rubocop(config['version'])
             options, paths = ::RuboCop::Options.new.parse(args)
             options[:stdin] = original
-            corrections = redirect_stdout do
-              ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+
+            # Ensure only one instance of RuboCop::Runner is running at
+            # a time - it uses 'chdir' to read config files with ERB,
+            # which can conflict with other chdirs.
+            corrections = Solargraph::CHDIR_MUTEX.synchronize do
+              redirect_stdout do
+                ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+              end
             end
             result = options[:stdin]
 
@@ -34,6 +40,7 @@ module Solargraph
           private
 
           # @param corrections [String]
+          # @return [void]
           def log_corrections(corrections)
             corrections = corrections&.strip
             return if corrections&.empty?
@@ -45,6 +52,8 @@ module Solargraph
             end
           end
 
+          # @param file_uri [String]
+          # @return [Hash{String => undefined}]
           def config_for(file_uri)
             conf = host.formatter_config(file_uri)
             return {} unless conf.is_a?(Hash)
@@ -52,7 +61,9 @@ module Solargraph
             conf['rubocop'] || {}
           end
 
+          # @param file_uri [String]
           # @param config [Hash{String => String}]
+          # @return [Array<String>]
           def cli_args file_uri, config
             file = UriHelpers.uri_to_file(file_uri)
             args = [
@@ -71,6 +82,8 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
+          # @sg-ignore
+          # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class(config)
             if self.class.const_defined?('BlankRubocopFormatter')
               # @sg-ignore
@@ -83,6 +96,7 @@ module Solargraph
           end
 
           # @param value [Array, String]
+          # @return [String]
           def cop_list(value)
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)

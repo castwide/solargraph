@@ -19,7 +19,7 @@ module Solargraph
       # @param library [String]
       # @param out [IO, nil] where to log messages
       def initialize library, out: $stderr
-        cached_pins = PinCache.load_stdlib_require library
+        cached_pins = PinCache.deserialize_stdlib_require library
         if cached_pins
           @pins = cached_pins
           @resolved = true

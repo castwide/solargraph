@@ -107,15 +107,13 @@ module Solargraph
         end
       end
 
-      # @return [String]
-      def full
+      # @return [String] the full name of the parameter, including any
+      #   declarative symbols such as `*` or `:` indicating type of
+      #   parameter. This is used in method signatures.
+      def full_name
         case decl
-        when :optarg
-          "#{name} = #{asgn_code || '?'}"
-        when :kwarg
+        when :kwarg, :kwoptarg
           "#{name}:"
-        when :kwoptarg
-          "#{name}: #{asgn_code || '?'}"
         when :restarg
           "*#{name}"
         when :kwrestarg
@@ -130,6 +128,18 @@ module Solargraph
       def reset_generated!
         super
         @return_type = nil if @return_type&.undefined?
+      end
+
+      # @return [String]
+      def full
+        full_name + case decl
+                    when :optarg
+                      " = #{asgn_code || '?'}"
+                    when :kwoptarg
+                      " #{asgn_code || '?'}"
+                    else
+                      ''
+                    end
       end
 
       # @return [ComplexType]

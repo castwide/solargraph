@@ -22,6 +22,7 @@ module Solargraph
       by_path.values + alias_pins
     end
 
+    # @param pins [Pin::Base]
     # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
       out = pins.reduce(nil) do |memo, pin|

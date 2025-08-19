@@ -15,7 +15,7 @@ module Solargraph
         @pins ||= []
       end
 
-      # @return [Set<Pin::Namespace>>, nil]
+      # @return [Set<String>]
       attr_reader :namespaces
 
       # @return [Hash{String => Array<Pin::Namespace>}]

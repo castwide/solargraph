@@ -24,8 +24,8 @@ module Solargraph
 
     # @param library [String]
     # @param version [String, nil]
-    # @param rbs_collection_config_path [String, nil]
-    # @param rbs_collection_paths [Array<String>]
+    # @param rbs_collection_config_path [String, Pathname, nil]
+    # @param rbs_collection_paths [Array<Pathname, String>]
     # @param out [IO, nil] where to log messages
     def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: [], out: $stderr
       if rbs_collection_config_path.nil? && !rbs_collection_paths.empty?
@@ -58,6 +58,11 @@ module Solargraph
       else
         'RBS collection'
       end
+    end
+
+    # @return [RBS::EnvironmentLoader]
+    def loader
+      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
     end
 
     # @sg-ignore
@@ -100,8 +105,8 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
-    # @param rbs_collection_path [String, nil]
-    # @param rbs_collection_config_path [String, nil]
+    # @param rbs_collection_path [String, Pathname, nil]
+    # @param rbs_collection_config_path [String, Pathname, nil]
     # @return [RbsMap]
     def self.from_gemspec gemspec, rbs_collection_path, rbs_collection_config_path
       rbs_map = RbsMap.new(gemspec.name, gemspec.version,

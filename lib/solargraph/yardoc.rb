@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
   #
