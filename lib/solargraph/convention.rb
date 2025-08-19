@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Solargraph
   # Conventions provide a way to modify an ApiMap based on expectations about
   # one of its sources.
@@ -21,6 +20,12 @@ module Solargraph
     # @return [void]
     def self.register convention
       @@conventions.add convention.new
+    end
+
+    # @param convention [Class<Convention::Base>]
+    # @return [void]
+    def self.deregister convention
+      @@conventions.delete_if { |c| c.instance_of? convention }
     end
 
     # @param source_map [SourceMap]

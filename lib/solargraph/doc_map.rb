@@ -55,6 +55,7 @@ module Solargraph
       @rbs_collection_path = workspace&.rbs_collection_path
       @rbs_collection_config_path = workspace&.rbs_collection_config_path
       @environ = Convention.for_global(self)
+      @requires.concat @environ.requires if @environ
       load_serialized_gem_pins
       pins.concat @environ.pins
     end
