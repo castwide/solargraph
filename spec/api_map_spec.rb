@@ -1,6 +1,7 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
+  # rubocop:disable RSpec/InstanceVariable
   before :all do
     @api_map = Solargraph::ApiMap.new
   end

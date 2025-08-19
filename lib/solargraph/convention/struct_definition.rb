@@ -20,7 +20,8 @@ module Solargraph
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
-              gates: region.closure.gates.freeze
+              gates: region.closure.gates.freeze,
+              source: :struct_definition
             )
             pins.push nspin
 
@@ -32,7 +33,8 @@ module Solargraph
               location: get_node_location(node),
               closure: nspin,
               visibility: :private,
-              docstring: docstring
+              docstring: docstring,
+              source: :struct_definition
             )
 
             pins.push initialize_method_pin
@@ -43,7 +45,8 @@ module Solargraph
                   name: attribute_name,
                   decl: struct_definition_node.keyword_init? ? :kwarg : :arg,
                   location: get_node_location(attribute_node),
-                  closure: initialize_method_pin
+                  closure: initialize_method_pin,
+                  source: :struct_definition
                 )
               )
             end
@@ -61,7 +64,8 @@ module Solargraph
                   closure: nspin,
                   # even assignments return the value
                   comments: attribute_comment(docs, false),
-                  visibility: :public
+                  visibility: :public,
+                  source: :struct_definition
                 )
 
                 if name.end_with?('=')
@@ -69,13 +73,15 @@ module Solargraph
                     name: attribute_name,
                     location: get_node_location(attribute_node),
                     closure: nspin,
-                    comments: attribute_comment(docs, true)
+                    comments: attribute_comment(docs, true),
+                    source: :struct_definition
                   )
 
                   pins.push Pin::InstanceVariable.new(name: "@#{attribute_name}",
                                                       closure: method_pin,
                                                       location: get_node_location(attribute_node),
-                                                      comments: attribute_comment(docs, false))
+                                                      comments: attribute_comment(docs, false),
+                                                      source: :struct_definition)
                 end
 
                 pins.push method_pin
