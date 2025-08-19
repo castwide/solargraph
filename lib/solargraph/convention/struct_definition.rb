@@ -56,14 +56,20 @@ module Solargraph
               [attribute_name, "#{attribute_name}="].each do |name|
                 docs = docstring.tags.find { |t| t.tag_name == 'param' && t.name == attribute_name }
 
+                attribute_type = ComplexType.parse(tag_string(docs))
+                return_type_comment = attribute_comment(docs, false)
+                param_comment = attribute_comment(docs, true)
+
                 method_pin = Pin::Method.new(
                   name: name,
                   parameters: [],
                   scope: :instance,
                   location: get_node_location(attribute_node),
                   closure: nspin,
+                  docstring: YARD::Docstring.new(return_type_comment),
                   # even assignments return the value
-                  comments: attribute_comment(docs, false),
+                  comments: return_type_comment,
+                  return_type: attribute_type,
                   visibility: :public,
                   source: :struct_definition
                 )
@@ -72,15 +78,17 @@ module Solargraph
                   method_pin.parameters << Pin::Parameter.new(
                     name: attribute_name,
                     location: get_node_location(attribute_node),
-                    closure: nspin,
-                    comments: attribute_comment(docs, true),
+                    closure: method_pin,
+                    return_type: attribute_type,
+                    comments: param_comment,
                     source: :struct_definition
                   )
 
                   pins.push Pin::InstanceVariable.new(name: "@#{attribute_name}",
                                                       closure: method_pin,
                                                       location: get_node_location(attribute_node),
-                                                      comments: attribute_comment(docs, false),
+                                                      return_type: attribute_type,
+                                                      comments: "@type [#{attribute_type.rooted_tags}]",
                                                       source: :struct_definition)
                 end
 
@@ -127,13 +135,21 @@ module Solargraph
             Solargraph::Source.parse_docstring(struct_comments).to_docstring
           end
 
+          # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
+          #
+          # @return [String]
+          def tag_string(tag)
+            tag&.types&.join(',') || 'undefined'
+          end
+
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute. If nil, this method is a no-op
           # @param for_setter [Boolean] If true, will return a @param tag instead of a @return tag
+          #
           # @return [String] The formatted comment for the attribute
           def attribute_comment(tag, for_setter)
             return "" if tag.nil?
 
-            suffix = "[#{tag.types&.join(',') || 'undefined'}] #{tag.text}"
+            suffix = "[#{tag_string(tag)}] #{tag.text}"
 
             if for_setter
               "@param #{tag.name} #{suffix}"
