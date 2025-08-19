@@ -47,7 +47,8 @@ jobs:
     - name: Install gems
       run: |
         bundle install
-        bundle update rbs # use latest available for this Ruby version
+    - name: Install types
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
