@@ -300,7 +300,6 @@ module Solargraph
       last_base_link = base.links.last
       return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
-
       arguments = last_base_link.arguments
 
       pins = base.define(api_map, closure_pin, locals)
