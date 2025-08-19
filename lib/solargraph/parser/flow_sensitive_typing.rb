@@ -236,8 +236,6 @@ module Solargraph
         "#{module_type_name}::#{class_node}"
       end
 
-      # @todo "return type could not be inferred" should not trigger here
-      # @sg-ignore
       # @param clause_node [Parser::AST::Node]
       def always_breaks?(clause_node)
         clause_node&.type == :break
