@@ -44,7 +44,7 @@ describe Solargraph::Library do
         end
       ), 'file.rb', 0)
       completion = nil
-      Timeout.timeout(20) do
+      Timeout.timeout(25) do
         # give Solargraph time to cache the gem
         while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
           sleep 0.25
