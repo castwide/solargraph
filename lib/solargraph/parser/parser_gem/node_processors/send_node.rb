@@ -8,7 +8,6 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            # @sg-ignore
             # @type [Symbol]
             method_name = node.children[1]
             # :nocov:
@@ -54,7 +53,6 @@ module Solargraph
           def process_visibility
             if (node.children.length > 2)
               node.children[2..-1].each do |child|
-                # @sg-ignore
                 # @type [Symbol]
                 visibility = node.children[1]
                 # :nocov:
