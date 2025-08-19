@@ -40,7 +40,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(class_method_object.tag(:return).types).to eq(['Foo'])
   end
 
-  it "generates mixins" do
+  it "generates instance mixins" do
     source = Solargraph::SourceMap.load_string(%(
       module Foo
         def bar
@@ -55,7 +55,24 @@ describe Solargraph::ApiMap::SourceToYard do
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     module_object = object.code_object_at('Foo')
     class_object = object.code_object_at('Baz')
-    expect(class_object.mixins).to include(module_object)
+    expect(class_object.instance_mixins).to include(module_object)
+  end
+
+  it "generates class mixins" do
+    source = Solargraph::SourceMap.load_string(%(
+      module Foo
+        def bar; end
+      end
+      class Baz
+        extend Foo
+      end
+    ))
+    object = Object.new
+    object.extend Solargraph::ApiMap::SourceToYard
+    object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
+    module_object = object.code_object_at('Foo')
+    class_object = object.code_object_at('Baz')
+    expect(class_object.class_mixins).to include(module_object)
   end
 
   it "generates methods for attributes" do
