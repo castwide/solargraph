@@ -38,15 +38,20 @@ module Solargraph
       @source_map ||= api_map.source_map(filename)
     end
 
+    # @return [Source]
+    def source
+      @source_map.source
+    end
+
     # @return [Array<Problem>]
     def problems
       @problems ||= begin
-        without_ignored(
-          method_tag_problems
-            .concat variable_type_tag_problems
-            .concat const_problems
-            .concat call_problems
-        )
+         all = method_tag_problems
+                 .concat(variable_type_tag_problems)
+                 .concat(const_problems)
+                 .concat(call_problems)
+         unignored = without_ignored(all)
+         unignored.concat(unneeded_sgignore_problems)
       end
     end
 
@@ -140,7 +145,7 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def virtual_pin? pin
-      pin.location && source_map.source.comment_at?(pin.location.range.ending)
+      pin.location && source.comment_at?(pin.location.range.ending)
     end
 
     # @param pin [Pin::Method]
@@ -231,7 +236,7 @@ module Solargraph
     def const_problems
       return [] unless rules.validate_consts?
       result = []
-      Solargraph::Parser::NodeMethods.const_nodes_from(source_map.source.node).each do |const|
+      Solargraph::Parser::NodeMethods.const_nodes_from(source.node).each do |const|
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
@@ -249,7 +254,7 @@ module Solargraph
     # @return [Array<Problem>]
     def call_problems
       result = []
-      Solargraph::Parser::NodeMethods.call_nodes_from(source_map.source.node).each do |call|
+      Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
@@ -665,7 +670,6 @@ module Solargraph
     # @param parameters [Enumerable<Pin::Parameter>]
     # @todo need to use generic types in method to choose correct
     #   signature and generate Integer as return type
-    # @sg-ignore
     # @return [Integer]
     def required_param_count(parameters)
       parameters.sum { |param| %i[arg kwarg].include?(param.decl) ? 1 : 0 }
@@ -706,12 +710,48 @@ module Solargraph
       args
     end
 
+    # @return [Set<Integer>]
+    def sg_ignore_lines_processed
+      @sg_ignore_lines_processed ||= Set.new
+    end
+
+    # @return [Set<Integer>]
+    def all_sg_ignore_lines
+      source.associated_comments.select do |_line, text|
+        text.include?('@sg-ignore')
+      end.keys.to_set
+    end
+
+    # @return [Array<Integer>]
+    def unprocessed_sg_ignore_lines
+      (all_sg_ignore_lines - sg_ignore_lines_processed).to_a.sort
+    end
+
+    # @return [Array<Problem>]
+    def unneeded_sgignore_problems
+      return [] unless rules.validate_sg_ignores?
+
+      unprocessed_sg_ignore_lines.map do |line|
+        Problem.new(
+          Location.new(filename, Range.from_to(line, 0, line, 0)),
+          'Unneeded @sg-ignore comment'
+        )
+      end
+    end
+
     # @param problems [Array<Problem>]
     # @return [Array<Problem>]
     def without_ignored problems
       problems.reject do |problem|
-        node = source_map.source.node_at(problem.location.range.start.line, problem.location.range.start.column)
-        node && source_map.source.comments_for(node)&.include?('@sg-ignore')
+        node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
+        ignored = node && source.comments_for(node)&.include?('@sg-ignore')
+        unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
+          # :nocov:
+          Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }
+          # :nocov:
+        end
+        sg_ignore_lines_processed.add problem.location.range.start.line if ignored
+        ignored
       end
     end
 end
