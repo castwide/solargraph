@@ -14,7 +14,7 @@ describe Solargraph::PinCache do
   describe '#cached?' do
     it 'returns true for a gem that is cached' do
       allow(File).to receive(:file?).with(%r{.*stdlib/backport.ser$}).and_return(false)
-      allow(File).to receive(:file?).with(%r{.*combined/backport-.*.ser$}).and_return(true)
+      allow(File).to receive(:file?).with(%r{.*combined/.*/backport-.*.ser$}).and_return(true)
 
       gemspec = Gem::Specification.find_by_name('backport')
       expect(pin_cache.cached?(gemspec)).to be true
@@ -132,7 +132,7 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
 
         # match arguments with regexp using rspec-matchers syntax
-        expect(File).to have_received(:write).with(%r{combined/logger-.*-stdlib.ser$}, any_args).once
+        expect(File).to have_received(:write).with(%r{combined/.*/logger-.*-stdlib.ser$}, any_args).once
       end
     end
 
@@ -150,7 +150,7 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
 
         # match arguments with regexp using rspec-matchers syntax
-        expect(File).to have_received(:write).with(%r{combined/base64-.*-export.ser$}, any_args, mode: 'wb').once
+        expect(File).to have_received(:write).with(%r{combined/.*/base64-.*-export.ser$}, any_args, mode: 'wb').once
       end
     end
   end
