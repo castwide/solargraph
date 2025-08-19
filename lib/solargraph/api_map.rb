@@ -36,11 +36,13 @@ module Solargraph
     # just caches), please also change `equality_fields` below.
     #
 
+    # @param other [Object]
     def eql?(other)
       self.class == other.class &&
         equality_fields == other.equality_fields
     end
 
+    # @param other [Object]
     def ==(other)
       self.eql?(other)
     end
@@ -113,6 +115,7 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
+    # @return [DocMap]
     def doc_map
       @doc_map ||= DocMap.new([], [])
     end
@@ -186,10 +189,16 @@ module Solargraph
       api_map
     end
 
+    # @param out [IO, nil]
+    # @return [void]
     def cache_all!(out)
       @doc_map.cache_all!(out)
     end
 
+    # @param gemspec [Gem::Specification]
+    # @param rebuild [Boolean]
+    # @param out [IO, nil]
+    # @return [void]
     def cache_gem(gemspec, rebuild: false, out: nil)
       @doc_map.cache(gemspec, rebuild: rebuild, out: out)
     end
@@ -201,9 +210,6 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory and cache
     # any missing gems.
     #
-    #
-    # @todo IO::NULL is incorrectly inferred to be a String.
-    # @sg-ignore
     #
     # @param directory [String]
     # @param out [IO] The output stream for messages
@@ -331,6 +337,18 @@ module Solargraph
                end
       cache.set_qualified_namespace(namespace, context_namespace, result)
       result
+    end
+
+    # @param fqns [String]
+    # @return [Array<String>]
+    def get_extends(fqns)
+      store.get_extends(fqns)
+    end
+
+    # @param fqns [String]
+    # @return [Array<String>]
+    def get_includes(fqns)
+      store.get_includes(fqns)
     end
 
     # Get an array of instance variable pins defined in specified namespace
@@ -514,6 +532,8 @@ module Solargraph
     # @param rooted_tag [String] Parameterized namespace, fully qualified
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param preserve_generics [Boolean]
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
@@ -664,6 +684,41 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
+    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
+    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    #   parameter - used to pull generics information
+    # @param type [ComplexType] The type which is having its
+    #   methods supplemented from fq_reference_tag
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean]
+    # @param skip [Set<String>]
+    # @param no_core [Boolean] Skip core classes if true
+    # @return [Array<Pin::Base>]
+    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
+      logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
+
+      # Ensure the types returned by the methods in the referenced
+      # type are relative to the generic values passed in the
+      # reference.  e.g., Foo<String> might include Enumerable<String>
+      #
+      # @todo perform the same translation in the other areas
+      #  here after adding a spec and handling things correctly
+      #  in ApiMap::Store and RbsMap::Conversions for each
+      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
+      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
+      if namespace_pin && !resolved_reference_type.all_params.empty?
+        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
+        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
+        methods = methods.map do |method_pin|
+          method_pin.resolve_generics(reference_pin, resolved_reference_type)
+        end
+      end
+      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
+      methods
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -697,6 +752,8 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.add reqstr
       result = []
+      environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
+      result.concat environ.pins
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = qualify(im, fqns)
@@ -707,6 +764,7 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
+      logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
         if scope == :instance
@@ -719,6 +777,7 @@ module Solargraph
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
           end
         else
+          logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
@@ -739,41 +798,6 @@ module Solargraph
         end
       end
       result
-    end
-
-    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
-    #   parameter - used to pull generics information
-    # @param type [ComplexType] The type which is having its
-    #   methods supplemented from fq_reference_tag
-    # @param scope [Symbol] :class or :instance
-    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param deep [Boolean]
-    # @param skip [Set<String>]
-    # @param no_core [Boolean] Skip core classes if true
-    # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
-
-      # Ensure the types returned by the methods in the referenced
-      # type are relative to the generic values passed in the
-      # reference.  e.g., Foo<String> might include Enumerable<String>
-      #
-      # @todo perform the same translation in the other areas
-      #  here after adding a spec and handling things correctly
-      #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
-      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
-      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
-      if namespace_pin && !resolved_reference_type.all_params.empty?
-        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
-        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
-        methods = methods.map do |method_pin|
-          method_pin.resolve_generics(reference_pin, resolved_reference_type)
-        end
-      end
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
-      methods
     end
 
     # @param fqns [String]
@@ -811,7 +835,7 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
-    # @param fq_tag [String]
+    # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
       fq_sub_type = ComplexType.try_parse(fq_sub_tag)

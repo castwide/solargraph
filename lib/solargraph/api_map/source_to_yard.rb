@@ -49,8 +49,12 @@ module Solargraph
           end
           store.get_extends(pin.path).each do |ref|
             extend_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
-            extend_object.instance_mixins.push code_object_map[ref] unless extend_object.nil? or extend_object.nil?
-            extend_object.class_mixins.push code_object_map[ref] unless extend_object.nil? or extend_object.nil?
+            next unless extend_object
+            code_object = code_object_map[ref]
+            next unless code_object
+            extend_object.class_mixins.push code_object
+            # @todo add spec showing why this next line is necessary
+            extend_object.instance_mixins.push code_object
           end
         end
         store.method_pins.each do |pin|
@@ -67,7 +71,7 @@ module Solargraph
           method_object.docstring = pin.docstring
           method_object.visibility = pin.visibility || :public
           method_object.parameters = pin.parameters.map do |p|
-            [p.name, p.asgn_code]
+            [p.full_name, p.asgn_code]
           end
         end
       end

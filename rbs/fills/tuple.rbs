@@ -45,7 +45,6 @@ module Solargraph
             | (7 index) -> H
             | (8 index) -> I
             | (9 index) -> J
-            | (0 index) -> K
             | (int index) -> nil
 
       # <!--
@@ -133,7 +132,7 @@ module Solargraph
                | [T] (7 index, T default) -> (H | T)
                | [T] (8 index, T default) -> (I | T)
                | [T] (9 index, T default) -> (J | T)
-               | [T] (int index, T default) -> (A | B | C | D | E | F |G | H | I | J | T)
+               | [T] (int index, T default) -> (A | B | C | D | E | F | G | H | I | J | T)
                | [T] (0 index) { (int index) -> T } -> (A | T)
                | [T] (1 index) { (int index) -> T } -> (B | T)
                | [T] (2 index) { (int index) -> T } -> (C | T)
@@ -144,7 +143,7 @@ module Solargraph
                | [T] (7 index) { (int index) -> T } -> (H | T)
                | [T] (8 index) { (int index) -> T } -> (I | T)
                | [T] (9 index) { (int index) -> T } -> (J | T)
-               | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F |G | H | I | J | T)
+               | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F | G | H | I | J | T)
     end
   end
 end
