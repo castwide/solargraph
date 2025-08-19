@@ -733,11 +733,6 @@ module Solargraph
       methods
     end
 
-    # @return [Workspace, nil]
-    def workspace
-      @doc_map&.workspace
-    end
-
     private
 
     # A hash of source maps with filename keys.
