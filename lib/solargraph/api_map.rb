@@ -211,9 +211,6 @@ module Solargraph
     # any missing gems.
     #
     #
-    # @todo IO::NULL is incorrectly inferred to be a String.
-    # @sg-ignore
-    #
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
