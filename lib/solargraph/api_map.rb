@@ -920,20 +920,6 @@ module Solargraph
       result + nil_pins
     end
 
-    # @param pins [Enumerable<Pin::Base>]
-    # @param visibility [Enumerable<Symbol>]
-    # @return [Array<Pin::Base>]
-    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
-      pins.map do |pin|
-        resolved = resolve_method_alias(pin)
-        if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
-          Solargraph.assert_or_log(:alias_visibility) { "Rejecting alias - visibility of target is #{resolved.visibility}, looking for visibility #{visibility}" }
-          next pin
-        end
-        resolved
-      end.compact
-    end
-
     # @param pin [Pin::MethodAlias, Pin::Base]
     # @return [Pin::Method]
     def resolve_method_alias pin
