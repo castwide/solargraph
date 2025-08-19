@@ -6,6 +6,7 @@ module Solargraph
       attr_reader :visibility
 
       # @param visibility [::Symbol] The visibility of the constant (:public, :protected, or :private)
+      # @param splat [Hash] Additional options supported by superclasses
       def initialize visibility: :public, **splat
         super(**splat)
         @visibility = visibility

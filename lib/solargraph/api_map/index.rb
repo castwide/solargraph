@@ -15,6 +15,9 @@ module Solargraph
         @pins ||= []
       end
 
+      # @return [Set<String>]
+      attr_reader :namespaces
+
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
@@ -61,6 +64,7 @@ module Solargraph
       end
 
       # @param pins [Array<Pin::Base>]
+      # @return [self]
       def merge pins
         deep_clone.catalog pins
       end
@@ -70,6 +74,7 @@ module Solargraph
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references
 
+      # @return [self]
       def deep_clone
         Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
@@ -85,6 +90,7 @@ module Solargraph
       end
 
       # @param new_pins [Array<Pin::Base>]
+      # @return [self]
       def catalog new_pins
         # @type [Hash{Class<generic<T>> => Set<generic<T>>}]
         @pin_select_cache = {}

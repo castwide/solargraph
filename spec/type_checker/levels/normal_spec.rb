@@ -222,7 +222,7 @@ describe Solargraph::TypeChecker do
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
       gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      yard_pins = Solargraph::GemPins.build_yard_pins(gemspec)
+      yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
       Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
 
       checker = type_checker(%(
