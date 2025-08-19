@@ -118,12 +118,12 @@ module Solargraph
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
         if gem == 'core'
-          PinCache.uncache_core(out: $stdout)
+          PinCache.uncache_core
           next
         end
 
         if gem == 'stdlib'
-          PinCache.uncache_stdlib(out: $stdout)
+          PinCache.uncache_stdlib
           next
         end
 
