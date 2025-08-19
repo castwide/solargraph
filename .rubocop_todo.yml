@@ -71,7 +71,6 @@ Layout/BlockAlignment:
 Layout/ClosingHeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment.
@@ -229,7 +228,6 @@ Layout/HashAlignment:
 Layout/HeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/yard_map/mapper/to_method_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
