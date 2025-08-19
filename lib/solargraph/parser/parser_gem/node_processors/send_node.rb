@@ -8,6 +8,7 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore Variable type could not be inferred for method_name
             # @type [Symbol]
             method_name = node.children[1]
             # :nocov:
@@ -53,6 +54,7 @@ module Solargraph
           def process_visibility
             if (node.children.length > 2)
               node.children[2..-1].each do |child|
+                # @sg-ignore Variable type could not be inferred for method_name
                 # @type [Symbol]
                 visibility = node.children[1]
                 # :nocov:
