@@ -437,17 +437,6 @@ module Solargraph
       )
     end
 
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
-    end
-
     # Create a library from a directory.
     #
     # @param directory [String] The path to be used for the workspace
@@ -680,8 +669,8 @@ module Solargraph
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
+        api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
         logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
         logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
