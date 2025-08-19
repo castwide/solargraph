@@ -20,7 +20,8 @@ module Solargraph
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
-              gates: region.closure.gates.freeze
+              gates: region.closure.gates.freeze,
+              source: :struct_definition
             )
             pins.push nspin
 
@@ -32,7 +33,8 @@ module Solargraph
               location: get_node_location(node),
               closure: nspin,
               visibility: :private,
-              docstring: docstring
+              docstring: docstring,
+              source: :struct_definition
             )
 
             pins.push initialize_method_pin
@@ -43,7 +45,8 @@ module Solargraph
                   name: attribute_name,
                   decl: struct_definition_node.keyword_init? ? :kwarg : :arg,
                   location: get_node_location(attribute_node),
-                  closure: initialize_method_pin
+                  closure: initialize_method_pin,
+                  source: :struct_definition
                 )
               )
             end
@@ -67,7 +70,8 @@ module Solargraph
                   # even assignments return the value
                   comments: return_type_comment,
                   return_type: attribute_type,
-                  visibility: :public
+                  visibility: :public,
+                  source: :struct_definition
                 )
 
                 if name.end_with?('=')
@@ -77,13 +81,15 @@ module Solargraph
                     closure: method_pin,
                     return_type: attribute_type,
                     comments: param_comment,
+                    source: :struct_definition
                   )
 
                   pins.push Pin::InstanceVariable.new(name: "@#{attribute_name}",
                                                       closure: method_pin,
                                                       location: get_node_location(attribute_node),
                                                       return_type: attribute_type,
-                                                      comments: "@type [#{attribute_type.rooted_tags}]")
+                                                      comments: "@type [#{attribute_type.rooted_tags}]",
+                                                      source: :struct_definition)
                 end
 
                 pins.push method_pin

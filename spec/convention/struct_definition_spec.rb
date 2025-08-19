@@ -136,7 +136,7 @@ describe Solargraph::Convention::StructDefinition do
   end
 
   context 'with typechecking' do
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
@@ -144,7 +144,7 @@ describe Solargraph::Convention::StructDefinition do
       checker = type_checker(%(
         Foo = Struct.new(:bar, :baz)
       ))
-      expect {  checker.problems }.not_to raise_error
+      expect { checker.problems }.not_to raise_error
     end
   end
 end
