@@ -133,6 +133,7 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||= begin
         unless directory.empty? || directory == '*'
