@@ -3,7 +3,7 @@
 describe Solargraph::GemPins do
   it 'can merge YARD and RBS' do
     gemspec = Gem::Specification.find_by_name('rbs')
-    yard_pins = Solargraph::GemPins.build_yard_pins(gemspec)
+    yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
     rbs_map = Solargraph::RbsMap.from_gemspec(gemspec, nil, nil)
     pins = Solargraph::GemPins.combine yard_pins, rbs_map.pins
 

@@ -121,7 +121,7 @@ module Solargraph
 
               # We should support specific comments for an attribute, and that can be either a @return on an @param
               # But since we merge into the struct_comments, then we should interpret either as a param
-              comment = '@param ' + attr_name + comment[7..] if comment.start_with?('@return')
+              comment = "@param #{attr_name}#{comment[7..]}" if comment.start_with?('@return')
 
               struct_comments += "\n#{comment}"
             end
@@ -139,7 +139,7 @@ module Solargraph
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute. If nil, this method is a no-op
           # @param for_setter [Boolean] If true, will return a @param tag instead of a @return tag
           #
-          # @return [String]
+          # @return [String] The formatted comment for the attribute
           def attribute_comment(tag, for_setter)
             return "" if tag.nil?
 
