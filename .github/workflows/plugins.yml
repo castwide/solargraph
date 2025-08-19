@@ -29,14 +29,15 @@ jobs:
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
+        bundle update rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Install gem types
-      run: bundle exec rbs collection install
+      run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
-      run: bundle exec rake spec
+      run: bundle exec rspec
