@@ -1793,6 +1793,7 @@ Style/GuardClause:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
+    - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/range.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/source.rb'

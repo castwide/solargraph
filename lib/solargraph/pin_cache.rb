@@ -225,8 +225,6 @@ module Solargraph
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
           out.puts "Clearing pin cache in #{path}" unless out.nil?
-        else
-          out.puts "Pin cache file #{path} does not exist" unless out.nil?
         end
       end
 
