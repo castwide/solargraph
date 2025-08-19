@@ -523,7 +523,7 @@ module Solargraph
     end
 
     # @param signature [Pin::Signature]
-    # @param pins [Array<Pin::Method>]
+    # @param method_pin_stack [Array<Pin::Method>]
     # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_details_from_stack(signature, method_pin_stack)
       signature_type = signature.typify(api_map)

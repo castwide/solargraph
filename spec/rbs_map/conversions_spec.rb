@@ -54,21 +54,16 @@ describe Solargraph::RbsMap::Conversions do
 
   if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('3.9.1')
     context 'with method pin for Open3.capture2e' do
-      let(:api_map) { Solargraph::ApiMap.load_with_cache('.') }
+      it 'accepts chdir kwarg' do
+        api_map = Solargraph::ApiMap.load_with_cache('.')
 
-      let(:method_pin) do
-        api_map.pins.find do |pin|
+        method_pin = api_map.pins.find do |pin|
           pin.is_a?(Solargraph::Pin::Method) && pin.path == 'Open3.capture2e'
         end
-      end
 
-      let(:chdir_param) do
-        method_pin&.signatures&.flat_map(&:parameters)&.find do |param| # rubocop:disable Style/SafeNavigationChainLength
+        chdir_param = method_pin&.signatures&.flat_map(&:parameters)&.find do |param| # rubocop:disable Style/SafeNavigationChainLength
           param.name == 'chdir'
         end
-      end
-
-      it 'accepts chdir kwarg' do
         expect(chdir_param).not_to be_nil, -> { "Found pin #{method_pin.to_rbs} from #{method_pin.type_location}" }
       end
     end
