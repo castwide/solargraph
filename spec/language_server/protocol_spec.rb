@@ -34,7 +34,7 @@ class Protocol
   end
 end
 
-describe Protocol, order: :defined do
+describe Protocol, order: :defined, fail_fast: true do
   before :all do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
   end
@@ -173,7 +173,12 @@ describe Protocol, order: :defined do
     item = response['result']['items'].select{|h| h['label'] == 'bar'}.first
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
-    expect(response['result']['documentation']['value']).to include('bar method')
+    expect(response).not_to be_nil
+    expect(response['error']).to be_nil
+    expect(response['result']).to be_a(Hash)
+    expect(response['result']['documentation']['value']).to include('bar method'), Proc.new do
+      "Response was not correct: #{response.inspect}"
+    end
   end
 
   it 'suppresses FileNotFoundError in textDocument/completion' do
