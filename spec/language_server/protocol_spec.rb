@@ -176,9 +176,7 @@ describe Protocol, order: :defined do
     expect(response).not_to be_nil
     expect(response['error']).to be_nil
     expect(response['result']).to be_a(Hash)
-    expect(response['result']['documentation']['value']).to include('bar method'), Proc.new do
-      "Response was not correct: #{response.inspect}"
-    end
+    expect(response['result']['documentation']['value']).to include('bar method')
   end
 
   it 'suppresses FileNotFoundError in textDocument/completion' do
