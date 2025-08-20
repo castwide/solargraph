@@ -81,9 +81,9 @@ describe Solargraph::DocMap do
     it 'tracks uncached_gemspecs' do
       pincache = instance_double(Solargraph::PinCache)
       uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
+      allow(workspace).to receive_messages(resolve_require: [], fresh_pincache: pincache)
       allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec, out: out).and_return([])
-      allow(workspace).to receive(:fresh_pincache).and_return(pincache)
       allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
       expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
     end
