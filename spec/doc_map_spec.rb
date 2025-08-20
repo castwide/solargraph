@@ -39,7 +39,18 @@ describe Solargraph::DocMap do
     end
 
     it 'tracks unresolved requires' do
-      expect(doc_map.unresolved_requires).to eq(['not_a_gem'])
+      # These are auto-required by solargraph-rspec in case the bundle
+      # includes these gems.  In our case, it doesn't!
+      unprovided_solargraph_rspec_requires = [
+        'rspec-rails',
+        'actionmailer',
+        'activerecord',
+        'shoulda-matchers',
+        'rspec-sidekiq',
+        'airborne'
+      ]
+      expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
+        .to eq(['not_a_gem'])
     end
   end
 
