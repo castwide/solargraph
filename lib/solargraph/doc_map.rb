@@ -89,7 +89,12 @@ module Solargraph
     # @return [Set<Gem::Specification>]
     # @param out [IO]
     def dependencies out: $stderr
-      @dependencies ||= (gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec, out: out) } - gemspecs).to_set
+      @dependencies ||=
+        begin
+          all_deps = gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec, out: out) }
+          existing_gems = gemspecs.map(&:name)
+          all_deps.reject { |gemspec| existing_gems.include? gemspec.name }
+        end
     end
 
     # Cache gem documentation if needed for this doc_map
