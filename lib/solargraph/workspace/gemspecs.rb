@@ -323,6 +323,10 @@ module Solargraph
             query_external_bundle(command).map do |name, version|
               resolve_gem_ignoring_local_bundle(name, version)
             end.compact
+          rescue Solargraph::BundleNotFoundError => e
+            Solargraph.logger.info e.message
+            Solargraph.logger.debug e.backtrace.join("\n")
+            []
           end
       end
 
