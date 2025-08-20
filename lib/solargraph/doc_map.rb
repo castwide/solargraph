@@ -93,7 +93,7 @@ module Solargraph
         begin
           all_deps = gemspecs.flat_map { |spec| workspace.fetch_dependencies(spec, out: out) }
           existing_gems = gemspecs.map(&:name)
-          all_deps.reject { |gemspec| existing_gems.include? gemspec.name }
+          all_deps.reject { |gemspec| existing_gems.include? gemspec.name }.to_set
         end
     end
 
