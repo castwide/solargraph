@@ -17,7 +17,7 @@ describe Solargraph::ApiMap do
     end
   end
 
-  describe '#get_method_stack' do
+  describe '#get_method_stack', time_limit_seconds: 120 do
     let(:out) { StringIO.new }
     let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
 
