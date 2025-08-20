@@ -604,7 +604,7 @@ module Solargraph
           kwargs[:chdir] = workspace.directory.to_s if workspace.directory && !workspace.directory.empty?
           # @sg-ignore Unresolved call to capture3
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s,
-                                    chdir: workspace.directory.to_s)
+                                    **kwargs)
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else
