@@ -2448,7 +2448,6 @@ Style/WordArray:
     - 'spec/pin/method_spec.rb'
     - 'spec/source/cursor_spec.rb'
     - 'spec/source/source_chainer_spec.rb'
-    - 'spec/source_map/clip_spec.rb'
     - 'spec/source_map/mapper_spec.rb'
     - 'spec/source_map_spec.rb'
     - 'spec/source_spec.rb'
