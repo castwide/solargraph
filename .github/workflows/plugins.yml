@@ -40,4 +40,4 @@ jobs:
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
-      run: bundle exec rspec --fail-fast
+      run: bundle exec rake spec
