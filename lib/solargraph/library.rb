@@ -249,7 +249,7 @@ module Solargraph
       return [] unless pin
       result = []
       files = if only
-                [api_map.source_map(filename)]
+        [api_map.source_map(filename)]
       else
         (workspace.sources + (@current ? [@current] : []))
       end
