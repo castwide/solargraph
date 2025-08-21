@@ -1,4 +1,5 @@
 describe Solargraph::Convention do
+  # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
   it 'newly defined pins are resolved by ApiMap after file changes' do
     filename = 'test.rb'
 
@@ -11,7 +12,7 @@ describe Solargraph::Convention do
 
     # Create a dummy convention that statically provides one method
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(_source_map)
+      def local _source_map
         Solargraph::Environ.new(
           pins: [
             Solargraph::Pin::Method.new(
@@ -26,7 +27,7 @@ describe Solargraph::Convention do
       end
     end
 
-    Solargraph::Convention.register dummy_convention
+    described_class.register dummy_convention
 
     source = Solargraph::Source.load_string(initial_code, filename)
     api_map = Solargraph::ApiMap.new
@@ -47,10 +48,10 @@ describe Solargraph::Convention do
     RUBY
 
     # Unregister the old convention and register a new one with two methods
-    Solargraph::Convention.unregister dummy_convention
+    described_class.unregister dummy_convention
 
     updated_dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(_source_map)
+      def local _source_map
         Solargraph::Environ.new(
           pins: [
             Solargraph::Pin::Method.new(
@@ -72,7 +73,7 @@ describe Solargraph::Convention do
       end
     end
 
-    Solargraph::Convention.register updated_dummy_convention
+    described_class.register updated_dummy_convention
 
     # Create an updater that represents the file being saved with new content
     updater = Solargraph::Source::Updater.new(
@@ -103,6 +104,7 @@ describe Solargraph::Convention do
     expect(method_pin).not_to be_nil
     expect(method_pin.name).to eq('newly_defined_field')
 
-    Solargraph::Convention.unregister updated_dummy_convention
+    described_class.unregister updated_dummy_convention
   end
+  # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
 end
