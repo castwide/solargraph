@@ -82,6 +82,7 @@ describe Solargraph::DocMap do
       pincache = instance_double(Solargraph::PinCache)
       uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
       allow(workspace).to receive_messages(resolve_require: [], fresh_pincache: pincache)
+      allow(workspace).to receive(:global_environ).and_return(Solargraph::Environ.new)
       allow(workspace).to receive(:resolve_require).with('uncached_gem').and_return([uncached_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec, out: out).and_return([])
       allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
@@ -133,22 +134,26 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'includes convention requires from environ' do
-    dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def global(doc_map)
-        Solargraph::Environ.new(
-          requires: ['convention_gem1', 'convention_gem2']
-        )
+  context 'with convention' do
+    let(:pre_cache) { false }
+
+    it 'includes convention requires from environ' do
+      dummy_convention = Class.new(Solargraph::Convention::Base) do
+        def global(doc_map)
+          Solargraph::Environ.new(
+            requires: ['convention_gem1', 'convention_gem2']
+          )
+        end
       end
+
+      Solargraph::Convention.register dummy_convention
+
+      doc_map = Solargraph::DocMap.new(['original_gem'], workspace)
+
+      expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
+    ensure
+      # Clean up the registered convention
+      Solargraph::Convention.deregister dummy_convention
     end
-
-    Solargraph::Convention.register dummy_convention
-
-    doc_map = Solargraph::DocMap.new(['original_gem'], workspace)
-
-    expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
-
-    # Clean up the registered convention
-    Solargraph::Convention.deregister dummy_convention
   end
 end
