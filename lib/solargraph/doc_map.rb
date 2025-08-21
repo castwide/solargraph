@@ -19,15 +19,6 @@ module Solargraph
 
     attr_reader :global_environ
 
-    # @return [Array<Gem::Specification>]
-    def uncached_gemspecs
-      if @uncached_gemspecs.nil?
-        @uncached_gemspecs = []
-        pins # force lazy-loaded pin lookup
-      end
-      @uncached_gemspecs
-    end
-
     # @return [Workspace]
     # @return [Workspace, nil]
     attr_reader :workspace
@@ -43,9 +34,23 @@ module Solargraph
       @out = out
     end
 
+    # @return [Array<Gem::Specification>]
+    def uncached_gemspecs
+      if @uncached_gemspecs.nil?
+        @uncached_gemspecs = []
+        pins # force lazy-loaded pin lookup
+      end
+      @uncached_gemspecs
+    end
+
     # @return [Array<Pin::Base>]
     def pins
       @pins ||= load_serialized_gem_pins + global_environ.pins
+    end
+
+    def reset_pins!
+      @uncached_gemspecs = nil
+      @pins = nil
     end
 
     # @return [Solargraph::PinCache]
@@ -76,8 +81,7 @@ module Solargraph
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
         out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms"
       end
-      @uncached_gemspecs = nil
-      @pins = nil
+      reset_pins!
     end
 
     # @return [Array<String>]
