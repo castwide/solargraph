@@ -38,7 +38,9 @@ require 'solargraph'
 # execute any logging blocks to make sure they don't blow up
 Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
 # ...but still suppress logger output in specs (if possible)
-Solargraph::Logging.logger.reopen(File::NULL) if Solargraph::Logging.logger.respond_to?(:reopen)
+if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+  Solargraph::Logging.logger.reopen(File::NULL)
+end
 
 # @param name [String]
 # @param value [String]
