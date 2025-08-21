@@ -47,7 +47,8 @@ describe Solargraph::DocMap do
         'activerecord',
         'shoulda-matchers',
         'rspec-sidekiq',
-        'airborne'
+        'airborne',
+        'activesupport'
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
