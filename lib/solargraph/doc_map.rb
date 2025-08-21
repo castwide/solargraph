@@ -13,12 +13,6 @@ module Solargraph
   class DocMap
     include Logging
 
-    # @return [Array<String>]
-    attr_reader :requires
-    alias required requires
-
-    attr_reader :global_environ
-
     # @return [Workspace]
     # @return [Workspace, nil]
     attr_reader :workspace
@@ -27,12 +21,20 @@ module Solargraph
     # @param workspace [Workspace]
     # @param out [IO, nil] output stream for logging
     def initialize requires, workspace, out: $stderr
-      @requires = requires.compact
+      @provided_requires = requires.compact
       @workspace = workspace
-      @global_environ = Convention.for_global(self)
-      @requires.concat @global_environ.requires if @global_environ
       @out = out
     end
+
+    def global_environ
+      @global_environ ||= Convention.for_global(self)
+    end
+
+    # @return [Array<String>]
+    def requires
+      @requires ||= @provided_requires + (global_environ&.requires || [])
+    end
+    alias required requires
 
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
