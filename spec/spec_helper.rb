@@ -27,7 +27,9 @@ RSpec.configure do |c|
 end
 require 'solargraph'
 # Suppress logger output in specs (if possible)
-Solargraph::Logging.logger.reopen(File::NULL) if Solargraph::Logging.logger.respond_to?(:reopen)
+if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+  Solargraph::Logging.logger.reopen(File::NULL)
+end
 
 # @param name [String]
 # @param value [String]
