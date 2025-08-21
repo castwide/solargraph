@@ -14,7 +14,6 @@ module Solargraph
     include Logging
 
     # @return [Workspace]
-    # @return [Workspace, nil]
     attr_reader :workspace
 
     # @param requires [Array<String>]
@@ -26,13 +25,9 @@ module Solargraph
       @out = out
     end
 
-    def global_environ
-      @global_environ ||= Convention.for_global(self)
-    end
-
     # @return [Array<String>]
     def requires
-      @requires ||= @provided_requires + (global_environ&.requires || [])
+      @requires ||= @provided_requires + (workspace.global_environ&.requires || [])
     end
     alias required requires
 
