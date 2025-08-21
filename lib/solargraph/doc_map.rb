@@ -48,6 +48,7 @@ module Solargraph
       @pins ||= load_serialized_gem_pins + global_environ.pins
     end
 
+    # @return [void]
     def reset_pins!
       @uncached_gemspecs = nil
       @pins = nil
