@@ -675,13 +675,53 @@ module Solargraph
     # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
-      with_resolved_aliases = pins.map do |pin|
-        resolved = resolve_method_alias(pin)
-        next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
-        resolved
-      end.compact
-      logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
-      GemPins.combine_method_pins_by_path(with_resolved_aliases)
+      # Separate regular pins from aliases
+      regular_pins = []
+      alias_pins = []
+
+      pins.each do |pin|
+        if pin.is_a?(Pin::MethodAlias)
+          alias_pins << pin
+        else
+          regular_pins << pin
+        end
+      end
+
+      # Filter regular pins by visibility
+      filtered_regular = regular_pins.select do |pin|
+        !pin.respond_to?(:visibility) || visibility.include?(pin.visibility)
+      end
+
+      # Resolve aliases using method name index
+      resolved_aliases = []
+
+      alias_pins.each do |alias_pin|
+        next if alias_pin.nil? || alias_pin.original.nil? || alias_pin.full_context.nil?
+
+        # Direct indexed lookup by method name
+        candidate_methods = store.get_methods_by_name(alias_pin.original) || []
+        next if candidate_methods.empty?
+
+        # Get ancestors using indexed references
+        ancestors = store.get_ancestors(alias_pin.full_context.tag)
+        next if ancestors.empty?
+
+        # Find the method in the correct context (including ancestors) and scope
+        origin = candidate_methods.find do |method_pin|
+          method_pin&.namespace &&
+          ancestors.include?(method_pin.namespace) && method_pin.scope == alias_pin.scope
+        end
+
+        next unless origin
+        resolved = create_resolved_alias_pin(alias_pin, origin)
+        if resolved && (!resolved.respond_to?(:visibility) || visibility.include?(resolved.visibility))
+          resolved_aliases << resolved
+        end
+      end
+
+      # Combine and return
+      all_pins = filtered_regular + resolved_aliases
+      GemPins.combine_method_pins_by_path(all_pins)
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
@@ -920,23 +960,23 @@ module Solargraph
       result + nil_pins
     end
 
-    # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::Method]
-    def resolve_method_alias pin
-      return pin unless pin.is_a?(Pin::MethodAlias)
-      return nil if @method_alias_stack.include?(pin.path)
-      @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
-      @method_alias_stack.pop
-      return nil if origin.nil?
+    include Logging
+
+    private
+
+    # Fast path for creating resolved alias pins without individual method stack lookups
+    # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
+    # @param origin [Pin::Method] The original method pin that was already found
+    # @return [Pin::Method] The resolved method pin
+    def create_resolved_alias_pin(alias_pin, origin)
+      # Build the resolved method pin directly (same logic as resolve_method_alias but without lookup)
       args = {
-        location: pin.location,
+        location: alias_pin.location,
         type_location: origin.type_location,
-        closure: pin.closure,
-        name: pin.name,
+        closure: alias_pin.closure,
+        name: alias_pin.name,
         comments: origin.comments,
         scope: origin.scope,
-#        context: pin.context,
         visibility: origin.visibility,
         signatures: origin.signatures.map(&:clone).freeze,
         attribute: origin.attribute?,
@@ -944,25 +984,23 @@ module Solargraph
         return_type: origin.return_type,
         source: :resolve_method_alias
       }
-      out = Pin::Method.new **args
-      out.signatures.each do |sig|
+      resolved_pin = Pin::Method.new **args
+
+      # Clone signatures and parameters
+      resolved_pin.signatures.each do |sig|
         sig.parameters = sig.parameters.map(&:clone).freeze
         sig.source = :resolve_method_alias
         sig.parameters.each do |param|
-          param.closure = out
+          param.closure = resolved_pin
           param.source = :resolve_method_alias
           param.reset_generated!
         end
-        sig.closure = out
+        sig.closure = resolved_pin
         sig.reset_generated!
       end
-      logger.debug { "ApiMap#resolve_method_alias(pin=#{pin}) - returning #{out} from #{origin}" }
-      out
+
+      resolved_pin
     end
-
-    include Logging
-
-    private
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]

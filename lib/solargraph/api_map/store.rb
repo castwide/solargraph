@@ -199,6 +199,51 @@ module Solargraph
         fqns_pins_map[[base, name]]
       end
 
+      # Get methods by name for efficient lookup
+      # @param method_name [String] The method name to look up
+      # @return [Array<Pin::Method>] Array of methods with that name
+      def get_methods_by_name(method_name)
+        index.method_name_hash[method_name]
+      end
+
+      # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
+      # @param fqns [String] The fully qualified namespace
+      # @return [Array<String>] Array of ancestor namespaces including the original
+      def get_ancestors(fqns)
+        return [] if fqns.nil? || fqns.empty?
+
+        ancestors = [fqns]
+        visited = Set.new
+        queue = [fqns]
+
+        until queue.empty?
+          current = queue.shift
+          next if current.nil? || current.empty? || visited.include?(current)
+          visited.add(current)
+
+          current = current.gsub(/^::/, '')
+
+          # Add superclass
+          superclass = get_superclass(current)
+          if superclass && !superclass.empty? && !visited.include?(superclass)
+            ancestors << superclass
+            queue << superclass
+          end
+
+          # Add includes, prepends, and extends
+          [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
+            next if refs.nil?
+            refs.each do |ref|
+              next if ref.nil? || ref.empty? || visited.include?(ref)
+              ancestors << ref
+              queue << ref
+            end
+          end
+        end
+
+        ancestors.compact.uniq
+      end
+
       private
 
       # @return [Index]
@@ -210,6 +255,7 @@ module Solargraph
       # @return [Boolean]
       def catalog pinsets
         @pinsets = pinsets
+        # @type [Array<Index>]
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?
