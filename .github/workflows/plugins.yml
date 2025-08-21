@@ -63,7 +63,7 @@ jobs:
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
-        yq -yi '.plugins += ["solargraph-rails]' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
