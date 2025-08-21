@@ -77,7 +77,6 @@ Layout/ClosingHeredocIndentation:
 # Configuration parameters: AllowForAlignment.
 Layout/CommentIndentation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/source_map/mapper.rb'
@@ -2136,13 +2135,6 @@ Style/NegatedIfElseCondition:
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: AllowedMethods.
-# AllowedMethods: be, be_a, be_an, be_between, be_falsey, be_kind_of, be_instance_of, be_truthy, be_within, eq, eql, end_with, include, match, raise_error, respond_to, start_with
-Style/NestedParenthesizedCalls:
-  Exclude:
-    - 'lib/solargraph/type_checker.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
 Style/NestedTernaryOperator:
   Exclude:
     - 'lib/solargraph/pin/conversions.rb'
@@ -2237,7 +2229,6 @@ Style/RedundantBegin:
     - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source/cursor.rb'
     - 'lib/solargraph/source/encoding_fixes.rb'
-    - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/workspace.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -2674,7 +2665,6 @@ YARD/MismatchName:
     - 'lib/solargraph/pin/until.rb'
     - 'lib/solargraph/pin/while.rb'
     - 'lib/solargraph/pin_cache.rb'
-    - 'lib/solargraph/source/chain.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
     - 'lib/solargraph/type_checker.rb'
