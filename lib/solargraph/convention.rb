@@ -23,6 +23,7 @@ module Solargraph
     end
 
     # @param convention [Class<Convention::Base>]
+    # @return [void]
     def self.unregister convention
       @@conventions.delete_if { |c| c.is_a?(convention) }
     end
