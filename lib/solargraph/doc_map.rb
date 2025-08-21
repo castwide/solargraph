@@ -41,13 +41,8 @@ module Solargraph
     end
 
     # @return [Array<Pin::Base>]
-    def global_environ_pins
-      @global_environ_pins ||= global_environ.pins
-    end
-
-    # @return [Array<Pin::Base>]
     def pins
-      @pins ||= load_serialized_gem_pins + global_environ_pins
+      @pins ||= load_serialized_gem_pins + (workspace.global_environ&.pins || [])
     end
 
     # @return [void]
