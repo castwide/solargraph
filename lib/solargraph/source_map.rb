@@ -169,6 +169,9 @@ module Solargraph
     private
 
     # @return [Hash{Class => Array<Pin::Base>}]
+    # @return [Array<Pin::Base>]
+    attr_writer :convention_pins
+
     def pin_class_hash
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
@@ -181,12 +184,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def convention_pins
       @convention_pins || []
-    end
-
-    # @param pins [Array<Pin::Base>]
-    # @return [Array<Pin::Base>]
-    def convention_pins=(pins)
-      @convention_pins = pins
     end
 
     # @param line [Integer]
