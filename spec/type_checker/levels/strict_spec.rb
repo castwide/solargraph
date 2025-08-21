@@ -55,14 +55,11 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
-      gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      pins = Solargraph::GemPins.build(gemspec)
-      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.new
+      api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
@@ -117,6 +114,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
+
+    xit 'complains about calling a private method from an illegal place'
+
+    xit 'complains about calling a non-existent method'
+
+    xit 'complains about inserting the wrong type into a tuple slot' do
+      checker = type_checker(%(
+        # @param a [::Solargraph::Fills::Tuple(String, Integer)]
+        def foo(a)
+          a[0] = :something
+        end
+      ))
+      expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
+    end
+
+    it 'complains about dereferencing a non-existent tuple slot'
 
     it 'reports mismatched keyword arguments' do
       checker = type_checker(%(
@@ -799,6 +812,16 @@ describe Solargraph::TypeChecker do
         foo('a', 'b', 'c', ['d'])
       ))
       expect(checker.problems.map(&:message)).to eq([])
+    end
+
+
+    it 'understands tuple superclass' do
+      checker = type_checker(%(
+        b = ['a', 'b', 123]
+        c = b.include?('a')
+        c
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     xit "Uses flow scope to specialize understanding of cvar types" do

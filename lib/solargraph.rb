@@ -2,6 +2,7 @@
 
 Encoding.default_external = 'UTF-8'
 
+require 'bundler'
 require 'set'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
@@ -47,10 +48,33 @@ module Solargraph
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'
-  autoload :Cache,            'solargraph/cache'
+  autoload :PinCache,         'solargraph/pin_cache'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
+
+  CHDIR_MUTEX = Mutex.new
+
+  # @param type [Symbol] Type of assert.
+  def self.asserts_on?(type)
+    if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
+      false
+    elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
+      true
+    else
+      logger.warn "Unrecognized SOLARGRAPH_ASSERTS value: #{ENV['SOLARGRAPH_ASSERTS']}"
+      false
+    end
+  end
+
+  # @param type [Symbol] The type of assertion to perform.
+  # @param msg [String, nil] An optional message to log
+  # @param block [Proc] A block that returns a message to log
+  # @return [void]
+  def self.assert_or_log(type, msg = nil, &block)
+    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
+    logger.info msg, &block
+  end
 
   # A convenience method for Solargraph::Logging.logger.
   #
@@ -61,6 +85,11 @@ module Solargraph
 
   # A helper method that runs Bundler.with_unbundled_env or falls back to
   # Bundler.with_clean_env for earlier versions of Bundler.
+  #
+  # @generic T
+  # @yieldreturn [generic<T>]
+  # @sg-ignore dynamic call, but both functions behave the same
+  # @return [generic<T>]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_original_env)
       :with_original_env
@@ -70,3 +99,7 @@ module Solargraph
     Bundler.send meth, &block
   end
 end
+
+# Ensure that ParserGem node processors are properly loaded to avoid conflicts
+# with Convention node processors
+require 'solargraph/parser/parser_gem/node_processors'

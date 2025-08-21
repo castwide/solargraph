@@ -299,6 +299,10 @@ module Solargraph
         end
       end
 
+      def command_path
+        options['commandPath'] || 'solargraph'
+      end
+
       # Prepare multiple folders.
       #
       # @param array [Array<Hash{String => String}>]
@@ -501,7 +505,8 @@ module Solargraph
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
-                closure: pin.closure
+                closure: pin.closure,
+                source: :solargraph
               )
             end)
           end
@@ -597,7 +602,11 @@ module Solargraph
       # @return [Array]
       def document query
         result = []
-        libraries.each { |lib| result.concat lib.document(query) }
+        if libraries.empty?
+          result.concat generic_library.document(query)
+        else
+          libraries.each { |lib| result.concat lib.document(query) }
+        end
         result
       end
 

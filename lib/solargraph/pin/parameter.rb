@@ -9,6 +9,10 @@ module Solargraph
       # @return [String]
       attr_reader :asgn_code
 
+      # allow this to be set to the method after the method itself has
+      # been created
+      attr_writer :closure
+
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
       def initialize decl: :arg, asgn_code: nil, **splat
@@ -17,12 +21,55 @@ module Solargraph
         @decl = decl
       end
 
+      def type_location
+        super || closure&.type_location
+      end
+
+      def location
+        super || closure&.type_location
+      end
+
+      def combine_with(other, attrs={})
+        new_attrs = {
+          decl: assert_same(other, :decl),
+          presence: choose(other, :presence),
+          asgn_code: choose(other, :asgn_code),
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
       def keyword?
         [:kwarg, :kwoptarg].include?(decl)
       end
 
       def kwrestarg?
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+      end
+
+      def needs_consistent_name?
+        keyword?
+      end
+
+      # @return [String]
+      def arity_decl
+        name = (self.name || '(anon)')
+        type = (return_type&.to_rbs || 'untyped')
+        case decl
+        when :arg
+          ""
+        when :optarg
+          "?"
+        when :kwarg
+          "#{name}:"
+        when :kwoptarg
+          "?#{name}:"
+        when :restarg
+          "*"
+        when :kwrestarg
+          "**"
+        else
+          "(unknown decl: #{decl})"
+        end
       end
 
       def arg?
@@ -66,15 +113,13 @@ module Solargraph
         end
       end
 
-      # @return [String]
-      def full
+      # @return [String] the full name of the parameter, including any
+      #   declarative symbols such as `*` or `:` indicating type of
+      #   parameter. This is used in method signatures.
+      def full_name
         case decl
-        when :optarg
-          "#{name} = #{asgn_code || '?'}"
-        when :kwarg
+        when :kwarg, :kwoptarg
           "#{name}:"
-        when :kwoptarg
-          "#{name}: #{asgn_code || '?'}"
         when :restarg
           "*#{name}"
         when :kwrestarg
@@ -84,6 +129,18 @@ module Solargraph
         else
           name
         end
+      end
+
+      # @return [String]
+      def full
+        full_name + case decl
+                    when :optarg
+                      " = #{asgn_code || '?'}"
+                    when :kwoptarg
+                      " #{asgn_code || '?'}"
+                    else
+                      ''
+                    end
       end
 
       # @return [ComplexType]
@@ -134,12 +191,6 @@ module Solargraph
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
         tag.text
-      end
-
-      # @param pin [Pin::Parameter]
-      def try_merge! pin
-        return false unless super && closure == pin.closure
-        true
       end
 
       private

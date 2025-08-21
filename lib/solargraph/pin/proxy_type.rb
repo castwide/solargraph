@@ -18,16 +18,16 @@ module Solargraph
       # @param closure [Pin::Namespace, nil] Used as the closure for this pin
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @return [ProxyType]
-      def self.anonymous context, closure: nil, binder: nil
+      def self.anonymous context, closure: nil, binder: nil, **kwargs
         unless closure
           parts = context.namespace.split('::')
           namespace = parts[0..-2].join('::').to_s
-          closure = Solargraph::Pin::Namespace.new(name: namespace)
+          closure = Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type)
         end
         # name = parts.last.to_s
         # ProxyType.new(nil, namespace, name, return_type)
         ProxyType.new(
-          closure: closure, return_type: context, binder: binder || context
+          closure: closure, return_type: context, binder: binder || context, **kwargs
         )
       end
     end

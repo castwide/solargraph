@@ -49,11 +49,14 @@ module Solargraph
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
-            # @todo should be able to resolve map; both types have it
-            #   with same return type
-            # @sg-ignore
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            # @sg-ignore
+            subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
+          elsif parameters_type == :list && name == 'Hash'
+            # Treat Hash<A, B> as Hash{A => B}
+            if subs.length != 2
+              raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring} - must have exactly two parameters"
+            end
+            key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           else
             subtypes.concat subs
@@ -306,7 +309,8 @@ module Solargraph
 
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
-            idx = definitions.generics.index(t.subtypes.first&.name)
+            generic_name = t.subtypes.first&.name
+            idx = definitions.generics.index(generic_name)
             next t if idx.nil?
             if context_type.parameters_type == :hash
               if idx == 0
@@ -323,7 +327,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
-              context_type.all_params[idx] || ComplexType::UNDEFINED
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
             t

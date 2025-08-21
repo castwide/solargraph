@@ -13,6 +13,7 @@ module Solargraph
       end
 
       def on_comment *args
+        # @sg-ignore
         # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
         result = super
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
@@ -50,7 +51,7 @@ module Solargraph
         result
       end
 
-      # @return [Hash{Integer => String}]
+      # @return [Hash{Integer => Solargraph::Parser::Snippet}]
       def parse
         @comments = {}
         super

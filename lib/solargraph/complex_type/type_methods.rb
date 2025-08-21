@@ -88,6 +88,7 @@ module Solargraph
       # @return [Symbol, nil]
       attr_reader :parameters_type
 
+      # @type [Hash{String => Symbol}]
       PARAMETERS_TYPE_BY_STARTING_TAG = {
         '{' => :hash,
         '(' => :fixed,
@@ -171,7 +172,11 @@ module Solargraph
         elsif fixed_parameters?
           "(#{subtypes_str})"
         else
-          "<#{subtypes_str}>"
+          if name == 'Hash'
+            "<#{key_types_str}, #{subtypes_str}>"
+          else
+            "<#{key_types_str}#{subtypes_str}>"
+          end
         end
       end
 

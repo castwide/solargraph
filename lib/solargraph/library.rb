@@ -2,6 +2,7 @@
 
 require 'pathname'
 require 'observer'
+require 'open3'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
@@ -327,9 +328,10 @@ module Solargraph
 
     # @param query [String]
     # @return [Enumerable<YARD::CodeObjects::Base>]
+    # @return [Array(ApiMap, Enumerable<Pin::Base>)]
     def document query
       sync_catalog
-      mutex.synchronize { api_map.document query }
+      mutex.synchronize { [api_map, api_map.get_path_pins(query)] }
     end
 
     # @param query [String]
@@ -433,17 +435,6 @@ module Solargraph
         external_requires: external_requires,
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
-    end
-
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
     end
 
     # Create a library from a directory.
@@ -587,26 +578,52 @@ module Solargraph
     # @return [void]
     def cache_next_gemspec
       return if @cache_progress
-      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec) }
+
+      spec = cacheable_specs.first
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
-      logger.info "Caching #{spec.name} #{spec.version}"
-      Thread.new do
-        cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
-        report_cache_progress spec.name, pending
-        Process.wait(cache_pid)
-        logger.info "Cached #{spec.name} #{spec.version}"
-      rescue Errno::EINVAL => _e
-        logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
-      rescue StandardError => e
-        cache_errors.add spec
-        Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
-      ensure
-        end_cache_progress
+
+      if Yardoc.processing?(spec)
+        logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
+        queued_gemspec_cache.push(spec)
+        return if pending - queued_gemspec_cache.length < 1
+
         catalog
         sync_catalog
+      else
+        logger.info "Caching #{spec.name} #{spec.version}"
+        Thread.new do
+          report_cache_progress spec.name, pending
+          _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+          if s.success?
+            logger.info "Cached #{spec.name} #{spec.version}"
+          else
+            cache_errors.add spec
+            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+            logger.warn e
+          end
+          end_cache_progress
+          catalog
+          sync_catalog
+        end
       end
+    end
+
+    # @return [Array<Gem::Specification>]
+    def cacheable_specs
+      cacheable = api_map.uncached_yard_gemspecs +
+                  api_map.uncached_rbs_collection_gemspecs -
+                  queued_gemspec_cache -
+                  cache_errors.to_a
+      return cacheable unless cacheable.empty?
+
+      queued_gemspec_cache
+    end
+
+    # @return [Array<Gem::Specification>]
+    def queued_gemspec_cache
+      @queued_gemspec_cache ||= []
     end
 
     # @param gem_name [String]
@@ -646,15 +663,17 @@ module Solargraph
       @total = nil
     end
 
+    # @return [void]
     def sync_catalog
       return if @sync_count == 0
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
+        api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
+        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end

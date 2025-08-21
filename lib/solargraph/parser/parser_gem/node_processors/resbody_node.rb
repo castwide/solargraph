@@ -7,6 +7,7 @@ module Solargraph
         class ResbodyNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          # @return [void]
           def process
             if node.children[1] # Exception local variable name
               here = get_node_start_position(node.children[1])
@@ -24,7 +25,8 @@ module Solargraph
                 closure: region.closure,
                 name: node.children[1].children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
-                presence: presence
+                presence: presence,
+                source: :parser
               )
             end
             NodeProcessor.process(node.children[2], region, pins, locals)

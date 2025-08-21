@@ -15,6 +15,7 @@ module Solargraph
     #
     class Chain
       include Equality
+      include Logging
 
       autoload :Link,             'solargraph/source/chain/link'
       autoload :Call,             'solargraph/source/chain/call'
@@ -75,7 +76,9 @@ module Solargraph
 
       # Determine potential Pins returned by this chain of words
       #
-      # @param api_map [ApiMap] @param name_pin [Pin::Base] A pin
+      # @param api_map [ApiMap]
+      #
+      # @param name_pin [Pin::Base] A pin
       # representing the place in which expression is evaluated (e.g.,
       # a Method pin, or a Module or Class pin if not run within a
       # method - both in terms of the closure around the chain, as well
@@ -122,7 +125,7 @@ module Solargraph
           # evaluation.  However, we use the last link's return type
           # for the binder, as this is chaining off of it, and the
           # binder is now the lhs of the rhs we are evaluating.
-          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin)
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
           logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}" }
         end
         links.last.last_context = working_pin
@@ -130,7 +133,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param name_pin [Pin::Base]
+      # @param name_pin [Pin::Base] The pin for the closure in which this code runs
       # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
       # @sg-ignore
@@ -192,6 +195,7 @@ module Solargraph
 
       include Logging
 
+      # @return [String]
       def desc
         links.map(&:desc).to_s
       end

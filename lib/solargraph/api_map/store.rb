@@ -8,6 +8,7 @@ module Solargraph
     class Store
       # @param pinsets [Array<Enumerable<Pin::Base>>]
       def initialize *pinsets
+        @pinsets = pinsets
         catalog pinsets
       end
 
@@ -61,15 +62,19 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        namespace_children(fqns).select do |pin|
+        all_pins = namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
+        GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      # @param fqns [String]
+      # @param fq_tag [String]
       # @return [String, nil]
-      def get_superclass fqns
-        raise "Do not prefix fully qualified namespaces with '::' - #{fqns.inspect}" if fqns.start_with?('::')
+      def get_superclass fq_tag
+        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
+        sub = ComplexType.parse(fq_tag)
+        fqns = sub.namespace
+        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
@@ -196,10 +201,13 @@ module Solargraph
 
       private
 
+      # @return [Index]
       def index
         @indexes.last
       end
 
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @return [Boolean]
       def catalog pinsets
         @pinsets = pinsets
         @indexes = []
@@ -231,17 +239,17 @@ module Solargraph
         index.superclass_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         index.include_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         index.prepend_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
       end

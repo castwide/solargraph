@@ -15,6 +15,7 @@ module Solargraph
       # @return [void]
       def require_rubocop(version = nil)
         begin
+          # @type [String]
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
           gem_lib_path = File.join(gem_path, 'lib')
           $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)

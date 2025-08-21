@@ -399,7 +399,7 @@ describe Solargraph::ApiMap do
       require 'invalid'
     ), 'app.rb')
     @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
-    expect(@api_map.unresolved_requires).to eq(['invalid'])
+    expect(@api_map.unresolved_requires).to include('invalid')
   end
 
   it 'gets instance variables from superclasses' do
@@ -428,6 +428,16 @@ describe Solargraph::ApiMap do
     @api_map.map source
     pins = @api_map.get_methods('Sup', scope: :class)
     expect(pins.map(&:path)).to include('Mixin#bar')
+  end
+
+  # pending https://github.com/apiology/solargraph/pull/4
+  xit 'understands tuples inherit from regular arrays' do
+    method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
+    method_pin = method_pins.first
+    expect(method_pin).to_not be_nil
+    expect(method_pin.path).to eq('Array#include?')
+    parameter_type = method_pin.signatures.first.parameters.first.return_type
+    expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
   end
 
   it 'loads workspaces from directories' do

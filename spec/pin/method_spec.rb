@@ -375,8 +375,7 @@ describe Solargraph::Pin::Method do
     expect(type.to_s).to eq('String')
   end
 
-  # pending https://github.com/castwide/solargraph/pull/826
-  xit 'infers from multiple-assignment chains' do
+  it 'infers from multiple-assignment chains' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def bar
