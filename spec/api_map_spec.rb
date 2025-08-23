@@ -209,19 +209,19 @@ describe Solargraph::ApiMap do
   it 'finds stacks of methods' do
     map = Solargraph::SourceMap.load_string(%(
       module Mixin
-        def meth; end
+        def select; end
       end
-      class Foo
+      class Foo < Array
         include Mixin
-        def meth; end
+        def select; end
       end
       class Bar < Foo
-        def meth; end
+        def select; end
       end
     ))
     @api_map.index map.pins
-    pins = @api_map.get_method_stack('Bar', 'meth')
-    expect(pins.map(&:path)).to eq(['Bar#meth', 'Foo#meth', 'Mixin#meth'])
+    pins = @api_map.get_method_stack('Bar', 'select')
+    expect(pins.map(&:path)).to eq(['Bar#select', 'Foo#select', 'Mixin#select', 'Array#select', 'Enumerable#select', 'Kernel#select'])
   end
 
   it 'finds symbols' do

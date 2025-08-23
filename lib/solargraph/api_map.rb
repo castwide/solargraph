@@ -675,53 +675,14 @@ module Solargraph
     # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
-      # Separate regular pins from aliases
-      regular_pins = []
-      alias_pins = []
-
-      pins.each do |pin|
-        if pin.is_a?(Pin::MethodAlias)
-          alias_pins << pin
-        else
-          regular_pins << pin
-        end
-      end
-
-      # Filter regular pins by visibility
-      filtered_regular = regular_pins.select do |pin|
-        !pin.respond_to?(:visibility) || visibility.include?(pin.visibility)
-      end
-
-      # Resolve aliases using method name index
-      resolved_aliases = []
-
-      alias_pins.each do |alias_pin|
-        next if alias_pin.nil? || alias_pin.original.nil? || alias_pin.full_context.nil?
-
-        # Direct indexed lookup by method name
-        candidate_methods = store.get_methods_by_name(alias_pin.original) || []
-        next if candidate_methods.empty?
-
-        # Get ancestors using indexed references
-        ancestors = store.get_ancestors(alias_pin.full_context.tag)
-        next if ancestors.empty?
-
-        # Find the method in the correct context (including ancestors) and scope
-        origin = candidate_methods.find do |method_pin|
-          method_pin&.namespace &&
-          ancestors.include?(method_pin.namespace) && method_pin.scope == alias_pin.scope
-        end
-
-        next unless origin
-        resolved = create_resolved_alias_pin(alias_pin, origin)
-        if resolved && (!resolved.respond_to?(:visibility) || visibility.include?(resolved.visibility))
-          resolved_aliases << resolved
-        end
-      end
-
-      # Combine and return
-      all_pins = filtered_regular + resolved_aliases
-      GemPins.combine_method_pins_by_path(all_pins)
+      with_resolved_aliases = pins.map do |pin|
+        next pin unless pin.is_a?(Pin::MethodAlias)
+        resolved = resolve_method_alias(pin)
+        next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
+        resolved
+      end.compact
+      logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
+      GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
@@ -963,6 +924,28 @@ module Solargraph
     include Logging
 
     private
+
+    # @param alias_pin [Pin::MethodAlias]
+    # @return [Pin::Method, nil]
+    def resolve_method_alias(alias_pin)
+      # Direct indexed lookup by method name
+      candidate_methods = store.get_methods_by_name(alias_pin.original) || []
+      return if candidate_methods.empty?
+
+      # Get ancestors using indexed references
+      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      return if ancestors.empty?
+
+      # Find the method in the correct context (including ancestors) and scope
+      origin = candidate_methods.find do |method_pin|
+        method_pin&.namespace &&
+          ancestors.include?(method_pin.namespace) && method_pin.scope == alias_pin.scope
+      end
+
+      return unless origin
+
+      create_resolved_alias_pin(alias_pin, origin)
+    end
 
     # Fast path for creating resolved alias pins without individual method stack lookups
     # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
