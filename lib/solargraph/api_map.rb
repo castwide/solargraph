@@ -26,7 +26,6 @@ module Solargraph
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
-      @method_alias_stack = []
       index pins
     end
 
@@ -928,43 +927,50 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      # Direct indexed lookup by method name
-      candidate_methods = store.get_methods_by_name(alias_pin.original) || []
-      return if candidate_methods.empty?
-
-      # Get ancestors using indexed references
       ancestors = store.get_ancestors(alias_pin.full_context.tag)
-      return if ancestors.empty?
+      original = nil
 
-      # Find the method in the correct context (including ancestors) and scope
-      origin = candidate_methods.find do |method_pin|
-        method_pin&.namespace &&
-          ancestors.include?(method_pin.namespace) && method_pin.scope == alias_pin.scope
+      # Search each ancestor for the original method
+      ancestors.each do |ancestor_fqns|
+        ancestor_fqns = ComplexType.parse(ancestor_fqns).force_rooted.namespace
+        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+
+        # Search for the original method in the ancestor
+        original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
+          if candidate_pin.is_a?(Pin::MethodAlias)
+            # recursively resolve method aliases
+            resolved = resolve_method_alias(candidate_pin)
+            break resolved if resolved
+          end
+
+          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+        end
+
+        break if original
       end
 
-      return unless origin
-
-      create_resolved_alias_pin(alias_pin, origin)
+      # @sg-ignore ignore `received nil` for original
+      create_resolved_alias_pin(alias_pin, original) if original
     end
 
     # Fast path for creating resolved alias pins without individual method stack lookups
     # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
-    # @param origin [Pin::Method] The original method pin that was already found
+    # @param original [Pin::Method] The original method pin that was already found
     # @return [Pin::Method] The resolved method pin
-    def create_resolved_alias_pin(alias_pin, origin)
+    def create_resolved_alias_pin(alias_pin, original)
       # Build the resolved method pin directly (same logic as resolve_method_alias but without lookup)
       args = {
         location: alias_pin.location,
-        type_location: origin.type_location,
+        type_location: original.type_location,
         closure: alias_pin.closure,
         name: alias_pin.name,
-        comments: origin.comments,
-        scope: origin.scope,
-        visibility: origin.visibility,
-        signatures: origin.signatures.map(&:clone).freeze,
-        attribute: origin.attribute?,
-        generics: origin.generics.clone,
-        return_type: origin.return_type,
+        comments: original.comments,
+        scope: original.scope,
+        visibility: original.visibility,
+        signatures: original.signatures.map(&:clone).freeze,
+        attribute: original.attribute?,
+        generics: original.generics.clone,
+        return_type: original.return_type,
         source: :resolve_method_alias
       }
       resolved_pin = Pin::Method.new **args

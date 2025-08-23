@@ -199,13 +199,6 @@ module Solargraph
         fqns_pins_map[[base, name]]
       end
 
-      # Get methods by name for efficient lookup
-      # @param method_name [String] The method name to look up
-      # @return [Array<Pin::Method>] Array of methods with that name
-      def get_methods_by_name(method_name)
-        index.method_name_hash[method_name]
-      end
-
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
       # @param fqns [String] The fully qualified namespace
       # @return [Array<String>] Array of ancestor namespaces including the original

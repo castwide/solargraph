@@ -62,16 +62,6 @@ module Solargraph
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::MethodAlias>}]
-      def method_alias_hash
-        @method_alias_hash ||= Hash.new { |h, k| h[k] = [] }
-      end
-
-      # @return [Hash{String => Array<Pin::Method>}]
-      def method_name_hash
-        @method_name_hash ||= Hash.new { |h, k| h[k] = [] }
-      end
-
       # @param pins [Array<Pin::Base>]
       # @return [self]
       def merge pins
@@ -81,7 +71,7 @@ module Solargraph
       protected
 
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
-                  :extend_references, :prepend_references, :superclass_references, :method_alias_hash, :method_name_hash
+                  :extend_references, :prepend_references, :superclass_references
 
       # @return [self]
       def deep_clone
@@ -90,7 +80,7 @@ module Solargraph
           copy.pins = pins.clone
           %i[
             namespace_hash pin_class_hash path_pin_hash include_references extend_references prepend_references
-            superclass_references method_alias_hash method_name_hash
+            superclass_references
           ].each do |sym|
             copy.send("#{sym}=", send(sym).clone)
             copy.send(sym)&.transform_values!(&:clone)
@@ -115,8 +105,6 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
-        map_method_aliases
-        map_methods_by_name
         map_overrides
         self
       end
@@ -147,22 +135,6 @@ module Solargraph
                          end
         referencing_ns = reference_pin.namespace
         hash[referencing_ns].push referenced_tag
-      end
-
-      # @return [void]
-      def map_method_aliases
-        pins_by_class(Pin::MethodAlias).each do |alias_pin|
-          method_name = alias_pin.name
-          method_alias_hash[method_name] << alias_pin
-        end
-      end
-
-      # @return [void]
-      def map_methods_by_name
-        pins_by_class(Pin::Method).each do |method_pin|
-          method_name = method_pin.name
-          method_name_hash[method_name] << method_pin
-        end
       end
 
       # @return [void]
