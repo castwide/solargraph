@@ -85,11 +85,11 @@ describe Solargraph::Convention::ActiveSupportConcern do
     let(:pins) { api_map.get_method_stack('A', 'my_method', scope: :class) }
 
     it 'sees all three methods' do
-      expect(pins.map(&:name)).to eq(['my_method', 'my_method', 'my_method'])
+      expect(pins.map(&:name)).to eq(%w[my_method my_method my_method])
     end
 
     it 'prefers directly defined method' do
-      expect(pins.map(&:path).first).to eq("A.my_method")
+      expect(pins.map(&:path).first).to eq('A.my_method')
     end
 
     it 'is able to typify from superclass' do
