@@ -753,7 +753,12 @@ module Solargraph
       skip.add reqstr
       result = []
       environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
-      result.concat environ.pins
+      # ensure we start out with any immediate methods in this
+      # namespace so we roughly match the same ordering of get_methods
+      # and obey the 'deep' instruction
+      direct_convention_methods, convention_methods_by_reference = environ.pins.partition { |p| p.namespace == rooted_tag }
+      result.concat direct_convention_methods
+
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = qualify(im, fqns)
@@ -767,6 +772,8 @@ module Solargraph
       logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
+        result.concat convention_methods_by_reference
+
         if scope == :instance
           store.get_includes(fqns).reverse.each do |include_tag|
             rooted_include_tag = qualify(include_tag, rooted_tag)
