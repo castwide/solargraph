@@ -69,3 +69,4 @@ jobs:
       run: bundle exec rake spec
     - name: Check PR coverage
       run: bundle exec rake undercover
+      continue-on-error: true

@@ -74,6 +74,8 @@ module Solargraph
         if parameters_type.nil?
           raise "You must supply parameters_type if you provide parameters" unless key_types.empty? && subtypes.empty?
         end
+
+        raise "name must be a String" unless name.is_a?(String)
         raise "Please remove leading :: and set rooted instead - #{name.inspect}" if name.start_with?('::')
         @name = name
         @parameters_type = parameters_type
@@ -126,7 +128,8 @@ module Solargraph
         #    | `false`
         return name if name.empty?
         return 'NilClass' if name == 'nil'
-        return 'Boolean' if ['true', 'false'].include?(name)
+        return 'TrueClass' if name == 'true'
+        return 'FalseClass' if name == 'false'
         return 'Symbol' if name[0] == ':'
         return 'String' if ['"', "'"].include?(name[0])
         return 'Integer' if name.match?(/^-?\d+$/)
@@ -349,9 +352,9 @@ module Solargraph
 
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
-      # @param new_key_types [Array<UniqueType>, nil]
+      # @param new_key_types [Array<ComplexType>, nil]
       # @param rooted [Boolean, nil]
-      # @param new_subtypes [Array<UniqueType>, nil]
+      # @param new_subtypes [Array<ComplexType>, nil]
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
         raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')

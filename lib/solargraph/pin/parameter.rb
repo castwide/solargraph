@@ -247,7 +247,7 @@ module Solargraph
       def resolve_reference ref, api_map, skip
         return nil if skip.include?(ref)
         skip.push ref
-        parts = ref.split(/[\.#]/)
+        parts = ref.split(/[.#]/)
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else

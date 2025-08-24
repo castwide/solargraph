@@ -318,7 +318,7 @@ module Solargraph
       @string_nodes ||= string_nodes_in(node)
     end
 
-    # @return [Array<Range>]
+    # @return [Array<Solargraph::Range>]
     def comment_ranges
       @comment_ranges ||= comments.values.map(&:range)
     end

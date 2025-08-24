@@ -28,7 +28,7 @@ module Solargraph
       #   syntax errors will be repaired.
       # @return [String] The updated text.
       def write text, nullable = false
-        if nullable and !range.nil? and new_text.match(/[\.\[\{\(@\$:]$/)
+        if nullable and !range.nil? and new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
             offset = Position.to_offset(text, range.start)
@@ -59,7 +59,7 @@ module Solargraph
         else
           result = commit text, fixed
           off = Position.to_offset(text, range.start)
-          match = result[0, off].match(/[\.:]+\z/)
+          match = result[0, off].match(/[.:]+\z/)
           if match
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
           end
