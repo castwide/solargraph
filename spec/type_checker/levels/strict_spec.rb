@@ -976,5 +976,22 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it 'does not complain on defaulted reader with detailed expression' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              if rand
+                 123
+               elsif rand
+                 456
+               end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
