@@ -18,6 +18,11 @@ module Solargraph
       end
 
       # @param pinsets [Array<Enumerable<Pin::Base>>]
+      #   - pinsets[0] = core Ruby pins
+      #   - pinsets[1] = documentation/gem pins
+      #   - pinsets[2] = convention pins
+      #   - pinsets[3] = workspace source pins
+      #   - pinsets[4] = currently open file pins
       # @return [Boolean] True if the index was updated
       def update *pinsets
         return catalog(pinsets) if pinsets.length != @pinsets.length
