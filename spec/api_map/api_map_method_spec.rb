@@ -11,6 +11,13 @@ describe Solargraph::ApiMap do
     api_map.catalog bench
   end
 
+  describe '#resolve_method_alias' do
+    it 'resolves the IO.for_fd alias to IO.new' do
+      stack = api_map.get_method_stack('IO', 'for_fd', scope: :class)
+      expect(stack).not_to be_empty
+    end
+  end
+
   describe '#qualify' do
     let(:external_requires) { ['yaml'] }
 
