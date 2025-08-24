@@ -28,7 +28,12 @@ module Solargraph
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
-        result = redirect_stdout{ runner.run(paths) }
+        # Ensure only one instance of RuboCop::Runner is running at
+        # a time - it uses 'chdir' to read config files with ERB,
+        # which can conflict with other chdirs.
+        result = Solargraph::CHDIR_MUTEX.synchronize do
+          redirect_stdout{ runner.run(paths) }
+        end
 
         return [] if result.empty?
 

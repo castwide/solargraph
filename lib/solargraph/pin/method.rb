@@ -22,7 +22,8 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false, **splat
+      def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
+                     **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -76,6 +77,9 @@ module Solargraph
       end
 
       def combine_with(other, attrs = {})
+        priority_choice = choose_priority(other)
+        return priority_choice unless priority_choice.nil?
+
         sigs = combine_signatures(other)
         parameters = if sigs.length > 0
           [].freeze
@@ -199,9 +203,11 @@ module Solargraph
             )
           end
           yield_return_type = ComplexType.try_parse(*yieldreturn_tags.flat_map(&:types))
-          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source, closure: self)
+          block = Signature.new(generics: generics, parameters: yield_parameters, return_type: yield_return_type, source: source,
+                                closure: self, location: location, type_location: type_location)
         end
-        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source)
+        signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source,
+                                  location: location, type_location: type_location)
         block.closure = signature if block
         signature
       end
@@ -299,7 +305,6 @@ module Solargraph
         super
       end
 
-      # @sg-ignore
       def documentation
         if @documentation.nil?
           method_docs ||= super || ''
@@ -423,7 +428,7 @@ module Solargraph
         @resolved_ref_tag = true
         return self unless docstring.ref_tags.any?
         docstring.ref_tags.each do |tag|
-          ref = if tag.owner.to_s.start_with?(/[#\.]/)
+          ref = if tag.owner.to_s.start_with?(/[#.]/)
             api_map.get_methods(namespace)
                    .select { |pin| pin.path.end_with?(tag.owner.to_s) }
                    .first
@@ -547,7 +552,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, nil]
       def resolve_reference ref, api_map
-        parts = ref.split(/[\.#]/)
+        parts = ref.split(/[.#]/)
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else

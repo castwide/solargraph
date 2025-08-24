@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  solargraph_typed:
+    name: Solargraph / typed
 
     runs-on: ubuntu-latest
 
@@ -29,7 +30,9 @@ jobs:
         ruby-version: 3.4
         bundler-cache: false
     - name: Install gems
-      run: bundle install
+      run: |
+        bundle install
+        bundle update rbs # use latest available for this Ruby version
     - name: Install gem types
       run: bundle exec rbs collection install
     - name: Typecheck self
