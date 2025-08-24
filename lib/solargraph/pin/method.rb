@@ -428,7 +428,7 @@ module Solargraph
         @resolved_ref_tag = true
         return self unless docstring.ref_tags.any?
         docstring.ref_tags.each do |tag|
-          ref = if tag.owner.to_s.start_with?(/[#\.]/)
+          ref = if tag.owner.to_s.start_with?(/[#.]/)
             api_map.get_methods(namespace)
                    .select { |pin| pin.path.end_with?(tag.owner.to_s) }
                    .first
@@ -552,7 +552,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, nil]
       def resolve_reference ref, api_map
-        parts = ref.split(/[\.#]/)
+        parts = ref.split(/[.#]/)
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else

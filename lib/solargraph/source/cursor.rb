@@ -124,7 +124,7 @@ module Solargraph
       def node_position
         @node_position ||= begin
           if start_of_word.empty?
-            match = source.code[0, offset].match(/[\s]*(\.|:+)[\s]*$/)
+            match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
             if match
               Position.from_offset(source.code, offset - match[0].length)
             else
@@ -159,7 +159,7 @@ module Solargraph
       #
       # @return [Regexp]
       def end_word_pattern
-        /^([a-z0-9_]|[^\u0000-\u007F])*[\?\!]?/i
+        /^([a-z0-9_]|[^\u0000-\u007F])*[?!]?/i
       end
     end
   end
