@@ -55,8 +55,7 @@ module Solargraph
 
   CHDIR_MUTEX = Mutex.new
 
-  # @param type [Symbol] Type of assert.
-  def self.asserts_on?(type)
+  def self.asserts_on?
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
@@ -72,12 +71,15 @@ module Solargraph
   # @param block [Proc] A block that returns a message to log
   # @return [void]
   def self.assert_or_log(type, msg = nil, &block)
-    if asserts_on? type
+    if asserts_on?
       # @type [String, nil]
       msg ||= block.call
 
       raise "No message given for #{type.inspect}" if msg.nil?
 
+      # conditional aliases to handle compatibility corner cases
+      return if type == :alias_target_missing && msg.include?('highline/compatibility.rb')
+      return if type == :alias_target_missing && msg.include?('lib/json/add/date.rb')
       # @todo :combine_with_visibility is not ready for prime time -
       #  lots of disagreements found in practice that heuristics need
       #  to be created for and/or debugging needs to resolve in pin
