@@ -1,3 +1,33 @@
+## 0.56.2 - July 29, 2025
+- Add support for Ruby Data.define (#970)
+- Ensure that pin locations are always populated (#965)
+- Improve struct support (#992)
+- Include Rakefile, Gemfile, and gemspec files in config by default (#984)
+- Use Open3 to cache gemspecs (#1000)
+- Eager load node processors (#1002)
+
+## 0.56.1 - July 13, 2025
+- Library avoids blocking on pending yardoc caches (#990)
+- DocMap checks for default Gemfile (#989)
+- [Bug fix] Fixed an error in rbs/fills/tuple.rbs (#993)
+
+## 0.56.0 - July 1, 2025
+-  [regression] Gem caching perf and logging fixes #983
+
+## 0.55.5 - July 1, 2025
+- Flatten results of DocMap external bundle query (#981)
+- [breaking] Reimplement global conventions (#877)
+- GemPins pin merging improvements (#946)
+- Support class-scoped aliases and attributes from RBS (#952)
+- Restructure ComplexType specs towards YARD doc compliance (#969)
+- Use Prism (#974)
+- Document pages (#977)
+- Enable disabled-but-working specs (#978)
+- Map RBS 'untyped' type (RBS::Types::Bases::Any) to 'undefined' (#979)
+- Re-enable support for .gem_rbs_collection directories (#942)
+- [breaking] Comply with YARD documentation on Hash tag format (#968)
+- Ignore directory paths in Workspace#would_require? (#988)
+
 ## 0.55.4 - June 27, 2025
 -  Flatten results of DocMap external bundle query (#981)
 

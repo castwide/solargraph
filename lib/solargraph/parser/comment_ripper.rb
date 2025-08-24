@@ -51,7 +51,7 @@ module Solargraph
         result
       end
 
-      # @return [Hash{Integer => String}]
+      # @return [Hash{Integer => Solargraph::Parser::Snippet}]
       def parse
         @comments = {}
         super

@@ -48,10 +48,12 @@ module Solargraph
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'
-  autoload :Cache,            'solargraph/cache'
+  autoload :PinCache,         'solargraph/pin_cache'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
+
+  CHDIR_MUTEX = Mutex.new
 
   # @param type [Symbol] Type of assert.
   def self.asserts_on?(type)
@@ -65,8 +67,28 @@ module Solargraph
     end
   end
 
+  # @param type [Symbol] The type of assertion to perform.
+  # @param msg [String, nil] An optional message to log
+  # @param block [Proc] A block that returns a message to log
+  # @return [void]
   def self.assert_or_log(type, msg = nil, &block)
-    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
+    if asserts_on? type
+      # @type [String, nil]
+      msg ||= block.call
+
+      raise "No message given for #{type.inspect}" if msg.nil?
+
+      # @todo :combine_with_visibility is not ready for prime time -
+      #  lots of disagreements found in practice that heuristics need
+      #  to be created for and/or debugging needs to resolve in pin
+      #  generation.
+      # @todo :api_map_namespace_pin_stack triggers in a badly handled
+      #   self type case - 'keeps track of self type in method
+      #   parameters in subclass' in call_spec.rb
+      return if %i[api_map_namespace_pin_stack combine_with_visibility].include?(type)
+
+      raise msg
+    end
     logger.info msg, &block
   end
 
@@ -79,6 +101,11 @@ module Solargraph
 
   # A helper method that runs Bundler.with_unbundled_env or falls back to
   # Bundler.with_clean_env for earlier versions of Bundler.
+  #
+  # @generic T
+  # @yieldreturn [generic<T>]
+  # @sg-ignore dynamic call, but both functions behave the same
+  # @return [generic<T>]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_original_env)
       :with_original_env
@@ -88,3 +115,7 @@ module Solargraph
     Bundler.send meth, &block
   end
 end
+
+# Ensure that ParserGem node processors are properly loaded to avoid conflicts
+# with Convention node processors
+require 'solargraph/parser/parser_gem/node_processors'

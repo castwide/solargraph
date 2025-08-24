@@ -3,8 +3,8 @@
 module Solargraph
   module Pin
     class BaseVariable < Base
-      include Solargraph::Parser::NodeMethods
       # include Solargraph::Source::NodeMethods
+      include Solargraph::Parser::NodeMethods
 
       # @return [Parser::AST::Node, nil]
       attr_reader :assignment
@@ -43,7 +43,6 @@ module Solargraph
         @return_type ||= generate_complex_type
       end
 
-      # @sg-ignore
       def nil_assignment?
         # this will always be false - should it be return_type ==
         #   ComplexType::NIL or somesuch?

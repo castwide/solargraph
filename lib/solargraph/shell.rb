@@ -90,19 +90,20 @@ module Solargraph
     # @return [void]
     def clear
       puts "Deleting all cached documentation (gems, core and stdlib)"
-      Solargraph::Cache.clear
+      Solargraph::PinCache.clear
     end
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
 
     desc 'cache', 'Cache a gem', hide: true
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @return [void]
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
+      api_map = Solargraph::ApiMap.load(Dir.pwd)
       spec = Gem::Specification.find_by_name(gem, version)
-      pins = GemPins.build(spec)
-      Cache.save('gems', "#{spec.name}-#{spec.version}.ser", pins)
+      api_map.cache_gem(spec, rebuild: options[:rebuild], out: $stdout)
     end
 
     desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
@@ -117,18 +118,17 @@ module Solargraph
       raise ArgumentError, 'No gems specified.' if gems.empty?
       gems.each do |gem|
         if gem == 'core'
-          Cache.uncache("core.ser")
+          PinCache.uncache_core
           next
         end
 
         if gem == 'stdlib'
-          Cache.uncache("stdlib")
+          PinCache.uncache_stdlib
           next
         end
 
         spec = Gem::Specification.find_by_name(gem)
-        Cache.uncache('gems', "#{spec.name}-#{spec.version}.ser")
-        Cache.uncache('gems', "#{spec.name}-#{spec.version}.yardoc")
+        PinCache.uncache_gem(spec, out: $stdout)
       end
     end
 
@@ -137,15 +137,18 @@ module Solargraph
     # @param names [Array<String>]
     # @return [void]
     def gems *names
+      api_map = ApiMap.load('.')
       if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec }
+        Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
+        STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
           spec = Gem::Specification.find_by_name(*name.split('='))
-          do_cache spec
+          do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
+        STDERR.puts "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -255,16 +258,12 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
+    # @param api_map [ApiMap]
     # @return [void]
-    def do_cache gemspec
-      cached = Yardoc.cached?(gemspec)
-      if cached && !options.rebuild
-        puts "Cache already exists for #{gemspec.name} #{gemspec.version}"
-      else
-        puts "#{cached ? 'Rebuilding' : 'Caching'} gem documentation for #{gemspec.name} #{gemspec.version}"
-        pins = GemPins.build(gemspec)
-        Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
-      end
+    def do_cache gemspec, api_map
+      # @todo if the rebuild: option is passed as a positional arg,
+      #   typecheck doesn't complain on the below line
+      api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
     end
   end
 end
