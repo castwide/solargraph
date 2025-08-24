@@ -500,7 +500,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{String => Set<String>}]
+    # @return [Hash{String => Array<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
     end
@@ -508,6 +508,7 @@ module Solargraph
     # @param source_map [SourceMap]
     # @return [void]
     def find_external_requires source_map
+      # @type [Set<String>]
       new_set = source_map.requires.map(&:name).to_set
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
