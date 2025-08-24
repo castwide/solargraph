@@ -97,7 +97,6 @@ jobs:
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
     - uses: actions/checkout@v3
@@ -114,6 +113,7 @@ jobs:
       run: bundle exec rubocop -c .rubocop.yml
 
     - name: Run RuboCop against todo file
+      continue-on-error: true
       run: |
         bundle exec rubocop --auto-gen-config --no-exclude-limit --no-offense-counts --no-auto-gen-timestamp
         if [ -n "$(git status --porcelain)" ]
