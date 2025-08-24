@@ -14,6 +14,10 @@ module Solargraph
           nil
         end
 
+        def inner_desc
+          super + ", tags=#{tags.inspect}, delete=#{delete.inspect}"
+        end
+
         def initialize location, name, tags, delete = [], **splat
           super(location: location, name: name, **splat)
           @tags = tags
