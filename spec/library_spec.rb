@@ -26,6 +26,28 @@ describe Solargraph::Library do
     expect(completion.pins.map(&:name)).to include('x')
   end
 
+  context 'with a require from an already-cached external gem' do
+    before do
+      Solargraph::Shell.new.gems('backport')
+    end
+
+    it "returns a Completion" do
+      library = Solargraph::Library.new(Solargraph::Workspace.new(Dir.pwd,
+                                                                  Solargraph::Workspace::Config.new))
+      library.attach Solargraph::Source.load_string(%(
+        require 'backport'
+
+        # @param adapter [Backport::Adapter]
+        def foo(adapter)
+          adapter.remo
+        end
+      ), 'file.rb', 0)
+      completion = library.completions_at('file.rb', 5, 19)
+      expect(completion).to be_a(Solargraph::SourceMap::Completion)
+      expect(completion.pins.map(&:name)).to include('remote')
+    end
+  end
+
   it "gets definitions from a file" do
     library = Solargraph::Library.new
     src = Solargraph::Source.load_string %(
@@ -108,6 +130,20 @@ describe Solargraph::Library do
     result = library.diagnose 'file.rb'
     expect(result).to be_a(Array)
     # @todo More tests
+  end
+
+  it 'diagnoses using all reporters' do
+    directory = ''
+    config = instance_double(Solargraph::Workspace::Config)
+    allow(config).to receive_messages(plugins: [], required: [], reporters: ['all!'])
+    workspace = Solargraph::Workspace.new directory, config
+    library = Solargraph::Library.new workspace
+    src = Solargraph::Source.load_string(%(
+      puts 'hello'
+    ), 'file.rb', 0)
+    library.attach src
+    result = library.diagnose 'file.rb'
+    expect(result.to_s).to include('rubocop')
   end
 
   it "documents symbols" do
