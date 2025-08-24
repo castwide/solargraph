@@ -13,10 +13,10 @@ module Solargraph
       # @return [YARD::CodeObjects::Base]
       attr_reader :code_object
 
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       attr_reader :location
 
-      # @return [Solargraph::Location]
+      # @return [Solargraph::Location, nil]
       attr_reader :type_location
 
       # @return [String]
@@ -27,6 +27,11 @@ module Solargraph
 
       # @return [::Symbol]
       attr_accessor :source
+
+      # @type [::Numeric, nil] A priority for determining if pins should be combined or not
+      #   A nil priority is considered the be the lowest. All code, yard & rbs pins have nil priority
+      #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
+      attr_reader :combine_priority
 
       def presence_certain?
         true
@@ -40,7 +45,8 @@ module Solargraph
       # @param source [Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
-      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil
+      # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil, combine_priority: nil
         @location = location
         @type_location = type_location
         @closure = closure
@@ -50,7 +56,17 @@ module Solargraph
         @identity = nil
         @docstring = docstring
         @directives = directives
+        @combine_priority = combine_priority
+
         assert_source_provided
+        assert_location_provided
+      end
+
+      # @return [void]
+      def assert_location_provided
+        return unless best_location.nil? && %i[yardoc source rbs].include?(source)
+
+        Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
       # @param other [self]
@@ -59,6 +75,9 @@ module Solargraph
       # @return [self]
       def combine_with(other, attrs={})
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
+        priority_choice = choose_priority(other)
+        return priority_choice unless priority_choice.nil?
+
         type_location = choose(other, :type_location)
         location = choose(other, :location)
         combined_name = combine_name(other)
@@ -71,12 +90,32 @@ module Solargraph
           source: :combined,
           docstring: choose(other, :docstring),
           directives: combine_directives(other),
+          combine_priority: combine_priority
         }.merge(attrs)
         assert_same_macros(other)
         logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
         out = self.class.new(**new_attrs)
         out.reset_generated!
         out
+      end
+
+      # @param other [self]
+      # @return [self, nil] Returns either the pin chosen based on priority or nil
+      #   A nil return means that the combination process must proceed
+      def choose_priority(other)
+        if combine_priority.nil? && !other.combine_priority.nil?
+          return other
+        elsif other.combine_priority.nil? && !combine_priority.nil?
+          return self
+        elsif !combine_priority.nil? && !other.combine_priority.nil?
+          if combine_priority > other.combine_priority
+            return self
+          elsif combine_priority < other.combine_priority
+            return other
+          end
+        end
+
+        nil
       end
 
       # @param other [self]
@@ -90,7 +129,6 @@ module Solargraph
         val2 = other.send(attr)
         return val1 if val1 == val2
         return val2 if val1.nil?
-        # @sg-ignore
         val1.length > val2.length ? val1 : val2
       end
 
@@ -229,7 +267,6 @@ module Solargraph
         raise "Expected #{attr} on #{other} to be an Enumerable, got #{arr2.class}" unless arr2.is_a?(::Enumerable)
         # @type arr2 [::Enumerable]
 
-        # @sg-ignore
         # @type [undefined]
         values1 = arr1.map(&block)
         # @type [undefined]
@@ -263,8 +300,8 @@ module Solargraph
       #
       # @return [Object, nil]
       def assert_same(other, attr)
-        return false if other.nil?
         val1 = send(attr)
+        return val1 if other.nil?
         val2 = other.send(attr)
         return val1 if val1 == val2
         Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
@@ -290,6 +327,9 @@ module Solargraph
         choose_pin_attr(other, attr)
       end
 
+      # @param other [self]
+      # @param attr [::Symbol]
+      # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
         val1 = send(attr)
@@ -304,6 +344,7 @@ module Solargraph
         [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 
+      # @return [void]
       def assert_source_provided
         Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
@@ -548,6 +589,7 @@ module Solargraph
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
       end
 
+      # @return [String]
       def desc
         "[#{inner_desc}]"
       end
@@ -557,6 +599,7 @@ module Solargraph
         "#<#{self.class} `#{self.inner_desc}`#{all_location_text} via #{source.inspect}>"
       end
 
+      # @return [String]
       def all_location_text
         if location.nil? && type_location.nil?
           ''
@@ -569,6 +612,7 @@ module Solargraph
         end
       end
 
+      # @return [void]
       def reset_generated!
       end
 

@@ -17,10 +17,13 @@ module Solargraph
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
+
+      # Canonicalize 'true, false' to the non-runtime-type 'Boolean'
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
         items.unshift(ComplexType::BOOLEAN)
       end
+
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end
@@ -299,7 +302,6 @@ module Solargraph
       # #  @todo Need ability to use a literal true as a type below
       # #  @param partial [Boolean] True if the string is part of a another type
       # #  @return [Array<UniqueType>]
-      # @sg-ignore
       # @todo To be able to select the right signature above,
       #   Chain::Call needs to know the decl type (:arg, :optarg,
       #   :kwarg, etc) of the arguments given, instead of just having

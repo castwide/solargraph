@@ -61,6 +61,8 @@ describe Solargraph::SourceMap do
     ), 'test.rb')
 
     expect(map.document_symbols.map(&:path)).to include('FooBar#baz_convention')
+
+    Solargraph::Convention.deregister dummy_convention
   end
 
   it "locates block pins" do

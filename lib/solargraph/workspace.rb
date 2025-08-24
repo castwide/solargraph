@@ -133,6 +133,7 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||= begin
         unless directory.empty? || directory == '*'
@@ -153,6 +154,14 @@ module Solargraph
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'
+    end
+
+    # True if the workspace has a root Gemfile.
+    #
+    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
+    #
+    def gemfile?
+      directory && File.file?(File.join(directory, 'Gemfile'))
     end
 
     private
