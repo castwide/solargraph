@@ -20,6 +20,10 @@ module Solargraph
         ''
       end
 
+      def closure
+        @closure ||= Pin::ROOT_PIN
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end

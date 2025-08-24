@@ -97,7 +97,7 @@ module Solargraph
       # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin
-          match = phrase.match(/[\s]*(\.{1}|::)[\s]*$/)
+          match = phrase.match(/\s*(\.{1}|::)\s*$/)
           if match
             match[0]
           else
