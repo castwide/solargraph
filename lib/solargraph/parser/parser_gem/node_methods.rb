@@ -243,7 +243,7 @@ module Solargraph
                 if source.synchronized?
                   return node if source.code[0..offset-1] =~ /\(\s*\z/ && source.code[offset..-1] =~ /^\s*\)/
                 else
-                  return node if source.code[0..offset-1] =~ /\([^\(]*\z/
+                  return node if source.code[0..offset-1] =~ /\([^(]*\z/
                 end
               end
             end
