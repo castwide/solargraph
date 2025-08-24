@@ -1028,11 +1028,11 @@ module Solargraph
       end
       if original.nil?
         # :nocov:
-        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{pin.full_context.tag} #{pin.original}() in #{pin.scope} scope = #{pin.inspect}" }
+        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}" }
         return nil
         # :nocov:
       end
-     
+
       # @sg-ignore ignore `received nil` for original
       create_resolved_alias_pin(alias_pin, original)
     end
