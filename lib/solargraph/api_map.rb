@@ -26,7 +26,6 @@ module Solargraph
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
-      @method_alias_stack = []
       index pins
     end
 
@@ -687,6 +686,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
       with_resolved_aliases = pins.map do |pin|
+        next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
@@ -998,49 +998,76 @@ module Solargraph
       result + nil_pins
     end
 
-    # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::Method]
-    def resolve_method_alias pin
-      return pin unless pin.is_a?(Pin::MethodAlias)
-      return nil if @method_alias_stack.include?(pin.path)
-      @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
-      @method_alias_stack.pop
-      return nil if origin.nil?
-      args = {
-        location: pin.location,
-        type_location: origin.type_location,
-        closure: pin.closure,
-        name: pin.name,
-        comments: origin.comments,
-        scope: origin.scope,
-#        context: pin.context,
-        visibility: origin.visibility,
-        signatures: origin.signatures.map(&:clone).freeze,
-        attribute: origin.attribute?,
-        generics: origin.generics.clone,
-        return_type: origin.return_type,
-        source: :resolve_method_alias
-      }
-      out = Pin::Method.new **args
-      out.signatures.each do |sig|
-        sig.parameters = sig.parameters.map(&:clone).freeze
-        sig.source = :resolve_method_alias
-        sig.parameters.each do |param|
-          param.closure = out
-          param.source = :resolve_method_alias
-          param.reset_generated!
-        end
-        sig.closure = out
-        sig.reset_generated!
-      end
-      logger.debug { "ApiMap#resolve_method_alias(pin=#{pin}) - returning #{out} from #{origin}" }
-      out
-    end
-
     include Logging
 
     private
+
+    # @param alias_pin [Pin::MethodAlias]
+    # @return [Pin::Method, nil]
+    def resolve_method_alias(alias_pin)
+      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      original = nil
+
+      # Search each ancestor for the original method
+      ancestors.each do |ancestor_fqns|
+        ancestor_fqns = ComplexType.parse(ancestor_fqns).force_rooted.namespace
+        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+
+        # Search for the original method in the ancestor
+        original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
+          if candidate_pin.is_a?(Pin::MethodAlias)
+            # recursively resolve method aliases
+            resolved = resolve_method_alias(candidate_pin)
+            break resolved if resolved
+          end
+
+          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+        end
+
+        break if original
+      end
+
+      # @sg-ignore ignore `received nil` for original
+      create_resolved_alias_pin(alias_pin, original) if original
+    end
+
+    # Fast path for creating resolved alias pins without individual method stack lookups
+    # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
+    # @param original [Pin::Method] The original method pin that was already found
+    # @return [Pin::Method] The resolved method pin
+    def create_resolved_alias_pin(alias_pin, original)
+      # Build the resolved method pin directly (same logic as resolve_method_alias but without lookup)
+      args = {
+        location: alias_pin.location,
+        type_location: original.type_location,
+        closure: alias_pin.closure,
+        name: alias_pin.name,
+        comments: original.comments,
+        scope: original.scope,
+        visibility: original.visibility,
+        signatures: original.signatures.map(&:clone).freeze,
+        attribute: original.attribute?,
+        generics: original.generics.clone,
+        return_type: original.return_type,
+        source: :resolve_method_alias
+      }
+      resolved_pin = Pin::Method.new **args
+
+      # Clone signatures and parameters
+      resolved_pin.signatures.each do |sig|
+        sig.parameters = sig.parameters.map(&:clone).freeze
+        sig.source = :resolve_method_alias
+        sig.parameters.each do |param|
+          param.closure = resolved_pin
+          param.source = :resolve_method_alias
+          param.reset_generated!
+        end
+        sig.closure = resolved_pin
+        sig.reset_generated!
+      end
+
+      resolved_pin
+    end
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
