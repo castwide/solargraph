@@ -99,7 +99,8 @@ module Solargraph
           elsif [:gvar, :gvasgn].include?(n.type)
             result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
-            result.concat generate_links n.children[1]
+            new_node = n.updated(n.children[0].type, n.children[0].children + [n.children[1]])
+            result.concat generate_links new_node
           elsif [:class, :module, :def, :defs].include?(n.type)
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL

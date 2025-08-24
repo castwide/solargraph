@@ -315,6 +315,7 @@ module Solargraph
         end
         # :nocov:
         val1 = send(attr)
+        return val1 if other.nil?
         val2 = other.send(attr)
         return val1 if val1 == val2
         Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
