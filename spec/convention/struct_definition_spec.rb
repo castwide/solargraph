@@ -21,7 +21,7 @@ describe Solargraph::Convention::StructDefinition do
       expect(param_baz.return_type.tag).to eql('Integer')
     end
 
-    it 'should set closure to method on assignment operator parameters' do
+    it 'sets closure to method on assignment operator parameters' do
       source = Solargraph::SourceMap.load_string(%(
         # @param bar [String]
         # @param baz [Integer]
@@ -140,7 +140,7 @@ describe Solargraph::Convention::StructDefinition do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
-    it 'should not crash' do
+    it "doesn't crash" do
       checker = type_checker(%(
         Foo = Struct.new(:bar, :baz)
       ))
