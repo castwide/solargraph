@@ -77,11 +77,18 @@ module Solargraph
 
       raise "No message given for #{type.inspect}" if msg.nil?
 
-      # not ready for prime time
-      return if [:combine_with_visibility].include?(type)
       # conditional aliases to handle compatibility corner cases
       return if type == :alias_target_missing && msg.include?('highline/compatibility.rb')
       return if type == :alias_target_missing && msg.include?('lib/json/add/date.rb')
+      # @todo :combine_with_visibility is not ready for prime time -
+      #  lots of disagreements found in practice that heuristics need
+      #  to be created for and/or debugging needs to resolve in pin
+      #  generation.
+      # @todo :api_map_namespace_pin_stack triggers in a badly handled
+      #   self type case - 'keeps track of self type in method
+      #   parameters in subclass' in call_spec.rb
+      return if %i[api_map_namespace_pin_stack combine_with_visibility].include?(type)
+
       raise msg
     end
     logger.info msg, &block

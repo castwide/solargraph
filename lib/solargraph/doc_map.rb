@@ -133,7 +133,7 @@ module Solargraph
       @yard_gems_in_memory ||= {}
     end
 
-    # @return [Hash{String => Array<Pin::Base>}] stored by RBS collection path
+    # @return [Hash{String => Hash{Array(String, String) => Array<Pin::Base>}}] stored by RBS collection path
     def self.all_rbs_collection_gems_in_memory
       @rbs_collection_gems_in_memory ||= {}
     end

@@ -4,9 +4,9 @@ module Solargraph
   class ApiMap
     class Cache
       def initialize
-        # @type [Hash{Array => Array<Pin::Method>}]
+        # @type [Hash{String => Array<Pin::Method>}]
         @methods = {}
-        # @type [Hash{(String, Array<String>) => Array<Pin::Base>}]
+        # @type [Hash{String, Array<String> => Array<Pin::Base>}]
         @constants = {}
         # @type [Hash{String => String}]
         @qualified_namespaces = {}
@@ -101,6 +101,7 @@ module Solargraph
 
       private
 
+      # @return [Array<Object>]
       def all_caches
         [@methods, @constants, @qualified_namespaces, @receiver_definitions, @clips]
       end

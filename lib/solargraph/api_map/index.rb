@@ -42,22 +42,22 @@ module Solargraph
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      # @return [Hash{String => Array<String>}]
       def include_references
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      # @return [Hash{String => Array<String>}]
       def extend_references
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
+      # @return [Hash{String => Array<String>}]
       def superclass_references
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
