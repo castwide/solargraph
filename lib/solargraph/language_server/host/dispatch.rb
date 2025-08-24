@@ -95,6 +95,7 @@ module Solargraph
           nil
         end
 
+        # @return [Hash{String => undefined}]
         def options
           @options ||= {}.freeze
         end
@@ -118,6 +119,7 @@ module Solargraph
         end
 
         # @param library [Solargraph::Library]
+        # @param progress [Solargraph::LanguageServer::Progress, nil]
         # @return [void]
         def update progress
           progress&.send(self)

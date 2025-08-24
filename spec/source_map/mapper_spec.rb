@@ -1525,9 +1525,9 @@ describe Solargraph::SourceMap::Mapper do
         def quz; end
       end
     ))
-    expect(map.first_pin('Foo#bar').visibility).to be(:public)
-    expect(map.first_pin('Foo#baz').visibility).to be(:private)
-    expect(map.first_pin('Foo#quz').visibility).to be(:public)
+    expect(map.first_pin('Foo#bar').visibility).to eq(:public)
+    expect(map.first_pin('Foo#baz').visibility).to eq(:private)
+    expect(map.first_pin('Foo#quz').visibility).to eq(:public)
   end
 
   it 'encloses class_eval calls in receivers' do

@@ -6,6 +6,8 @@ module Solargraph
       # @return [String]
       attr_reader :text
 
+      # @param range [Solargraph::Range]
+      # @param text [String]
       def initialize range, text
         @range = range
         @text = text

@@ -79,6 +79,7 @@ module Solargraph
 
         private
 
+        # @return [void]
         def accept_or_cancel
           if host.cancel?(id)
             # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest

@@ -175,7 +175,6 @@ Layout/ExtraSpacing:
   Exclude:
     - 'lib/solargraph/parser/parser_gem/node_processors/opasgn_node.rb'
     - 'lib/solargraph/pin/closure.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'spec/spec_helper.rb'
@@ -337,7 +336,6 @@ Layout/SpaceAroundOperators:
   Exclude:
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/source.rb'
     - 'lib/solargraph/source/change.rb'
     - 'lib/solargraph/source/cursor.rb'

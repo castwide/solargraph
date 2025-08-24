@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class ProxyType < Base
       # @param return_type [ComplexType]
+      # @param binder [ComplexType, ComplexType::UniqueType, nil]
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, **splat
         super(**splat)
         @return_type = return_type

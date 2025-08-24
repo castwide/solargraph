@@ -9,7 +9,7 @@ module Solargraph
       autoload :Base, 'solargraph/parser/node_processor/base'
 
       class << self
-        # @type [Hash<Symbol, Array<Class<NodeProcessor::Base>>>]
+        # @type [Hash{Symbol => Array<Class<NodeProcessor::Base>>}]
         @@processors ||= {}
 
         # Register a processor for a node type. You can register multiple processors for the same type.
@@ -17,7 +17,7 @@ module Solargraph
         #
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
-        # @return [Class<NodeProcessor::Base>]
+        # @return [Array<Class<NodeProcessor::Base>>]
         def register type, cls
           @@processors[type] ||= []
           @@processors[type] << cls

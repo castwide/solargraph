@@ -39,6 +39,7 @@ module Solargraph
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
+        # @sg-ignore need to support destructured args in blocks
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
@@ -91,6 +92,7 @@ module Solargraph
       # @param new_pins [Array<Pin::Base>]
       # @return [self]
       def catalog new_pins
+        # @type [Hash{Class<generic<T>> => Set<generic<T>>}]
         @pin_select_cache = {}
         pins.concat new_pins
         set = new_pins.to_set

@@ -3,6 +3,10 @@
 module Solargraph
   module Pin
     module Common
+      # @!method closure
+      #   @abstract
+      #   @return [Pin::Closure, nil]
+
       # @return [Location]
       attr_reader :location
 

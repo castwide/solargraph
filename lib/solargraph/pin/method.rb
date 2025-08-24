@@ -51,7 +51,7 @@ module Solargraph
       end
 
       # @param other [Pin::Method]
-      # @return [Symbol]
+      # @return [::Symbol]
       def combine_visibility(other)
         if dodgy_visibility_source? && !other.dodgy_visibility_source?
           other.visibility

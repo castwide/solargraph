@@ -9,11 +9,13 @@ module Solargraph::LanguageServer::Message::Workspace
 
     private
 
+    # @return [void]
     def add_folders
       return unless params['event'] && params['event']['added']
       host.prepare_folders params['event']['added']
     end
 
+    # @return [void]
     def remove_folders
       return unless params['event'] && params['event']['removed']
       params['event']['removed'].each do |folder|

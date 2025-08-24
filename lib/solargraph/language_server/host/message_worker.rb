@@ -72,10 +72,12 @@ module Solargraph
 
         private
 
+        # @return [Hash, nil]
         def next_message
           cancel_message || next_priority
         end
 
+        # @return [Hash, nil]
         def cancel_message
           # Handle cancellations first
           idx = messages.find_index { |msg| msg['method'] == '$/cancelRequest' }
@@ -86,6 +88,7 @@ module Solargraph
           msg
         end
 
+        # @return [Hash, nil]
         def next_priority
           # Prioritize updates and version-dependent messages for performance
           idx = messages.find_index do |msg|
