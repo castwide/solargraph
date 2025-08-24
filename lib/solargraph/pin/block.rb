@@ -49,7 +49,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
       def typify_parameters(api_map)
-        logger.debug("Block#typify_parameters() - start")
+        logger.debug('Block#typify_parameters() - start')
         chain = Parser.chain(receiver, filename, node)
         logger.debug { "Block#typify_parameters() - chain=#{chain.desc}" }
         clip = api_map.clip_at(location.filename, location.range.start)
@@ -57,6 +57,7 @@ module Solargraph
         meths = chain.define(api_map, closure, locals)
         logger.debug { "Block#typify_parameters() - meths=#{meths}" }
         # @todo Convert logic to use signatures
+        # @param meth [Pin::Method]
         meths.each do |meth|
           if meth.block.nil?
             logger.debug { "Block#typify_parameters() - no block for #{meth.path} - moving to next method: #{meth}" }
@@ -65,7 +66,9 @@ module Solargraph
           end
           logger.debug { "Block#typify_parameters() - meth.block=#{meth.block}" }
           yield_types = meth.block.parameters.map(&:return_type)
-          logger.debug { "Block#typify_parameters() - yield_types were #{yield_types.map(&:rooted_tags)} from #{meth.path}: #{meth}" }
+          logger.debug do
+            "Block#typify_parameters() - yield_types were #{yield_types.map(&:rooted_tags)} from #{meth.path}: #{meth}"
+          end
           # 'arguments' is what the method says it will yield to the
           # block; 'parameters' is what the block accepts
           argument_types = destructure_yield_types(yield_types, parameters)
@@ -79,7 +82,10 @@ module Solargraph
               if arg_type.generic? && param_type.defined?
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 after_generics = arg_type.resolve_generics(namespace_pin, param_type)
-                logger.debug { "Block#typify_parameters() - arg_type=#{arg_type}, namespace_pin=#{namespace_pin}, param_type=#{param_type}, after_generics=#{after_generics}" }
+                logger.debug do
+                  "Block#typify_parameters() - arg_type=#{arg_type}, namespace_pin=#{namespace_pin}, " \
+                    "param_type=#{param_type}, after_generics=#{after_generics}"
+                end
                 after_generics
               else
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
@@ -93,7 +99,7 @@ module Solargraph
             logger.debug { "Block#typify_parameters() - param_types=#{param_types.map(&:rooted_tags)}" }
           end
         end
-        logger.debug { "Block#typify_parameters(): methods provided no information" }
+        logger.debug { 'Block#typify_parameters(): methods provided no information' }
         out = parameters.map { ComplexType::UNDEFINED }
         logger.debug { "Block#typify_parameters() => #{out.map(&:rooted_tags)}" }
         out
@@ -115,7 +121,9 @@ module Solargraph
 
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
         unless types&.any?
-          logger.debug { "Block#maybe_rebind(): no yield receiver types => undefined" }
+          logger.debug do
+            'Block#maybe_rebind(): no yield receiver types => undefined'
+          end
           return ComplexType::UNDEFINED
         end
         logger.debug { "Block#maybe_rebind(): yield receiver tag types: #{types}" }

@@ -166,30 +166,20 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        logger.debug { "Parameter#typify(self=#{self.desc} in #{closure.desc}) - starting" }
+        logger.debug { "Parameter#typify(self=#{desc} in #{closure.desc}) - starting" }
         unless return_type.undefined?
           out = return_type.qualify(api_map, closure.context.namespace)
-          logger.debug { "Parameter#typify(self=#{self.desc}, return_type=#{return_type.rooted_tags}, ) => #{out.rooted_tags} from declaration" }
+          logger.debug { "Parameter#typify(self=#{desc}, return_type=#{return_type.rooted_tags}, ) => #{out.rooted_tags} from declaration" }
           return out
         end
         if closure.is_a?(Pin::Block)
           out = typify_block_param(api_map)
-          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from block parameter" }
-          out
+          logger.debug { "Parameter#typify(self=#{desc}) => #{out.rooted_tags} from block parameter" }
         else
           out = typify_method_param(api_map)
-          logger.debug { "Parameter#typify(self=#{self.desc}) => #{out.rooted_tags} from method parameter" }
-          out
+          logger.debug { "Parameter#typify(self=#{desc}) => #{out.rooted_tags} from method parameter" }
         end
-      end
-
-      # @param atype [ComplexType]
-      # @param api_map [ApiMap]
-      def compatible_arg?(atype, api_map)
-        # make sure we get types from up the method
-        # inheritance chain if we don't have them on this pin
-        ptype = typify api_map
-        ptype.undefined? || ptype.can_assign?(api_map, atype) || ptype.generic?
+        out
       end
 
       # @param atype [ComplexType]

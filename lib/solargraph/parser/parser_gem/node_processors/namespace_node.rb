@@ -23,7 +23,10 @@ module Solargraph
               gates: region.closure.gates.freeze,
               source: :parser
             )
-            logger.debug { "NamespaceNode#process: Created namespace pin: #{nspin} in closure #{region.closure} and namespace=#{nspin.namespace} and name=#{name}" }
+            logger.debug do
+              "NamespaceNode#process: Created namespace pin: #{nspin} in closure #{region.closure} " \
+                "and namespace=#{nspin.namespace} and name=#{name}"
+            end
             pins.push nspin
             unless superclass_name.nil?
               pins.push Pin::Reference::Superclass.new(

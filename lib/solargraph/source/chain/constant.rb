@@ -34,7 +34,10 @@ module Solargraph
               break if type.undefined?
             end
             next if type.undefined?
-            logger.debug { "Constant#resolve(word=#{word.inspect}) - name_pin=#{name_pin}, type=#{type}, type.namespace=#{type.namespace}" }
+            logger.debug do
+              "Constant#resolve(word=#{word.inspect}) - name_pin=#{name_pin}, type=#{type}, " \
+                "type.namespace=#{type.namespace}"
+            end
             result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
             return result unless result.empty?
           end
@@ -51,7 +54,9 @@ module Solargraph
             if clos.is_a?(Pin::Namespace)
               gates = clos.gates
               gates.push('') if gates.empty?
-              logger.debug { "Constant#crawl_gates(pin=#{pin}) clos=#{clos}, clos.path=#{clos.path.inspect} - gates=#{gates}" }
+              logger.debug do
+                "Constant#crawl_gates(pin=#{pin}) clos=#{clos}, clos.path=#{clos.path.inspect} - gates=#{gates}"
+              end
               return gates
             end
             clos = clos.closure

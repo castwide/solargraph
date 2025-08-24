@@ -23,6 +23,7 @@ module Solargraph
         def chain
           links = generate_links(@node)
           logger.debug { "NodeChainer#chain(@node=#{@node}, @filename=#{@filename}, @parent=#{@parent}) - links=#{links}" }
+          # @sg-ignore Unresolved call to type
           out = Chain.new(links, @node, (Parser.is_ast_node?(@node) && @node.type == :splat))
           logger.debug { "NodeChainer#chain(@node=#{@node}, @filename=#{@filename}, @parent=#{@parent}) => #{out}" }
           out
