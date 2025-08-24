@@ -77,7 +77,6 @@ Layout/ClosingHeredocIndentation:
 # Configuration parameters: AllowForAlignment.
 Layout/CommentIndentation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/source_map/mapper.rb'
@@ -2656,7 +2655,6 @@ YARD/MismatchName:
     - 'lib/solargraph/pin/until.rb'
     - 'lib/solargraph/pin/while.rb'
     - 'lib/solargraph/pin_cache.rb'
-    - 'lib/solargraph/source/chain.rb'
     - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
     - 'lib/solargraph/type_checker.rb'

@@ -204,6 +204,44 @@ module Solargraph
         fqns_pins_map[[base, name]]
       end
 
+      # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
+      # @param fqns [String] The fully qualified namespace
+      # @return [Array<String>] Array of ancestor namespaces including the original
+      def get_ancestors(fqns)
+        return [] if fqns.nil? || fqns.empty?
+
+        ancestors = [fqns]
+        visited = Set.new
+        queue = [fqns]
+
+        until queue.empty?
+          current = queue.shift
+          next if current.nil? || current.empty? || visited.include?(current)
+          visited.add(current)
+
+          current = current.gsub(/^::/, '')
+
+          # Add superclass
+          superclass = get_superclass(current)
+          if superclass && !superclass.empty? && !visited.include?(superclass)
+            ancestors << superclass
+            queue << superclass
+          end
+
+          # Add includes, prepends, and extends
+          [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
+            next if refs.nil?
+            refs.each do |ref|
+              next if ref.nil? || ref.empty? || visited.include?(ref)
+              ancestors << ref
+              queue << ref
+            end
+          end
+        end
+
+        ancestors.compact.uniq
+      end
+
       private
 
       # @return [Index]
