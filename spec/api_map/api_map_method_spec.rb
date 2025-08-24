@@ -14,7 +14,7 @@ describe Solargraph::ApiMap do
   describe '#resolve_method_alias' do
     it 'resolves the IO.for_fd alias to IO.new' do
       stack = api_map.get_method_stack('IO', 'for_fd', scope: :class)
-      expect(stack).not_to be_empty
+      expect(stack.map(&:class).uniq).to eq([Solargraph::Pin::Method])
     end
   end
 
