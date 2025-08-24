@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 3.0'
 
+  s.add_runtime_dependency 'ast', '~> 2.4.3'
   s.add_runtime_dependency 'backport', '~> 1.2'
   s.add_runtime_dependency 'benchmark', '~> 0.4'
   s.add_runtime_dependency 'bundler', '~> 2.0'
@@ -33,6 +34,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'logger', '~> 1.6'
   s.add_runtime_dependency 'observer', '~> 0.1'
   s.add_runtime_dependency 'ostruct', '~> 0.6'
+  s.add_runtime_dependency 'open3', '~> 0.2.1'
   s.add_runtime_dependency 'parser', '~> 3.0'
   s.add_runtime_dependency 'prism', '~> 1.4'
   s.add_runtime_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.4']

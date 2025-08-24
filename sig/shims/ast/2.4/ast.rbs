@@ -1,0 +1,73 @@
+module AST
+  interface _ToAst
+    def to_ast: () -> Node
+  end
+
+  interface _ToSym
+    def to_sym: () -> Symbol
+  end
+
+  class Node
+    public
+
+    attr_reader children: Array[Node]
+    attr_reader hash: String
+    attr_reader type: Symbol
+
+    alias + concat
+
+    alias << append
+
+    def ==: (untyped other) -> bool
+
+    def append: (untyped element) -> self
+
+    alias clone dup
+
+    def concat: (_ToA[untyped] array) -> self
+
+    def dup: () -> self
+
+    def eql?: (untyped other) -> bool
+
+    def inspect: (?Integer indent) -> String
+
+    alias to_a children
+
+    def to_ast: () -> self
+
+    alias to_s to_sexp
+
+    def to_sexp: (?Integer indent) -> String
+
+    def to_sexp_array: () -> Array[untyped]
+
+    def updated: (?_ToSym? `type`, ?_ToA[untyped]? children, ?Hash[Symbol, untyped]? properties) -> self
+
+    private
+
+    def initialize: (_ToSym `type`, ?_ToA[untyped]? children, ?Hash[Symbol, untyped] properties) -> void
+
+    alias original_dup dup
+  end
+
+  class Processor
+    include Mixin
+
+    module Mixin
+      public
+
+      def handler_missing: (Node node) -> Node?
+
+      def process: (_ToAst? node) -> Node?
+
+      def process_all: (Array[_ToAst] nodes) -> Array[Node]
+    end
+  end
+
+  module Sexp
+    public
+
+    def s: (_ToSym `type`, *untyped children) -> Node
+  end
+end
