@@ -210,6 +210,7 @@ module Solargraph
       # @return [Boolean]
       def catalog pinsets
         @pinsets = pinsets
+        # @type [Array<Index>]
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?
