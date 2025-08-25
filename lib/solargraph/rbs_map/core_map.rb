@@ -5,7 +5,6 @@ module Solargraph
     # Ruby core pins
     #
     class CoreMap
-
       def resolved?
         true
       end

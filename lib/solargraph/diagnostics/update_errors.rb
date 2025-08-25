@@ -3,7 +3,7 @@
 module Solargraph
   module Diagnostics
     class UpdateErrors < Base
-      def diagnose source, api_map
+      def diagnose source, _api_map
         result = []
         combine_ranges(source.code, source.error_ranges).each do |range|
           result.push(
@@ -26,7 +26,7 @@ module Solargraph
       def combine_ranges code, ranges
         result = []
         lines = []
-        ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
+        ranges.sort { |a, b| a.start.line <=> b.start.line }.each do |rng|
           next if rng.nil? || lines.include?(rng.start.line)
           lines.push rng.start.line
           next if rng.start.line >= code.lines.length

@@ -32,9 +32,21 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         # Special handling for files that end with an integer and a period
-        return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])), Chain::UNDEFINED_CALL]) if phrase =~ /^[0-9]+\.$/
-        return Chain.new([Chain::Literal.new('Symbol', phrase[1..].to_sym)]) if phrase.start_with?(':') && !phrase.start_with?('::')
-        return SourceChainer.chain(source, Position.new(position.line, position.character + 1)) if end_of_phrase.strip == '::' && source.code[Position.to_offset(source.code, position)].to_s.match?(/[a-z]/i)
+        if phrase =~ /^[0-9]+\.$/
+          return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])),
+                            Chain::UNDEFINED_CALL])
+        end
+        if phrase.start_with?(':') && !phrase.start_with?('::')
+          return Chain.new([Chain::Literal.new('Symbol',
+                                               phrase[1..].to_sym)])
+        end
+        if end_of_phrase.strip == '::' && source.code[Position.to_offset(
+          source.code, position
+        )].to_s.match?(/[a-z]/i)
+          return SourceChainer.chain(source,
+                                     Position.new(position.line,
+                                                  position.character + 1))
+        end
         begin
           return Chain.new([]) if phrase.end_with?('..')
           node = nil
@@ -48,7 +60,12 @@ module Solargraph
           elsif source.repaired?
             node = Parser.parse(fixed_phrase)
           else
-            node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
+            unless source.error_ranges.any? do |r|
+              r.nil? || r.include?(fixed_position)
+            end
+              node, parent = source.tree_at(fixed_position.line,
+                                            fixed_position.column)[0..2]
+            end
             # Exception for positions that chain literal nodes in unsynchronized sources
             node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
             node = Parser.parse(fixed_phrase) if node.nil?
@@ -81,12 +98,12 @@ module Solargraph
 
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data..offset-1]
+        @phrase ||= source.code[signature_data..offset - 1]
       end
 
       # @return [String]
       def fixed_phrase
-        @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
+        @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
       end
 
       # @return [Position]
@@ -137,7 +154,7 @@ module Solargraph
         brackets = 0
         squares = 0
         parens = 0
-        index -=1
+        index -= 1
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
@@ -148,18 +165,16 @@ module Solargraph
           if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
-              unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
-                old = @source.code[index+1..-1]
-                nxt = @source.code[index+1..-1].lstrip
-                index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
-                break
-              end
+            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace && !(char == '.' or @source.code[index + 1..-1].strip.start_with?('.'))
+              @source.code[index + 1..-1]
+              @source.code[index + 1..-1].lstrip
+              index += (@source.code[index + 1..-1].length - @source.code[index + 1..-1].lstrip.length)
+              break
             end
             if char == ')'
-              parens -=1
+              parens -= 1
             elsif char == ']'
-              squares -=1
+              squares -= 1
             elsif char == '}'
               brackets -= 1
             elsif char == '('
@@ -175,9 +190,7 @@ module Solargraph
               break if char == '$'
               if char == '@'
                 index -= 1
-                if @source.code[index, 1] == '@'
-                  index -= 1
-                end
+                index -= 1 if @source.code[index, 1] == '@'
                 break
               end
             elsif parens == 1 || brackets == 1 || squares == 1

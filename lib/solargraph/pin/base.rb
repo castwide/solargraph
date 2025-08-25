@@ -46,7 +46,8 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
-      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '', docstring: nil, directives: nil, combine_priority: nil
+      def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
+                     docstring: nil, directives: nil, combine_priority: nil
         @location = location
         @type_location = type_location
         @closure = closure
@@ -66,14 +67,15 @@ module Solargraph
       def assert_location_provided
         return unless best_location.nil? && %i[yardoc source rbs].include?(source)
 
-        Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
+        Solargraph.assert_or_log(:best_location,
+                                 "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
       # @param other [self]
       # @param attrs [Hash{Symbol => Object}]
       #
       # @return [self]
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
@@ -93,7 +95,9 @@ module Solargraph
           combine_priority: combine_priority
         }.merge(attrs)
         assert_same_macros(other)
-        logger.debug { "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{self.comments}" }
+        logger.debug do
+          "Base#combine_with(path=#{path}) - other.comments=#{other.comments.inspect}, self.comments = #{comments}"
+        end
         out = self.class.new(**new_attrs)
         out.reset_generated!
         out
@@ -102,7 +106,7 @@ module Solargraph
       # @param other [self]
       # @return [self, nil] Returns either the pin chosen based on priority or nil
       #   A nil return means that the combination process must proceed
-      def choose_priority(other)
+      def choose_priority other
         if combine_priority.nil? && !other.combine_priority.nil?
           return other
         elsif other.combine_priority.nil? && !combine_priority.nil?
@@ -122,7 +126,7 @@ module Solargraph
       # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
-      def choose_longer(other, attr)
+      def choose_longer other, attr
         # @type [undefined]
         val1 = send(attr)
         # @type [undefined]
@@ -134,15 +138,15 @@ module Solargraph
 
       # @param other [self]
       # @return [::Array<YARD::Tags::Directive>, nil]
-      def combine_directives(other)
-        return self.directives if other.directives.empty?
+      def combine_directives other
+        return directives if other.directives.empty?
         return other.directives if directives.empty?
         [directives + other.directives].uniq
       end
 
       # @param other [self]
       # @return [String]
-      def combine_name(other)
+      def combine_name other
         if needs_consistent_name? || other.needs_consistent_name?
           assert_same(other, :name)
         else
@@ -177,7 +181,7 @@ module Solargraph
 
       # @param other [self]
       # @return [ComplexType]
-      def combine_return_type(other)
+      def combine_return_type other
         if return_type.undefined?
           other.return_type
         elsif other.return_type.undefined?
@@ -207,13 +211,13 @@ module Solargraph
       # @param attr [::Symbol]
       #
       # @return [Object, nil]
-      def choose(other, attr)
+      def choose other, attr
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
-        return true if results.any? { |r| r == true || r == false }
+        return true if results.any? { |r| [true, false].include?(r) }
         results.min
-      rescue
-        STDERR.puts("Problem handling #{attr} for \n#{self.inspect}\n and \n#{other.inspect}\n\n#{self.send(attr).inspect} vs #{other.send(attr).inspect}")
+      rescue StandardError
+        warn("Problem handling #{attr} for \n#{inspect}\n and \n#{other.inspect}\n\n#{send(attr).inspect} vs #{other.send(attr).inspect}")
         raise
       end
 
@@ -221,7 +225,7 @@ module Solargraph
       # @param attr [Symbol]
       # @sg-ignore
       # @return [undefined]
-      def choose_node(other, attr)
+      def choose_node other, attr
         if other.object_id < attr.object_id
           other.send(attr)
         else
@@ -233,9 +237,9 @@ module Solargraph
       # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
-      def prefer_rbs_location(other, attr)
+      def prefer_rbs_location other, attr
         if rbs_location? && !other.rbs_location?
-          self.send(attr)
+          send(attr)
         elsif !rbs_location? && other.rbs_location?
           other.send(attr)
         else
@@ -249,8 +253,8 @@ module Solargraph
 
       # @param other [self]
       # @return [void]
-      def assert_same_macros(other)
-        return unless self.source == :yardoc && other.source == :yardoc
+      def assert_same_macros other
+        return unless source == :yardoc && other.source == :yardoc
         assert_same_count(other, :macros)
         assert_same_array_content(other, :macros) { |macro| macro.tag.name }
       end
@@ -259,7 +263,7 @@ module Solargraph
       # @param attr [::Symbol]
       # @return [void]
       # @todo strong typechecking should complain when there are no block-related tags
-      def assert_same_array_content(other, attr, &block)
+      def assert_same_array_content other, attr, &block
         arr1 = send(attr)
         raise "Expected #{attr} on #{self} to be an Enumerable, got #{arr1.class}" unless arr1.is_a?(::Enumerable)
         # @type arr1 [::Enumerable]
@@ -273,7 +277,7 @@ module Solargraph
         values2 = arr2.map(&block)
         # @sg-ignore
         return arr1 if values1 == values2
-        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+        Solargraph.assert_or_log(:"combine_with_#{attr}",
                                  "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self values = #{values1}\nother values =#{attr} = #{values2}")
         arr1
       end
@@ -282,15 +286,15 @@ module Solargraph
       # @param attr [::Symbol]
       #
       # @return [::Enumerable]
-      def assert_same_count(other, attr)
+      def assert_same_count other, attr
         # @type [::Enumerable]
-        arr1 = self.send(attr)
+        arr1 = send(attr)
         raise "Expected #{attr} on #{self} to be an Enumerable, got #{arr1.class}" unless arr1.is_a?(::Enumerable)
         # @type [::Enumerable]
         arr2 = other.send(attr)
         raise "Expected #{attr} on #{other} to be an Enumerable, got #{arr2.class}" unless arr2.is_a?(::Enumerable)
         return arr1 if arr1.count == arr2.count
-        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+        Solargraph.assert_or_log(:"combine_with_#{attr}",
                                  "Inconsistent #{attr.inspect} count value between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{arr1.inspect}\nother.#{attr} = #{arr2.inspect}")
         arr1
       end
@@ -299,12 +303,12 @@ module Solargraph
       # @param attr [::Symbol]
       #
       # @return [Object, nil]
-      def assert_same(other, attr)
+      def assert_same other, attr
         val1 = send(attr)
         return val1 if other.nil?
         val2 = other.send(attr)
         return val1 if val1 == val2
-        Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
+        Solargraph.assert_or_log(:"combine_with_#{attr}",
                                  "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         val1
       end
@@ -313,15 +317,17 @@ module Solargraph
       # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
-      def choose_pin_attr_with_same_name(other, attr)
+      def choose_pin_attr_with_same_name other, attr
         # @type [Pin::Base, nil]
         val1 = send(attr)
         # @type [Pin::Base, nil]
         val2 = other.send(attr)
-        raise "Expected pin for #{attr} on\n#{self.inspect},\ngot #{val1.inspect}" unless val1.nil? || val1.is_a?(Pin::Base)
-        raise "Expected pin for #{attr} on\n#{other.inspect},\ngot #{val2.inspect}" unless val2.nil? || val2.is_a?(Pin::Base)
+        raise "Expected pin for #{attr} on\n#{inspect},\ngot #{val1.inspect}" unless val1.nil? || val1.is_a?(Pin::Base)
+        unless val2.nil? || val2.is_a?(Pin::Base)
+          raise "Expected pin for #{attr} on\n#{other.inspect},\ngot #{val2.inspect}"
+        end
         if val1&.name != val2&.name
-          Solargraph.assert_or_log("combine_with_#{attr}_name".to_sym,
+          Solargraph.assert_or_log(:"combine_with_#{attr}_name",
                                    "Inconsistent #{attr.inspect} name values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
         end
         choose_pin_attr(other, attr)
@@ -330,13 +336,13 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       # @return [undefined]
-      def choose_pin_attr(other, attr)
+      def choose_pin_attr other, attr
         # @type [Pin::Base, nil]
         val1 = send(attr)
         # @type [Pin::Base, nil]
         val2 = other.send(attr)
         if val1.class != val2.class
-          Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
+          Solargraph.assert_or_log(:"combine_with_#{attr}_class",
                                    "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
           return val1
         end
@@ -359,7 +365,7 @@ module Solargraph
       # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context(generics_to_resolve, return_type_context = nil, resolved_generic_values: {})
+      def resolve_generics_from_context generics_to_resolve, return_type_context = nil, resolved_generic_values: {}
         proxy return_type.resolve_generics_from_context(generics_to_resolve,
                                                         return_type_context,
                                                         resolved_generic_values: resolved_generic_values)
@@ -368,7 +374,7 @@ module Solargraph
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
-      def transform_types(&transform)
+      def transform_types &transform
         proxy return_type.transform(&transform)
       end
 
@@ -389,7 +395,7 @@ module Solargraph
 
       # @param generics_to_erase [::Array<String>]
       # @return [self]
-      def erase_generics(generics_to_erase)
+      def erase_generics generics_to_erase
         return self if generics_to_erase.empty?
         transform_types { |t| t.erase_generics(generics_to_erase) }
       end
@@ -435,7 +441,8 @@ module Solargraph
           name == other.name &&
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
-            (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
+            (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives,
+                                                                                                     other.directives)) &&
             compare_docstring_tags(docstring, other.docstring))
           )
       end
@@ -515,7 +522,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
-        Solargraph::Logging.logger.warn "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        Solargraph::Logging.logger.warn 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.'
         type = typify(api_map)
         return type unless type.undefined?
         probe api_map
@@ -596,7 +603,7 @@ module Solargraph
 
       # @return [String]
       def inspect
-        "#<#{self.class} `#{self.inner_desc}`#{all_location_text} via #{source.inspect}>"
+        "#<#{self.class} `#{inner_desc}`#{all_location_text} via #{source.inspect}>"
       end
 
       # @return [String]
@@ -613,8 +620,7 @@ module Solargraph
       end
 
       # @return [void]
-      def reset_generated!
-      end
+      def reset_generated!; end
 
       protected
 
@@ -627,9 +633,7 @@ module Solargraph
       # @return [ComplexType]
       attr_writer :return_type
 
-      attr_writer :docstring
-
-      attr_writer :directives
+      attr_writer :docstring, :directives
 
       private
 
@@ -688,7 +692,7 @@ module Solargraph
       def collect_macros
         return [] unless maybe_directives?
         parse = Solargraph::Source.parse_docstring(comments)
-        parse.directives.select{ |d| d.tag.tag_name == 'macro' }
+        parse.directives.select { |d| d.tag.tag_name == 'macro' }
       end
     end
   end

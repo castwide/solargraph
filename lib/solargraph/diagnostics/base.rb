@@ -21,7 +21,9 @@ module Solargraph
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
       # @return [Array<Hash>]
-      def diagnose source, api_map
+      # @param [Object] _source
+      # @param [Object] _api_map
+      def diagnose _source, _api_map
         []
       end
     end

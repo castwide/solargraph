@@ -23,7 +23,8 @@ module Solargraph
               if named_path.is_a?(Pin::Method)
                 pins.push Solargraph::Pin::InstanceVariable.new(
                   location: loc,
-                  closure: Pin::Namespace.new(type: :module, closure: region.closure.closure, name: region.closure.name),
+                  closure: Pin::Namespace.new(type: :module, closure: region.closure.closure,
+                                              name: region.closure.name),
                   name: node.children[0].to_s,
                   comments: comments_for(node),
                   assignment: node.children[1],

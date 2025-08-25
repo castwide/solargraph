@@ -5,9 +5,9 @@ describe Solargraph::Parser::NodeProcessor do
         private_constant
       end
     ))
-    expect {
+    expect do
       Solargraph::Parser::NodeProcessor.process(node)
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'orders optional args correctly' do

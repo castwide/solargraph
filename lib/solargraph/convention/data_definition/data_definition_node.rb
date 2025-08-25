@@ -25,7 +25,7 @@ module Solargraph
           #     s(:def, :foo,
           #       s(:args),
           #       s(:send, nil, :bar)))
-          def match?(node)
+          def match? node
             return false unless node&.type == :class
 
             data_definition_node?(node.children[1])
@@ -35,7 +35,7 @@ module Solargraph
 
           # @param data_node [Parser::AST::Node]
           # @return [Boolean]
-          def data_definition_node?(data_node)
+          def data_definition_node? data_node
             return false unless data_node.is_a?(::Parser::AST::Node)
             return false unless data_node&.type == :send
             return false unless data_node.children[0]&.type == :const
@@ -47,7 +47,7 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node]
-        def initialize(node)
+        def initialize node
           @node = node
         end
 

@@ -10,15 +10,15 @@ module Solargraph
           def process
             location = get_node_location(node)
             parent = if other_class_eval?
-              Solargraph::Pin::Namespace.new(
-                location: location,
-                type: :class,
-                name: unpack_name(node.children[0].children[0]),
-                source: :parser,
-              )
-            else
-              region.closure
-            end
+                       Solargraph::Pin::Namespace.new(
+                         location: location,
+                         type: :class,
+                         name: unpack_name(node.children[0].children[0]),
+                         source: :parser
+                       )
+                     else
+                       region.closure
+                     end
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: parent,
@@ -37,7 +37,7 @@ module Solargraph
           def other_class_eval?
             node.children[0].type == :send &&
               node.children[0].children[1] == :class_eval &&
-              [:cbase, :const].include?(node.children[0].children[0]&.type)
+              %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end
       end

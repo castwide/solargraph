@@ -4,6 +4,8 @@ module Solargraph
   module Pin
     class ProxyType < Base
       # @param return_type [ComplexType]
+      # @param [Object, nil] binder
+      # @param [Hash{Symbol => Object}] splat
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, **splat
         super(**splat)
         @return_type = return_type
@@ -18,6 +20,7 @@ module Solargraph
       # @param closure [Pin::Namespace, nil] Used as the closure for this pin
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @return [ProxyType]
+      # @param [Hash{Symbol => Object}] kwargs
       def self.anonymous context, closure: nil, binder: nil, **kwargs
         unless closure
           parts = context.namespace.split('::')

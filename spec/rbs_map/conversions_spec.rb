@@ -2,7 +2,7 @@ describe Solargraph::RbsMap::Conversions do
   # create a temporary directory with the scope of the spec
   around do |example|
     require 'tmpdir'
-    Dir.mktmpdir("rspec-solargraph-") do |dir|
+    Dir.mktmpdir('rspec-solargraph-') do |dir|
       @temp_dir = dir
       example.run
     end
@@ -33,21 +33,21 @@ describe Solargraph::RbsMap::Conversions do
   attr_reader :temp_dir
 
   context 'with untyped response' do
-    let(:rbs) do
-      <<~RBS
-          class Foo
-            def bar: () -> untyped
-          end
-        RBS
-    end
-
     subject(:method_pin) { pins.find { |pin| pin.path == 'Foo#bar' } }
 
-    it { should_not be_nil }
+    let(:rbs) do
+      <<~RBS
+        class Foo
+          def bar: () -> untyped
+        end
+      RBS
+    end
 
-    it { should be_a(Solargraph::Pin::Method) }
+    it { is_expected.not_to be_nil }
 
-    it 'maps untyped in RBS to undefined in Solargraph 'do
+    it { is_expected.to be_a(Solargraph::Pin::Method) }
+
+    it 'maps untyped in RBS to undefined in Solargraph' do
       expect(method_pin.return_type.tag).to eq('undefined')
     end
   end

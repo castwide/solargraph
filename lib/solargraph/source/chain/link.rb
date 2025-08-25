@@ -40,7 +40,10 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [::Enumerable<Pin::Base>]
         # @return [::Array<Pin::Base>]
-        def resolve api_map, name_pin, locals
+        # @param [Object] _api_map
+        # @param [Object] _name_pin
+        # @param [Object] _locals
+        def resolve _api_map, _name_pin, _locals
           []
         end
 
@@ -55,7 +58,7 @@ module Solargraph
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         def head?
@@ -88,7 +91,7 @@ module Solargraph
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         include Logging

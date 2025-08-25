@@ -1,5 +1,5 @@
 describe Solargraph::Source::Updater do
-  it "applies changes" do
+  it 'applies changes' do
     text = 'foo'
     changes = []
     range = Solargraph::Range.from_to(0, 3, 0, 3)
@@ -13,7 +13,7 @@ describe Solargraph::Source::Updater do
     expect(updated).to eq('foo.bar')
   end
 
-  it "applies repairs" do
+  it 'applies repairs' do
     text = 'foo'
     changes = []
     range = Solargraph::Range.from_to(0, 3, 0, 3)
@@ -27,7 +27,7 @@ describe Solargraph::Source::Updater do
     expect(updated).to eq('foo    ')
   end
 
-  it "handles nil ranges" do
+  it 'handles nil ranges' do
     text = 'foo'
     changes = []
     range = nil

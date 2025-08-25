@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 # @todo PR the RBS gem to add this
 # @!parse
 #   module ::Gem
@@ -23,8 +22,8 @@ module Solargraph
 
           # @param obj [Gem::SpecFetcher]
           # @return [Gem::SpecFetcher]
-          def self.fetcher= obj
-            @fetcher = obj
+          class << self
+            attr_writer :fetcher
           end
 
           GEM_ZERO = Gem::Version.new('0.0.0')
@@ -47,11 +46,11 @@ module Solargraph
                                           ['Update now'] do |result|
                                             next unless result == 'Update now'
                                             cmd = if host.options['useBundler']
-                                              'bundle update solargraph'
-                                            else
-                                              'gem update solargraph'
-                                            end
-                                            o, s = Open3.capture2(cmd)
+                                                    'bundle update solargraph'
+                                                  else
+                                                    'gem update solargraph'
+                                                  end
+                                            _, s = Open3.capture2(cmd)
                                             if s == 0
                                               host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
                                               host.send_notification '$/solargraph/restart', {}
@@ -67,9 +66,9 @@ module Solargraph
               host.show_message(error, MessageTypes::ERROR) if params['verbose']
             end
             set_result({
-              installed: current,
-              available: available
-            })
+                         installed: current,
+                         available: available
+                       })
           end
 
           private

@@ -26,7 +26,7 @@ module Solargraph
       [line, character]
     end
 
-    def <=>(other)
+    def <=> other
       return nil unless other.is_a?(Position)
       if line == other.line
         character <=> other.character

@@ -1,38 +1,39 @@
 describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
-  before :each do
+  before do
     version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
-    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher, search_for_dependency: [version])
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher,
+                                                                                    search_for_dependency: [version])
   end
 
-  after :each do
+  after do
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = nil
   end
 
-  it "checks the gem source" do
+  it 'checks the gem source' do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, {})
     expect { message.process }.not_to raise_error
   end
 
-  it "performs a verbose check" do
+  it 'performs a verbose check' do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, { 'params' => { 'verbose' => true } })
     expect { message.process }.not_to raise_error
   end
 
-  it "detects available updates" do
+  it 'detects available updates' do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, {}, current: Gem::Version.new('0.0.1'))
     expect { message.process }.not_to raise_error
   end
 
-  it "performs a verbose check with an available update" do
+  it 'performs a verbose check with an available update' do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, { 'params' => { 'verbose' => true } }, current: Gem::Version.new('0.0.1'))
     expect { message.process }.not_to raise_error
   end
 
-  it "responds to update actions" do
+  it 'responds to update actions' do
     host = Solargraph::LanguageServer::Host.new
     message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
     message.process
@@ -42,18 +43,18 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
       response = data
     end
     reader.receive host.flush
-    expect {
+    expect do
       action = {
-        "id" => response['id'],
-        "result" => response['params']['actions'].first
+        'id' => response['id'],
+        'result' => response['params']['actions'].first
       }
       host.receive action
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'uses bundler' do
     host = Solargraph::LanguageServer::Host.new
-    host.configure({'useBundler' => true})
+    host.configure({ 'useBundler' => true })
     message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
     message.process
     response = nil
@@ -62,12 +63,12 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
       response = data
     end
     reader.receive host.flush
-    expect {
+    expect do
       action = {
-        "id" => response['id'],
-        "result" => response['params']['actions'].first
+        'id' => response['id'],
+        'result' => response['params']['actions'].first
       }
       host.receive action
-    }.not_to raise_error
+    end.not_to raise_error
   end
 end
