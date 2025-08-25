@@ -695,6 +695,10 @@ module Solargraph
         resolved = resolve_method_alias(pin)
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
+      rescue Solargraph::ComplexTypeError => e
+        logger.warn "ComplexTypeError while resolving #{pin.inspect}: #{e.message}"
+        raise e
+      end
       end.compact
       logger.debug do
         "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}"
