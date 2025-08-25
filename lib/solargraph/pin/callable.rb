@@ -185,6 +185,7 @@ module Solargraph
         callable = super
         callable.block = block.transform_types(&transform) if block?
         callable.parameters = parameters.map do |param|
+          # @sg-ignore Too many arguments to Solargraph::Pin::Base#transform_types
           param.transform_types(&transform)
         end
         callable

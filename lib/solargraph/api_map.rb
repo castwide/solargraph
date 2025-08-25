@@ -370,6 +370,7 @@ module Solargraph
 
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
     def visible_pins(...)
+      # @sg-ignore Not enough arguments to Solargraph::Parser::FlowSensitiveTyping.visible_pins
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(...)
     end
 

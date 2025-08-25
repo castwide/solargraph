@@ -108,6 +108,7 @@ module Solargraph
 
       def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
+        # @sg-ignore Too many arguments to Solargraph::Pin::Callable#transform_types
         m = super
         m.signatures = m.signatures.map do |sig|
           sig.transform_types(&transform)

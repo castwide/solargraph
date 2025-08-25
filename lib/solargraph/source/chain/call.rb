@@ -51,6 +51,7 @@ module Solargraph
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = if head?
+                    # @sg-ignore Too many arguments to Solargraph::ApiMap#visible_pins
                     api_map.visible_pins(locals, word, name_pin, location)
                   else
                     []
