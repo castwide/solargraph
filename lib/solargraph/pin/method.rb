@@ -22,6 +22,7 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
+      # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
                      **splat
         super(**splat)
@@ -52,7 +53,7 @@ module Solargraph
 
       # @param other [Pin::Method]
       # @return [Symbol]
-      def combine_visibility(other)
+      def combine_visibility other
         if dodgy_visibility_source? && !other.dodgy_visibility_source?
           other.visibility
         elsif other.dodgy_visibility_source? && !dodgy_visibility_source?
@@ -64,7 +65,7 @@ module Solargraph
 
       # @param other [Pin::Method]
       # @return [Array<Pin::Signature>]
-      def combine_signatures(other)
+      def combine_signatures other
         all_undefined = signatures.all? { |sig| sig.return_type.undefined? }
         other_all_undefined = other.signatures.all? { |sig| sig.return_type.undefined? }
         if all_undefined && !other_all_undefined
@@ -76,16 +77,16 @@ module Solargraph
         end
       end
 
-      def combine_with(other, attrs = {})
+      def combine_with other, attrs = {}
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
 
         sigs = combine_signatures(other)
         parameters = if sigs.length > 0
-          [].freeze
-        else
-          choose(other, :parameters).clone.freeze
-        end
+                       [].freeze
+                     else
+                       choose(other, :parameters).clone.freeze
+                     end
         new_attrs = {
           visibility: combine_visibility(other),
           explicit: explicit? || other.explicit?,
@@ -105,9 +106,9 @@ module Solargraph
         super && other.node == node
       end
 
-      def transform_types(&transform)
+      def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
-        m = super(&transform)
+        m = super
         m.signatures = m.signatures.map do |sig|
           sig.transform_types(&transform)
         end
@@ -120,14 +121,12 @@ module Solargraph
       def reset_generated!
         super
         unless signatures.empty?
-          return_type = nil
           @block = :undefined
-          parameters = []
+          []
         end
         block&.reset_generated!
         @signatures&.each(&:reset_generated!)
-        signature_help = nil
-        documentation = nil
+        nil
       end
 
       def all_rooted?
@@ -136,7 +135,7 @@ module Solargraph
 
       # @param signature [Pin::Signature]
       # @return [Pin::Method]
-      def with_single_signature(signature)
+      def with_single_signature signature
         m = proxy signature.return_type
         m.reset_generated!
         # @todo populating the single parameters/return_type/block
@@ -176,7 +175,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       # @param return_type [ComplexType]
       # @return [Signature]
-      def generate_signature(parameters, return_type)
+      def generate_signature parameters, return_type
         block = nil
         yieldparam_tags = docstring.tags(:yieldparam)
         yieldreturn_tags = docstring.tags(:yieldreturn)
@@ -218,7 +217,11 @@ module Solargraph
           top_type = generate_complex_type
           result = []
           result.push generate_signature(parameters, top_type) if top_type.defined?
-          result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+          unless overloads.empty?
+            result.concat(overloads.map do |meth|
+              generate_signature(meth.parameters, meth.return_type)
+            end)
+          end
           result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
           result
         end
@@ -238,11 +241,17 @@ module Solargraph
         # change when pins get proxied.
         detail = String.new
         detail += if signatures.length > 1
-          "(*) "
-        else
-          "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
-        end.to_s
-        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
+                    '(*) '
+                  else
+                    "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
+                  end.to_s
+        unless return_type.undefined?
+          detail += "=#{if probed?
+                          '~'
+                        else
+                          (proxied? ? '^' : '>')
+                        end} #{return_type}"
+        end
         detail.strip!
         return nil if detail.empty?
         detail
@@ -280,7 +289,7 @@ module Solargraph
       end
 
       def path
-        @path ||= "#{namespace}#{(scope == :instance ? '#' : '.')}#{name}"
+        @path ||= "#{namespace}#{scope == :instance ? '#' : '.'}#{name}"
       end
 
       # @return [String]
@@ -289,10 +298,14 @@ module Solargraph
       end
 
       def typify api_map
-        logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting" }
+        logger.debug do
+          "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
+        end
         decl = super
         unless decl.undefined?
-          logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl.rooted_tags.inspect} - decl found" }
+          logger.debug do
+            "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl.rooted_tags.inspect} - decl found"
+          end
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
@@ -340,7 +353,7 @@ module Solargraph
             method_docs += "Block Returns:\n"
             lines = []
             yieldreturn_tags.each do |r|
-              l = "*"
+              l = '*'
               l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? or r.types.empty?
               l += " #{r.text}"
               lines.push l
@@ -353,7 +366,7 @@ module Solargraph
             method_docs += "Returns:\n"
             lines = []
             return_tags.each do |r|
-              l = "*"
+              l = '*'
               l += " [#{escape_brackets(r.types.join(', '))}]" unless r.types.nil? or r.types.empty?
               l += " #{r.text}"
               lines.push l
@@ -410,7 +423,7 @@ module Solargraph
             end,
             closure: self,
             return_type: ComplexType.try_parse(*tag.docstring.tags(:return).flat_map(&:types)),
-            source: :overloads,
+            source: :overloads
           )
         end
         @overloads
@@ -429,13 +442,13 @@ module Solargraph
         return self unless docstring.ref_tags.any?
         docstring.ref_tags.each do |tag|
           ref = if tag.owner.to_s.start_with?(/[#.]/)
-            api_map.get_methods(namespace)
-                   .select { |pin| pin.path.end_with?(tag.owner.to_s) }
-                   .first
-          else
-            # @todo Resolve relative namespaces
-            api_map.get_path_pins(tag.owner.to_s).first
-          end
+                  api_map.get_methods(namespace)
+                         .select { |pin| pin.path.end_with?(tag.owner.to_s) }
+                         .first
+                else
+                  # @todo Resolve relative namespaces
+                  api_map.get_path_pins(tag.owner.to_s).first
+                end
           next unless ref
 
           docstring.add_tag(*ref.docstring.tags(:param))
@@ -451,25 +464,21 @@ module Solargraph
 
       protected
 
-      attr_writer :block
-
-      attr_writer :signature_help
-
-      attr_writer :documentation
+      attr_writer :block, :signature_help, :documentation, :return_type
 
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
         # inside 'class << self' blocks, but YARD did OK at it
-        source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined? ||
+        (source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined?) ||
           # YARD's RBS generator seems to miss a lot of should-be protected instance methods
-          source == :rbs && scope == :instance && namespace.start_with?('YARD::') ||
+          (source == :rbs && scope == :instance && namespace.start_with?('YARD::')) ||
           # private on attr_readers seems to be broken in Prism's auto-generator script
-          source == :rbs && scope == :instance && namespace.start_with?('Prism::') ||
+          (source == :rbs && scope == :instance && namespace.start_with?('Prism::')) ||
           # The RBS for the RBS gem itself seems to use private as a
           # 'is this a public API' concept, more aggressively than the
           # actual code.  Let's respect that and ignore the actual .rb file.
-          source == :yardoc && scope == :instance && namespace.start_with?('RBS::')
+          (source == :yardoc && scope == :instance && namespace.start_with?('RBS::'))
       end
 
       private
@@ -506,7 +515,7 @@ module Solargraph
       # @param name [String]
       #
       # @return [ComplexType]
-      def param_type_from_name(tag, name)
+      def param_type_from_name tag, name
         param = tag.tags(:param).select { |t| t.name == name }.first
         return ComplexType::UNDEFINED unless param
         ComplexType.try_parse(*param.types)
@@ -516,7 +525,7 @@ module Solargraph
       def generate_complex_type
         tags = docstring.tags(:return).map(&:types).flatten.compact
         return ComplexType::UNDEFINED if tags.empty?
-        ComplexType.try_parse *tags
+        ComplexType.try_parse(*tags)
       end
 
       # @param api_map [ApiMap]
@@ -573,7 +582,7 @@ module Solargraph
         return nil if node.nil?
         return node.children[1].children.last if node.type == :DEFN
         return node.children[2].children.last if node.type == :DEFS
-        return node.children[2] if node.type == :def || node.type == :DEFS
+        return node.children[2] if %i[def DEFS].include?(node.type)
         return node.children[3] if node.type == :defs
         nil
       end
@@ -586,7 +595,7 @@ module Solargraph
         has_nil = false
         return ComplexType::NIL if method_body_node.nil?
         returns_from_method_body(method_body_node).each do |n|
-          if n.nil? || [:NIL, :nil].include?(n.type)
+          if n.nil? || %i[NIL nil].include?(n.type)
             has_nil = true
             next
           end
@@ -624,7 +633,7 @@ module Solargraph
       #
       # @param name [String]
       # @return [::Array(String, ::Symbol)]
-      def parse_overload_param(name)
+      def parse_overload_param name
         # @todo this needs to handle mandatory vs not args, kwargs, blocks, etc
         if name.start_with?('**')
           [name[2..-1], :kwrestarg]
@@ -647,10 +656,6 @@ module Solargraph
         .join("\n")
         .concat("```\n")
       end
-
-      protected
-
-      attr_writer :return_type
     end
   end
 end

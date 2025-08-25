@@ -21,7 +21,7 @@ module Solargraph
           @word ||= "<#{@type}>"
         end
 
-        def resolve api_map, name_pin, locals
+        def resolve _api_map, _name_pin, _locals
           [Pin::ProxyType.anonymous(@complex_type, source: :chain)]
         end
 

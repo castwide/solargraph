@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::GlobalVariable do
-  it "resolves instance variable pins" do
+  it 'resolves instance variable pins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo')
     foo_pin = Solargraph::Pin::GlobalVariable.new(closure: closure, name: '$foo')
     not_pin = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@bar')

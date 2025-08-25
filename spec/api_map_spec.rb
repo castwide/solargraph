@@ -222,7 +222,8 @@ describe Solargraph::ApiMap do
     ))
     @api_map.index map.pins
     pins = @api_map.get_method_stack('Bar', 'select')
-    expect(pins.map(&:path)).to eq(['Bar#select', 'Foo#select', 'Mixin#select', 'Array#select', 'Enumerable#select', 'Kernel#select'])
+    expect(pins.map(&:path)).to eq(['Bar#select', 'Foo#select', 'Mixin#select', 'Array#select', 'Enumerable#select',
+                                    'Kernel#select'])
   end
 
   it 'finds symbols' do
@@ -435,7 +436,7 @@ describe Solargraph::ApiMap do
   xit 'understands tuples inherit from regular arrays' do
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
-    expect(method_pin).to_not be_nil
+    expect(method_pin).not_to be_nil
     expect(method_pin.path).to eq('Array#include?')
     parameter_type = method_pin.signatures.first.parameters.first.return_type
     expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
@@ -791,7 +792,9 @@ describe Solargraph::ApiMap do
 
   it 'ignores malformed mixins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
-    mixin = Solargraph::Pin::Reference::Include.new(name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure)
+    mixin = Solargraph::Pin::Reference::Include.new(
+      name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure
+    )
     api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
   end

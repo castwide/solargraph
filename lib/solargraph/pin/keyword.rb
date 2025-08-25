@@ -12,9 +12,7 @@ module Solargraph
         @closure ||= Pin::ROOT_PIN
       end
 
-      def name
-        @name
-      end
+      attr_reader :name
     end
   end
 end

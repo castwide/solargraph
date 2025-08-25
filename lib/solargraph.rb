@@ -56,7 +56,7 @@ module Solargraph
   CHDIR_MUTEX = Mutex.new
 
   # @param type [Symbol] Type of assert.
-  def self.asserts_on?(type)
+  def self.asserts_on? _type
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
@@ -71,7 +71,7 @@ module Solargraph
   # @param msg [String, nil] An optional message to log
   # @param block [Proc] A block that returns a message to log
   # @return [void]
-  def self.assert_or_log(type, msg = nil, &block)
+  def self.assert_or_log type, msg = nil, &block
     if asserts_on? type
       # @type [String, nil]
       msg ||= block.call
@@ -108,10 +108,10 @@ module Solargraph
   # @return [generic<T>]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_original_env)
-      :with_original_env
-    else
-      :with_clean_env
-    end
+             :with_original_env
+           else
+             :with_clean_env
+           end
     Bundler.send meth, &block
   end
 end

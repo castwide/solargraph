@@ -16,7 +16,8 @@ module Solargraph
       #
       # @param source_map [SourceMap]
       # @return [Environ]
-      def local source_map
+      # @param [Object] _source_map
+      def local _source_map
         EMPTY_ENVIRON
       end
 
@@ -25,7 +26,8 @@ module Solargraph
       #
       # @param doc_map [DocMap]
       # @return [Environ]
-      def global doc_map
+      # @param [Object] _doc_map
+      def global _doc_map
         EMPTY_ENVIRON
       end
 
@@ -41,8 +43,15 @@ module Solargraph
       # @param no_core [Boolean] Skip core classes if true
       #
       # @return [Environ]
-      def object api_map, rooted_tag, scope, visibility,
-                 deep, skip, no_core
+      # @param [Object] _api_map
+      # @param [Object] _rooted_tag
+      # @param [Object] _scope
+      # @param [Object] _visibility
+      # @param [Object] _deep
+      # @param [Object] _skip
+      # @param [Object] _no_core
+      def object _api_map, _rooted_tag, _scope, _visibility,
+                 _deep, _skip, _no_core
         EMPTY_ENVIRON
       end
     end

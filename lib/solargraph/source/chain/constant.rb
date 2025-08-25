@@ -8,7 +8,7 @@ module Solargraph
           @word = word
         end
 
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, _locals
           return [Pin::ROOT_PIN] if word.empty?
           if word.start_with?('::')
             base = word[2..-1]
@@ -28,7 +28,7 @@ module Solargraph
             type = deep_constant_type(gate, api_map)
             # Use deep inference to resolve root
             parts[0..-2].each do |sym|
-              pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
+              pins = api_map.get_constants('', type.namespace).select { |pin| pin.name == sym }
               type = first_pin_type(pins, api_map)
               break if type.undefined?
             end
@@ -59,7 +59,7 @@ module Solargraph
         # @param pins [::Array<Pin::Base>]
         # @param api_map [ApiMap]
         # @return [ComplexType]
-        def first_pin_type(pins, api_map)
+        def first_pin_type pins, api_map
           type = ComplexType::UNDEFINED
           pins.each do |pin|
             type = pin.typify(api_map)
@@ -73,7 +73,7 @@ module Solargraph
         # @param gate [String]
         # @param api_map [ApiMap]
         # @return [ComplexType]
-        def deep_constant_type(gate, api_map)
+        def deep_constant_type gate, api_map
           type = ComplexType::ROOT
           return type if gate == ''
           gate.split('::').each do |word|

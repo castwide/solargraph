@@ -20,7 +20,7 @@ module Solargraph
               @value = true
             elsif node.type == :false
               @value = false
-            elsif [:int, :sym].include?(node.type)
+            elsif %i[int sym].include?(node.type)
               @value = node.children.first
             end
           end
@@ -34,7 +34,7 @@ module Solargraph
           super + [@value, @type, @literal_type, @complex_type]
         end
 
-        def resolve api_map, name_pin, locals
+        def resolve api_map, _name_pin, _locals
           if api_map.super_and_sub?(@complex_type.name, @literal_type.name)
             [Pin::ProxyType.anonymous(@literal_type, source: :chain)]
           else

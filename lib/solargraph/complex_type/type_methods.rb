@@ -70,7 +70,7 @@ module Solargraph
 
       # @param generics_to_erase [Enumerable<String>]
       # @return [self]
-      def erase_generics(generics_to_erase)
+      def erase_generics generics_to_erase
         transform do |type|
           if type.name == ComplexType::GENERIC_TAG_NAME
             if type.all_params.length == 1 && generics_to_erase.include?(type.all_params.first.to_s)
@@ -126,14 +126,14 @@ module Solargraph
           return simplify_literals.namespace if literal?
           return 'Object' if duck_type? || name == 'Boolean'
           return 'NilClass' if nil_type?
-          return (name == 'Class' || name == 'Module') && !subtypes.empty? ? subtypes.first.name : name
+          %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end
 
       def namespace_type
         return ComplexType.parse('::Object') if duck_type?
         return ComplexType.parse('::NilClass') if nil_type?
-        return subtypes.first if (name == 'Class' || name == 'Module') && !subtypes.empty?
+        return subtypes.first if %w[Class Module].include?(name) && !subtypes.empty?
         self
       end
 
@@ -160,7 +160,7 @@ module Solargraph
       end
 
       # @return [String]
-      def generate_substring_from(&to_str)
+      def generate_substring_from &to_str
         key_types_str = key_types.map(&to_str).join(', ')
         subtypes_str = subtypes.map(&to_str).join(', ')
         if key_types.none?(&:defined?) && subtypes.none?(&:defined?)
@@ -171,19 +171,17 @@ module Solargraph
           "{#{key_types_str} => #{subtypes_str}}"
         elsif fixed_parameters?
           "(#{subtypes_str})"
+        elsif name == 'Hash'
+          "<#{key_types_str}, #{subtypes_str}>"
         else
-          if name == 'Hash'
-            "<#{key_types_str}, #{subtypes_str}>"
-          else
-            "<#{key_types_str}#{subtypes_str}>"
-          end
+          "<#{key_types_str}#{subtypes_str}>"
         end
       end
 
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?
-        @scope ||= (name == 'Class' || name == 'Module') && !subtypes.empty? ? :class : :instance
+        @scope ||= %w[Class Module].include?(name) && !subtypes.empty? ? :class : :instance
       end
 
       # @param other [Object]
@@ -213,7 +211,7 @@ module Solargraph
 
       # @yieldparam [UniqueType]
       # @return [Enumerator<UniqueType>]
-      def each_unique_type &block
+      def each_unique_type
         return enum_for(__method__) unless block_given?
         yield self
       end

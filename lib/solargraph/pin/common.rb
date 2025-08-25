@@ -8,7 +8,10 @@ module Solargraph
 
       # @return [Pin::Closure, nil]
       def closure
-        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        unless @closure
+          Solargraph.assert_or_log(:closure,
+                                   "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}")
+        end
         @closure
       end
 

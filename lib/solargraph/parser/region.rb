@@ -25,6 +25,8 @@ module Solargraph
       # @param namespace [String]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
+      # @param [Object, nil] closure
+      # @param [Array<Object>] lvars
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public, lvars: []
         @source = source
@@ -46,6 +48,7 @@ module Solargraph
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @return [Region]
+      # @param [Object, nil] lvars
       def update closure: nil, scope: nil, visibility: nil, lvars: nil
         Region.new(
           source: source,
