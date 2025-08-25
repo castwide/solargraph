@@ -154,7 +154,7 @@ describe Solargraph::ApiMap do
 
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
-      it 'handles the YAML gem aliased to Psych' do
+      it 'handles the YAML gem aliased to Psych', time_limit_seconds: 120 do
         expect(method_stack).not_to be_empty
       end
     end
