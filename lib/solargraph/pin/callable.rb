@@ -182,6 +182,7 @@ module Solargraph
       # @return [self]
       def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
+        # @sg-ignore Too many arguments to Solargraph::Pin::Base#transform_types
         callable = super
         callable.block = block.transform_types(&transform) if block?
         callable.parameters = parameters.map do |param|
