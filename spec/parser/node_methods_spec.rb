@@ -440,5 +440,45 @@ describe Solargraph::Parser::NodeMethods do
       calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
       expect(calls).to be_one
     end
+
+    it 'handles chained calls' do
+      source = Solargraph::Source.load_string(%(
+        Foo.new.bar('string')
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls.length).to eq(2)
+    end
+
+    it 'handles calls from inside array literals' do
+      source = Solargraph::Source.load_string(%(
+        [ Foo.new.bar('string') ]
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls.length).to eq(2)
+    end
+
+    it 'handles calls from inside array literals that are chained' do
+      source = Solargraph::Source.load_string(%(
+        [ Foo.new.bar('string') ].compact
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls.length).to eq(3)
+    end
+
+    it 'does not over-report calls' do
+      source = Solargraph::Source.load_string(%(
+        class Foo
+          def something
+          end
+        end
+        class Bar < Foo
+          def something
+            super(1) + 2
+          end
+        end
+      ))
+      calls = Solargraph::Parser::NodeMethods.call_nodes_from(source.node)
+      expect(calls.length).to eq(2)
+    end
   end
 end

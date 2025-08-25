@@ -277,7 +277,11 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              if closest.defined?
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
+              else
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              end
               @marked_ranges.push rng
             end
           end
@@ -289,127 +293,136 @@ module Solargraph
 
     # @param chain [Solargraph::Source::Chain]
     # @param api_map [Solargraph::ApiMap]
-    # @param block_pin [Solargraph::Pin::Base]
+    # @param closure_pin [Solargraph::Pin::Closure]
     # @param locals [Array<Solargraph::Pin::Base>]
     # @param location [Solargraph::Location]
     # @return [Array<Problem>]
-    def argument_problems_for chain, api_map, block_pin, locals, location
+    def argument_problems_for chain, api_map, closure_pin, locals, location
       result = []
       base = chain
-      until base.links.length == 1 && base.undefined?
-        last_base_link = base.links.last
-        break unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
+      # @type last_base_link [Solargraph::Source::Chain::Call]
+      last_base_link = base.links.last
+      return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
-        arguments = last_base_link.arguments
+      arguments = last_base_link.arguments
 
-        pins = base.define(api_map, block_pin, locals)
+      pins = base.define(api_map, closure_pin, locals)
 
-        first_pin = pins.first
-        if first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
-          # Do nothing, as we can't find the actual method implementation
-        elsif first_pin.is_a?(Pin::Method)
-          # @type [Pin::Method]
-          pin = first_pin
-          ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
-            arity_problems_for(pin, fake_args_for(block_pin), location)
-          elsif pin.path == 'Class#new'
-            fqns = if base.links.one?
-              block_pin.namespace
-            else
-              base.base.infer(api_map, block_pin, locals).namespace
-            end
-            init = api_map.get_method_stack(fqns, 'initialize').first
-            init ? arity_problems_for(init, arguments, location) : []
-          else
-            arity_problems_for(pin, arguments, location)
+      first_pin = pins.first
+      unresolvable = first_pin.is_a?(Pin::DelegatedMethod) && !first_pin.resolvable?(api_map)
+      if !unresolvable && first_pin.is_a?(Pin::Method)
+        # @type [Pin::Method]
+        pin = first_pin
+        ap = if base.links.last.is_a?(Solargraph::Source::Chain::ZSuper)
+               arity_problems_for(pin, fake_args_for(closure_pin), location)
+             elsif pin.path == 'Class#new'
+               fqns = if base.links.one?
+                        closure_pin.namespace
+                      else
+                        base.base.infer(api_map, closure_pin, locals).namespace
+                      end
+               init = api_map.get_method_stack(fqns, 'initialize').first
+
+               init ? arity_problems_for(init, arguments, location) : []
+             else
+               arity_problems_for(pin, arguments, location)
+             end
+        return ap unless ap.empty?
+        return [] if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
+
+        params = first_param_hash(pins)
+
+        all_errors = []
+        pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
+          signature_errors = signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
+          if signature_errors.empty?
+            # we found a signature that works - meaning errors from
+            # other signatures don't matter.
+            return []
           end
-          unless ap.empty?
-            result.concat ap
-            break
-          end
-          break if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
-
-          params = first_param_hash(pins)
-
-          all_errors = []
-          pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
-            errors = []
-            sig.parameters.each_with_index do |par, idx|
-              # @todo add logic mapping up restarg parameters with
-              #   arguments (including restarg arguments).  Use tuples
-              #   when possible, and when not, ensure provably
-              #   incorrect situations are detected.
-              break if par.decl == :restarg  # bail out pending better arg processing
-              argchain = arguments[idx]
-              if argchain.nil?
-                if par.decl == :arg
-                  final_arg = arguments.last
-                  if final_arg && final_arg.node.type == :splat
-                    argchain = final_arg
-                    next # don't try to apply the type of the splat - unlikely to be specific enough
-                  else
-                    errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
-                    next
-                  end
-                else
-                  final_arg = arguments.last
-                  argchain = final_arg if final_arg && [:kwsplat, :hash].include?(final_arg.node.type)
-                end
-              end
-              if argchain
-                if par.decl != :arg
-                  errors.concat kwarg_problems_for sig, argchain, api_map, block_pin, locals, location, pin, params, idx
-                  next
-                else
-                  if argchain.node.type == :splat && argchain == arguments.last
-                    final_arg = argchain
-                  end
-                  if (final_arg && final_arg.node.type == :splat)
-                    # The final argument given has been seen and was a
-                    # splat, which doesn't give us useful types or
-                    # arities against positional parameters, so let's
-                    # continue on in case there are any required
-                    # kwargs we should warn about
-                    next
-                  end
-
-                  if argchain.node.type == :splat && par != sig.parameters.last
-                    # we have been given a splat and there are more
-                    # arguments to come.
-
-                    # @todo Improve this so that we can skip past the
-                    #   rest of the positional parameters here but still
-                    #   process the kwargs
-                    break
-                  end
-                  ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
-                  ptype = ptype.self_to_type(par.context)
-                  if ptype.nil?
-                    # @todo Some level (strong, I guess) should require the param here
-                  else
-                    argtype = argchain.infer(api_map, block_pin, locals)
-                    if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
-                      errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
-                      next
-                    end
-                  end
-                end
-              elsif par.decl == :kwarg
-                errors.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
-                next
-              end
-            end
-            if errors.empty?
-              all_errors.clear
-              break
-            end
-            all_errors.concat errors
-          end
-          result.concat all_errors
+          all_errors.concat signature_errors
         end
-        base = base.base
+        result.concat all_errors
       end
       result
+    end
+
+    # @param location [Location]
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param closure_pin [Pin::Closure]
+    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
+    # @param arguments [Array<Source::Chain>]
+    # @param sig [Pin::Signature]
+    # @param pin [Pin::Method]
+    # @param pins [Array<Pin::Method>]
+    #
+    # @return [Array<Problem>]
+    def signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
+      errors = []
+      # @todo add logic mapping up restarg parameters with
+      #   arguments (including restarg arguments).  Use tuples
+      #   when possible, and when not, ensure provably
+      #   incorrect situations are detected.
+      sig.parameters.each_with_index do |par, idx|
+        return errors if par.decl == :restarg  # bail out and assume the rest is valid pending better arg processing
+        argchain = arguments[idx]
+        if argchain.nil?
+          if par.decl == :arg
+            final_arg = arguments.last
+            if final_arg && final_arg.node.type == :splat
+              argchain = final_arg
+              return errors
+            else
+              errors.push Problem.new(location, "Not enough arguments to #{pin.path}")
+            end
+          else
+            final_arg = arguments.last
+            argchain = final_arg if final_arg && [:kwsplat, :hash].include?(final_arg.node.type)
+          end
+        end
+        if argchain
+          if par.decl != :arg
+            errors.concat kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
+            next
+          else
+            if argchain.node.type == :splat && argchain == arguments.last
+              final_arg = argchain
+            end
+            if (final_arg && final_arg.node.type == :splat)
+              # The final argument given has been seen and was a
+              # splat, which doesn't give us useful types or
+              # arities against positional parameters, so let's
+              # continue on in case there are any required
+              # kwargs we should warn about
+              next
+            end
+            if argchain.node.type == :splat && par != sig.parameters.last
+              # we have been given a splat and there are more
+              # arguments to come.
+
+              # @todo Improve this so that we can skip past the
+              #   rest of the positional parameters here but still
+              #   process the kwargs
+              return errors
+            end
+            ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
+            ptype = ptype.self_to_type(par.context)
+            if ptype.nil?
+            # @todo Some level (strong, I guess) should require the param here
+            else
+              argtype = argchain.infer(api_map, closure_pin, locals)
+              if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
+                errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
+                return errors
+              end
+            end
+          end
+        elsif par.decl == :kwarg
+          errors.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
+          next
+        end
+      end
+      errors
     end
 
     # @param sig [Pin::Signature]

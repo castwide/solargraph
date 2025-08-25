@@ -87,7 +87,11 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @param out [IO, nil] output stream for logging
+    # @return [Array<String>]
+    def yard_plugins
+      @environ.yard_plugins
+    end
+
     # @return [Set<Gem::Specification>]
     # @param out [IO]
     def dependencies out: $stderr

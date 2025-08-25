@@ -158,7 +158,6 @@ module Solargraph
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       # @return [Gem::Specification, nil]
-      # @sg-ignore
       def to_gem_specification specish
         # print time including milliseconds
         self.class.gem_specification_cache[specish] ||= case specish
@@ -309,7 +308,6 @@ module Solargraph
       end
 
       # @return [Array<Gem::Specification>]
-      # @sg-ignore
       def all_gemspecs_from_external_bundle
         @all_gemspecs_from_external_bundle ||=
           begin

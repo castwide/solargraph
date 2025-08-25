@@ -1,8 +1,13 @@
 describe Solargraph::Pin::Symbol do
   context "as an unquoted literal" do
-    it "is a kind of keyword" do
+    it "is a kind of keyword to the LSP" do
       pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
+    end
+
+    it "has global closure" do
+      pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
+      expect(pin.closure).to eq(Solargraph::Pin::ROOT_PIN)
     end
 
     it "has a Symbol return type" do
