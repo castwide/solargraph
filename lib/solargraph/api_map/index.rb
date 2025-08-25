@@ -15,6 +15,9 @@ module Solargraph
         @pins ||= []
       end
 
+      # @return [Set<String>]
+      attr_reader :namespaces
+
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
@@ -39,27 +42,28 @@ module Solargraph
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      # @return [Hash{String => Array<String>}]
       def include_references
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      # @return [Hash{String => Array<String>}]
       def extend_references
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
+      # @return [Hash{String => Array<String>}]
       def superclass_references
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @param pins [Array<Pin::Base>]
+      # @return [self]
       def merge pins
         deep_clone.catalog pins
       end
@@ -69,6 +73,7 @@ module Solargraph
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references
 
+      # @return [self]
       def deep_clone
         Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
@@ -84,6 +89,7 @@ module Solargraph
       end
 
       # @param new_pins [Array<Pin::Base>]
+      # @return [self]
       def catalog new_pins
         @pin_select_cache = {}
         pins.concat new_pins

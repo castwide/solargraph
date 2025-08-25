@@ -65,7 +65,7 @@ module Solargraph
       # position. Locals can be local variables, method parameters, or block
       # parameters. The array starts with the nearest local pin.
       #
-      # @return [::Array<Solargraph::Pin::Base>]
+      # @return [::Array<Solargraph::Pin::LocalVariable>]
       def locals
         @locals ||= source_map.locals_at(location)
       end
