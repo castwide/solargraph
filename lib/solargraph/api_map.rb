@@ -1015,8 +1015,6 @@ module Solargraph
 
     include Logging
 
-    private
-
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
