@@ -6,11 +6,31 @@
 # Note that changes in the inspected code, or installation of new
 # versions of RuboCop, may require this file to be generated again.
 
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: Severity.
+Gemspec/DeprecatedAttributeAssignment:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+
 # Configuration parameters: EnforcedStyle, AllowedGems.
 # SupportedStyles: Gemfile, gems.rb, gemspec
 Gemspec/DevelopmentDependencies:
   Exclude:
     - 'solargraph.gemspec'
+
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: Severity.
+Gemspec/RequireMFA:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+    - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
+
+# Configuration parameters: Severity.
+Gemspec/RequiredRubyVersion:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+    - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
+    - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: RequireParenthesesForMethodChains.
@@ -70,6 +90,21 @@ Lint/EmptyBlock:
   Exclude:
     - 'spec/convention_spec.rb'
 
+# Configuration parameters: AllowComments.
+Lint/EmptyClass:
+  Exclude:
+    - 'spec/fixtures/rubocop-validation-error/app.rb'
+    - 'spec/fixtures/workspace-with-gemfile/lib/other.rb'
+    - 'spec/fixtures/workspace/lib/other.rb'
+    - 'spec/fixtures/workspace/lib/something.rb'
+    - 'spec/fixtures/workspace_folders/folder1/app.rb'
+    - 'spec/fixtures/workspace_folders/folder2/app.rb'
+
+# Configuration parameters: AllowComments.
+Lint/EmptyFile:
+  Exclude:
+    - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
+
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/InterpolationCheck:
   Exclude:
@@ -114,6 +149,13 @@ Lint/UnexpectedBlockArity:
 Lint/UnmodifiedReduceAccumulator:
   Exclude:
     - 'lib/solargraph/pin/method.rb'
+
+# This cop supports safe autocorrection (--autocorrect).
+Lint/UselessAssignment:
+  Exclude:
+    - 'spec/fixtures/long_squiggly_heredoc.rb'
+    - 'spec/fixtures/rubocop-unused-variable-error/app.rb'
+    - 'spec/fixtures/unicode.rb'
 
 Lint/UselessConstantScoping:
   Exclude:
@@ -230,6 +272,11 @@ Naming/AccessorMethodName:
     - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/language_server/message/base.rb'
 
+# Configuration parameters: AsciiConstants.
+Naming/AsciiIdentifiers:
+  Exclude:
+    - 'spec/fixtures/unicode.rb'
+
 # Configuration parameters: ForbiddenDelimiters.
 # ForbiddenDelimiters: (?i-mx:(^|\s)(EO[A-Z]{1}|END)(\s|$))
 Naming/HeredocDelimiterNaming:
@@ -289,6 +336,12 @@ Naming/PredicatePrefix:
     - 'lib/solargraph/parser/parser_gem/class_methods.rb'
     - 'lib/solargraph/pin_cache.rb'
     - 'lib/solargraph/workspace.rb'
+
+# Configuration parameters: EnforcedStyle, AllowedIdentifiers, AllowedPatterns, ForbiddenIdentifiers, ForbiddenPatterns.
+# SupportedStyles: snake_case, camelCase
+Naming/VariableName:
+  Exclude:
+    - 'spec/fixtures/unicode.rb'
 
 RSpec/Be:
   Exclude:
@@ -966,6 +1019,15 @@ Style/Documentation:
     - 'lib/solargraph/yard_map/mapper/to_namespace.rb'
     - 'lib/solargraph/yard_map/to_method.rb'
 
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle.
+# SupportedStyles: compact, expanded
+Style/EmptyMethod:
+  Exclude:
+    - 'spec/fixtures/formattable.rb'
+    - 'spec/fixtures/rdoc-lib/lib/example.rb'
+    - 'spec/fixtures/workspace-with-gemfile/lib/thing.rb'
+
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: left_coerce, right_coerce, single_coerce, fdiv
@@ -1012,6 +1074,25 @@ Style/FrozenStringLiteralComment:
     - 'spec/diagnostics/type_check_spec.rb'
     - 'spec/diagnostics/update_errors_spec.rb'
     - 'spec/diagnostics_spec.rb'
+    - 'spec/fixtures/formattable.rb'
+    - 'spec/fixtures/long_squiggly_heredoc.rb'
+    - 'spec/fixtures/rdoc-lib/Gemfile'
+    - 'spec/fixtures/rdoc-lib/lib/example.rb'
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+    - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
+    - 'spec/fixtures/rubocop-validation-error/app.rb'
+    - 'spec/fixtures/unicode.rb'
+    - 'spec/fixtures/workspace-with-gemfile/Gemfile'
+    - 'spec/fixtures/workspace-with-gemfile/app.rb'
+    - 'spec/fixtures/workspace-with-gemfile/lib/other.rb'
+    - 'spec/fixtures/workspace-with-gemfile/lib/thing.rb'
+    - 'spec/fixtures/workspace/app.rb'
+    - 'spec/fixtures/workspace/lib/other.rb'
+    - 'spec/fixtures/workspace/lib/something.rb'
+    - 'spec/fixtures/workspace/lib/thing.rb'
+    - 'spec/fixtures/workspace_folders/folder1/app.rb'
+    - 'spec/fixtures/workspace_folders/folder2/app.rb'
+    - 'spec/fixtures/yard_map/attr.rb'
     - 'spec/language_server/host/diagnoser_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/host/message_worker_spec.rb'
@@ -1144,6 +1225,13 @@ Style/MapToSet:
   Exclude:
     - 'lib/solargraph/library.rb'
     - 'spec/source_map/clip_spec.rb'
+
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle.
+# SupportedStyles: require_parentheses, require_no_parentheses, require_no_parentheses_except_multiline
+Style/MethodDefParentheses:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/lib/example.rb'
 
 Style/MultilineBlockChain:
   Exclude:
@@ -1285,6 +1373,13 @@ Style/StringConcatenation:
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/namespace.rb'
     - 'solargraph.gemspec'
+
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle, ConsistentQuotesInMultiline.
+# SupportedStyles: single_quotes, double_quotes
+Style/StringLiterals:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: AllowMethodsWithArguments, AllowedMethods, AllowedPatterns, AllowComments.
