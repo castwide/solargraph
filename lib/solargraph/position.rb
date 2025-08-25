@@ -58,8 +58,14 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      # @sg-ignore Unresolved call to + on Integer
-      text.lines[0...position.line].sum(&:length) + position.character
+      cursor = 0
+      index = -1
+      text.each_line do |line|
+        index += 1
+        break if index == position.line
+        cursor += line.length
+      end
+      cursor + position.character
     end
 
     # Get a numeric offset for the specified text and a position identified
@@ -82,9 +88,15 @@ module Solargraph
       cursor = 0
       line = 0
       character = nil
-      text.lines.each do |l|
+      text.each_line do |l|
         line_length = l.length
-        char_length = l.chomp.length
+
+        if l.end_with?("\n") || l.end_with?("\r\n")
+          char_length = line_length - 1
+        else
+          char_length = line_length
+        end
+
         if cursor + char_length >= offset
           character = offset - cursor
           break
