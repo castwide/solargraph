@@ -50,7 +50,7 @@ jobs:
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: |
-        bundle update rbs collection update
+        bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
