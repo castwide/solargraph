@@ -138,7 +138,7 @@ module Solargraph
       @rbs_collection_gems_in_memory ||= {}
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Gem::Specification>}] Indexed by gemspec name and version
     def yard_pins_in_memory
       self.class.all_yard_gems_in_memory
     end
