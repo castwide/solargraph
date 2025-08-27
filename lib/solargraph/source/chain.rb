@@ -104,6 +104,7 @@ module Solargraph
       # @return [::Array<Pin::Base>] Pins representing possible return
       #   types of this method.
       def define api_map, name_pin, locals
+        logger.debug { "Chain#define(name_pin=#{name_pin.desc}, links=#{links.map(&:desc)}, locals=#{locals}) - starting" }
         return [] if undefined?
 
         # working_pin is the surrounding closure pin for the link
@@ -129,7 +130,9 @@ module Solargraph
           logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}" }
         end
         links.last.last_context = working_pin
-        links.last.resolve(api_map, working_pin, locals)
+        out = links.last.resolve(api_map, working_pin, locals)
+        logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.desc}, locals=#{locals}) => #{out}" }
+        out
       end
 
       # @param api_map [ApiMap]
@@ -207,6 +210,8 @@ module Solargraph
       include Logging
 
       private
+
+      include Logging
 
       # @param pins [::Array<Pin::Base>]
       # @param context [Pin::Base]

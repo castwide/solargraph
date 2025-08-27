@@ -170,8 +170,12 @@ module Solargraph
     # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
+      logger.debug { "ApiMap#clip_at(filename=#{filename}, position=#{position}) - start" }
+
       position = Position.normalize(position)
-      clip(cursor_at(filename, position))
+      out = clip(cursor_at(filename, position))
+      logger.debug { "ApiMap#clip_at(filename=#{filename}, position=#{position}) => #{out}" }
+      out
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -259,6 +263,7 @@ module Solargraph
     # @param contexts [Array<String>] The contexts
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, *contexts
+      logger.debug { "ApiMap#get_constants(namespace=#{namespace.inspect}, contexts=#{contexts.inspect})" }
       namespace ||= ''
       contexts.push '' if contexts.empty?
       cached = cache.get_constants(namespace, contexts)
@@ -267,11 +272,13 @@ module Solargraph
       result = []
       contexts.each do |context|
         fqns = qualify(namespace, context)
+        logger.debug { "ApiMap#get_constants(namespace=#{namespace.inspect}, contexts=#{contexts.inspect}) - fqns=#{fqns}" }
         visibility = [:public]
         visibility.push :private if fqns == context
         result.concat inner_get_constants(fqns, visibility, skip)
       end
       cache.set_constants(namespace, contexts, result)
+      logger.debug { "ApiMap#get_constants(namespace=#{namespace.inspect}, contexts=#{contexts.inspect}) => #{result}" }
       result
     end
 
@@ -327,6 +334,7 @@ module Solargraph
     # @return [String, nil] fully qualified namespace
     def qualify_namespace(namespace, context_namespace = '')
       cached = cache.get_qualified_namespace(namespace, context_namespace)
+      logger.debug { "ApiMap#qualify_namespace(namespace=#{namespace.inspect}, context_namespace=#{context_namespace.inspect}) - cached=#{cached.inspect}" }
       return cached.clone unless cached.nil?
       result = if namespace.start_with?('::')
                  inner_qualify(namespace[2..-1], '', Set.new)
@@ -334,6 +342,7 @@ module Solargraph
                  inner_qualify(namespace, context_namespace, Set.new)
                end
       cache.set_qualified_namespace(namespace, context_namespace, result)
+      logger.debug { "ApiMap#qualify_namespace(namespace=#{namespace.inspect}, context_namespace=#{context_namespace.inspect}) => #{result.inspect}" }
       result
     end
 
@@ -378,7 +387,9 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @return [Enumerable<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      prefer_non_nil_variables(store.get_class_variables(namespace))
+      out = prefer_non_nil_variables(store.get_class_variables(namespace))
+      logger.debug { "ApiMap#get_class_variable_pins(namespace=#{namespace.inspect}) => #{out}" }
+      out
     end
 
     # @return [Enumerable<Solargraph::Pin::Base>]
@@ -835,14 +846,20 @@ module Solargraph
     # @param skip [Set<String>]
     # @return [Array<Pin::Base>]
     def inner_get_constants fqns, visibility, skip
-      return [] if fqns.nil? || skip.include?(fqns)
+      logger.debug { "ApiMap#inner_get_constants(fqns=#{fqns.inspect}, visibility=#{visibility.inspect}, skip=#{skip.inspect}) - starting" }
+      if fqns.nil? || skip.include?(fqns)
+        logger.debug { "ApiMap#inner_get_constants(fqns=#{fqns.inspect}, visibility=#{visibility.inspect}, skip=#{skip.inspect}) => [] - fqns=#{fqns.inspect}, skip=#{skip}" }
+        return []
+      end
       skip.add fqns
       result = []
       store.get_prepends(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
-      result.concat store.get_constants(fqns, visibility)
-                    .sort { |a, b| a.name <=> b.name }
+      constants = store.get_constants(fqns, visibility)
+                      .sort { |a, b| a.name <=> b.name }
+      logger.debug { "Constants in #{fqns} with visibility #{visibility}, constants=#{constants}" }
+      result.concat constants
       store.get_includes(fqns).each do |is|
         result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
       end
@@ -850,6 +867,7 @@ module Solargraph
       unless %w[Object BasicObject].include?(fqsc)
         result.concat inner_get_constants(fqsc, [:public], skip)
       end
+      logger.debug { "ApiMap#inner_get_constants(fqns=#{fqns.inspect}, visibility=#{visibility.inspect}, skip=#{skip.inspect}) => #{result}" }
       result
     end
 
@@ -885,6 +903,7 @@ module Solargraph
     # @param skip [Set<String>] Contexts already searched
     # @return [String, nil] Fully qualified ("rooted") namespace
     def inner_qualify name, root, skip
+      logger.debug { "ApiMap#inner_qualify(name=#{name.inspect}, root=#{root.inspect}, skip=#{skip.inspect}) - starting" }
       return name if name == ComplexType::GENERIC_TAG_NAME
       return nil if name.nil?
       return nil if skip.include?(root)

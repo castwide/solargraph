@@ -6,6 +6,8 @@ module Solargraph
     # core.
     #
     class Store
+      include Logging
+
       # @param pinsets [Array<Enumerable<Pin::Base>>]
       def initialize *pinsets
         @pinsets = pinsets
@@ -130,7 +132,9 @@ module Solargraph
       # @param fqns [String]
       # @return [Boolean]
       def namespace_exists?(fqns)
-        fqns_pins(fqns).any?
+        out = fqns_pins(fqns).any?
+        logger.debug { "Store#namespace_exists?(#{fqns.inspect}) => #{out}" }
+        out
       end
 
       # @return [Set<String>]
@@ -201,7 +205,9 @@ module Solargraph
           base = ''
           name = fqns
         end
-        fqns_pins_map[[base, name]]
+        out = fqns_pins_map[[base, name]]
+        logger.debug { "Store#fqns_pins(#{fqns.inspect}) => #{out}" }
+        out
       end
 
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
