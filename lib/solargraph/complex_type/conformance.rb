@@ -39,9 +39,6 @@ module Solargraph
           # :nocov:
         end
 
-        if use_simplified_inferred_type?
-          return with_new_types(inferred.simplify_literals, expected).conforms_to_unique_type?
-        end
         return true if ignore_interface?
         return true if conforms_via_reverse_match?
 
@@ -78,10 +75,6 @@ module Solargraph
       end
 
       private
-
-      def use_simplified_inferred_type?
-        inferred.simplifyable_literal? && !expected.literal?
-      end
 
       def only_inferred_parameters?
         !expected.parameters? && inferred.parameters?
