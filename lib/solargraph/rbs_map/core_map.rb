@@ -28,7 +28,7 @@ module Solargraph
           @pins.concat RbsMap::CoreFills::ALL
           # process overrides, then remove any which couldn't be resolved
           processed = ApiMap::Store.new(@pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-          STDOUT.puts "RBS core pins cache size: #{@pins.size}"
+          puts "RBS core pins cache size: #{@pins.size}"
           @pins.replace processed
 
           PinCache.serialize_core @pins
