@@ -23,6 +23,7 @@ module Solargraph
 
     # @param filename [String]
     # @param api_map [ApiMap, nil]
+    # @param rules [Rules]
     # @param level [Symbol]
     def initialize filename, api_map: nil, level: :normal, rules: Rules.new(level)
       @filename = filename

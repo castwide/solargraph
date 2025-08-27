@@ -170,6 +170,7 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
+      # @sg-ignore Unresolved call to options
       level = options[:level].to_sym
       rules = Solargraph::TypeChecker::Rules.new(level)
       api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout, loose_unions: rules.loose_unions?)
@@ -182,6 +183,7 @@ module Solargraph
       filecount = 0
       time = Benchmark.measure {
         files.each do |file|
+          # @sg-ignore Unresolved call to options
           checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym)
           problems = checker.problems
           next if problems.empty?
