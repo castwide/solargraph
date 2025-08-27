@@ -57,7 +57,7 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'method_pin' do
+  describe 'pin' do
     let(:api_map) { instance_double(Solargraph::ApiMap) }
     let(:to_s_pin) { instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String')) }
 
@@ -70,7 +70,7 @@ describe Solargraph::Shell do
       it 'prints a pin' do
         allow(to_s_pin).to receive(:inspect).and_return('pin inspect result')
 
-        out = capture_both { shell.method_pin('String#to_s') }
+        out = capture_both { shell.pin('String#to_s') }
 
         expect(out).to eq("pin inspect result\n")
       end
@@ -82,7 +82,7 @@ describe Solargraph::Shell do
 
         out = capture_both do
           shell.options = { rbs: true }
-          shell.method_pin('String#to_s')
+          shell.pin('String#to_s')
         end
         expect(out).to eq("pin RBS result\n")
       end
@@ -95,9 +95,9 @@ describe Solargraph::Shell do
         allow(api_map).to receive(:get_method_stack).and_return([to_s_pin])
         capture_both do
           shell.options = { stack: true }
-          shell.method_pin('String#to_s')
+          shell.pin('String#to_s')
         end
-        expect(api_map).to haveo_received(:get_method_stack).with('String', 'to_s', scope: :instance)
+        expect(api_map).to have_received(:get_method_stack).with('String', 'to_s', scope: :instance)
       end
 
       it 'prints a static pin using stack results' do
@@ -107,7 +107,7 @@ describe Solargraph::Shell do
         allow(api_map).to receive(:get_method_stack).with('String', 'new', scope: :class).and_return([string_new_pin])
         capture_both do
           shell.options = { stack: true }
-          shell.method_pin('String.new')
+          shell.pin('String.new')
         end
         expect(api_map).to have_received(:get_method_stack).with('String', 'new', scope: :class)
       end
@@ -119,7 +119,7 @@ describe Solargraph::Shell do
 
         out = capture_both do
           shell.options = { typify: true }
-          shell.method_pin('String#to_s')
+          shell.pin('String#to_s')
         end
         expect(out).to eq("::String\n")
       end
@@ -131,7 +131,7 @@ describe Solargraph::Shell do
 
         out = capture_both do
           shell.options = { typify: true, rbs: true }
-          shell.method_pin('String#to_s')
+          shell.pin('String#to_s')
         end
         expect(out).to eq("::String\n")
       end
@@ -143,7 +143,7 @@ describe Solargraph::Shell do
 
         out = capture_both do
           shell.options = {}
-          shell.method_pin('Not#found')
+          shell.pin('Not#found')
         rescue SystemExit
           # Ignore the SystemExit raised by the shell when no pin is found
         end

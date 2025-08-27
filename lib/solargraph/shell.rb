@@ -240,7 +240,7 @@ module Solargraph
     end
 
     # @sg-ignore Unresolved call to desc
-    desc 'method_pin [PATH]', 'Describe a method pin'
+    desc 'pin [PATH]', 'Describe a pin', hide: true
     # @sg-ignore Unresolved call to option
     option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
     # @sg-ignore Unresolved call to option
@@ -248,10 +248,10 @@ module Solargraph
     # @sg-ignore Unresolved call to option
     option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
     # @sg-ignore Unresolved call to option
-    option :stack, type: :boolean, desc: 'Show entire stack by including definitions in superclasses', default: false
+    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
-    def method_pin path
+    def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
 
       # @sg-ignore Unresolved call to options
