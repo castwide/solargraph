@@ -559,7 +559,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
