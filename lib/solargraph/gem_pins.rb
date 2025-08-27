@@ -22,7 +22,6 @@ module Solargraph
     # @param pins [Array<Pin::Method>]
     # @return [Array<Pin::Method>]
     def self.combine_method_pins_by_path(pins)
-      # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
       by_path = method_pins.group_by(&:path)
       combined_by_path = by_path.transform_values do |pins|
@@ -31,6 +30,8 @@ module Solargraph
       combined_by_path.values + alias_pins
     end
 
+    # @param pins [Pin::Base]
+    # @return [Pin::Base, nil]
     def self.combine_method_pins(*pins)
       # @type [Pin::Method, nil]
       out = pins.reduce(nil) do |memo, pin|

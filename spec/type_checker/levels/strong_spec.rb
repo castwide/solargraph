@@ -4,6 +4,59 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'does not complain on array dereference' do
+      checker = type_checker(%(
+        # @param idx [Integer, nil] an index
+        # @param arr [Array<Integer>] an array of integers
+        #
+        # @return [void]
+        def foo(idx, arr)
+          arr[idx]
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'complains on bad @type assignment' do
+      checker = type_checker(%(
+        # @type [Integer]
+        c = Class.new
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Declared type Integer does not match inferred type Class for variable c']
+    end
+
+    it 'does not complain on another variant of Class.new' do
+      checker = type_checker(%(
+        class Class
+          # @return [self]
+          def self.blah
+            new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not complain on indirect Class.new', skip: 'hangs in a loop currently' do
+      checker = type_checker(%(
+        class Foo < Class; end
+        Foo.new
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'reports unneeded @sg-ignore tags' do
+      checker = type_checker(%(
+        class Foo
+          # @sg-ignore
+          # @return [void]
+          def bar; end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unneeded @sg-ignore comment'])
+    end
+
     it 'reports missing return tags' do
       checker = type_checker(%(
         class Foo

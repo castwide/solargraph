@@ -8,6 +8,7 @@ module Solargraph
     class Store
       # @param pinsets [Array<Enumerable<Pin::Base>>]
       def initialize *pinsets
+        @pinsets = pinsets
         catalog pinsets
       end
 
@@ -72,13 +73,13 @@ module Solargraph
       def get_superclass fq_tag
         raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
         sub = ComplexType.parse(fq_tag)
+        return sub.simplify_literals.name if sub.literal?
+        return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
         return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
-        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
-        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -142,6 +143,11 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
+      # @return [Enumerable<Solargraph::Pin::Constant>]
+      def constant_pins
+        pins_by_class(Solargraph::Pin::Constant)
+      end
+
       # @return [Enumerable<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
@@ -198,14 +204,56 @@ module Solargraph
         fqns_pins_map[[base, name]]
       end
 
+      # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
+      # @param fqns [String] The fully qualified namespace
+      # @return [Array<String>] Array of ancestor namespaces including the original
+      def get_ancestors(fqns)
+        return [] if fqns.nil? || fqns.empty?
+
+        ancestors = [fqns]
+        visited = Set.new
+        queue = [fqns]
+
+        until queue.empty?
+          current = queue.shift
+          next if current.nil? || current.empty? || visited.include?(current)
+          visited.add(current)
+
+          current = current.gsub(/^::/, '')
+
+          # Add superclass
+          superclass = get_superclass(current)
+          if superclass && !superclass.empty? && !visited.include?(superclass)
+            ancestors << superclass
+            queue << superclass
+          end
+
+          # Add includes, prepends, and extends
+          [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
+            next if refs.nil?
+            refs.each do |ref|
+              next if ref.nil? || ref.empty? || visited.include?(ref)
+              ancestors << ref
+              queue << ref
+            end
+          end
+        end
+
+        ancestors.compact.uniq
+      end
+
       private
 
+      # @return [Index]
       def index
         @indexes.last
       end
 
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @return [Boolean]
       def catalog pinsets
         @pinsets = pinsets
+        # @type [Array<Index>]
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?
@@ -235,17 +283,17 @@ module Solargraph
         index.superclass_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         index.include_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         index.prepend_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
       end

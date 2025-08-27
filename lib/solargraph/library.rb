@@ -402,8 +402,8 @@ module Solargraph
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
-          Diagnostics.reporters.each do |reporter|
-            repargs[reporter] ||= []
+          Diagnostics.reporters.each do |reporter_name|
+            repargs[Diagnostics.reporter(reporter_name)] ||= []
           end
         else
           args = line.split(':').map(&:strip)
@@ -435,17 +435,6 @@ module Solargraph
         external_requires: external_requires,
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
-    end
-
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
     end
 
     # Create a library from a directory.
@@ -511,7 +500,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{String => Set<String>}]
+    # @return [Hash{String => Array<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
     end
@@ -519,6 +508,7 @@ module Solargraph
     # @param source_map [SourceMap]
     # @return [void]
     def find_external_requires source_map
+      # @type [Set<String>]
       new_set = source_map.requires.map(&:name).to_set
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
@@ -621,6 +611,7 @@ module Solargraph
       end
     end
 
+    # @return [Array<Gem::Specification>]
     def cacheable_specs
       cacheable = api_map.uncached_yard_gemspecs +
                   api_map.uncached_rbs_collection_gemspecs -
@@ -631,6 +622,7 @@ module Solargraph
       queued_gemspec_cache
     end
 
+    # @return [Array<Gem::Specification>]
     def queued_gemspec_cache
       @queued_gemspec_cache ||= []
     end
@@ -672,13 +664,14 @@ module Solargraph
       @total = nil
     end
 
+    # @return [void]
     def sync_catalog
       return if @sync_count == 0
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        api_map.catalog bench
         source_map_hash.values.each { |map| find_external_requires(map) }
+        api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
         logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
         logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"

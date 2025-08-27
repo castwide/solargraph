@@ -10,11 +10,7 @@ module Solargraph
     #     @name: String
     #     @subtypes: Array<ComplexType>
     #     @rooted: boolish
-    #   methods:
-    #     transform()
-    #     all_params()
-    #     rooted?()
-    #     can_root_name?()
+    #   methods: (see @!method declarations below)
     module TypeMethods
       # @!method transform(new_name = nil, &transform_type)
       #   @param new_name [String, nil]
@@ -24,6 +20,9 @@ module Solargraph
       # @!method all_params
       #   @return [Array<ComplexType>]
       # @!method rooted?
+      # @!method literal?
+      # @!method simplify_literals
+      #   @return [ComplexType::UniqueType, ComplexType]
       # @!method can_root_name?(name_to_check = nil)
       #   @param name_to_check [String, nil]
 
@@ -136,7 +135,8 @@ module Solargraph
       def namespace
         # if priority higher than ||=, old implements cause unnecessary check
         @namespace ||= lambda do
-          return 'Object' if duck_type?
+          return simplify_literals.namespace if literal?
+          return 'Object' if duck_type? || name == 'Boolean'
           return 'NilClass' if nil_type?
           return (name == 'Class' || name == 'Module') && !subtypes.empty? ? subtypes.first.name : name
         end.call

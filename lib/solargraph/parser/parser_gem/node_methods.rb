@@ -120,7 +120,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @return [Hash{Parser::AST::Node, Symbol => Chain}]
+        # @return [Hash{Parser::AST::Node, Symbol => Source::Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           return convert_hash(node.children[0]) if node.type == :kwsplat
@@ -179,6 +179,7 @@ module Solargraph
             node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
           elsif node.type == :send
             result.push node
+            result.concat call_nodes_from(node.children.first)
             node.children[2..-1].each { |child| result.concat call_nodes_from(child) }
           elsif [:super, :zsuper].include?(node.type)
             result.push node
@@ -242,7 +243,7 @@ module Solargraph
                 if source.synchronized?
                   return node if source.code[0..offset-1] =~ /\(\s*\z/ && source.code[offset..-1] =~ /^\s*\)/
                 else
-                  return node if source.code[0..offset-1] =~ /\([^\(]*\z/
+                  return node if source.code[0..offset-1] =~ /\([^(]*\z/
                 end
               end
             end

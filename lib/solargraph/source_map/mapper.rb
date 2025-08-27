@@ -163,7 +163,7 @@ module Solargraph
             end
           end
         when 'visibility'
-          begin
+
             kind = directive.tag.text&.to_sym
             return unless [:private, :protected, :public].include?(kind)
 
@@ -182,7 +182,7 @@ module Solargraph
                 pin.instance_variable_set(:@visibility, kind)
               end
             end
-          end
+
         when 'parse'
           begin
             ns = closure_at(source_position)
