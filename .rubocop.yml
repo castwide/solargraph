@@ -21,6 +21,10 @@ AllCops:
     - "vendor/**/.*"
   TargetRubyVersion: 3.0
 
+# we don't have a spec/solargraph subdirectory like this one wants
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
 Style/MethodDefParentheses:
   EnforcedStyle: require_no_parentheses
 
