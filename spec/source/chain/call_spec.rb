@@ -407,7 +407,6 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-
   it 'denies calls off of nilable objects when loose union mode is off' do
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]

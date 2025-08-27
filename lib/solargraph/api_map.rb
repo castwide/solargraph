@@ -62,7 +62,6 @@ module Solargraph
       equality_fields.hash
     end
 
-
     attr_reader :loose_unions
 
     def to_s
@@ -192,6 +191,7 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    # @param loose_unions [Boolean] See #initialize
     # @return [ApiMap]
     def self.load directory, loose_unions: true
       api_map = new(loose_unions: loose_unions)
@@ -226,9 +226,10 @@ module Solargraph
     #
     #
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, nil] The output stream for messages
+    # @param loose_unions [Boolean] See #initialize
     # @return [ApiMap]
-    def self.load_with_cache directory, out = IO::NULL, loose_unions: true
+    def self.load_with_cache directory, out = nil, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
