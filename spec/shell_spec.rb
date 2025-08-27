@@ -5,7 +5,7 @@ require 'open3'
 
 describe Solargraph::Shell do
   let(:shell) { described_class.new }
-  
+
   let(:temp_dir) { Dir.mktmpdir }
 
   before do
@@ -42,7 +42,9 @@ describe Solargraph::Shell do
     it "uncaches without erroring out" do
       output = bundle_exec("solargraph", "uncache", "solargraph")
 
-      expect(output).to include('Clearing pin cache in')  
+      expect(output).to include('Clearing pin cache in')
+    end
+  end
 
   # @type cmd [Array<String>]
   # @return [String]
@@ -95,7 +97,7 @@ describe Solargraph::Shell do
           shell.options = { stack: true }
           shell.method_pin('String#to_s')
         end
-        expect(api_map).to have_received(:get_method_stack).with('String', 'to_s', scope: :instance)
+        expect(api_map).to haveo_received(:get_method_stack).with('String', 'to_s', scope: :instance)
       end
 
       it 'prints a static pin using stack results' do

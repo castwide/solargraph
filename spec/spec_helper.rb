@@ -44,7 +44,6 @@ def with_env_var(name, value)
   end
 end
 
-
 def capture_stdout &block
   original_stdout = $stdout
   $stdout = StringIO.new

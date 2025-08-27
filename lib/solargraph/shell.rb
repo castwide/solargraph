@@ -249,12 +249,17 @@ module Solargraph
     def method_pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
 
+      # @type [Array<Pin::Base>]
       pins = if options[:stack]
                scope, ns, meth = if path.include? '#'
                                    [:instance, *path.split('#', 2)]
                                  else
                                    [:class, *path.split('.', 2)]
                                  end
+
+               # @sg-ignore Wrong argument type for
+               #   Solargraph::ApiMap#get_method_stack: rooted_tag
+               #   expected String, received Array<String>
                api_map.get_method_stack(ns, meth, scope: scope)
              else
                api_map.get_path_pins path
