@@ -117,7 +117,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::ClassVariable>]
       def get_class_variables(fqns)
         namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
@@ -283,17 +283,17 @@ module Solargraph
         index.superclass_references
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Include>}]
+      # @return [Hash{String => Array<String>}]
       def include_references
         index.include_references
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         index.prepend_references
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Extend>}]
+      # @return [Hash{String => Array<String>}]
       def extend_references
         index.extend_references
       end

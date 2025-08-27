@@ -28,7 +28,7 @@ module Solargraph
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name)
+          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
           final_visibility ||= visibility
           final_visibility ||= :private if code_object.module_function? && final_scope == :instance
           final_visibility ||= :public if code_object.module_function? && final_scope == :class

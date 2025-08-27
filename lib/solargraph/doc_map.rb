@@ -138,7 +138,7 @@ module Solargraph
       @rbs_collection_gems_in_memory ||= {}
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Gem::Specification>}] Indexed by gemspec name and version
     def yard_pins_in_memory
       self.class.all_yard_gems_in_memory
     end
@@ -177,6 +177,7 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      # @sg-ignore Need Hash[] support
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
       # @type [Array<Gem::Specification>]

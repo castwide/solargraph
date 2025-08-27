@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 
-# @todo PR the RBS gem to add this
-# @!parse
-#   module ::Gem
-#    class SpecFetcher; end
-#   end
-
 module Solargraph
   module LanguageServer
     module Message

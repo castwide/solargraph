@@ -37,7 +37,7 @@ module Solargraph
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
+        # @type [Set<generic<T>>]
         s = Set.new
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
@@ -62,7 +62,7 @@ module Solargraph
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @param pins [Array<Pin::Base>]
+      # @param pins [Enumerable<Pin::Base>]
       # @return [self]
       def merge pins
         deep_clone.catalog pins
@@ -88,7 +88,7 @@ module Solargraph
         end
       end
 
-      # @param new_pins [Array<Pin::Base>]
+      # @param new_pins [Enumerable<Pin::Base>]
       # @return [self]
       def catalog new_pins
         @pin_select_cache = {}
@@ -110,7 +110,7 @@ module Solargraph
       end
 
       # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
@@ -120,7 +120,7 @@ module Solargraph
 
       # Add references to a map
       #
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @param reference_pin [Pin::Reference]
       #
       # @return [void]

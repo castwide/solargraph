@@ -11,7 +11,6 @@ module Solargraph
 
       attr_reader :all_params, :subtypes, :key_types
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
       protected def equality_fields
         [@name, @all_params, @subtypes, @key_types]
       end
@@ -103,6 +102,7 @@ module Solargraph
         tag
       end
 
+      # @return [self]
       def simplify_literals
         transform do |t|
           next t unless t.literal?
@@ -110,14 +110,20 @@ module Solargraph
         end
       end
 
+      def simplifyable_literal?
+        literal? && name != 'nil'
+      end
+
       def literal?
         non_literal_name != name
       end
 
+      # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
         #
@@ -150,8 +156,84 @@ module Solargraph
         eql?(other)
       end
 
+      # https://www.playfulpython.com/type-hinting-covariance-contra-variance/
+
+      # "[Expected] type variables that are COVARIANT can be substituted with
+      #  a more specific [inferred] type without causing errors"
+      #
+      # "[Expected] type variables that are CONTRAVARIANT can be substituted
+      #   with a more general [inferred] type without causing errors"
+      #
+      # "[Expected] types where neither is possible are INVARIANT"
+      #
+      # @param _situation [:method_call]
+      # @param default [Symbol] The default variance to return if the type is not one of the special cases
+      #
+      # @return [:invariant, :covariant, :contravariant]
+      def parameter_variance _situation, default = :covariant
+        # @todo RBS can specify variance - maybe we can use that info
+        #   and also let folks specify?
+        #
+        # Array/Set: ideally invariant, since we don't know if user is
+        #   going to add new stuff into it or read it.  But we don't
+        #   have a way to specify, so we use covariant
+        # Enumerable: covariant:  can't be changed, so we can pass
+        #   in more specific subtypes
+        # Hash: read-only would be covariant, read-write would be
+        #   invariant if we could distinguish that - should default to
+        #   covariant
+        # contravariant?: Proc - can be changed, so we can pass
+        #   in less specific super types
+        if ['Hash', 'Tuple', 'Array', 'Set', 'Enumerable'].include?(name) && fixed_parameters?
+          :covariant
+        else
+          default
+        end
+      end
+
+      # Whether this is an RBS interface like _ToAry or _Each.
+      def interface?
+        name.start_with?('_')
+      end
+
+      # @param other [UniqueType]
+      def erased_version_of?(other)
+        name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
+      end
+
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType::UniqueType, ComplexType]
+      # @param situation [:method_call, :assignment, :return]
+      # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
+      # @param variance [:invariant, :covariant, :contravariant]
+      def conforms_to?(api_map, expected, situation, rules = [],
+                       variance: erased_variance(situation))
+        return true if undefined? && rules.include?(:allow_undefined)
+
+        # @todo teach this to validate duck types as inferred type
+        return true if duck_type?
+
+        # complex types as expectations are unions - we only need to
+        # match one of their unique types
+        expected.any? do |expected_unique_type|
+          # :nocov:
+          unless expected_unique_type.instance_of?(UniqueType)
+            raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
+          end
+          # :nocov:
+          conformance = Conformance.new(api_map, self, expected_unique_type, situation,
+                                        rules, variance: variance)
+          conformance.conforms_to_unique_type?
+        end
+      end
+
       def hash
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
+      end
+
+      # @return [self]
+      def erase_parameters
+        UniqueType.new(name, rooted: rooted?, parameters_type: parameters_type)
       end
 
       # @return [Array<UniqueType>]
@@ -170,6 +252,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def desc
         rooted_tags
       end
@@ -183,7 +266,7 @@ module Solargraph
         elsif name.downcase == 'nil'
           'nil'
         elsif name == GENERIC_TAG_NAME
-          all_params.first.name
+          all_params.first&.name
         elsif ['Class', 'Module'].include?(name)
           rbs_name
         elsif ['Tuple', 'Array'].include?(name) && fixed_parameters?
@@ -235,18 +318,6 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param atype [ComplexType] type which may be assigned to this type
-      def can_assign?(api_map, atype)
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
-        downcasted_atype = atype.downcast_to_literal_if_possible
-        out = downcasted_atype.all? do |autype|
-          autype.name == name || api_map.super_and_sub?(name, autype.name)
-        end
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
-        out
-      end
-
       # @return [UniqueType]
       def downcast_to_literal_if_possible
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
@@ -254,7 +325,7 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+      # @param resolved_generic_values [Hash{String => ComplexType, UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
@@ -434,6 +505,11 @@ module Solargraph
           next t if t.name != 'self'
           object_type_dst
         end
+      end
+
+      # @yieldreturn [Boolean]
+      def any? &block
+        block.yield self
       end
 
       def all_rooted?

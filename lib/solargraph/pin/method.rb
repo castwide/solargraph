@@ -51,7 +51,7 @@ module Solargraph
       end
 
       # @param other [Pin::Method]
-      # @return [Symbol]
+      # @return [::Symbol]
       def combine_visibility(other)
         if dodgy_visibility_source? && !other.dodgy_visibility_source?
           other.visibility
@@ -388,7 +388,7 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
-      # @return [::Array<Pin::Method>]
+      # @return [::Array<Pin::Signature>]
       def overloads
         # Ignore overload tags with nil parameters. If it's not an array, the
         # tag's source is likely malformed.
