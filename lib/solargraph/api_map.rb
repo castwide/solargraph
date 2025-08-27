@@ -1015,6 +1015,8 @@ module Solargraph
 
         # Search for the original method in the ancestor
         original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
+          next if candidate_pin == alias_pin
+
           if candidate_pin.is_a?(Pin::MethodAlias)
             # recursively resolve method aliases
             resolved = resolve_method_alias(candidate_pin)
