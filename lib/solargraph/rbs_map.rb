@@ -48,6 +48,7 @@ module Solargraph
     #   if the config for where information comes form changes.
     def cache_key
       @hextdigest ||= begin
+        # @type [String, nil]
         data = nil
         if rbs_collection_config_path
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))

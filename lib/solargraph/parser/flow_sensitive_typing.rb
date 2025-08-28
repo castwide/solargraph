@@ -15,7 +15,9 @@ module Solargraph
       #
       # @return [void]
       def process_and(and_node, true_ranges = [])
+        # @type [Parser::AST::Node]
         lhs = and_node.children[0]
+        # @type [Parser::AST::Node]
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -42,7 +44,9 @@ module Solargraph
         #   s(:send, nil, :bar))
         # [4] pry(main)>
         conditional_node = if_node.children[0]
+        # @type [Parser::AST::Node]
         then_clause = if_node.children[1]
+        # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 
         true_ranges = []
