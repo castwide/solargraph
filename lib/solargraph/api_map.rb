@@ -950,7 +950,6 @@ module Solargraph
 
       assignment = constant.assignment
 
-      # @sg-ignore Wrong argument type for Solargraph::ApiMap#resolve_trivial_constant: node expected AST::Node, received Parser::AST::Node, nil
       target_ns = resolve_trivial_constant(assignment) if assignment
       return nil unless target_ns
       qualify_namespace target_ns, constant_namespace
