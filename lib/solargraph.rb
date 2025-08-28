@@ -72,23 +72,7 @@ module Solargraph
   # @param block [Proc] A block that returns a message to log
   # @return [void]
   def self.assert_or_log(type, msg = nil, &block)
-    if asserts_on? type
-      # @type [String, nil]
-      msg ||= block.call
-
-      raise "No message given for #{type.inspect}" if msg.nil?
-
-      # @todo :combine_with_visibility is not ready for prime time -
-      #  lots of disagreements found in practice that heuristics need
-      #  to be created for and/or debugging needs to resolve in pin
-      #  generation.
-      # @todo :api_map_namespace_pin_stack triggers in a badly handled
-      #   self type case - 'keeps track of self type in method
-      #   parameters in subclass' in call_spec.rb
-      return if %i[api_map_namespace_pin_stack combine_with_visibility].include?(type)
-
-      raise msg
-    end
+    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
     logger.info msg, &block
   end
 
