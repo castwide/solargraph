@@ -51,7 +51,8 @@ module Solargraph
     end
 
     # @param yard_pins [Array<Pin::Base>]
-    # @param rbs_map [RbsMap]
+    # @param rbs_pins [Array<Pin::Base>]
+    #
     # @return [Array<Pin::Base>]
     def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new

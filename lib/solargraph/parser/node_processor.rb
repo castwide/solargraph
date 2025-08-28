@@ -23,6 +23,10 @@ module Solargraph
           @@processors[type] << cls
         end
 
+        # @param type [Symbol]
+        # @param cls [Class<NodeProcessor::Base>]
+        #
+        # @return [void]
         def deregister type, cls
           @@processors[type].delete(cls)
         end

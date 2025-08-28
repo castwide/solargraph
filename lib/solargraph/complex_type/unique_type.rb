@@ -114,10 +114,12 @@ module Solargraph
         non_literal_name != name
       end
 
+      # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
         #
@@ -170,6 +172,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def desc
         rooted_tags
       end
