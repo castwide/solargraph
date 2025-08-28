@@ -134,7 +134,7 @@ module Solargraph
       @doc_map.uncached_yard_gemspecs
     end
 
-    # @return [Array<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
     def core_pins
       @@core_map.pins
     end
