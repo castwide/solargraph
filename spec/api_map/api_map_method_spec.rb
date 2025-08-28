@@ -150,5 +150,44 @@ describe Solargraph::ApiMap do
         expect(method_stack).not_to be_empty
       end
     end
+
+    context 'with alias to invalid type type' do
+      before do
+        sub_pin = Solargraph::Pin::Namespace.new(
+          type: :class,
+          name: 'Sub',
+          closure: Solargraph::Pin::ROOT_PIN,
+          source: :spec
+        )
+
+        superclass_ref_pin = Solargraph::Pin::Reference::Superclass.new(
+          closure: sub_pin,
+          name: 'Hash<Symbol>',
+          source: :spec
+        )
+
+        method_alias_pin = Solargraph::Pin::MethodAlias.new(
+          name: 'meth_alias',
+          original: '[]',
+          closure: sub_pin,
+          scope: :instance,
+          source: :spec
+        )
+
+        api_map.index [sub_pin, method_alias_pin, superclass_ref_pin]
+      end
+
+      it 'does not crash looking at superclass method' do
+        expect { api_map.get_method_stack('Hash<Symbol>', '[]', scope: :instance) }.not_to raise_error
+      end
+
+      it 'does not crash looking at subclass method' do
+        expect { api_map.get_method_stack('Sub', '[]', scope: :instance) }.not_to raise_error
+      end
+
+      it 'does not crash looking at subclass alias' do
+        expect { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }.not_to raise_error
+      end
+    end
   end
 end
