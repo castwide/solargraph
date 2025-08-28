@@ -310,7 +310,7 @@ module Solargraph
       fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
       return unless fqns
 
-      return fqns if %w[Class Module].include? type
+      return fqns if %w[Class Module].include? type.tag
 
       fqns + type.substring
     end
