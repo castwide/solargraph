@@ -47,6 +47,10 @@ module Solargraph
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
+      def include_reference_pins
+        @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
+      end
+
       # @return [Hash{String => Array<String>}]
       def extend_references
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
@@ -105,6 +109,7 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
+        map_include_pins
         map_overrides
         self
       end
@@ -115,6 +120,12 @@ module Solargraph
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
           store_parametric_reference(hash, pin)
+        end
+      end
+
+      def map_include_pins
+        pins_by_class(Solargraph::Pin::Reference::Include).each do |pin|
+          include_reference_pins[pin.namespace].push pin
         end
       end
 

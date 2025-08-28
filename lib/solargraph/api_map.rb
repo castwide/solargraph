@@ -537,8 +537,18 @@ module Solargraph
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
-      methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+      namespace_pin = store.get_path_pins(fqns).first
+      methods = if namespace_pin.is_a?(Pin::Constant)
+        type = namespace_pin.infer(self)
+        if type.defined?
+          namespace_pin = store.get_path_pins(type.namespace).first
+          get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+        else
+          []
+        end
+      else
+        get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+      end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -768,9 +778,16 @@ module Solargraph
       result.concat methods
       if deep
         if scope == :instance
-          store.get_includes(fqns).reverse.each do |include_tag|
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-            result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+          store.get_include_pins(fqns).reverse.each do |ref|
+            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
+            if const.is_a?(Pin::Namespace) || const.nil?
+              referenced_tag = ref.parametrized_tag
+              next unless referenced_tag.defined?
+              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            elsif const.is_a?(Pin::Constant)
+              type = const.infer(self)
+              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
+            end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
