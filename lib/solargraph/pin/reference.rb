@@ -21,16 +21,12 @@ module Solargraph
       def parametrized_tag
         @parametrized_tag ||= ComplexType.try_parse(
           name +
-          if generic_values&.length > 0
-            "<" + generic_values.join(', ') + ">"
+          if generic_values&.length&.> 0
+            '<' + generic_values.join(', ') + '>'
           else
             ''
           end
         )
-      end
-
-      def parametrized?
-        generic_values&.any?
       end
     end
   end

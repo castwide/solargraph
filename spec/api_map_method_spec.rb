@@ -14,28 +14,6 @@ describe Solargraph::ApiMap do
   describe '#qualify' do
     let(:external_requires) { ['yaml'] }
 
-    # it 'resolves YAML to Psych' do
-    #   pin = api_map.get_path_pins('YAML').first
-    #   puts pin.inspect
-    #   puts pin.return_type
-    #   expect(api_map.qualify('YAML', '')).to eq('Psych')
-    # end
-
-    # it 'resolves constants used to alias namespaces' do
-    #   map = Solargraph::SourceMap.load_string(%(
-    #     class Foo
-    #       def bing; end
-    #     end
-
-    #     module Bar
-    #       Baz = ::Foo
-    #     end
-    # ))
-    #   api_map.index map.pins
-    #   fqns = api_map.qualify('Bar::Baz')
-    #   expect(fqns).to eq('Foo')
-    # end
-
     it 'understands alias namespaces resolving types' do
       source = Solargraph::Source.load_string(%(
         class Foo

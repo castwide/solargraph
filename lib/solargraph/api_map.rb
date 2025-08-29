@@ -539,16 +539,16 @@ module Solargraph
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first
       methods = if namespace_pin.is_a?(Pin::Constant)
-        type = namespace_pin.infer(self)
-        if type.defined?
-          namespace_pin = store.get_path_pins(type.namespace).first
-          get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
-        else
-          []
-        end
-      else
-        get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
-      end
+                  type = namespace_pin.infer(self)
+                  if type.defined?
+                    namespace_pin = store.get_path_pins(type.namespace).first
+                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+                  else
+                    []
+                  end
+                else
+                  get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+                end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
