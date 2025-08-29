@@ -289,7 +289,7 @@ module Solargraph
         index.include_references
       end
 
-      # @return [Array<Pin::Reference::Include>]
+      # @return [Hash{String => Array<Solargraph::Pin::Reference::Include>}]
       def include_reference_pins
         index.include_reference_pins
       end
