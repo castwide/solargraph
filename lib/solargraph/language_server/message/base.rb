@@ -16,7 +16,7 @@ module Solargraph
         # @return [String]
         attr_reader :method
 
-        # @return [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
+        # @return [Hash{String => undefined}]
         attr_reader :params
 
         # @return [Hash, Array, nil]
@@ -79,6 +79,7 @@ module Solargraph
 
         private
 
+        # @return [void]
         def accept_or_cancel
           if host.cancel?(id)
             # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest

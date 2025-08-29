@@ -58,7 +58,7 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # We keep this at strong because if you added an @sg-ignore to
+      # We keep this at strong because if you added an @ sg-ignore to
       # address a strong-level issue, then ran at a lower level, you'd
       # get a false positive - we don't run stronger level checks than
       # requested for performance reasons

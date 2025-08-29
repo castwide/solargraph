@@ -130,6 +130,7 @@ module Solargraph
         end.call
       end
 
+      # @return [self]
       def namespace_type
         return ComplexType.parse('::Object') if duck_type?
         return ComplexType.parse('::NilClass') if nil_type?
