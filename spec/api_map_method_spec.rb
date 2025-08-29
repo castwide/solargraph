@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::ApiMap do
+describe 'Solargraph::ApiMap methods' do
   let(:api_map) { described_class.new }
   let(:bench) do
     Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new('.'))
