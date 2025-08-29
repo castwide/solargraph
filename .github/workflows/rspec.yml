@@ -29,6 +29,14 @@ jobs:
             rbs-version: '3.9.4'
           - ruby-version: '3.0'
             rbs-version: '4.0.0.dev.4'
+          # Missing require in 'rbs collection update' - hopefully
+          # fixed in next RBS release
+          - ruby-version: 'head'
+            rbs-version: '4.0.0.dev.4'
+          - ruby-version: 'head'
+            rbs-version: '3.9.4'
+          - ruby-version: 'head'
+            rbs-version: '3.6.1'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -48,6 +56,9 @@ jobs:
       run: |
         bundle install
         bundle update rbs # use latest available for this Ruby version
+    - name: Update types
+      run: |
+        bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
