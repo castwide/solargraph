@@ -11,7 +11,10 @@ Gem::Specification.new do |s|
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
   s.files       = Dir.chdir(File.expand_path('..', __FILE__)) do
-    `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
+    # @sg-ignore Need backtick support
+    # @type [String]
+    all_files = `git ls-files -z`
+    all_files.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   end
   s.homepage    = 'https://solargraph.org'
   s.license     = 'MIT'

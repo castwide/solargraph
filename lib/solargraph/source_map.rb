@@ -32,11 +32,13 @@ module Solargraph
 
       environ.merge Convention.for_local(self) unless filename.nil?
       self.convention_pins = environ.pins
+      # @type [Hash{Class<generic<T>> => Array<generic<T>>}]
       @pin_select_cache = {}
     end
 
-    # @param klass [Class]
-    # @return [Array<Pin::Base>]
+    # @generic T
+    # @param klass [Class<generic<T>>]
+    # @return [Array<generic<T>>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end

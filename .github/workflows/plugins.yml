@@ -99,6 +99,7 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
+       bundle update rbs
        RAILS_DIR="$(pwd)/spec/rails7"
        export RAILS_DIR
        cd ${RAILS_DIR}
@@ -121,7 +122,7 @@ jobs:
         bundle info solargraph
         bundle info rbs
         bundle info yard
-        bundle exec rake spec
+        ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
         MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
         MATRIX_RAILS_VERSION: "7.0"
