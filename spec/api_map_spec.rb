@@ -8,6 +8,7 @@ describe Solargraph::ApiMap do
   before :all do
     @api_map = described_class.load_with_cache(Dir.pwd, nil)
   end
+  # rubocop:enable RSpec/InstanceVariable
 
   it 'returns core methods' do
     pins = @api_map.get_methods('String') # rubocop:disable RSpec/InstanceVariable
