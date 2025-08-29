@@ -106,7 +106,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @return [Hash{Parser::AST::Node, Symbol => Source::Chain}]
+        # @return [Hash{Parser::AST::Node => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           return convert_hash(node.children[0]) if node.type == :kwsplat
