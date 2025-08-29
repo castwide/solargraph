@@ -308,14 +308,8 @@ module Solargraph
       # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
-        # :nocov:
-        if other.nil?
-          Solargraph.assert_or_log("combine_with_#{attr}".to_sym, "Sent nil for comparison")
-          return send(attr)
-        end
-        # :nocov:
+        return false if other.nil?
         val1 = send(attr)
-        return val1 if other.nil?
         val2 = other.send(attr)
         return val1 if val1 == val2
         Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
