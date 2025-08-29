@@ -34,6 +34,8 @@ Metrics/ParameterLists:
   Max: 7
   CountKeywordArgs: false
 
+RSpec/SpecFilePathFormat:
+  Enabled: false
 
 # we tend to use @@ and the risk doesn't seem high
 Style/ClassVars:
