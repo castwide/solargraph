@@ -922,6 +922,7 @@ RSpec/DescribeClass:
     - '**/spec/views/**/*'
     - 'spec/complex_type_spec.rb'
     - 'spec/source_map/node_processor_spec.rb'
+    - 'spec/api_map_method_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: SkipBlocks, EnforcedStyle, OnlyStaticConstants.
