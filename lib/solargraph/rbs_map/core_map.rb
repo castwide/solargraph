@@ -14,6 +14,7 @@ module Solargraph
 
       def initialize; end
 
+      # @return [Enumerable<Pin::Base>]
       def pins
         return @pins if @pins
 
@@ -39,10 +40,12 @@ module Solargraph
 
       private
 
+      # @return [RBS::EnvironmentLoader]
       def loader
         @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
       end
 
+      # @return [Conversions]
       def conversions
         @conversions ||= Conversions.new(loader: loader)
       end
