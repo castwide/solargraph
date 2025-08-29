@@ -30,7 +30,7 @@ describe 'Solargraph::ApiMap methods' do
         Bar::Baz
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [11, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -53,7 +53,7 @@ describe 'Solargraph::ApiMap methods' do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [13, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -78,7 +78,7 @@ describe 'Solargraph::ApiMap methods' do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -103,7 +103,7 @@ describe 'Solargraph::ApiMap methods' do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -112,7 +112,7 @@ describe 'Solargraph::ApiMap methods' do
 
   describe '#get_method_stack' do
     let(:out) { StringIO.new }
-    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
+    let(:api_map) { Solargraph::ApiMap.load_with_cache(Dir.pwd, out) }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
