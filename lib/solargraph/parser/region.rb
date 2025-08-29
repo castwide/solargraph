@@ -23,8 +23,10 @@ module Solargraph
 
       # @param source [Source]
       # @param namespace [String]
+      # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
+      # @param lvars [Array<Symbol>]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public, lvars: []
         @source = source
@@ -45,6 +47,7 @@ module Solargraph
       # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
+      # @param lvars [Array<Symbol>, nil]
       # @return [Region]
       def update closure: nil, scope: nil, visibility: nil, lvars: nil
         Region.new(

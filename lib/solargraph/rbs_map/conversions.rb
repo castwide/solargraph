@@ -707,13 +707,13 @@ module Solargraph
       # @return [ComplexType::UniqueType]
       def build_type(type_name, type_args = [])
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }.map do |t|
+        params = type_args.map { |a| other_type_to_tag(a) }.map do |t|
           ComplexType.try_parse(t).force_rooted
         end
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params, rooted: true, parameters_type: :list)
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
         end
       end
 

@@ -26,7 +26,10 @@ module Solargraph
           assignment: assert_same(other, :assignment),
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        new_attrs[:presence] =  assert_same(other, :presence) unless attrs.key?(:presence)
+        # @sg-ignore Wrong argument type for
+        #   Solargraph::Pin::Base#assert_same: other expected
+        #   Solargraph::Pin::Base, received self
+        new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         super(other, new_attrs)
       end

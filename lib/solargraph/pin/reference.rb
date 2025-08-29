@@ -17,6 +17,18 @@ module Solargraph
         super(**splat)
         @generic_values = generic_values
       end
+
+      # @return [ComplexType]
+      def parametrized_tag
+        @parametrized_tag ||= ComplexType.try_parse(
+          name +
+          if generic_values&.length&.> 0
+            "<#{generic_values.join(', ')}>"
+          else
+            ''
+          end
+        )
+      end
     end
   end
 end
