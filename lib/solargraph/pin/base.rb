@@ -188,13 +188,9 @@ module Solargraph
           return_type
         else
           all_items = return_type.items + other.return_type.items
-          # If we got a 'self' return type from something, but
-          # something else listed the type specifically, assume 'self'
-          # is the better choice
-          if all_items.any? { |item| item.selfy? } &&
-             all_items.any? { |item| item.rooted_namespace == context.rooted_namespace }
+          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
             # assume this was a declaration that should have said 'self'
-            all_items.delete_if { |item| item.rooted_namespace == context.rooted_namespace }
+            all_items.delete_if { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
           end
           ComplexType.new(all_items)
         end
