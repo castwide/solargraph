@@ -1,4 +1,4 @@
-name: Plugin Backwards Compatibility Tests
+name: Plugin
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  regression:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,13 +29,72 @@ jobs:
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
+        bundle update rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Install gem types
-      run: bundle exec rbs collection install
+      run: bundle exec rbs collection update
+    - name: Ensure typechecking still works
+      run: bundle exec solargraph typecheck --level typed
+    - name: Ensure specs still run
+      run: bundle exec rake spec
+  rails:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: false
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rails"' > .Gemfile
+        bundle install
+        bundle update rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+    - name: Install gem types
+      run: bundle exec rbs collection update
+    - name: Ensure typechecking still works
+      run: bundle exec solargraph typecheck --level typed
+    - name: Ensure specs still run
+      run: bundle exec rake spec
+  rspec:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+        bundler-cache: false
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rspec"' >> .Gemfile
+        bundle install
+        bundle update rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Install gem types
+      run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run

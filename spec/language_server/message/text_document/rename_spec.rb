@@ -55,6 +55,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       }
     })
     rename.process
+    expect(rename.result).not_to be_nil
+    expect(rename.result[:changes]).not_to be_nil
+    expect(rename.result[:changes]['file:///file.rb']).not_to be_nil
     expect(rename.result[:changes]['file:///file.rb'].length).to eq(3)
   end
 

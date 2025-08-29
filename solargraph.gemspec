@@ -48,6 +48,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
+  s.add_development_dependency 'rspec-time-guard', '~> 0.2.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6'
   s.add_development_dependency 'rubocop-yard', '~> 1.0'

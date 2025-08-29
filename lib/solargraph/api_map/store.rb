@@ -50,7 +50,7 @@ module Solargraph
 
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
@@ -72,7 +72,10 @@ module Solargraph
       # @return [String, nil]
       def get_superclass fq_tag
         raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
-        sub = ComplexType.parse(fq_tag)
+        sub = ComplexType.try_parse(fq_tag)
+        return nil if sub.nil?
+        return sub.simplify_literals.name if sub.literal?
+        return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
         return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
         return superclass_references[fqns].first if superclass_references.key?(fqns)
@@ -117,7 +120,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::ClassVariable>]
       def get_class_variables(fqns)
         namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
@@ -133,14 +136,14 @@ module Solargraph
         fqns_pins(fqns).any?
       end
 
-      # @return [Set<String>]
-      def namespaces
-        index.namespaces
-      end
-
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
+      end
+
+      # @return [Enumerable<Solargraph::Pin::Constant>]
+      def constant_pins
+        pins_by_class(Solargraph::Pin::Constant)
       end
 
       # @return [Enumerable<Solargraph::Pin::Method>]
@@ -244,8 +247,9 @@ module Solargraph
         @indexes.last
       end
 
-      # @param pinsets [Array<Enumerable<Pin::Base>>]
-      # @return [Boolean]
+      # @param pinsets [Array<Array<Pin::Base>>]
+      #
+      # @return [void]
       def catalog pinsets
         @pinsets = pinsets
         # @type [Array<Index>]

@@ -1,6 +1,6 @@
 describe Solargraph::TypeChecker do
-  context 'typed level' do
-    def type_checker(code)
+  context 'when checking at typed level' do
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :typed)
     end
 
