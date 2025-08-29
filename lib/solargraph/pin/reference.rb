@@ -18,6 +18,7 @@ module Solargraph
         @generic_values = generic_values
       end
 
+      # @return [ComplexType]
       def parametrized_tag
         @parametrized_tag ||= ComplexType.try_parse(
           name +

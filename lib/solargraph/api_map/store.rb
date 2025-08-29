@@ -89,6 +89,7 @@ module Solargraph
         include_references[fqns] || []
       end
 
+      # @param fqns [String]
       # @return [Array<Pin::Reference::Include>]
       def get_include_pins fqns
         include_reference_pins[fqns] || []
@@ -288,6 +289,7 @@ module Solargraph
         index.include_references
       end
 
+      # @return [Array<Pin::Reference::Include>]
       def include_reference_pins
         index.include_reference_pins
       end
