@@ -47,6 +47,7 @@ module Solargraph
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_reference_pins
         @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
       end
@@ -123,6 +124,7 @@ module Solargraph
         end
       end
 
+      # @return [void]
       def map_include_pins
         pins_by_class(Solargraph::Pin::Reference::Include).each do |pin|
           include_reference_pins[pin.namespace].push pin
