@@ -781,13 +781,15 @@ module Solargraph
         if scope == :instance
           store.get_include_pins(fqns).reverse.each do |ref|
             const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
-            if const.is_a?(Pin::Namespace) || const.nil?
-              referenced_tag = ref.parametrized_tag
-              next unless referenced_tag.defined?
-              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            if const.is_a?(Pin::Namespace)
+              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
             elsif const.is_a?(Pin::Constant)
               type = const.infer(self)
               result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
+            else
+              referenced_tag = ref.parametrized_tag
+              next unless referenced_tag.defined?
+              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
             end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)

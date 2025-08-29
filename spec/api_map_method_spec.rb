@@ -132,4 +132,25 @@ describe 'Solargraph::ApiMap methods' do
       end
     end
   end
+
+  describe '#get_methods' do
+    it 'recognizes mixin references from context' do
+      source = Solargraph::Source.load_string(%(
+        module Foo
+          module Bar
+            def baz; end
+          end
+
+          class Includer
+            include Bar
+          end
+        end
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pins = api_map.get_methods('Foo::Includer')
+      expect(pins.map(&:path)).to include('Foo::Bar#baz')
+    end
+  end
 end
