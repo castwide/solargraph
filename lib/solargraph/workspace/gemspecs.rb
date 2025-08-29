@@ -266,7 +266,7 @@ module Solargraph
               '.select { |dep| dep.groups.include?(:default) && dep.should_include? }' \
               '.map(&:name)'
             # @sg-ignore
-            # @type [Array<Array(String, String)>]
+            # @type [Array<String>]
             dep_names = query_external_bundle command
 
             all_gemspecs_from_bundle.select { |gemspec| dep_names.include?(gemspec.name) }
