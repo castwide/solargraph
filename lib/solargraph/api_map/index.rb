@@ -39,7 +39,7 @@ module Solargraph
       def pins_by_class klass
         # @type [Set<Solargraph::Pin::Base>]
         s = Set.new
-        # @sg-ignore Need to handle block parameter destructuring
+        # @sg-ignore need to support destructured args in block
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
