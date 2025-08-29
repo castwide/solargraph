@@ -204,6 +204,7 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end

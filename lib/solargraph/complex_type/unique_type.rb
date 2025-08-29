@@ -101,6 +101,7 @@ module Solargraph
         tag
       end
 
+      # @return [self]
       def simplify_literals
         transform do |t|
           next t unless t.literal?
