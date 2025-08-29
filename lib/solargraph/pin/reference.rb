@@ -22,7 +22,7 @@ module Solargraph
         @parametrized_tag ||= ComplexType.try_parse(
           name +
           if generic_values&.length&.> 0
-            '<' + generic_values.join(', ') + '>'
+            "<#{generic_values.join(', ')}>"
           else
             ''
           end
