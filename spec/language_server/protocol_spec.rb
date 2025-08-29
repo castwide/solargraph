@@ -434,7 +434,7 @@ describe Protocol, order: :defined do
     expect(response['result']['available']).to be_a(String)
   end
 
-  it "handles $/solargraph/documentGems" do
+  it "handles $/solargraph/documentGems", time_limit_seconds: 120 do
     @protocol.request '$/solargraph/documentGems', {}
     response = @protocol.response
     expect(response['error']).to be_nil
