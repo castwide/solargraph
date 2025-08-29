@@ -39,6 +39,8 @@ module Solargraph
         end
         return ComplexType::UNDEFINED if closure.nil?
         return ComplexType::UNDEFINED unless closure.is_a?(Pin::Method)
+        # @sg-ignore need is_a? support
+        # @type [Array<Pin::Method>]
         method_stack = closure.rest_of_stack api_map
         logger.debug { "Signature#typify(self=#{self}) - method_stack: #{method_stack}" }
         method_stack.each do |pin|

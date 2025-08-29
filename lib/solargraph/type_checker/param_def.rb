@@ -12,6 +12,8 @@ module Solargraph
       # @return [Symbol]
       attr_reader :type
 
+      # @param name [String]
+      # @param type [Symbol] The type of parameter, such as :req, :opt, :rest, etc.
       def initialize name, type
         @name = name
         @type = type
