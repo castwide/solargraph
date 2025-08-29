@@ -17,7 +17,7 @@ module Solargraph
         index.pins
       end
 
-      # @param pinsets [Array<Array<Pin::Base>>]
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
       # @return [Boolean] True if the index was updated
       def update *pinsets
         return catalog(pinsets) if pinsets.length != @pinsets.length
