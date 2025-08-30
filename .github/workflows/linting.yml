@@ -115,7 +115,7 @@ jobs:
     - name: Run RuboCop against todo file
       continue-on-error: true
       run: |
-        cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestampxb*com"
+        cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
         ${cmd:?}
         set +e
         if [ -n "$(git status --porcelain)" ]
