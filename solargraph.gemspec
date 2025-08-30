@@ -11,7 +11,10 @@ Gem::Specification.new do |s|
   s.authors     = ["Fred Snyder"]
   s.email       = 'admin@castwide.com'
   s.files       = Dir.chdir(File.expand_path('..', __FILE__)) do
-    `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
+    # @sg-ignore Need backtick support
+    # @type [String]
+    all_files = `git ls-files -z`
+    all_files.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   end
   s.homepage    = 'https://solargraph.org'
   s.license     = 'MIT'
@@ -54,7 +57,7 @@ Gem::Specification.new do |s|
   #
   # even more specific on RuboCop itself, which is written into _todo
   # file.
-  s.add_development_dependency 'rubocop', '~> 1.79.2.0'
+  s.add_development_dependency 'rubocop', '~> 1.80.0.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'
   s.add_development_dependency 'rubocop-yard', '~> 1.0.0'

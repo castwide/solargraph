@@ -155,10 +155,12 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def tags
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def simple_tags
       simplify_literals.tags
     end
@@ -172,10 +174,12 @@ module Solargraph
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
+    # @return [String]
     def desc
       rooted_tags
     end
 
+    # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
@@ -200,6 +204,7 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end
