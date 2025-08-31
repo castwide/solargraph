@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::ApiMap do
-  let(:api_map) { Solargraph::ApiMap.new.map(source) }
+  let(:api_map) { described_class.new.map(source) }
 
   context 'with a non-rooted include in local source' do
     let :source do
@@ -27,7 +27,7 @@ describe Solargraph::ApiMap do
     end
 
     it 'handles includes via relative name' do
-      api_map = Solargraph::ApiMap.new.map(source)
+      api_map = described_class.new.map(source)
 
       pin = api_map.get_method_stack('A::C', 'foo', scope: :instance)
       expect(pin.map(&:return_type).map(&:rooted_tags)).to eq(['String'])
@@ -38,7 +38,7 @@ describe Solargraph::ApiMap do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end
@@ -63,7 +63,7 @@ describe Solargraph::ApiMap do
         class A::C
           include B
         end
-        RBS
+      RBS
     end
 
     let(:conversions) do
@@ -72,7 +72,7 @@ describe Solargraph::ApiMap do
       Solargraph::RbsMap::Conversions.new(loader: loader)
     end
 
-    let(:api_map) { Solargraph::ApiMap.new pins: conversions.pins }
+    let(:api_map) { described_class.new pins: conversions.pins }
 
     before do
       rbs_file = File.join(temp_dir, 'foo.rbs')
