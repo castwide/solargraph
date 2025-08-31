@@ -15,10 +15,6 @@ describe Solargraph::RbsMap::Conversions do
       Solargraph::RbsMap::Conversions.new(loader: loader)
     end
 
-    let(:pins) do
-      conversions.pins
-    end
-
     before do
       rbs_file = File.join(temp_dir, 'foo.rbs')
       File.write(rbs_file, rbs)
@@ -35,7 +31,7 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      subject(:method_pin) { pins.find { |pin| pin.path == 'Foo#bar' } }
+      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
 
       it { should_not be_nil }
 
@@ -45,7 +41,6 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
-
 
     # https://github.com/castwide/solargraph/issues/1042
     context 'with Hash superclass with untyped value and alias' do
