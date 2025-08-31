@@ -33,7 +33,7 @@ jobs:
           ruby-version: 3.4
           bundler: latest
           bundler-cache: true
-          cache-version: 2025-06-06
+          cache-version: 2025-08
 
       - name: Update to best available RBS
         run: |
