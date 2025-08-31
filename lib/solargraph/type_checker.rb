@@ -453,8 +453,7 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              argtype = argchain.infer(api_map, block_pin, locals)
-              argtype = argtype.self_to_type(block_pin.context)
+              argtype = argchain.infer(api_map, block_pin, locals).self_to_type(block_pin.context)
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
