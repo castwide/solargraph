@@ -456,7 +456,7 @@ module Solargraph
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #
-      # @param other [self]
+      # @param other [Object]
       def == other
         return false unless nearly? other
         comments == other.comments && location == other.location
