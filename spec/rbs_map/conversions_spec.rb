@@ -22,7 +22,6 @@ describe Solargraph::RbsMap::Conversions do
     before do
       rbs_file = File.join(temp_dir, 'foo.rbs')
       File.write(rbs_file, rbs)
-      loader.add(path: Pathname(temp_dir))
     end
 
     attr_reader :temp_dir
@@ -46,8 +45,46 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
-  end
 
+
+    # https://github.com/castwide/solargraph/issues/1042
+    context 'with Hash superclass with untyped value and alias' do
+      let(:rbs) do
+        <<~RBS
+          class Sub < Hash[Symbol, untyped]
+            alias meth_alias []
+          end
+        RBS
+      end
+
+      let(:api_map) { Solargraph::ApiMap.new }
+
+      let(:sup_method_stack) { api_map.get_method_stack('Hash{Symbol => undefined}', '[]', scope: :instance) }
+
+      let(:sub_alias_stack) { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }
+
+      before do
+        api_map.index conversions.pins
+      end
+
+      it 'does not crash looking at superclass method' do
+        expect { sup_method_stack }.not_to raise_error
+      end
+
+      it 'does not crash looking at alias' do
+        expect { sub_alias_stack }.not_to raise_error
+      end
+
+      it 'finds superclass method pin return type' do
+        expect(sup_method_stack.map(&:return_type).map(&:rooted_tags).uniq).to eq(['undefined'])
+      end
+
+      it 'finds superclass method pin parameter type' do
+        expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
+                 .uniq).to eq(['Symbol'])
+      end
+    end
+  end
 
   if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('3.9.1')
     context 'with method pin for Open3.capture2e' do
@@ -63,44 +100,6 @@ describe Solargraph::RbsMap::Conversions do
         end
         expect(chdir_param).not_to be_nil, -> { "Found pin #{method_pin.to_rbs} from #{method_pin.type_location}" }
       end
-    end
-  end
-
-  # https://github.com/castwide/solargraph/issues/1042
-  context 'with Hash superclass with untyped value and alias' do
-    let(:rbs) do
-      <<~RBS
-          class Sub < Hash[Symbol, untyped]
-            alias meth_alias []
-          end
-        RBS
-    end
-
-    let(:api_map) { Solargraph::ApiMap.new }
-
-    let(:sup_method_stack) { api_map.get_method_stack('Hash{Symbol => undefined}', '[]', scope: :instance) }
-
-    let(:sub_alias_stack) { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }
-
-    before do
-      api_map.index conversions.pins
-    end
-
-    it 'does not crash looking at superclass method' do
-      expect { sup_method_stack }.not_to raise_error
-    end
-
-    it 'does not crash looking at alias' do
-      expect { sub_alias_stack }.not_to raise_error
-    end
-
-    it 'finds superclass method pin return type' do
-      expect(sup_method_stack.map(&:return_type).map(&:rooted_tags).uniq).to eq(['undefined'])
-    end
-
-    it 'finds superclass method pin parameter type' do
-      expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-               .uniq).to eq(['Symbol'])
     end
   end
 end
