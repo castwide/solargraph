@@ -677,7 +677,7 @@ class Bundler::Dsl
 
   @valid_keys: untyped
 
-  include RubyDsl
+  include ::Bundler::RubyDsl
 
   def self.evaluate: (untyped gemfile, untyped lockfile, untyped unlock) -> untyped
 
