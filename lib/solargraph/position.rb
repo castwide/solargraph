@@ -58,13 +58,21 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
+      newline_index  = -1
       cursor = 0
-      index = -1
-      text.each_line do |line|
-        index += 1
-        break if index == position.line
-        cursor += line.length
+      line = -1
+
+      last_line_index = 0
+      while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
+        line += 1
+        break if line == position.line
+        line_length = newline_index - last_line_index
+
+        cursor += line_length.zero? ? 1 : line_length
+
+        last_line_index = newline_index
       end
+
       cursor + position.character
     end
 
@@ -87,22 +95,12 @@ module Solargraph
     def self.from_offset text, offset
       cursor = 0
       line = 0
-      character = nil
-      text.each_line do |l|
-        line_length = l.length
+      character = offset
+      newline_index = -1
 
-        if l.end_with?("\n")
-          char_length = line_length - 1
-        else
-          char_length = line_length
-        end
-
-        if cursor + char_length >= offset
-          character = offset - cursor
-          break
-        end
-        cursor += line_length
+      while (newline_index = text.index("\n", newline_index + 1)) && newline_index < offset
         line += 1
+        character = offset - newline_index - 1
       end
       character = 0 if character.nil? and (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
