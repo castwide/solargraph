@@ -46,8 +46,8 @@ jobs:
           key: |
             2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
           restore-keys: |
-            2025-06-26-09-${{ runner.os }}-dot-cache
-            2025-06-26-09-${{ runner.os }}-dot-cache-
+            2025-08-${{ runner.os }}-dot-cache
+            2025-08-${{ runner.os }}-dot-cache-
           path: |
             /home/runner/.cache/solargraph
 
