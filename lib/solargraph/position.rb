@@ -91,7 +91,7 @@ module Solargraph
       text.each_line do |l|
         line_length = l.length
 
-        if l.end_with?("\n") || l.end_with?("\r\n")
+        if l.end_with?("\n")
           char_length = line_length - 1
         else
           char_length = line_length
