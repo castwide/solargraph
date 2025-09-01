@@ -139,7 +139,6 @@ module Solargraph
           end
           if node.type == :dstr && node.children.last.nil?
             last = node.children[-2]
-            # @sg-ignore
             unless last.nil?
               rng = Range.from_node(last)
               pos = Position.new(rng.ending.line, rng.ending.column - 1)

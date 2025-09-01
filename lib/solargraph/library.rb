@@ -522,7 +522,7 @@ module Solargraph
           full = File.join(base, path)
           filenames[].include?(full) or filenames[].include?(full << ".rb")
         end
-      end
+      end.to_set
       @external_requires = nil
     end
 

@@ -35,7 +35,6 @@ module Solargraph
           presence: choose(other, :presence),
           asgn_code: choose(other, :asgn_code),
         }.merge(attrs)
-        # @sg-ignore Wrong argument type for Solargraph::Pin::LocalVariable#combine_with: other expected Solargraph::Pin::LocalVariable, received self
         super(other, new_attrs)
       end
 
