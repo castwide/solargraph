@@ -26,7 +26,7 @@ module Solargraph
       #
       # @sg-ignore RBS gem doesn't reflect that Open3.* also include
       #   kwopts from Process.spawn()
-      stdout_and_stderr_str, status = Open3.capture2e(cmd, chdir: gemspec.gem_dir)
+      stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       unless status.success?
         Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
         Solargraph.logger.info stdout_and_stderr_str
@@ -59,6 +59,23 @@ module Solargraph
     def load!(gemspec)
       YARD::Registry.load! PinCache.yardoc_path gemspec
       YARD::Registry.all
+    end
+
+    # If the BUNDLE_GEMFILE environment variable is set, we need to
+    # make sure it's an absolute path, as we'll be changing
+    # directories.
+    #
+    # 'bundle exec' sets an absolute path here, but at least the
+    # overcommit gem does not, breaking on-the-fly documention with a
+    # spawned yardoc command from our current bundle
+    #
+    # @return [Hash{String => String}] a hash of environment variables to override
+    def current_bundle_env_tweaks
+      tweaks = {}
+      if ENV['BUNDLE_GEMFILE'] && !ENV['BUNDLE_GEMFILE'].empty?
+        tweaks['BUNDLE_GEMFILE'] = File.expand_path(ENV['BUNDLE_GEMFILE'])
+      end
+      tweaks
     end
   end
 end
