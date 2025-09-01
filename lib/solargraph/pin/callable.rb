@@ -27,7 +27,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [Solargraph::Pin::Signature, nil]
+      # @return [Pin::Signature, nil]
       def combine_blocks(other)
         if block.nil?
           other.block
@@ -61,10 +61,9 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [::Array<Parameter>]
+      # @return [Array<Pin::Parameter>]
       def choose_parameters(other)
         raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
-        # @sg-ignore Wrong argument type for Array#zip: arg expected _Each<Solargraph::Pin::Parameter>, received Array<Solargraph::Pin::Parameter>
         parameters.zip(other.parameters).map do |param, other_param|
           if param.nil? && other_param.block?
             other_param

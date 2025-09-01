@@ -73,6 +73,7 @@ module Solargraph
       return CACHE_KEY_UNRESOLVED unless resolved?
 
       @hextdigest ||= begin
+        # @type [String, nil]
         data = nil
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
         gem_config = nil

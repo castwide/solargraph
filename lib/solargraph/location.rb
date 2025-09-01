@@ -63,7 +63,7 @@ module Solargraph
     end
 
     # @param node [Parser::AST::Node, nil]
-    # @return [self]
+    # @return [Location, nil]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
       range = Range.from_node(node)

@@ -37,7 +37,7 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
-        # @sg-ignore https://github.com/castwide/backport/pull/5
+        # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
@@ -54,7 +54,7 @@ module Solargraph
         Signal.trap("TERM") do
           Backport.stop
         end
-        # @sg-ignore https://github.com/castwide/backport/pull/5
+        # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
         STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end

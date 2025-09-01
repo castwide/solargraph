@@ -93,6 +93,12 @@ module Solargraph
       end
 
       # @param fqns [String]
+      # @return [Array<Pin::Reference::Include>]
+      def get_include_pins fqns
+        include_reference_pins[fqns] || []
+      end
+
+      # @param fqns [String]
       # @return [Array<String>]
       def get_prepends fqns
         prepend_references[fqns] || []
@@ -285,6 +291,11 @@ module Solargraph
       # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         index.include_references
+      end
+
+      # @return [Hash{String => Array<Solargraph::Pin::Reference::Include>}]
+      def include_reference_pins
+        index.include_reference_pins
       end
 
       # @return [Hash{String => Array<Pin::Reference::Prepend>}]

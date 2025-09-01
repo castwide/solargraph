@@ -200,7 +200,6 @@ module Solargraph
             'ruby', '-e',
             "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts begin; #{command}; end.to_json }"
           ]
-          # @sg-ignore
           o, e, s = Open3.capture3(*cmd)
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"

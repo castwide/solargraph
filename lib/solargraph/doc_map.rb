@@ -87,11 +87,6 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Array<String>]
-    def yard_plugins
-      @environ.yard_plugins
-    end
-
     # @return [Set<Gem::Specification>]
     # @param out [IO]
     def dependencies out: $stderr
@@ -128,10 +123,10 @@ module Solargraph
     def load_serialized_gem_pins out: @out
       serialized_pins = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
-      # @sg-ignore Need support for RBS duck interfaces like _ToHash
+      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
       # @type [Array<String>]
       missing_paths = Hash[without_gemspecs].keys
-      # @sg-ignore Need support for RBS duck interfaces like _ToHash
+      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies(out: out).to_a
 

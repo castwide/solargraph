@@ -187,7 +187,6 @@ module Solargraph
     end
 
     # @return [String, nil]
-    # @sg-ignore Solargraph::Workspace#rbs_collection_config_path return type could not be inferred
     def rbs_collection_config_path
       @rbs_collection_config_path ||=
         begin
