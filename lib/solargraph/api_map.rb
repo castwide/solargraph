@@ -364,6 +364,7 @@ module Solargraph
 
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
     # @param (see Solargraph::Parser::FlowSensitiveTyping#visible_pins)
+    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
     # @return (see Solargraph::Parser::FlowSensitiveTyping#visible_pins)
     def visible_pins(*args, **kwargs, &blk)
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
