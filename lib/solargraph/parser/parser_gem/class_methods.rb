@@ -74,8 +74,8 @@ module Solargraph
         end
 
         # @param name [String]
-        # @param top [Parser::AST::Node]
-        # @return [Array<Parser::AST::Node>]
+        # @param top [AST::Node]
+        # @return [Array<AST::Node>]
         def inner_node_references name, top
           # @type [Array<Parser::AST::Node>]
           result = []
@@ -112,7 +112,7 @@ module Solargraph
           parser.version
         end
 
-        # @param node [Object]
+        # @param node [BasicObject]
         # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
