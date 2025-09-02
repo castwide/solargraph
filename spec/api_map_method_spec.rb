@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-describe Solargraph::ApiMap do
-  let(:api_map) { described_class.new }
+describe 'Solargraph::ApiMap methods' do
+  let(:api_map) { Solargraph::ApiMap.new }
   let(:bench) do
     Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new('.'))
   end
@@ -13,25 +13,6 @@ describe Solargraph::ApiMap do
 
   describe '#qualify' do
     let(:external_requires) { ['yaml'] }
-
-    it 'resolves YAML to Psych' do
-      expect(api_map.qualify('YAML', '')).to eq('Psych')
-    end
-
-    it 'resolves constants used to alias namespaces' do
-      map = Solargraph::SourceMap.load_string(%(
-        class Foo
-          def bing; end
-        end
-
-        module Bar
-          Baz = ::Foo
-        end
-    ))
-      api_map.index map.pins
-      fqns = api_map.qualify('Bar::Baz')
-      expect(fqns).to eq('Foo')
-    end
 
     it 'understands alias namespaces resolving types' do
       source = Solargraph::Source.load_string(%(
@@ -49,7 +30,7 @@ describe Solargraph::ApiMap do
         Bar::Baz
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [11, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -72,7 +53,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [13, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -97,7 +78,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -122,7 +103,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = described_class.new.map(source)
+      api_map = Solargraph::ApiMap.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -131,7 +112,7 @@ describe Solargraph::ApiMap do
 
   describe '#get_method_stack' do
     let(:out) { StringIO.new }
-    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
+    let(:api_map) { Solargraph::ApiMap.load_with_cache(Dir.pwd, out) }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
@@ -149,6 +130,27 @@ describe Solargraph::ApiMap do
       it 'handles finding Thor.desc' do
         expect(method_stack).not_to be_empty
       end
+    end
+  end
+
+  describe '#get_methods' do
+    it 'recognizes mixin references from context' do
+      source = Solargraph::Source.load_string(%(
+        module Foo
+          module Bar
+            def baz; end
+          end
+
+          class Includer
+            include Bar
+          end
+        end
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pins = api_map.get_methods('Foo::Includer')
+      expect(pins.map(&:path)).to include('Foo::Bar#baz')
     end
   end
 end

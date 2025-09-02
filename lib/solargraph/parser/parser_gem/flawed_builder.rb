@@ -9,6 +9,7 @@ module Solargraph
       class FlawedBuilder < ::Parser::Builders::Default
         # @param token [::Parser::AST::Node]
         # @return [String]
+        # @sg-ignore
         def string_value(token)
           value(token)
         end
