@@ -548,14 +548,6 @@ module Solargraph
                   get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
                 end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
-      if methods.empty? && namespace_pin.nil?
-        # namespace may be set by an alias
-        constant = store.constant_pins.find { |c| c.name == fqns && visibility.include?(c.visibility) }
-        if constant
-          return get_method_stack(constant.return_type.tag, name, scope: scope, visibility: visibility,
-                                                                  preserve_generics: preserve_generics)
-        end
-      end
       methods
     end
 

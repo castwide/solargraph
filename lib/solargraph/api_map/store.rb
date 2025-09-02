@@ -148,11 +148,6 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Enumerable<Solargraph::Pin::Constant>]
-      def constant_pins
-        pins_by_class(Solargraph::Pin::Constant)
-      end
-
       # @return [Enumerable<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
