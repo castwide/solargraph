@@ -76,6 +76,7 @@ module Solargraph
                "spec = eval(File.read('#{gemspec_file_path}'), TOPLEVEL_BINDING, '#{gemspec_file_path}'); " \
                'return unless Gem::Specification === spec; ' \
                'puts({name: spec.name, paths: spec.require_paths}.to_json)']
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         o, e, s = Open3.capture3(*cmd)
         if s.success?
           begin

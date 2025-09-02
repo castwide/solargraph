@@ -64,7 +64,6 @@ Layout/BlockAlignment:
 Layout/ClosingHeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment.
@@ -166,7 +165,6 @@ Layout/ExtraSpacing:
   Exclude:
     - 'lib/solargraph/parser/parser_gem/node_processors/opasgn_node.rb'
     - 'lib/solargraph/pin/closure.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'spec/spec_helper.rb'
@@ -224,7 +222,6 @@ Layout/HashAlignment:
 Layout/HeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/yard_map/mapper/to_method_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -326,7 +323,6 @@ Layout/SpaceAroundOperators:
   Exclude:
     - 'lib/solargraph/library.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/source.rb'
     - 'lib/solargraph/source/change.rb'
     - 'lib/solargraph/source/cursor.rb'
@@ -900,6 +896,7 @@ RSpec/DescribeClass:
     - '**/spec/routing/**/*'
     - '**/spec/system/**/*'
     - '**/spec/views/**/*'
+    - 'spec/api_map_method_spec.rb'
     - 'spec/complex_type_spec.rb'
     - 'spec/source_map/node_processor_spec.rb'
 
@@ -1022,7 +1019,6 @@ RSpec/ExampleLength:
 # DisallowedExamples: works
 RSpec/ExampleWording:
   Exclude:
-    - 'spec/convention/struct_definition_spec.rb'
     - 'spec/pin/base_spec.rb'
     - 'spec/pin/method_spec.rb'
 
@@ -2552,7 +2548,6 @@ Layout/LineLength:
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/workspace/config.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
-    - 'spec/api_map_spec.rb'
     - 'spec/complex_type_spec.rb'
     - 'spec/language_server/message/completion_item/resolve_spec.rb'
     - 'spec/language_server/message/extended/check_gem_version_spec.rb'
