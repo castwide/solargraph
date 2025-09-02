@@ -212,6 +212,7 @@ module Solargraph
     #
     # @param directory [String]
     # @param out [IO] The output stream for messages
+    #
     # @return [ApiMap]
     def self.load_with_cache directory, out = $stderr
       api_map = load(directory)

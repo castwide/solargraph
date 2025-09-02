@@ -126,6 +126,7 @@ module Solargraph
       end
 
       # @param fqns [String]
+      #
       # @return [Enumerable<Solargraph::Pin::ClassVariable>]
       def get_class_variables(fqns)
         namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
@@ -253,7 +254,7 @@ module Solargraph
         @indexes.last
       end
 
-      # @param pinsets [Array<Array<Pin::Base>>]
+      # @param pinsets [Array<Enumerable<Pin::Base>>]
       #
       # @return [void]
       def catalog pinsets
