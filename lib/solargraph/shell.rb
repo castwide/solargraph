@@ -246,6 +246,8 @@ module Solargraph
     # @sg-ignore Unresolved call to option
     option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
     # @sg-ignore Unresolved call to option
+    option :references, type: :boolean, desc: 'Show references', default: false
+    # @sg-ignore Unresolved call to option
     option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
     # @sg-ignore Unresolved call to option
     option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
@@ -253,27 +255,34 @@ module Solargraph
     # @return [void]
     def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
-
-      # @sg-ignore Unresolved call to options
-      # @type [Array<Pin::Base>]
-      pins = if options[:stack]
-               scope, ns, meth = if path.include? '#'
-                                   [:instance, *path.split('#', 2)]
-                                 else
-                                   [:class, *path.split('.', 2)]
-                                 end
-
-               # @sg-ignore Wrong argument type for
-               #   Solargraph::ApiMap#get_method_stack: rooted_tag
-               #   expected String, received Array<String>
-               api_map.get_method_stack(ns, meth, scope: scope)
-             else
-               api_map.get_path_pins path
-             end
-      if pins.empty?
+      pins = api_map.get_path_pins path
+      references = {}
+      pin = pins.first
+      case pin
+      when nil
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
+      when Pin::Method
+        if options[:stack]
+          scope, ns, meth = if path.include? '#'
+                              [:instance, *path.split('#', 2)]
+                            else
+                              [:class, *path.split('.', 2)]
+                            end
+
+          # @sg-ignore Wrong argument type for
+          #   Solargraph::ApiMap#get_method_stack: rooted_tag
+          #   expected String, received Array<String>
+          pins = api_map.get_method_stack(ns, meth, scope: scope)
+        end
+      when Pin::Namespace
+        if options[:references]
+          superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
+          superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
+          references[:superclass] = superclass_pin if superclass_pin
+        end
       end
+
       pins.each do |pin|
         # @sg-ignore Unresolved call to options
         if options[:typify] || options[:probe]
@@ -287,6 +296,10 @@ module Solargraph
         end
 
         print_pin(pin)
+      end
+      references.each do |key, refpin|
+        puts "\n# #{key.to_s.capitalize}:\n\n"
+        print_pin(refpin)
       end
     end
 
