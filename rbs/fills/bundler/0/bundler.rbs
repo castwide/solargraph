@@ -607,7 +607,7 @@ class Bundler::DepProxy
 
   def initialize: (untyped dep, untyped platform) -> void
 
-  def name: () -> untyped
+  def name: () -> String
 
   def requirement: () -> untyped
 
@@ -878,7 +878,7 @@ class Bundler::EndpointSpecification < Gem::Specification
 
   def source=: (untyped source) -> untyped
 
-  def version: () -> untyped
+  def version: () -> String
 end
 
 Bundler::EndpointSpecification::Elem: untyped
