@@ -62,6 +62,7 @@ describe Solargraph::Shell do
     let(:to_s_pin) { instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String')) }
 
     before do
+      allow(Solargraph::Pin::Method).to receive(:===).with(to_s_pin).and_return(true)
       allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
       allow(api_map).to receive(:get_path_pins).with('String#to_s').and_return([to_s_pin])
     end
@@ -105,6 +106,8 @@ describe Solargraph::Shell do
         string_new_pin = instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String'))
 
         allow(api_map).to receive(:get_method_stack).with('String', 'new', scope: :class).and_return([string_new_pin])
+        allow(Solargraph::Pin::Method).to receive(:===).with(string_new_pin).and_return(true)
+        allow(api_map).to receive(:get_path_pins).with('String.new').and_return([string_new_pin])
         capture_both do
           shell.options = { stack: true }
           shell.pin('String.new')
@@ -140,6 +143,7 @@ describe Solargraph::Shell do
     context 'with no pin' do
       it 'prints error' do
         allow(api_map).to receive(:get_path_pins).with('Not#found').and_return([])
+        allow(Solargraph::Pin::Method).to receive(:===).with(nil).and_return(false)
 
         out = capture_both do
           shell.options = {}
