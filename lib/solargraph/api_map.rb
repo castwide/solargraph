@@ -177,6 +177,7 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    #
     # @return [ApiMap]
     def self.load directory
       api_map = new
