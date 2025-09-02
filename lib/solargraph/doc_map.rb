@@ -123,10 +123,10 @@ module Solargraph
     def load_serialized_gem_pins out: @out
       serialized_pins = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       missing_paths = Hash[without_gemspecs].keys
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies(out: out).to_a
 
