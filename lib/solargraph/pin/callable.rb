@@ -27,7 +27,8 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [Pin::Block, nil]
+      #
+      # @return [Pin::Signature, nil]
       def combine_blocks(other)
         if block.nil?
           other.block
@@ -61,6 +62,7 @@ module Solargraph
       end
 
       # @param other [self]
+      #
       # @return [Array<Pin::Parameter>]
       def choose_parameters(other)
         raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
