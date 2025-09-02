@@ -21,6 +21,8 @@ AllCops:
     - "vendor/**/.*"
   TargetRubyVersion: 3.0
 
+# we don't use the spec/solargraph directory, instead keeping things
+# directly under spec.
 RSpec/SpecFilePathFormat:
   Enabled: false
 
@@ -36,11 +38,6 @@ Lint/UnusedMethodArgument:
 Metrics/ParameterLists:
   Max: 7
   CountKeywordArgs: false
-
-# we don't use the spec/solargraph directory, instead keeping things
-# directly under spec.
-RSpec/SpecFilePathFormat:
-  Enabled: false
 
 # we tend to use @@ and the risk doesn't seem high
 Style/ClassVars:
