@@ -580,7 +580,7 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-g      spec = cacheable_specs.first
+      spec = cacheable_specs.first
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
