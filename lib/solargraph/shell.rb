@@ -265,6 +265,7 @@ module Solargraph
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
       when Pin::Method
+        # @sg-ignore Unresolved call to options
         if options[:stack]
           scope, ns, meth = if path.include? '#'
                               [:instance, *path.split('#', 2)]
