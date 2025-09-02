@@ -3076,7 +3076,7 @@ class Bundler::RemoteSpecification
 
   def initialize: (untyped name, untyped version, untyped platform, untyped spec_fetcher) -> void
 
-  def name: () -> untyped
+  def name: () -> String
 
   def platform: () -> untyped
 
@@ -3106,7 +3106,7 @@ class Bundler::RemoteSpecification
 
   def to_s: () -> untyped
 
-  def version: () -> untyped
+  def version: () -> String
 end
 
 class Bundler::Resolver
