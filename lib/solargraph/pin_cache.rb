@@ -629,6 +629,11 @@ module Solargraph
       def cache_core out: $stderr
         RbsMap::CoreMap.new.cache_core(out: out)
       end
+
+      # @param path [String]
+      def exist? *path
+        File.file? File.join(*path)
+      end
     end
   end
 end
