@@ -43,7 +43,6 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore Unresolved call to type
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 

@@ -81,7 +81,6 @@ module Solargraph
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
-            # @sg-ignore
             top.children.each { |c| result.concat inner_node_references(name, c) }
           end
           result
@@ -130,7 +129,6 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Array<Range>]
         def string_ranges node
-          # @sg-ignore
           return [] unless is_ast_node?(node)
           result = []
           result.push Range.from_node(node) if node.type == :str
