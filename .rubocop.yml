@@ -39,6 +39,9 @@ Metrics/ParameterLists:
 Style/ClassVars:
   Enabled: false
 
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
 #
 # Set a relaxed standard on harder-to-address item for ease of
 # contribution - if you are good at refactoring, we welcome PRs to
