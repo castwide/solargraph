@@ -12,7 +12,7 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         block_pin = block
-        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver).contain?(cursor.range.start)
+        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver)&.contain?(cursor.range.start)
         @in_block = nil
       end
 
