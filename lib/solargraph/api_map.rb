@@ -559,7 +559,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -568,7 +568,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Enumerable<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end
@@ -730,6 +730,21 @@ module Solargraph
       methods
     end
 
+    # @param fq_sub_tag [String]
+    # @return [String, nil]
+    def qualify_superclass fq_sub_tag
+      fq_sub_type = ComplexType.try_parse(fq_sub_tag)
+      fq_sub_ns = fq_sub_type.name
+      sup_tag = store.get_superclass(fq_sub_tag)
+      sup_type = ComplexType.try_parse(sup_tag)
+      sup_ns = sup_type.name
+      return nil if sup_tag.nil?
+      parts = fq_sub_ns.split('::')
+      last = parts.pop
+      parts.pop if last == sup_ns
+      qualify(sup_tag, parts.join('::'))
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -862,21 +877,6 @@ module Solargraph
     # @return [String, nil]
     def qualify_lower namespace, context
       qualify namespace, context.split('::')[0..-2].join('::')
-    end
-
-    # @param fq_sub_tag [String]
-    # @return [String, nil]
-    def qualify_superclass fq_sub_tag
-      fq_sub_type = ComplexType.try_parse(fq_sub_tag)
-      fq_sub_ns = fq_sub_type.name
-      sup_tag = store.get_superclass(fq_sub_tag)
-      sup_type = ComplexType.try_parse(sup_tag)
-      sup_ns = sup_type.name
-      return nil if sup_tag.nil?
-      parts = fq_sub_ns.split('::')
-      last = parts.pop
-      parts.pop if last == sup_ns
-      qualify(sup_tag, parts.join('::'))
     end
 
     # @param name [String] Namespace to fully qualify
