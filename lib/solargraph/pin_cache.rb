@@ -164,14 +164,16 @@ module Solargraph
         exist?(rbs_collection_path(gemspec, hash))
       end
 
+      # @param out [IO, nil]
       # @return [void]
-      def uncache_core
-        uncache(core_path)
+      def uncache_core out: nil
+        uncache(core_path, out: out)
       end
 
+      # @param out [IO, nil]
       # @return [void]
-      def uncache_stdlib
-        uncache(stdlib_path)
+      def uncache_stdlib out: nil
+        uncache(stdlib_path, out: out)
       end
 
       # @param gemspec [Gem::Specification]
@@ -187,6 +189,40 @@ module Solargraph
       # @return [void]
       def clear
         FileUtils.rm_rf base_dir, secure: true
+      end
+
+      def core?
+        File.file?(core_path)
+      end
+
+      # @param out [IO, nil]
+      # @return [Enumerable<Pin::Base>]
+      def cache_core out: nil
+        RbsMap::CoreMap.new.cache_core(out: out)
+      end
+
+      # @param out [IO, nil] output stream for logging
+      #
+      # @return [void]
+      def cache_all_stdlibs out: $stderr
+        possible_stdlibs.each do |stdlib|
+          RbsMap::StdlibMap.new(stdlib, out: out)
+        end
+      end
+
+      # @return [Array<String>] a list of possible standard library names
+      def possible_stdlibs
+        # all dirs and .rb files in Gem::RUBYGEMS_DIR
+        Dir.glob(File.join(Gem::RUBYGEMS_DIR, '*')).map do |file_or_dir|
+          basename = File.basename(file_or_dir)
+          # remove .rb
+          basename = basename[0..-4] if basename.end_with?('.rb')
+          basename
+        end.sort.uniq
+      rescue StandardError => e
+        logger.info { "Failed to get possible stdlibs: #{e.message}" }
+        logger.debug { e.backtrace.join("\n") }
+        []
       end
 
       private
