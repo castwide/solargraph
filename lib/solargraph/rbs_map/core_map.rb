@@ -5,25 +5,27 @@ module Solargraph
     # Ruby core pins
     #
     class CoreMap
+      include Logging
 
       def resolved?
         true
       end
 
-      FILLS_DIRECTORY = File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills')
+      FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
       def initialize; end
 
+      # @param out [IO, nil] output stream for logging
       # @return [Enumerable<Pin::Base>]
-      def pins
+      def pins out: $stderr
         return @pins if @pins
-
         @pins = []
         cache = PinCache.deserialize_core
         if cache
           @pins.replace cache
         else
           loader.add(path: Pathname(FILLS_DIRECTORY))
+          out&.puts 'Caching RBS pins for Ruby core'
           @pins = conversions.pins
           @pins.concat RbsMap::CoreFills::ALL
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
@@ -32,6 +34,12 @@ module Solargraph
           PinCache.serialize_core @pins
         end
         @pins
+      end
+
+      # @param out [IO, nil] output stream for logging
+      # @return [Enumerable<Pin::Base>]
+      def cache_core out: $stderr
+        pins out: out
       end
 
       def loader

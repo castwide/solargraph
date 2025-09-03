@@ -8,8 +8,10 @@ describe Solargraph::DocMap do
     Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
   end
 
+  let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
+
   it 'generates pins from gems' do
-    doc_map = Solargraph::DocMap.new(['ast'], [])
+    doc_map = Solargraph::DocMap.new(['ast'], [], workspace)
     doc_map.cache_all!($stderr)
     node_pin = doc_map.pins.find { |pin| pin.path == 'AST::Node' }
     expect(node_pin).to be_a(Solargraph::Pin::Namespace)
@@ -32,7 +34,6 @@ describe Solargraph::DocMap do
   end
 
   it 'imports all gems when bundler/require used' do
-    workspace = Solargraph::Workspace.new(Dir.pwd)
     plain_doc_map = Solargraph::DocMap.new([], [], workspace)
     doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [], workspace)
 
@@ -42,8 +43,9 @@ describe Solargraph::DocMap do
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
-    expect(Solargraph.logger).not_to receive(:warn).with(/path set/)
+    allow(Solargraph.logger).to receive(:warn)
     Solargraph::DocMap.new(['set'], [])
+    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
   it 'ignores nil requires' do

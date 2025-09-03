@@ -43,3 +43,29 @@ def with_env_var(name, value)
     ENV[name] = old_value  # Restore the old value
   end
 end
+
+def capture_stdout &block
+  original_stdout = $stdout
+  $stdout = StringIO.new
+  begin
+    block.call
+    $stdout.string
+  ensure
+    $stdout = original_stdout
+  end
+end
+
+def capture_both &block
+  original_stdout = $stdout
+  original_stderr = $stderr
+  stringio = StringIO.new
+  $stdout = stringio
+  $stderr = stringio
+  begin
+    block.call
+  ensure
+    $stdout = original_stdout
+    $stderr = original_stderr
+  end
+  stringio.string
+end
