@@ -171,7 +171,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param p [Pin::Method]
+        # @param method_pin [Pin::Method]
         # @return [ComplexType, nil]
         def inferr_from_factory_parameters(api_map, method_pin)
           factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|

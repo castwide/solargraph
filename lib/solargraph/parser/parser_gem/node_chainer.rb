@@ -138,7 +138,6 @@ module Solargraph
             if lit
               method_call_chain = NodeChainer.chain(send_node, @filename, nil, [])
               literal = Chain::Literal.new(lit, n)
-              arg_index = send_node.children[2..-1].index(n)
               result.push Chain::Parameter.new(literal, method_call_chain)
             end
           else
@@ -149,7 +148,7 @@ module Solargraph
         end
 
         def inside_method_call?
-          send_node != nil && send_node != @node
+          !send_node.nil? && send_node != @node
         end
 
         # @return [Parser::AST::Node, nil]

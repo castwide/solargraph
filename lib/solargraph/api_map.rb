@@ -240,7 +240,6 @@ module Solargraph
     #
     # @return [Enumerable<Solargraph::Pin::FactoryParameter>]
     def factory_parameter_pins
-      # TODO: Index these pins
       store.pins_by_class(Pin::FactoryParameter)
     end
 

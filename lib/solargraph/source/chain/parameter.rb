@@ -1,10 +1,17 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     class Chain
+      # A method parameter represented as a link in a method call chain.
+      #
+      # @example
+      #   some_method('literal_value')
+      #                ^^^^^^^^^^^^^
       class Parameter < Link
         # @param literal [Chain::Literal] - literal argument
         # @param method_call_chain [Chain] method call that contains the argument
-        def initialize literal, method_call_chain
+        def initialize literal, method_call_chain # rubocop:disable Lint/MissingSuper
           @literal = literal
           @method_call_chain = method_call_chain
         end
@@ -43,6 +50,7 @@ module Solargraph
         # @ return [Chain]
         attr_reader :method_call_chain
 
+        # @return [String] The name of the method that this parameter belongs to
         def method_name
           @method_name ||= method_call.word
         end
@@ -59,6 +67,7 @@ module Solargraph
         end
 
         # @return [::String, ::Symbol] The literal value of the parameter
+        # @sg-ignore false "return type could not be inferred"
         def literal_value
           literal.node.children.first
         end

@@ -89,7 +89,7 @@ describe Solargraph::Source::Chain do
 
   it 'infers types from factory methods' do
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(_source_map)
+      def local _source_map
         Solargraph::Environ.new(
           pins: [
             Solargraph::Pin::FactoryParameter.new(
@@ -129,7 +129,7 @@ describe Solargraph::Source::Chain do
 
   it "defines factory parameters" do
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(_source_map)
+      def local _source_map
         Solargraph::Environ.new(
           pins: [
             Solargraph::Pin::FactoryParameter.new(

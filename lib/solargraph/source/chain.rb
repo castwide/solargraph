@@ -173,7 +173,10 @@ module Solargraph
         links.last.is_a?(Chain::Literal)
       end
 
+      # @return [Boolean]
+      # @sg-ignore false "return type could not be inferred"
       def require_parameter?
+        # @sg-ignore false "Unresolved call to require_parameter? on Solargraph::Source::Chain::Link"
         links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
       end
 

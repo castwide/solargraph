@@ -33,7 +33,7 @@ module Solargraph
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
-        # TODO Improve magic word comparsion == '<::Symbol>', too fragile
+        # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal?
         if cursor.comment?
