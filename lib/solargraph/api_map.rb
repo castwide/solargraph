@@ -13,6 +13,7 @@ module Solargraph
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
     autoload :Index,          'solargraph/api_map/index'
+    autoload :Constants,      'solargraph/api_map/constants'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -261,19 +262,13 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def get_constants namespace, *contexts
       namespace ||= ''
-      contexts.push '' if contexts.empty?
-      cached = cache.get_constants(namespace, contexts)
-      return cached.clone unless cached.nil?
-      skip = Set.new
-      result = []
-      contexts.each do |context|
-        fqns = qualify(namespace, context)
-        visibility = [:public]
-        visibility.push :private if fqns == context
-        result.concat inner_get_constants(fqns, visibility, skip)
-      end
-      cache.set_constants(namespace, contexts, result)
-      result
+      gates = contexts.clone
+      gates.push '' if contexts.empty? && namespace.empty?
+      gates.push namespace unless namespace.empty?
+      store.constants
+           .collect(gates)
+           .select { |pin| namespace.empty? || contexts.empty? || pin.namespace == namespace }
+           .select { |pin| pin.visibility == :public || pin.namespace == namespace }
     end
 
     # @param namespace [String]
@@ -299,44 +294,7 @@ module Solargraph
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
     def qualify tag, context_tag = ''
-      return tag if ['Boolean', 'self', nil].include?(tag)
-
-      context_type = ComplexType.try_parse(context_tag).force_rooted
-      return unless context_type
-
-      type = ComplexType.try_parse(tag)
-      return unless type
-      return tag if type.literal?
-
-      context_type = ComplexType.try_parse(context_tag)
-      return unless context_type
-
-      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
-      return unless fqns
-
-      fqns + type.substring
-    end
-
-    # Determine fully qualified namespace for a given namespace used
-    # inside the definition of another tag ("context"). This method
-    # will start the search in the specified context until it finds a
-    # match for the namespace.
-    #
-    # @param namespace [String, nil] The namespace to
-    #   match
-    # @param context_namespace [String] The context namespace in which the
-    #   tag was referenced; start from here to resolve the name
-    # @return [String, nil] fully qualified namespace
-    def qualify_namespace(namespace, context_namespace = '')
-      cached = cache.get_qualified_namespace(namespace, context_namespace)
-      return cached.clone unless cached.nil?
-      result = if namespace.start_with?('::')
-                 inner_qualify(namespace[2..-1], '', Set.new)
-               else
-                 inner_qualify(namespace, context_namespace, Set.new)
-               end
-      cache.set_qualified_namespace(namespace, context_namespace, result)
-      result
+      store.constants.qualify(tag, context_tag)
     end
 
     # @param fqns [String]
@@ -828,30 +786,6 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
-
-    # @param fqns [String]
-    # @param visibility [Array<Symbol>]
-    # @param skip [Set<String>]
-    # @return [Array<Pin::Base>]
-    def inner_get_constants fqns, visibility, skip
-      return [] if fqns.nil? || skip.include?(fqns)
-      skip.add fqns
-      result = []
-      store.get_prepends(fqns).each do |is|
-        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
-      end
-      result.concat store.get_constants(fqns, visibility)
-                    .sort { |a, b| a.name <=> b.name }
-      store.get_includes(fqns).each do |is|
-        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
-      end
-      fqsc = qualify_superclass(fqns)
-      unless %w[Object BasicObject].include?(fqsc)
-        result.concat inner_get_constants(fqsc, [:public], skip)
-      end
-      result
-    end
 
     # @return [Hash]
     def path_macros
@@ -878,47 +812,6 @@ module Solargraph
       last = parts.pop
       parts.pop if last == sup_ns
       qualify(sup_tag, parts.join('::'))
-    end
-
-    # @param name [String] Namespace to fully qualify
-    # @param root [String] The context to search
-    # @param skip [Set<String>] Contexts already searched
-    # @return [String, nil] Fully qualified ("rooted") namespace
-    def inner_qualify name, root, skip
-      return name if name == ComplexType::GENERIC_TAG_NAME
-      return nil if name.nil?
-      return nil if skip.include?(root)
-      skip.add root
-      possibles = []
-      if name == ''
-        if root == ''
-          return ''
-        else
-          return inner_qualify(root, '', skip)
-        end
-      else
-        return name if root == '' && store.namespace_exists?(name)
-        roots = root.to_s.split('::')
-        while roots.length > 0
-          fqns = roots.join('::') + '::' + name
-          return fqns if store.namespace_exists?(fqns)
-          incs = store.get_includes(roots.join('::'))
-          incs.each do |inc|
-            foundinc = inner_qualify(name, inc, skip)
-            possibles.push foundinc unless foundinc.nil?
-          end
-          roots.pop
-        end
-        if possibles.empty?
-          incs = store.get_includes('')
-          incs.each do |inc|
-            foundinc = inner_qualify(name, inc, skip)
-            possibles.push foundinc unless foundinc.nil?
-          end
-        end
-        return name if store.namespace_exists?(name)
-        return possibles.last
-      end
     end
 
     # Get the namespace's type (Class or Module).

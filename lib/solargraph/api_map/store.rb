@@ -42,6 +42,7 @@ module Solargraph
             @indexes[changed + idx - 1].merge(pins)
           end
         end
+        @constants = Constants.new(self)
         true
       end
 
@@ -251,6 +252,10 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      def constants
+        @constants ||= Constants.new(self)
+      end
+
       private
 
       # @return [Index]
@@ -271,6 +276,7 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
+        @constants = Constants.new(self)
         true
       end
 
