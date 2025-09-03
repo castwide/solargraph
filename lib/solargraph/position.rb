@@ -58,7 +58,7 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      newline_index  = -1
+      newline_index = -1
       cursor = 0
       line = -1
 
