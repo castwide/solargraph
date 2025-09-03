@@ -10,15 +10,19 @@ module Solargraph
         @store = store
       end
 
+      # Resolve a name to a fully qualified namespace or constant.
+      #
       # @param name [String]
       # @param gates [Array<Array<String>, String>]
-      # @return [String]
+      # @return [String, nil]
       def resolve(name, *gates)
         flat = gates.flatten
         flat.push '' if flat.empty?
         cached_resolve[[name, flat]] || resolve_and_cache(name, flat)
       end
 
+      # Collect a list of all constants defined in the specified gates.
+      #
       # @param gates [Array<Array<String>, String>]
       # @return [Array<Pin::Base>]
       def collect(*gates)
@@ -69,7 +73,15 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String]
       def resolve_and_cache name, gates
+        cached_resolve[[name, gates]] = resolve_uncached(name, gates)
+      end
 
+      def resolve_uncached name, gates
+        gates.each do |gate|
+          resolved = collect(name, gate).map(&:path).find { |ns| ns if "::#{ns}".end_with?("::#{name}") }
+          return resolved if resolved
+        end
+        nil
       end
 
       # @param gates [Array<String>]
