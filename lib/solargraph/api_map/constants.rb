@@ -87,8 +87,18 @@ module Solargraph
       end
 
       def resolve_uncached name, gates
+        parts = name.split('::')
+        here = parts.shift
+        resolved = simple_resolve(here, gates)
+        return resolved if parts.empty? || resolved.nil?
+
+        final = "#{resolved}::#{parts.join('::')}".sub(/^::/, '')
+        final if store.namespace_exists?(final)
+      end
+
+      def simple_resolve name, gates
         gates.each do |gate|
-          resolved = collect(gate).map(&:path).find { |ns| ns if "::#{ns}".end_with?("::#{name}") }
+          resolved = collect(gate).map(&:path).find { |ns| "::#{ns}".end_with?("::#{name}") }
           return resolved if resolved
         end
         nil

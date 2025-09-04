@@ -19,6 +19,20 @@ describe Solargraph::ApiMap::Constants do
       resolved = constants.resolve('Bar', pin.gates)
       expect(resolved).to eq('Foo::Bar')
     end
+
+    it 'returns namespaces for nested namespaces' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        module Foo
+          module Bar
+            module Baz; end
+          end
+        end
+      ), 'test.rb')
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = Solargraph::ApiMap::Constants.new(store)
+      resolved = constants.resolve('Foo::Bar::Baz')
+      expect(resolved).to eq('Foo::Bar::Baz')
+    end
   end
 
   describe '#dereference' do
