@@ -16,9 +16,7 @@ module Solargraph
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
       def resolve(name, *gates)
-        if name.start_with?('::')
-          return store.get_path_pins(name[2..]).any? ? name[2..] : nil
-        end
+        return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
         flat.push '' if flat.empty?
@@ -90,7 +88,7 @@ module Solargraph
 
       def resolve_uncached name, gates
         gates.each do |gate|
-          resolved = collect(name, gate).map(&:path).find { |ns| ns if "::#{ns}".end_with?("::#{name}") }
+          resolved = collect(gate).map(&:path).find { |ns| ns if "::#{ns}".end_with?("::#{name}") }
           return resolved if resolved
         end
         nil
