@@ -72,7 +72,7 @@ describe Solargraph::Workspace do
     gemspec_file = File.join(dir_path, 'test.gemspec')
     File.write(gemspec_file, '')
     expect(workspace.gemspec?).to be(true)
-    expect(workspace.gemspecs).to eq([gemspec_file])
+    expect(workspace.gemspec_files).to eq([gemspec_file])
   end
 
   it "generates default require path" do
@@ -130,7 +130,7 @@ describe Solargraph::Workspace do
   it 'ignores gemspecs in excluded directories' do
     # vendor/**/* is excluded by default
     workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
-    expect(workspace.gemspecs).to be_empty
+    expect(workspace.gemspec_files).to be_empty
   end
 
   it 'rescues errors loading files into sources' do

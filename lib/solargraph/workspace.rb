@@ -9,7 +9,10 @@ module Solargraph
   # in an associated Library or ApiMap.
   #
   class Workspace
+    include Logging
+
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
 
     # @return [String]
     attr_reader :directory
@@ -39,6 +42,19 @@ module Solargraph
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec, out: $stderr
+      gemspecs.fetch_dependencies(gemspec, out: out)
+    end
+
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    # @return [Array<Gem::Specification>]
+    def resolve_require require
+      gemspecs.resolve_require(require)
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -115,15 +131,15 @@ module Solargraph
     #
     # @return [Boolean]
     def gemspec?
-      !gemspecs.empty?
+      !gemspec_files.empty?
     end
 
     # Get an array of all gemspec files in the workspace.
     #
     # @return [Array<String>]
-    def gemspecs
+    def gemspec_files
       return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
+      @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
         config.allow? gs
       end
     end
@@ -156,12 +172,15 @@ module Solargraph
       server['commandPath'] || 'solargraph'
     end
 
-    # True if the workspace has a root Gemfile.
-    #
-    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-    #
-    def gemfile?
-      directory && File.file?(File.join(directory, 'Gemfile'))
+    # @return [String, nil]
+    def directory_or_nil
+      return nil if directory.empty? || directory == '*'
+      directory
+    end
+
+    # @return [Solargraph::Workspace::Gemspecs]
+    def gemspecs
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory_or_nil)
     end
 
     private
@@ -200,7 +219,7 @@ module Solargraph
     def generate_require_paths
       return configured_require_paths unless gemspec?
       result = []
-      gemspecs.each do |file|
+      gemspec_files.each do |file|
         base = File.dirname(file)
         # HACK: Evaluating gemspec files violates the goal of not running
         #   workspace code, but this is how Gem::Specification.load does it
