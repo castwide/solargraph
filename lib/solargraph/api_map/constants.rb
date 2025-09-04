@@ -25,6 +25,14 @@ module Solargraph
         cached_resolve[[name, flat]] || resolve_and_cache(name, flat)
       end
 
+      # Get a fully qualified namespace from a reference pin.
+      #
+      # @param pin [Pin::Reference]
+      # @return [String, nil]
+      def dereference(pin)
+        resolve(pin.name, pin.allowed_gates)
+      end
+
       # Collect a list of all constants defined in the specified gates.
       #
       # @param gates [Array<Array<String>, String>]
@@ -173,8 +181,9 @@ module Solargraph
         skip.add fqns
         result = []
 
-        store.get_prepends(fqns).each do |is|
-          result.concat inner_get_constants(qualify(is.parametrized_tag.to_s, fqns), [:public], skip)
+        store.get_prepends(fqns).each do |pre|
+          pre_fqns = resolve(pre.name, pre.closure.gates - skip.to_a)
+          result.concat inner_get_constants(pre_fqns, [:public], skip)
         end
         result.concat(store.get_constants(fqns, visibility).sort { |a, b| a.name <=> b.name })
         store.get_includes(fqns).each do |pin|
