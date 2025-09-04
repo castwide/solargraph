@@ -637,7 +637,7 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag.parametrized_tag.to_s).name }.include?(module_ns)
+      store.get_includes(host_ns).map { |inc_tag| inc_tag.parametrized_tag.name }.include?(module_ns)
     end
 
     # @param pins [Enumerable<Pin::Base>]
