@@ -732,7 +732,7 @@ module Solargraph
 
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
-          fqim = qualify(im.parametrized_tag.to_s, fqns)
+          fqim = store.constants.dereference(im)
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -766,7 +766,7 @@ module Solargraph
         else
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
-            fqem = qualify(em.parametrized_tag.to_s, fqns)
+            fqem = store.constants.dereference(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)

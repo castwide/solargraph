@@ -37,6 +37,10 @@ module Solargraph
           end
         )
       end
+
+      def allowed_gates
+        closure.gates
+      end
     end
   end
 end

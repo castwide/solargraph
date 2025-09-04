@@ -86,7 +86,7 @@ module Solargraph
         ref = superclass_references[fq_tag].first || superclass_references[fqns].first
         if ref
           return nil if ref.name == ref.closure.path
-          resolved = constants.resolve(ref.name, ref.closure.gates - [ref.closure.path])
+          resolved = constants.dereference(ref)
           return resolved + ref.parameter_tag if resolved
           return nil
         end
