@@ -111,8 +111,7 @@ module Solargraph
         map_references Pin::Reference::Include, include_references
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
-        map_references Pin::Reference::Superclass, superclass_references
-        map_include_pins
+        old_map_references Pin::Reference::Superclass, superclass_references
         map_overrides
         self
       end
@@ -122,14 +121,13 @@ module Solargraph
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
-          store_parametric_reference(hash, pin)
+          hash[pin.namespace].push pin
         end
       end
 
-      # @return [void]
-      def map_include_pins
-        pins_by_class(Solargraph::Pin::Reference::Include).each do |pin|
-          include_reference_pins[pin.namespace].push pin
+      def old_map_references klass, hash
+        pins_by_class(klass).each do |pin|
+          store_parametric_reference(hash, pin)
         end
       end
 

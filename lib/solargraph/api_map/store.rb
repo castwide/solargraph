@@ -94,12 +94,6 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Array<Pin::Reference::Include>]
-      def get_include_pins fqns
-        include_reference_pins[fqns] || []
-      end
-
-      # @param fqns [String]
       # @return [Array<String>]
       def get_prepends fqns
         prepend_references[fqns] || []
@@ -236,7 +230,7 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
-            refs.each do |ref|
+            refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
               queue << ref

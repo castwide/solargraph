@@ -143,7 +143,7 @@ module Solargraph
             return fqns if store.namespace_exists?(fqns)
             incs = store.get_includes(roots.join('::'))
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc, skip)
+              foundinc = inner_qualify(name, inc.parametrized_tag, skip)
               possibles.push foundinc unless foundinc.nil?
             end
             roots.pop
@@ -151,7 +151,7 @@ module Solargraph
           if possibles.empty?
             incs = store.get_includes('')
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc, skip)
+              foundinc = inner_qualify(name, inc.parametrized_tag, skip)
               possibles.push foundinc unless foundinc.nil?
             end
           end
@@ -167,22 +167,21 @@ module Solargraph
       def inner_get_constants fqns, visibility, skip
         return [] if fqns.nil? || skip.include?(fqns)
         skip.add fqns
-        return cached_collect[[fqns]] if cached_collect.key?([fqns])
         result = []
 
         store.get_prepends(fqns).each do |is|
-          result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+          result.concat inner_get_constants(qualify(is.parametrized_tag.to_s, fqns), [:public], skip)
         end
-        result.concat store.get_constants(fqns, visibility)
-                      .sort { |a, b| a.name <=> b.name }
-        store.get_includes(fqns).each do |is|
-          result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
+        result.concat(store.get_constants(fqns, visibility).sort { |a, b| a.name <=> b.name })
+        store.get_includes(fqns).each do |pin|
+          inc_fqns = resolve(pin.name, pin.closure.gates - skip.to_a)
+          result.concat inner_get_constants(inc_fqns, [:public], skip)
         end
         fqsc = qualify_superclass(fqns)
         unless %w[Object BasicObject].include?(fqsc)
           result.concat inner_get_constants(fqsc, [:public], skip)
         end
-        cached_collect[[fqns]] = result
+        result
       end
 
       # @param fq_sub_tag [String]

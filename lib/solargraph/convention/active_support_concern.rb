@@ -60,7 +60,7 @@ module Solargraph
           @namespace_pin = api_map.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
 
           api_map.get_includes(fqns).reverse.each do |include_tag|
-            process_include include_tag
+            process_include include_tag.parametrized_tag.to_s
           end
         end
 
@@ -80,7 +80,7 @@ module Solargraph
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "Handling class include include_tag=#{include_tag}"
           end
-          module_extends = api_map.get_extends(rooted_include_tag)
+          module_extends = api_map.get_extends(rooted_include_tag).map(&:parametrized_tag).map(&:to_s)
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "found module extends of #{rooted_include_tag}: #{module_extends}"
