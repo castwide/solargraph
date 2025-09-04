@@ -59,6 +59,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'undercover', '~> 0.7'
   s.add_development_dependency 'overcommit', '~> 0.68.0'
   s.add_development_dependency 'webmock', '~> 3.6'
+  s.add_development_dependency 'vernier'
   # work around missing yard dependency needed as of Ruby 3.5
   s.add_development_dependency 'irb', '~> 1.15'
 end
