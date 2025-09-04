@@ -637,7 +637,7 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
+      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag.parametrized_tag.to_s).name }.include?(module_ns)
     end
 
     # @param pins [Enumerable<Pin::Base>]
@@ -732,7 +732,7 @@ module Solargraph
 
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
-          fqim = qualify(im, fqns)
+          fqim = qualify(im.parametrized_tag.to_s, fqns)
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -746,7 +746,7 @@ module Solargraph
         result.concat convention_methods_by_reference
 
         if scope == :instance
-          store.get_include_pins(fqns).reverse.each do |ref|
+          store.get_includes(fqns).reverse.each do |ref|
             const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
@@ -766,7 +766,7 @@ module Solargraph
         else
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
-            fqem = qualify(em, fqns)
+            fqem = qualify(em.parametrized_tag.to_s, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
