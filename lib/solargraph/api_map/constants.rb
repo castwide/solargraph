@@ -16,6 +16,10 @@ module Solargraph
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
       def resolve(name, *gates)
+        if name.start_with?('::')
+          return store.get_path_pins(name[2..]).any? ? name[2..] : nil
+        end
+
         flat = gates.flatten
         flat.push '' if flat.empty?
         cached_resolve[[name, flat]] || resolve_and_cache(name, flat)

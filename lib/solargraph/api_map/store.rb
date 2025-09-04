@@ -83,8 +83,13 @@ module Solargraph
         return sub.simplify_literals.name if sub.literal?
         return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
-        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
-        return superclass_references[fqns].first if superclass_references.key?(fqns)
+        ref = superclass_references[fq_tag].first || superclass_references[fqns].first
+        if ref
+          return nil if ref.name == ref.closure.path
+          resolved = constants.resolve(ref.name, ref.closure.gates - [ref.closure.path])
+          return resolved + ref.parameter_tag if resolved
+          return nil
+        end
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
         simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
