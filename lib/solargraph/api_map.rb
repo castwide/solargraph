@@ -319,11 +319,9 @@ module Solargraph
       result = []
       used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
-      sc = qualify_lower(store.get_superclass(namespace), namespace)
-      until sc.nil? || used.include?(sc)
-        used.push sc
+      sc = namespace
+      while (sc = store.get_superclass(sc))
         result.concat store.get_instance_variables(sc, scope)
-        sc = qualify_lower(store.get_superclass(sc), sc)
       end
       result
     end
@@ -618,13 +616,10 @@ module Solargraph
     # @param sub [String] The subclass
     # @return [Boolean]
     def super_and_sub?(sup, sub)
-      fqsup = qualify(sup)
-      cls = qualify(sub)
-      tested = []
-      until fqsup.nil? || cls.nil? || tested.include?(cls)
-        return true if cls == fqsup
-        tested.push cls
-        cls = qualify_superclass(cls)
+      return true if sup == sub
+      sc = sub
+      while (sc = store.get_superclass(sc))
+        return true if sc == sup
       end
       false
     end
@@ -790,13 +785,6 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
-    end
-
-    # @param namespace [String]
-    # @param context [String]
-    # @return [String, nil]
-    def qualify_lower namespace, context
-      qualify namespace, context.split('::')[0..-2].join('::')
     end
 
     # @param fq_sub_tag [String]
