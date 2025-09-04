@@ -297,6 +297,12 @@ module Solargraph
       store.constants.qualify(tag, context_tag)
     end
 
+    # @param [Pin::Reference]
+    # @return [String, nil]
+    def dereference(pin)
+      store.constants.dereference(pin)
+    end
+
     # @param fqns [String]
     # @return [Array<String>]
     def get_extends(fqns)

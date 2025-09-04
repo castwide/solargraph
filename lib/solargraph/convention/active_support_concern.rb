@@ -60,7 +60,7 @@ module Solargraph
           @namespace_pin = api_map.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
 
           api_map.get_includes(fqns).reverse.each do |include_tag|
-            process_include include_tag.parametrized_tag.to_s
+            process_include include_tag
           end
         end
 
@@ -70,11 +70,11 @@ module Solargraph
                     :visibility, :deep, :skip, :namespace_pin,
                     :fqns
 
-        # @param include_tag [String] the tag of the module being included
+        # @param include_tag [Pin::Reference::Include] the include reference pin
         #
         # @return [void]
         def process_include include_tag
-          rooted_include_tag = api_map.qualify(include_tag, rooted_tag)
+          rooted_include_tag = api_map.dereference(include_tag)
           return if rooted_include_tag.nil?
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
