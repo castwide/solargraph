@@ -29,7 +29,15 @@ jobs:
             rbs-version: '3.9.4'
           - ruby-version: '3.0'
             rbs-version: '4.0.0.dev.4'
-    steps:
+          # Missing require in 'rbs collection update' - hopefully
+          # fixed in next RBS dev release
+          - ruby-version: 'head'
+            rbs-version: '4.0.0.dev.4'
+          - ruby-version: 'head'
+            rbs-version: '3.9.4'
+          - ruby-version: 'head'
+            rbs-version: '3.6.1'
+  steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
