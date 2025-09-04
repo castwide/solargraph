@@ -30,7 +30,7 @@ jobs:
           - ruby-version: '3.0'
             rbs-version: '4.0.0.dev.4'
           # Missing require in 'rbs collection update' - hopefully
-          # fixed in next RBS release
+          # fixed in next RBS dev release
           - ruby-version: 'head'
             rbs-version: '4.0.0.dev.4'
           - ruby-version: 'head'
