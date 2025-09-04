@@ -1,5 +1,5 @@
 describe Solargraph::TypeChecker do
-  context 'normal level' do
+  context 'when checking at normal level' do
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :normal)
     end
@@ -221,9 +221,9 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
+      workspace = Solargraph::Workspace.new(Dir.pwd)
       gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
-      Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
+      workspace.cache_gem(gemspec)
 
       checker = type_checker(%(
         require 'kramdown-parser-gfm'

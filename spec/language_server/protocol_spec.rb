@@ -34,7 +34,7 @@ class Protocol
   end
 end
 
-describe Protocol do
+describe Protocol, order: :defined do
   before :all do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
   end
@@ -173,6 +173,9 @@ describe Protocol do
     item = response['result']['items'].select{|h| h['label'] == 'bar'}.first
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
+    expect(response).not_to be_nil
+    expect(response['error']).to be_nil
+    expect(response['result']).to be_a(Hash)
     expect(response['result']['documentation']['value']).to include('bar method')
   end
 
@@ -431,7 +434,7 @@ describe Protocol do
     expect(response['result']['available']).to be_a(String)
   end
 
-  it "handles $/solargraph/documentGems" do
+  it "handles $/solargraph/documentGems", time_limit_seconds: 120 do
     @protocol.request '$/solargraph/documentGems', {}
     response = @protocol.response
     expect(response['error']).to be_nil
