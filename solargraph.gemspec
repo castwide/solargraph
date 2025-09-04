@@ -51,9 +51,16 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
-  s.add_development_dependency 'rubocop-rake', '~> 0.7'
-  s.add_development_dependency 'rubocop-rspec', '~> 3.6'
-  s.add_development_dependency 'rubocop-yard', '~> 1.0'
+  #
+  # very specific development-time RuboCop version patterns for CI
+  # stability - feel free to update in an isolated PR
+  #
+  # even more specific on RuboCop itself, which is written into _todo
+  # file.
+  s.add_development_dependency 'rubocop', '~> 1.80.0.0'
+  s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
+  s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'
+  s.add_development_dependency 'rubocop-yard', '~> 1.0.0'
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
   s.add_development_dependency 'undercover', '~> 0.7'
