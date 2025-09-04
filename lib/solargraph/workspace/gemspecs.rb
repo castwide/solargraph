@@ -161,6 +161,7 @@ module Solargraph
             'puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }' \
             '.to_h.to_json }'
           ]
+          # @sg-ignore Unresolved call to capture3 on Module<Open3>
           o, e, s = Open3.capture3(*cmd)
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
