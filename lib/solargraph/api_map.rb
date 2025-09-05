@@ -924,9 +924,9 @@ module Solargraph
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
-    # @param namespace_pin [Pin::Namespace]
+    # @param namespace_pin [Pin::Namespace, Pin::Constant]
     def has_generics?(namespace_pin)
-      namespace_pin && !namespace_pin.generics.empty?
+      namespace_pin.is_a?(Pin::Namespace) && !namespace_pin.generics.empty?
     end
 
     # @param namespace_pin [Pin::Namespace]
