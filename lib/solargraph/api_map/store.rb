@@ -97,6 +97,17 @@ module Solargraph
         nil
       end
 
+      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN)
+      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN)
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass]
+      def get_superclass_pin fqns
+        return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
+
+        superclass_references[fqns].first || try_special_superclasses(fqns)
+      end
+
       # @param fqns [String]
       # @return [Array<String>]
       def get_includes fqns
@@ -327,6 +338,15 @@ module Solargraph
       # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
         index.pins_by_class(Pin::InstanceVariable)
+      end
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass, nil]
+      def try_special_superclasses(fqns)
+        return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
+
+        sub = ComplexType.try_parse(fqns)
+        get_superclass_pin(sub.simplify_literals.name) if sub.literal?
       end
     end
   end
