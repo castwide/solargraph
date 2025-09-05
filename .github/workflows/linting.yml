@@ -7,10 +7,12 @@ name: Linting
 
 on:
   workflow_dispatch: {}
-  pull_request: true
-  push:
+  pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - 'main'
     tags:
       - 'v*'
 
