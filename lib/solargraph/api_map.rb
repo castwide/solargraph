@@ -327,9 +327,10 @@ module Solargraph
       result = []
       used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
-      sc = namespace
-      while (sc = store.get_superclass(sc))
-        result.concat store.get_instance_variables(sc, scope)
+      sc_fqns = namespace
+      while (sc = store.get_superclass_pin(sc_fqns))
+        sc_fqns = store.constants.dereference(sc)
+        result.concat store.get_instance_variables(sc_fqns, scope)
       end
       result
     end
