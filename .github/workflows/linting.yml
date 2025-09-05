@@ -115,11 +115,13 @@ jobs:
     - name: Run RuboCop against todo file
       continue-on-error: true
       run: |
-        bundle exec rubocop --auto-gen-config --no-exclude-limit --no-offense-counts --no-auto-gen-timestamp
+        cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
+        ${cmd:?}
+        set +e
         if [ -n "$(git status --porcelain)" ]
         then
           git status --porcelain
           git diff -u .
-           >&2 echo "Please fix deltas if bad or run 'bundle exec rubocop --auto-gen-config --no-exclude-limit --no-offense-counts --no-auto-gen-timestamp' and push up changes if good"
+           >&2 echo "Please address any new issues, then run '${cmd:?}' and push up any improvements"
            exit 1
         fi
