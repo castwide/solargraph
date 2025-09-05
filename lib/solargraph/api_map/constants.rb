@@ -28,7 +28,7 @@ module Solargraph
       # @param pin [Pin::Reference]
       # @return [String, nil]
       def dereference(pin)
-        resolve(pin.name, pin.allowed_gates)
+        resolve(pin.name, pin.reference_gates)
       end
 
       # Collect a list of all constants defined in the specified gates.
@@ -199,9 +199,12 @@ module Solargraph
           inc_fqns = resolve(pin.name, pin.closure.gates - skip.to_a)
           result.concat inner_get_constants(inc_fqns, [:public], skip)
         end
-        fqsc = store.get_superclass(fqns)
-        unless %w[Object BasicObject].include?(fqsc)
-          result.concat inner_get_constants(fqsc, [:public], skip)
+        heh = store.get_superclass_pin(fqns)
+        if heh
+          fqsc = dereference(heh)
+          unless %w[Object BasicObject].include?(fqsc)
+            result.concat inner_get_constants(fqsc, [:public], skip)
+          end
         end
         result
       end
