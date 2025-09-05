@@ -1100,11 +1100,6 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Configuration parameters: .
-# SupportedStyles: have_received, receive
-RSpec/MessageSpies:
-  EnforcedStyle: receive
-
 RSpec/MissingExampleGroupArgument:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
