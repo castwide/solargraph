@@ -7,8 +7,7 @@ name: Linting
 
 on:
   workflow_dispatch: {}
-  pull_request:
-    branches: [ * ]
+  pull_request: true
   push:
     branches:
       - 'main'
