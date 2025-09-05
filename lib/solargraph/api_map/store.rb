@@ -42,7 +42,7 @@ module Solargraph
             @indexes[changed + idx - 1].merge(pins)
           end
         end
-        @constants = Constants.new(self)
+        constants.clear
         true
       end
 
@@ -275,7 +275,7 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
-        @constants = Constants.new(self)
+        constants.clear
         true
       end
 

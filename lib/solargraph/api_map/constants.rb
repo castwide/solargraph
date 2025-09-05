@@ -74,6 +74,10 @@ module Solargraph
         fqns + type.substring
       end
 
+      def clear
+        [cached_collect, cached_resolve].each(&:clear)
+      end
+
       private
 
       # @return [Store]

@@ -297,6 +297,8 @@ module Solargraph
       store.constants.qualify(tag, context_tag)
     end
 
+    # Get a fully qualified namespace from a reference pin.
+    #
     # @param [Pin::Reference]
     # @return [String, nil]
     def dereference(pin)
