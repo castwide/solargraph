@@ -246,6 +246,7 @@ module Solargraph
     option :output_dir, type: :string, aliases: :o, desc: 'The output directory for profiles', default: './tmp/profiles'
     option :line, type: :numeric, aliases: :l, desc: 'Line number (0-based)', default: 4
     option :column, type: :numeric, aliases: :c, desc: 'Column number', default: 10
+    option :memory, type: :boolean, aliases: :m, desc: 'Include memory usage counter', default: true
     # @param file [String, nil]
     # @return [void]
     def profile(file = nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -255,6 +256,9 @@ module Solargraph
         STDERR.puts "vernier gem not found. Install with: gem install vernier"
         return
       end
+
+      hooks = []
+      hooks << :memory_usage if options[:memory]
 
       directory = File.realpath(options[:directory])
       FileUtils.mkdir_p(options[:output_dir])
@@ -267,7 +271,7 @@ module Solargraph
 
       puts "Parsing and mapping source files..."
       prepare_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/parse_benchmark.json.gz") do
+      Vernier.profile(out: "#{options[:output_dir]}/parse_benchmark.json.gz", hooks: hooks) do
         puts "Mapping libraries"
         host.prepare(directory)
         sleep 0.2 until host.libraries.all?(&:mapped?)
@@ -276,7 +280,7 @@ module Solargraph
 
       puts "Building the catalog..."
       catalog_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/catalog_benchmark.json.gz") do
+      Vernier.profile(out: "#{options[:output_dir]}/catalog_benchmark.json.gz", hooks: hooks) do
         host.catalog
       end
       catalog_time = Time.now - catalog_start
@@ -303,7 +307,7 @@ module Solargraph
       puts "Position: line #{options[:line]}, column #{options[:column]}"
 
       definition_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/definition_benchmark.json.gz") do
+      Vernier.profile(out: "#{options[:output_dir]}/definition_benchmark.json.gz", hooks: hooks) do
         message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
           host, {
             'params' => {
