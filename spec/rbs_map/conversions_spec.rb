@@ -20,6 +20,7 @@ describe Solargraph::RbsMap::Conversions do
     before do
       rbs_file = File.join(temp_dir, 'foo.rbs')
       File.write(rbs_file, rbs)
+      api_map.index conversions.pins
     end
 
     attr_reader :temp_dir
@@ -57,10 +58,6 @@ describe Solargraph::RbsMap::Conversions do
       let(:sup_method_stack) { api_map.get_method_stack('Hash{Symbol => undefined}', '[]', scope: :instance) }
 
       let(:sub_alias_stack) { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }
-
-      before do
-        api_map.index conversions.pins
-      end
 
       it 'does not crash looking at superclass method' do
         expect { sup_method_stack }.not_to raise_error
