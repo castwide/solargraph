@@ -1,11 +1,11 @@
 describe Solargraph::Pin::Documenting do
-  let(:object) {
+  let(:object) do
     Class.new do
       include Solargraph::Pin::Documenting
 
       attr_accessor :docstring
     end.new
-  }
+  end
 
   it 'parses indented code blocks' do
     object.docstring = YARD::Docstring.new(%(Method overview

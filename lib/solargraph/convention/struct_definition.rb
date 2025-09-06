@@ -138,7 +138,7 @@ module Solargraph
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
           #
           # @return [String]
-          def tag_string(tag)
+          def tag_string tag
             tag&.types&.join(',') || 'undefined'
           end
 
@@ -146,8 +146,8 @@ module Solargraph
           # @param for_setter [Boolean] If true, will return a @param tag instead of a @return tag
           #
           # @return [String] The formatted comment for the attribute
-          def attribute_comment(tag, for_setter)
-            return "" if tag.nil?
+          def attribute_comment tag, for_setter
+            return '' if tag.nil?
 
             suffix = "[#{tag_string(tag)}] #{tag.text}"
 

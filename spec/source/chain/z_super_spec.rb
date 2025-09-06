@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::ZSuper do
-  it "resolves super" do
+  it 'resolves super' do
     head = Solargraph::Source::Chain::ZSuper.new('super')
     npin = Solargraph::Pin::Namespace.new(name: 'Substring')
     scpin = Solargraph::Pin::Reference::Superclass.new(closure: npin, name: 'String')

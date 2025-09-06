@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::InstanceVariable do
-  it "resolves instance variable pins" do
+  it 'resolves instance variable pins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo')
     methpin = Solargraph::Pin::Method.new(closure: closure, name: 'imeth', scope: :instance)
     foo_pin = Solargraph::Pin::InstanceVariable.new(closure: methpin, name: '@foo')

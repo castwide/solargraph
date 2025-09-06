@@ -22,11 +22,11 @@ module Solargraph
       # @param level [Symbol]
       def initialize level
         @rank = if LEVELS.key?(level)
-          LEVELS[level]
-        else
-          Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
-          0
-        end
+                  LEVELS[level]
+                else
+                  Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
+                  0
+                end
         @level = LEVELS[LEVELS.values.index(@rank)]
       end
 

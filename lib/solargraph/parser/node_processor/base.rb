@@ -53,14 +53,14 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [Solargraph::Location]
-        def get_node_location(node)
+        def get_node_location node
           range = Parser.node_range(node)
           Location.new(region.filename, range)
         end
 
         # @param node [Parser::AST::Node]
         # @return [String, nil]
-        def comments_for(node)
+        def comments_for node
           region.source.comments_for(node)
         end
 

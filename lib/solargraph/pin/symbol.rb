@@ -5,6 +5,7 @@ module Solargraph
     class Symbol < Base
       # @param location [Solargraph::Location]
       # @param name [String]
+      # @param [Hash{Symbol => Object}] kwargs
       def initialize(location, name, **kwargs)
         # @sg-ignore "Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize"
         super(location: location, name: name, **kwargs)

@@ -55,13 +55,13 @@ module Solargraph
       # @return [Array<AST::Node>] low-level value nodes in
       #   value position.  Does not include explicit return
       #   statements
-      def value_position_nodes_only(node)
+      def value_position_nodes_only node
         raise NotImplementedError
       end
 
       # @abstract
       # @param nodes [Enumerable<Parser::AST::Node>]
-      def any_splatted_call?(nodes)
+      def any_splatted_call? nodes
         raise NotImplementedError
       end
 
@@ -82,14 +82,14 @@ module Solargraph
       # @abstract
       # @param node [Parser::AST::Node]
       # @return [Position]
-      def get_node_start_position(node)
+      def get_node_start_position node
         raise NotImplementedError
       end
 
       # @abstract
       # @param node [Parser::AST::Node]
       # @return [Position]
-      def get_node_end_position(node)
+      def get_node_end_position node
         raise NotImplementedError
       end
     end

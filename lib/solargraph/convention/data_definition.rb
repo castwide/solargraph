@@ -90,7 +90,7 @@ module Solargraph
           # @param attribute_node [Parser::AST::Node]
           # @param attribute_name [String]
           # @return [String, nil]
-          def attribute_comments(attribute_node, attribute_name)
+          def attribute_comments attribute_node, attribute_name
             data_comments = comments_for(attribute_node)
             return if data_comments.nil? || data_comments.empty?
 

@@ -32,10 +32,10 @@ module Solargraph
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
-            @indexes[changed + idx - 1]
-          else
-            @indexes[changed + idx - 1].merge(pins)
-          end
+                                      @indexes[changed + idx - 1]
+                                    else
+                                      @indexes[changed + idx - 1].merge(pins)
+                                    end
         end
         true
       end
@@ -52,9 +52,9 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_constants fqns, visibility = [:public]
-        namespace_children(fqns).select { |pin|
+        namespace_children(fqns).select do |pin|
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
-        }
+        end
       end
 
       # @param fqns [String]
@@ -119,16 +119,16 @@ module Solargraph
       # @param fqns [String]
       # @param scope [Symbol] :class or :instance
       # @return [Enumerable<Solargraph::Pin::Base>]
-      def get_instance_variables(fqns, scope = :instance)
-        all_instance_variables.select { |pin|
+      def get_instance_variables fqns, scope = :instance
+        all_instance_variables.select do |pin|
           pin.binder.namespace == fqns && pin.binder.scope == scope
-        }
+        end
       end
 
       # @param fqns [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      def get_class_variables(fqns)
-        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
+      def get_class_variables fqns
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable) }
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]
@@ -138,7 +138,7 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Boolean]
-      def namespace_exists?(fqns)
+      def namespace_exists? fqns
         fqns_pins(fqns).any?
       end
 
@@ -159,7 +159,7 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Array<String>]
-      def domains(fqns)
+      def domains fqns
         result = []
         fqns_pins(fqns).each do |nspin|
           result.concat nspin.domains
@@ -172,7 +172,7 @@ module Solargraph
         @named_macros ||= begin
           result = {}
           pins.each do |pin|
-            pin.macros.select{|m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
+            pin.macros.select { |m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
               next if macro.tag.name.nil? || macro.tag.name.empty?
               result[macro.tag.name] = macro
             end
@@ -211,7 +211,7 @@ module Solargraph
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
       # @param fqns [String] The fully qualified namespace
       # @return [Array<String>] Array of ancestor namespaces including the original
-      def get_ancestors(fqns)
+      def get_ancestors fqns
         return [] if fqns.nil? || fqns.empty?
 
         ancestors = [fqns]
