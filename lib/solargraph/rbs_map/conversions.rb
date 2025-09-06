@@ -163,9 +163,10 @@ module Solargraph
             generic_defaults[param.name.to_s] = ComplexType.parse(tag).force_rooted
           end
         end
+        class_name = decl.name.relative!.to_s
         class_pin = Solargraph::Pin::Namespace.new(
           type: :class,
-          name: decl.name.relative!.to_s,
+          name: class_name,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
           type_location: location_decl_to_pin_location(decl.location),
@@ -180,11 +181,12 @@ module Solargraph
         if decl.super_class
           type = build_type(decl.super_class.name, decl.super_class.args)
           generic_values = type.all_params.map(&:to_s)
+          superclass_name = decl.super_class.name.to_s
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
             generic_values: generic_values,
-            name: decl.super_class.name.relative!.to_s,
+            name: superclass_name,
             source: :rbs
           )
         end
