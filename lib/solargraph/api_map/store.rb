@@ -75,8 +75,8 @@ module Solargraph
         GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN)
-      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN)
+      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN, source: :solargraph)
+      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
 
       # @param fqns [String]
       # @return [Pin::Reference::Superclass]
