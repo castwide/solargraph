@@ -230,7 +230,7 @@ module Solargraph
       def type_name(node)
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node.type == :const
+        return unless node&.type == :const
         module_node = node.children[0]
         class_node = node.children[1]
 

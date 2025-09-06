@@ -241,4 +241,16 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [2, 6])
     expect { clip.infer.to_s }.not_to raise_error
   end
+
+  it 'handles is_a? with a receiver and no argument' do
+    source = Solargraph::Source.load_string(%(
+    r = '1'
+    if r.is_a?
+      x
+    end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 6])
+    expect { clip.infer.to_s }.not_to raise_error
+  end
 end
