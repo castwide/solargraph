@@ -37,6 +37,7 @@ module Solargraph
             @indexes[changed + idx - 1].merge(pins)
           end
         end
+        constants.clear
         true
       end
 
@@ -77,8 +78,13 @@ module Solargraph
         return sub.simplify_literals.name if sub.literal?
         return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
-        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
-        return superclass_references[fqns].first if superclass_references.key?(fqns)
+        ref = superclass_references[fq_tag].first || superclass_references[fqns].first
+        if ref
+          return nil if ref.name == ref.closure.path
+          resolved = constants.dereference(ref)
+          return resolved + ref.parameter_tag if resolved
+          return nil
+        end
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
         simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
@@ -86,16 +92,21 @@ module Solargraph
         nil
       end
 
+      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN)
+      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN)
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass]
+      def get_superclass_pin fqns
+        return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
+
+        superclass_references[fqns].first || try_special_superclasses(fqns)
+      end
+
       # @param fqns [String]
       # @return [Array<String>]
       def get_includes fqns
         include_references[fqns] || []
-      end
-
-      # @param fqns [String]
-      # @return [Array<Pin::Reference::Include>]
-      def get_include_pins fqns
-        include_reference_pins[fqns] || []
       end
 
       # @param fqns [String]
@@ -235,7 +246,7 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
-            refs.each do |ref|
+            refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
               queue << ref
@@ -244,6 +255,10 @@ module Solargraph
         end
 
         ancestors.compact.uniq
+      end
+
+      def constants
+        @constants ||= Constants.new(self)
       end
 
       private
@@ -266,6 +281,7 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
+        constants.clear
         true
       end
 
@@ -317,6 +333,15 @@ module Solargraph
       # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
         index.pins_by_class(Pin::InstanceVariable)
+      end
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass, nil]
+      def try_special_superclasses(fqns)
+        return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
+
+        sub = ComplexType.try_parse(fqns)
+        get_superclass_pin(sub.simplify_literals.name) if sub.literal?
       end
     end
   end
