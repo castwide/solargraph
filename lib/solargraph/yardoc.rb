@@ -23,9 +23,6 @@ module Solargraph
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel
-      #
-      # @sg-ignore RBS gem doesn't reflect that Open3.* also include
-      #   kwopts from Process.spawn()
       stdout_and_stderr_str, status = Open3.capture2e(cmd, chdir: gemspec.gem_dir)
       unless status.success?
         Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
