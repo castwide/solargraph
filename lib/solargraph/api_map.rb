@@ -625,10 +625,22 @@ module Solargraph
     # @param sub [String] The subclass
     # @return [Boolean]
     def super_and_sub?(sup, sub)
+      sup = ComplexType.try_parse(sup)
+      sub = ComplexType.try_parse(sub)
+      # @todo If two literals are different values of the same type, it would
+      #   make more sense for super_and_sub? to return true, but there are a
+      #   few callers that currently expect this to be false.
+      return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      sup = sup.simplify_literals.to_s
+      sub = sub.simplify_literals.to_s
       return true if sup == sub
-      sc = sub
-      while (sc = store.get_superclass(sc))
-        return true if sc == sup
+      sc_fqns = sub
+      while (sc = store.get_superclass_pin(sc_fqns))
+        sc_new = store.constants.dereference(sc)
+        # Cyclical inheritance is invalid
+        return false if sc_new == sc_fqns
+        sc_fqns = sc_new
+        return true if sc_fqns == sup
       end
       false
     end
