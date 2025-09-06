@@ -328,7 +328,7 @@ module Solargraph
       used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
-      while (sc = store.get_superclass_pin(sc_fqns))
+      while (sc = store.get_superclass(sc_fqns))
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
@@ -635,7 +635,7 @@ module Solargraph
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
-      while (sc = store.get_superclass_pin(sc_fqns))
+      while (sc = store.get_superclass(sc_fqns))
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
@@ -813,7 +813,7 @@ module Solargraph
     def qualify_superclass fq_sub_tag
       type = ComplexType.try_parse(fq_sub_tag)
       return type.simplify_literals.to_s if type.literal?
-      ref = store.get_superclass_pin(fq_sub_tag)
+      ref = store.get_superclass(fq_sub_tag)
       return unless ref
       res = store.constants.dereference(ref)
       return unless res

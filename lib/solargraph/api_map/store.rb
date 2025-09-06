@@ -74,35 +74,12 @@ module Solargraph
         GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      # @param fq_tag [String]
-      # @return [String, nil]
-      def get_superclass fq_tag
-        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
-        sub = ComplexType.try_parse(fq_tag)
-        return nil if sub.nil?
-        return sub.simplify_literals.name if sub.literal?
-        return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
-        fqns = sub.namespace
-        ref = superclass_references[fq_tag].first || superclass_references[fqns].first
-        if ref
-          return nil if ref.name == ref.closure.path
-          resolved = constants.dereference(ref)
-          return resolved + ref.parameter_tag if resolved
-          return nil
-        end
-        return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
-        return 'Object' if fqns == 'Boolean'
-        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
-        return simplified_literal_name if simplified_literal_name != fqns
-        nil
-      end
-
       BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN)
       OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN)
 
       # @param fqns [String]
       # @return [Pin::Reference::Superclass]
-      def get_superclass_pin fqns
+      def get_superclass fqns
         return nil if fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
@@ -243,7 +220,7 @@ module Solargraph
           current = current.gsub(/^::/, '')
 
           # Add superclass
-          ref = get_superclass_pin(current)
+          ref = get_superclass(current)
           superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
             ancestors << superclass
@@ -349,9 +326,9 @@ module Solargraph
         return OBJECT_SUPERCLASS_PIN if !['BasicObject', 'Object'].include?(fqns) && namespace_exists?(fqns)
 
         sub = ComplexType.try_parse(fqns)
-        return get_superclass_pin(sub.simplify_literals.name) if sub.literal?
+        return get_superclass(sub.simplify_literals.name) if sub.literal?
 
-        get_superclass_pin(sub.namespace) if sub.namespace != fqns
+        get_superclass(sub.namespace) if sub.namespace != fqns
       end
     end
   end

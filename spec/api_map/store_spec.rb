@@ -50,20 +50,20 @@ describe Solargraph::ApiMap::Store do
   end
 
   # @todo This will become #get_superclass
-  describe '#get_superclass_pin' do
+  describe '#get_superclass' do
     it 'returns simple superclasses' do
       map = Solargraph::SourceMap.load_string(%(
         class Foo; end
         class Bar < Foo; end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(map.pins)
-      ref = store.get_superclass_pin('Bar')
+      ref = store.get_superclass('Bar')
       expect(ref.name).to eq('Foo')
     end
 
     it 'returns Boolean superclass' do
       store = Solargraph::ApiMap::Store.new
-      ref = store.get_superclass_pin('TrueClass')
+      ref = store.get_superclass('TrueClass')
       expect(ref.name).to eq('Boolean')
     end
 
@@ -73,7 +73,7 @@ describe Solargraph::ApiMap::Store do
       Errno.constants.each do |const|
         pin = store.get_path_pins("Errno::#{const}").first
         expect(pin).to be_a(Solargraph::Pin::Namespace)
-        superclass = store.get_superclass_pin(pin.path)
+        superclass = store.get_superclass(pin.path)
         expect(superclass.name).to eq('::SystemCallError')
         expect(store.constants.dereference(superclass)).to eq('SystemCallError')
       end

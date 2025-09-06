@@ -199,7 +199,7 @@ module Solargraph
           inc_fqns = resolve(pin.name, pin.closure.gates - skip.to_a)
           result.concat inner_get_constants(inc_fqns, [:public], skip)
         end
-        heh = store.get_superclass_pin(fqns)
+        heh = store.get_superclass(fqns)
         if heh
           fqsc = dereference(heh)
           unless %w[Object BasicObject].include?(fqsc)
