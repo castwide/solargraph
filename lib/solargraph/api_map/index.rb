@@ -68,6 +68,11 @@ module Solargraph
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
+      # @return [Hash{String => Array<Pin::FactoryParameter>}]
+      def factory_parameter_hash
+        @factory_parameter_hash ||= Hash.new { |h, k| h[k] = [] }
+      end
+
       # @param pins [Enumerable<Pin::Base>]
       # @return [self]
       def merge pins
@@ -77,7 +82,7 @@ module Solargraph
       protected
 
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
-                  :extend_references, :prepend_references, :superclass_references
+                  :extend_references, :prepend_references, :superclass_references, :factory_parameter_hash
 
       # @return [self]
       def deep_clone
@@ -113,6 +118,7 @@ module Solargraph
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
         map_include_pins
+        map_factory_parameters
         map_overrides
         self
       end
@@ -190,6 +196,13 @@ module Solargraph
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
         pin.reset_generated!
+      end
+
+      # @return [void]
+      def map_factory_parameters
+        pins_by_class(Pin::FactoryParameter).each do |fp|
+          factory_parameter_hash[fp.method_path] << fp
+        end
       end
     end
   end

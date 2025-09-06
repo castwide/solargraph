@@ -563,12 +563,8 @@ module Solargraph
     def maybe_map source
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
-      if source_map_hash.key?(source.filename)
-        new_map = Solargraph::SourceMap.map(source)
-        source_map_hash[source.filename] = new_map
-      else
-        source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
-      end
+
+      source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
     end
 
     # @return [Set<Gem::Specification>]

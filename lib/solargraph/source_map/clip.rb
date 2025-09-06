@@ -12,13 +12,13 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         block_pin = block
-        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver).contain?(cursor.range.start)
+        block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver)&.contain?(cursor.range.start)
         @in_block = nil
       end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
-        return [] if cursor.comment? || cursor.chain.literal?
+        return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
         result = cursor.chain.define(api_map, block, locals)
         result.concat file_global_methods
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
@@ -33,7 +33,8 @@ module Solargraph
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
-        return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
+        # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
+        return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
         return Completion.new([], cursor.range) if cursor.chain.literal?
         if cursor.comment?
           tag_complete

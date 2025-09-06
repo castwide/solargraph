@@ -137,7 +137,11 @@ module Solargraph
                 #
                 # qualify(), however, happens in the namespace where
                 # the docs were written - from the method pin.
-                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace) if new_return_type.defined?
+                if new_return_type.defined?
+                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace)
+                else
+                  type = inferr_from_factory_parameters(api_map, p)
+                end
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -164,6 +168,27 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # @param api_map [ApiMap]
+        # @param method_pin [Pin::Method]
+        # @return [ComplexType, nil]
+        def inferr_from_factory_parameters(api_map, method_pin)
+          factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
+            method_pin.parameters.each_with_index.find do |param, index|
+              current_argument = arguments[index]
+              next unless current_argument&.literal?
+              # @type [Solargraph::Source::Chain::Literal]
+              last_link = current_argument.links.last
+              argument_value = last_link.value
+
+              param.name == factory_param.param_name && argument_value == factory_param.value
+            end
+          end
+
+          return nil if factory_parameter.nil?
+
+          factory_parameter.return_type.qualify(api_map, method_pin.namespace)
         end
 
         # @param pin [Pin::Base]

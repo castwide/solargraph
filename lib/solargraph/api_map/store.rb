@@ -246,6 +246,14 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      # Get factory parameters for a method pin.
+      #
+      # @param method_pin [Pin::Method]
+      # @return [Array<Pin::FactoryParameter>]
+      def factory_parameters_for_method(method_pin)
+        factory_parameter_hash[method_pin.path] || []
+      end
+
       private
 
       # @return [Index]
@@ -305,6 +313,11 @@ module Solargraph
       # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
+      end
+
+      # @return [Hash{String => Array<Pin::FactoryParameter>}]
+      def factory_parameter_hash
+        index.factory_parameter_hash
       end
 
       # @param name [String]

@@ -34,6 +34,7 @@ module Solargraph
       autoload :ZSuper,           'solargraph/source/chain/z_super'
       autoload :Hash,             'solargraph/source/chain/hash'
       autoload :Array,            'solargraph/source/chain/array'
+      autoload :Parameter,        'solargraph/source/chain/parameter'
 
       @@inference_stack = []
       @@inference_depth = 0
@@ -170,6 +171,13 @@ module Solargraph
       # @return [Boolean]
       def literal?
         links.last.is_a?(Chain::Literal)
+      end
+
+      # @return [Boolean]
+      # @sg-ignore false "return type could not be inferred"
+      def require_parameter?
+        # @sg-ignore false "Unresolved call to require_parameter? on Solargraph::Source::Chain::Link"
+        links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
       end
 
       def undefined?
