@@ -32,6 +32,9 @@ module Solargraph
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code
           parser.parse(buffer)
+        # @sg-ignore Unresolved type Parser::SyntaxError,
+        #   Parser::UnknownEncodingInMagicComment for variable e
+        #   https://github.com/castwide/solargraph/pull/1005
         rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
           raise Parser::SyntaxError, e.message
         end

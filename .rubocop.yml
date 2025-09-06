@@ -37,7 +37,6 @@ Metrics/ParameterLists:
   Max: 7
   CountKeywordArgs: false
 
-
 # we tend to use @@ and the risk doesn't seem high
 Style/ClassVars:
   Enabled: false
