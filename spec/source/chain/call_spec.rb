@@ -371,6 +371,21 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
   end
 
+  it 'allows calls off of nilable objects by default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, nil]
+      f = foo
+      a = f.upcase
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
+  end
+
   it 'calculates class return type based on class generic' do
     source = Solargraph::Source.load_string(%(
       # @generic A
@@ -390,6 +405,21 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 7))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('String')
+  end
+
+  it 'denies calls off of nilable objects when loose union mode is off' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, nil]
+      f = foo
+      a = f.upcase
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new(loose_unions: false)
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('undefined')
   end
 
   it 'preserves unions in value position in Hash' do
