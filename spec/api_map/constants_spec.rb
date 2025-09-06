@@ -14,7 +14,7 @@ describe Solargraph::ApiMap::Constants do
         end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(source_map.pins)
-      constants = Solargraph::ApiMap::Constants.new(store)
+      constants = described_class.new(store)
       pin = source_map.first_pin('Foo::Quuz')
       resolved = constants.resolve('Bar', pin.gates)
       expect(resolved).to eq('Foo::Bar')
@@ -29,7 +29,7 @@ describe Solargraph::ApiMap::Constants do
         end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(source_map.pins)
-      constants = Solargraph::ApiMap::Constants.new(store)
+      constants = described_class.new(store)
       resolved = constants.resolve('Foo::Bar::Baz')
       expect(resolved).to eq('Foo::Bar::Baz')
     end
@@ -48,7 +48,7 @@ describe Solargraph::ApiMap::Constants do
         end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(source_map.pins)
-      constants = Solargraph::ApiMap::Constants.new(store)
+      constants = described_class.new(store)
       pin = source_map.pins_by_class(Solargraph::Pin::Reference::Include).first
       resolved = constants.dereference(pin)
       expect(resolved).to eq('Foo::Bar')
@@ -60,7 +60,7 @@ describe Solargraph::ApiMap::Constants do
         class Bar < Foo; end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(source_map.pins)
-      constants = Solargraph::ApiMap::Constants.new(store)
+      constants = described_class.new(store)
       pin = source_map.pins_by_class(Solargraph::Pin::Reference::Superclass).first
       resolved = constants.dereference(pin)
       expect(resolved).to eq('Foo')
@@ -80,7 +80,7 @@ describe Solargraph::ApiMap::Constants do
         end
       ), 'test.rb')
       store = Solargraph::ApiMap::Store.new(source_map.pins)
-      constants = Solargraph::ApiMap::Constants.new(store)
+      constants = described_class.new(store)
       collected = constants.collect('Foo::Quuz').map(&:path)
       expect(collected).to eq(['Foo::Bar::Baz'])
     end
