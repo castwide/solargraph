@@ -60,9 +60,7 @@ module Solargraph
           result = commit text, fixed
           off = Position.to_offset(text, range.start)
           match = result[0, off].match(/[.:]+\z/)
-          if match
-            result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
-          end
+          result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1] if match
           result
         end
       end
@@ -75,7 +73,7 @@ module Solargraph
       def commit text, insert
         start_offset = Position.to_offset(text, range.start)
         end_offset = Position.to_offset(text, range.ending)
-        (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + normalize(insert) + text[end_offset..-1].to_s
+        (start_offset == 0 ? '' : text[0..start_offset - 1].to_s) + normalize(insert) + text[end_offset..-1].to_s
       end
     end
   end

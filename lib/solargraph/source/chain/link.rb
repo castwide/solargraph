@@ -55,7 +55,7 @@ module Solargraph
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         def head?
@@ -88,7 +88,7 @@ module Solargraph
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         include Logging

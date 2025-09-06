@@ -1,5 +1,5 @@
 describe Solargraph::Source::Cursor do
-  it "detects cursors in strings" do
+  it 'detects cursors in strings' do
     source = Solargraph::Source.load_string('str = "string"')
     cursor = described_class.new(source, Solargraph::Position.new(0, 6))
     expect(cursor).not_to be_string
@@ -7,7 +7,7 @@ describe Solargraph::Source::Cursor do
     expect(cursor).to be_string
   end
 
-  it "detects cursors in comments" do
+  it 'detects cursors in comments' do
     source = Solargraph::Source.load_string(%(
       # @type [String]
       var = make_a_string
@@ -20,48 +20,48 @@ describe Solargraph::Source::Cursor do
     expect(cursor).not_to be_comment
   end
 
-  it "detects arguments inside parentheses" do
+  it 'detects arguments inside parentheses' do
     source = Solargraph::Source.load_string('a(1); b')
-    cur = described_class.new(source, Solargraph::Position.new(0,2))
+    cur = described_class.new(source, Solargraph::Position.new(0, 2))
     expect(cur).to be_argument
-    cur = described_class.new(source, Solargraph::Position.new(0,3))
+    cur = described_class.new(source, Solargraph::Position.new(0, 3))
     expect(cur).to be_argument
-    cur = described_class.new(source, Solargraph::Position.new(0,4))
+    cur = described_class.new(source, Solargraph::Position.new(0, 4))
     expect(cur).not_to be_argument
-    cur = described_class.new(source, Solargraph::Position.new(0,5))
+    cur = described_class.new(source, Solargraph::Position.new(0, 5))
     expect(cur).not_to be_argument
-    cur = described_class.new(source, Solargraph::Position.new(0,7))
+    cur = described_class.new(source, Solargraph::Position.new(0, 7))
     expect(cur).not_to be_argument
   end
 
   it 'detects arguments at opening parentheses' do
     source = Solargraph::Source.load_string('String.new', 'test.rb')
-    change = Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 10, 0, 10) ,'(')
+    change = Solargraph::Source::Change.new(Solargraph::Range.from_to(0, 10, 0, 10), '(')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [change])
     source = source.synchronize(updater)
     cursor = source.cursor_at([0, 11])
     expect(cursor).to be_argument
   end
 
-  it "detects class variables" do
-    source = double(:Source, :code => '@@foo')
+  it 'detects class variables' do
+    source = double(:Source, code: '@@foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 2))
     expect(cur.word).to eq('@@foo')
   end
 
-  it "detects instance variables" do
-    source = double(:Source, :code => '@foo')
+  it 'detects instance variables' do
+    source = double(:Source, code: '@foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 1))
     expect(cur.word).to eq('@foo')
   end
 
-  it "detects global variables" do
-    source = double(:Source, :code => '@foo')
+  it 'detects global variables' do
+    source = double(:Source, code: '@foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 1))
     expect(cur.word).to eq('@foo')
   end
 
-  it "generates word ranges" do
+  it 'generates word ranges' do
     source = Solargraph::Source.load_string(%(
       foo = bar
     ))
@@ -69,26 +69,26 @@ describe Solargraph::Source::Cursor do
     expect(source.at(cur.range)).to eq('bar')
   end
 
-  it "generates chains" do
+  it 'generates chains' do
     source = Solargraph::Source.load_string('foo.bar(1,2).baz{}')
     cur = described_class.new(source, Solargraph::Position.new(0, 18))
     expect(cur.chain).to be_a(Solargraph::Source::Chain)
-    expect(cur.chain.links.map(&:word)).to eq(['foo', 'bar', 'baz'])
+    expect(cur.chain.links.map(&:word)).to eq(%w[foo bar baz])
   end
 
-  it "detects constant words" do
-    source = double(:Source, :code => 'Foo::Bar')
+  it 'detects constant words' do
+    source = double(:Source, code: 'Foo::Bar')
     cur = described_class.new(source, Solargraph::Position.new(0, 5))
     expect(cur.word).to eq('Bar')
   end
 
-  it "detects cursors in dynamic strings" do
+  it 'detects cursors in dynamic strings' do
     source = Solargraph::Source.load_string('"#{100}"')
     cursor = source.cursor_at(Solargraph::Position.new(0, 7))
     expect(cursor).to be_string
   end
 
-  it "detects cursors in embedded strings" do
+  it 'detects cursors in embedded strings' do
     source = Solargraph::Source.load_string('"#{100}..."')
     cursor = source.cursor_at(Solargraph::Position.new(0, 10))
     expect(cursor).to be_string
@@ -118,8 +118,8 @@ describe Solargraph::Source::Cursor do
       "#{[]}"
     ', 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [
-      Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 12, 1, 12), '.')
-    ])
+                                                Solargraph::Source::Change.new(Solargraph::Range.from_to(1, 12, 1, 12), '.')
+                                              ])
     updated = source.synchronize(updater)
     cursor = updated.cursor_at(Solargraph::Position.new(1, 13))
     expect(cursor).to be_string

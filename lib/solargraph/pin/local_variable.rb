@@ -21,10 +21,10 @@ module Solargraph
         @presence_certain = presence_certain
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = {
           assignment: assert_same(other, :assignment),
-          presence_certain: assert_same(other, :presence_certain?),
+          presence_certain: assert_same(other, :presence_certain?)
         }.merge(attrs)
         # @sg-ignore Wrong argument type for
         #   Solargraph::Pin::Base#assert_same: other expected
@@ -36,7 +36,7 @@ module Solargraph
 
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
-      def visible_at?(other_closure, other_loc)
+      def visible_at? other_closure, other_loc
         location.filename == other_loc.filename &&
           presence.include?(other_loc.range.start) &&
           match_named_closure(other_closure, closure)

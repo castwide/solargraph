@@ -139,12 +139,12 @@ module Solargraph
       # @param reference_pin [Pin::Reference]
       #
       # @return [void]
-      def store_parametric_reference(hash, reference_pin)
+      def store_parametric_reference hash, reference_pin
         referenced_ns = reference_pin.name
         referenced_tag_params = reference_pin.generic_values
         referenced_tag = referenced_ns +
                          if referenced_tag_params && referenced_tag_params.length > 0
-                           "<" + referenced_tag_params.join(', ') + ">"
+                           '<' + referenced_tag_params.join(', ') + '>'
                          else
                            ''
                          end
@@ -159,9 +159,7 @@ module Solargraph
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
-            new_pin = if pin.path.end_with?('#initialize')
-                        path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
-                      end
+            new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               pin.docstring.delete_tags tag
               new_pin.docstring.delete_tags tag if new_pin
