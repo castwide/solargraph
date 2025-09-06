@@ -71,6 +71,7 @@ module Solargraph
         fqns + type.substring
       end
 
+      # @return [void]
       def clear
         [cached_collect, cached_resolve].each(&:clear)
       end
@@ -100,6 +101,9 @@ module Solargraph
         final if store.namespace_exists?(final)
       end
 
+      # @param name [String]
+      # @param gates [Array<String>]
+      # @return [String, nil]
       def simple_resolve name, gates
         gates.each do |gate|
           resolved = collect(gate).map(&:path).find { |ns| "::#{ns}".end_with?("::#{name}") }
