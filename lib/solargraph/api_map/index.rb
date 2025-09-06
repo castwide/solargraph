@@ -95,6 +95,7 @@ module Solargraph
       end
 
       # @param new_pins [Enumerable<Pin::Base>]
+      #
       # @return [self]
       def catalog new_pins
         # @type [Hash{Class<generic<T>> => Set<generic<T>>}]

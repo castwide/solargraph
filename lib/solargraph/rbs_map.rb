@@ -23,7 +23,7 @@ module Solargraph
     attr_reader :rbs_collection_config_path
 
     # @param library [String]
-    # @param version [String, nil
+    # @param version [String, nil]
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @param rbs_collection_paths [Array<Pathname, String>]
     def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: []
@@ -72,7 +72,7 @@ module Solargraph
       end
     end
 
-    # @param gemspec [Gem::Specification]
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param rbs_collection_path [String, Pathname, nil]
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @return [RbsMap]
