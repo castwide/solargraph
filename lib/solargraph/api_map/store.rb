@@ -101,19 +101,19 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Include>]
       def get_includes fqns
         include_references[fqns] || []
       end
 
       # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Prepend>]
       def get_prepends fqns
         prepend_references[fqns] || []
       end
 
       # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Extend>]
       def get_extends fqns
         extend_references[fqns] || []
       end

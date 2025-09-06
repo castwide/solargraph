@@ -82,11 +82,14 @@ module Solargraph
 
       # @param name [String]
       # @param gates [Array<String>]
-      # @return [String]
+      # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
       end
 
+      # @param name [String]
+      # @param gates [Array<String>]
+      # @return [String, nil]
       def resolve_uncached name, gates
         parts = name.split('::')
         here = parts.shift
@@ -114,10 +117,12 @@ module Solargraph
         end
       end
 
+      # @return [Hash{Array(Name, Array<String>) => String, nil}]
       def cached_resolve
         @cached_resolve ||= {}
       end
 
+      # @return [Hash{Array<String> => Array<Pin::Base>}]
       def cached_collect
         @cached_collect ||= {}
       end
@@ -164,7 +169,7 @@ module Solargraph
             return fqns if store.namespace_exists?(fqns)
             incs = store.get_includes(roots.join('::'))
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc.parametrized_tag, skip)
+              foundinc = inner_qualify(name, inc.parametrized_tag.to_s, skip)
               possibles.push foundinc unless foundinc.nil?
             end
             roots.pop
@@ -172,7 +177,7 @@ module Solargraph
           if possibles.empty?
             incs = store.get_includes('')
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc.parametrized_tag, skip)
+              foundinc = inner_qualify(name, inc.parametrized_tag.to_s, skip)
               possibles.push foundinc unless foundinc.nil?
             end
           end
