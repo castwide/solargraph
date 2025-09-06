@@ -337,10 +337,12 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Gem::Specification]
     def gemspec_or_preference gemspec
+      # :nocov: dormant feature
       return gemspec unless preference_map.key?(gemspec.name)
       return gemspec if gemspec.version == preference_map[gemspec.name].version
 
-      change_gemspec_version gemspec, preference_map[by_path.name].version
+      change_gemspec_version gemspec, preference_map[gemspec.name].version
+      # :nocov:
     end
 
     # @param gemspec [Gem::Specification]
