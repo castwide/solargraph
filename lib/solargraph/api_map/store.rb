@@ -103,6 +103,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Pin::Reference::Superclass]
       def get_superclass_pin fqns
+        return nil if fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
         superclass_references[fqns].first || try_special_superclasses(fqns)
@@ -242,7 +243,8 @@ module Solargraph
           current = current.gsub(/^::/, '')
 
           # Add superclass
-          superclass = get_superclass(current)
+          ref = get_superclass_pin(current)
+          superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
             ancestors << superclass
             queue << superclass
@@ -344,9 +346,12 @@ module Solargraph
       # @return [Pin::Reference::Superclass, nil]
       def try_special_superclasses(fqns)
         return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
+        return OBJECT_SUPERCLASS_PIN if !['BasicObject', 'Object'].include?(fqns) && namespace_exists?(fqns)
 
         sub = ComplexType.try_parse(fqns)
-        get_superclass_pin(sub.simplify_literals.name) if sub.literal?
+        return get_superclass_pin(sub.simplify_literals.name) if sub.literal?
+
+        get_superclass_pin(sub.namespace) if sub.namespace != fqns
       end
     end
   end

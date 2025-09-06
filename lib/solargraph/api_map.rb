@@ -811,7 +811,13 @@ module Solargraph
     # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
-      store.get_superclass(fq_sub_tag)
+      type = ComplexType.try_parse(fq_sub_tag)
+      return type.simplify_literals.to_s if type.literal?
+      ref = store.get_superclass_pin(fq_sub_tag)
+      return unless ref
+      res = store.constants.dereference(ref)
+      return unless res
+      res + type.substring
     end
 
     # Get the namespace's type (Class or Module).
