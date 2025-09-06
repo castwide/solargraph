@@ -143,7 +143,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          inner_qualify(namespace[2..-1], '', Set.new)
+          inner_qualify(namespace[2..], '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)
         end
@@ -162,14 +162,12 @@ module Solargraph
         if name == ''
           return '' if root == ''
 
-
           inner_qualify(root, '', skip)
-
         else
           return name if root == '' && store.namespace_exists?(name)
           roots = root.to_s.split('::')
-          while roots.length > 0
-            fqns = roots.join('::') + '::' + name
+          while roots.length.positive?
+            fqns = "#{roots.join('::')}::#{name}"
             return fqns if store.namespace_exists?(fqns)
             incs = store.get_includes(roots.join('::'))
             incs.each do |inc|
