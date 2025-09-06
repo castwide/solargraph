@@ -18,6 +18,7 @@ module Solargraph
         @generic_values = generic_values
       end
 
+      # @return [String]
       def parameter_tag
         @parameter_tag ||= if generic_values&.any?
                              "<#{generic_values.join(', ')}>"
@@ -38,6 +39,7 @@ module Solargraph
         )
       end
 
+      # @return [Array<String>]
       def reference_gates
         closure.gates
       end

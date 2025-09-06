@@ -255,6 +255,7 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      # @return [Constants]
       def constants
         @constants ||= Constants.new(self)
       end
