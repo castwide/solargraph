@@ -338,7 +338,7 @@ module Solargraph
       # @return [Pin::Reference::Superclass, nil]
       def try_special_superclasses(fqns)
         return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
-        return OBJECT_SUPERCLASS_PIN if !['BasicObject', 'Object'].include?(fqns) && namespace_exists?(fqns)
+        return OBJECT_SUPERCLASS_PIN if !%w[BasicObject Object].include?(fqns) && namespace_exists?(fqns)
 
         sub = ComplexType.try_parse(fqns)
         return get_superclass(sub.simplify_literals.name) if sub.literal?

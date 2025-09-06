@@ -6,7 +6,7 @@ module Solargraph
     #
     class Constants
       # @param store [Store]
-      def initialize(store)
+      def initialize store
         @store = store
       end
 
@@ -27,7 +27,7 @@ module Solargraph
       #
       # @param pin [Pin::Reference]
       # @return [String, nil]
-      def dereference(pin)
+      def dereference pin
         resolve(pin.name, pin.reference_gates)
       end
 
@@ -117,7 +117,7 @@ module Solargraph
       def collect_and_cache gates
         skip = Set.new
         cached_collect[gates] = gates.flat_map do |gate|
-          inner_get_constants(gate, [:public, :private], skip)
+          inner_get_constants(gate, %i[public private], skip)
         end
       end
 
@@ -141,7 +141,7 @@ module Solargraph
       # @param context_namespace [String] The context namespace in which the
       #   tag was referenced; start from here to resolve the name
       # @return [String, nil] fully qualified namespace
-      def qualify_namespace(namespace, context_namespace = '')
+      def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
           inner_qualify(namespace[2..-1], '', Set.new)
         else
@@ -160,11 +160,11 @@ module Solargraph
         skip.add root
         possibles = []
         if name == ''
-          if root == ''
-            return ''
-          else
-            return inner_qualify(root, '', skip)
-          end
+          return '' if root == ''
+
+
+          inner_qualify(root, '', skip)
+
         else
           return name if root == '' && store.namespace_exists?(name)
           roots = root.to_s.split('::')
@@ -186,7 +186,7 @@ module Solargraph
             end
           end
           return name if store.namespace_exists?(name)
-          return possibles.last
+          possibles.last
         end
       end
 
@@ -211,9 +211,7 @@ module Solargraph
         heh = store.get_superclass(fqns)
         if heh
           fqsc = dereference(heh)
-          unless %w[Object BasicObject].include?(fqsc)
-            result.concat inner_get_constants(fqsc, [:public], skip)
-          end
+          result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end
         result
       end

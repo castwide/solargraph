@@ -20,10 +20,10 @@ module Solargraph
 
       def parameter_tag
         @parameter_tag ||= if generic_values&.any?
-          "<#{generic_values.join(', ')}>"
-        else
-          ''
-        end
+                             "<#{generic_values.join(', ')}>"
+                           else
+                             ''
+                           end
       end
 
       # @return [ComplexType]

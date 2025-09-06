@@ -299,7 +299,7 @@ module Solargraph
 
     # Get a fully qualified namespace from a reference pin.
     #
-    # @param [Pin::Reference]
+    # @param pin [Pin::Reference]
     # @return [String, nil]
     def dereference(pin)
       store.constants.dereference(pin)
@@ -802,6 +802,7 @@ module Solargraph
       end
       result
     end
+    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
