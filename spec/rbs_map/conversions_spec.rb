@@ -135,7 +135,6 @@ describe Solargraph::RbsMap::Conversions do
           param.name == 'chdir'
         end
         expect(chdir_param).not_to be_nil, -> { "Found pin #{method_pin.to_rbs} from #{method_pin.type_location}" }
->>>>>>> origin/master
       end
     end
   end

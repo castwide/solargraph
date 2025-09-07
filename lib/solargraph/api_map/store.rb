@@ -297,7 +297,7 @@ module Solargraph
         index.include_reference_pins
       end
 
-      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
+      # @return [Hash{String => Array<String>}]
       def prepend_references
         index.prepend_references
       end
