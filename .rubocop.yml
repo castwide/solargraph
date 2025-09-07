@@ -21,6 +21,9 @@ AllCops:
     - "vendor/**/.*"
   TargetRubyVersion: 3.0
 
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
 Style/MethodDefParentheses:
   EnforcedStyle: require_no_parentheses
 
@@ -33,7 +36,6 @@ Lint/UnusedMethodArgument:
 Metrics/ParameterLists:
   Max: 7
   CountKeywordArgs: false
-
 
 # we tend to use @@ and the risk doesn't seem high
 Style/ClassVars:
