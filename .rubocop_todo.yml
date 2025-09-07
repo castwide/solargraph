@@ -64,7 +64,6 @@ Layout/BlockAlignment:
 Layout/ClosingHeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment.
@@ -167,7 +166,6 @@ Layout/HashAlignment:
 Layout/HeredocIndentation:
   Exclude:
     - 'spec/diagnostics/rubocop_spec.rb'
-    - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/yard_map/mapper/to_method_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -685,10 +683,13 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Configuration parameters: .
+# Configuration parameters: EnforcedStyle.
 # SupportedStyles: have_received, receive
 RSpec/MessageSpies:
-  EnforcedStyle: receive
+  Exclude:
+    - 'spec/doc_map_spec.rb'
+    - 'spec/language_server/host/diagnoser_spec.rb'
+    - 'spec/language_server/host/message_worker_spec.rb'
 
 RSpec/MissingExampleGroupArgument:
   Exclude:
@@ -749,10 +750,6 @@ RSpec/RepeatedExample:
 RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
-
-# Configuration parameters: CustomTransform, IgnoreMethods, IgnoreMetadata.
-RSpec/SpecFilePathFormat:
-  Enabled: false
 
 RSpec/StubbedMock:
   Exclude:
