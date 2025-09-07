@@ -25,8 +25,9 @@ describe Solargraph::RbsMap::Conversions do
 
     attr_reader :temp_dir
 
-
     context 'with overlapping module hierarchies and inheritance' do
+      subject(:method_pin) { api_map.get_method_stack('A::B::C', 'foo').first }
+
       let(:rbs) do
         <<~RBS
           module B
@@ -43,16 +44,16 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      subject(:method_pin) { api_map.get_method_stack('A::B::C', 'foo').first }
-
       before do
         api_map.index conversions.pins
       end
 
-      it { should be_a(Solargraph::Pin::Method) }
+      it { is_expected.to be_a(Solargraph::Pin::Method) }
     end
 
     context 'with untyped response' do
+      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
+
       let(:rbs) do
         <<~RBS
           class Foo
@@ -61,13 +62,11 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
+      it { is_expected.not_to be_nil }
 
-      it { should_not be_nil }
+      it { is_expected.to be_a(Solargraph::Pin::Method) }
 
-      it { should be_a(Solargraph::Pin::Method) }
-
-      it 'maps untyped in RBS to undefined in Solargraph 'do
+      it 'maps untyped in RBS to undefined in Solargraph' do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
