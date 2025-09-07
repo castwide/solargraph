@@ -83,7 +83,7 @@ module Solargraph
               @fetched = true
               begin
                 @available ||= begin
-                  # @sg-ignore
+                  # @sg-ignore Variable type could not be inferred for tuple
                   # @type [Gem::Dependency, nil]
                   tuple = CheckGemVersion.fetcher.search_for_dependency(Gem::Dependency.new('solargraph')).flatten.first
                   if tuple.nil?

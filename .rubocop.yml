@@ -1,0 +1,66 @@
+---
+inherit_from: .rubocop_todo.yml
+
+# The behavior of RuboCop can be controlled via the .rubocop.yml
+# configuration file. It makes it possible to enable/disable
+# certain cops (checks) and to alter their behavior if they accept
+# any parameters. The file can be placed either in your home
+# directory or in some project directory.
+#
+# RuboCop will start looking for the configuration file in the directory
+# where the inspected file is and continue its way up to the root directory.
+#
+# See https://docs.rubocop.org/rubocop/configuration
+AllCops:
+  NewCops: enable
+  Exclude:
+    - "spec/fixtures/invalid_byte.rb"
+    - "spec/fixtures/invalid_node_comment.rb"
+    - "spec/fixtures/invalid_utf8.rb"
+    - "vendor/**/*"
+    - "vendor/**/.*"
+  TargetRubyVersion: 3.0
+
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
+Style/MethodDefParentheses:
+  EnforcedStyle: require_no_parentheses
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: true
+
+Metrics/ParameterLists:
+  Max: 7
+  CountKeywordArgs: false
+
+
+# we tend to use @@ and the risk doesn't seem high
+Style/ClassVars:
+  Enabled: false
+
+#
+# Set a relaxed standard on harder-to-address item for ease of
+# contribution - if you are good at refactoring, we welcome PRs to
+# improve existing code!
+#
+Metrics/AbcSize:
+  Max: 65
+Metrics/MethodLength:
+  Max: 60
+Metrics/ClassLength:
+  Max: 500
+Metrics/CyclomaticComplexity:
+  Max: 23
+Metrics/PerceivedComplexity:
+  Max: 29
+RSpec/ExampleLength:
+  Max: 17
+
+plugins:
+  - rubocop-rspec
+  - rubocop-rake
+  - rubocop-yard

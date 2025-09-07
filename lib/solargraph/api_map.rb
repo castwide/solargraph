@@ -26,7 +26,6 @@ module Solargraph
     def initialize pins: []
       @source_map_hash = {}
       @cache = Cache.new
-      @method_alias_stack = []
       index pins
     end
 
@@ -36,11 +35,13 @@ module Solargraph
     # just caches), please also change `equality_fields` below.
     #
 
+    # @param other [Object]
     def eql?(other)
       self.class == other.class &&
         equality_fields == other.equality_fields
     end
 
+    # @param other [Object]
     def ==(other)
       self.eql?(other)
     end
@@ -113,6 +114,7 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
+    # @return [DocMap]
     def doc_map
       @doc_map ||= DocMap.new([], [])
     end
@@ -132,7 +134,7 @@ module Solargraph
       @doc_map.uncached_yard_gemspecs
     end
 
-    # @return [Array<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
     def core_pins
       @@core_map.pins
     end
@@ -186,10 +188,16 @@ module Solargraph
       api_map
     end
 
+    # @param out [IO, nil]
+    # @return [void]
     def cache_all!(out)
       @doc_map.cache_all!(out)
     end
 
+    # @param gemspec [Gem::Specification]
+    # @param rebuild [Boolean]
+    # @param out [IO, nil]
+    # @return [void]
     def cache_gem(gemspec, rebuild: false, out: nil)
       @doc_map.cache(gemspec, rebuild: rebuild, out: out)
     end
@@ -201,9 +209,6 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory and cache
     # any missing gems.
     #
-    #
-    # @todo IO::NULL is incorrectly inferred to be a String.
-    # @sg-ignore
     #
     # @param directory [String]
     # @param out [IO] The output stream for messages
@@ -333,6 +338,18 @@ module Solargraph
       result
     end
 
+    # @param fqns [String]
+    # @return [Array<String>]
+    def get_extends(fqns)
+      store.get_extends(fqns)
+    end
+
+    # @param fqns [String]
+    # @return [Array<String>]
+    def get_includes(fqns)
+      store.get_includes(fqns)
+    end
+
     # Get an array of instance variable pins defined in specified namespace
     # and scope.
     #
@@ -352,6 +369,7 @@ module Solargraph
       result
     end
 
+    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
     def visible_pins(*args, **kwargs, &blk)
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
@@ -514,12 +532,24 @@ module Solargraph
     # @param rooted_tag [String] Parameterized namespace, fully qualified
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param preserve_generics [Boolean]
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
-      methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+      namespace_pin = store.get_path_pins(fqns).first
+      methods = if namespace_pin.is_a?(Pin::Constant)
+                  type = namespace_pin.infer(self)
+                  if type.defined?
+                    namespace_pin = store.get_path_pins(type.namespace).first
+                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+                  else
+                    []
+                  end
+                else
+                  get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+                end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -656,12 +686,48 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def resolve_method_aliases pins, visibility = [:public, :private, :protected]
       with_resolved_aliases = pins.map do |pin|
+        next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact
       logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
+    end
+
+    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
+    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    #   parameter - used to pull generics information
+    # @param type [ComplexType] The type which is having its
+    #   methods supplemented from fq_reference_tag
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
+    # @param deep [Boolean]
+    # @param skip [Set<String>]
+    # @param no_core [Boolean] Skip core classes if true
+    # @return [Array<Pin::Base>]
+    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
+      logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
+
+      # Ensure the types returned by the methods in the referenced
+      # type are relative to the generic values passed in the
+      # reference.  e.g., Foo<String> might include Enumerable<String>
+      #
+      # @todo perform the same translation in the other areas
+      #  here after adding a spec and handling things correctly
+      #  in ApiMap::Store and RbsMap::Conversions for each
+      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
+      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
+      if namespace_pin && !resolved_reference_type.all_params.empty?
+        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
+        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
+        methods = methods.map do |method_pin|
+          method_pin.resolve_generics(reference_pin, resolved_reference_type)
+        end
+      end
+      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
+      methods
     end
 
     private
@@ -687,6 +753,7 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
+    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -697,6 +764,13 @@ module Solargraph
       return [] if skip.include?(reqstr)
       skip.add reqstr
       result = []
+      environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
+      # ensure we start out with any immediate methods in this
+      # namespace so we roughly match the same ordering of get_methods
+      # and obey the 'deep' instruction
+      direct_convention_methods, convention_methods_by_reference = environ.pins.partition { |p| p.namespace == rooted_tag }
+      result.concat direct_convention_methods
+
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = qualify(im, fqns)
@@ -707,18 +781,31 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
+      logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
+        result.concat convention_methods_by_reference
+
         if scope == :instance
-          store.get_includes(fqns).reverse.each do |include_tag|
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-            result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+          store.get_include_pins(fqns).reverse.each do |ref|
+            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
+            if const.is_a?(Pin::Namespace)
+              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
+            elsif const.is_a?(Pin::Constant)
+              type = const.infer(self)
+              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
+            else
+              referenced_tag = ref.parametrized_tag
+              next unless referenced_tag.defined?
+              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
           end
         else
+          logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = qualify(em, fqns)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
@@ -740,41 +827,7 @@ module Solargraph
       end
       result
     end
-
-    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
-    #   parameter - used to pull generics information
-    # @param type [ComplexType] The type which is having its
-    #   methods supplemented from fq_reference_tag
-    # @param scope [Symbol] :class or :instance
-    # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param deep [Boolean]
-    # @param skip [Set<String>]
-    # @param no_core [Boolean] Skip core classes if true
-    # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
-
-      # Ensure the types returned by the methods in the referenced
-      # type are relative to the generic values passed in the
-      # reference.  e.g., Foo<String> might include Enumerable<String>
-      #
-      # @todo perform the same translation in the other areas
-      #  here after adding a spec and handling things correctly
-      #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
-      # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
-      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
-      if namespace_pin && !resolved_reference_type.all_params.empty?
-        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
-        # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
-        methods = methods.map do |method_pin|
-          method_pin.resolve_generics(reference_pin, resolved_reference_type)
-        end
-      end
-      # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
-      methods
-    end
+    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @param fqns [String]
     # @param visibility [Array<Symbol>]
@@ -811,7 +864,7 @@ module Solargraph
       qualify namespace, context.split('::')[0..-2].join('::')
     end
 
-    # @param fq_tag [String]
+    # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
       fq_sub_type = ComplexType.try_parse(fq_sub_tag)
@@ -896,49 +949,79 @@ module Solargraph
       result + nil_pins
     end
 
-    # @param pin [Pin::MethodAlias, Pin::Base]
-    # @return [Pin::Method]
-    def resolve_method_alias pin
-      return pin unless pin.is_a?(Pin::MethodAlias)
-      return nil if @method_alias_stack.include?(pin.path)
-      @method_alias_stack.push pin.path
-      origin = get_method_stack(pin.full_context.tag, pin.original, scope: pin.scope, preserve_generics: true).first
-      @method_alias_stack.pop
-      return nil if origin.nil?
-      args = {
-        location: pin.location,
-        type_location: origin.type_location,
-        closure: pin.closure,
-        name: pin.name,
-        comments: origin.comments,
-        scope: origin.scope,
-#        context: pin.context,
-        visibility: origin.visibility,
-        signatures: origin.signatures.map(&:clone).freeze,
-        attribute: origin.attribute?,
-        generics: origin.generics.clone,
-        return_type: origin.return_type,
-        source: :resolve_method_alias
-      }
-      out = Pin::Method.new **args
-      out.signatures.each do |sig|
-        sig.parameters = sig.parameters.map(&:clone).freeze
-        sig.source = :resolve_method_alias
-        sig.parameters.each do |param|
-          param.closure = out
-          param.source = :resolve_method_alias
-          param.reset_generated!
-        end
-        sig.closure = out
-        sig.reset_generated!
-      end
-      logger.debug { "ApiMap#resolve_method_alias(pin=#{pin}) - returning #{out} from #{origin}" }
-      out
-    end
-
     include Logging
 
     private
+
+    # @param alias_pin [Pin::MethodAlias]
+    # @return [Pin::Method, nil]
+    def resolve_method_alias(alias_pin)
+      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      original = nil
+
+      # Search each ancestor for the original method
+      ancestors.each do |ancestor_fqns|
+        ancestor_fqns = ComplexType.try_parse(ancestor_fqns).force_rooted.namespace
+        next if ancestor_fqns.nil?
+        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+
+        # Search for the original method in the ancestor
+        original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
+          next if candidate_pin == alias_pin
+
+          if candidate_pin.is_a?(Pin::MethodAlias)
+            # recursively resolve method aliases
+            resolved = resolve_method_alias(candidate_pin)
+            break resolved if resolved
+          end
+
+          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+        end
+
+        break if original
+      end
+
+      # @sg-ignore ignore `received nil` for original
+      create_resolved_alias_pin(alias_pin, original) if original
+    end
+
+    # Fast path for creating resolved alias pins without individual method stack lookups
+    # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
+    # @param original [Pin::Method] The original method pin that was already found
+    # @return [Pin::Method] The resolved method pin
+    def create_resolved_alias_pin(alias_pin, original)
+      # Build the resolved method pin directly (same logic as resolve_method_alias but without lookup)
+      args = {
+        location: alias_pin.location,
+        type_location: original.type_location,
+        closure: alias_pin.closure,
+        name: alias_pin.name,
+        comments: original.comments,
+        scope: original.scope,
+        visibility: original.visibility,
+        signatures: original.signatures.map(&:clone).freeze,
+        attribute: original.attribute?,
+        generics: original.generics.clone,
+        return_type: original.return_type,
+        source: :resolve_method_alias
+      }
+      resolved_pin = Pin::Method.new **args
+
+      # Clone signatures and parameters
+      resolved_pin.signatures.each do |sig|
+        sig.parameters = sig.parameters.map(&:clone).freeze
+        sig.source = :resolve_method_alias
+        sig.parameters.each do |param|
+          param.closure = resolved_pin
+          param.source = :resolve_method_alias
+          param.reset_generated!
+        end
+        sig.closure = resolved_pin
+        sig.reset_generated!
+      end
+
+      resolved_pin
+    end
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]

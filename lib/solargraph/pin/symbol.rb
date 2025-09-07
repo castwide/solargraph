@@ -20,6 +20,10 @@ module Solargraph
         ''
       end
 
+      def closure
+        @closure ||= Pin::ROOT_PIN
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::KEYWORD
       end
@@ -36,6 +40,7 @@ module Solargraph
         []
       end
 
+      # @return [::Symbol]
       def visibility
         :public
       end

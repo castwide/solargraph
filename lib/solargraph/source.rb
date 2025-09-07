@@ -30,7 +30,7 @@ module Solargraph
       @node
     end
 
-    # @return [Hash{Integer => Array<String>}]
+    # @return [Hash{Integer => Solargraph::Parser::Snippet}]
     def comments
       finalize
       @comments
@@ -235,6 +235,7 @@ module Solargraph
     # @return [Hash{Integer => String}]
     def associated_comments
       @associated_comments ||= begin
+        # @type [Hash{Integer => String}]
         result = {}
         buffer = String.new('')
         # @type [Integer, nil]
@@ -317,7 +318,7 @@ module Solargraph
       @string_nodes ||= string_nodes_in(node)
     end
 
-    # @return [Array<Range>]
+    # @return [Array<Solargraph::Range>]
     def comment_ranges
       @comment_ranges ||= comments.values.map(&:range)
     end
@@ -386,6 +387,7 @@ module Solargraph
     # @return [Integer]
     attr_writer :version
 
+    # @return [void]
     def finalize
       return if @finalized && changes.empty?
 
@@ -440,6 +442,7 @@ module Solargraph
     # @return [String]
     attr_writer :repaired
 
+    # @return [String]
     def repaired
       finalize
       @repaired

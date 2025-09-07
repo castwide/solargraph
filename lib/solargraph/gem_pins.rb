@@ -11,17 +11,9 @@ module Solargraph
       include Logging
     end
 
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build_yard_pins(gemspec)
-      Yardoc.cache(gemspec) unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
-      YardMap::Mapper.new(yardoc, gemspec).map
-    end
-
     # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def self.combine_method_pins_by_path(pins)
-      # bad_pins = pins.select { |pin| pin.is_a?(Pin::Method) && pin.path == 'StringIO.open' && pin.source == :rbs }; raise "wtf: #{bad_pins}" if bad_pins.length > 1
       method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
       by_path = method_pins.group_by(&:path)
       by_path.transform_values! do |pins|
@@ -30,8 +22,12 @@ module Solargraph
       by_path.values + alias_pins
     end
 
+    # @param pins [Array<Pin::Method>]
+    # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
-      out = pins.reduce(nil) do |memo, pin|
+      # @type [Pin::Method, nil]
+      combined_pin = nil
+      out = pins.reduce(combined_pin) do |memo, pin|
         next pin if memo.nil?
         if memo == pin && memo.source != :combined
           # @todo we should track down situations where we are handled
@@ -45,8 +41,18 @@ module Solargraph
       out
     end
 
+    # @param yard_plugins [Array<String>] The names of YARD plugins to use.
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>]
+    def self.build_yard_pins(yard_plugins, gemspec)
+      Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
+      yardoc = Yardoc.load!(gemspec)
+      YardMap::Mapper.new(yardoc, gemspec).map
+    end
+
     # @param yard_pins [Array<Pin::Base>]
-    # @param rbs_map [RbsMap]
+    # @param rbs_pins [Array<Pin::Base>]
+    #
     # @return [Array<Pin::Base>]
     def self.combine(yard_pins, rbs_pins)
       in_yard = Set.new

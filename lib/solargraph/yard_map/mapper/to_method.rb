@@ -19,12 +19,7 @@ module Solargraph
         # @param spec [Gem::Specification, nil]
         # @return [Solargraph::Pin::Method]
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
-          closure ||= Solargraph::Pin::Namespace.new(
-            name: code_object.namespace.to_s,
-            gates: [code_object.namespace.to_s],
-            type: code_object.namespace.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
-            source: :yardoc,
-          )
+          closure ||= create_closure_namespace_for(code_object, spec)
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
           return_type = ComplexType::SELF if name == 'new'
@@ -32,8 +27,8 @@ module Solargraph
           final_scope = scope || code_object.scope
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
-          final_visibility ||= VISIBILITY_OVERRIDE[override_key[0..-2]]
-          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name)
+          final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
+          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
           final_visibility ||= visibility
           final_visibility ||= :private if code_object.module_function? && final_scope == :instance
           final_visibility ||= :public if code_object.module_function? && final_scope == :class

@@ -49,11 +49,7 @@ module Solargraph
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
-            # @todo should be able to resolve map; both types have it
-            #   with same return type
-            # @sg-ignore
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            # @sg-ignore
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           elsif parameters_type == :list && name == 'Hash'
             # Treat Hash<A, B> as Hash{A => B}
@@ -105,6 +101,7 @@ module Solargraph
         tag
       end
 
+      # @return [self]
       def simplify_literals
         transform do |t|
           next t unless t.literal?
@@ -116,10 +113,12 @@ module Solargraph
         non_literal_name != name
       end
 
+      # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
         #
@@ -171,6 +170,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def desc
         rooted_tags
       end
@@ -255,7 +255,7 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+      # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
@@ -353,9 +353,9 @@ module Solargraph
 
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
-      # @param new_key_types [Array<UniqueType>, nil]
+      # @param new_key_types [Array<ComplexType>, nil]
       # @param rooted [Boolean, nil]
-      # @param new_subtypes [Array<UniqueType>, nil]
+      # @param new_subtypes [Array<ComplexType>, nil]
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
         raise "Please remove leading :: and set rooted instead - #{new_name}" if new_name&.start_with?('::')

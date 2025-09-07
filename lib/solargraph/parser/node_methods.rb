@@ -1,6 +1,6 @@
 module Solargraph
   module Parser
-    class NodeMethods
+    module NodeMethods
       module_function
 
       # @abstract
@@ -74,7 +74,7 @@ module Solargraph
 
       # @abstract
       # @param node [Parser::AST::Node]
-      # @return [Hash{Parser::AST::Node => Source::Chain}]
+      # @return [Hash{Symbol => Source::Chain}]
       def convert_hash node
         raise NotImplementedError
       end

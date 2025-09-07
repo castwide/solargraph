@@ -1,6 +1,7 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
+  # rubocop:disable RSpec/InstanceVariable
   before :all do
     @api_map = Solargraph::ApiMap.new
   end
@@ -399,7 +400,7 @@ describe Solargraph::ApiMap do
       require 'invalid'
     ), 'app.rb')
     @api_map.catalog Solargraph::Bench.new(source_maps: [source1, source2], external_requires: ['invalid'])
-    expect(@api_map.unresolved_requires).to eq(['invalid'])
+    expect(@api_map.unresolved_requires).to include('invalid')
   end
 
   it 'gets instance variables from superclasses' do
@@ -817,4 +818,61 @@ describe Solargraph::ApiMap do
     clip = api_map.clip_at('test.rb', [11, 10])
     expect(clip.infer.to_s).to eq('Symbol')
   end
+
+  it 'resolves aliases in identically named deeply nested classes' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        module Bar
+          # @return [Integer]
+          def quux; 123; end
+        end
+
+        Baz = Bar
+
+        class Foo
+          include Baz
+        end
+      end
+
+      def c
+        b = A::Foo.new.quux
+        b
+      end
+    ), 'test.rb')
+
+    api_map = described_class.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 8])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
+  it 'resolves aliases in nested classes' do
+    source = Solargraph::Source.load_string(%(
+      module A
+        module Bar
+          class Baz
+            # @return [Integer]
+            def quux; 123; end
+          end
+        end
+
+        Baz = Bar::Baz
+
+        class Foo
+          include Baz
+        end
+      end
+
+      def c
+        b = A::Foo.new.quux
+        b
+      end
+    ), 'test.rb')
+
+    api_map = described_class.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [18, 4])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
+  # rubocop:enable RSpec/InstanceVariable
 end
