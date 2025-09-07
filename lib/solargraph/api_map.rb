@@ -134,7 +134,7 @@ module Solargraph
       @doc_map.uncached_yard_gemspecs
     end
 
-    # @return [Array<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
     def core_pins
       @@core_map.pins
     end
@@ -369,6 +369,7 @@ module Solargraph
       result
     end
 
+    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
     def visible_pins(*args, **kwargs, &blk)
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
@@ -537,8 +538,18 @@ module Solargraph
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
-      methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+      namespace_pin = store.get_path_pins(fqns).first
+      methods = if namespace_pin.is_a?(Pin::Constant)
+                  type = namespace_pin.infer(self)
+                  if type.defined?
+                    namespace_pin = store.get_path_pins(type.namespace).first
+                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+                  else
+                    []
+                  end
+                else
+                  get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+                end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -742,6 +753,7 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
+    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -753,7 +765,12 @@ module Solargraph
       skip.add reqstr
       result = []
       environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
-      result.concat environ.pins
+      # ensure we start out with any immediate methods in this
+      # namespace so we roughly match the same ordering of get_methods
+      # and obey the 'deep' instruction
+      direct_convention_methods, convention_methods_by_reference = environ.pins.partition { |p| p.namespace == rooted_tag }
+      result.concat direct_convention_methods
+
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = qualify(im, fqns)
@@ -767,10 +784,21 @@ module Solargraph
       logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
+        result.concat convention_methods_by_reference
+
         if scope == :instance
-          store.get_includes(fqns).reverse.each do |include_tag|
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-            result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+          store.get_include_pins(fqns).reverse.each do |ref|
+            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
+            if const.is_a?(Pin::Namespace)
+              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
+            elsif const.is_a?(Pin::Constant)
+              type = const.infer(self)
+              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
+            else
+              referenced_tag = ref.parametrized_tag
+              next unless referenced_tag.defined?
+              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
@@ -799,6 +827,7 @@ module Solargraph
       end
       result
     end
+    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @param fqns [String]
     # @param visibility [Array<Symbol>]
@@ -932,7 +961,8 @@ module Solargraph
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
-        ancestor_fqns = ComplexType.parse(ancestor_fqns).force_rooted.namespace
+        ancestor_fqns = ComplexType.try_parse(ancestor_fqns).force_rooted.namespace
+        next if ancestor_fqns.nil?
         ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
 
         # Search for the original method in the ancestor
