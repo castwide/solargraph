@@ -16,15 +16,6 @@ module Solargraph
     # @return [Workspace]
     attr_reader :workspace
 
-    # @param requires [Array<String>]
-    # @param workspace [Workspace]
-    # @param out [IO, nil] output stream for logging
-    def initialize requires, workspace, out: $stderr
-      @provided_requires = requires.compact
-      @workspace = workspace
-      @out = out
-    end
-
     # @return [Array<String>]
     def requires
       @requires ||= @provided_requires + (workspace.global_environ&.requires || [])
@@ -38,6 +29,15 @@ module Solargraph
         pins # force lazy-loaded pin lookup
       end
       @uncached_gemspecs
+    end
+
+    # @param requires [Array<String>]
+    # @param workspace [Workspace]
+    # @param out [IO, nil] output stream for logging
+    def initialize requires, workspace, out: $stderr
+      @provided_requires = requires.compact
+      @workspace = workspace
+      @out = out
     end
 
     # @return [Array<Pin::Base>]
@@ -166,7 +166,7 @@ module Solargraph
 
     # @return [Hash{String => Array<Gem::Specification>}]
     def required_gems_map
-      @required_gems_map ||= requires.to_h { |require| [require, workspace.resolve_require(require)] }
+      @required_gems_map ||= requires.to_h { |path| [path, workspace.resolve_require(path)] }
     end
 
     def inspect
