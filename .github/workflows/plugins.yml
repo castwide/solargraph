@@ -144,8 +144,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        # RBS 3.9 supports Ruby 3.2+
-        ruby-version: '3.2'
+        ruby-version: '3.0'
         bundler-cache: false
         bundler: latest
       env:
@@ -158,7 +157,7 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
-       bundle update solargraph rbs
+       bundle update rbs
        RAILS_DIR="$(pwd)/spec/rails7"
        export RAILS_DIR
        cd ${RAILS_DIR}
