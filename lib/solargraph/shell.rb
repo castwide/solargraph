@@ -259,7 +259,7 @@ module Solargraph
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
           puts problems.map { |prob|
-            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
+            "#{prob.location.filename}:#{prob.location.range.start.line + 1}: #{prob.message}"
           }.join("\n")
           filecount += 1
           probcount += problems.length
