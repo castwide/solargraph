@@ -144,7 +144,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.0'
+        # RBS 3.9 supports Ruby 3.2+
+        ruby-version: '3.2'
         bundler-cache: false
         bundler: latest
       env:
@@ -163,7 +164,7 @@ jobs:
        cd ${RAILS_DIR}
        bundle install
        bundle exec --gemfile ../../Gemfile rbs --version
-       bundle exec --gemfile ../../Gemfile rbs collection update
+       bundle exec --gemfile ../../Gemfile rbs collection install
        cd ../../
        # bundle exec rbs collection init
        # bundle exec rbs collection install
