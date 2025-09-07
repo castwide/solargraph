@@ -45,13 +45,13 @@ module Solargraph
     #
 
     # @param other [Object]
-    def eql? other
+    def eql?(other)
       self.class == other.class &&
         equality_fields == other.equality_fields
     end
 
     # @param other [Object]
-    def == other
+    def ==(other)
       self.eql?(other)
     end
 
@@ -125,8 +125,10 @@ module Solargraph
       [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
     end
 
-    # @return [DocMap, nil]
-    attr_reader :doc_map
+    # @return [DocMap]
+    def doc_map
+      @doc_map ||= DocMap.new([], Workspace.new('.'))
+    end
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
@@ -687,9 +689,6 @@ module Solargraph
         resolved = resolve_method_alias(pin)
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
-      rescue Solargraph::ComplexTypeError => e
-        logger.warn "ComplexTypeError while resolving #{pin.inspect}: #{e.message}"
-        raise e
       end.compact
       logger.debug do
         "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}"
