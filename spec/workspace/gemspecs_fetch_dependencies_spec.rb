@@ -11,7 +11,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
   let(:dir_path) { Dir.pwd }
 
   context 'when in our bundle' do
-    xcontext 'with a Bundler::LazySpecification' do
+    context 'with a Bundler::LazySpecification' do
       let(:gemspec) do
         Bundler::LazySpecification.new('solargraph', nil, nil)
       end
