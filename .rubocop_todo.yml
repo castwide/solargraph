@@ -224,11 +224,6 @@ Layout/SpaceAroundEqualsInParameterDefault:
   Enabled: false
 
 # This cop supports safe autocorrection (--autocorrect).
-Layout/SpaceAroundKeyword:
-  Exclude:
-    - 'spec/rbs_map/conversions_spec.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowForAlignment, EnforcedStyleForExponentOperator, EnforcedStyleForRationalLiterals.
 # SupportedStylesForExponentOperator: space, no_space
 # SupportedStylesForRationalLiterals: space, no_space
@@ -643,7 +638,6 @@ RSpec/ExampleWording:
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/ExcessiveDocstringSpacing:
   Exclude:
-    - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/source/chain/call_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -659,20 +653,9 @@ RSpec/ExpectActual:
 RSpec/HookArgument:
   Enabled: false
 
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: .
-# SupportedStyles: is_expected, should
-RSpec/ImplicitExpect:
-  EnforcedStyle: should
-
 # Configuration parameters: AssignmentOnly.
 RSpec/InstanceVariable:
   Enabled: false
-
-# This cop supports safe autocorrection (--autocorrect).
-RSpec/LeadingSubject:
-  Exclude:
-    - 'spec/rbs_map/conversions_spec.rb'
 
 RSpec/LeakyConstantDeclaration:
   Exclude:
@@ -974,7 +957,6 @@ Style/MapIntoArray:
   Exclude:
     - 'lib/solargraph/diagnostics/update_errors.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
-    - 'lib/solargraph/type_checker/param_def.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/MapToHash:
@@ -1048,7 +1030,6 @@ Style/Next:
     - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
     - 'lib/solargraph/pin/signature.rb'
     - 'lib/solargraph/source_map/clip.rb'
-    - 'lib/solargraph/type_checker/checks.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Strict, AllowedNumbers, AllowedPatterns.
@@ -1295,10 +1276,7 @@ YARD/MismatchName:
   Enabled: false
 
 YARD/TagTypeSyntax:
-  Exclude:
-    - 'lib/solargraph/language_server/host.rb'
-    - 'lib/solargraph/parser/comment_ripper.rb'
-    - 'lib/solargraph/type_checker.rb'
+  Enabled: false
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
