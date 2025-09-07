@@ -9,11 +9,11 @@ describe Solargraph::Yardoc do
 
     testobj.run
   ensure
-    FileUtils.remove_entry(@tmpdir) # rubocop:disable RSpec/InstanceVariable
+    FileUtils.remove_entry(@tmpdir)
   end
 
   let(:gem_yardoc_path) do
-    File.join(@tmpdir, 'solargraph', 'yardoc', 'test_gem') # rubocop:disable RSpec/InstanceVariable
+    File.join(@tmpdir, 'solargraph', 'yardoc', 'test_gem')
   end
 
   before do

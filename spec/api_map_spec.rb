@@ -9,7 +9,7 @@ describe Solargraph::ApiMap do
   end
 
   it 'returns core methods', time_limit_seconds: 120 do
-    pins = @api_map.get_methods('String') # rubocop:disable RSpec/InstanceVariable
+    pins = @api_map.get_methods('String')
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
