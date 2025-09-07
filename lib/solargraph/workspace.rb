@@ -19,6 +19,10 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
+    # @return [Array<String>]
+    attr_reader :gemnames
+    alias source_gems gemnames
+
     # @param directory [String] TODO: Document and test '' and '*' semantics
     # @param config [Config, nil]
     # @param server [Hash]
