@@ -25,6 +25,33 @@ describe Solargraph::RbsMap::Conversions do
 
     attr_reader :temp_dir
 
+
+    context 'with overlapping module hierarchies and inheritance' do
+      let(:rbs) do
+        <<~RBS
+          module B
+            class C
+              def foo: () -> String
+            end
+          end
+          module A
+            module B
+              class C < ::B::C
+              end
+            end
+          end
+        RBS
+      end
+
+      subject(:method_pin) { api_map.get_method_stack('A::B::C', 'foo').first }
+
+      before do
+        api_map.index conversions.pins
+      end
+
+      it { should be_a(Solargraph::Pin::Method) }
+    end
+
     context 'with untyped response' do
       let(:rbs) do
         <<~RBS
@@ -51,7 +78,7 @@ describe Solargraph::RbsMap::Conversions do
       @api_map = Solargraph::ApiMap.load_with_cache('.')
     end
 
-    let(:api_map) { @api_map } # rubocop:disable RSpec/InstanceVariable
+    let(:api_map) { @api_map }
 
     context 'with superclass pin for Parser::AST::Node' do
       let(:superclass_pin) do
@@ -96,28 +123,6 @@ describe Solargraph::RbsMap::Conversions do
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
                  .uniq).to eq(['Symbol'])
       end
-    end
-
-    context 'with overlapping module hierarchies and inheritance' do
-      let(:rbs) do
-        <<~RBS
-          module B
-            class C
-              def foo: () -> String
-            end
-          end
-          module A
-            module B
-              class C < ::B::C
-              end
-            end
-          end
-        RBS
-      end
-
-      subject(:method_pin) { api_map.get_method_stack('A::B::C', 'foo').first }
-
-      it { should be_a(Solargraph::Pin::Method) }
     end
   end
 
