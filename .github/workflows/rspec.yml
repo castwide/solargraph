@@ -48,8 +48,8 @@ jobs:
       run: |
         bundle install
         bundle update rbs # use latest available for this Ruby version
-#    - name: Run tests
-#      run: bundle exec rake spec
+    - name: Run tests
+      run: bundle exec rake spec
   undercover:
     runs-on: ubuntu-latest
     steps:
