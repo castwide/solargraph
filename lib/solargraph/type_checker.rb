@@ -481,6 +481,7 @@ module Solargraph
           else
             ptype = data[:qualified]
             unless ptype.undefined?
+              # @type [ComplexType]
               argtype = argchain.infer(api_map, block_pin, locals)
               if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
