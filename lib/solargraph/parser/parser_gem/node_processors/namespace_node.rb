@@ -12,7 +12,6 @@ module Solargraph
             superclass_name = unpack_name(node.children[1]) if node.type == :class && node.children[1]&.type == :const
 
             loc = get_node_location(node)
-            # @sg-ignore Unresolved call to children on Parser::AST::Node
             name = unpack_name(node.children[0])
             nspin = Solargraph::Pin::Namespace.new(
               type: node.type,
