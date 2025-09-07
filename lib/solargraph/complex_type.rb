@@ -17,13 +17,10 @@ module Solargraph
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
-
-      # Canonicalize 'true, false' to the non-runtime-type 'Boolean'
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
         items.unshift(ComplexType::BOOLEAN)
       end
-
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end
@@ -161,10 +158,12 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def tags
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def simple_tags
       simplify_literals.tags
     end
@@ -178,10 +177,12 @@ module Solargraph
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
+    # @return [String]
     def desc
       rooted_tags
     end
 
+    # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
@@ -206,6 +207,7 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end

@@ -1,0 +1,17 @@
+class Thor
+  class Group
+  end
+
+  module Actions
+    class CreateFile
+    end
+
+    def create_file: (String destination, String data, ?verbose: bool) -> String
+                   | (String destination, ?verbose: bool) { () -> String } -> String
+  end
+
+  class Error
+  end
+
+  def self.start: (Array[String] given_args, ?Hash[Symbol, untyped] config) -> void
+end
