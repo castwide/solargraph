@@ -20,6 +20,7 @@ module Solargraph
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
       # @param name [String]
+      # @param [Hash{Symbol => Object}] splat
       def initialize type: :class, visibility: :public, gates: [''], name: '', **splat
         # super(location, namespace, name, comments)
         super(**splat, name: name)
@@ -37,10 +38,10 @@ module Solargraph
           parts = name.split('::')
           name = parts.pop
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
-            ''
-          else
-            closure.full_context.namespace + '::'
-          end
+                           ''
+                         else
+                           closure.full_context.namespace + '::'
+                         end
           closure_name += parts.join('::')
           @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')], source: :namespace)
           @context = nil
@@ -49,7 +50,7 @@ module Solargraph
       end
 
       def to_rbs
-        "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
+        "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
       def inner_desc
@@ -91,7 +92,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.try_parse( (type == :class ? '::Class' : '::Module') + "<::#{path}>")
+        @return_type ||= ComplexType.try_parse((type == :class ? '::Class' : '::Module') + "<::#{path}>")
       end
 
       # @return [Array<String>]
@@ -105,10 +106,10 @@ module Solargraph
 
       def gates
         @gates ||= if path.empty?
-          @open_gates
-        else
-          [path] + @open_gates
-        end
+                     @open_gates
+                   else
+                     [path] + @open_gates
+                   end
       end
     end
   end

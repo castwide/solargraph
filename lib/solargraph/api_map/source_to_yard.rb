@@ -3,7 +3,6 @@
 module Solargraph
   class ApiMap
     module SourceToYard
-
       # Get the YARD CodeObject at the specified path.
       #
       # @generic T
@@ -32,15 +31,15 @@ module Solargraph
             next
           end
           if pin.type == :class
-            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
+            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) do |obj|
               next if pin.location.nil? || pin.location.filename.nil?
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
-            }
+            end
           else
-            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
+            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) do |obj|
               next if pin.location.nil? || pin.location.filename.nil?
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
-            }
+            end
           end
           code_object_map[pin.path].docstring = pin.docstring
           store.get_includes(pin.path).each do |ref|
@@ -63,10 +62,12 @@ module Solargraph
             next
           end
 
-          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
+          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
+            code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope
+          ) do |obj|
             next if pin.location.nil? || pin.location.filename.nil?
             obj.add_file pin.location.filename, pin.location.range.start.line
-          }
+          end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
           method_object.docstring = pin.docstring
           method_object.visibility = pin.visibility || :public

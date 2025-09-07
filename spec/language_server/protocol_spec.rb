@@ -1,5 +1,3 @@
-require 'thread'
-
 class Protocol
   attr_reader :response
 
@@ -43,16 +41,17 @@ describe Protocol do
     @protocol.stop
   end
 
-  before :each do
+  before do
     version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
-    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher, search_for_dependency: [version])
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher,
+                                                                                    search_for_dependency: [version])
   end
 
-  after :each do
+  after do
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = nil
   end
 
-  it "handles initialize" do
+  it 'handles initialize' do
     @protocol.request 'initialize', {
       'capabilities' => {
         'textDocument' => {
@@ -69,27 +68,27 @@ describe Protocol do
     expect(response['result'].keys).to include('capabilities')
   end
 
-  it "is not stopped after initialization" do
+  it 'is not stopped after initialization' do
     expect(@protocol.host.stopped?).to be(false)
   end
 
-  it "configured dynamic registration capabilities from initialize" do
+  it 'configured dynamic registration capabilities from initialize' do
     expect(@protocol.host.can_register?('textDocument/completion')).to be(true)
     expect(@protocol.host.can_register?('textDocument/hover')).to be(false)
     expect(@protocol.host.can_register?('workspace/symbol')).to be(false)
   end
 
-  it "handles initialized" do
+  it 'handles initialized' do
     @protocol.request 'initialized', nil
     response = @protocol.response
     expect(response['error']).to be_nil
   end
 
-  it "configured default dynamic registration capabilities from initialized" do
+  it 'configured default dynamic registration capabilities from initialized' do
     expect(@protocol.host.registered?('textDocument/completion')).to be(true)
   end
 
-  it "handles textDocument/didOpen" do
+  it 'handles textDocument/didOpen' do
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
         'uri' => 'file:///file.rb',
@@ -107,7 +106,7 @@ describe Protocol do
         'version' => 0
       }
     }
-    response = @protocol.response
+    @protocol.response
     expect(@protocol.host.open?('file:///file.rb')).to be(true)
   end
 
@@ -126,7 +125,7 @@ describe Protocol do
     expect(response['result'].length).to eq(2)
   end
 
-  it "handles textDocument/didChange" do
+  it 'handles textDocument/didChange' do
     @protocol.request 'textDocument/didChange', {
       'textDocument' => {
         'uri' => 'file:///file.rb',
@@ -148,11 +147,11 @@ describe Protocol do
         }
       ]
     }
-    response = @protocol.response
+    @protocol.response
     # @todo What to expect?
   end
 
-  it "handles textDocument/completion" do
+  it 'handles textDocument/completion' do
     @protocol.request 'textDocument/completion', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -167,10 +166,10 @@ describe Protocol do
     expect(response['result']['items'].length > 0).to be(true)
   end
 
-  it "handles completionItem/resolve" do
+  it 'handles completionItem/resolve' do
     # Reuse the response from textDocument/completion
     response = @protocol.response
-    item = response['result']['items'].select{|h| h['label'] == 'bar'}.first
+    item = response['result']['items'].select { |h| h['label'] == 'bar' }.first
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
     expect(response['result']['documentation']['value']).to include('bar method')
@@ -189,7 +188,7 @@ describe Protocol do
     expect(@protocol.response['error']).to be_nil
   end
 
-  it "documents YARD pins" do
+  it 'documents YARD pins' do
     @protocol.request 'textDocument/completion', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -200,14 +199,14 @@ describe Protocol do
       }
     }
     response = @protocol.response
-    item = response['result']['items'].select{|i| i['data']['path'] == 'File.absolute_path'}.first
+    item = response['result']['items'].select { |i| i['data']['path'] == 'File.absolute_path' }.first
     expect(item).not_to be_nil
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
     expect(response['result']['documentation']).not_to be_empty
   end
 
-  it "handles workspace/symbol" do
+  it 'handles workspace/symbol' do
     @protocol.request 'workspace/symbol', {
       'query' => 'test'
     }
@@ -215,7 +214,7 @@ describe Protocol do
     expect(response['error']).to be_nil
   end
 
-  it "handles textDocument/definition" do
+  it 'handles textDocument/definition' do
     sleep 0.5 # HACK: Give the Host::Sources thread time to work
     @protocol.request 'textDocument/definition', {
       'textDocument' => {
@@ -231,7 +230,7 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
-  it "handles textDocument/definition on undefined symbols" do
+  it 'handles textDocument/definition on undefined symbols' do
     @protocol.request 'textDocument/definition', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -246,7 +245,7 @@ describe Protocol do
     expect(response['result']).to be_empty
   end
 
-  it "handles textDocument/documentSymbol" do
+  it 'handles textDocument/documentSymbol' do
     @protocol.request 'textDocument/documentSymbol', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -256,7 +255,7 @@ describe Protocol do
     expect(response['error']).to be_nil
   end
 
-  it "handles textDocument/hover" do
+  it 'handles textDocument/hover' do
     @protocol.request 'textDocument/hover', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -285,7 +284,7 @@ describe Protocol do
     expect(@protocol.response['error']).to be_nil
   end
 
-  it "handles textDocument/signatureHelp" do
+  it 'handles textDocument/signatureHelp' do
     @protocol.request 'textDocument/signatureHelp', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -300,7 +299,7 @@ describe Protocol do
     expect(response['result']['signatures']).not_to be_empty
   end
 
-  it "handles workspace/symbol" do
+  it 'handles workspace/symbol' do
     @protocol.request 'workspace/symbol', {
       'query' => 'Foo'
     }
@@ -309,7 +308,7 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
-  it "handles textDocument/references for namespaces" do
+  it 'handles textDocument/references for namespaces' do
     @protocol.request 'textDocument/references', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -324,7 +323,7 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
-  it "handles textDocument/references for methods" do
+  it 'handles textDocument/references for methods' do
     @protocol.request 'textDocument/references', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -339,7 +338,7 @@ describe Protocol do
     expect(response['result']).not_to be_empty
   end
 
-  it "handles textDocument/rename" do
+  it 'handles textDocument/rename' do
     @protocol.request 'textDocument/rename', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -355,7 +354,7 @@ describe Protocol do
     expect(response['result']['changes']['file:///file.rb']).to be_a(Array)
   end
 
-  it "handles textDocument/prepareRename" do
+  it 'handles textDocument/prepareRename' do
     @protocol.request 'textDocument/prepareRename', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -371,7 +370,7 @@ describe Protocol do
     expect(response['result']).to be_a(Hash)
   end
 
-  it "handles textDocument/foldingRange" do
+  it 'handles textDocument/foldingRange' do
     @protocol.request 'textDocument/foldingRange', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
@@ -382,17 +381,17 @@ describe Protocol do
     expect(response['result'].length).not_to be_zero
   end
 
-  it "handles textDocument/didClose" do
+  it 'handles textDocument/didClose' do
     @protocol.request 'textDocument/didClose', {
       'textDocument' => {
         'uri' => 'file:///file.rb'
       }
     }
-    response = @protocol.response
+    @protocol.response
     expect(@protocol.host.open?('file:///file.rb')).to be(false)
   end
 
-  it "handles $/solargraph/search" do
+  it 'handles $/solargraph/search' do
     @protocol.request '$/solargraph/search', {
       'query' => 'Foo#bar'
     }
@@ -401,7 +400,7 @@ describe Protocol do
     expect(response['result']['content']).not_to be_empty
   end
 
-  it "handles $/solargraph/document" do
+  it 'handles $/solargraph/document' do
     @protocol.request '$/solargraph/document', {
       'query' => 'String'
     }
@@ -410,7 +409,7 @@ describe Protocol do
     expect(response['result']['content']).not_to be_empty
   end
 
-  it "handles workspace/didChangeConfiguration" do
+  it 'handles workspace/didChangeConfiguration' do
     @protocol.request 'workspace/didChangeConfiguration', {
       'settings' => {
         'solargraph' => {
@@ -423,7 +422,7 @@ describe Protocol do
     expect(@protocol.host.registered?('textDocument/completion')).to be(false)
   end
 
-  it "handles $/solargraph/checkGemVersion" do
+  it 'handles $/solargraph/checkGemVersion' do
     @protocol.request '$/solargraph/checkGemVersion', { verbose: false }
     response = @protocol.response
     expect(response['error']).to be_nil
@@ -431,13 +430,13 @@ describe Protocol do
     expect(response['result']['available']).to be_a(String)
   end
 
-  it "handles $/solargraph/documentGems" do
+  it 'handles $/solargraph/documentGems' do
     @protocol.request '$/solargraph/documentGems', {}
     response = @protocol.response
     expect(response['error']).to be_nil
   end
 
-  it "handles textDocument/formatting" do
+  it 'handles textDocument/formatting' do
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
         'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb')),
@@ -455,7 +454,7 @@ describe Protocol do
     expect(response['result'].first['newText']).to be_a(String)
   end
 
-  it "can format file without file extension" do
+  it 'can format file without file extension' do
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
         'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable')),
@@ -474,13 +473,13 @@ describe Protocol do
     # expect(response['result'].first['newText']).to include('def barbaz(parameter); end')
   end
 
-  it "handles MethodNotFound errors" do
+  it 'handles MethodNotFound errors' do
     @protocol.request 'notamethod', {}
     response = @protocol.response
     expect(response['error']['code']).to be(Solargraph::LanguageServer::ErrorCodes::METHOD_NOT_FOUND)
   end
 
-  it "handles didChangeWatchedFiles for created files" do
+  it 'handles didChangeWatchedFiles for created files' do
     @protocol.request 'workspace/didChangeWatchedFiles', {
       'changes' => [
         {
@@ -493,7 +492,7 @@ describe Protocol do
     expect(response['error']).to be_nil
   end
 
-  it "handles didChangeWatchedFiles for changed files" do
+  it 'handles didChangeWatchedFiles for changed files' do
     @protocol.request 'workspace/didChangeWatchedFiles', {
       'changes' => [
         {
@@ -506,7 +505,7 @@ describe Protocol do
     expect(response['error']).to be_nil
   end
 
-  it "handles didChangeWatchedFiles for deleted files" do
+  it 'handles didChangeWatchedFiles for deleted files' do
     @protocol.request 'workspace/didChangeWatchedFiles', {
       'changes' => [
         {
@@ -519,11 +518,11 @@ describe Protocol do
     expect(response['error']).to be_nil
   end
 
-  it "handles didChangeWatchedFiles for invalid change types" do
+  it 'handles didChangeWatchedFiles for invalid change types' do
     @protocol.request 'workspace/didChangeWatchedFiles', {
       'changes' => [
         {
-          'type' => -99999,
+          'type' => -99_999,
           'uri' => 'file:///watched-file.rb'
         }
       ]
@@ -532,7 +531,7 @@ describe Protocol do
     expect(response['error']).not_to be_nil
   end
 
-  it "adds folders to the workspace" do
+  it 'adds folders to the workspace' do
     dir = File.absolute_path('spec/fixtures/workspace_folders/folder1')
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(dir)
     @protocol.request 'workspace/didChangeWorkspaceFolders', {
@@ -549,7 +548,7 @@ describe Protocol do
     expect(@protocol.host.folders).to include(dir)
   end
 
-  it "removes folders from the workspace" do
+  it 'removes folders from the workspace' do
     dir = File.absolute_path('spec/fixtures/workspace_folders/folder1')
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(dir)
     @protocol.request 'workspace/didChangeWorkspaceFolders', {
@@ -566,27 +565,27 @@ describe Protocol do
     expect(@protocol.host.folders).not_to include(dir)
   end
 
-  it "handles $/cancelRequest" do
-    expect {
+  it 'handles $/cancelRequest' do
+    expect do
       @protocol.request '$/cancelRequest', {
         'id' => 0
       }
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "handles $/solargraph/environment" do
+  it 'handles $/solargraph/environment' do
     @protocol.request '$/solargraph/environment', {}
     response = @protocol.response
     expect(response['result']['content']).not_to be_nil
   end
 
-  it "handles shutdown" do
+  it 'handles shutdown' do
     @protocol.request 'shutdown', {}
     response = @protocol.response
     expect(response['error']).to be_nil
   end
 
-  it "handles exit" do
+  it 'handles exit' do
     @protocol.request 'exit', {}
     response = @protocol.response
     expect(response['error']).to be_nil

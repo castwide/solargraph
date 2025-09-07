@@ -26,7 +26,8 @@ module Solargraph::LanguageServer::Message::TextDocument
     def require_location
       # @todo Terrible hack
       lib = host.library_for(params['textDocument']['uri'])
-      rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']), Solargraph::Range.from_to(@line, @column, @line, @column))
+      rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']),
+                                      Solargraph::Range.from_to(@line, @column, @line, @column))
       dloc = lib.locate_ref(rloc)
       return nil if dloc.nil?
       [

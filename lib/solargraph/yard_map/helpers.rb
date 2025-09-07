@@ -21,10 +21,12 @@ module Solargraph
       # @param code_object [YARD::CodeObjects::Base]
       # @param spec [Gem::Specification, nil]
       # @return [Solargraph::Pin::Namespace]
-      def create_closure_namespace_for(code_object, spec)
+      def create_closure_namespace_for code_object, spec
         code_object_for_location = code_object
         # code_object.namespace is sometimes a YARD proxy object pointing to a method path ("Object#new")
-        code_object_for_location = code_object.namespace if code_object.namespace.is_a?(YARD::CodeObjects::NamespaceObject)
+        if code_object.namespace.is_a?(YARD::CodeObjects::NamespaceObject)
+          code_object_for_location = code_object.namespace
+        end
         namespace_location = object_location(code_object_for_location, spec)
         ns_name = code_object.namespace.to_s
         if ns_name.empty?
