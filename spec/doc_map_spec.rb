@@ -77,6 +77,6 @@ describe Solargraph::DocMap do
     expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
 
     # Clean up the registered convention
-    Solargraph::Convention.deregister dummy_convention
+    Solargraph::Convention.unregister dummy_convention
   end
 end
