@@ -120,7 +120,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @return [Hash{Parser::AST::Node => Chain}]
+        # @return [Hash{Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           return convert_hash(node.children[0]) if node.type == :kwsplat
@@ -233,6 +233,7 @@ module Solargraph
           else
             source.tree_at(position.line, position.column - 1)
           end
+          # @type [AST::Node, nil]
           prev = nil
           tree.each do |node|
             if node.type == :send

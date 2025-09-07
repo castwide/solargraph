@@ -177,8 +177,10 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
+      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -335,10 +337,12 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Gem::Specification]
     def gemspec_or_preference gemspec
+      # :nocov: dormant feature
       return gemspec unless preference_map.key?(gemspec.name)
       return gemspec if gemspec.version == preference_map[gemspec.name].version
 
-      change_gemspec_version gemspec, preference_map[by_path.name].version
+      change_gemspec_version gemspec, preference_map[gemspec.name].version
+      # :nocov:
     end
 
     # @param gemspec [Gem::Specification]
