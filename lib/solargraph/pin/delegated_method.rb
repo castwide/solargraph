@@ -51,6 +51,7 @@ module Solargraph
       %i[typify realize infer probe].each do |method|
         # @param api_map [ApiMap]
         define_method(method) do |api_map|
+          # @sg-ignore Unresolved call to resolve_method
           resolve_method(api_map)
           # @sg-ignore Need to set context correctly in define_method blocks
           @resolved_method ? @resolved_method.send(method, api_map) : super(api_map)

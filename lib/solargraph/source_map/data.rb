@@ -3,15 +3,18 @@
 module Solargraph
   class SourceMap
     class Data
+      # @param source [Solargraph::Source]
       def initialize source
         @source = source
       end
 
+      # @return [Array<Solargraph::Pin::Base>]
       def pins
         generate
         @pins || []
       end
 
+      # @return [Array<Solargraph::LocalVariable>]
       def locals
         generate
         @locals || []
@@ -19,6 +22,7 @@ module Solargraph
 
       private
 
+      # @return [void]
       def generate
         return if @generated
 
