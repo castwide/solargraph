@@ -72,7 +72,8 @@ module Solargraph
       # @return [String, nil]
       def get_superclass fq_tag
         raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
-        sub = ComplexType.parse(fq_tag)
+        sub = ComplexType.try_parse(fq_tag)
+        return nil if sub.nil?
         return sub.simplify_literals.name if sub.literal?
         return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
         fqns = sub.namespace
@@ -80,6 +81,8 @@ module Solargraph
         return superclass_references[fqns].first if superclass_references.key?(fqns)
         return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
         return 'Object' if fqns == 'Boolean'
+        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
+        return simplified_literal_name if simplified_literal_name != fqns
         nil
       end
 
@@ -87,6 +90,12 @@ module Solargraph
       # @return [Array<String>]
       def get_includes fqns
         include_references[fqns] || []
+      end
+
+      # @param fqns [String]
+      # @return [Array<Pin::Reference::Include>]
+      def get_include_pins fqns
+        include_reference_pins[fqns] || []
       end
 
       # @param fqns [String]
@@ -141,11 +150,6 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)
-      end
-
-      # @return [Enumerable<Solargraph::Pin::Constant>]
-      def constant_pins
-        pins_by_class(Solargraph::Pin::Constant)
       end
 
       # @return [Enumerable<Solargraph::Pin::Method>]
@@ -288,7 +292,12 @@ module Solargraph
         index.include_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Solargraph::Pin::Reference::Include>}]
+      def include_reference_pins
+        index.include_reference_pins
+      end
+
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         index.prepend_references
       end

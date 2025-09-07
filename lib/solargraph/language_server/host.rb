@@ -717,7 +717,7 @@ module Solargraph
       # A hash of client requests by ID. The host uses this to keep track of
       # pending responses.
       #
-      # @return [Hash{Integer => Request}]
+      # @return [Hash{Integer => Solargraph::LanguageServer::Request}]
       def requests
         @requests ||= {}
       end

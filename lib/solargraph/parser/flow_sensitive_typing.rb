@@ -160,6 +160,7 @@ module Solargraph
 
       # @param conditional_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      #
       # @return [void]
       def process_conditional(conditional_node, true_ranges)
         if conditional_node.type == :send

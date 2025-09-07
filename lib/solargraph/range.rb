@@ -23,7 +23,7 @@ module Solargraph
       [start, ending]
     end
 
-    # @param other [Object]
+    # @param other [BasicObject]
     def <=>(other)
       return nil unless other.is_a?(Range)
       if start == other.start

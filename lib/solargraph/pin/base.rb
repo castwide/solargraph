@@ -69,8 +69,15 @@ module Solargraph
         Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
+      # @return [Pin::Closure, nil]
+      def closure
+        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        # @type [Pin::Closure, nil]
+        @closure
+      end
+
       # @param other [self]
-      # @param attrs [Hash{Symbol => Object}]
+      # @param attrs [Hash{::Symbol => Object}]
       #
       # @return [self]
       def combine_with(other, attrs={})
@@ -222,7 +229,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @param attr [Symbol]
+      # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
       def choose_node(other, attr)
@@ -310,7 +317,6 @@ module Solargraph
           return send(attr)
         end
         val1 = send(attr)
-        return val1 if other.nil?
         val2 = other.send(attr)
         return val1 if val1 == val2
         Solargraph.assert_or_log("combine_with_#{attr}".to_sym,
@@ -338,6 +344,8 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
+      #
+      # @sg-ignore
       # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
@@ -345,11 +353,14 @@ module Solargraph
         # @type [Pin::Base, nil]
         val2 = other.send(attr)
         if val1.class != val2.class
+          # :nocov:
           Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
                                    "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
           return val1
+          # :nocov:
         end
         # arbitrary way of choosing a pin
+        # @sg-ignore Need _1 support
         [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 

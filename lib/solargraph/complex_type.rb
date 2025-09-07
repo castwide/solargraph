@@ -18,13 +18,10 @@ module Solargraph
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
-
-      # Canonicalize 'true, false' to the non-runtime-type 'Boolean'
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
         items.unshift(UniqueType::BOOLEAN)
       end
-
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end
@@ -258,7 +255,7 @@ module Solargraph
       any?(&:generic?)
     end
 
-    # @return [ComplexType]
+    # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end
