@@ -164,7 +164,7 @@ jobs:
        cd ${RAILS_DIR}
        bundle install
        bundle exec --gemfile ../../Gemfile rbs --version
-       bundle exec --gemfile ../../Gemfile rbs collection install
+       bundle exec --gemfile ../../Gemfile rbs collection update
        cd ../../
        # bundle exec rbs collection init
        # bundle exec rbs collection install
