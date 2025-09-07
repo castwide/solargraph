@@ -13,14 +13,10 @@ module Solargraph
 
     autoload :Config, 'solargraph/workspace/config'
     autoload :Gemspecs, 'solargraph/workspace/gemspecs'
+    autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
     attr_reader :directory
-
-    # The require paths associated with the workspace.
-    #
-    # @return [Array<String>]
-    attr_reader :require_paths
 
     # @return [Array<String>]
     attr_reader :gemnames
@@ -35,8 +31,15 @@ module Solargraph
       @server = server
       load_sources
       @gemnames = []
-      @require_paths = generate_require_paths
       require_plugins
+    end
+
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
+    def require_paths
+      # @todo are the semantics of '*' the same as '', meaning 'don't send back any require paths'?
+      @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
     # @return [Solargraph::Workspace::Config]
@@ -210,48 +213,6 @@ module Solargraph
           end
         end
       end
-    end
-
-    # Generate require paths from gemspecs if they exist or assume the default
-    # lib directory.
-    #
-    # @return [Array<String>]
-    def generate_require_paths
-      return configured_require_paths unless gemspec?
-      result = []
-      gemspec_files.each do |file|
-        base = File.dirname(file)
-        # HACK: Evaluating gemspec files violates the goal of not running
-        #   workspace code, but this is how Gem::Specification.load does it
-        #   anyway.
-        cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
-        o, e, s = Open3.capture3(*cmd)
-        if s.success?
-          begin
-            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-            next if hash.empty?
-            @gemnames.push hash['name']
-            result.concat(hash['paths'].map { |path| File.join(base, path) })
-          rescue StandardError => e
-            Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-          end
-        else
-          Solargraph.logger.warn "Error reading #{file}"
-          Solargraph.logger.warn e
-        end
-      end
-      result.concat(config.require_paths.map { |p| File.join(directory, p) })
-      result.push File.join(directory, 'lib') if result.empty?
-      result
-    end
-
-    # Get additional require paths defined in the configuration.
-    #
-    # @return [Array<String>]
-    def configured_require_paths
-      return ['lib'] if directory.empty?
-      return [File.join(directory, 'lib')] if config.require_paths.empty?
-      config.require_paths.map { |p| File.join(directory, p) }
     end
 
     # @return [void]
