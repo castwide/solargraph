@@ -158,6 +158,7 @@ jobs:
        export BUNDLE_PATH
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
+       bundle install
        bundle update solargraph rbs
        RAILS_DIR="$(pwd)/spec/rails7"
        export RAILS_DIR
