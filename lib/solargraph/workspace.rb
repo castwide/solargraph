@@ -53,22 +53,9 @@ module Solargraph
       @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
-    # @param out [IO, nil] output stream for logging
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Gem::Specification>]
-    def fetch_dependencies gemspec, out: $stderr
-      gemspecs.fetch_dependencies(gemspec, out: out)
-    end
-
     # @return [Solargraph::PinCache]
     def pin_cache
       @pin_cache ||= fresh_pincache
-    end
-
-    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
-    # @return [Array<Gem::Specification>]
-    def resolve_require require
-      gemspecs.resolve_require(require)
     end
 
     # @param stdlib_name [String]
@@ -113,6 +100,19 @@ module Solargraph
     # @return [Array<String>]
     def yard_plugins
       @yard_plugins ||= global_environ.yard_plugins.sort.uniq
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec, out: $stderr
+      gemspecs.fetch_dependencies(gemspec, out: out)
+    end
+
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    # @return [Array<Gem::Specification>]
+    def resolve_require require
+      gemspecs.resolve_require(require)
     end
 
     # Merge the source. A merge will update the existing source for the file
