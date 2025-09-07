@@ -103,7 +103,7 @@ Run `bundle install` and optionally use `bundle exec solargraph gems` to generat
 
 In order to make sure you're using the correct dependencies, you can start the language server with Bundler. In VS Code, there's a `solargraph.useBundler` option. Other clients will vary, but the command you probably want to run is `bundle exec solargraph socket` or `bundle exec solargraph stdio`.
 
-### Rubocop Version
+### RuboCop Version
 
 If you have multiple versions of [`rubocop`](https://rubygems.org/gems/rubocop) installed and you would like to choose a version other than the latest to use, this specific version can be configured.
 

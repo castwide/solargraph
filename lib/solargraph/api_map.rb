@@ -75,7 +75,7 @@ module Solargraph
       # @todo This implementation is incomplete. It should probably create a
       #   Bench.
       @source_map_hash = {}
-      implicit.clear
+      conventions_environ.clear
       cache.clear
       store.update @@core_map.pins, pins
       self
@@ -84,10 +84,11 @@ module Solargraph
     # Map a single source.
     #
     # @param source [Source]
+    # @param live [Boolean] True for live source map (active editor file)
     # @return [self]
-    def map source
+    def map source, live: false
       map = Solargraph::SourceMap.map(source)
-      catalog Bench.new(source_maps: [map])
+      catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end
 
@@ -98,12 +99,12 @@ module Solargraph
     def catalog bench
       @source_map_hash = bench.source_map_hash
       iced_pins = bench.icebox.flat_map(&:pins)
-      live_pins = bench.live_map&.pins || []
-      implicit.clear
+      live_pins = bench.live_map&.all_pins || []
+      conventions_environ.clear
       source_map_hash.each_value do |map|
-        implicit.merge map.environ
+        conventions_environ.merge map.conventions_environ
       end
-      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
+      unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
                         workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
                         @doc_map.any_uncached?
@@ -113,7 +114,7 @@ module Solargraph
         @gemspecs = @doc_map.workspace.gemspecs
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
     end
@@ -122,7 +123,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
+      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
     end
 
     # @return [DocMap]
@@ -152,8 +153,8 @@ module Solargraph
     end
 
     # @return [Environ]
-    def implicit
-      @implicit ||= Environ.new
+    def conventions_environ
+      @conventions_environ ||= Environ.new
     end
 
     # @param filename [String]
@@ -419,7 +420,7 @@ module Solargraph
       skip = Set.new
       if rooted_tag == ''
         # @todo Implement domains
-        implicit.domains.each do |domain|
+        conventions_environ.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
           result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
