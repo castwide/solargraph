@@ -97,6 +97,29 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
+    it 'understands complex use of other' do
+      checker = type_checker(%(
+        class A
+          # @param other [self]
+          #
+          # @return [void]
+          def foo other; end
+
+          # @param other [self]
+          #
+          # @return [void]
+          def bar(other); end
+        end
+
+        class B < A
+          def bar(other)
+            foo(other)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'calls out type issues even when keyword issues are there' do
       pending('fixes to arg vs param checking algorithm')
 
