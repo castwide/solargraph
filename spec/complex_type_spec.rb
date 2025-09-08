@@ -159,7 +159,6 @@ describe 'YARD type specifier list parsing' do
       expect(types.to_rbs).to eq('Array[Symbol, String]')
     end
 
-
     # Note that parametrized types are typically not order-dependent, in
     # other words, a list of parametrized types can occur in any order
     # inside of a type. An array specified as Array<String, Fixnum> can
@@ -538,12 +537,12 @@ describe 'YARD type specifier list parsing' do
           let(:complex_type) { Solargraph::ComplexType.parse(tag) }
           let(:unique_type) { complex_type.first }
 
+          let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
+          let(:generic_value) { unfrozen_input_map.transform_values! { |tag| Solargraph::ComplexType.parse(tag) } }
+
           it '#{tag} is a unique type' do
             expect(complex_type.length).to eq(1)
           end
-
-          let(:generic_value) { unfrozen_input_map.transform_values! { |tag| Solargraph::ComplexType.parse(tag) } }
-          let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
 
           it "resolves to #{expected_tag} with updated map #{expected_output_map}" do
             resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
@@ -602,7 +601,22 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context "supports arbitrary combinations of the above syntax and features" do
+  context 'supports arbitrary combinations of the above syntax and features' do
+    let(:foo_bar_api_map) do
+      api_map = Solargraph::ApiMap.new
+      source = Solargraph::Source.load_string(%(
+        module Foo
+          class Bar
+            # @return [Bar]
+            def make_bar
+            end
+          end
+        end
+       ))
+      api_map.map source
+      api_map
+    end
+
     it 'returns string representations of the entire type array' do
       type = Solargraph::ComplexType.parse('String', 'Array<String>')
       expect(type.to_s).to eq('String, Array<String>')
@@ -628,21 +642,6 @@ describe 'YARD type specifier list parsing' do
       types = Solargraph::ComplexType.parse('Array<String>, Hash{String => Symbol}, Array(String, Integer)')
       expect(types.all?(&:parameters?)).to be(true)
       expect(types.to_rbs).to eq('(Array[String] | Hash[String, Symbol] | [String, Integer])')
-    end
-
-    let(:foo_bar_api_map) do
-      api_map = Solargraph::ApiMap.new
-      source = Solargraph::Source.load_string(%(
-        module Foo
-          class Bar
-            # @return [Bar]
-            def make_bar
-            end
-          end
-        end
-       ))
-      api_map.map source
-      api_map
     end
 
     it 'qualifies types with list parameters' do
