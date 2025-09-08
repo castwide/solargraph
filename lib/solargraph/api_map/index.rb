@@ -37,7 +37,7 @@ module Solargraph
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
+        # @type [Set<generic<T>>]
         s = Set.new
         # @sg-ignore need to support destructured args in blocks
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
@@ -118,7 +118,7 @@ module Solargraph
       end
 
       # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
@@ -135,7 +135,7 @@ module Solargraph
 
       # Add references to a map
       #
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @param reference_pin [Pin::Reference]
       #
       # @return [void]

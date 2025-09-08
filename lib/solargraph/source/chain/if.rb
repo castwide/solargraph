@@ -8,7 +8,7 @@ module Solargraph
           '<if>'
         end
 
-        # @param links [::Array<Link>]
+        # @param links [::Array<Chain>]
         def initialize links
           @links = links
         end

@@ -95,7 +95,7 @@ module Solargraph
         type = build_type(decl.name, decl.args)
         generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
-          name: decl.name.relative!.to_s,
+          name: type.rooted_name,
           type_location: location_decl_to_pin_location(decl.location),
           generic_values: generic_values,
           closure: closure,
@@ -230,6 +230,8 @@ module Solargraph
         pins.push module_pin
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
+
+        raise "Invalid type for module declaration: #{module_pin.class}" unless module_pin.is_a?(Pin::Namespace)
 
         add_mixins decl, module_pin.closure
       end
