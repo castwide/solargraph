@@ -2,7 +2,7 @@ require 'tmpdir'
 
 describe Solargraph::ApiMap do
   before :all do
-    @api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+    @api_map = Solargraph::ApiMap.new
   end
 
   it 'returns core methods', time_limit_seconds: 120 do

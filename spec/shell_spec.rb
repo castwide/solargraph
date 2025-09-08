@@ -16,6 +16,8 @@ describe Solargraph::Shell do
     raise "Failure installing bundle: #{output}" unless status.success?
   end
 
+  # @type cmd [Array<String>]
+  # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
     Bundler.with_unbundled_env do
