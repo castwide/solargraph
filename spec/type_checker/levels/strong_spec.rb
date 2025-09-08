@@ -1,5 +1,5 @@
 describe Solargraph::TypeChecker do
-  context 'when tracking at strong level' do
+  context 'strong level' do
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
