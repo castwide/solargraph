@@ -38,6 +38,8 @@ module Solargraph
           true
         end
 
+        include Logging
+
         private
 
         # @param subregion [Region]

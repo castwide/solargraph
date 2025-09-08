@@ -34,13 +34,16 @@ module Solargraph
     # @param context [String]
     # @return [ComplexType]
     def qualify api_map, context = ''
+      logger.debug { "ComplexType#qualify(self=#{rooted_tags}, context=#{context.inspect}) - starting" }
       red = reduce_object
       types = red.items.map do |t|
         next t if ['nil', 'void', 'undefined'].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
         t.qualify api_map, context
       end
-      ComplexType.new(types).reduce_object
+      out = ComplexType.new(types).reduce_object
+      logger.debug { "ComplexType#qualify(self=#{rooted_tags}, context=#{context.inspect}) => #{out.rooted_tags}" }
+      out
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
@@ -408,6 +411,8 @@ module Solargraph
     SELF = ComplexType.parse('self')
     BOOLEAN = ComplexType.parse('::Boolean')
     BOT = ComplexType.parse('bot')
+
+    include Logging
 
     private
 

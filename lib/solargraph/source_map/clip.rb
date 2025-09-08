@@ -32,12 +32,19 @@ module Solargraph
 
       # @return [Completion]
       def complete
+        logger.debug { "Clip#complete() - #{cursor.word}" }
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
         return package_completions(api_map.get_symbols) if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
-        return Completion.new([], cursor.range) if cursor.chain.literal?
+        if cursor.chain.literal?
+          out = Completion.new([], cursor.range)
+          logger.debug { "Clip#complete() => #{out} - literal" }
+          return out
+        end
         if cursor.comment?
+          logger.debug { "Clip#complete() => #{tag_complete} - comment" }
           tag_complete
         else
+          logger.debug { "Clip#complete() => #{code_complete.inspect} - !comment" }
           code_complete
         end
       end
@@ -89,6 +96,8 @@ module Solargraph
         chain = Parser.chain(Parser.parse(phrase))
         chain.define(api_map, block, locals)
       end
+
+      include Logging
 
       private
 
@@ -176,6 +185,7 @@ module Solargraph
 
       # @return [Completion]
       def code_complete
+        logger.debug { "Clip#code_complete() start - #{cursor.word}" }
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
@@ -191,6 +201,7 @@ module Solargraph
               ComplexType::UNDEFINED
             end
           end
+          logger.debug { "Clip#code_complete() - type=#{type}" }
           if type.undefined?
             if full.include?('::')
               result.concat api_map.get_constants(full, *gates)
