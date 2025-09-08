@@ -24,8 +24,8 @@ module Solargraph
 
     # @param convention [Class<Convention::Base>]
     # @return [void]
-    def self.deregister convention
-      @@conventions.delete_if { |c| c.instance_of? convention }
+    def self.unregister convention
+      @@conventions.delete_if { |c| c.is_a?(convention) }
     end
 
     # @param source_map [SourceMap]
