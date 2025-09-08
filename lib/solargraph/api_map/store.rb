@@ -81,7 +81,7 @@ module Solargraph
       # @param fqns [String]
       # @return [Pin::Reference::Superclass]
       def get_superclass fqns
-        return nil if fqns.empty?
+        return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
         superclass_references[fqns].first || try_special_superclasses(fqns)
