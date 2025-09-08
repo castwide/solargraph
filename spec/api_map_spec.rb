@@ -841,7 +841,7 @@ describe Solargraph::ApiMap do
       end
     ), 'test.rb')
 
-    api_map = Solargraph::ApiMap.new.map(source)
+    api_map = described_class.new.map(source)
     clip = api_map.clip_at('test.rb', [16, 8])
     expect(clip.infer.to_s).to eq('Integer')
   end
@@ -869,7 +869,7 @@ describe Solargraph::ApiMap do
       end
     ), 'test.rb')
 
-    api_map = Solargraph::ApiMap.new.map(source)
+    api_map = described_class.new.map(source)
 
     clip = api_map.clip_at('test.rb', [18, 4])
     expect(clip.infer.to_s).to eq('Integer')
