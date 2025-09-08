@@ -145,7 +145,7 @@ module Solargraph
         STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
-          spec = Gem::Specification.find_by_name(*name.split('='))
+          spec = api_map.workspace.find_gem(*name.split('='))
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
