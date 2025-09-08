@@ -1,7 +1,6 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
-  # rubocop:disable RSpec/InstanceVariable
   before :all do
     @api_map = Solargraph::ApiMap.new
   end
@@ -791,7 +790,9 @@ describe Solargraph::ApiMap do
 
   it 'ignores malformed mixins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
-    mixin = Solargraph::Pin::Reference::Include.new(name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure)
+    mixin = Solargraph::Pin::Reference::Include.new(
+      name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure
+    )
     api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
   end
@@ -873,6 +874,4 @@ describe Solargraph::ApiMap do
     clip = api_map.clip_at('test.rb', [18, 4])
     expect(clip.infer.to_s).to eq('Integer')
   end
-
-  # rubocop:enable RSpec/InstanceVariable
 end
