@@ -279,7 +279,6 @@ Layout/TrailingWhitespace:
   Exclude:
     - 'lib/solargraph/language_server/message/client/register_capability.rb'
     - 'spec/api_map/config_spec.rb'
-    - 'spec/convention_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowedMethods, AllowedPatterns.
@@ -336,11 +335,6 @@ Lint/DuplicateBranch:
 
 Lint/DuplicateMethods:
   Enabled: false
-
-# Configuration parameters: AllowComments, AllowEmptyLambdas.
-Lint/EmptyBlock:
-  Exclude:
-    - 'spec/convention_spec.rb'
 
 # Configuration parameters: AllowComments.
 Lint/EmptyClass:
@@ -617,11 +611,6 @@ RSpec/DescribeClass:
 RSpec/DescribedClass:
   Enabled: false
 
-# This cop supports unsafe autocorrection (--autocorrect-all).
-RSpec/EmptyExampleGroup:
-  Exclude:
-    - 'spec/convention_spec.rb'
-
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/EmptyLineAfterFinalLet:
   Exclude:
@@ -741,10 +730,6 @@ RSpec/RepeatedExample:
 RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
-
-# Configuration parameters: CustomTransform, IgnoreMethods, IgnoreMetadata.
-RSpec/SpecFilePathFormat:
-  Enabled: false
 
 # Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
 RSpec/VerifiedDoubles:
