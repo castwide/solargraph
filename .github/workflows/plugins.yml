@@ -1,3 +1,4 @@
+---
 name: Plugin
 
 # To debug locally:
@@ -147,7 +148,6 @@ jobs:
         bundler-cache: false
         bundler: latest
       env:
-        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
       run: |
@@ -168,7 +168,6 @@ jobs:
        # bundle exec rbs collection init
        # bundle exec rbs collection install
       env:
-        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
         MATRIX_RAILS_VERSION: "7.0"
         MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Run specs
@@ -182,5 +181,4 @@ jobs:
         bundle info yard
         ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
-        MATRIX_SOLARGRAPH_VERSION: '>=0.56.0.pre1'
         MATRIX_RAILS_VERSION: "7.0"
