@@ -124,6 +124,9 @@ describe Solargraph::Convention::ActiveSupportConcern do
     attr_reader :temp_dir
 
     context 'with Inheritance module in ActiveRecord' do
+      # See
+      # https://github.com/ruby/gem_rbs_collection/blob/main/gems/activerecord/6.0/activerecord-generated.rbs
+      # for full RBS
       let(:rbs) do
         <<~RBS
           module MyActiveRecord
