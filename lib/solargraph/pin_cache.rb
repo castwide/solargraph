@@ -119,7 +119,8 @@ module Solargraph
       PinCache.uncache(yard_gem_path(gemspec), out: out)
       uncache_by_prefix(rbs_collection_pins_path_prefix(gemspec), out: out)
       uncache_by_prefix(combined_path_prefix(gemspec), out: out)
-      combined_pins_in_memory.delete([gemspec.name, gemspec.version])
+      rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)
+      combined_pins_in_memory.delete([gemspec.name, gemspec.version, rbs_version_cache_key])
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -380,7 +381,11 @@ module Solargraph
     # @param hash [String, nil]
     # @return [Array<Pin::Base>, nil]
     def load_combined_gem gemspec, hash
-      PinCache.load(combined_path(gemspec, hash))
+      cached = combined_pins_in_memory[[gemspec.name, gemspec.version, hash]]
+      return cached if cached
+      loaded = PinCache.load(combined_path(gemspec, hash))
+      combined_pins_in_memory[[gemspec.name, gemspec.version, hash]] = loaded if loaded
+      loaded
     end
 
     # @param gemspec [Gem::Specification]
