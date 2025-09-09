@@ -106,8 +106,8 @@ module Solargraph
       # @return [String, nil]
       def simple_resolve name, gates
         gates.each do |gate|
-          resolved = collect(gate).map(&:path).find { |ns| "::#{ns}".end_with?("::#{name}") }
-          return resolved if resolved
+          here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
+          return here if store.namespace_exists?(here)
         end
         nil
       end
@@ -206,9 +206,9 @@ module Solargraph
           inc_fqns = resolve(pin.name, pin.closure.gates - skip.to_a)
           result.concat inner_get_constants(inc_fqns, [:public], skip)
         end
-        heh = store.get_superclass(fqns)
-        if heh
-          fqsc = dereference(heh)
+        sc_ref = store.get_superclass(fqns)
+        if sc_ref
+          fqsc = dereference(sc_ref)
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end
         result
