@@ -5,10 +5,7 @@ WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   # set up lcov reporting for undercover
   require 'simplecov'
-  require 'simplecov-lcov'
   require 'undercover/simplecov_formatter'
-  SimpleCov::Formatter::LcovFormatter.config.report_with_single_file = true
-  SimpleCov.formatter = SimpleCov::Formatter::LcovFormatter
   SimpleCov.start do
     cname = ENV.fetch('TEST_COVERAGE_COMMAND_NAME', 'ad-hoc')
     command_name cname
