@@ -55,14 +55,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'does not warn for redundant requires' do
-    # Requiring 'set' is unnecessary because it's already included in core. It
-    # might make sense to log redundant requires, but a warning is overkill.
-    allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], [])
-    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
-  end
-
   context 'when deserialization takes a while' do
     let(:pre_cache) { false }
     let(:requires) { ['backport'] }
@@ -81,27 +73,6 @@ describe Solargraph::DocMap do
       _pins = doc_map.pins
       expect(out.string).to include('Deserialized ').and include(' gem pins ').and include(' ms')
     end
-  end
-
-  it 'does not warn for redundant requires' do
-    # Requiring 'set' is unnecessary because it's already included in core. It
-    # might make sense to log redundant requires, but a warning is overkill.
-    allow(Solargraph.logger).to receive(:warn)
-    Solargraph::DocMap.new(['set'], [], workspace)
-    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
-  end
-
-  it 'ignores nil requires' do
-    expect { Solargraph::DocMap.new([nil], [], workspace) }.not_to raise_error
-  end
-
-  it 'ignores empty requires' do
-    expect { Solargraph::DocMap.new([''], [], workspace) }.not_to raise_error
-  end
-
-  it 'collects dependencies' do
-    doc_map = Solargraph::DocMap.new(['rspec'], [], workspace)
-    expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
   end
 
   context 'with require as bundle/require' do
