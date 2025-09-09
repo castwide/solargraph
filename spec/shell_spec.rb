@@ -23,7 +23,6 @@ describe Solargraph::Shell do
     output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
     expect(status.success?).to be(true), "Command failed: #{output}"
     output
-    end
   end
 
   after do
