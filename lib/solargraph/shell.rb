@@ -246,7 +246,7 @@ module Solargraph
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
       time = Benchmark.measure {
-        api_map = Solargraph::ApiMap.load_with_cache(directory, out)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, $stderr)
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
