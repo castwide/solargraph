@@ -3,6 +3,7 @@
 require 'benchmark'
 require 'thor'
 require 'yard'
+require 'yaml'
 
 module Solargraph
   class Shell < Thor
@@ -118,19 +119,21 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+
       gems.each do |gem|
         if gem == 'core'
-          PinCache.uncache_core
+          PinCache.uncache_core(out: $stdout)
           next
         end
 
         if gem == 'stdlib'
-          PinCache.uncache_stdlib
+          PinCache.uncache_stdlib(out: $stdout)
           next
         end
 
         spec = Gem::Specification.find_by_name(gem)
-        PinCache.uncache_gem(spec, out: $stdout)
+        workspace.uncache_gem(spec, out: $stdout)
       end
     end
 
