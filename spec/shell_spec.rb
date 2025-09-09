@@ -20,10 +20,9 @@ describe Solargraph::Shell do
   # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
-    Bundler.with_unbundled_env do
-      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
-      expect(status.success?).to be(true), "Command failed: #{output}"
-      output
+    output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
+    expect(status.success?).to be(true), "Command failed: #{output}"
+    output
     end
   end
 
