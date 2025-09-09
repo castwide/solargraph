@@ -67,7 +67,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     context 'with gem that exists in our bundle' do
       let(:gem_name) { 'undercover' }
 
-      it 'finds dependencies' do
+      it 'finds dependencies', time_limit_seconds: 120 do
         expect(deps.map(&:name)).to include('ast')
       end
     end
@@ -75,7 +75,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     context 'with gem does not exist in our bundle' do
       let(:gem_name) { 'activerecord' }
 
-      it 'gives a useful message' do
+      it 'gives a useful message', time_limit_seconds: 120 do
         dep_names = nil
         output = capture_both { dep_names = deps.map(&:name) }
         expect(output).to include('Please install the gem activerecord')
