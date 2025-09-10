@@ -167,9 +167,7 @@ module Solargraph
     #
     # @return [Gem::Specification, nil]
     def find_gem name, version = nil
-      Gem::Specification.find_by_name(name, version)
-    rescue Gem::MissingSpecError
-      nil
+      gemspecs.find_gem(name, version)
     end
 
     # Synchronize the workspace from the provided updater.

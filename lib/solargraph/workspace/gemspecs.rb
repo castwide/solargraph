@@ -68,6 +68,17 @@ module Solargraph
         [gemspec_or_preference(gemspec)]
       end
 
+      # @param name [String]
+      # @param version [String, nil]
+      # @param out [IO, nil] output stream for logging
+      #
+      # @return [Gem::Specification, nil]
+      def find_gem name, version = nil, out = nil
+        Gem::Specification.find_by_name(name, version)
+      rescue Gem::MissingSpecError
+        nil
+      end
+
       # @param gemspec [Gem::Specification]
       # @param out[IO, nil] output stream for logging
       #
