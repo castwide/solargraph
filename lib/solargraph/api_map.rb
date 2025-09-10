@@ -793,7 +793,8 @@ module Solargraph
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
             elsif const.is_a?(Pin::Constant)
-              type = const.infer(self)
+              type = const.typify(self)
+              type = const.probe(self) unless type.defined?
               result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
             else
               referenced_tag = ref.parametrized_tag
