@@ -7,13 +7,13 @@ module Solargraph
   class Location
     include Equality
 
-    # @return [String, nil]
+    # @return [String]
     attr_reader :filename
 
     # @return [Solargraph::Range]
     attr_reader :range
 
-    # @param filename [String, nil]
+    # @param filename [String]
     # @param range [Solargraph::Range]
     def initialize filename, range
       @filename = filename
@@ -31,8 +31,6 @@ module Solargraph
       if filename == other.filename
         range <=> other.range
       else
-        return -1 if filename.nil?
-        return 1 if other.filename.nil?
         filename <=> other.filename
       end
     end
