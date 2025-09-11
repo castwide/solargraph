@@ -267,7 +267,7 @@ module Solargraph
     def do_cache gemspec, api_map
       # @todo if the rebuild: option is passed as a positional arg,
       #   typecheck doesn't complain on the below line
-      api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+      api_map.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
     end
   end
 end
