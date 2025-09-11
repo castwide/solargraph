@@ -38,7 +38,9 @@ describe Solargraph::DocMap do
       ['rspec-mocks']
     end
 
-    it 'generates pins from gems' do
+    # This is a gem name vs require name issue - works under
+    # solargraph-rspec, but not without
+    xit 'generates pins from gems' do
       pending('handling dependencies from conventions as gem names, not requires')
 
       ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
