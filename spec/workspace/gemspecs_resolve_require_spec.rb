@@ -180,9 +180,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       let(:require) { 'bundler/require' }
 
       it 'finds nothing' do
-        pending('https://github.com/castwide/solargraph/pull/1006')
-
-        expect(specs).to be_empty
+        expect(specs).to be_nil
       end
     end
   end
@@ -219,9 +217,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
       let(:require) { 'bundler/gem_tasks' }
 
-      xit 'returns gems' do
-        pending('improved logic for require lookups')
-
+      it 'returns gems' do
         expect(specs&.map(&:name)).to include('bundler')
       end
     end
