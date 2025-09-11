@@ -170,7 +170,8 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      workspace = Workspace.new('.')
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+
       gems.each do |gem|
         if gem == 'core'
           PinCache.uncache_core(out: $stdout)
@@ -246,7 +247,7 @@ module Solargraph
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
       time = Benchmark.measure {
-        api_map = Solargraph::ApiMap.load_with_cache(directory, $stderr)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
