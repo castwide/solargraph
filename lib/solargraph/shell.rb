@@ -129,7 +129,7 @@ module Solargraph
           next
         end
 
-        spec = Gem::Specification.find_by_name(gem)
+        spec = api_map.workspace.find_gem(gem)
         PinCache.uncache_gem(spec, out: $stdout)
       end
     end
