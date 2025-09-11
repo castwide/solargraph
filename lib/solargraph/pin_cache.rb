@@ -7,6 +7,23 @@ module Solargraph
     class << self
       include Logging
 
+      # @return [Array<String>] a list of possible standard library names
+      def possible_stdlibs
+        @possible_stdlibs ||= begin
+          # all dirs and .rb files in Gem::RUBYGEMS_DIR
+          Dir.glob(File.join(Gem::RUBYGEMS_DIR, '*')).map do |file_or_dir|
+            basename = File.basename(file_or_dir)
+            # remove .rb
+            basename = basename[0..-4] if basename.end_with?('.rb')
+            basename
+          end.sort.uniq
+        rescue StandardError => e
+          logger.info { "Failed to get possible stdlibs: #{e.message}" }
+          logger.debug { e.backtrace.join("\n") }
+          []
+        end
+      end
+
       # The base directory where cached YARD documentation and serialized pins are serialized
       #
       # @return [String]
