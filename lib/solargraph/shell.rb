@@ -125,23 +125,27 @@ module Solargraph
         The 'core' argument can be used to cache the type
         documentation for the core Ruby libraries.
 
+        If the library is already cached, it will be rebuilt if the
+        --rebuild option is set.
+
         Cached documentation is stored in #{PinCache.base_dir}, which
         can be stored between CI runs.
     )
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
     def gems *names
-      $stderr.puts("Caching these gems: #{names}")
       # print time with ms
       workspace = Solargraph::Workspace.new('.')
 
       api_map = Solargraph::ApiMap.load(Dir.pwd)
       if names.empty?
-        api_map.cache_all!($stdout)
+        api_map.cache_all!($stdout, rebuild: options[:rebuild]])
       else
+        $stderr.puts("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
-            PinCache.cache_core(out: $stdout)
+            PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
             next
           end
 
