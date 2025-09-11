@@ -22,6 +22,16 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
     end
 
+    context 'with a Gem::Specification' do
+      let(:gemspec) do
+        Gem::Specification.find_by_name('solargraph')
+      end
+
+      it 'finds a known dependency' do
+        expect(deps.map(&:name)).to include('backport')
+      end
+    end
+
     context 'with gem whose dependency does not exist in our bundle' do
       let(:gemspec) do
         instance_double(Gem::Specification,
