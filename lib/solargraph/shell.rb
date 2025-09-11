@@ -265,6 +265,9 @@ module Solargraph
 
       host = Solargraph::LanguageServer::Host.new
       host.client_capabilities.merge!({ 'window' => { 'workDoneProgress' => true } })
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
+      # @return [void]
       def host.send_notification method, params
         puts "Notification: #{method} - #{params}"
       end
