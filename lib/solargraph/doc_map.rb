@@ -61,19 +61,27 @@ module Solargraph
     end
 
     # @param out [IO]
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
     # @return [void]
-    def cache_all!(out)
-      # if we log at debug level:
-      if logger.info?
-        gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
-        logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
-      end
-      logger.debug { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
-      logger.debug { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
+    def cache_all!(out, rebuild: false)
       load_serialized_gem_pins
-      uncached_gemspecs.each do |gemspec|
+      PinCache.cache_core(out: out) unless PinCache.core?
+      gem_specs = uncached_gemspecs
+      # try any possible standard libraries, but be quiet about it
+      stdlib_specs = PinCache.possible_stdlibs.map { |stdlib| workspace.find_gem(stdlib, out: nil) }.compact
+      specs = (gem_specs + stdlib_specs)
+      specs.each do |gemspec|
         cache(gemspec, out: out)
       end
+      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      # do this after so that we prefer stdlib requires from gems,
+      # which are likely to be newer and have more pins
+      PinCache.cache_all_stdlibs(out: out)
+
+      out&.puts "Documentation cached for core, standard library and gems."
+
       load_serialized_gem_pins
       @uncached_rbs_collection_gemspecs = []
       @uncached_yard_gemspecs = []
@@ -359,7 +367,7 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec
       # @param spec [Gem::Dependency]
-      only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
+      gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
         dep = Gem.loaded_specs[spec.name]
         # @todo is next line necessary?
@@ -368,6 +376,11 @@ module Solargraph
       rescue Gem::MissingSpecError
         Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
       end.to_a
+      # RBS tracks implicit dependencies, like how the YAML standard
+      # library implies pulling in the psych library.
+      stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+      stdlib_dep_gemspecs = stdlib_deps.map { |dep| workspace.find_gem(dep['name'], dep['version']) }.compact
+      (gem_dep_gemspecs.compact + stdlib_dep_gemspecs).uniq(&:name)
     end
 
     # @param gemspec [Gem::Specification]
