@@ -68,12 +68,8 @@ module Solargraph
         #   - need to expand Environ to provide a place to put gem
         #   names and get new plugins out before retiring this.
         gemspec ||= find_gem(gem_name_guess)
-        if gemspec.nil?
-          if !PinCache.possible_stdlibs.include?(gem_name_guess) && !['rspec-rails', 'actionmailer', 'activesupport', 'activerecord', 'shoulda-matchers', 'rspec-sidekiq', 'airborne'].include?(gem_name_guess)
-            Solargraph.assert_or_log(:gemspecs_resolve_require_guess, "Could not find require based on #{require.inspect}")
-          end
-          return nil
-        end
+        return nil if gemspec.nil?
+
         [gemspec_or_preference(gemspec)]
       end
 
