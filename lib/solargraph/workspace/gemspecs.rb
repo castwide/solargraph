@@ -57,6 +57,7 @@ module Solargraph
             file = "lib/#{require}.rb"
             # @sg-ignore Unresolved call to files
             gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
+            Solargraph.assert_or_log(:gemspecs_resolve_require_guess, "Could not find require based on #{require.inspect}") if gemspec.nil?
           rescue Gem::MissingSpecError
             logger.debug do
               "Require path #{require} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
