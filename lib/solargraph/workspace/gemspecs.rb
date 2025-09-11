@@ -57,17 +57,23 @@ module Solargraph
             file = "lib/#{require}.rb"
             # @sg-ignore Unresolved call to files
             gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
-            if gemspec.nil? && !PinCache.possible_stdlibs.include?(gem_name_guess)
-              Solargraph.assert_or_log(:gemspecs_resolve_require_guess, "Could not find require based on #{require.inspect}")
-            end
           rescue Gem::MissingSpecError
             logger.debug do
               "Require path #{require} could not be resolved to a gem via find_by_path or guess of #{gem_name_guess}"
             end
-            []
           end
         end
-        return nil if gemspec.nil?
+        # @todo the 'requires' provided in Environ is being used
+        #   by plugins to pass gem names instead of require paths
+        #   - need to expand Environ to provide a place to put gem
+        #   names and get new plugins out before retiring this.
+        gemspec ||= find_gem(gem_name_guess)
+        if gemspec.nil?
+          if !PinCache.possible_stdlibs.include?(gem_name_guess) && !['rspec-rails', 'actionmailer', 'activesupport', 'activerecord', 'shoulda-matchers', 'rspec-sidekiq', 'airborne'].include?(gem_name_guess)
+            Solargraph.assert_or_log(:gemspecs_resolve_require_guess, "Could not find require based on #{require.inspect}")
+          end
+          return nil
+        end
         [gemspec_or_preference(gemspec)]
       end
 
@@ -156,6 +162,7 @@ module Solargraph
             logger.info("Could not find #{lazy_spec.name}:#{lazy_spec.version} with " \
                         'find_by_name, falling back to guess')
             # can happen in local filesystem references
+            # TODO: should this be resolve_require or find_gem?
             specs = resolve_require lazy_spec.name
             logger.warn "Gem #{lazy_spec.name} #{lazy_spec.version} from bundle not found: #{e}" if specs.nil?
             next specs
@@ -190,6 +197,7 @@ module Solargraph
             rescue Gem::MissingSpecError => e
               logger.info("Could not find #{name}:#{version} with find_by_name, falling back to guess")
               # can happen in local filesystem references
+              # TODO: should this be resolve_require or find_gem?
               specs = resolve_require name
               logger.warn "Gem #{name} #{version} from bundle not found: #{e}" if specs.nil?
               next specs
