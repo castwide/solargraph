@@ -118,6 +118,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
+      workspace = Solargraph::Workspace.new(Dir.pwd)
       gems.each do |gem|
         if gem == 'core'
           PinCache.uncache_core
@@ -129,7 +130,7 @@ module Solargraph
           next
         end
 
-        spec = api_map.workspace.find_gem(gem)
+        spec = workspace.find_gem(gem)
         PinCache.uncache_gem(spec, out: $stdout)
       end
     end
@@ -140,12 +141,13 @@ module Solargraph
     # @return [void]
     def gems *names
       api_map = ApiMap.load('.')
+      workspace = api_map.workspace
       if names.empty?
         Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
         STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
-          spec = api_map.workspace.find_gem(*name.split('='))
+          spec = workspace.find_gem(*name.split('='))
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
