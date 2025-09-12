@@ -9,6 +9,7 @@ module Solargraph
 
       # The base directory where cached YARD documentation and serialized pins are serialized
       #
+      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [String]
       def base_dir
         # The directory is not stored in a variable so it can be overridden
@@ -192,6 +193,7 @@ module Solargraph
       private
 
       # @param file [String]
+      # @sg-ignore Marshal.load evaluates to boolean here which is wrong
       # @return [Array<Solargraph::Pin::Base>, nil]
       def load file
         return nil unless File.file?(file)

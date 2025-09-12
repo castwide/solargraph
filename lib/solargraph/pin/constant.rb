@@ -12,6 +12,7 @@ module Solargraph
         @visibility = visibility
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       def return_type
         @return_type ||= generate_complex_type
       end

@@ -75,6 +75,7 @@ module Solargraph
         block.gates
       end
 
+      # @sg-ignore need boolish support for ? methods
       def in_block?
         return @in_block unless @in_block.nil?
         @in_block = begin

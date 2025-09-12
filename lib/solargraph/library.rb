@@ -493,6 +493,7 @@ module Solargraph
       @pins ||= []
     end
 
+    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [Set<String>]
     def external_requires
       @external_requires ||= source_map_external_require_hash.values.flatten.to_set
@@ -539,6 +540,7 @@ module Solargraph
     #
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
+    # @sg-ignore flow sensitive typing needs to handle if foo && ...
     # @return [Solargraph::Source]
     def read filename
       return @current if @current && @current.filename == filename

@@ -5,7 +5,9 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class SclassNode < Parser::NodeProcessor::Base
+          # @sg-ignore @override is adding, not overriding
           def process
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             sclass = node.children[0]
             if sclass.is_a?(AST::Node) && sclass.type == :self
               closure = region.closure

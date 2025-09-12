@@ -27,6 +27,7 @@ module Solargraph
         # @param code [String]
         # @param filename [String, nil]
         # @param line [Integer]
+        # @sg-ignore need to understand that raise does not return
         # @return [Parser::AST::Node]
         def parse code, filename = nil, line = 0
           buffer = ::Parser::Source::Buffer.new(filename, line)

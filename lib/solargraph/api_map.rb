@@ -120,6 +120,7 @@ module Solargraph
       @doc_map ||= DocMap.new([], [])
     end
 
+    # @sg-ignore flow sensitive typing needs to handle || on nil types
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []
@@ -211,6 +212,7 @@ module Solargraph
     # any missing gems.
     #
     #
+    # @sg-ignore Declared type IO does not match inferred type IO, StringIO for variable out
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
@@ -788,6 +790,9 @@ module Solargraph
 
         if scope == :instance
           store.get_include_pins(fqns).reverse.each do |ref|
+            # @sg-ignore Declared type Solargraph::Pin::Constant does
+            #   not match inferred type Solargraph::Pin::Constant,
+            #   Solargraph::Pin::Namespace, nil for variable const
             const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)

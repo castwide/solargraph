@@ -362,7 +362,7 @@ module Solargraph
       # #  @todo Need ability to use a literal true as a type below
       # #  @param partial [Boolean] True if the string is part of a another type
       # #  @return [Array<UniqueType>]
-      # @todo To be able to select the right signature above,
+      # @sg-ignore To be able to select the right signature above,
       #   Chain::Call needs to know the decl type (:arg, :optarg,
       #   :kwarg, etc) of the arguments given, instead of just having
       #   an array of Chains as the arguments.

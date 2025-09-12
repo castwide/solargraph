@@ -42,6 +42,7 @@ module Solargraph
         # Find the best libary match for the given URI.
         #
         # @param uri [String]
+        # @sg-ignore sensitive typing needs to handle || on nil types
         # @return [Library]
         def library_for uri
           result = explicit_library_for(uri) ||

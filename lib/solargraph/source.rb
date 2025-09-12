@@ -60,6 +60,8 @@ module Solargraph
     # @param c1 [Integer]
     # @param l2 [Integer]
     # @param c2 [Integer]
+    #
+    # @sg-ignore Need to figure if String#[n..m] can return nil
     # @return [String]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(code, l1, c1)
@@ -188,6 +190,8 @@ module Solargraph
     end
 
     # @param node [AST::Node]
+    #
+    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
@@ -459,6 +463,7 @@ module Solargraph
 
     private
 
+    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [Array<String>]
     def code_lines
       @code_lines ||= code.lines

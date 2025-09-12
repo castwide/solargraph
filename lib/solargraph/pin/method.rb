@@ -76,6 +76,7 @@ module Solargraph
         end
       end
 
+      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       def combine_with(other, attrs = {})
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
@@ -155,6 +156,8 @@ module Solargraph
         !block.nil?
       end
 
+      # @sg-ignore flow-sensitive typing needs to remove literal with
+      #   this unless block
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
@@ -212,6 +215,7 @@ module Solargraph
         signature
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [::Array<Signature>]
       def signatures
         @signatures ||= begin
@@ -568,6 +572,7 @@ module Solargraph
         nil
       end
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1005
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?

@@ -58,8 +58,20 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
+      # @todo need boolish support for ? methods
+      # @todo need to be able to disambiguate Array signatures
+      # @todo https://github.com/castwide/solargraph/pull/1005
+      # @todo To make JSON strongly typed we'll need a record syntax
+      # @todo flow sensitive typing needs to handle "unless foo.nil?"
+      # @todo flow sensitive typing needs to handle || on nil types
+      # @todo Need to understand @foo ||= 123 will never be nil
+      # @todo add metatype - e.g., $stdout is both an IO as well as
+      #   a StringIO.  Marking it as [IO, StringIO] implies it is
+      #   /either/ one, not both, which means you can't hand it to
+      #   something that demands a regular IO and doesn't also claim
+      #   to accept a StringIO.
       def require_all_unique_types_match_declared?
-        rank >= LEVELS[:alpha]
+        rank >= LEVELS[:typed]
       end
 
       def require_no_undefined_args?

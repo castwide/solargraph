@@ -55,6 +55,7 @@ module Solargraph
         closure ? closure.gates : ['']
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [::Array<String>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)

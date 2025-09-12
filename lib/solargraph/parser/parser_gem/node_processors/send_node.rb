@@ -7,6 +7,7 @@ module Solargraph
         class SendNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          # @sg-ignore @override is adding, not overriding
           def process
             # @sg-ignore Variable type could not be inferred for method_name
             # @type [Symbol]

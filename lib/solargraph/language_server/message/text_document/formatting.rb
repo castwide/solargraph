@@ -96,7 +96,8 @@ module Solargraph
           end
 
           # @param value [Array, String]
-          # @return [String]
+          # @sg-ignore Need to handle this case in flow sensitive typing
+          # @return [String, nil]
           def cop_list(value)
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)

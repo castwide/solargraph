@@ -40,18 +40,21 @@ module Solargraph
         @comments[result[2][0]] = Snippet.new(Range.from_to(result[2][0] || 0, result[2][1] || 0, result[2][0] || 0, (result[2][1] || 0) + chomped.length), chomped)
       end
 
+      # @sg-ignore @override is adding, not overriding
       def on_embdoc_beg *args
         result = super
         create_snippet(result)
         result
       end
 
+      # @sg-ignore @override is adding, not overriding
       def on_embdoc *args
         result = super
         create_snippet(result)
         result
       end
 
+      # @sg-ignore @override is adding, not overriding
       def on_embdoc_end *args
         result = super
         create_snippet(result)

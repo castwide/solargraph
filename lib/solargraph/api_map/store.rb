@@ -274,6 +274,7 @@ module Solargraph
         true
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|

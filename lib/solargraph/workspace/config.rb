@@ -111,6 +111,7 @@ module Solargraph
 
       private
 
+      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [String]
       def global_config_path
         ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||

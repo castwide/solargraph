@@ -17,6 +17,7 @@ module Solargraph
       # @param locals [Hash]
       # @param render_method [Proc]
       def initialize locals, render_method
+        # @sg-ignore Too many arguments to BasicObject#initialize
         super(locals)
         define_singleton_method :render do |template, layout: false, locals: {}|
           render_method.call(template, layout: layout, locals: locals)

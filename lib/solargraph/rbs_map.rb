@@ -96,6 +96,9 @@ module Solargraph
     # @generic T
     # @param path [String]
     # @param klass [Class<generic<T>>]
+    #
+    # @sg-ignore Need to be able to resolve generics based on a
+    #   Class<generic<T>> param
     # @return [generic<T>, nil]
     def path_pin path, klass = Pin::Base
       pin = pins.find { |p| p.path == path }

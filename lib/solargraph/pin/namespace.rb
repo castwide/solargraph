@@ -26,6 +26,7 @@ module Solargraph
         @type = type
         @visibility = visibility
         if name.start_with?('::')
+          # @sg-ignore flow sensitive typing needs to handle || on nil types
           # @type [String]
           name = name[2..-1] || ''
           @closure = Solargraph::Pin::ROOT_PIN

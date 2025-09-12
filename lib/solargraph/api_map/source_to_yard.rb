@@ -6,6 +6,9 @@ module Solargraph
 
       # Get the YARD CodeObject at the specified path.
       #
+      # @sg-ignore Declared return type generic<T>, nil does not match
+      #   inferred type ::YARD::CodeObjects::Base, nil for
+      #   Solargraph::ApiMap::SourceToYard#code_object_at
       # @generic T
       # @param path [String]
       # @param klass [Class<generic<T>>]

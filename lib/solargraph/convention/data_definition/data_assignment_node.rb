@@ -47,6 +47,7 @@ module Solargraph
 
         private
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @return [Parser::AST::Node]
         def data_node
           if node.children[2].type == :block

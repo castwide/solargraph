@@ -34,6 +34,7 @@ module Solargraph
         raise NotImplementedError
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [Hash]
       def completion_item
         @completion_item ||= {
@@ -49,6 +50,7 @@ module Solargraph
         }
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [Hash]
       def resolve_completion_item
         @resolve_completion_item ||= begin
@@ -80,6 +82,7 @@ module Solargraph
 
       # Get a markdown-flavored link to a documentation page.
       #
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def link_documentation
         @link_documentation ||= generate_link

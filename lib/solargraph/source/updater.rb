@@ -29,6 +29,7 @@ module Solargraph
 
       # @param text [String]
       # @param nullable [Boolean]
+      # @sg-ignore changes doesn't mutate @output, so this can never be nil
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)

@@ -77,6 +77,7 @@ module Solargraph
           keyword_init_param.children[0].children[1].type == :true
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @return [Parser::AST::Node]
         def body_node
           node.children[2]
@@ -87,11 +88,13 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @return [Parser::AST::Node]
         def struct_node
           node.children[1]
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
           struct_node.children[2..-1]

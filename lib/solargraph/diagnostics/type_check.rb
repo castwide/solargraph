@@ -45,6 +45,7 @@ module Solargraph
 
       # @param position [Solargraph::Position]
       # @param source [Solargraph::Source]
+      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [Integer]
       def last_character position, source
         cursor = Position.to_offset(source.code, position)

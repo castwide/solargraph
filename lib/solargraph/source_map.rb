@@ -82,6 +82,8 @@ module Solargraph
     end
 
     # all pins except Solargraph::Pin::Reference::Reference
+    #
+    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= (pins + convention_pins).select do |pin|
@@ -116,6 +118,7 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
+    # @sg-ignore Need better generic inference here
     # @return [Pin::Method,Pin::Namespace]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
@@ -123,6 +126,7 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
+    # @sg-ignore Need better generic inference here
     # @return [Pin::Namespace,Pin::Method,Pin::Block]
     def locate_block_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
@@ -186,10 +190,12 @@ module Solargraph
       @convention_pins || []
     end
 
+    # @generic T
     # @param line [Integer]
     # @param character [Integer]
-    # @param klasses [Array<Class>]
-    # @return [Pin::Base, nil]
+    # @param klasses [Array<Class<generic<T>>>]
+    # @return [generic<T>, nil]
+    # @sg-ignore Need better generic inference here
     def _locate_pin line, character, *klasses
       position = Position.new(line, character)
       found = nil

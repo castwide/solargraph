@@ -25,6 +25,7 @@ module Solargraph
     end
 
     # @param other [self]
+    # @sg-ignore Why does Solargraph think this should return 0, nil?
     def <=>(other)
       return nil unless other.is_a?(Location)
       if filename == other.filename

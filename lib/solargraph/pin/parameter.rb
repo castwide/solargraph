@@ -135,6 +135,7 @@ module Solargraph
                     end
       end
 
+      # @sg-ignore super always sets @return_type to something
       # @return [ComplexType]
       def return_type
         if @return_type.nil?
@@ -151,12 +152,13 @@ module Solargraph
             end
           end
         end
-        super
+        super # always sets @return_type
         @return_type
       end
 
       # The parameter's zero-based location in the block's signature.
       #
+      # @sg-ignore this won't be nil if our code is correct
       # @return [Integer]
       def index
         # @type [Method, Block]
@@ -185,6 +187,7 @@ module Solargraph
         ptype.generic?
       end
 
+      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
@@ -205,6 +208,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
+        # @sg-ignore type here should not be affected by later downcasting
         block_pin = closure
         if block_pin.is_a?(Pin::Block) && block_pin.receiver
           return block_pin.typify_parameters(api_map)[index]
@@ -236,6 +240,8 @@ module Solargraph
       # @param heredoc [YARD::Docstring]
       # @param api_map [ApiMap]
       # @param skip [::Array]
+      #
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|

@@ -39,6 +39,7 @@ module Solargraph
       @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
+    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
