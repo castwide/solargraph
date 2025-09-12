@@ -261,7 +261,7 @@ module Solargraph
 
       # @param pinsets [Array<Enumerable<Pin::Base>>]
       #
-      # @return [void]
+      # @return [true]
       def catalog pinsets
         @pinsets = pinsets
         # @type [Array<Index>]
