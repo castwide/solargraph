@@ -14,8 +14,8 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @todo To make this strongly typed we'll need a record syntax
-      # @return [Hash{String => Array, Hash, Integer, nil}]
+      # @todo To make JSON strongly typed we'll need a record syntax
+      # @return [Hash{String => undefined, nil}]
       attr_reader :raw_data
 
       # @param directory [String]
@@ -124,7 +124,7 @@ module Solargraph
         File.join(@directory, '.solargraph.yml')
       end
 
-      # @return [Hash{String => Array<undefined>, Hash{String => undefined}, Integer}]
+      # @return [Hash{String => undefined}]
       def config_data
         workspace_config = read_config(workspace_config_path)
         global_config = read_config(global_config_path)

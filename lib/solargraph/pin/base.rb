@@ -354,7 +354,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
+      # @sg-ignore Missing @return tag for Solargraph::Pin::Base#choose_pin_attr
       # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
@@ -472,7 +472,7 @@ module Solargraph
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #
-      # @param other [self]
+      # @param other [Object]
       def == other
         return false unless nearly? other
         comments == other.comments && location == other.location
@@ -599,7 +599,7 @@ module Solargraph
         return_type.to_rbs
       end
 
-      # @return [String]
+      # @return [String, nil]
       def type_desc
         rbs = to_rbs
         # RBS doesn't have a way to represent a Class<x> type

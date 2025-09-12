@@ -61,7 +61,6 @@ module Solargraph
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + return_type.to_rbs
       end

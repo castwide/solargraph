@@ -175,7 +175,7 @@ module Solargraph
       end
 
       # @param isa_node [Parser::AST::Node]
-      # @return [Array(String, String)]
+      # @return [Array(String, String), nil]
       def parse_isa(isa_node)
         return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
