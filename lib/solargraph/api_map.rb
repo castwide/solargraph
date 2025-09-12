@@ -259,7 +259,7 @@ module Solargraph
     #
     # @param namespace [String] The namespace
     # @param contexts [Array<String>] The contexts
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Constant, Solargraph::Pin::Namespace>]
     def get_constants namespace, *contexts
       namespace ||= ''
       contexts.push '' if contexts.empty?

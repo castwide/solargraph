@@ -579,7 +579,7 @@ module Solargraph
         return_type.to_rbs
       end
 
-      # @return [String]
+      # @return [String, nil]
       def type_desc
         rbs = to_rbs
         # RBS doesn't have a way to represent a Class<x> type
