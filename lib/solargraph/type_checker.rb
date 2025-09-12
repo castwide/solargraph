@@ -442,7 +442,7 @@ module Solargraph
             else
               argtype = argchain.infer(api_map, closure_pin, locals)
               argtype = argtype.self_to_type(closure_pin.context)
-              if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
+              if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                 errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                 return errors
               end
