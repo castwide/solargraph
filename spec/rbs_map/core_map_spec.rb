@@ -5,8 +5,9 @@ describe Solargraph::RbsMap::CoreMap do
     Errno.constants.each do |const|
       pin = store.get_path_pins("Errno::#{const}").first
       expect(pin).to be_a(Solargraph::Pin::Namespace)
-      superclass = store.get_superclass(pin.path)
-      expect(superclass).to eq('::SystemCallError')
+      ref = store.get_superclass(pin.path)
+      superclass = store.constants.dereference(ref)
+      expect(superclass).to eq('SystemCallError')
     end
   end
 
