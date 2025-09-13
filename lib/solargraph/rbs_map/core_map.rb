@@ -5,12 +5,13 @@ module Solargraph
     # Ruby core pins
     #
     class CoreMap
+      include Logging
 
       def resolved?
         true
       end
 
-      FILLS_DIRECTORY = File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills')
+      FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
       def initialize; end
 
@@ -23,22 +24,22 @@ module Solargraph
         if cache
           @pins.replace cache
         else
-          loader.add(path: Pathname(FILLS_DIRECTORY))
-          @pins = conversions.pins
-          # add some overrides
+          @pins.concat conversions.pins
+
+          # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+          fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+          fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+          fill_conversions = Conversions.new(loader: fill_loader)
+          @pins.concat fill_conversions.pins
+
           @pins.concat RbsMap::CoreFills::ALL
-          # process overrides, then remove any which couldn't be resolved
-          processed = ApiMap::Store.new(@pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-          puts "RBS core pins cache size: #{@pins.size}"
+
+          processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           @pins.replace processed
 
           PinCache.serialize_core @pins
         end
         @pins
-      end
-
-      def loader
-        @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
       end
 
       private

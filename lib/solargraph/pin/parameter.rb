@@ -161,7 +161,6 @@ module Solargraph
       # @sg-ignore this won't be nil if our code is correct
       # @return [Integer]
       def index
-        # @type [Method, Block]
         method_pin = closure
         method_pin.parameter_names.index(name)
       end
