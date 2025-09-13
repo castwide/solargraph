@@ -660,6 +660,7 @@ RSpec/InstanceVariable:
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/LeadingSubject:
   Exclude:
+    - 'spec/convention/activesupport_concern_spec.rb'
     - 'spec/rbs_map/conversions_spec.rb'
 
 RSpec/LeakyConstantDeclaration:
