@@ -148,7 +148,7 @@ module Solargraph
       def combine_directives(other)
         return self.directives if other.directives.empty?
         return other.directives if directives.empty?
-        [directives + other.directives].uniq
+        (directives + other.directives).uniq
       end
 
       # @param other [self]
