@@ -70,17 +70,17 @@ module Solargraph
                     :visibility, :deep, :skip, :namespace_pin,
                     :fqns
 
-        # @param include_tag [String] the tag of the module being included
+        # @param include_tag [Pin::Reference::Include] the include reference pin
         #
         # @return [void]
         def process_include include_tag
-          rooted_include_tag = api_map.qualify(include_tag, rooted_tag)
+          rooted_include_tag = api_map.dereference(include_tag)
           return if rooted_include_tag.nil?
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "Handling class include include_tag=#{include_tag}"
           end
-          module_extends = api_map.get_extends(rooted_include_tag)
+          module_extends = api_map.get_extends(rooted_include_tag).map(&:parametrized_tag).map(&:to_s)
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "found module extends of #{rooted_include_tag}: #{module_extends}"
