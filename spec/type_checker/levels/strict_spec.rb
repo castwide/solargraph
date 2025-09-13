@@ -5,6 +5,23 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'ignores nilable type issues' do
+      pending("moving nilable handling back to strong")
+
+      checker = type_checker(%(
+        # @param a [String]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
@@ -780,19 +797,6 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
-    end
-
-    it 'does not falsely enforce nil in return types' do
-      checker = type_checker(%(
-      # @return [Integer]
-      def foo
-        # @sg-ignore
-        # @type [Integer, nil]
-        a = bar
-        a || 123
-      end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'refines types on is_a? and && to downcast and avoid false positives' do

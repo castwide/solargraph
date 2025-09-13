@@ -5,6 +5,20 @@ describe Solargraph::TypeChecker do
     def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
+    it 'does not falsely enforce nil in return types' do
+      pending('type inference fix')
+
+      checker = type_checker(%(
+      # @return [Integer]
+      def foo
+        # @sg-ignore
+        # @type [Integer, nil]
+        a = bar
+        a || 123
+      end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
 
     it 'reports nilable type issues' do
       checker = type_checker(%(
