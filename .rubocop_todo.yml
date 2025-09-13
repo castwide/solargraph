@@ -284,7 +284,6 @@ Layout/TrailingWhitespace:
 # Configuration parameters: AllowedMethods, AllowedPatterns.
 Lint/AmbiguousBlockAssociation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -1087,7 +1086,6 @@ Style/RedundantFreeze:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/RedundantInterpolation:
   Exclude:
-    - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/source_map/mapper.rb'
 
@@ -1112,7 +1110,6 @@ Style/RedundantRegexpEscape:
 # Configuration parameters: AllowMultipleReturnValues.
 Style/RedundantReturn:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
@@ -1246,7 +1243,11 @@ Style/YAMLFileRead:
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/ZeroLengthPredicate:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/language_server/host.rb'
+    - 'lib/solargraph/pin/method.rb'
+    - 'lib/solargraph/source/chain/array.rb'
+    - 'spec/language_server/protocol_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
