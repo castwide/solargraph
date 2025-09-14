@@ -856,7 +856,6 @@ module Solargraph
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
-        ancestor_fqns = ComplexType.try_parse(ancestor_fqns).force_rooted.namespace
         next if ancestor_fqns.nil?
         ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
 
