@@ -20,6 +20,11 @@ module Solargraph
       end
 
       # @param pinsets [Array<Enumerable<Pin::Base>>]
+      #   - pinsets[0] = core Ruby pins
+      #   - pinsets[1] = documentation/gem pins
+      #   - pinsets[2] = convention pins
+      #   - pinsets[3] = workspace source pins
+      #   - pinsets[4] = currently open file pins
       # @return [Boolean] True if the index was updated
       def update *pinsets
         return catalog(pinsets) if pinsets.length != @pinsets.length
@@ -39,6 +44,8 @@ module Solargraph
             @indexes[changed + idx - 1].merge(pins)
           end
         end
+        constants.clear
+        cached_qualify_superclass.clear
         true
       end
 
@@ -70,44 +77,45 @@ module Solargraph
         GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      # @param fq_tag [String]
+      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN, source: :solargraph)
+      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass]
+      def get_superclass fqns
+        return nil if fqns.nil? || fqns.empty?
+        return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
+
+        superclass_references[fqns].first || try_special_superclasses(fqns)
+      end
+
+      # @param fq_sub_tag [String]
       # @return [String, nil]
-      def get_superclass fq_tag
-        raise "Do not prefix fully qualified tags with '::' - #{fq_tag.inspect}" if fq_tag.start_with?('::')
-        sub = ComplexType.try_parse(fq_tag)
-        return nil if sub.nil?
-        return sub.simplify_literals.name if sub.literal?
-        return 'Boolean' if %w[TrueClass FalseClass].include?(fq_tag)
-        fqns = sub.namespace
-        return superclass_references[fq_tag].first if superclass_references.key?(fq_tag)
-        return superclass_references[fqns].first if superclass_references.key?(fqns)
-        return 'Object' if fqns != 'BasicObject' && namespace_exists?(fqns)
-        return 'Object' if fqns == 'Boolean'
-        simplified_literal_name = ComplexType.parse("#{fqns}").simplify_literals.name
-        return simplified_literal_name if simplified_literal_name != fqns
-        nil
+      def qualify_superclass fq_sub_tag
+        cached_qualify_superclass[fq_sub_tag] || qualify_and_cache_superclass(fq_sub_tag)
+        type = ComplexType.try_parse(fq_sub_tag)
+        return type.simplify_literals.to_s if type.literal?
+        ref = get_superclass(fq_sub_tag)
+        return unless ref
+        res = constants.dereference(ref)
+        return unless res
+        res + type.substring
       end
 
       # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Include>]
       def get_includes fqns
         include_references[fqns] || []
       end
 
       # @param fqns [String]
-      # @return [Array<Pin::Reference::Include>]
-      def get_include_pins fqns
-        include_reference_pins[fqns] || []
-      end
-
-      # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Prepend>]
       def get_prepends fqns
         prepend_references[fqns] || []
       end
 
       # @param fqns [String]
-      # @return [Array<String>]
+      # @return [Array<Pin::Reference::Extend>]
       def get_extends fqns
         extend_references[fqns] || []
       end
@@ -232,7 +240,8 @@ module Solargraph
           current = current.gsub(/^::/, '')
 
           # Add superclass
-          superclass = get_superclass(current)
+          ref = get_superclass(current)
+          superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
             ancestors << superclass
             queue << superclass
@@ -241,7 +250,7 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
-            refs.each do |ref|
+            refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
               queue << ref
@@ -250,6 +259,11 @@ module Solargraph
         end
 
         ancestors.compact.uniq
+      end
+
+      # @return [Constants]
+      def constants
+        @constants ||= Constants.new(self)
       end
 
       private
@@ -272,6 +286,8 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
+        constants.clear
+        cached_qualify_superclass.clear
         true
       end
 
@@ -323,6 +339,41 @@ module Solargraph
       # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
         index.pins_by_class(Pin::InstanceVariable)
+      end
+
+      # @param fqns [String]
+      # @return [Pin::Reference::Superclass, nil]
+      def try_special_superclasses(fqns)
+        return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
+        return OBJECT_SUPERCLASS_PIN if !%w[BasicObject Object].include?(fqns) && namespace_exists?(fqns)
+
+        sub = ComplexType.try_parse(fqns)
+        return get_superclass(sub.simplify_literals.name) if sub.literal?
+
+        get_superclass(sub.namespace) if sub.namespace != fqns
+      end
+
+      # @param fq_sub_tag [String]
+      # @return [String, nil]
+      def qualify_and_cache_superclass fq_sub_tag
+        cached_qualify_superclass[fq_sub_tag] = uncached_qualify_superclass(fq_sub_tag)
+      end
+
+      # @return [Hash{String => String, nil}]
+      def cached_qualify_superclass
+        @cached_qualify_superclass ||= {}
+      end
+
+      # @param fq_sub_tag [String]
+      # @return [String, nil]
+      def uncached_qualify_superclass fq_sub_tag
+        type = ComplexType.try_parse(fq_sub_tag)
+        return type.simplify_literals.to_s if type.literal?
+        ref = get_superclass(fq_sub_tag)
+        return unless ref
+        res = constants.dereference(ref)
+        return unless res
+        res + type.substring
       end
     end
   end
