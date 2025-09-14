@@ -96,7 +96,7 @@ module Solargraph
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
       result = []
-      declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, pin.full_context.tag)
+      declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.closure.gates)
       if declared.undefined?
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
@@ -506,7 +506,7 @@ module Solargraph
         next if tag.types.nil?
         result[tag.name.to_s] = {
           tagged: tag.types.join(', '),
-          qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
+          qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, *pin.closure.gates)
         }
       end
       result

@@ -289,12 +289,12 @@ module Solargraph
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The fully qualified context in which
+    # @param gates [Array<String>] The fully qualified context in which
     #   the tag was referenced; start from here to resolve the name.
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
-    def qualify tag, context_tag = ''
-      store.constants.qualify(tag, context_tag)
+    def qualify tag, *gates
+      store.constants.qualify(tag, *gates)
     end
 
     # Get a fully qualified namespace from a reference pin.

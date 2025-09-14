@@ -55,9 +55,20 @@ module Solargraph
       #   the tag was referenced; start from here to resolve the name.
       #   Should not be prefixed with '::'.
       # @return [String, nil] fully qualified tag
-      def qualify tag, context_tag = ''
+      def qualify tag, *gates
         return tag if ['Boolean', 'self', nil].include?(tag)
 
+        if tag =~ /^[a-z0-9_:]*$/i && gates.all? { |t| t =~ /^[a-z0-9_:]*?$/i }
+          gates.push '' unless gates.include?('')
+          resolved = resolve(tag, gates)
+          return resolved if resolved
+          Solargraph.logger.debug "resolve failed. #{tag.inspect} #{gates.inspect} #{caller_locations[0, 2]}"
+          return nil
+        else
+          raise "not shortable!"
+        end
+
+        context_tag = gates.first
         type = ComplexType.try_parse(tag)
         return unless type.defined?
         return tag if type.literal?
@@ -92,24 +103,43 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String, nil]
       def resolve_uncached name, gates
-        parts = name.split('::')
-        here = parts.shift
-        resolved = simple_resolve(here, gates)
-        return resolved if parts.empty? || resolved.nil?
+        # parts = name.split('::')
+        # here = parts.shift
+        # resolved = simple_resolve(here, gates)
+        # return resolved if parts.empty? || resolved.nil?
 
-        final = "#{resolved}::#{parts.join('::')}".sub(/^::/, '')
-        final if store.namespace_exists?(final)
+        # final = "#{resolved}::#{parts.join('::')}".sub(/^::/, '')
+        # final if store.namespace_exists?(final)
+        resolved = nil
+        base = gates
+        name.split('::').each do |nam|
+          resolved = complex_resolve(nam, base)
+          return unless resolved
+          base = [resolved]
+        end
+        resolved
+      end
+
+      def complex_resolve name, gates
+        resolved = nil
+        gates.each do |gate|
+          resolved = simple_resolve(name, gate)
+          return resolved if resolved
+          store.get_includes(gate).each do |ref|
+            mixin = resolve(ref.name, ref.reference_gates - [gate])
+            resolved = simple_resolve(name, mixin)
+            return resolved if resolved
+          end
+        end
+        nil
       end
 
       # @param name [String]
-      # @param gates [Array<String>]
+      # @param gate [String]
       # @return [String, nil]
-      def simple_resolve name, gates
-        gates.each do |gate|
-          here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
-          return here if store.namespace_exists?(here)
-        end
-        nil
+      def simple_resolve name, gate
+        here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
+        here if store.namespace_exists?(here)
       end
 
       # @param gates [Array<String>]

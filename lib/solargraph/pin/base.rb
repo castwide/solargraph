@@ -513,7 +513,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
       # Infer the pin's return type via static code analysis.
