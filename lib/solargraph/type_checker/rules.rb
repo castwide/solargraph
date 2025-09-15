@@ -50,10 +50,6 @@ module Solargraph
         rank > LEVELS[:typed]
       end
 
-      def loose_unions?
-        rank < LEVELS[:strong]
-      end
-
       def validate_tags?
         rank > LEVELS[:normal]
       end

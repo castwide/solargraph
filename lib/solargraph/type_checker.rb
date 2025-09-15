@@ -97,7 +97,7 @@ module Solargraph
       def load filename, level = :normal
         source = Solargraph::Source.load(filename)
         rules = Rules.new(level)
-        api_map = Solargraph::ApiMap.new(loose_unions: rules.loose_unions?)
+        api_map = Solargraph::ApiMap.new(loose_unions: rules.require_all_unique_types_match_expected?)
         api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
@@ -110,7 +110,7 @@ module Solargraph
       def load_string code, filename = nil, level = :normal, api_map: nil
         source = Solargraph::Source.load_string(code, filename)
         rules = Rules.new(level)
-        api_map ||= Solargraph::ApiMap.new(loose_unions: rules.loose_unions?)
+        api_map ||= Solargraph::ApiMap.new(loose_unions: rules.require_all_unique_types_match_expected?)
         api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
