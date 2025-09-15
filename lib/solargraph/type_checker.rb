@@ -69,7 +69,7 @@ module Solargraph
     def conforms_to?(inferred, expected, scenario)
       rules_arr = []
       rules_arr << :allow_empty_params unless rules.require_inferred_type_params?
-      rules_arr << :allow_any_match unless rules.require_all_unique_types_match_declared?
+      rules_arr << :allow_any_match unless rules.require_all_unique_types_match_expected?
       rules_arr << :allow_undefined unless rules.require_no_undefined_args?
       rules_arr << :allow_unresolved_generic unless rules.require_generics_resolved?
       rules_arr << :allow_unmatched_interface unless rules.require_interfaces_resolved?

@@ -62,7 +62,6 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo TODO: Need to add support for all unique type match checking on lhs as well
       # @todo 27: Need to understand @foo ||= 123 will never be nil
       # @todo 18: Need to add nil check here
       # @todo 16: flow sensitive typing needs to handle "if foo.nil?"
@@ -74,7 +73,7 @@ module Solargraph
       # @todo 4: Need to figure if Array#[n..m] can return nil
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
-      def require_all_unique_types_match_declared?
+      def require_all_unique_types_match_expected?
         rank >= LEVELS[:typed]
       end
 
