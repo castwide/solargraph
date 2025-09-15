@@ -82,7 +82,7 @@ module Solargraph
       # @return [ComplexType]
       def probe api_map
         unless @assignment.nil?
-          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+          # @sg-ignore sensitive typing needs to handle "unless foo.nil?"
           types = return_types_from_node(@assignment, api_map)
           return ComplexType.new(types.uniq) unless types.empty?
         end

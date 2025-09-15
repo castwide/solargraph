@@ -216,7 +216,6 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
-        # @sg-ignore type here should not be affected by later downcasting
         block_pin = closure
         if block_pin.is_a?(Pin::Block) && block_pin.receiver
           return block_pin.typify_parameters(api_map)[index]
@@ -249,8 +248,8 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param skip [::Array]
       #
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       # @return [::Array<YARD::Tags::Tag>]
+      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner

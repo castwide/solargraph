@@ -59,10 +59,11 @@ module Solargraph
       end
 
       # @todo 18: Need to add nil check here
-      # @todo 18: flow sensitive typing needs to handle "if foo.nil?"
       # @todo 16: flow sensitive typing needs to handle "if foo"
       # @todo 16: flow sensitive typing needs to handle || on nil types
+      # @todo 10: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 8: Need to figure if String#[n..m] can return nil
+      # @todo 7: flow sensitive typing needs to handle "if foo.nil? ... else"
       # @todo 6: Need to validate config
       # @todo 5: need boolish support for ? methods
       # @todo 5: Need to figure if Array#[n..m] can return nil
@@ -70,9 +71,11 @@ module Solargraph
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       def require_all_unique_types_match_expected?
+        # TODO: Put this back up to strong
         rank >= LEVELS[:typed]
       end
 
+      # TODO: Take this back down to strong
       def require_all_unique_types_match_expected_on_lhs?
         rank >= LEVELS[:alpha]
       end

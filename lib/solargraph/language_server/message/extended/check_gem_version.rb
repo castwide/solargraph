@@ -72,8 +72,8 @@ module Solargraph
           # @return [Gem::Version]
           attr_reader :current
 
-          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           # @return [Gem::Version]
+          # @sg-ignore flow sensitive typing needs to handle "if foo ... else"
           def available
             if !@available && !@fetched
               @fetched = true

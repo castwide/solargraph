@@ -767,7 +767,7 @@ module Solargraph
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = store.constants.dereference(im)
-          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -782,9 +782,6 @@ module Solargraph
 
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
-            # @sg-ignore Declared type Solargraph::Pin::Constant does
-            #   not match inferred type Solargraph::Pin::Constant,
-            #   Solargraph::Pin::Namespace, nil for variable const
             const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
@@ -799,19 +796,19 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
           end
         else
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = store.constants.dereference(em)
-            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, true)
           end
           unless no_core || fqns.empty?

@@ -19,9 +19,6 @@ module Solargraph
             )
             if region.visibility == :module_function
               here = get_node_start_position(node)
-              # @sg-ignore Declared type Solargraph::Pin::Method does
-              #   not match inferred type Solargraph::Pin::Closure, nil
-              #   for variable named_path
               # @type [Pin::Closure, nil]
               named_path = named_path_pin(here)
               if named_path.is_a?(Pin::Method)

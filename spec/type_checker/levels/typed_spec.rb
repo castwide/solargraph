@@ -4,6 +4,23 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :typed)
     end
 
+    it 'respects pin visibility' do
+      checker = type_checker(%(
+        class Foo
+          # Get the namespace's type (Class or Module).
+          #
+          # @param bar [Array<Symbol>]
+          # @return [Symbol, Integer]
+          def foo bar
+            baz = bar.first
+            return 123 if baz.nil?
+            baz
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'reports mismatched types for empty methods' do
       checker = type_checker(%(
         class Foo

@@ -63,7 +63,6 @@ module Solargraph
 
       # @return [ComplexType]
       def find_context
-        # @sg-ignore should not get type error here, as type changes later on
         here = closure
         until here.nil?
           if here.is_a?(Pin::Namespace)

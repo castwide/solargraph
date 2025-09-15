@@ -251,7 +251,7 @@ module Solargraph
 
       if !rbs_collection_pins.nil? && !yard_pins.nil?
         logger.debug { "Combining pins for #{gemspec.name}:#{gemspec.version}" }
-        # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+        # @sg-ignore sensitive typing needs to handle "unless foo.nil?"
         combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
         PinCache.serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = combined_pins
@@ -330,7 +330,7 @@ module Solargraph
         end
       end
       return nil if gemspec.nil?
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil? ... else"
       [gemspec_or_preference(gemspec)]
     end
 

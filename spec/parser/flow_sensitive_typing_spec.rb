@@ -253,4 +253,30 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [3, 6])
     expect { clip.infer.to_s }.not_to raise_error
   end
+
+  it 'uses nil? in a simple if() to refine types on a simple class' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      def verify_repro(repr)
+        repr = 10 if floop
+        repr
+        if repr.nil?
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, 10, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    # the 10 here is arguably a bug
+    expect(clip.infer.rooted_tags).to eq('nil')
+
+    pending('handling else case in flow senstiive typing')
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
 end
