@@ -80,7 +80,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_yard_pins(gemspec, out)
       pins = GemPins.build_yard_pins(yard_plugins, gemspec)
@@ -89,7 +89,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_rbs_collection_pins(gemspec, out)
       rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)

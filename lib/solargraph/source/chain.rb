@@ -230,9 +230,6 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             if type.generic?
-              # @todo even at strong, no typechecking complaint
-              #   happens when a [Pin::Base,nil] is passed into a method
-              #   that accepts only [Pin::Namespace] as an argument
               type = type.resolve_generics(pin.closure, context.binder)
             end
             types << type
