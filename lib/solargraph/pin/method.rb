@@ -217,7 +217,6 @@ module Solargraph
         signature
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [::Array<Signature>]
       def signatures
         @signatures ||= begin

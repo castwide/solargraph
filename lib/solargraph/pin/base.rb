@@ -376,7 +376,6 @@ module Solargraph
         Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def comments
         @comments ||= ''
@@ -484,7 +483,6 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [YARD::Docstring]
       def docstring
         parse_comments unless @docstring
@@ -516,7 +514,6 @@ module Solargraph
         @maybe_directives ||= comments.include?('@!')
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [Boolean]
       def deprecated?
         @deprecated ||= docstring.has_tag?('deprecated')
@@ -586,7 +583,6 @@ module Solargraph
         result
       end
 
-      # @sg-ignore to understand @foo ||= 123 will never be nil
       # @deprecated
       # @return [String]
       def identity

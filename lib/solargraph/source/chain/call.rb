@@ -70,6 +70,8 @@ module Solargraph
             end
           else
             # grab pins which are provided by every potential context type
+            # @todo Need to understand reduce()
+            # @type [::Array<Solargraph::Pin::Method>]
             pins = name_pin.binder.each_unique_type.map do |context|
               ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
               stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)

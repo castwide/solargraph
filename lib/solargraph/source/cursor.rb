@@ -50,7 +50,6 @@ module Solargraph
       # The part of the word after the current position. Given the text
       # `foo.bar`, the end_of_word at position (0,6) is `r`.
       #
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def end_of_word
         @end_of_word ||= begin

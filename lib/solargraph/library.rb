@@ -494,7 +494,6 @@ module Solargraph
       @pins ||= []
     end
 
-    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [Set<String>]
     def external_requires
       @external_requires ||= source_map_external_require_hash.values.flatten.to_set

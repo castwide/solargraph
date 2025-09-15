@@ -73,6 +73,10 @@ module Solargraph
         rank >= LEVELS[:typed]
       end
 
+      def require_all_unique_types_match_expected_on_lhs?
+        rank >= LEVELS[:alpha]
+      end
+
       def require_no_undefined_args?
         rank >= LEVELS[:alpha]
       end

@@ -99,6 +99,10 @@ module Solargraph
             # we know what it will be after assignment.  If it
             # violates the existing type, that's something to deal
             # with at type-checking time
+            #
+            # TODO: Need to implement this in a Link - currently
+            # definition support relies on it
+            #
             new_node = n.children[1]
             result.concat generate_links new_node
           elsif [:cvar, :cvasgn].include?(n.type)

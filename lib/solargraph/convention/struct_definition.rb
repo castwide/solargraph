@@ -102,7 +102,10 @@ module Solargraph
 
           private
 
-          # @return [StructDefintionNode, StructAssignmentNode, nil]
+          # @sg-ignore
+          #   Solargraph::Convention::StructDefinition::NodeProcessors::StructNode#struct_definition_node
+          #   return type could not be inferred
+          # @return [StructDefinition::StructDefintionNode, StructDefinition::StructAssignmentNode, nil]
           def struct_definition_node
             @struct_definition_node ||= if StructDefintionNode.match?(node)
                                           StructDefintionNode.new(node)

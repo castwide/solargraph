@@ -9,12 +9,10 @@ module Solargraph
         super(**splat)
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       def generics
         @generics ||= [].freeze
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       def identity
         @identity ||= "signature#{object_id}"
       end

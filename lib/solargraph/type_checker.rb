@@ -29,7 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @rules = rules
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename),
-                                                    loose_unions: !require_all_unique_types_match_expected?)
+                                                    loose_unions: !rules.require_all_unique_types_match_expected_on_lhs?)
 
       # @type [Array<Range>]
       @marked_ranges = []

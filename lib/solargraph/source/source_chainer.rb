@@ -96,7 +96,6 @@ module Solargraph
         @fixed_position ||= Position.from_offset(source.code, offset - end_of_phrase.length)
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin
