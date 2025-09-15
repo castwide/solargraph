@@ -61,10 +61,20 @@ module Solargraph
           #   expected Enumerable<Solargraph::Pin::Method>, received
           #   Array<Solargraph::Pin::LocalVariable>, Array
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
-          pins = name_pin.binder.each_unique_type.flat_map do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+          if api_map.loose_unions
+            # fetch methods which ANY of the potential context types provide
+            pins = name_pin.binder.each_unique_type.flat_map do |context|
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              [stack.first].compact
+            end
+          else
+            # grab pins which are provided by every potential context type
+            pins = name_pin.binder.each_unique_type.map do |context|
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              [stack.first].compact
+            end.reduce(:&)
           end
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)

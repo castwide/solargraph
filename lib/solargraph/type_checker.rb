@@ -22,12 +22,15 @@ module Solargraph
 
     # @param filename [String, nil]
     # @param api_map [ApiMap, nil]
+    # @param rules [Rules]
     # @param level [Symbol]
-    def initialize filename, api_map: nil, level: :normal
+    def initialize filename, api_map: nil, level: :normal, rules: Rules.new(level)
       @filename = filename
       # @todo Smarter directory resolution
-      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
-      @rules = Rules.new(level)
+      @rules = rules
+      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename),
+                                                    loose_unions: rules.loose_unions?)
+
       # @type [Array<Range>]
       @marked_ranges = []
     end
@@ -93,20 +96,23 @@ module Solargraph
       # @return [self]
       def load filename, level = :normal
         source = Solargraph::Source.load(filename)
-        api_map = Solargraph::ApiMap.new
+        rules = Rules.new(level)
+        api_map = Solargraph::ApiMap.new(loose_unions: rules.loose_unions?)
         api_map.map(source)
-        new(filename, api_map: api_map, level: level)
+        new(filename, api_map: api_map, level: level, rules: rules)
       end
 
       # @param code [String]
       # @param filename [String, nil]
       # @param level [Symbol]
-      # @param api_map [Solargraph::ApiMap]
+      # @param api_map [Solargraph::ApiMap, nil]
       # @return [self]
-      def load_string code, filename = nil, level = :normal, api_map: Solargraph::ApiMap.new
+      def load_string code, filename = nil, level = :normal, api_map: nil
         source = Solargraph::Source.load_string(code, filename)
+        rules = Rules.new(level)
+        api_map ||= Solargraph::ApiMap.new(loose_unions: rules.loose_unions?)
         api_map.map(source)
-        new(filename, api_map: api_map, level: level)
+        new(filename, api_map: api_map, level: level, rules: rules)
       end
     end
 
