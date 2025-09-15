@@ -113,7 +113,6 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
-        map_include_pins
         map_overrides
         self
       end
@@ -123,7 +122,7 @@ module Solargraph
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
-          store_parametric_reference(hash, pin)
+          hash[pin.namespace].push pin
         end
       end
 
