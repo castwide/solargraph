@@ -29,7 +29,7 @@ module Solargraph
       # @todo Smarter directory resolution
       @rules = rules
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename),
-                                                    loose_unions: rules.loose_unions?)
+                                                    loose_unions: !require_all_unique_types_match_expected?)
 
       # @type [Array<Range>]
       @marked_ranges = []
@@ -319,7 +319,7 @@ module Solargraph
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
               if closest.defined?
-                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest.rooted_tags}")
               else
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               end
