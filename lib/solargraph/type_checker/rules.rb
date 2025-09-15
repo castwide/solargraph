@@ -58,17 +58,17 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 27: Need to understand @foo ||= 123 will never be nil
       # @todo 18: Need to add nil check here
-      # @todo 16: flow sensitive typing needs to handle "if foo.nil?"
-      # @todo 15: flow sensitive typing needs to handle "if foo"
-      # @todo 15: flow sensitive typing needs to handle || on nil types
-      # @todo 7: Need to figure if String#[n..m] can return nil
+      # @todo 18: flow sensitive typing needs to handle "if foo.nil?"
+      # @todo 16: flow sensitive typing needs to handle "if foo"
+      # @todo 16: flow sensitive typing needs to handle || on nil types
+      # @todo 8: Need to figure if String#[n..m] can return nil
       # @todo 6: Need to validate config
       # @todo 5: need boolish support for ? methods
-      # @todo 4: Need to figure if Array#[n..m] can return nil
+      # @todo 5: Need to figure if Array#[n..m] can return nil
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
+      # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:typed]
       end

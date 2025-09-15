@@ -191,12 +191,12 @@ module Solargraph
 
     # @param node [AST::Node]
     #
-    # @sg-ignore Need to understand @foo ||= 123 will never be nil
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
       stringified_comments[rng.start.line] ||= begin
         buff = associated_comments[rng.start.line]
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         buff ? stringify_comment_array(buff) : nil
       end
     end
@@ -237,7 +237,7 @@ module Solargraph
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #
-    # @return [Hash{Integer => String}]
+    # @return [Hash{Integer => String, nil}]
     def associated_comments
       @associated_comments ||= begin
         # @type [Hash{Integer => String}]
@@ -313,7 +313,7 @@ module Solargraph
 
     # A hash of line numbers and their associated comments.
     #
-    # @return [Hash{Integer => Array<String>, nil}]
+    # @return [Hash{Integer => String}]
     def stringified_comments
       @stringified_comments ||= {}
     end

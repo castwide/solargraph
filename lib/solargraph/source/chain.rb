@@ -71,7 +71,7 @@ module Solargraph
 
       # @return [Chain]
       def base
-        # @sg-ignore Need to understand @foo ||= 123 will never be nil
+        # @sg-ignore Need to figure if Array#[n..m] can return nil
         @base ||= Chain.new(links[0..-2])
       end
 

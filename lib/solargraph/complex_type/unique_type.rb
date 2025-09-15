@@ -435,7 +435,7 @@ module Solargraph
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
         make_rooted = @rooted if make_rooted.nil?
-        # @sg-ignore Need to understand @foo ||= 123 will never be nil
+        # @sg-ignore flow sensitive typing needs to handle || on nil types
         UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
       end
 

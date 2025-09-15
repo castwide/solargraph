@@ -249,7 +249,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param skip [::Array]
       #
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|

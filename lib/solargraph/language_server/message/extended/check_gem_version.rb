@@ -72,7 +72,7 @@ module Solargraph
           # @return [Gem::Version]
           attr_reader :current
 
-          # @sg-ignore Need to understand @foo ||= 123 will never be nil
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           # @return [Gem::Version]
           def available
             if !@available && !@fetched

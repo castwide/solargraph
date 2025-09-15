@@ -80,8 +80,7 @@ module Solargraph
 
       # Get a markdown-flavored link to a documentation page.
       #
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
-      # @return [String]
+      # @return [String, nil]
       def link_documentation
         @link_documentation ||= generate_link
       end
