@@ -132,6 +132,7 @@ module Solargraph
             result.push Source::Chain::Array.new(chained_children, n)
           else
             lit = infer_literal_node_type(n)
+            # @sg-ignore flow sensitive typing needs to handle "if foo"
             result.push (lit ? Chain::Literal.new(lit, n) : Chain::Link.new)
           end
           result

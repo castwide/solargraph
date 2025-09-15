@@ -47,6 +47,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
+        # @sg-ignore Need to figure if String#[n..m] can return nil
         path[0].upcase + path[1..-1]
       end
 

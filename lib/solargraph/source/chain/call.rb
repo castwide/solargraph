@@ -53,6 +53,7 @@ module Solargraph
           found = if head?
             api_map.visible_pins(locals, word, name_pin, location)
           else
+            # @type [Array<Solargraph::Pin::LocalVariable>]
             []
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
@@ -142,6 +143,7 @@ module Solargraph
               end
               break if type.defined?
             end
+            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
@@ -168,7 +170,7 @@ module Solargraph
 
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
-        # @param context [ComplexType]
+        # @param context [ComplexType, ComplexType::UniqueType]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
@@ -187,13 +189,14 @@ module Solargraph
 
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
-        # @param context [ComplexType]
+        # @param context [ComplexType, ComplexType::UniqueType]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
+            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -203,7 +206,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
-        # @param context [ComplexType]
+        # @param context [ComplexType, ComplexType::UniqueType]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
@@ -273,7 +276,7 @@ module Solargraph
         end
 
         # @param type [ComplexType]
-        # @param context [ComplexType]
+        # @param context [ComplexType, ComplexType::UniqueType]
         # @return [ComplexType]
         def with_params type, context
           return type unless type.to_s.include?('$')
@@ -287,7 +290,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param context [ComplexType]
+        # @param context [ComplexType, ComplexType::UniqueType]
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]
@@ -311,6 +314,7 @@ module Solargraph
           node_location = Solargraph::Location.from_node(block.node)
           return if  node_location.nil?
           block_pins = api_map.get_block_pins
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
 

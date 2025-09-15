@@ -28,7 +28,7 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def context
         # Get the static context from the nearest namespace
         @context ||= find_context
@@ -40,7 +40,7 @@ module Solargraph
         context.namespace.to_s
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def binder
         @binder || context
       end

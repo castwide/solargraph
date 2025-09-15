@@ -64,6 +64,7 @@ module Solargraph
     # @return [Location, nil]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       range = Range.from_node(node)
       self.new(node.loc.expression.source_buffer.name, range)
     end

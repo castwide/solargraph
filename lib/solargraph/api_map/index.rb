@@ -118,7 +118,7 @@ module Solargraph
       end
 
       # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<String>}]
+      # @param hash [Hash{String => Array<Pin::Reference::Base>}]
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
@@ -145,6 +145,7 @@ module Solargraph
               redefine_return_type pin, tag
               if new_pin
                 new_pin.docstring.add_tag(tag)
+                # @sg-ignore flow sensitive typing needs to handle "if foo"
                 redefine_return_type new_pin, tag
               end
             end

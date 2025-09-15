@@ -68,7 +68,7 @@ module Solargraph
 
       # @param name [String]
       # @param context [String]
-      # @param value [String]
+      # @param value [String, nil]
       # @return [void]
       def set_qualified_namespace name, context, value
         @qualified_namespaces["#{name}|#{context}"] = value

@@ -226,6 +226,7 @@ module Solargraph
             if node.type == :send
               args = node.children[2..-1]
               if !args.empty?
+                # @sg-ignore flow sensitive typing needs to handle "if foo"
                 return node if prev && args.include?(prev)
               else
                 if source.synchronized?
@@ -348,6 +349,7 @@ module Solargraph
               if COMPOUND_STATEMENTS.include?(node.type)
                 result.concat from_value_position_compound_statement node
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
+                # @sg-ignore Need to figure if Array#[n..m] can return nil
                 result.concat reduce_to_value_nodes(node.children[1..-1])
                 # result.push NIL_NODE unless node.children[2]
               elsif CONDITIONAL_ALL.include?(node.type)
@@ -463,6 +465,7 @@ module Solargraph
                 elsif COMPOUND_STATEMENTS.include?(node.type)
                   result.concat from_value_position_compound_statement(node)
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
+                  # @sg-ignore Need to figure if Array#[n..m] can return nil
                   result.concat reduce_to_value_nodes(node.children[1..-1])
                 elsif node.type == :return
                   result.concat reduce_to_value_nodes([node.children[0]])

@@ -41,7 +41,7 @@ module Solargraph
       # @param type_location [Solargraph::Location, nil]
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
-      # @param comments [String]
+      # @param comments [String, nil]
       # @param source [Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
@@ -375,13 +375,15 @@ module Solargraph
         Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
 
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def comments
+        # @sg-ignore Need to understand @foo ||= 123 will never be nil
         @comments ||= ''
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param return_type_context [ComplexType, nil]
+      # @param return_type_context [ComplexType, ComplexType::UniqueType, nil]
       # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
@@ -603,6 +605,7 @@ module Solargraph
         rbs = return_type.rooted_tags if return_type.name == 'Class'
         if path
           if rbs
+            # @sg-ignore flow sensitive typing needs to handle "if foo"
             path + ' ' + rbs
           else
             path

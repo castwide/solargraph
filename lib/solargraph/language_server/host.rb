@@ -728,6 +728,7 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
+        # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 

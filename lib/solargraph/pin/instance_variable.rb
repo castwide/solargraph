@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def binder
         closure.binder
       end

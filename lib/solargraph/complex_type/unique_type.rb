@@ -31,6 +31,8 @@ module Solargraph
         if name.start_with?('::')
           name = name[2..-1]
           rooted = true
+        # @sg-ignore out of scope of the above [2..-1], which is what
+        #   is making solargraph think 'name' is nilable
         elsif !can_root_name?(name)
           rooted = true
         else
@@ -45,6 +47,7 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
+          # @sg-ignore need a non-empty-list type
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
@@ -61,6 +64,7 @@ module Solargraph
             subtypes.concat subs
           end
         end
+        # @sg-ignore Need to figure if String#[n..m] can return nil
         new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
@@ -134,6 +138,7 @@ module Solargraph
         return 'NilClass' if name == 'nil'
         return 'Boolean' if ['true', 'false'].include?(name)
         return 'Symbol' if name[0] == ':'
+        # @sg-ignore need a non-empty-list type
         return 'String' if ['"', "'"].include?(name[0])
         return 'Integer' if name.match?(/^-?\d+$/)
         name
@@ -200,7 +205,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param expected [ComplexType::UniqueType, ComplexType]
-      # @param situation [:method_call, :assignment, :return]
+      # @param situation [:method_call, :assignment, :return_type]
       # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
       # @param variance [:invariant, :covariant, :contravariant]
       def conforms_to?(api_map, expected, situation, rules = [],
@@ -322,15 +327,18 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, nil]
+      # @param context_type [ComplexType, UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
-          return self unless generics_to_resolve.include? type_param
+          # @sg-ignore flow sensitive typing needs to handle "if foo"
+          return self unless type_param && generics_to_resolve.include?(type_param)
+          # @sg-ignore flow sensitive typing needs to handle "if foo"
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
+            # @sg-ignore flow sensitive typing needs to handle "if foo"
             resolved_generic_values[type_param] = context_type
           end
           if new_binding
@@ -338,6 +346,7 @@ module Solargraph
               complex_type.resolve_generics_from_context(generics_to_resolve, nil, resolved_generic_values: resolved_generic_values)
             end
           end
+          # @sg-ignore flow sensitive typing needs to handle "if foo"
           return resolved_generic_values[type_param] || self
         end
 
@@ -348,7 +357,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, nil]
+      # @param context_type [UniqueType, ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -399,6 +408,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
+              # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
               context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
@@ -432,6 +442,7 @@ module Solargraph
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
         make_rooted = @rooted if make_rooted.nil?
+        # @sg-ignore Need to understand @foo ||= 123 will never be nil
         UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
       end
 

@@ -50,6 +50,7 @@ module Solargraph
       # @param lvars [Array<Symbol>, nil]
       # @return [Region]
       def update closure: nil, scope: nil, visibility: nil, lvars: nil
+        # @sg-ignore flow sensitive typing needs to handle || on nil types
         Region.new(
           source: source,
           closure: closure || self.closure,

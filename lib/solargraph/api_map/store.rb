@@ -95,6 +95,7 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         res = constants.dereference(ref)
         return unless res
         res + type.substring
@@ -202,7 +203,7 @@ module Solargraph
         index.pins_by_class klass
       end
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @return [Array<Solargraph::Pin::Namespace>]
       def fqns_pins fqns
         return [] if fqns.nil?
@@ -236,9 +237,12 @@ module Solargraph
 
           # Add superclass
           ref = get_superclass(current)
+          # @sg-ignore flow sensitive typing needs to handle || on nil types
           superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
+            # @sg-ignore flow sensitive typing needs to handle "if foo"
             ancestors << superclass
+            # @sg-ignore flow sensitive typing needs to handle "if foo"
             queue << superclass
           end
 
@@ -368,6 +372,7 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         res = constants.dereference(ref)
         return unless res
         res + type.substring

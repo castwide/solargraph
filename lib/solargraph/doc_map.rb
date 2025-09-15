@@ -60,7 +60,7 @@ module Solargraph
       pins.concat @environ.pins
     end
 
-    # @param out [IO]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_all!(out)
       # if we log at debug level:
@@ -80,7 +80,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO]
+    # @param out [IO, nil]
     # @return [void]
     def cache_yard_pins(gemspec, out)
       pins = GemPins.build_yard_pins(yard_plugins, gemspec)
@@ -89,7 +89,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO]
+    # @param out [IO, nil]
     # @return [void]
     def cache_rbs_collection_pins(gemspec, out)
       rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
@@ -103,7 +103,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     # @return [void]
     def cache(gemspec, rebuild: false, out: nil)
       build_yard = uncached_yard_gemspecs.include?(gemspec) || rebuild
@@ -253,6 +253,7 @@ module Solargraph
 
       if !rbs_collection_pins.nil? && !yard_pins.nil?
         logger.debug { "Combining pins for #{gemspec.name}:#{gemspec.version}" }
+        # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
         combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
         PinCache.serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = combined_pins
@@ -331,6 +332,7 @@ module Solargraph
         end
       end
       return nil if gemspec.nil?
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       [gemspec_or_preference(gemspec)]
     end
 

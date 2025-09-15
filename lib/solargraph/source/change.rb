@@ -7,13 +7,13 @@ module Solargraph
     class Change
       include EncodingFixes
 
-      # @return [Range]
+      # @return [Range, nil]
       attr_reader :range
 
       # @return [String]
       attr_reader :new_text
 
-      # @param range [Range] The starting and ending positions of the change.
+      # @param range [Range, nil] The starting and ending positions of the change.
       #   If nil, the original text will be overwritten.
       # @param new_text [String] The text to be changed.
       def initialize range, new_text
@@ -61,6 +61,7 @@ module Solargraph
           off = Position.to_offset(text, range.start)
           match = result[0, off].match(/[.:]+\z/)
           if match
+            # @sg-ignore Need to figure if String#[n..m] can return nil
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
           end
           result

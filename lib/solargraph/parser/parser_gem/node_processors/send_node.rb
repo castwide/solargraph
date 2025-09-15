@@ -202,6 +202,7 @@ module Solargraph
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 unless ref.nil?
+                  # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
                   pins.delete ref
                   mm = Solargraph::Pin::Method.new(
                     location: ref.location,

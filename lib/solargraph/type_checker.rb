@@ -18,7 +18,7 @@ module Solargraph
     # @return [ApiMap]
     attr_reader :api_map
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param api_map [ApiMap, nil]
     # @param level [Symbol]
     def initialize filename, api_map: nil, level: :normal
@@ -32,6 +32,7 @@ module Solargraph
 
     # @return [SourceMap]
     def source_map
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       @source_map ||= api_map.source_map(filename)
     end
 
@@ -270,6 +271,7 @@ module Solargraph
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, block_pin, locals)
@@ -286,9 +288,11 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)
@@ -305,6 +309,7 @@ module Solargraph
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
+          # @sg-ignore flow sensitive typing needs to handle || on nil types
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
               if closest.defined?
@@ -380,7 +385,9 @@ module Solargraph
     # @param location [Location]
     # @param locals [Array<Pin::LocalVariable>]
     # @param closure_pin [Pin::Closure]
-    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
+    # @sg-ignore Unresolved type Hash{String => undefined] for params
+    #   param on Solargraph::TypeChecker#signature_argument_problems_for
+    # @param params [Hash{String => undefined]
     # @param arguments [Array<Source::Chain>]
     # @param sig [Pin::Signature]
     # @param pin [Pin::Method]
@@ -462,7 +469,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => Hash{Symbol => String, Solargraph::ComplexType}}]
+    # @param params [Hash{String => Hash{Symbol => undefined}}]
     # @param idx [Integer]
     #
     # @return [Array<Problem>]
@@ -597,6 +604,7 @@ module Solargraph
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       rng = Solargraph::Range.from_node(pin.assignment)
       block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
       type = chain.infer(api_map, block_pin, locals)
@@ -612,6 +620,7 @@ module Solargraph
           base = base.base
         end
         closest = found.typify(api_map) if found
+        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         if !found || closest.defined? || internal?(found)
           return false
         end

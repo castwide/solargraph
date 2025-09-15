@@ -367,6 +367,7 @@ module Solargraph
     # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       here = Range.from_node(node)
       if here.contain?(position)
         stack.unshift node

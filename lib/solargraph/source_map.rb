@@ -97,7 +97,7 @@ module Solargraph
       Pin::Search.new(document_symbols, query).results
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at position
       Source::Cursor.new(source, position)

@@ -17,7 +17,7 @@ module Solargraph
       # @return [String, nil]
       attr_reader :suggestion
 
-      # @param location [Solargraph::Location]
+      # @param location [Solargraph::Location, nil]
       # @param message [String]
       # @param pin [Solargraph::Pin::Base, nil]
       # @param suggestion [String, nil]

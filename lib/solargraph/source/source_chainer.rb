@@ -148,6 +148,7 @@ module Solargraph
           break if brackets > 0 or parens > 0 or squares > 0
           char = @source.code[index, 1]
           break if char.nil? # @todo Is this the right way to handle this?
+          # @sg-ignore Need to figure if String#[n..m] can return nil
           if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
@@ -173,7 +174,9 @@ module Solargraph
               squares += 1
             end
             if brackets.zero? and parens.zero? and squares.zero?
+              # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
               break if ['"', "'", ',', ';', '%'].include?(char)
+              # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
               break if ['!', '?'].include?(char) && index < offset - 1
               break if char == '$'
               if char == '@'

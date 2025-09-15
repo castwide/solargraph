@@ -93,6 +93,7 @@ module Solargraph
       end
       character = 0 if character.nil? and (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
+      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       Position.new(line, character)
     end
 

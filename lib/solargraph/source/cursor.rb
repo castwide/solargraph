@@ -112,6 +112,7 @@ module Solargraph
       def recipient
         @recipient ||= begin
           node = recipient_node
+          # @sg-ignore flow sensitive typing needs to handle "if foo"
           node ? Cursor.new(source, Range.from_node(node).ending) : nil
         end
       end

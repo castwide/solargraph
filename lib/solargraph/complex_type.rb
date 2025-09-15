@@ -44,7 +44,7 @@ module Solargraph
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
-    # @param context_type [UniqueType, nil]
+    # @param context_type [ComplexType, ComplexType::UniqueType, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
@@ -65,7 +65,7 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
-    # @param dst [ComplexType]
+    # @param dst [ComplexType, ComplexType::UniqueType]
     # @return [ComplexType]
     def self_to_type dst
       object_type_dst = dst.reduce_class_type
@@ -217,14 +217,15 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param expected [ComplexType]
-    # @param inferred [ComplexType]
+    # @param expected [ComplexType, UniqueType]
+    # @param inferred [ComplexType, UniqueType]
     # @return [Boolean]
     def duck_types_match? api_map, expected, inferred
       raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
+        # @sg-ignore Need to figure if String#[n..m] can return nil
         return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
       end
       true
@@ -367,12 +368,13 @@ module Solargraph
       #   :kwarg, etc) of the arguments given, instead of just having
       #   an array of Chains as the arguments.
       def parse *strings, partial: false
-        # @type [Hash{Array<String> => ComplexType}]
+        # @type [Hash{Array<String> => ComplexType, Array<ComplexType::UniqueType>}]
         @cache ||= {}
         unless partial
           cached = @cache[strings]
           return cached unless cached.nil?
         end
+        # @types [Array<ComplexType::UniqueType>]
         types = []
         key_types = nil
         strings.each do |type_string|

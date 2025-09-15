@@ -410,7 +410,9 @@ module Solargraph
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           repargs[reporter] ||= []
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           repargs[reporter].concat args
         end
       end
@@ -472,6 +474,7 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
         source_map_hash[src.filename]
       else
@@ -566,9 +569,11 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         new_map = Solargraph::SourceMap.map(source)
         source_map_hash[source.filename] = new_map
       else
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end
@@ -634,6 +639,7 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
+      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?

@@ -32,6 +32,7 @@ module Solargraph
           next if rng.start.line >= code.lines.length
           scol = code.lines[rng.start.line].index(/[^\s]/) || 0
           ecol = code.lines[rng.start.line].length
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           result.push Range.from_to(rng.start.line, scol, rng.start.line, ecol)
         end
         result

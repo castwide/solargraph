@@ -192,7 +192,7 @@ module Solargraph
       api_map
     end
 
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_all!(out)
       @doc_map.cache_all!(out)
@@ -214,9 +214,8 @@ module Solargraph
     # any missing gems.
     #
     #
-    # @sg-ignore Declared type IO does not match inferred type IO, StringIO for variable out
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, StringIO] The output stream for messages
     #
     # @return [ApiMap]
     def self.load_with_cache directory, out = $stdout
@@ -333,6 +332,7 @@ module Solargraph
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
@@ -641,6 +641,7 @@ module Solargraph
       return true if sup == sub
       sc_fqns = sub
       while (sc = store.get_superclass(sc_fqns))
+        # @sg-ignore flow sensitive typing needs to handle "if foo"
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
@@ -784,6 +785,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
           end
         else
@@ -794,6 +796,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, true)
           end
           unless no_core || fqns.empty?

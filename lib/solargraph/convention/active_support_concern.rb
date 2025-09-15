@@ -80,12 +80,14 @@ module Solargraph
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "Handling class include include_tag=#{include_tag}"
           end
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           module_extends = api_map.get_extends(rooted_include_tag).map(&:parametrized_tag).map(&:to_s)
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "found module extends of #{rooted_include_tag}: #{module_extends}"
           end
           return unless module_extends.include? 'ActiveSupport::Concern'
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           included_class_pins = api_map.inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type,
                                                                          :class, visibility, deep, skip, true)
           logger.debug do

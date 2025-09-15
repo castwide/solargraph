@@ -16,6 +16,7 @@ module Solargraph
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
       def resolve(name, *gates)
+        # @sg-ignore Need to figure if String#[n..m] can return nil
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
@@ -136,13 +137,14 @@ module Solargraph
       # will start the search in the specified context until it finds a
       # match for the namespace.
       #
-      # @param namespace [String, nil] The namespace to
+      # @param namespace [String] The namespace to
       #   match
       # @param context_namespace [String] The context namespace in which the
       #   tag was referenced; start from here to resolve the name
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
+          # @sg-ignore Need to figure if String#[n..m] can return nil
           inner_qualify(namespace[2..], '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)
@@ -208,6 +210,7 @@ module Solargraph
         end
         sc_ref = store.get_superclass(fqns)
         if sc_ref
+          # @sg-ignore flow sensitive typing needs to handle "if foo"
           fqsc = dereference(sc_ref)
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end

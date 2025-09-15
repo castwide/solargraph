@@ -62,7 +62,7 @@ module Solargraph
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @param closure [Solargraph::Pin::Base, nil]
-      # @param spec [Solargraph::Pin::Base, nil]
+      # @param spec [Gem::Specification, nil]
       # @return [Solargraph::Pin::Method]
       def make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
         closure ||= Solargraph::Pin::Namespace.new(
@@ -71,6 +71,7 @@ module Solargraph
         )
         location = object_location(code_object, spec)
         comments = code_object.docstring ? code_object.docstring.all.to_s : ''
+        # @sg-ignore flow sensitive typing needs to handle || on nil types
         Pin::Method.new(
           location: location,
           closure: closure,

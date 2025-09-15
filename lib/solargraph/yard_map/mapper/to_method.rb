@@ -35,6 +35,7 @@ module Solargraph
           final_visibility ||= code_object.visibility
           if code_object.is_alias?
             origin_code_object = code_object.namespace.aliases[code_object]
+            # @sg-ignore flow sensitive typing needs to handle || on nil types
             pin = Pin::MethodAlias.new(
               name: name,
               location: location,
