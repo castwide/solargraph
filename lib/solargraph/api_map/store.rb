@@ -79,7 +79,7 @@ module Solargraph
       OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
 
       # @param fqns [String]
-      # @return [Pin::Reference::Superclass]
+      # @return [Pin::Reference::Superclass, nil]
       def get_superclass fqns
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
@@ -301,12 +301,12 @@ module Solargraph
         index.pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         index.superclass_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         index.include_references
       end
@@ -316,12 +316,12 @@ module Solargraph
         index.include_reference_pins
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         index.prepend_references
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
       end
