@@ -90,10 +90,17 @@ module Solargraph
           elsif n.type == :const
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          elsif [:lvar, :lvasgn].include?(n.type)
+          elsif n.type == :lvar
             result.push Chain::Call.new(n.children[0].to_s, Location.from_node(n))
-          elsif [:ivar, :ivasgn].include?(n.type)
+          elsif n.type == :ivar
             result.push Chain::InstanceVariable.new(n.children[0].to_s)
+          elsif [:lvasgn, :ivasgn, :cvasgn].include?(n.type)
+            # We don't really care about the existing type of the lhs;
+            # we know what it will be after assignment.  If it
+            # violates the existing type, that's something to deal
+            # with at type-checking time
+            new_node = n.children[1]
+            result.concat generate_links new_node
           elsif [:cvar, :cvasgn].include?(n.type)
             result.push Chain::ClassVariable.new(n.children[0].to_s)
           elsif [:gvar, :gvasgn].include?(n.type)

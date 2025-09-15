@@ -31,10 +31,6 @@ module Solargraph
     #   type.  The former is useful during completion, but the
     #   latter is best for typechecking at higher levels.
     #
-    #   Currently applies only to selecting potential methods to
-    #   select in a Call link, but is likely to expand in the
-    #   future to similar situations.
-    #
     def initialize pins: [], loose_unions: true
       @source_map_hash = {}
       @cache = Cache.new

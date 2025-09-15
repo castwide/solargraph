@@ -19,6 +19,22 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include("Wrong argument type for Array#[]: index expected Integer, received Integer, nil")
     end
 
+    it 'understands local evaluation with ||= removes nil from lhs type' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            @bar = nil
+          end
+
+          # @return [Integer]
+          def bar
+            @bar ||= 123
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'complains on bad @type assignment' do
       checker = type_checker(%(
         # @type [Integer]
