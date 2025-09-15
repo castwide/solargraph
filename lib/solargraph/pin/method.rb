@@ -225,6 +225,7 @@ module Solargraph
           result = []
           result.push generate_signature(parameters, top_type) if top_type.defined?
           result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+          # @sg-ignore sensitive typing needs to handle || on nil types
           result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
           result
         end
