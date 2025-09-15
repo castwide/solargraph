@@ -127,32 +127,6 @@ module Solargraph
       end
 
       # @return [void]
-      def map_include_pins
-        pins_by_class(Solargraph::Pin::Reference::Include).each do |pin|
-          include_reference_pins[pin.namespace].push pin
-        end
-      end
-
-      # Add references to a map
-      #
-      # @param hash [Hash{String => Array<String>}]
-      # @param reference_pin [Pin::Reference]
-      #
-      # @return [void]
-      def store_parametric_reference(hash, reference_pin)
-        referenced_ns = reference_pin.name
-        referenced_tag_params = reference_pin.generic_values
-        referenced_tag = referenced_ns +
-                         if referenced_tag_params && referenced_tag_params.length > 0
-                           "<" + referenced_tag_params.join(', ') + ">"
-                         else
-                           ''
-                         end
-        referencing_ns = reference_pin.namespace
-        hash[referencing_ns].push referenced_tag
-      end
-
-      # @return [void]
       def map_overrides
         pins_by_class(Pin::Reference::Override).each do |ovr|
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
