@@ -38,6 +38,9 @@ module Solargraph
         @output = text
         @did_nullify = can_nullify
         changes.each do |ch|
+          # @sg-ignore Wrong argument type for
+          #   Solargraph::Source::Change#write: text expected String,
+          #   received String, nil
           @output = ch.write(@output, can_nullify)
         end
         @output

@@ -56,6 +56,10 @@ module Solargraph
             # @type [Array<Solargraph::Pin::LocalVariable>]
             []
           end
+          # @sg-ignore TODO: Wrong argument type for
+          #   Solargraph::Source::Chain::Call#inferred_pins: pins
+          #   expected Enumerable<Solargraph::Pin::Method>, received
+          #   Array<Solargraph::Pin::LocalVariable>, Array
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
@@ -221,6 +225,7 @@ module Solargraph
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
+          # @sg-ignore Need to add support for all unique type match checking on lhs as well
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
@@ -329,6 +334,7 @@ module Solargraph
           block_context_pin = name_pin
           block_pin = find_block_pin(api_map)
           block_context_pin = block_pin.closure if block_pin
+          # @sg-ignore Need to add nil check here
           block.infer(api_map, block_context_pin, locals)
         end
       end

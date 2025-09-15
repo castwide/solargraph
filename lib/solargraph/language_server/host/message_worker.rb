@@ -66,6 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
+          # @sg-ignore Need to add nil check here
           handler = @host.receive(message)
           handler&.send_response
         end
@@ -86,9 +87,7 @@ module Solargraph
           idx = messages.find_index { |msg| msg['method'] == '$/cancelRequest' }
           return unless idx
 
-          # @sg-ignore flow sensitive typing needs to handle "if foo"
           msg = messages[idx]
-          # @sg-ignore flow sensitive typing needs to handle "if foo"
           messages.delete_at idx
           msg
         end
@@ -99,7 +98,6 @@ module Solargraph
           idx = messages.find_index do |msg|
             UPDATE_METHODS.include?(msg['method']) || version_dependent?(msg)
           end
-          # @sg-ignore flow sensitive typing needs to handle "if foo"
           idx ? messages.delete_at(idx) : messages.shift
         end
 

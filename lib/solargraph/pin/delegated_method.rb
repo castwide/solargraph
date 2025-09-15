@@ -77,8 +77,8 @@ module Solargraph
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
-          Solargraph.logger.warn \
-            "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
+          # @sg-ignore Need to add nil check here
+          msg = Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
 

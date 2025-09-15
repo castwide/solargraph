@@ -3,6 +3,7 @@
 module Solargraph
   class YardMap
     class ToMethod
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1082
       module InnerMethods
         module_function
 
@@ -79,6 +80,7 @@ module Solargraph
           comments: comments,
           scope: scope || code_object.scope,
           visibility: visibility || code_object.visibility,
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1082
           parameters: InnerMethods.get_parameters(code_object, location, comments),
           explicit: code_object.is_explicit?,
           source: :yard_map

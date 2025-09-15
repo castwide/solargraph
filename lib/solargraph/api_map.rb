@@ -142,7 +142,7 @@ module Solargraph
       @@core_map.pins
     end
 
-    # @param name [String]
+    # @param name [String, nil]
     # @return [YARD::Tags::MacroDirective, nil]
     def named_macro name
       store.named_macros[name]
@@ -640,6 +640,7 @@ module Solargraph
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
+      # @sg-ignore Need to disambiguate type of sup, sub
       while (sc = store.get_superclass(sc_fqns))
         # @sg-ignore flow sensitive typing needs to handle "if foo"
         sc_new = store.constants.dereference(sc)
@@ -754,6 +755,7 @@ module Solargraph
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = store.constants.dereference(im)
+          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -792,6 +794,7 @@ module Solargraph
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
             fqem = store.constants.dereference(em)
+            # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)

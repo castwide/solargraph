@@ -162,6 +162,7 @@ module Solargraph
       # @return [Integer]
       def index
         method_pin = closure
+        # @sg-ignore TODO: Unresolved call to parameter_names
         method_pin.parameter_names.index(name)
       end
 

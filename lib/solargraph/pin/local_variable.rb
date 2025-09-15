@@ -26,9 +26,6 @@ module Solargraph
           assignment: assert_same(other, :assignment),
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Pin::Base#assert_same: other expected
-        #   Solargraph::Pin::Base, received self
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         super(other, new_attrs)
@@ -39,6 +36,7 @@ module Solargraph
       def visible_at?(other_closure, other_loc)
         location.filename == other_loc.filename &&
           presence.include?(other_loc.range.start) &&
+          # @sg-ignore Need to add nil check here
           match_named_closure(other_closure, closure)
       end
 

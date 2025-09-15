@@ -37,7 +37,7 @@ module Solargraph
           parts
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
           return nil unless node.is_a?(AST::Node)
@@ -105,7 +105,7 @@ module Solargraph
           signature
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Hash{Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
@@ -119,7 +119,6 @@ module Solargraph
           result
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         NIL_NODE = ::Parser::AST::Node.new(:nil)
 
         # @param node [Parser::AST::Node]
@@ -226,7 +225,6 @@ module Solargraph
             if node.type == :send
               args = node.children[2..-1]
               if !args.empty?
-                # @sg-ignore flow sensitive typing needs to handle "if foo"
                 return node if prev && args.include?(prev)
               else
                 if source.synchronized?

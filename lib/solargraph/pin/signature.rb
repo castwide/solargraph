@@ -26,12 +26,10 @@ module Solargraph
         super || closure&.dodgy_return_type_source?
       end
 
-      # @sg-ignore need boolish support for ? methods
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore need boolish support for ? methods
       def location
         super || closure&.location
       end

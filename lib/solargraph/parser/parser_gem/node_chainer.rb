@@ -151,6 +151,7 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
+          # @sg-ignore Need to add nil check here
           NodeChainer.chain(@parent.children[2], @filename)
         end
 

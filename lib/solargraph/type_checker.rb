@@ -7,6 +7,8 @@ module Solargraph
     autoload :Problem,  'solargraph/type_checker/problem'
     autoload :Rules,    'solargraph/type_checker/rules'
 
+    # @!parse
+    #  include Solargraph::Parser::ParserGem::NodeMethods
     include Parser::NodeMethods
 
     # @return [String]
@@ -32,7 +34,6 @@ module Solargraph
 
     # @return [SourceMap]
     def source_map
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       @source_map ||= api_map.source_map(filename)
     end
 
@@ -288,7 +289,6 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
@@ -464,7 +464,7 @@ module Solargraph
     end
 
     # @param sig [Pin::Signature]
-    # @param argchain [Source::Chain]
+    # @param argchain [Solargraph::Source::Chain]
     # @param api_map [ApiMap]
     # @param block_pin [Pin::Block]
     # @param locals [Array<Pin::LocalVariable>]
@@ -478,6 +478,7 @@ module Solargraph
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
+      # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
         result.concat kwrestarg_problems_for(api_map, block_pin, locals, location, pin, params, kwargs)
@@ -490,7 +491,6 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              # @type [ComplexType]
               argtype = argchain.infer(api_map, block_pin, locals).self_to_type(block_pin.context)
               if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")

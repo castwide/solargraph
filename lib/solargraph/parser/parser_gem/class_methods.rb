@@ -39,6 +39,7 @@ module Solargraph
         # @param source [Source]
         # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
         def map source
+          # @sg-ignore Need to add nil check here
           NodeProcessor.process(source.node, Region.new(source: source))
         end
 
@@ -100,7 +101,7 @@ module Solargraph
           Solargraph::Parser::NodeProcessor.process *args
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
           NodeMethods.infer_literal_node_type node
@@ -111,7 +112,7 @@ module Solargraph
           parser.version
         end
 
-        # @param node [BasicObject]
+        # @param node [BasicObject, nil]
         # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
@@ -125,7 +126,7 @@ module Solargraph
           Range.new(st, en)
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Array<Range>]
         def string_ranges node
           return [] unless is_ast_node?(node)

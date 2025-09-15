@@ -46,6 +46,7 @@ module Solargraph
 
     # @generic T
     # @param klass [Class<generic<T>>]
+    # @sg-ignore Need better generic inference here
     # @return [Array<generic<T>>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
@@ -176,7 +177,9 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_writer :convention_pins
 
+    # @return [Hash{Class => Array<Pin::Base>}]
     def pin_class_hash
+      # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 

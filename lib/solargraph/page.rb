@@ -13,11 +13,11 @@ module Solargraph
     #   @param locals[Hash]
     #   @param render_method [Proc]
     #   @return [Binder]
+    # @sg-ignore https://github.com/castwide/solargraph/issues/1082
     class Binder < OpenStruct
       # @param locals [Hash]
       # @param render_method [Proc]
       def initialize locals, render_method
-        # @sg-ignore Too many arguments to BasicObject#initialize
         super(locals)
         define_singleton_method :render do |template, layout: false, locals: {}|
           render_method.call(template, layout: layout, locals: locals)
@@ -59,6 +59,7 @@ module Solargraph
       # @param layout [Boolean]
       # @param locals [Hash]
       @render_method = proc { |template, layout: false, locals: {}|
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1082
         binder = Binder.new(locals, @render_method)
         if layout
           Tilt::ERBTemplate.new(Page.select_template(directories, 'layout')).render(binder) do

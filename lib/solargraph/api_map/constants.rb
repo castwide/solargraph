@@ -190,7 +190,7 @@ module Solargraph
         end
       end
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @param visibility [Array<Symbol>]
       # @param skip [Set<String>]
       # @return [Array<Pin::Base>]

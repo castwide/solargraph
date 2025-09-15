@@ -230,6 +230,7 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             if type.generic?
+              # @sg-ignore Need to add nil check here
               type = type.resolve_generics(pin.closure, context.binder)
             end
             types << type

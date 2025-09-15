@@ -15,10 +15,8 @@ module Solargraph
       #
       # @return [void]
       def process_and(and_node, true_ranges = [])
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @type [Parser::AST::Node]
         rhs = and_node.children[1]
 
@@ -46,10 +44,8 @@ module Solargraph
         #   s(:send, nil, :bar))
         # [4] pry(main)>
         conditional_node = if_node.children[0]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @type [Parser::AST::Node]
         then_clause = if_node.children[1]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
         # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 

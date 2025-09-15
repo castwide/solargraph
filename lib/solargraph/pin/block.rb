@@ -16,10 +16,9 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
       def initialize receiver: nil, args: [], context: nil, node: nil, **splat
-        super(**splat, parameters: args)
+        super(**splat, parameters: args, return_type: ComplexType.parse('::Proc'))
         @receiver = receiver
         @context = context
-        @return_type = ComplexType.parse('::Proc')
         @node = node
       end
 
@@ -52,6 +51,7 @@ module Solargraph
         chain = Parser.chain(receiver, filename, node)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
+        # @sg-ignore Need to add nil check here
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
         meths.each do |meth|
@@ -86,7 +86,9 @@ module Solargraph
         return ComplexType::UNDEFINED unless receiver
 
         chain = Parser.chain(receiver, location.filename)
+        # @sg-ignore Need to add nil check here
         locals = api_map.source_map(location.filename).locals_at(location)
+        # @sg-ignore Need to add nil check here
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 

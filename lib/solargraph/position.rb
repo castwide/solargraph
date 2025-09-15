@@ -57,7 +57,6 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      # @sg-ignore Unresolved call to + on Integer
       text.lines[0...position.line].sum(&:length) + position.character
     end
 

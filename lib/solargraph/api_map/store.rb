@@ -78,12 +78,13 @@ module Solargraph
       BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN, source: :solargraph)
       OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @return [Pin::Reference::Superclass, nil]
       def get_superclass fqns
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
+        # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 
@@ -125,7 +126,7 @@ module Solargraph
         index.path_pin_hash[path]
       end
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @param scope [Symbol] :class or :instance
       # @return [Enumerable<Solargraph::Pin::Base>]
       def get_instance_variables(fqns, scope = :instance)
@@ -240,9 +241,7 @@ module Solargraph
           # @sg-ignore flow sensitive typing needs to handle || on nil types
           superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
-            # @sg-ignore flow sensitive typing needs to handle "if foo"
             ancestors << superclass
-            # @sg-ignore flow sensitive typing needs to handle "if foo"
             queue << superclass
           end
 

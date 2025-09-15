@@ -177,7 +177,7 @@ module Solargraph
       end
 
       # @param parameters [::Array<Parameter>]
-      # @param return_type [ComplexType]
+      # @param return_type [ComplexType, nil]
       # @return [Signature]
       def generate_signature(parameters, return_type)
         block = nil
@@ -225,7 +225,6 @@ module Solargraph
           result = []
           result.push generate_signature(parameters, top_type) if top_type.defined?
           result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
-          # @sg-ignore sensitive typing needs to handle || on nil types
           result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
           result
         end
@@ -536,6 +535,7 @@ module Solargraph
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
+        # @sg-ignore Need to add nil check here
         resolve_reference match[1], api_map
       end
 
@@ -575,7 +575,6 @@ module Solargraph
         nil
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1005
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?

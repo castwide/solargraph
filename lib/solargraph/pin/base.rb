@@ -315,6 +315,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
+      # @sg-ignore Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @return [undefined]
       def assert_same(other, attr)
         if other.nil?
@@ -378,7 +379,6 @@ module Solargraph
       # @sg-ignore Need to understand @foo ||= 123 will never be nil
       # @return [String]
       def comments
-        # @sg-ignore Need to understand @foo ||= 123 will never be nil
         @comments ||= ''
       end
 
@@ -577,7 +577,7 @@ module Solargraph
       # the return type and the #proxied? setting, the proxy should be a clone
       # of the original.
       #
-      # @param return_type [ComplexType]
+      # @param return_type [ComplexType, nil]
       # @return [self]
       def proxy return_type
         result = dup
@@ -605,7 +605,6 @@ module Solargraph
         rbs = return_type.rooted_tags if return_type.name == 'Class'
         if path
           if rbs
-            # @sg-ignore flow sensitive typing needs to handle "if foo"
             path + ' ' + rbs
           else
             path
@@ -657,7 +656,7 @@ module Solargraph
       # @return [Boolean]
       attr_writer :proxied
 
-      # @return [ComplexType]
+      # @return [ComplexType, nil]
       attr_writer :return_type
 
       attr_writer :docstring

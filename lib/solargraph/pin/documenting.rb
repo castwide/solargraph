@@ -67,7 +67,6 @@ module Solargraph
 
         # @return [String]
         def to_markdown
-          # @sg-ignore Too many arguments to BasicObject.new
           ReverseMarkdown.convert Kramdown::Document.new(@plaintext, input: 'GFM').to_html
         end
       end

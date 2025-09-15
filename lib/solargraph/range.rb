@@ -78,7 +78,7 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [AST::Node]
+    # @param node [AST::Node, nil]
     # @return [Range, nil]
     def self.from_node node
       if node&.loc && node.loc.expression

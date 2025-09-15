@@ -58,6 +58,7 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
+      # @todo Need to add support for all unique type match checking on lhs as well
       # @todo Array#include? argument type should include
       #   nil for expressiveness like below
       # @todo need a non-empty-list type
@@ -65,6 +66,9 @@ module Solargraph
       # @todo need to be able to disambiguate Array signatures
       # @todo https://github.com/castwide/solargraph/pull/1005
       # @todo To make JSON strongly typed we'll need a record syntax
+      # @todo Need to add nil check here
+      # @todo Untyped method Solargraph::Pin::Base#assert_same could not be inferred
+      # @todo Need to validate config
       # @todo flow sensitive typing needs to handle "if foo"
       # @todo flow sensitive typing needs to handle "if foo.nil?"
       # @todo flow sensitive typing needs to handle || on nil types

@@ -20,7 +20,6 @@ module Solargraph
         ''
       end
 
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       def closure
         @closure ||= Pin::ROOT_PIN
       end

@@ -223,6 +223,7 @@ module Solargraph
     # @return [Array<Range>]
     def folding_ranges
       @folding_ranges ||= begin
+        # @type [Array<Range>]
         result = []
         inner_folding_ranges node, result
         result.concat foldable_comment_block_ranges
@@ -269,7 +270,7 @@ module Solargraph
       cursor
     end
 
-    # @param top [Parser::AST::Node]
+    # @param top [Parser::AST::Node, nil]
     # @param result [Array<Range>]
     # @param parent [Symbol, nil]
     # @return [void]
@@ -367,7 +368,6 @@ module Solargraph
     # @return [void]
     def inner_tree_at node, position, stack
       return if node.nil?
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       here = Range.from_node(node)
       if here.contain?(position)
         stack.unshift node

@@ -7,7 +7,6 @@ module Solargraph
         class SclassNode < Parser::NodeProcessor::Base
           # @sg-ignore @override is adding, not overriding
           def process
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             sclass = node.children[0]
             # @todo Changing Parser::AST::Node to AST::Node below will
             #   cause type errors at strong level because the combined

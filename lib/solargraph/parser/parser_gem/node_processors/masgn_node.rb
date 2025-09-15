@@ -22,13 +22,10 @@ module Solargraph
             #     s(:int, 2),
             #     s(:int, 3)))
             masgn = node
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             # @type [Parser::AST::Node]
             mlhs = masgn.children.fetch(0)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             # @type [Array<Parser::AST::Node>]
             lhs_arr = mlhs.children
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             # @type [Parser::AST::Node]
             mass_rhs = node.children.fetch(1)
 

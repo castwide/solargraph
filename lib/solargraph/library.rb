@@ -410,9 +410,7 @@ module Solargraph
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
-          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           repargs[reporter] ||= []
-          # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
           repargs[reporter].concat args
         end
       end
@@ -639,7 +637,6 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
-      # @sg-ignore Need to understand @foo ||= 123 will never be nil
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?
