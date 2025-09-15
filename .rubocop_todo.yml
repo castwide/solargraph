@@ -91,13 +91,6 @@ Layout/EmptyLines:
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Exclude:
-    - 'lib/solargraph/rbs_map/core_map.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
 # SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines
 Layout/EmptyLinesAroundModuleBody:
   Exclude:
@@ -1015,6 +1008,7 @@ Style/NestedTernaryOperator:
 # SupportedStyles: skip_modifier_ifs, always
 Style/Next:
   Exclude:
+    - 'lib/solargraph/api_map/index.rb'
     - 'lib/solargraph/parser/parser_gem/node_processors/send_node.rb'
     - 'lib/solargraph/pin/signature.rb'
     - 'lib/solargraph/source_map/clip.rb'
