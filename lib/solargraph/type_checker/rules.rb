@@ -58,28 +58,18 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo Need to add support for all unique type match checking on lhs as well
-      # @todo Array#include? argument type should include
-      #   nil for expressiveness like below
-      # @todo need a non-empty-list type
-      # @todo need boolish support for ? methods
-      # @todo need to be able to disambiguate Array signatures
-      # @todo https://github.com/castwide/solargraph/pull/1005
-      # @todo To make JSON strongly typed we'll need a record syntax
-      # @todo Need to add nil check here
-      # @todo Untyped method Solargraph::Pin::Base#assert_same could not be inferred
-      # @todo Need to validate config
-      # @todo flow sensitive typing needs to handle "if foo"
-      # @todo flow sensitive typing needs to handle "if foo.nil?"
-      # @todo flow sensitive typing needs to handle || on nil types
-      # @todo Need to understand @foo ||= 123 will never be nil
-      # @todo Need to figure if String#[n..m] can return nil
-      # @todo Need to figure if Array#[n..m] can return nil
-      # @todo add metatype - e.g., $stdout is both an IO as well as
-      #   a StringIO.  Marking it as [IO, StringIO] implies it is
-      #   /either/ one, not both, which means you can't hand it to
-      #   something that demands a regular IO and doesn't also claim
-      #   to accept a StringIO.
+      # @todo TODO: Need to add support for all unique type match checking on lhs as well
+      # @todo 27: Need to understand @foo ||= 123 will never be nil
+      # @todo 18: Need to add nil check here
+      # @todo 16: flow sensitive typing needs to handle "if foo.nil?"
+      # @todo 15: flow sensitive typing needs to handle "if foo"
+      # @todo 15: flow sensitive typing needs to handle || on nil types
+      # @todo 7: Need to figure if String#[n..m] can return nil
+      # @todo 6: Need to validate config
+      # @todo 5: need boolish support for ? methods
+      # @todo 4: Need to figure if Array#[n..m] can return nil
+      # @todo 1: To make JSON strongly typed we'll need a record syntax
+      # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       def require_all_unique_types_match_declared?
         rank >= LEVELS[:typed]
       end

@@ -92,7 +92,7 @@ module Solargraph
           node.children[1]
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1005
+        # @sg-ignore Need to figure if Array#[n..m] can return nil
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
           struct_node.children[2..-1]
