@@ -128,12 +128,28 @@ module Solargraph
 
       private
 
+      # @param return_type [ComplexType, nil]
+      #
+      # @return [ComplexType, nil]
+      def remove_nil(return_type)
+        # TODO: This probably needs to be some kind of override
+        return if return_type.nil?
+
+        types = return_type.items.reject { |t| t.name == 'nil' }
+        ComplexType.new(types)
+      end
+
       # @param pin [Pin::LocalVariable]
-      # @param downcast_type_name [String]
+      # @param downcast_type_name [String, :not_nil]
       # @param presence [Range]
       #
       # @return [void]
       def add_downcast_local(pin, downcast_type_name, presence)
+        type = if downcast_type_name == :not_nil
+                 remove_nil(pin.return_type)
+               else
+                 ComplexType.try_parse(downcast_type_name)
+               end
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
           location: pin.location,
@@ -143,7 +159,7 @@ module Solargraph
           # that it implies
           comments: pin.comments,
           presence: presence,
-          return_type: ComplexType.try_parse(downcast_type_name),
+          return_type: type,
           presence_certain: true,
           source: :flow_sensitive_typing
         )
@@ -162,10 +178,12 @@ module Solargraph
           facts.each do |fact|
             downcast_type_name = fact.fetch(:type, nil)
             nilp = fact.fetch(:nil, nil)
+            not_nilp = fact.fetch(:not_nil, nil)
             presences.each do |presence|
               # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
               add_downcast_local(pin, downcast_type_name, presence) unless downcast_type_name.nil?
               add_downcast_local(pin, 'nil', presence) if nilp == true
+              add_downcast_local(pin, :not_nil, presence) if not_nilp == true
             end
           end
         end
@@ -180,6 +198,8 @@ module Solargraph
           process_calls(conditional_node, true_ranges)
         elsif conditional_node.type == :and
           process_and(conditional_node, true_ranges)
+        elsif [:lvar, :ivar, :cvar, :gvar].include?(conditional_node.type)
+          process_variable(conditional_node, true_ranges)
         end
       end
 
@@ -273,6 +293,30 @@ module Solargraph
         if_true = {}
         if_true[pin] ||= []
         if_true[pin] << { nil: true }
+        process_facts(if_true, true_presences)
+      end
+
+      # @param var_node [Parser::AST::Node]
+      #
+      # @return [String, nil] Variable name referenced
+      def parse_variable(var_node)
+        return if var_node.children.length != 1
+
+        var_node.children[0]&.to_s
+      end
+
+      def process_variable(node, true_presences)
+        variable_name = parse_variable(node)
+        return if variable_name.nil?
+
+        var_position = Range.from_node(node).start
+
+        pin = find_local(variable_name, var_position)
+        return unless pin
+
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { not_nil: true }
         process_facts(if_true, true_presences)
       end
 
