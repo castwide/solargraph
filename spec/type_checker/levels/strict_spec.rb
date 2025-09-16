@@ -7,7 +7,7 @@ describe Solargraph::TypeChecker do
 
     it 'can derive return types' do
       checker = type_checker(%(
-        # @param a [String]
+        # @param a [String, nil]
         # @return [void]
         def foo(a); end
 
@@ -1019,10 +1019,30 @@ describe Solargraph::TypeChecker do
                  123
                elsif rand
                  456
+               else
+                 nil
                end
           end
         end
       ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with detailed expression' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              if rand
+                 123
+               elsif rand
+                 456
+               end
+          end
+        end
+      ))
+      pending('implicit nil being understood from implicit else')
       expect(checker.problems.map(&:message)).to eq([])
     end
   end

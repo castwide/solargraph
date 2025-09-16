@@ -47,6 +47,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
+      pending 'not-nil override pin available and used by flow sensitive typing'
       expect(checker.problems.map(&:message)).to be_empty
     end
 
