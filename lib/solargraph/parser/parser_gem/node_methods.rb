@@ -302,7 +302,6 @@ module Solargraph
         module DeepInference
           class << self
             CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
-            CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]
             COMPOUND_STATEMENTS = [:begin, :kwbegin]
@@ -350,8 +349,6 @@ module Solargraph
                 # @sg-ignore Need to add nil check here
                 result.concat reduce_to_value_nodes(node.children[1..-1])
                 # result.push NIL_NODE unless node.children[2]
-              elsif CONDITIONAL_ALL.include?(node.type)
-                result.push node
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif FIRST_TWO_CHILDREN.include?(node.type)

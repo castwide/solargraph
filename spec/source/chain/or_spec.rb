@@ -14,7 +14,7 @@ describe Solargraph::Source::Chain::Or do
     expect(clip.infer.simplify_literals.rooted_tags).to eq('::Integer')
   end
 
-  it '' do
+  it 'removes nil from more complex cases' do
     source = Solargraph::Source.load_string(%(
       def foo
         out = ENV['BAR'] ||
