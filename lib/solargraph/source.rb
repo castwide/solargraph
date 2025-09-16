@@ -61,7 +61,7 @@ module Solargraph
     # @param l2 [Integer]
     # @param c2 [Integer]
     #
-    # @sg-ignore Need to figure if String#[n..m] can return nil
+    # @sg-ignore Need to add nil check here
     # @return [String]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(code, l1, c1)

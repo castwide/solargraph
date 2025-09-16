@@ -71,7 +71,7 @@ module Solargraph
 
       # @return [Chain]
       def base
-        # @sg-ignore Need to figure if Array#[n..m] can return nil
+        # @sg-ignore Need to add nil check here
         @base ||= Chain.new(links[0..-2])
       end
 

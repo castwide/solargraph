@@ -81,7 +81,7 @@ module Solargraph
           node.children[1]
         end
 
-        # @sg-ignore Need to figure if String#[n..m] can return nil
+        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
           data_node.children[2..-1]

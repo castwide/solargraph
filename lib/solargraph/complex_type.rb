@@ -225,7 +225,7 @@ module Solargraph
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
-        # @sg-ignore Need to figure if String#[n..m] can return nil
+        # @sg-ignore Need to add nil check here
         return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
       end
       true

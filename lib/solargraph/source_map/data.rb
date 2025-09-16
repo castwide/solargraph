@@ -12,7 +12,7 @@ module Solargraph
         @locals = nil
       end
 
-      # @sg-ignore flow sensitive typing needs to handle || on nil types
+      # @sg-ignore Need better || handling on ivars
       # @return [Array<Solargraph::Pin::Base>]
       def pins
         generate
@@ -21,7 +21,7 @@ module Solargraph
         @pins || empty_pins
       end
 
-      # @sg-ignore flow sensitive typing needs to handle || on nil types
+      # @sg-ignore Need better || handling on ivars
       # @return [Array<Solargraph::Pin::LocalVariable>]
       def locals
         generate

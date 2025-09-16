@@ -238,7 +238,7 @@ module Solargraph
 
           # Add superclass
           ref = get_superclass(current)
-          # @sg-ignore flow sensitive typing needs to handle || on nil types
+          # @sg-ignore flow sensitive typing needs to handle && with variables
           superclass = ref && constants.dereference(ref)
           if superclass && !superclass.empty? && !visited.include?(superclass)
             ancestors << superclass

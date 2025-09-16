@@ -195,7 +195,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
@@ -249,7 +249,7 @@ module Solargraph
       # @param skip [::Array]
       #
       # @return [::Array<YARD::Tags::Tag>]
-      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner

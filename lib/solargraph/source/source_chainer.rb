@@ -79,13 +79,13 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      # @sg-ignore Need to figure if String#[n..m] can return nil
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def phrase
         @phrase ||= source.code[signature_data..offset-1]
       end
 
-      # @sg-ignore Need to figure if String#[n..m] can return nil
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]

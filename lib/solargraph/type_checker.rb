@@ -315,7 +315,7 @@ module Solargraph
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          # @sg-ignore flow sensitive typing needs to handle || on nil types
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
               if closest.defined?

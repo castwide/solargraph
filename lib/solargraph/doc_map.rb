@@ -330,7 +330,7 @@ module Solargraph
         end
       end
       return nil if gemspec.nil?
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil? ... else"
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       [gemspec_or_preference(gemspec)]
     end
 

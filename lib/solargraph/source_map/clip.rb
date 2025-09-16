@@ -164,7 +164,7 @@ module Solargraph
           full = match[1]
           if full.include?('::')
             if full.end_with?('::')
-              # @sg-ignore Need to figure if String#[n..m] can return nil
+              # @sg-ignore Need to add nil check here
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)

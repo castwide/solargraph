@@ -50,7 +50,7 @@ module Solargraph
               source: :yardoc,
             )
           else
-            # @sg-ignore flow sensitive typing needs to handle || on nil types
+            # @sg-ignore Need to add nil check here
             pin = Pin::Method.new(
               location: location,
               closure: closure,

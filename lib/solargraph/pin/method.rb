@@ -76,7 +76,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       def combine_with(other, attrs = {})
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
