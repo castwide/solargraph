@@ -4,6 +4,40 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'respects pin visibility in if/nil? pattern' do
+      checker = type_checker(%(
+        class Foo
+          # Get the namespace's type (Class or Module).
+          #
+          # @param bar [Symbol, nil]
+          # @return [Symbol, Integer]
+          def foo bar
+            return 123 if bar.nil?
+            bar
+          end
+        end
+      ))
+      pending('recognizing returning branches in flow sensitive typing')
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'respects pin visibility in if/foo pattern' do
+      checker = type_checker(%(
+        class Foo
+          # Get the namespace's type (Class or Module).
+          #
+          # @param bar [Symbol, nil]
+          # @return [Symbol, Integer]
+          def foo bar
+            baz = bar
+            return baz if baz
+            123
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does gives correct complaint on array dereference with nilable type' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index

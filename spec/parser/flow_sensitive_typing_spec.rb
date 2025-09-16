@@ -279,4 +279,54 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
   end
+
+  it 'uses variable in a simple if() to refine types on a simple class' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      def verify_repro(repr)
+        repr = 10 if floop
+        repr
+        if repr
+          repr
+        else
+          repr
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, 10, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    pending('handling else case in flow senstiive typing')
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+  end
+
+  it 'uses variable in a simple if() to refine types on a simple class using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      def verify_repro(repr = nil)
+        repr = 10 if floop
+        repr
+        if repr
+          repr
+        else
+          repr
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 8])
+    expect(clip.infer.rooted_tags).to eq('10, nil')
+
+    pending('deferring nil removal in flow senstive typing')
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    pending('supporting else in flow senstiive typing')
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+  end
 end
