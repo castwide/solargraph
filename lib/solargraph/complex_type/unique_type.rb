@@ -323,10 +323,6 @@ module Solargraph
         nil_type?
       end
 
-      def nil_type?
-        downcast_to_literal_if_possible == UniqueType::NIL
-      end
-
       # @return [UniqueType]
       def downcast_to_literal_if_possible
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
