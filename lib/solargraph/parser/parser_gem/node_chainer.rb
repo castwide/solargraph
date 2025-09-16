@@ -105,9 +105,9 @@ module Solargraph
             #
             new_node = n.children[1]
             result.concat generate_links new_node
-          elsif [:cvar, :cvasgn].include?(n.type)
+          elsif n.type == :cvar
             result.push Chain::ClassVariable.new(n.children[0].to_s)
-          elsif [:gvar, :gvasgn].include?(n.type)
+          elsif n.type == :gvar
             result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
             new_node = n.updated(n.children[0].type, n.children[0].children + [n.children[1]])
