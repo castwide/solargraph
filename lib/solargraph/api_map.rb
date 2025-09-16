@@ -131,7 +131,6 @@ module Solargraph
       @doc_map ||= DocMap.new([], [])
     end
 
-    # @sg-ignore flow sensitive typing needs to handle || on nil types
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       @doc_map&.uncached_gemspecs || []

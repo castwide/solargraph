@@ -135,13 +135,11 @@ module Solargraph
               struct_comments += "\n#{comment}"
             end
 
-            # @sg-ignore flow sensitive typing needs to handle || on nil types
             Solargraph::Source.parse_docstring(struct_comments).to_docstring
           end
 
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
           #
-          # @sg-ignore flow sensitive typing needs to handle || on nil types
           # @return [String]
           def tag_string(tag)
             tag&.types&.join(',') || 'undefined'

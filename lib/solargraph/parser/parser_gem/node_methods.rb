@@ -351,7 +351,7 @@ module Solargraph
                 result.concat reduce_to_value_nodes(node.children[1..-1])
                 # result.push NIL_NODE unless node.children[2]
               elsif CONDITIONAL_ALL.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children)
+                result.push node
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif FIRST_TWO_CHILDREN.include?(node.type)

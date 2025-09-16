@@ -6,17 +6,27 @@ module Solargraph
       # @param source [Solargraph::Source]
       def initialize source
         @source = source
+        # @type [Array<Solargraph::Pin::Base>, nil]
+        @pins = nil
+        # @return [Array<Solargraph::Pin::LocalVariable>, nil]
+        @locals = nil
       end
 
+      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [Array<Solargraph::Pin::Base>]
       def pins
         generate
-        @pins || []
+        # @type [Array<Solargraph::Pin::Base>]
+        empty_pins = []
+        @pins || empty_pins
       end
 
-      # @return [Array<Solargraph::LocalVariable>]
+      # @sg-ignore flow sensitive typing needs to handle || on nil types
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def locals
         generate
+        # @type [Array<Pin::LocalVariable>]
+        empty_locals = []
         @locals || []
       end
 

@@ -57,6 +57,9 @@ module Solargraph
         @docstring = docstring
         @directives = directives
         @combine_priority = combine_priority
+        # @type [ComplexType, ComplexType::UniqueType, nil]
+        @binder = nil
+
 
         assert_source_provided
         assert_location_provided

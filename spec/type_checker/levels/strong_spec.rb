@@ -21,6 +21,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'respects || overriding nilable types' do
+      checker = type_checker(%(
+        # @return [String]
+        def global_config_path
+          out = ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
+              File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+          out
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'respects pin visibility in if/foo pattern' do
       checker = type_checker(%(
         class Foo

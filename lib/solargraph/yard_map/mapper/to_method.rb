@@ -6,6 +6,7 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        # @type [Hash{Array<String, Symbol, String> => Symbol}]
         VISIBILITY_OVERRIDE = {
           # YARD pays attention to 'private' statements prior to class methods but shouldn't
           ["Rails::Engine", :class, "find_root_with_flag"] => :public
@@ -35,7 +36,6 @@ module Solargraph
           final_visibility ||= code_object.visibility
           if code_object.is_alias?
             origin_code_object = code_object.namespace.aliases[code_object]
-            # @sg-ignore flow sensitive typing needs to handle || on nil types
             pin = Pin::MethodAlias.new(
               name: name,
               location: location,
@@ -50,6 +50,7 @@ module Solargraph
               source: :yardoc,
             )
           else
+            # @sg-ignore flow sensitive typing needs to handle || on nil types
             pin = Pin::Method.new(
               location: location,
               closure: closure,

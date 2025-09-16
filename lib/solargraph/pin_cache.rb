@@ -9,7 +9,6 @@ module Solargraph
 
       # The base directory where cached YARD documentation and serialized pins are serialized
       #
-      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [String]
       def base_dir
         # The directory is not stored in a variable so it can be overridden

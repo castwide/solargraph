@@ -300,8 +300,10 @@ module Solargraph
         end
       end
 
+      # @sg-ignore Need to validate config
       # @return [String]
       def command_path
+        # @type [String]
         options['commandPath'] || 'solargraph'
       end
 

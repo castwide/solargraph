@@ -42,6 +42,9 @@ module Solargraph
       @document_symbols = nil
       self.convention_pins = conventions_environ.pins
       @pin_select_cache = {}
+
+      # @type [Array<Pin::Base>, nil]
+      @convention_pins = nil
     end
 
     # @generic T
@@ -118,7 +121,6 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @sg-ignore Need better generic inference here
     # @return [Pin::Method,Pin::Namespace]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
@@ -126,7 +128,6 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @sg-ignore Need better generic inference here
     # @return [Pin::Namespace,Pin::Method,Pin::Block]
     def locate_block_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
@@ -172,7 +173,6 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class => Array<Pin::Base>}]
     # @return [Array<Pin::Base>]
     attr_writer :convention_pins
 

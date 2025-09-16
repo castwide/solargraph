@@ -78,6 +78,7 @@ module Solargraph
 
       # An array of load paths for required paths.
       #
+      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def require_paths
         raw_data['require_paths'] || []
@@ -117,11 +118,11 @@ module Solargraph
 
       private
 
-      # @sg-ignore flow sensitive typing needs to handle || on nil types
       # @return [String]
       def global_config_path
-        ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
-          File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+        out = ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
+              File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+        out
       end
 
       # @return [String]

@@ -5,6 +5,21 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'can derive return types' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'ignores nilable type issues' do
       pending("moving nilable handling back to strong")
 

@@ -319,6 +319,14 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+      def nullable?
+        nil_type?
+      end
+
+      def nil_type?
+        downcast_to_literal_if_possible == UniqueType::NIL
+      end
+
       # @return [UniqueType]
       def downcast_to_literal_if_possible
         SINGLE_SUBTYPE.fetch(rooted_tag, self)

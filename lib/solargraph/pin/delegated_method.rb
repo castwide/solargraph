@@ -13,9 +13,8 @@ module Solargraph
       #
       # @param method [Method, nil] an already resolved method pin.
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
-      # @sg-ignore flow sensitive typing needs to handle || on nil types
-      # @param name [String]
-      # @param receiver_method_name [String] the method name that will be called on the receiver (defaults to :name).
+      # @param name [String, nil]
+      # @param receiver_method_name [String, nil] the method name that will be called on the receiver (defaults to :name).
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
         super(name: name, **splat)
@@ -95,6 +94,7 @@ module Solargraph
             [receiver_type.to_s, :instance]
           end
 
+        # @sg-ignore Need to add nil check here
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
       end
