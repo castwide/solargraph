@@ -196,7 +196,7 @@ module Solargraph
       rng = Range.from_node(node)
       stringified_comments[rng.start.line] ||= begin
         buff = associated_comments[rng.start.line]
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         buff ? stringify_comment_array(buff) : nil
       end
     end

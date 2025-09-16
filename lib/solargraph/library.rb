@@ -472,7 +472,7 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
         source_map_hash[src.filename]
       else
@@ -566,11 +566,11 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         new_map = Solargraph::SourceMap.map(source)
         source_map_hash[source.filename] = new_map
       else
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end

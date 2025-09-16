@@ -145,7 +145,7 @@ module Solargraph
               redefine_return_type pin, tag
               if new_pin
                 new_pin.docstring.add_tag(tag)
-                # @sg-ignore flow sensitive typing needs to handle "if foo"
+                # @sg-ignore flow sensitive typing needs a not-nil override pin
                 redefine_return_type new_pin, tag
               end
             end

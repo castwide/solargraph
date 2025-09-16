@@ -278,7 +278,7 @@ module Solargraph
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, block_pin, locals)
@@ -298,7 +298,7 @@ module Solargraph
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)

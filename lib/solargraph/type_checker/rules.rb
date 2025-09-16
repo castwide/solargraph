@@ -59,7 +59,7 @@ module Solargraph
       end
 
       # @todo 18: Need to add nil check here
-      # @todo 16: flow sensitive typing needs to handle "if foo"
+      # @todo 16: flow sensitive typing needs a not-nil override pin
       # @todo 16: flow sensitive typing needs to handle || on nil types
       # @todo 10: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 8: Need to figure if String#[n..m] can return nil

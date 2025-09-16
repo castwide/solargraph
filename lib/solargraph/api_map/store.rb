@@ -96,7 +96,7 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         res = constants.dereference(ref)
         return unless res
         res + type.substring
@@ -370,7 +370,7 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
-        # @sg-ignore flow sensitive typing needs to handle "if foo"
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         res = constants.dereference(ref)
         return unless res
         res + type.substring

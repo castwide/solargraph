@@ -191,9 +191,9 @@ module Solargraph
             name = p.name
             decl = :arg
             if name
-              # @sg-ignore flow sensitive typing needs to handle "if foo"
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               decl = select_decl(name, false)
-              # @sg-ignore flow sensitive typing needs to handle "if foo"
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               name = clean_param(name)
             end
             Pin::Parameter.new(
