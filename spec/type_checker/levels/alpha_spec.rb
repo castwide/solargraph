@@ -6,8 +6,6 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
     it 'does not falsely enforce nil in return types' do
-      pending('type inference fix')
-
       checker = type_checker(%(
       # @return [Integer]
       def foo

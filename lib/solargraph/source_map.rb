@@ -44,7 +44,6 @@ module Solargraph
       @document_symbols = nil
       self.convention_pins = conventions_environ.pins
       @pin_select_cache = {}
-
     end
 
     # @generic T
