@@ -133,7 +133,7 @@ module Solargraph
       # @return [ComplexType, nil]
       def remove_nil(return_type)
         # TODO: This probably needs to be some kind of override
-        return if return_type.nil?
+        return return_type if return_type.nil? || return_type.undefined?
 
         types = return_type.items.reject { |t| t.name == 'nil' }
         ComplexType.new(types)
@@ -150,6 +150,7 @@ module Solargraph
                else
                  ComplexType.try_parse(downcast_type_name)
                end
+        return if type == pin.return_type
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
           location: pin.location,
@@ -305,12 +306,16 @@ module Solargraph
         var_node.children[0]&.to_s
       end
 
+      # @return [void]
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
       def process_variable(node, true_presences)
         variable_name = parse_variable(node)
         return if variable_name.nil?
 
         var_position = Range.from_node(node).start
 
+        # @sg-ignore flow sensitive typing needs to handle "if foo.nil? ... else"
         pin = find_local(variable_name, var_position)
         return unless pin
 
