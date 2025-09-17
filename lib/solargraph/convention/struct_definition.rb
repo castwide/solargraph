@@ -17,7 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
-              # @sg-ignore need to be able to resolve same method signature on two different types
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
@@ -40,7 +40,7 @@ module Solargraph
 
             pins.push initialize_method_pin
 
-            # @sg-ignore need to be able to resolve same method signature on two different types
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             struct_definition_node.attributes.map do |attribute_node, attribute_name|
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
