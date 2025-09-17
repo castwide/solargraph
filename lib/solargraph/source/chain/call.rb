@@ -56,21 +56,19 @@ module Solargraph
             []
           end
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
-          if api_map.loose_unions
-            # fetch methods which ANY of the potential context types provide
-            pins = name_pin.binder.each_unique_type.flat_map do |context|
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              [stack.first].compact
-            end
-          else
-            # grab pins which are provided by every potential context type
-            pins = name_pin.binder.each_unique_type.map do |context|
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              [stack.first].compact
-            end.reduce(:&)
+          # @sg-ignore Unresolved call to map on void, ::Enumerator<::Solargraph::ComplexType::UniqueType>
+          pin_groups = name_pin.binder.each_unique_type.map do |context|
+            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+            [stack.first].compact
           end
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+          if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
+            pin_groups = []
+          end
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+          pins = pin_groups.flatten.uniq(&:path)
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
