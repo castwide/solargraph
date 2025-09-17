@@ -237,7 +237,7 @@ module Solargraph
       end
 
       api_map.cache_all!(out)
-      load(directory)
+      load(directory, loose_unions: loose_unions)
     end
 
     # @return [Array<Solargraph::Pin::Base>]
