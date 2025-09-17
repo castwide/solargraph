@@ -96,6 +96,7 @@ module Solargraph
         @fixed_position ||= Position.from_offset(source.code, offset - end_of_phrase.length)
       end
 
+      # @sg-ignore Need better ||= handling on ivars
       # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin

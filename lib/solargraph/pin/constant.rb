@@ -12,6 +12,7 @@ module Solargraph
         @visibility = visibility
       end
 
+      # @sg-ignore Need better ||= handling on ivars
       def return_type
         @return_type ||= generate_complex_type
       end

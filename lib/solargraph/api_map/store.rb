@@ -290,6 +290,7 @@ module Solargraph
         true
       end
 
+      # @sg-ignore Need better ||= handling on ivars
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
         @fqns_pins_map ||= Hash.new do |h, (base, name)|

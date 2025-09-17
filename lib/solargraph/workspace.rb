@@ -39,6 +39,7 @@ module Solargraph
       @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
+    # @sg-ignore Need better ||= handling on ivars
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)

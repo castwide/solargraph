@@ -86,6 +86,7 @@ module Solargraph
 
     # all pins except Solargraph::Pin::Reference::Reference
     #
+    # @sg-ignore Need better ||= handling on ivars
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= (pins + convention_pins).select do |pin|

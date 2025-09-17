@@ -217,6 +217,7 @@ module Solargraph
         signature
       end
 
+      # @sg-ignore Need better ||= handling on ivars
       # @return [::Array<Signature>]
       def signatures
         @signatures ||= begin
