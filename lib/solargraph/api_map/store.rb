@@ -34,6 +34,7 @@ module Solargraph
         @fqns_pins_map = nil
         return catalog(pinsets) if changed == 0
 
+        # @sg-ignore Need to add nil check here
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
@@ -99,6 +100,7 @@ module Solargraph
         # @sg-ignore flow sensitive typing needs a not-nil override pin
         res = constants.dereference(ref)
         return unless res
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         res + type.substring
       end
 
@@ -210,7 +212,9 @@ module Solargraph
         return [] if fqns.nil?
         if fqns.include?('::')
           parts = fqns.split('::')
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           name = parts.pop
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           base = parts.join('::')
         else
           base = ''
@@ -240,6 +244,7 @@ module Solargraph
           ref = get_superclass(current)
           # @sg-ignore flow sensitive typing needs to handle && with variables
           superclass = ref && constants.dereference(ref)
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           if superclass && !superclass.empty? && !visited.include?(superclass)
             ancestors << superclass
             queue << superclass
@@ -374,6 +379,7 @@ module Solargraph
         # @sg-ignore flow sensitive typing needs a not-nil override pin
         res = constants.dereference(ref)
         return unless res
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         res + type.substring
       end
     end

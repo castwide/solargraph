@@ -205,7 +205,9 @@ module Solargraph
         # @todo Attribute pins should not be treated like closures, but
         #   there's probably a better way to handle it
         next if pin.is_a?(Pin::Method) && pin.attribute?
+        # @sg-ignore Need to add nil check here
         found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
+        # @sg-ignore Need to add nil check here
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

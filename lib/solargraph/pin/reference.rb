@@ -39,8 +39,10 @@ module Solargraph
         )
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [Array<String>]
       def reference_gates
+        # @sg-ignore Need to add nil check here
         closure.gates
       end
     end

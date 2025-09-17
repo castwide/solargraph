@@ -5,6 +5,21 @@ describe Solargraph::TypeChecker do
     def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
+
+    it 'allows a compatible function call from two distinct types in a union' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [::Boolean, nil]
+          # @return [void]
+          def bar(baz: nil)
+            baz.nil?
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'does not falsely enforce nil in return types' do
       checker = type_checker(%(
       # @return [Integer]

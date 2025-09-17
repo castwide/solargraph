@@ -225,7 +225,6 @@ module Solargraph
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
-        # @sg-ignore Need to add nil check here
         return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
       end
       true
@@ -399,6 +398,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
+                # @sg-ignore Need to add nil check here
                 types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being

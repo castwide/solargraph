@@ -72,6 +72,7 @@ module Solargraph
           elsif here.is_a?(Pin::Method)
             return here.context
           end
+          # @sg-ignore Need to add nil check here
           here = here.closure
         end
         ComplexType::ROOT

@@ -25,12 +25,14 @@ module Solargraph
             end
           end
           @type = type
+          # @sg-ignore need to be able to resolve same method signature on two different types
           @literal_type = ComplexType.try_parse(@value.inspect)
           @complex_type = ComplexType.try_parse(type)
         end
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@value, @type, @literal_type, @complex_type]
         end
 

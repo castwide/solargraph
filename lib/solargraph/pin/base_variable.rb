@@ -66,7 +66,9 @@ module Solargraph
           else
             rng = Range.from_node(node)
             next if rng.nil?
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             pos = rng.ending
+            # @sg-ignore Need to add nil check here
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
@@ -111,6 +113,7 @@ module Solargraph
       end
 
       def type_desc
+        # @sg-ignore should understand meaning of &.
         "#{super} = #{assignment&.type.inspect}"
       end
 

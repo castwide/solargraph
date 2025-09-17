@@ -52,15 +52,18 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
+            # @sg-ignore Need to add nil check here
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
+            # @sg-ignore Need to add nil check here
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|
             rng = Range.from_node(n)
+            # @sg-ignore Need to add nil check here
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
             Location.new(
@@ -137,8 +140,10 @@ module Solargraph
           end
           if node.type == :dstr && node.children.last.nil?
             last = node.children[-2]
+            # @sg-ignore Need to add nil check here
             unless last.nil?
               rng = Range.from_node(last)
+              # @sg-ignore Need to add nil check here
               pos = Position.new(rng.ending.line, rng.ending.column - 1)
               result.push Range.new(pos, pos)
             end

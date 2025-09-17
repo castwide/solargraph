@@ -218,6 +218,7 @@ module Solargraph
 
       cached = PinCache.deserialize_yard_gem(gemspec)
       if cached
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         logger.info { "Loaded #{cached.length} cached YARD pins from #{gemspec.name}:#{gemspec.version}" }
         yard_pins_in_memory[[gemspec.name, gemspec.version]] = cached
         cached
@@ -240,6 +241,7 @@ module Solargraph
 
       cached = PinCache.deserialize_combined_gem(gemspec, rbs_version_cache_key)
       if cached
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         logger.info { "Loaded #{cached.length} cached YARD pins from #{gemspec.name}:#{gemspec.version}" }
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = cached
         return combined_pins_in_memory[[gemspec.name, gemspec.version]]
@@ -296,6 +298,7 @@ module Solargraph
       return if rbs_collection_pins_in_memory.key?([gemspec, rbs_version_cache_key])
       cached = PinCache.deserialize_rbs_collection_gem(gemspec, rbs_version_cache_key)
       if cached
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         logger.info { "Loaded #{cached.length} pins from RBS collection cache for #{gemspec.name}:#{gemspec.version}" } unless cached.empty?
         rbs_collection_pins_in_memory[[gemspec, rbs_version_cache_key]] = cached
         cached
@@ -384,8 +387,11 @@ module Solargraph
     # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_bundler
       # @todo Handle projects with custom Bundler/Gemfile setups
+      # @sg-ignore Need to add nil check here
       return unless workspace.gemfile?
 
+      # @todo: redundant check
+      # @sg-ignore Need to add nil check here
       if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
         # Find only the gems bundler is now using
         Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|

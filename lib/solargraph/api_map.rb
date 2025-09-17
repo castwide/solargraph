@@ -651,13 +651,13 @@ module Solargraph
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
-      # @sg-ignore Need to disambiguate type of sup, sub
       while (sc = store.get_superclass(sc_fqns))
         # @sg-ignore flow sensitive typing needs a not-nil override pin
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
         sc_fqns = sc_new
+        # @sg-ignore need to be able to resolve same method signature on two different types
         return true if sc_fqns == sup
       end
       false
@@ -681,6 +681,7 @@ module Solargraph
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
+        # @sg-ignore Need to add nil check here
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact
@@ -844,6 +845,7 @@ module Solargraph
       # @type [Pin::Namespace, nil]
       pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
       return nil if pin.nil?
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       pin.type
     end
 

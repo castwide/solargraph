@@ -65,7 +65,9 @@ module Solargraph
       # @param other [Pin::Method]
       # @return [Array<Pin::Signature>]
       def combine_signatures(other)
+        # @sg-ignore Need to add nil check here
         all_undefined = signatures.all? { |sig| sig.return_type.undefined? }
+        # @sg-ignore Need to add nil check here
         other_all_undefined = other.signatures.all? { |sig| sig.return_type.undefined? }
         if all_undefined && !other_all_undefined
           other.signatures
@@ -202,6 +204,7 @@ module Solargraph
               comments: p.text,
               name: name,
               decl: decl,
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               presence: location ? location.range : nil,
               return_type: ComplexType.try_parse(*p.types),
               source: source
@@ -213,6 +216,7 @@ module Solargraph
         end
         signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source,
                                   location: location, type_location: type_location)
+        # @sg-ignore Need to add nil check here
         block.closure = signature if block
         signature
       end
@@ -248,6 +252,7 @@ module Solargraph
         else
           "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
         end.to_s
+        # @sg-ignore Need to add nil check here
         detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
         detail.strip!
         return nil if detail.empty?
@@ -277,6 +282,7 @@ module Solargraph
         return nil if signatures.empty?
 
         rbs = "def #{name}: #{signatures.first.to_rbs}"
+        # @sg-ignore Need to add nil check here
         signatures[1..].each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))
@@ -295,6 +301,7 @@ module Solargraph
       end
 
       def typify api_map
+        # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting" }
         decl = super
         unless decl.undefined?
@@ -302,9 +309,12 @@ module Solargraph
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
+        # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           qualified = type.qualify(api_map, namespace)
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -409,6 +419,7 @@ module Solargraph
                 comments: tag.docstring.all.to_s,
                 name: name,
                 decl: decl,
+                # @sg-ignore flow sensitive typing needs a not-nil override pin
                 presence: location ? location.range : nil,
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
@@ -444,6 +455,7 @@ module Solargraph
           end
           next unless ref
 
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           docstring.add_tag(*ref.docstring.tags(:param))
         end
         self
@@ -463,10 +475,12 @@ module Solargraph
 
       attr_writer :documentation
 
+      # @sg-ignore Need to add nil check here
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
         # inside 'class << self' blocks, but YARD did OK at it
+        # @sg-ignore Need to add nil check here
         source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined? ||
           # YARD's RBS generator seems to miss a lot of should-be protected instance methods
           source == :rbs && scope == :instance && namespace.start_with?('YARD::') ||
@@ -550,6 +564,7 @@ module Solargraph
         stack = rest_of_stack api_map
         return nil if stack.empty?
         stack.each do |pin|
+          # @sg-ignore Need to add nil check here
           return pin.return_type unless pin.return_type.undefined?
         end
         nil
@@ -565,6 +580,7 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, namespace)
           return ComplexType::UNDEFINED if fqns.nil?
+          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
@@ -600,9 +616,12 @@ module Solargraph
           rng = Range.from_node(n)
           next unless rng
           clip = api_map.clip_at(
+            # @sg-ignore Need to add nil check here
             location.filename,
+            # @sg-ignore Need to add nil check here
             rng.ending
           )
+          # @sg-ignore Need to add nil check here
           chain = Solargraph::Parser.chain(n, location.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?

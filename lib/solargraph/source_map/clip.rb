@@ -12,6 +12,7 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         block_pin = block
+        # @sg-ignore Need to add nil check here
         block_pin.rebind(api_map) if block_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(block_pin.receiver).contain?(cursor.range.start)
         @in_block = nil
       end
@@ -21,6 +22,7 @@ module Solargraph
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, block, locals)
         result.concat file_global_methods
+        # @sg-ignore Need to add nil check here
         result.concat((source_map.pins + source_map.locals).select{ |p| p.name == cursor.word && p.location.range.contain?(cursor.position) }) if result.empty?
         result
       end
@@ -159,17 +161,23 @@ module Solargraph
       # @return [Completion]
       def tag_complete
         result = []
+        # @sg-ignore Need to add nil check here
         match = source_map.code[0..cursor.offset-1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           full = match[1]
+          # @sg-ignore Need to add nil check here
           if full.include?('::')
+            # @sg-ignore Need to add nil check here
             if full.end_with?('::')
               # @sg-ignore Need to add nil check here
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
+              # @sg-ignore Need to add nil check here
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
             end
           else
+            # @sg-ignore Need to add nil check here
             result.concat api_map.get_constants('', full.end_with?('::') ? '' : context_pin.full_context.namespace, *gates) #.select { |pin| pin.name.start_with?(full) }
           end
         end
@@ -186,6 +194,7 @@ module Solargraph
             cursor.chain.base.infer(api_map, context_pin, locals)
           else
             if full.include?('::') && cursor.chain.links.length == 1
+              # @sg-ignore Need to add nil check here
               ComplexType.try_parse(full.split('::')[0..-2].join('::'))
             elsif cursor.chain.links.length > 1
               ComplexType.try_parse(full)

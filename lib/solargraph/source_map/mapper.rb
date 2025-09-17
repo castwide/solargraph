@@ -62,6 +62,7 @@ module Solargraph
       # @param position [Solargraph::Position]
       # @return [Solargraph::Pin::Closure]
       def closure_at(position)
+        # @sg-ignore Need to add nil check here
         pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
       end
 
@@ -90,11 +91,13 @@ module Solargraph
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
         return start unless start < comment.lines.length
+        # @sg-ignore Need to add nil check here
         num = comment.lines[start..-1].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning
           line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
         end
+        # @sg-ignore Need to add nil check here
         num.to_i + start
       end
 
@@ -109,6 +112,7 @@ module Solargraph
         case directive.tag.tag_name
         when 'method'
           namespace = closure_at(source_position) || @pins.first
+          # @sg-ignore Need to add nil check here
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
@@ -133,6 +137,7 @@ module Solargraph
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
               location: location,
@@ -146,6 +151,7 @@ module Solargraph
               source: :source_map
             )
           end
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           if t.nil? || t.include?('w')
             method_pin = Solargraph::Pin::Method.new(
               location: location,
@@ -170,6 +176,7 @@ module Solargraph
 
             name = directive.tag.name
             closure = closure_at(source_position) || @pins.first
+            # @sg-ignore Need to add nil check here
             if closure.location.range.start.line < comment_position.line
               closure = closure_at(comment_position)
             end
@@ -198,6 +205,7 @@ module Solargraph
               comment_position.line
             end
             Parser.process_node(src.node, region, @pins)
+            # @sg-ignore Need to add nil check here
             @pins[index..-1].each do |p|
               # @todo Smelly instance variable access
               p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
@@ -208,6 +216,7 @@ module Solargraph
           end
         when 'domain'
           namespace = closure_at(source_position) || Pin::ROOT_PIN
+          # @sg-ignore Need to add nil check here
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
           # @sg-ignore Need to add nil check here
@@ -220,7 +229,9 @@ module Solargraph
 
       # @param line1 [Integer]
       # @param line2 [Integer]
+      # @sg-ignore Need to add nil check here
       def no_empty_lines?(line1, line2)
+        # @sg-ignore Need to add nil check here
         @code.lines[line1..line2].none? { |line| line.strip.empty? }
       end
 
@@ -238,6 +249,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             num = cur if cur < num
           end
           ctxt += "#{p[num..-1]}" if started

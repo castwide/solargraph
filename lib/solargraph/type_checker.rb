@@ -42,7 +42,7 @@ module Solargraph
 
     # @return [Source]
     def source
-      @source_map.source
+      source_map.source
     end
 
     # @param inferred [ComplexType]
@@ -111,6 +111,7 @@ module Solargraph
         source = Solargraph::Source.load_string(code, filename)
         rules = Rules.new(level)
         api_map ||= Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_match_expected?)
+        # @sg-ignore Need better ||= handling on locals
         api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
@@ -136,6 +137,7 @@ module Solargraph
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, pin.full_context.tag)
       if declared.undefined?
+        # @sg-ignore Need to add nil check here
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
             inferred = pin.probe(api_map).self_to_type(pin.full_context)
@@ -143,6 +145,7 @@ module Solargraph
           else
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
           end
+          # @sg-ignore Need to add nil check here
         elsif pin.return_type.defined? && !resolved_constant?(pin)
           result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
@@ -183,6 +186,7 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def virtual_pin? pin
+      # @sg-ignore Need to add nil check here
       pin.location && source.comment_at?(pin.location.range.ending)
     end
 
@@ -277,8 +281,9 @@ module Solargraph
       Solargraph::Parser::NodeMethods.const_nodes_from(source.node).each do |const|
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
+        # @sg-ignore Need to add nil check here
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, block_pin, locals)
@@ -295,10 +300,12 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
+        # @sg-ignore Need to add nil check here
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
+        # @sg-ignore Need to add nil check here
         block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         type = chain.infer(api_map, block_pin, locals)
@@ -313,12 +320,16 @@ module Solargraph
             missing = base
             base = base.base
           end
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
           # @sg-ignore flow sensitive typing needs a not-nil override pin
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
+            # @sg-ignore need to be able to resolve same method signature on two different types
             unless closest.generic? || ignored_pins.include?(found)
+              # @sg-ignore need to be able to resolve same method signature on two different types
               if closest.defined?
+                # @sg-ignore need to be able to resolve same method signature on two different types
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest.rooted_tags}")
               else
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
@@ -364,6 +375,7 @@ module Solargraph
                       end
                init = api_map.get_method_stack(fqns, 'initialize').first
 
+               # @type [::Array<Solargraph::TypeChecker::Problem>]
                init ? arity_problems_for(init, arguments, location) : []
              else
                arity_problems_for(pin, arguments, location)
@@ -570,6 +582,7 @@ module Solargraph
       first_pin = pins.first.proxy first_pin_type
       param_names = first_pin.parameter_names
       results = param_hash(first_pin)
+      # @sg-ignore Need to add nil check here
       pins[1..].each do |pin|
         # @todo this assignment from parametric use of Hash should not lose its generic
         # @type [Hash{String => Hash{Symbol => BasicObject}}]
@@ -591,6 +604,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
@@ -611,6 +625,7 @@ module Solargraph
       return true if pin.assignment.nil?
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       rng = Solargraph::Range.from_node(pin.assignment)
+      # @sg-ignore Need to add nil check here
       block_pin = source_map.locate_block_pin(rng.start.line, rng.start.column)
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
@@ -627,6 +642,7 @@ module Solargraph
           missing = base
           base = base.base
         end
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         closest = found.typify(api_map) if found
         # @sg-ignore flow sensitive typing needs to handle "if !foo"
         if !found || closest.defined? || internal?(found)
@@ -729,8 +745,10 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
+    # @sg-ignore need boolish support for ? methods
     def abstract? pin
       pin.docstring.has_tag?('abstract') ||
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
@@ -791,6 +809,7 @@ module Solargraph
       problems.reject do |problem|
         node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
+        # @sg-ignore need to be able to resolve same method signature on two different types
         unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
           # :nocov:
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }

@@ -31,9 +31,11 @@ module Solargraph
         if nullable and !range.nil? and new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             offset = Position.to_offset(text, range.start)
             if text[offset - 1] == dupable
               p = Position.from_offset(text, offset - 1)
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               r = Change.new(Range.new(p, range.start), ' ')
               text = r.write(text)
             end
@@ -58,9 +60,12 @@ module Solargraph
           fixed
         else
           result = commit text, fixed
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           off = Position.to_offset(text, range.start)
+          # @sg-ignore Need to add nil check here
           match = result[0, off].match(/[.:]+\z/)
           if match
+            # @sg-ignore Need to add nil check here
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
           end
           result
@@ -73,7 +78,9 @@ module Solargraph
       # @param insert [String]
       # @return [String]
       def commit text, insert
+        # @sg-ignore Need to add nil check here
         start_offset = Position.to_offset(text, range.start)
+        # @sg-ignore Need to add nil check here
         end_offset = Position.to_offset(text, range.ending)
         (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + normalize(insert) + text[end_offset..-1].to_s
       end

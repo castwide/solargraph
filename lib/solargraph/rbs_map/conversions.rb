@@ -259,6 +259,7 @@ module Solargraph
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
+          # @sg-ignore Need to add nil check here
           closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
         else
           name = parts.first

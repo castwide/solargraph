@@ -428,6 +428,7 @@ module Solargraph
       # @return [String, nil]
       def filename
         return nil if location.nil?
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         location.filename
       end
 
@@ -464,6 +465,7 @@ module Solargraph
       def nearly? other
         self.class == other.class &&
           name == other.name &&
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
@@ -515,6 +517,7 @@ module Solargraph
       #
       # @return [Boolean]
       def maybe_directives?
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         return !@directives.empty? if defined?(@directives) && @directives
         @maybe_directives ||= comments.include?('@!')
       end

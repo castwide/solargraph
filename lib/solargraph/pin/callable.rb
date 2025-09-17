@@ -21,8 +21,10 @@ module Solargraph
         @parameters = parameters
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def method_namespace
+        # @sg-ignore Need to add nil check here
         closure.namespace
       end
 
@@ -113,6 +115,7 @@ module Solargraph
             param.dup
           else
             param.resolve_generics_from_context(generics_to_resolve,
+                                                # @sg-ignore flow sensitive typing needs a not-nil override pin
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)
           end
@@ -136,9 +139,11 @@ module Solargraph
         end
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def method_name
         raise "closure was nil in #{self.inspect}" if closure.nil?
+        # @sg-ignore Need to add nil check here
         @method_name ||= closure.name
       end
 
@@ -183,7 +188,6 @@ module Solargraph
                                                              resolved_generic_values: resolved_generic_values)
       end
 
-      # @return [Array<String>]
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
@@ -215,6 +219,7 @@ module Solargraph
       end
 
       def to_rbs
+        # @sg-ignore Need to add nil check here
         rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
       end
 

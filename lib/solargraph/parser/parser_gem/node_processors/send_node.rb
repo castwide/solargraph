@@ -54,6 +54,7 @@ module Solargraph
           # @return [void]
           def process_visibility
             if (node.children.length > 2)
+              # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |child|
                 # @sg-ignore Variable type could not be inferred for method_name
                 # @type [Symbol]
@@ -83,6 +84,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
+            # @sg-ignore Need to add nil check here
             node.children[2..-1].each do |a|
               loc = get_node_location(node)
               clos = region.closure
@@ -123,6 +125,7 @@ module Solargraph
           def process_include
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
               cp = region.closure
+              # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |i|
                 type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
                 pins.push type.new(
@@ -139,6 +142,7 @@ module Solargraph
           def process_prepend
             if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
               cp = region.closure
+              # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |i|
                 pins.push Pin::Reference::Prepend.new(
                   location: get_node_location(i),
@@ -152,6 +156,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
+            # @sg-ignore Need to add nil check here
             node.children[2..-1].each do |i|
               loc = get_node_location(node)
               if i.type == :self
@@ -194,6 +199,7 @@ module Solargraph
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
             elsif node.children[2].type == :sym || node.children[2].type == :str
+              # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]

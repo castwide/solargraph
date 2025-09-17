@@ -37,6 +37,7 @@ module Solargraph
         @context ||= begin
           result = super
           if scope == :instance
+            # @sg-ignore Need support for reduce_class_type in UniqueType
             result.reduce_class_type
           else
             result
@@ -52,6 +53,7 @@ module Solargraph
       def gates
         # @todo This check might not be necessary. There should always be a
         #   root pin
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         closure ? closure.gates : ['']
       end
 

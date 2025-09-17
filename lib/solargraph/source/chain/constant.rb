@@ -17,6 +17,7 @@ module Solargraph
             base = word
             gates = crawl_gates(name_pin)
           end
+          # @sg-ignore Need to add nil check here
           parts = base.split('::')
           gates.each do |gate|
             # @todo 'Wrong argument type for
@@ -27,12 +28,14 @@ module Solargraph
             #   shouldn't be.
             type = deep_constant_type(gate, api_map)
             # Use deep inference to resolve root
+            # @sg-ignore Need to add nil check here
             parts[0..-2].each do |sym|
               pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
               type = first_pin_type(pins, api_map)
               break if type.undefined?
             end
             next if type.undefined?
+            # @sg-ignore Need to add nil check here
             result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
             return result unless result.empty?
           end
@@ -51,6 +54,7 @@ module Solargraph
               gates.push('') if gates.empty?
               return gates
             end
+            # @sg-ignore Need to add nil check here
             clos = clos.closure
           end
           ['']

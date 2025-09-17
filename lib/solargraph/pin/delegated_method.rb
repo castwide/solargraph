@@ -15,6 +15,7 @@ module Solargraph
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
       # @param name [String, nil]
       # @param receiver_method_name [String, nil] the method name that will be called on the receiver (defaults to :name).
+      # @sg-ignore should understand meaning of &.
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
         super(name: name, **splat)
@@ -73,6 +74,7 @@ module Solargraph
       def resolve_method api_map
         return if @resolved_method
 
+        # @sg-ignore Need to add nil check here
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
@@ -81,16 +83,21 @@ module Solargraph
           return
         end
 
+        # @sg-ignore Need to add nil check here
         receiver_type = resolver.return_type
 
+        # @sg-ignore Need to add nil check here
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
+          # @sg-ignore Need to add nil check here
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
+            # @sg-ignore Need to add nil check here
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
+            # @sg-ignore Need to add nil check here
             [receiver_type.to_s, :instance]
           end
 

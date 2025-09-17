@@ -21,10 +21,12 @@ module Solargraph
         @decl = decl
       end
 
+      # @sg-ignore Should better support meaning of '&' in RBS
       def type_location
         super || closure&.type_location
       end
 
+      # @sg-ignore Should better support meaning of '&' in RBS
       def location
         super || closure&.type_location
       end
@@ -43,6 +45,7 @@ module Solargraph
       end
 
       def kwrestarg?
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
@@ -149,7 +152,9 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           if @return_type.undefined?
             if decl == :restarg
               @return_type = ComplexType.try_parse('::Array')
@@ -166,16 +171,17 @@ module Solargraph
 
       # The parameter's zero-based location in the block's signature.
       #
-      # @sg-ignore this won't be nil if our code is correct
+      # @sg-ignore Need to add nil check here
       # @return [Integer]
       def index
         method_pin = closure
-        # @sg-ignore TODO: Unresolved call to parameter_names
+        # @sg-ignore Need to add nil check here
         method_pin.parameter_names.index(name)
       end
 
       # @param api_map [ApiMap]
       def typify api_map
+        # @sg-ignore Need to add nil check here
         return return_type.qualify(api_map, closure.context.namespace) unless return_type.undefined?
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
@@ -195,10 +201,11 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
       def documentation
         tag = param_tag
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         return '' if tag.nil? || tag.text.nil?
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         tag.text
       end
 
@@ -206,10 +213,13 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
+        # @sg-ignore Need to add nil check here
         params = closure.docstring.tags(:param)
+        # @sg-ignore Need to add nil check here
         params.each do |p|
           return p if p.name == name
         end
+        # @sg-ignore Need to add nil check here
         params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
@@ -226,6 +236,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
+        # @sg-ignore Need to add nil check here
         meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
         meths.each do |meth|
@@ -239,6 +250,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
+          # @sg-ignore flow sensitive typing needs a not-nil override pin
           return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
@@ -272,6 +284,7 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
+          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

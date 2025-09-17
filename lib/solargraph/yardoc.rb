@@ -70,6 +70,7 @@ module Solargraph
     # @return [Hash{String => String}] a hash of environment variables to override
     def current_bundle_env_tweaks
       tweaks = {}
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       if ENV['BUNDLE_GEMFILE'] && !ENV['BUNDLE_GEMFILE'].empty?
         tweaks['BUNDLE_GEMFILE'] = File.expand_path(ENV['BUNDLE_GEMFILE'])
       end

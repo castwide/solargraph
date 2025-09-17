@@ -138,12 +138,14 @@ module Solargraph
                       end
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               pin.docstring.delete_tags tag
+              # @sg-ignore flow sensitive typing needs a not-nil override pin
               new_pin.docstring.delete_tags tag if new_pin
             end
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
               redefine_return_type pin, tag
               if new_pin
+                # @sg-ignore flow sensitive typing needs a not-nil override pin
                 new_pin.docstring.add_tag(tag)
                 # @sg-ignore flow sensitive typing needs a not-nil override pin
                 redefine_return_type new_pin, tag

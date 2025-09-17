@@ -223,13 +223,16 @@ module Solargraph
             pin.typify api_map
             pin.probe api_map
           rescue StandardError => e
+            # @sg-ignore Need to add nil check here
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
+            # @sg-ignore Need to add nil check here
             STDERR.puts e.backtrace.join("\n")
             exit 1
           end
         end
       }
+      # @sg-ignore Need to add nil check here
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
@@ -250,6 +253,7 @@ module Solargraph
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
         if pin.closure
+          # @sg-ignore Need to add nil check here
           "#{pin.closure.path} | #{pin.name}"
         else
           "#{pin.context.namespace} | #{pin.name}"
@@ -257,6 +261,7 @@ module Solargraph
       else
         pin.path
       end
+      # @sg-ignore Need to add nil check here
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end

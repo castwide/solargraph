@@ -61,6 +61,7 @@ module Solargraph
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
               args = []
+              # @sg-ignore Need to add nil check here
               n.children[2..-1].each do |c|
                 args.push NodeChainer.chain(c, @filename, n)
               end
@@ -149,6 +150,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Source::Chain, nil]
         def passed_block node
+          # @sg-ignore Should better support meaning of '&' in RBS
           return unless node == @node && @parent&.type == :block
 
           # @sg-ignore Need to add nil check here
@@ -156,8 +158,10 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         # @return [Array<Source::Chain>]
         def node_args node
+          # @sg-ignore Need to add nil check here
           node.children[2..-1].map do |child|
             NodeChainer.chain(child, @filename, node)
           end

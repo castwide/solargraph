@@ -24,6 +24,7 @@ module Solargraph
         end
         # Some yardocs contain documentation for dependencies that can be
         # ignored here. The YardMap will load dependencies separately.
+        # @sg-ignore Need to add nil check here
         @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end

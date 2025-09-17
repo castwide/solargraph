@@ -17,6 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
+              # @sg-ignore need to be able to resolve same method signature on two different types
               name: data_definition_node.class_name,
               comments: comments_for(node),
               visibility: :public,
@@ -39,6 +40,7 @@ module Solargraph
             # Solargraph::SourceMap::Clip#complete_keyword_parameters does not seem to currently take into account [Pin::Method#signatures] hence we only one for :kwarg
             pins.push initialize_method_pin
 
+            # @sg-ignore need to be able to resolve same method signature on two different types
             data_definition_node.attributes.map do |attribute_node, attribute_name|
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
@@ -51,6 +53,7 @@ module Solargraph
             end
 
             # define attribute readers and instance variables
+            # @sg-ignore need to be able to resolve same method signature on two different types
             data_definition_node.attributes.each do |attribute_node, attribute_name|
               name = attribute_name.to_s
               method_pin = Pin::Method.new(
@@ -92,8 +95,10 @@ module Solargraph
           # @return [String, nil]
           def attribute_comments(attribute_node, attribute_name)
             data_comments = comments_for(attribute_node)
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             return if data_comments.nil? || data_comments.empty?
 
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             data_comments.split("\n").find do |row|
               row.include?(attribute_name)
             end&.gsub('@param', '@return')&.gsub(attribute_name, '')

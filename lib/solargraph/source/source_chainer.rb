@@ -33,6 +33,7 @@ module Solargraph
       def chain
         # Special handling for files that end with an integer and a period
         return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])), Chain::UNDEFINED_CALL]) if phrase =~ /^[0-9]+\.$/
+        # @sg-ignore Need to add nil check here
         return Chain.new([Chain::Literal.new('Symbol', phrase[1..].to_sym)]) if phrase.start_with?(':') && !phrase.start_with?('::')
         return SourceChainer.chain(source, Position.new(position.line, position.character + 1)) if end_of_phrase.strip == '::' && source.code[Position.to_offset(source.code, position)].to_s.match?(/[a-z]/i)
         begin
@@ -56,6 +57,7 @@ module Solargraph
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
         chain = Parser.chain(node, source.filename, parent)
@@ -96,12 +98,12 @@ module Solargraph
         @fixed_position ||= Position.from_offset(source.code, offset - end_of_phrase.length)
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [String]
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
           if match
+            # @sg-ignore flow sensitive typing needs a not-nil override pin
             match[0]
           else
             ''
@@ -152,9 +154,12 @@ module Solargraph
             in_whitespace = true
           else
             if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
+              # @sg-ignore Need to add nil check here
               unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
                 old = @source.code[index+1..-1]
+                # @sg-ignore flow sensitive typing needs a not-nil override pin
                 nxt = @source.code[index+1..-1].lstrip
+                # @sg-ignore flow sensitive typing needs a not-nil override pin
                 index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
                 break
               end
