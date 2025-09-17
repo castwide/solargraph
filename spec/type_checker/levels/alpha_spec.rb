@@ -48,5 +48,28 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to eq(['Wrong argument type for #foo: a expected String, received String, nil'])
     end
+
+    it 'tracks type of ivar' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def initialize
+            @sync_count = 0
+          end
+
+          # @return [void]
+          def synchronized?
+            @sync_count < 2
+          end
+
+          # @return [void]
+          def catalog
+            @sync_count += 1
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
