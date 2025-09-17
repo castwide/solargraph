@@ -51,7 +51,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'does gives correct complaint on array dereference with nilable type' do
+    it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index
         # @param arr [Array<Integer>] an array of integers
@@ -61,9 +61,7 @@ describe Solargraph::TypeChecker do
           arr[idx]
         end
       ))
-      # may also give errors about other arities; not really too
-      # worried about that
-      expect(checker.problems.map(&:message)).to include("Wrong argument type for Array#[]: index expected Integer, received Integer, nil")
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'understands local evaluation with ||= removes nil from lhs type' do
