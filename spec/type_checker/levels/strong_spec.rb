@@ -79,6 +79,8 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
+      pending('support for @@var ||= expr pattern')
+
       expect(checker.problems.map(&:message)).to eq([])
     end
 

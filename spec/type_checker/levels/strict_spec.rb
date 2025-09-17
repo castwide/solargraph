@@ -1042,7 +1042,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      pending('implicit nil being understood from implicit else')
+
       expect(checker.problems.map(&:message)).to eq([])
     end
   end
