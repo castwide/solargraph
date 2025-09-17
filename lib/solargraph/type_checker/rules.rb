@@ -58,9 +58,10 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 34: flow sensitive typing needs a not-nil override pin
-      # @todo 33: Need to add nil check here
-      # @todo 6: Need to validate config
+      # @todo 33: flow sensitive typing needs a not-nil override pin
+      # @todo 32: Need to add nil check here
+      # @todo 18: Need better ||= handling on ivars
+      # @todo 9: Need to validate config
       # @todo 5: need boolish support for ? methods
       # @todo 2: Need better || handling on ivars
       # @todo 1: flow sensitive typing needs to handle && with variables
