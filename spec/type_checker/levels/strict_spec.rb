@@ -21,8 +21,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'ignores nilable type issues' do
-      pending("moving nilable handling back to strong")
-
       checker = type_checker(%(
         # @param a [String]
         # @return [void]

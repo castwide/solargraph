@@ -70,13 +70,11 @@ module Solargraph
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       # @todo 1: Need better ||= handling on locals
       def require_all_unique_types_match_expected?
-        # TODO: Put this back up to strong
-        rank >= LEVELS[:typed]
+        rank >= LEVELS[:strong]
       end
 
-      # TODO: Take this back down to strong
       def require_all_unique_types_match_expected_on_lhs?
-        rank >= LEVELS[:alpha]
+        rank >= LEVELS[:strong]
       end
 
       def require_no_undefined_args?

@@ -270,8 +270,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'allows loose return tags' do
-      pending('temporary move is reversed')
-
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
