@@ -10,7 +10,7 @@ describe Solargraph::Source::Chain::Or do
 
     api_map = Solargraph::ApiMap.new.map(source)
 
-    clip = api_map.clip_at('test.rb', [3, 8])
+    clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.simplify_literals.rooted_tags).to eq('::Integer')
   end
 
