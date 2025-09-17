@@ -4,6 +4,8 @@ module Solargraph
   class Source
     class Chain
       class InstanceVariable < Link
+        # @param word [String]
+        # @param node [Parser::AST::Node, nil] The node representing the variable
         def initialize word, node
           super(word)
           @node = node

@@ -78,9 +78,6 @@ module Solargraph
 
           private
 
-          # @sg-ignore
-          #   Solargraph::Convention::DataDefinition::NodeProcessors::DataNode#data_definition_node
-          #   return type could not be inferred
           # @return [DataDefinition::DataDefintionNode, DataDefinition::DataAssignmentNode, nil]
           def data_definition_node
             @data_definition_node ||= if DataDefintionNode.match?(node)
