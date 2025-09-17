@@ -16,10 +16,11 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
       def initialize receiver: nil, args: [], context: nil, node: nil, **splat
-        super(**splat, parameters: args, return_type: ComplexType.parse('::Proc'))
+        super(**splat, parameters: args)
         @receiver = receiver
         @context = context
         @node = node
+        @return_type = ComplexType.parse('::Proc')
       end
 
       # @param api_map [ApiMap]
