@@ -59,25 +59,19 @@ module Solargraph
           # @sg-ignore TODO: Wrong argument type for
           #   Solargraph::Source::Chain::Call#inferred_pins: pins
           #   expected Enumerable<Solargraph::Pin::Method>, received
-          #   Array<Solargraph::Pin::LocalVariable>, Array
+          #   Array<Solargraph::Pin::LocalVariable>, Array - need to
+          #   look through logic to understand whether this is dead
+          #   code
           return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
-          if api_map.loose_unions
-            # fetch methods which ANY of the potential context types provide
-            pins = name_pin.binder.each_unique_type.flat_map do |context|
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              [stack.first].compact
-            end
-          else
-            # grab pins which are provided by every potential context type
-            # @todo Need to understand reduce()
-            # @type [::Array<Solargraph::Pin::Method>]
-            pins = name_pin.binder.each_unique_type.map do |context|
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              [stack.first].compact
-            end.reduce(:&)
+          pin_groups = name_pin.binder.each_unique_type.map do |context|
+            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+            [stack.first].compact
           end
+          if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
+            pin_groups = []
+          end
+          pins = pin_groups.flatten.uniq(&:path)
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
