@@ -212,6 +212,38 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Float')
   end
 
+  it 'uses varname in a "break unless" statement in a while to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase, nil]
+      value = bar
+      while !is_done()
+        break unless value
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'uses varname in a "break if" statement in a while to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase, nil]
+      value = bar
+      while !is_done()
+        break if value.nil?
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
   it 'understands compatible reassignments' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -526,5 +558,24 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     pending('supporting else in flow senstiive typing')
     clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
+  end
+
+  it 'uses variable in a simple if() to refine types on a simple class using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          return if baz.nil?
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    pending('return if support')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 end

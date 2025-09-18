@@ -12,9 +12,10 @@ module Solargraph
 
       # @param and_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_and(and_node, true_ranges = [])
+      def process_and(and_node, true_ranges = [], false_ranges = [])
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
@@ -27,19 +28,20 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_conditional(lhs, true_ranges + [rhs_presence])
-        process_conditional(rhs, true_ranges)
+        process_conditional(lhs, true_ranges + [rhs_presence], false_ranges)
+        process_conditional(rhs, true_ranges, false_ranges)
       end
 
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_calls(node, true_presences)
+      def process_calls(node, true_presences, false_presences)
         return unless node.type == :send
 
-        process_isa(node, true_presences)
-        process_nilp(node, true_presences)
+        process_isa(node, true_presences, false_presences)
+        process_nilp(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -64,10 +66,17 @@ module Solargraph
         else_clause = if_node.children[2]
 
         true_ranges = []
-        if always_breaks?(else_clause)
-          unless enclosing_breakable_pin.nil?
-            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
-                                               get_node_end_position(enclosing_breakable_pin.node))
+        false_ranges = []
+
+        unless enclosing_breakable_pin.nil?
+          rest_of_breakable_body = Range.new(get_node_end_position(if_node),
+                                             get_node_end_position(enclosing_breakable_pin.node))
+
+          if always_breaks?(then_clause)
+            false_ranges << rest_of_breakable_body
+          end
+
+          if always_breaks?(else_clause)
             true_ranges << rest_of_breakable_body
           end
         end
@@ -82,7 +91,7 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
-        process_conditional(conditional_node, true_ranges)
+        process_conditional(conditional_node, true_ranges, false_ranges)
       end
 
       class << self
@@ -189,12 +198,13 @@ module Solargraph
 
       # @param conditional_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_conditional(conditional_node, true_ranges)
-        process_calls(conditional_node, true_ranges)
-        process_and(conditional_node, true_ranges)
-        process_variable(conditional_node, true_ranges)
+      def process_conditional(conditional_node, true_ranges, false_ranges)
+        process_calls(conditional_node, true_ranges, false_ranges)
+        process_and(conditional_node, true_ranges, false_ranges)
+        process_variable(conditional_node, true_ranges, false_ranges)
       end
 
       # @param call_node [Parser::AST::Node]
@@ -246,9 +256,10 @@ module Solargraph
 
       # @param isa_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_isa(isa_node, true_presences)
+      def process_isa(isa_node, true_presences, false_presences)
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         # @sg-ignore Need to add nil check here
@@ -261,6 +272,12 @@ module Solargraph
         if_true[pin] ||= []
         if_true[pin] << { type: isa_type_name }
         process_facts(if_true, true_presences)
+
+        if_false = {}
+        if_true[pin] ||= []
+        # @todo: should add support for not_type
+        # if_true[pin] << { not_type: isa_type_name } #
+        process_facts(if_true, false_presences)
       end
 
       # @param nilp_node [Parser::AST::Node]
@@ -271,9 +288,10 @@ module Solargraph
 
       # @param nilp_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_nilp(nilp_node, true_presences)
+      def process_nilp(nilp_node, true_presences, false_presences)
         nilp_arg, variable_name = parse_nilp(nilp_node)
         return if variable_name.nil? || variable_name.empty?
         # if .nil? got an argument, move on, this isn't the situation
@@ -290,6 +308,11 @@ module Solargraph
         if_true[pin] ||= []
         if_true[pin] << { nil: true }
         process_facts(if_true, true_presences)
+
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { not_nil: true }
+        process_facts(if_false, false_presences)
       end
 
       # @param var_node [Parser::AST::Node]
@@ -304,7 +327,8 @@ module Solargraph
       # @return [void]
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
-      def process_variable(node, true_presences)
+      # @param false_presences [Array<Range>]
+      def process_variable(node, true_presences, false_presences)
         return unless [:lvar, :ivar, :cvar, :gvar].include?(node.type)
 
         variable_name = parse_variable(node)
@@ -321,6 +345,11 @@ module Solargraph
         if_true[pin] ||= []
         if_true[pin] << { not_nil: true }
         process_facts(if_true, true_presences)
+
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { nil: true }
+        process_facts(if_false, false_presences)
       end
 
       # @param node [Parser::AST::Node]
