@@ -251,6 +251,7 @@ module Solargraph
         def repaired_find_recipient_node cursor
           cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
           node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
+          # @sg-ignore flow sensitive typing needs to handle && with variables
           return node if node && node.type == :send
         end
 

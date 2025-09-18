@@ -15,6 +15,8 @@ module Solargraph
       #
       # @return [void]
       def process_and(and_node, true_ranges = [])
+        return unless and_node.type == :and
+
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
@@ -25,7 +27,8 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_calls(lhs, true_ranges + [rhs_presence])
+        process_conditional(lhs, true_ranges + [rhs_presence])
+        process_conditional(rhs, true_ranges)
       end
 
       # @param node [Parser::AST::Node]
@@ -33,6 +36,8 @@ module Solargraph
       #
       # @return [void]
       def process_calls(node, true_presences)
+        return unless node.type == :send
+
         process_isa(node, true_presences)
         process_nilp(node, true_presences)
       end
@@ -187,13 +192,9 @@ module Solargraph
       #
       # @return [void]
       def process_conditional(conditional_node, true_ranges)
-        if conditional_node.type == :send
-          process_calls(conditional_node, true_ranges)
-        elsif conditional_node.type == :and
-          process_and(conditional_node, true_ranges)
-        elsif [:lvar, :ivar, :cvar, :gvar].include?(conditional_node.type)
-          process_variable(conditional_node, true_ranges)
-        end
+        process_calls(conditional_node, true_ranges)
+        process_and(conditional_node, true_ranges)
+        process_variable(conditional_node, true_ranges)
       end
 
       # @param call_node [Parser::AST::Node]
@@ -304,6 +305,8 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       def process_variable(node, true_presences)
+        return unless [:lvar, :ivar, :cvar, :gvar].include?(node.type)
+
         variable_name = parse_variable(node)
         return if variable_name.nil?
 

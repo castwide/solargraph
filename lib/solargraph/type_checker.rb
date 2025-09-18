@@ -442,7 +442,6 @@ module Solargraph
             if argchain.node.type == :splat && argchain == arguments.last
               final_arg = argchain
             end
-            # @sg-ignore flow sensitive typing needs to handle && with variables
             if (final_arg && final_arg.node.type == :splat)
               # The final argument given has been seen and was a
               # splat, which doesn't give us useful types or

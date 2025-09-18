@@ -254,7 +254,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect { clip.infer.to_s }.not_to raise_error
   end
 
-  it 'uses nil? in a simple if() to refine types on a simple class' do
+  it 'uses nil? in a simple if() to refine nilness' do
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       def verify_repro(repr)
@@ -278,6 +278,204 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     pending('handling else case in flow senstiive typing')
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
+
+  it 'uses nil? and && in a simple if() to refine nilness - nil? first' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if repr.nil? && throw_the_dice
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+  end
+
+  it 'uses nil? and && in a simple if() to refine nilness - nil? second' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if throw_the_dice && repr.nil?
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+  end
+
+  it 'uses nil? and || in a simple if() - nil? first' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if repr.nil? || throw_the_dice
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+  end
+
+  it 'uses nil? and || in a simple if() - nil? second' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if throw_the_dice || repr.nil?
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+  end
+
+  it 'uses varname and || in a simple if() - varname first' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if repr || throw_the_dice
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    pending('supporting else after || on varname')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+  end
+
+  it 'uses varname and || in a simple if() - varname second' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if throw_the_dice || repr
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    pending('supporting else after || on varname')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+  end
+
+  it 'uses varname and && in a simple if() - varname first' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if repr && throw_the_dice
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+  end
+
+  it 'uses varname and && in a simple if() - varname second' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if throw_the_dice && repr
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    pending('supporting else after && on varname')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
   end
 
   it 'uses variable in a simple if() to refine types on a simple class' do

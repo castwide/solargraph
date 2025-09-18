@@ -83,7 +83,7 @@ module Solargraph
     #
     # @param line [Integer]
     # @param column [Integer]
-    # @return [Array<AST::Node>]
+    # @return [Array<Parser::AST::Node>]
     def tree_at(line, column)
       position = Position.new(line, column)
       stack = []

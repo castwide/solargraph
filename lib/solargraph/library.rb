@@ -194,7 +194,6 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore flow sensitive typing needs to handle && with variables
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag

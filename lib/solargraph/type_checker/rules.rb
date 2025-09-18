@@ -59,7 +59,7 @@ module Solargraph
       end
 
       # @todo 64: Need to add nil check here
-      # @todo 43: flow sensitive typing needs to handle && with variables
+      # flow sensitive typing needs to handle && with variables
       # @todo 25: flow sensitive typing needs to handle "return if foo.nil?"
       # @todo 12: need to be able to resolve same method signature on two different types
       # @todo 11: flow sensitive typing needs to handle "unless foo.nil?"
@@ -77,7 +77,7 @@ module Solargraph
       # @todo 3: Need to handle implicit nil on else
       # @todo 2: flow sensitive typing needs better handling of ||= on lvars
       # @todo 2: Should handle redefinition of types in simple contexts
-      # @todo 2: Translate to something flow sensitive typing understands
+      # Translate to something flow sensitive typing understands
       # @todo 2: flow sensitive typing needs to handle if on ivars
       # @todo 2: flow sensitive typing needs to handle "while foo""
       # @todo 1: flow sensitive typing needs to handle 'raise if'

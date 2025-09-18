@@ -76,8 +76,6 @@ module Solargraph
             # TODO: Should either complain at strong level on .items
             #   dereferences or not show ', nil' in hover docs'
             types = raw_return_type.items - exclude_return_type.items
-            # @sg-ignore TODO: Get this to not error out - not clear
-            # why it would given hoverover docs
             types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
             ComplexType.new(types)
           else
