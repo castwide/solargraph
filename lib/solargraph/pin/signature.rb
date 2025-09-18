@@ -9,12 +9,11 @@ module Solargraph
         super(**splat)
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       def generics
+        # @type [Array<::String, nil>]
         @generics ||= [].freeze
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       def identity
         @identity ||= "signature#{object_id}"
       end

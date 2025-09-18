@@ -379,7 +379,6 @@ module Solargraph
         Solargraph.assert_or_log(:source, "source not provided - #{@path} #{@source} #{self.class}") if source.nil?
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [String]
       def comments
         @comments ||= ''
@@ -489,7 +488,6 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [YARD::Docstring]
       def docstring
         parse_comments unless @docstring
@@ -522,7 +520,6 @@ module Solargraph
         @maybe_directives ||= comments.include?('@!')
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [Boolean]
       def deprecated?
         @deprecated ||= docstring.has_tag?('deprecated')
@@ -592,7 +589,6 @@ module Solargraph
         result
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @deprecated
       # @return [String]
       def identity

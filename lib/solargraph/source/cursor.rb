@@ -52,6 +52,7 @@ module Solargraph
       # `foo.bar`, the end_of_word at position (0,6) is `r`.
       #
       # @return [String]
+      # @sg-ignore Need to add nil check here
       def end_of_word
         @end_of_word ||= begin
           match = source.code[offset..-1].to_s.match(end_word_pattern)

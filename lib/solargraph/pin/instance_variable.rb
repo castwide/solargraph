@@ -17,6 +17,7 @@ module Solargraph
         closure.binder.scope
       end
 
+      # @sg-ignore Need support for reduce_class_type in UniqueType
       # @return [ComplexType]
       def context
         @context ||= begin

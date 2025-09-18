@@ -100,8 +100,16 @@ module Solargraph
           elsif [:gvar, :gvasgn].include?(n.type)
             result.push Chain::GlobalVariable.new(n.children[0].to_s)
           elsif n.type == :or_asgn
-            new_node = n.updated(n.children[0].type, n.children[0].children + [n.children[1]])
-            result.concat generate_links new_node
+            # @bar ||= 123 translates to:
+            #
+            # s(:or_asgn,
+            #   s(:ivasgn, :@bar),
+            #   s(:int, 123))
+            lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
+            rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
+            or_link = Chain::Or.new([lhs_chain, rhs_chain])
+            # this is just for a call chain, so we don't need to record the assignment
+            result.push(or_link)
           elsif [:class, :module, :def, :defs].include?(n.type)
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL

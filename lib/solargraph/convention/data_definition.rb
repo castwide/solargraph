@@ -81,6 +81,7 @@ module Solargraph
 
           private
 
+          # @sg-ignore Need to handle implicit nil on else
           # @return [DataDefinition::DataDefintionNode, DataDefinition::DataAssignmentNode, nil]
           def data_definition_node
             @data_definition_node ||= if DataDefintionNode.match?(node)

@@ -484,7 +484,6 @@ module Solargraph
 
     private
 
-    # @sg-ignore Need better ||= handling on ivars
     # @return [Array<String>]
     def code_lines
       @code_lines ||= code.lines

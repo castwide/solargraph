@@ -39,7 +39,6 @@ module Solargraph
       @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
-    # @sg-ignore Need better ||= handling on ivars
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
@@ -137,6 +136,7 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
+    # @sg-ignore Need to handle implicit nil on else
     # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||= begin

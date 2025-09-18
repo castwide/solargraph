@@ -34,7 +34,6 @@ module Solargraph
         raise NotImplementedError
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [Hash]
       def completion_item
         @completion_item ||= {
@@ -50,7 +49,6 @@ module Solargraph
         }
       end
 
-      # @sg-ignore Need better ||= handling on ivars
       # @return [Hash]
       def resolve_completion_item
         @resolve_completion_item ||= begin

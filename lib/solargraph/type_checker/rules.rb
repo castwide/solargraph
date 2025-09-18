@@ -58,17 +58,22 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 33: flow sensitive typing needs a not-nil override pin
-      # @todo 32: Need to add nil check here
-      # @todo 18: Need better ||= handling on ivars
+      # @todo 128: flow sensitive typing needs a not-nil override pin
+      # @todo 65: Need to add nil check here
+      # @todo 12: need to be able to resolve same method signature on two different types
       # @todo 9: Need to validate config
-      # @todo 5: need boolish support for ? methods
-      # @todo 2: Need better || handling on ivars
+      # @todo 8: Should better support meaning of '&' in RBS
+      # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 4: need boolish support for ? methods
+      # @todo 4: should understand meaning of &.
+      # @todo 4: Need support for reduce_class_type in UniqueType
+      # @todo 3: Need to handle implicit nil on else
+      # @todo 2: Should handle redefinition of types in simple contexts
+      # @todo 2: Translate to something flow sensitive typing understands
       # @todo 1: flow sensitive typing needs to handle && with variables
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
-      # @todo 1: Need better ||= handling on locals
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end

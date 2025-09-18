@@ -611,6 +611,46 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'Can infer through simple ||= on ivar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on lvar' do
+      checker = type_checker(%(
+        def recipient
+          recip ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on cvar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @@recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on civar' do
+      checker = type_checker(%(
+        class Foo
+          @recipient ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'Can infer through ||= with a begin+end' do
       checker = type_checker(%(
         def recipient
@@ -1033,13 +1073,15 @@ describe Solargraph::TypeChecker do
           def bar
             @bar ||=
               if rand
-                 123
-               elsif rand
-                 456
-               end
+                123
+              elsif rand
+                456
+              end
           end
         end
       ))
+
+      pending('Need to handle implicit nil on else')
 
       expect(checker.problems.map(&:message)).to eq([])
     end

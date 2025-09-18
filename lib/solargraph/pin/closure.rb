@@ -57,8 +57,7 @@ module Solargraph
         closure ? closure.gates : ['']
       end
 
-      # @sg-ignore Need better ||= handling on ivars
-      # @return [::Array<String>]
+      # @return [::Array<String, nil>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
