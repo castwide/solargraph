@@ -45,7 +45,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle || within &&
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
@@ -152,7 +152,7 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           # @sg-ignore Need to add nil check here
           if @return_type.undefined?
@@ -203,7 +203,7 @@ module Solargraph
 
       def documentation
         tag = param_tag
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle || with variables
         return '' if tag.nil? || tag.text.nil?
         # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
         tag.text
@@ -250,7 +250,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED

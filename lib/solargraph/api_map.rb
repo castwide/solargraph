@@ -767,7 +767,7 @@ module Solargraph
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = store.constants.dereference(im)
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end

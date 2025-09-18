@@ -31,11 +31,11 @@ module Solargraph
         if nullable and !range.nil? and new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
-            # @sg-ignore flow sensitive typing needs to handle && with variables
+            # @sg-ignore flow sensitive typing needs to handle "if !foo"
             offset = Position.to_offset(text, range.start)
             if text[offset - 1] == dupable
               p = Position.from_offset(text, offset - 1)
-              # @sg-ignore flow sensitive typing needs to handle && with variables
+              # @sg-ignore flow sensitive typing needs to handle "if !foo"
               r = Change.new(Range.new(p, range.start), ' ')
               text = r.write(text)
             end

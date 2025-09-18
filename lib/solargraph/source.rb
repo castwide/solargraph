@@ -258,11 +258,11 @@ module Solargraph
         # @type [Integer, nil]
         last = nil
         comments.each_pair do |num, snip|
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle "if !foo"
           if !last || num == last + 1
             buffer.concat "#{snip.text}\n"
           else
-            # @sg-ignore flow sensitive typing needs to handle && with variables
+            # @sg-ignore flow sensitive typing needs to handle "if !foo"
             result[first_not_empty_from(last + 1)] = buffer.clone
             buffer.replace "#{snip.text}\n"
           end
@@ -320,7 +320,7 @@ module Solargraph
           ctxt.concat p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore Should handle redefinition of types in simple contexts
           skip = here if skip.nil? || here < skip
           ctxt.concat p[skip..-1]
         end

@@ -231,7 +231,7 @@ module Solargraph
               args = node.children[2..-1]
               # @sg-ignore Need to add nil check here
               if !args.empty?
-                # @sg-ignore flow sensitive typing needs to handle && with variables
+                # @sg-ignore Need to add nil check here
                 return node if prev && args.include?(prev)
               else
                 if source.synchronized?
@@ -251,7 +251,7 @@ module Solargraph
         def repaired_find_recipient_node cursor
           cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
           node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore investigate why Parser::AST#type isn't available here
           return node if node && node.type == :send
         end
 

@@ -142,7 +142,7 @@ module Solargraph
 
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
           #
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle || with variables
           # @return [String]
           def tag_string(tag)
             tag&.types&.join(',') || 'undefined'

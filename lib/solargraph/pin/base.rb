@@ -464,7 +464,7 @@ module Solargraph
       def nearly? other
         self.class == other.class &&
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle && with variables
+          # @sg-ignore flow sensitive typing needs to handle || within &&
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
@@ -515,7 +515,7 @@ module Solargraph
       #
       # @return [Boolean]
       def maybe_directives?
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle && with unrelated calls
         return !@directives.empty? if defined?(@directives) && @directives
         @maybe_directives ||= comments.include?('@!')
       end

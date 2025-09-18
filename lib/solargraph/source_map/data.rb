@@ -12,7 +12,7 @@ module Solargraph
         @locals = nil
       end
 
-      # @sg-ignore flow sensitive typing needs to handle && with variables
+      # @sg-ignore flow sensitive typing needs to handle || with variables
       # @return [Array<Solargraph::Pin::Base>]
       def pins
         generate
@@ -21,8 +21,7 @@ module Solargraph
         @pins || empty_pins
       end
 
-      # @sg-ignore flow sensitive typing needs to handle && with variables
-      # @return [Array<Solargraph::Pin::LocalVariable>]
+      # @sg-ignore flow sensitive typing needs to handle || with variables
       def locals
         generate
         # @type [Array<Pin::LocalVariable>]

@@ -57,11 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      # @sg-ignore flow sensitive typing needs to handle && with variables
+      # @sg-ignore flow sensitive typing needs to handle "if !foo"
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         source_map_hash.delete @current.filename
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -75,9 +75,9 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Boolean]
-    # @sg-ignore flow sensitive typing needs to handle && with variables
+    # @sg-ignore flow sensitive typing needs to handle "if !foo"
     def attached? filename
-      # @sg-ignore flow sensitive typing needs to handle && with variables
+      # @sg-ignore flow sensitive typing needs to handle "if !foo"
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
@@ -87,7 +87,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
-      # @sg-ignore flow sensitive typing needs to handle && with variables
+      # @sg-ignore flow sensitive typing needs to handle || with variables
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -284,7 +284,7 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
-            # @sg-ignore flow sensitive typing needs to handle && with variables
+            # @sg-ignore Need to add nil check here
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -556,7 +556,7 @@ module Solargraph
     # @sg-ignore flow sensitive typing needs to handle if foo && ...
     # @return [Solargraph::Source]
     def read filename
-      # @sg-ignore flow sensitive typing needs to handle && with variables
+      # @sg-ignore flow sensitive typing needs to handle && with ivars
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
@@ -580,7 +580,7 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
         new_map = Solargraph::SourceMap.map(source)
         source_map_hash[source.filename] = new_map
       else

@@ -58,7 +58,7 @@ module Solargraph
             data = gem_config&.to_s
           end
         end
-        # @sg-ignore flow sensitive typing needs to handle && with variables
+        # @sg-ignore flow sensitive typing needs to handle || with variables
         if data.nil? || data.empty?
           if resolved?
             # definitely came from the gem itself and not elsewhere -
