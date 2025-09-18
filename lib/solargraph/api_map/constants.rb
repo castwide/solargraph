@@ -40,44 +40,18 @@ module Solargraph
         cached_collect[flat] || collect_and_cache(flat)
       end
 
-      # Determine fully qualified tag for a given tag used inside the
-      # definition of another tag ("context"). This method will start
-      # the search in the specified context until it finds a match for
-      # the tag.
+      # Determine a fully qualified namespace for a given name referenced
+      # from the specified open gates. This method will search in each gate
+      # until it finds a match for the name.
       #
-      # Does not recurse into qualifying the type parameters, but
-      # returns any which were passed in unchanged.
-      #
-      # @param tag [String, nil] The namespace to
-      #   match, complete with generic parameters set to appropriate
-      #   values if available
-      # @param context_tag [String] The fully qualified context in which
-      #   the tag was referenced; start from here to resolve the name.
-      #   Should not be prefixed with '::'.
+      # @param name [String, nil] The namespace to match
+      # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
-      def qualify tag, *gates
-        return tag if ['Boolean', 'self', nil].include?(tag)
+      def qualify name, *gates
+        return name if ['Boolean', 'self', nil].include?(name)
 
-        if tag =~ /^[a-z0-9_:]*$/i && gates.all? { |t| t =~ /^[a-z0-9_:]*?$/i }
-          gates.push '' unless gates.include?('')
-          resolved = resolve(tag, gates)
-          return resolved if resolved
-          Solargraph.logger.debug "resolve failed. #{tag.inspect} #{gates.inspect} #{caller_locations[0, 2]}"
-          return nil
-        end
-
-        context_tag = gates.first
-        type = ComplexType.try_parse(tag)
-        return unless type.defined?
-        return tag if type.literal?
-
-        context_type = ComplexType.try_parse(context_tag)
-        return unless context_type.defined?
-
-        fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
-        return unless fqns
-
-        fqns + type.substring
+        gates.push '' unless gates.include?('')
+        resolve(name, gates)
       end
 
       # @return [void]
