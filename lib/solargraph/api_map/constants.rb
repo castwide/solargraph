@@ -64,8 +64,6 @@ module Solargraph
           return resolved if resolved
           Solargraph.logger.debug "resolve failed. #{tag.inspect} #{gates.inspect} #{caller_locations[0, 2]}"
           return nil
-        else
-          raise "not shortable!"
         end
 
         context_tag = gates.first
