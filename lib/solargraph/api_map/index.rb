@@ -15,11 +15,6 @@ module Solargraph
         @pins ||= []
       end
 
-      # @return [Set<String>]
-      def constant_names
-        @constant_names ||= (pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant)).to_set(&:path)
-      end
-
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }

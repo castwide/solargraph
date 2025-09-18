@@ -101,10 +101,17 @@ module Solargraph
 
       # @param name [String]
       # @param gate [String]
-      # @return [String, nil]
+      # @return [Pin::Constant, Pin::Namespace, nil]
       def simple_resolve name, gate
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
-        here if store.constant_names.include?(here)
+        pin = store.get_path_pins(here).first
+        if pin.is_a?(Pin::Constant)
+          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
+          return unless const
+          resolve(const, pin.gates)
+        else
+          pin&.path
+        end
       end
 
       # @param gates [Array<String>]
