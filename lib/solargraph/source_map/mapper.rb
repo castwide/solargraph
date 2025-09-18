@@ -137,7 +137,7 @@ module Solargraph
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
               location: location,
@@ -151,7 +151,7 @@ module Solargraph
               source: :source_map
             )
           end
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
           if t.nil? || t.include?('w')
             method_pin = Solargraph::Pin::Method.new(
               location: location,
@@ -249,7 +249,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "else"
             num = cur if cur < num
           end
           ctxt += "#{p[num..-1]}" if started

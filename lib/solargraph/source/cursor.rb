@@ -112,7 +112,7 @@ module Solargraph
       def recipient
         @recipient ||= begin
           node = recipient_node
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle ternary operator
           node ? Cursor.new(source, Range.from_node(node).ending) : nil
         end
       end

@@ -57,11 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle && with variables
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         source_map_hash.delete @current.filename
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -75,9 +75,9 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Boolean]
-    # @sg-ignore flow sensitive typing needs a not-nil override pin
+    # @sg-ignore flow sensitive typing needs to handle && with variables
     def attached? filename
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle && with variables
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
@@ -87,7 +87,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle && with variables
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -194,7 +194,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle && with variables
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -285,7 +285,7 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle && with variables
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -312,7 +312,7 @@ module Solargraph
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
       # @param full [String]
@@ -447,7 +447,7 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle ternary operator
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -557,7 +557,7 @@ module Solargraph
     # @sg-ignore flow sensitive typing needs to handle if foo && ...
     # @return [Solargraph::Source]
     def read filename
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle && with variables
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
@@ -581,11 +581,11 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         new_map = Solargraph::SourceMap.map(source)
         source_map_hash[source.filename] = new_map
       else
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle "else"
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end
@@ -652,29 +652,29 @@ module Solargraph
     def report_cache_progress gem_name, pending
       @total ||= pending
       @total = pending if pending > @total
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
       finished = @total - pending
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
       pct = if @total.zero?
         0
       else
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
         ((finished.to_f / @total.to_f) * 100).to_i
       end
       message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
       # "
       if @cache_progress
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore oflow sensitive typing needs to handle if on ivars
         @cache_progress.report(message, pct)
       else
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore Should handle redefinition of types in simple contexts
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore Should handle redefinition of types in simple contexts
         @cache_progress.report(message, pct)
       end
       changed

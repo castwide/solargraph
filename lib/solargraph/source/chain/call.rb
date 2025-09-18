@@ -160,7 +160,7 @@ module Solargraph
               end
               break if type.defined?
             end
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
@@ -217,7 +217,7 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -293,7 +293,7 @@ module Solargraph
           method_pin = find_method_pin(name_pin)
           return [] unless method_pin
 
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
             signature_pin.proxy(return_type)
@@ -343,7 +343,7 @@ module Solargraph
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
 

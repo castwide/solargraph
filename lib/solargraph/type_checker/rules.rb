@@ -58,25 +58,33 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # flow sensitive typing needs to handle "else"
-      # flow sensitive typing needs to handle "&&"
-      # flow sensitive typing needs to handle "if !foo"
-      # flow sensitive typing needs a not-nil override pin
-      # @todo 65: Need to add nil check here
+      # @todo 64: Need to add nil check here
+      # @todo 43: flow sensitive typing needs to handle && with variables
+      # @todo 25: flow sensitive typing needs to handle "return if foo.nil?"
       # @todo 12: need to be able to resolve same method signature on two different types
+      # @todo 11: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 9: Need to validate config
       # @todo 8: Should better support meaning of '&' in RBS
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 6: flow sensitive typing needs to handle "else"
+      # @todo 5: flow sensitive typing needs to handle ternary operator
+      # @todo 5: flow sensitive typing needs to handle inner closures
+      # @todo 5: flow sensitive typing needs better handling of ||= on ivars
       # @todo 4: need boolish support for ? methods
       # @todo 4: should understand meaning of &.
       # @todo 4: Need support for reduce_class_type in UniqueType
+      # @todo 4: flow sensitive typing needs to handle 'return if'
       # @todo 3: Need to handle implicit nil on else
+      # @todo 2: flow sensitive typing needs better handling of ||= on lvars
       # @todo 2: Should handle redefinition of types in simple contexts
       # @todo 2: Translate to something flow sensitive typing understands
-      # @todo 1: flow sensitive typing needs to handle && with variables
+      # @todo 2: flow sensitive typing needs to handle if on ivars
+      # @todo 2: flow sensitive typing needs to handle "while foo""
+      # @todo 1: flow sensitive typing needs to handle 'raise if'
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
+      # @todo 1: flow sensitive typing needs to handle "if !foo"
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end

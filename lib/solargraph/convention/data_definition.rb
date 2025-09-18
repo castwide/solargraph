@@ -96,10 +96,10 @@ module Solargraph
           # @return [String, nil]
           def attribute_comments(attribute_node, attribute_name)
             data_comments = comments_for(attribute_node)
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle && with variables
             return if data_comments.nil? || data_comments.empty?
 
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
             data_comments.split("\n").find do |row|
               row.include?(attribute_name)
             end&.gsub('@param', '@return')&.gsub(attribute_name, '')

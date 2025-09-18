@@ -231,7 +231,7 @@ module Solargraph
               args = node.children[2..-1]
               # @sg-ignore Need to add nil check here
               if !args.empty?
-                # @sg-ignore flow sensitive typing needs a not-nil override pin
+                # @sg-ignore flow sensitive typing needs to handle && with variables
                 return node if prev && args.include?(prev)
               else
                 if source.synchronized?

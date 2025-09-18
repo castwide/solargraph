@@ -78,7 +78,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
       def combine_with(other, attrs = {})
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
@@ -202,7 +202,7 @@ module Solargraph
               comments: p.text,
               name: name,
               decl: decl,
-              # @sg-ignore flow sensitive typing needs a not-nil override pin
+              # @sg-ignore flow sensitive typing needs to handle ternary operator
               presence: location ? location.range : nil,
               return_type: ComplexType.try_parse(*p.types),
               source: source
@@ -308,9 +308,9 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           qualified = type.qualify(api_map, namespace)
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -415,7 +415,7 @@ module Solargraph
                 comments: tag.docstring.all.to_s,
                 name: name,
                 decl: decl,
-                # @sg-ignore flow sensitive typing needs a not-nil override pin
+                # @sg-ignore flow sensitive typing needs to handle ternary operator
                 presence: location ? location.range : nil,
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
@@ -451,7 +451,7 @@ module Solargraph
           end
           next unless ref
 
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           docstring.add_tag(*ref.docstring.tags(:param))
         end
         self

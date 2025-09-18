@@ -92,7 +92,7 @@ module Solargraph
       end
       character = 0 if character.nil? and (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle 'raise if'
       Position.new(line, character)
     end
 

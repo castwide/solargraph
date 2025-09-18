@@ -57,7 +57,7 @@ module Solargraph
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
         chain = Parser.chain(node, source.filename, parent)
@@ -157,9 +157,9 @@ module Solargraph
               # @sg-ignore Need to add nil check here
               unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
                 old = @source.code[index+1..-1]
-                # @sg-ignore flow sensitive typing needs a not-nil override pin
+                # @sg-ignore Need to add nil check here
                 nxt = @source.code[index+1..-1].lstrip
-                # @sg-ignore flow sensitive typing needs a not-nil override pin
+                # @sg-ignore Need to add nil check here
                 index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
                 break
               end

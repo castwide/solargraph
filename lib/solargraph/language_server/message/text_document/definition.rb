@@ -33,9 +33,9 @@ module Solargraph::LanguageServer::Message::TextDocument
       return nil if dloc.nil?
       [
         {
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
           uri: file_to_uri(dloc.filename),
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
           range: dloc.range.to_hash
         }
       ]

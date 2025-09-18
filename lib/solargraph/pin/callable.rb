@@ -115,7 +115,7 @@ module Solargraph
             param.dup
           else
             param.resolve_generics_from_context(generics_to_resolve,
-                                                # @sg-ignore flow sensitive typing needs a not-nil override pin
+                                                # @sg-ignore flow sensitive typing needs to handle "else"
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)
           end

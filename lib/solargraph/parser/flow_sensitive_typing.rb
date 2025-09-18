@@ -173,7 +173,7 @@ module Solargraph
             nilp = fact.fetch(:nil, nil)
             not_nilp = fact.fetch(:not_nil, nil)
             presences.each do |presence|
-              # @sg-ignore flow sensitive typing needs a not-nil override pin
+              # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
               add_downcast_local(pin, downcast_type_name, presence) unless downcast_type_name.nil?
               add_downcast_local(pin, 'nil', presence) if nilp == true
               add_downcast_local(pin, :not_nil, presence) if not_nilp == true
@@ -310,7 +310,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         var_position = Range.from_node(node).start
 
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle 'return if'
         pin = find_local(variable_name, var_position)
         return unless pin
 

@@ -111,7 +111,7 @@ module Solargraph
         source = Solargraph::Source.load_string(code, filename)
         rules = Rules.new(level)
         api_map ||= Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_match_expected?)
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
@@ -322,7 +322,7 @@ module Solargraph
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle && with variables
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             # @sg-ignore need to be able to resolve same method signature on two different types
             unless closest.generic? || ignored_pins.include?(found)
@@ -442,7 +442,7 @@ module Solargraph
             if argchain.node.type == :splat && argchain == arguments.last
               final_arg = argchain
             end
-            # @sg-ignore flow sensitive typing needs to handle "&&"
+            # @sg-ignore flow sensitive typing needs to handle && with variables
             if (final_arg && final_arg.node.type == :splat)
               # The final argument given has been seen and was a
               # splat, which doesn't give us useful types or
@@ -606,7 +606,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore flow sensitive typing needs a not-nil override pin
+      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
@@ -749,7 +749,7 @@ module Solargraph
     # @sg-ignore need boolish support for ? methods
     def abstract? pin
       pin.docstring.has_tag?('abstract') ||
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
+        # @sg-ignore flow sensitive typing needs to handle && with variables
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 

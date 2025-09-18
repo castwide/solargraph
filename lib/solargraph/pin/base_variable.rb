@@ -65,7 +65,7 @@ module Solargraph
           else
             rng = Range.from_node(node)
             next if rng.nil?
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
             pos = rng.ending
             # @sg-ignore Need to add nil check here
             clip = api_map.clip_at(location.filename, pos)

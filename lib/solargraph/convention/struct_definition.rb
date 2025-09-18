@@ -17,7 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
-              # @sg-ignore flow sensitive typing needs a not-nil override pin
+              # @sg-ignore flow sensitive typing needs to handle 'return if'
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
@@ -40,7 +40,7 @@ module Solargraph
 
             pins.push initialize_method_pin
 
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
+            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
             struct_definition_node.attributes.map do |attribute_node, attribute_name|
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
@@ -142,7 +142,7 @@ module Solargraph
 
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
           #
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
+          # @sg-ignore flow sensitive typing needs to handle && with variables
           # @return [String]
           def tag_string(tag)
             tag&.types&.join(',') || 'undefined'
