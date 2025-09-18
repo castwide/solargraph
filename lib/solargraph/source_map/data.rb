@@ -22,6 +22,7 @@ module Solargraph
       end
 
       # @sg-ignore flow sensitive typing needs to handle || with variables
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def locals
         generate
         # @type [Array<Pin::LocalVariable>]
