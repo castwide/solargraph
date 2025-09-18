@@ -12,6 +12,11 @@ module Solargraph
 
       # Resolve a name to a fully qualified namespace or constant.
       #
+      # `Constants#resolve` is similar to `Constants#qualify`` in that its
+      # purpose is to find fully qualified (absolute) namespaces, except
+      # `#resolve`` is only concerned with real namespaces. It disregards
+      # parametrized types and special types like literals, self, and Boolean.
+      #
       # @param name [String]
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
@@ -108,12 +113,12 @@ module Solargraph
         resolved = nil
         gates.each.with_index do |gate, idx|
           resolved = simple_resolve(name, gate, internal)
-          return [resolved, gates[idx + 1..]] if resolved
+          return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
             mixin = resolve(ref.name, ref.reference_gates - [gate])
             next unless mixin
             resolved = simple_resolve(name, mixin, internal)
-            return [resolved, gates[idx + 1..]] if resolved
+            return [resolved, gates[(idx + 1)..]] if resolved
           end
         end
         [nil, []]
