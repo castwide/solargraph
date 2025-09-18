@@ -92,7 +92,7 @@ module Solargraph
       # @return [String, nil]
       def complex_resolve name, gates, internal
         resolved = nil
-        gates.each.with_index do |gate, idx|
+        gates.each do |gate|
           resolved = simple_resolve(name, gate, internal)
           return resolved if resolved
           store.get_ancestor_references(gate).each do |ref|
