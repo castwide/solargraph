@@ -51,7 +51,16 @@ module Solargraph
         return name if ['Boolean', 'self', nil].include?(name)
 
         gates.push '' unless gates.include?('')
-        resolve(name, gates)
+        fqns = resolve(name, gates)
+        return unless fqns
+        pin = store.get_path_pins(fqns).first
+        if pin.is_a?(Pin::Constant)
+          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
+          return unless const
+          resolve(const, pin.gates)
+        else
+          fqns
+        end
       end
 
       # @return [void]
@@ -78,10 +87,15 @@ module Solargraph
         resolved = nil
         base = gates
         parts = name.split('::')
+        first = nil
         parts.each.with_index do |nam, idx|
-          resolved = complex_resolve(nam, base, idx != parts.length - 1)
-          break unless resolved
-          base = [resolved]
+          resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
+          first ||= remainder
+          if resolved
+            base = [resolved]
+          else
+            return resolve(name, first) unless first.empty?
+          end
         end
         resolved
       end
@@ -89,25 +103,26 @@ module Solargraph
       # @param name [String]
       # @param gates [Array<String>]
       # @param internal [Boolean] True if the name is not the last in the namespace
-      # @return [String, nil]
+      # @return [Array]
       def complex_resolve name, gates, internal
         resolved = nil
-        gates.each do |gate|
+        gates.each.with_index do |gate, idx|
           resolved = simple_resolve(name, gate, internal)
-          return resolved if resolved
-          store.get_ancestor_references(gate).each do |ref|
+          return [resolved, gates[idx + 1..]] if resolved
+          (store.get_ancestor_references(gate)).each do |ref|
             mixin = resolve(ref.name, ref.reference_gates - [gate])
+            next unless mixin
             resolved = simple_resolve(name, mixin, internal)
-            return resolved if resolved
+            return [resolved, gates[idx + 1..]] if resolved
           end
         end
-        nil
+        [nil, []]
       end
 
       # @param name [String]
       # @param gate [String]
       # @param internal [Boolean] True if the name is not the last in the namespace
-      # @return [Pin::Constant, Pin::Namespace, nil]
+      # @return [String, nil]
       def simple_resolve name, gate, internal
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
         pin = store.get_path_pins(here).first
