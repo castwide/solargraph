@@ -320,7 +320,6 @@ module Solargraph
             missing = base
             base = base.base
           end
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
           # @sg-ignore flow sensitive typing needs a not-nil override pin
@@ -443,6 +442,7 @@ module Solargraph
             if argchain.node.type == :splat && argchain == arguments.last
               final_arg = argchain
             end
+            # @sg-ignore flow sensitive typing needs to handle "&&"
             if (final_arg && final_arg.node.type == :splat)
               # The final argument given has been seen and was a
               # splat, which doesn't give us useful types or
@@ -466,7 +466,9 @@ module Solargraph
             # @todo Some level (strong, I guess) should require the param here
             else
               argtype = argchain.infer(api_map, closure_pin, locals)
+              # @sg-ignore flow sensitive typing needs to handle "else"
               argtype = argtype.self_to_type(closure_pin.context)
+              # @sg-ignore flow sensitive typing needs to handle "else"
               if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                 errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                 return errors
@@ -642,7 +644,6 @@ module Solargraph
           missing = base
           base = base.base
         end
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
         closest = found.typify(api_map) if found
         # @sg-ignore flow sensitive typing needs to handle "if !foo"
         if !found || closest.defined? || internal?(found)

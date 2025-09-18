@@ -209,7 +209,6 @@ module Solargraph
       stringified_comments[rng.start.line] ||= begin
         # @sg-ignore Need to add nil check here
         buff = associated_comments[rng.start.line]
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
         buff ? stringify_comment_array(buff) : nil
       end
     end

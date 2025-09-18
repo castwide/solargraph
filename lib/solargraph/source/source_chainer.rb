@@ -104,7 +104,6 @@ module Solargraph
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
           if match
-            # @sg-ignore flow sensitive typing needs a not-nil override pin
             match[0]
           else
             ''

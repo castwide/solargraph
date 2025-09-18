@@ -58,7 +58,10 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 128: flow sensitive typing needs a not-nil override pin
+      # flow sensitive typing needs to handle "else"
+      # flow sensitive typing needs to handle "&&"
+      # flow sensitive typing needs to handle "if !foo"
+      # flow sensitive typing needs a not-nil override pin
       # @todo 65: Need to add nil check here
       # @todo 12: need to be able to resolve same method signature on two different types
       # @todo 9: Need to validate config

@@ -193,9 +193,7 @@ module Solargraph
             name = p.name
             decl = :arg
             if name
-              # @sg-ignore flow sensitive typing needs a not-nil override pin
               decl = select_decl(name, false)
-              # @sg-ignore flow sensitive typing needs a not-nil override pin
               name = clean_param(name)
             end
             Pin::Parameter.new(
@@ -216,7 +214,6 @@ module Solargraph
         end
         signature = Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, closure: self, source: source,
                                   location: location, type_location: type_location)
-        # @sg-ignore Need to add nil check here
         block.closure = signature if block
         signature
       end

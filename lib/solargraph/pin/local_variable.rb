@@ -6,6 +6,9 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
+      # @return [Boolean]
+      attr_reader :presence_certain
+
       def presence_certain?
         @presence_certain
       end
@@ -13,22 +16,74 @@ module Solargraph
       # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
+      # @param exclude_return_type [ComplexType, nil] Ensure any return
+      #   type returned will never include these unique types in the
+      #   unique types of its complex type
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
+      def initialize assignment: nil, presence: nil, presence_certain: false,
+                     exclude_return_type: nil, **splat
         super(**splat)
         @assignment = assignment
         @presence = presence
         @presence_certain = presence_certain
+        @exclude_return_type = exclude_return_type
       end
 
       def combine_with(other, attrs={})
         new_attrs = {
           assignment: assert_same(other, :assignment),
           presence_certain: assert_same(other, :presence_certain?),
+          exclude_return_type: combine_types(other, :exclude_return_type),
         }.merge(attrs)
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
+        new_attrs[:presence_certain] = assert_same(other, :presence_certain) unless attrs.key?(:presence_certain)
 
         super(other, new_attrs)
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [ComplexType, nil]
+      def combine_types(other, attr)
+        # @type [ComplexType, nil]
+        type1 = send(attr)
+        # @type [ComplexType, nil]
+        type2 = other.send(attr)
+        if type1 && type2
+          types = (type1.items + type2.items).uniq
+          ComplexType.new(types)
+        else
+          type1 || type2
+        end
+      end
+
+      def reset_generated!
+        @return_type_minus_exclusions = nil
+        super
+      end
+
+      # @return [ComplexType, nil]
+      def return_type
+        @return_type = return_type_minus_exclusions(super)
+      end
+
+      # @param raw_return_type [ComplexType, nil]
+      # @return [ComplexType, nil]
+      def return_type_minus_exclusions(raw_return_type)
+        @return_type_minus_exclusions ||=
+          if exclude_return_type && raw_return_type
+            # TODO: Should either complain at strong level on .items
+            #   dereferences or not show ', nil' in hover docs'
+            types = raw_return_type.items - exclude_return_type.items
+            # @sg-ignore TODO: Get this to not error out - not clear
+            # why it would given hoverover docs
+            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+            ComplexType.new(types)
+          else
+            raw_return_type
+          end
+        @return_type_minus_exclusions
       end
 
       # @param other_closure [Pin::Closure]
@@ -46,6 +101,8 @@ module Solargraph
       end
 
       private
+
+      attr_reader :exclude_return_type
 
       # @param tag1 [String]
       # @param tag2 [String]

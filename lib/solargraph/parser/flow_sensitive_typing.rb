@@ -128,31 +128,22 @@ module Solargraph
 
       private
 
-      # @param return_type [ComplexType, nil]
-      #
-      # @return [ComplexType, nil]
-      def remove_nil(return_type)
-        # @todo flow sensitive typing needs a not-nil override pin
-        return return_type if return_type.nil? || return_type.undefined?
-
-        types = return_type.items.reject { |t| t.name == 'nil' }
-        ComplexType.new(types)
-      end
-
       # @param pin [Pin::LocalVariable]
       # @param downcast_type_name [String, :not_nil]
       # @param presence [Range]
       #
       # @return [void]
       def add_downcast_local(pin, downcast_type_name, presence)
-        type = if downcast_type_name == :not_nil
-                 remove_nil(pin.return_type)
-               else
-                 ComplexType.try_parse(downcast_type_name)
-               end
-        return if type == pin.return_type
+        return_type = if downcast_type_name == :not_nil
+                        pin.return_type
+                      else
+                        ComplexType.parse(downcast_type_name)
+                      end
+        exclude_return_type = downcast_type_name == :not_nil ? ComplexType::NIL : nil
+
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
+          presence_certain: true,
           location: pin.location,
           closure: pin.closure,
           name: pin.name,
@@ -160,10 +151,11 @@ module Solargraph
           # that it implies
           comments: pin.comments,
           presence: presence,
-          return_type: type,
-          presence_certain: true,
+          return_type: return_type,
+          exclude_return_type: exclude_return_type,
           source: :flow_sensitive_typing
         )
+        new_pin.reset_generated!
         locals.push(new_pin)
       end
 

@@ -213,7 +213,6 @@ module Solargraph
         end
         sc_ref = store.get_superclass(fqns)
         if sc_ref
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
           fqsc = dereference(sc_ref)
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end

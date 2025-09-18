@@ -24,6 +24,7 @@ module Solargraph
         @name ||= ''
       end
 
+      # @todo redundant with Base#return_type?
       # @return [ComplexType]
       def return_type
         @return_type ||= ComplexType::UNDEFINED

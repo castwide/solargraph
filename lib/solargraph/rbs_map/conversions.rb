@@ -447,7 +447,6 @@ module Solargraph
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
           rbs_block = overload.method_type.block
           block = if rbs_block
-                    # @sg-ignore flow sensitive typing needs a not-nil override pin
                     block_parameters, block_return_type = parts_of_function(rbs_block, pin)
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)

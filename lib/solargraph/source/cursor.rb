@@ -39,7 +39,6 @@ module Solargraph
       def start_of_word
         @start_of_word ||= begin
           match = source.code[0..offset-1].to_s.match(start_word_pattern)
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
           # @sg-ignore Need to add nil check here
@@ -56,7 +55,6 @@ module Solargraph
       def end_of_word
         @end_of_word ||= begin
           match = source.code[offset..-1].to_s.match(end_word_pattern)
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
           match ? match[0] : ''
         end
       end
@@ -132,7 +130,6 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
             if match
-              # @sg-ignore Need to add nil check here
               Position.from_offset(source.code, offset - match[0].length)
             else
               position

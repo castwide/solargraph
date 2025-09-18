@@ -236,7 +236,6 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
-            # @sg-ignore Need to add nil check here
             txt = named.tag.text.clone if named
           end
           i = 1
@@ -358,7 +357,6 @@ module Solargraph
 
           block_context_pin = name_pin
           block_pin = find_block_pin(api_map)
-          # @sg-ignore flow sensitive typing needs a not-nil override pin
           block_context_pin = block_pin.closure if block_pin
           # @sg-ignore Need to add nil check here
           block.infer(api_map, block_context_pin, locals)
