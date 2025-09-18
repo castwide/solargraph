@@ -33,6 +33,7 @@ module Solargraph
         super(other, new_attrs)
       end
 
+      # @sg-ignore Need support for reduce_class_type in UniqueType
       def context
         @context ||= begin
           result = super
@@ -57,8 +58,10 @@ module Solargraph
         closure ? closure.gates : ['']
       end
 
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       # @return [::Array<String, nil>]
       def generics
+        # @sg-ignore flow sensitive typing needs a not-nil override pin
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 

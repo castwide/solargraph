@@ -111,8 +111,8 @@ module Solargraph
         source = Solargraph::Source.load_string(code, filename)
         rules = Rules.new(level)
         api_map ||= Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_match_expected?)
-        api_map.map(source)
         # @sg-ignore flow sensitive typing needs a not-nil override pin
+        api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
     end

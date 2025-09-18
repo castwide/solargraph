@@ -9,6 +9,7 @@ module Solargraph
         super(**splat)
       end
 
+      # @sg-ignore flow sensitive typing needs a not-nil override pin
       def generics
         # @type [Array<::String, nil>]
         @generics ||= [].freeze
