@@ -61,7 +61,6 @@ module Solargraph
       # @sg-ignore flow sensitive typing needs a not-nil override pin
       # @return [::Array<String, nil>]
       def generics
-        # @sg-ignore flow sensitive typing needs a not-nil override pin
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
