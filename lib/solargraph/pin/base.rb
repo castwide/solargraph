@@ -574,6 +574,18 @@ module Solargraph
         @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
+      # The namespaces available for resolving the current namespace. Each gate
+      # should be a fully qualified namespace or the root namespace (i.e., an
+      # empty string.)
+      #
+      # Example: Given the name 'Bar' and the gates ['Foo', ''],
+      # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
+      #
+      # @return [Array<string>]
+      def gates
+        @gates ||= closure&.gates || ['']
+      end
+
       # @return [String, nil]
       def to_rbs
         return_type.to_rbs

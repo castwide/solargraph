@@ -15,7 +15,7 @@ module Solargraph
             gates = ['']
           else
             base = word
-            gates = crawl_gates(name_pin)
+            gates = name_pin.gates
           end
           parts = base.split('::')
           gates.each do |gate|
@@ -40,21 +40,6 @@ module Solargraph
         end
 
         private
-
-        # @param pin [Pin::Closure]
-        # @return [::Array<String>]
-        def crawl_gates pin
-          clos = pin
-          until clos.nil?
-            if clos.is_a?(Pin::Namespace)
-              gates = clos.gates
-              gates.push('') if gates.empty?
-              return gates
-            end
-            clos = clos.closure
-          end
-          ['']
-        end
 
         # @param pins [::Array<Pin::Base>]
         # @param api_map [ApiMap]
