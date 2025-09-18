@@ -103,18 +103,11 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String, nil]
       def resolve_uncached name, gates
-        # parts = name.split('::')
-        # here = parts.shift
-        # resolved = simple_resolve(here, gates)
-        # return resolved if parts.empty? || resolved.nil?
-
-        # final = "#{resolved}::#{parts.join('::')}".sub(/^::/, '')
-        # final if store.namespace_exists?(final)
         resolved = nil
         base = gates
         name.split('::').each do |nam|
           resolved = complex_resolve(nam, base)
-          return unless resolved
+          break unless resolved
           base = [resolved]
         end
         resolved
@@ -125,7 +118,7 @@ module Solargraph
         gates.each do |gate|
           resolved = simple_resolve(name, gate)
           return resolved if resolved
-          store.get_includes(gate).each do |ref|
+          store.get_ancestor_references(gate).each do |ref|
             mixin = resolve(ref.name, ref.reference_gates - [gate])
             resolved = simple_resolve(name, mixin)
             return resolved if resolved
@@ -139,7 +132,7 @@ module Solargraph
       # @return [String, nil]
       def simple_resolve name, gate
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
-        here if store.namespace_exists?(here)
+        here if store.constant_names.include?(here)
       end
 
       # @param gates [Array<String>]

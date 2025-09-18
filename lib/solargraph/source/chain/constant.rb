@@ -17,6 +17,9 @@ module Solargraph
             base = word
             gates = name_pin.gates
           end
+          fqns = api_map.send(:store).constants.resolve(base, gates)
+          return api_map.get_path_pins(fqns) if fqns
+
           parts = base.split('::')
           gates.each do |gate|
             # @todo 'Wrong argument type for

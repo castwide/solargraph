@@ -16,7 +16,9 @@ module Solargraph
       end
 
       # @return [Set<String>]
-      attr_reader :namespaces
+      def constant_names
+        @constant_names ||= (pins_by_class(Pin::Namespace) + pins_by_class(Pin::Constant)).to_set(&:path)
+      end
 
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash

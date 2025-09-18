@@ -160,6 +160,10 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
+      def constant_names
+        index.constant_names
+      end
+
       # @return [Enumerable<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
@@ -253,6 +257,10 @@ module Solargraph
         end
 
         ancestors.compact.uniq
+      end
+
+      def get_ancestor_references(fqns)
+        (get_prepends(fqns) + get_includes(fqns) + [get_superclass(fqns)]).compact
       end
 
       # @return [Constants]
