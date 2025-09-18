@@ -17,29 +17,32 @@ module Solargraph
             base = word
             gates = name_pin.gates
           end
-          fqns = api_map.send(:store).constants.resolve(base, gates)
-          return api_map.get_path_pins(fqns) if fqns
+          fqns = api_map.resolve(base, gates)
+          api_map.get_path_pins(fqns)
 
-          parts = base.split('::')
-          gates.each do |gate|
-            # @todo 'Wrong argument type for
-            #   Solargraph::Source::Chain::Constant#deep_constant_type:
-            #   gate expected String, received generic<Elem>' is because
-            #   we lose 'rooted' information in the 'Chain::Array' class
-            #   internally, leaving ::Array#each shadowed when it
-            #   shouldn't be.
-            type = deep_constant_type(gate, api_map)
-            # Use deep inference to resolve root
-            parts[0..-2].each do |sym|
-              pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
-              type = first_pin_type(pins, api_map)
-              break if type.undefined?
-            end
-            next if type.undefined?
-            result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
-            return result unless result.empty?
-          end
-          []
+          # @todo This routine may no longer be necessary. Store::Constants can
+          #   resolve constant aliases in the form of `Foo = Bar`.
+          #
+          # parts = base.split('::')
+          # gates.each do |gate|
+          #   # @todo 'Wrong argument type for
+          #   #   Solargraph::Source::Chain::Constant#deep_constant_type:
+          #   #   gate expected String, received generic<Elem>' is because
+          #   #   we lose 'rooted' information in the 'Chain::Array' class
+          #   #   internally, leaving ::Array#each shadowed when it
+          #   #   shouldn't be.
+          #   type = deep_constant_type(gate, api_map)
+          #   # Use deep inference to resolve root
+          #   parts[0..-2].each do |sym|
+          #     pins = api_map.get_constants('', type.namespace).select{ |pin| pin.name == sym }
+          #     type = first_pin_type(pins, api_map)
+          #     break if type.undefined?
+          #   end
+          #   next if type.undefined?
+          #   result = api_map.get_constants('', type.namespace).select { |pin| pin.name == parts.last }
+          #   return result unless result.empty?
+          # end
+          # []
         end
 
         private

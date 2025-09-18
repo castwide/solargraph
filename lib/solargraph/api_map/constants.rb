@@ -77,22 +77,27 @@ module Solargraph
       def resolve_uncached name, gates
         resolved = nil
         base = gates
-        name.split('::').each do |nam|
-          resolved = complex_resolve(nam, base)
+        parts = name.split('::')
+        parts.each.with_index do |nam, idx|
+          resolved = complex_resolve(nam, base, idx != parts.length - 1)
           break unless resolved
           base = [resolved]
         end
         resolved
       end
 
-      def complex_resolve name, gates
+      # @param name [String]
+      # @param gates [Array<String>]
+      # @param internal [Boolean] True if the name is not the last in the namespace
+      # @return [String, nil]
+      def complex_resolve name, gates, internal
         resolved = nil
-        gates.each do |gate|
-          resolved = simple_resolve(name, gate)
+        gates.each.with_index do |gate, idx|
+          resolved = simple_resolve(name, gate, internal)
           return resolved if resolved
           store.get_ancestor_references(gate).each do |ref|
             mixin = resolve(ref.name, ref.reference_gates - [gate])
-            resolved = simple_resolve(name, mixin)
+            resolved = simple_resolve(name, mixin, internal)
             return resolved if resolved
           end
         end
@@ -101,11 +106,12 @@ module Solargraph
 
       # @param name [String]
       # @param gate [String]
+      # @param internal [Boolean] True if the name is not the last in the namespace
       # @return [Pin::Constant, Pin::Namespace, nil]
-      def simple_resolve name, gate
+      def simple_resolve name, gate, internal
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
         pin = store.get_path_pins(here).first
-        if pin.is_a?(Pin::Constant)
+        if pin.is_a?(Pin::Constant) && internal
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
           resolve(const, pin.gates)

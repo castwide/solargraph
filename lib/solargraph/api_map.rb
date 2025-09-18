@@ -297,6 +297,13 @@ module Solargraph
       store.constants.qualify(tag, *gates)
     end
 
+    # @param name [String]
+    # @param gates [Array<String, Array<String>>]
+    # @return [String, nil]
+    def resolve name, *gates
+      store.constants.resolve(name, *gates)
+    end
+
     # Get a fully qualified namespace from a reference pin.
     #
     # @param pin [Pin::Reference]
