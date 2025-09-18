@@ -109,7 +109,7 @@ module Solargraph
         gates.each.with_index do |gate, idx|
           resolved = simple_resolve(name, gate, internal)
           return [resolved, gates[idx + 1..]] if resolved
-          (store.get_ancestor_references(gate)).each do |ref|
+          store.get_ancestor_references(gate).each do |ref|
             mixin = resolve(ref.name, ref.reference_gates - [gate])
             next unless mixin
             resolved = simple_resolve(name, mixin, internal)
