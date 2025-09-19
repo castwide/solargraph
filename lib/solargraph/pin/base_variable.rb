@@ -80,13 +80,24 @@ module Solargraph
         types
       end
 
+      # @return [ComplexType, nil]
+      def exclude_return_type
+        nil
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
+        if presence_certain? && return_type.defined?
+          # flow sensitive typing has already figured out this type
+          return return_type.qualify(api_map, namespace)
+        end
+
         unless @assignment.nil?
           # @sg-ignore sensitive typing needs to handle "unless foo.nil?"
           types = return_types_from_node(@assignment, api_map)
-          return ComplexType.new(types.uniq) unless types.empty?
+          exclude_items = exclude_return_type&.items&.uniq
+          return ComplexType.new(types.flat_map(&:items).uniq - (exclude_items || [])) unless types.empty?
         end
 
         unless @mass_assignment.nil?

@@ -307,7 +307,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     # the 10 here is arguably a bug
     expect(clip.infer.rooted_tags).to eq('nil')
 
-    pending('handling else case in flow senstiive typing')
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
   end
@@ -530,7 +529,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
 
-    pending('handling else case in flow senstiive typing')
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
   end
@@ -575,20 +573,48 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       end
     ), 'test.rb')
 
-    pending('return if support')
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
-
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [9, 10])
-    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 
+  # https://cse.buffalo.edu/~regan/cse305/RubyBNF.pdf
+  # https://ruby-doc.org/docs/ruby-doc-bundle/Manual/man-1.4/syntax.html
   it 'uses .nil? in a return if() in a method to refine types using nil checks'
   it 'uses .nil? in a return if() in a block to refine types using nil checks'
   it 'uses .nil? in a return if() in an unless to refine types using nil checks'
   it 'uses .nil? in a return if() in a while to refine types using nil checks'
-  it 'uses .nil? in a return if() in anb until to refine types using nil checks'
+  it 'uses .nil? in a return if() in an until to refine types using nil checks'
+  it 'uses .nil? in a return if() in a switch/case/else to refine types using nil checks'
+  it 'uses .nil? in a return if() in a ternary operator to refine types using nil checks'
+  it 'uses .nil? in a return if() in a begin/end to refine types using nil checks'
+  it 'uses .nil? in a return if() in a ||= to refine types using nil checks'
+  it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks'
+  it 'uses .nil? in a return if() in top level namespace to refine types using nil checks'
+
+  it 'provides a useful pin after a return if .nil?' do
+    source = Solargraph::Source.load_string(%(
+      class A
+        # @param b [Hash{String => String}]
+        # @return [void]
+        def a b
+          c = b["123"]
+          c
+          return c if c.nil?
+          c
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [7, 17])
+    expect(clip.infer.to_s).to eq('nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('String')
+  end
 end

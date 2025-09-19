@@ -4,6 +4,20 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'does not misunderstand types during flow-sensitive typing' do
+      checker = type_checker(%(
+        class A
+          # @param b [Hash{String => String}]
+          # @return [void]
+          def a b
+            c = b["123"]
+            return if c.nil?
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'respects pin visibility in if/nil? pattern' do
       checker = type_checker(%(
         class Foo
@@ -17,7 +31,6 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      pending('recognizing returning branches in flow sensitive typing')
       expect(checker.problems.map(&:message)).to be_empty
     end
 
@@ -25,8 +38,18 @@ describe Solargraph::TypeChecker do
       checker = type_checker(%(
         # @return [String]
         def global_config_path
-          out = ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
+          ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
               File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'is able to probe type over an assignment' do
+      checker = type_checker(%(
+        # @return [String]
+        def global_config_path
+          out = 'foo'
           out
         end
       ))
@@ -44,6 +67,40 @@ describe Solargraph::TypeChecker do
             baz = bar
             return baz if baz
             123
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'handles a flow sensitive typing if correctly' do
+      checker = type_checker(%(
+        # @param a [String, nil]
+        # @return [void]
+        def foo a = nil
+          b = a
+          if b
+            b.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'handles another flow sensitive typing if correctly' do
+      checker = type_checker(%(
+        class A
+          # @param e [String]
+          # @param f [String]
+          # @return [void]
+          def d(e, f:); end
+
+          # @return [void]
+          def a
+            c = rand ? nil : "foo"
+            if c
+              d(c, f: c)
+            end
           end
         end
       ))

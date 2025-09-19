@@ -5,9 +5,11 @@ module Solargraph
 
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
-      def initialize(locals, enclosing_breakable_pin = nil)
+      # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatementable, nil]
+      def initialize(locals, enclosing_breakable_pin, enclosing_compound_statement_pin)
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
+        @enclosing_compound_statement_pin = enclosing_compound_statement_pin
       end
 
       # @param and_node [Parser::AST::Node]
@@ -28,8 +30,12 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_conditional(lhs, true_ranges + [rhs_presence], false_ranges)
-        process_conditional(rhs, true_ranges, false_ranges)
+
+        # can't assume if an and is false that every single condition
+        # is false, so don't provide any false ranges to assert facts
+        # on
+        process_conditional(lhs, true_ranges + [rhs_presence], [])
+        process_conditional(rhs, true_ranges, [])
       end
 
       # @param node [Parser::AST::Node]
@@ -81,14 +87,42 @@ module Solargraph
           end
         end
 
+        unless enclosing_compound_statement_pin.nil?
+          rest_of_returnable_body = Range.new(get_node_end_position(if_node),
+                                              get_node_end_position(enclosing_compound_statement_pin.node))
+
+          #
+          # if one of the clauses always leaves the compound
+          # statement, we can assume things about the rest of the
+          # compound statement
+          #
+          if always_leaves_compound_statement?(then_clause)
+            false_ranges << rest_of_returnable_body
+          end
+
+          if always_leaves_compound_statement?(else_clause)
+            true_ranges << rest_of_returnable_body
+          end
+        end
+
         unless then_clause.nil?
           #
-          # Add specialized locals for the then clause range
+          # If the condition is true we can assume things about the then clause
           #
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
           true_ranges << Range.new(before_then_clause_pos,
                                    get_node_end_position(then_clause))
+        end
+
+        unless else_clause.nil?
+          #
+          # If the condition is true we can assume things about the else clause
+          #
+          before_else_clause_loc = else_clause.location.expression.adjust(begin_pos: -1)
+          before_else_clause_pos = Position.new(before_else_clause_loc.line, before_else_clause_loc.column)
+          false_ranges << Range.new(before_else_clause_pos,
+                                    get_node_end_position(else_clause))
         end
 
         process_conditional(conditional_node, true_ranges, false_ranges)
@@ -161,8 +195,7 @@ module Solargraph
           location: pin.location,
           closure: pin.closure,
           name: pin.name,
-          # not sending along assignment as we are changing the type
-          # that it implies
+          assignment: pin.assignment,
           comments: pin.comments,
           presence: presence,
           return_type: return_type,
@@ -274,10 +307,10 @@ module Solargraph
         process_facts(if_true, true_presences)
 
         if_false = {}
-        if_true[pin] ||= []
+        if_false[pin] ||= []
         # @todo: should add support for not_type
-        # if_true[pin] << { not_type: isa_type_name } #
-        process_facts(if_true, false_presences)
+        # if_true[pin] << { not_type: isa_type_name }
+        process_facts(if_false, false_presences)
       end
 
       # @param nilp_node [Parser::AST::Node]
@@ -376,9 +409,15 @@ module Solargraph
         clause_node&.type == :break
       end
 
+      # @param clause_node [Parser::AST::Node, nil]
+      def always_leaves_compound_statement?(clause_node)
+        # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
+        [:return, :raise, :next, :redo, :retry].include?(clause_node&.type)
+      end
+
       attr_reader :locals
 
-      attr_reader :enclosing_breakable_pin
+      attr_reader :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end
   end
 end
