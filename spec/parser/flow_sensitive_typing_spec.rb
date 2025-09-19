@@ -3,7 +3,7 @@
 # @todo These tests depend on `Clip`, but we're putting the tests here to
 #   avoid overloading clip_spec.rb.
 describe Solargraph::Parser::FlowSensitiveTyping do
-  it 'uses is_a? in a simple if() to refine types on a simple class' do
+  it 'uses is_a? in a simple if() to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       class Repro < ReproBase; end
@@ -72,7 +72,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
-  it 'uses is_a? in a simple unless statement to refine types on a simple class' do
+  it 'uses is_a? in a simple unless statement to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       class Repro < ReproBase; end
@@ -510,7 +510,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('nil')
   end
 
-  it 'uses variable in a simple if() to refine types on a simple class' do
+  it 'uses variable in a simple if() to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       def verify_repro(repr)
@@ -535,7 +535,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('nil')
   end
 
-  it 'uses variable in a simple if() to refine types on a simple class using nil checks' do
+  it 'uses variable in a simple if() to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       def verify_repro(repr = nil)
         repr = 10 if floop
@@ -560,7 +560,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('nil')
   end
 
-  it 'uses variable in a simple if() to refine types on a simple class using nil checks' do
+  it 'uses .nil? in a return if() in an if to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
