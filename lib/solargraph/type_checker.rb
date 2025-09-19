@@ -295,15 +295,20 @@ module Solargraph
         if type.undefined? && !rules.ignore_all_undefined?
           base = chain
           missing = chain
+          # @type [Solargraph::Pin::Base, nil]
           found = nil
+          # @type [Array<Solargraph::Pin::Base>]
+          all_found = []
           closest = ComplexType::UNDEFINED
           until base.links.first.undefined?
-            found = base.define(api_map, block_pin, locals).first
+            all_found = base.define(api_map, block_pin, locals)
+            found = all_found.first
             break if found
             missing = base
             base = base.base
           end
-          closest = found.typify(api_map) if found
+          all_closest = all_found.map { |pin| pin.typify(api_map) }
+          closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
@@ -603,15 +608,20 @@ module Solargraph
       if type.undefined? && !rules.ignore_all_undefined?
         base = chain
         missing = chain
+        # @type [Solargraph::Pin::Base, nil]
         found = nil
+        # @type [Array<Solargraph::Pin::Base>]
+        all_found = []
         closest = ComplexType::UNDEFINED
         until base.links.first.undefined?
-          found = base.define(api_map, block_pin, locals).first
+          all_found = base.define(api_map, block_pin, locals)
+          found = all_found.first
           break if found
           missing = base
           base = base.base
         end
-        closest = found.typify(api_map) if found
+        all_closest = all_found.map { |pin| pin.typify(api_map) }
+        closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
         if !found || closest.defined? || internal?(found)
           return false
         end
