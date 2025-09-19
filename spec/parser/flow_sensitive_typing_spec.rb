@@ -566,7 +566,10 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         # @param baz [::Boolean, nil]
         # @return [void]
         def bar(baz: nil)
-          return if baz.nil?
+          if rand
+            return if baz.nil?
+            baz
+          end
           baz
         end
       end
@@ -575,7 +578,17 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     pending('return if support')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [6, 10])
+    clip = api_map.clip_at('test.rb', [7, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
+
+  it 'uses .nil? in a return if() in a method to refine types using nil checks'
+  it 'uses .nil? in a return if() in a block to refine types using nil checks'
+  it 'uses .nil? in a return if() in an unless to refine types using nil checks'
+  it 'uses .nil? in a return if() in a while to refine types using nil checks'
+  it 'uses .nil? in a return if() in anb until to refine types using nil checks'
 end
