@@ -58,25 +58,28 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 240: Need to add nil check here
-      # @todo 25: flow sensitive typing needs to handle "return if foo.nil?"
-      # @todo 13: flow sensitive typing needs to handle "unless foo.nil?"
+      # Need to support nested flow sensitive types
+      # Need to add nil check here
+      # REFILE: flow sensitive typing needs to handle "return if foo.nil?"
+      # downcast output of Enumerable#select
+      # flow sensitive typing needs to handle &&
+      # REFILE: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 13: flow sensitive typing needs to handle || with variables
       # @todo 12: need to be able to resolve same method signature on two different types
       # @todo 9: Need to validate config
       # @todo 8: Should better support meaning of '&' in RBS
       # @todo 8: flow sensitive typing needs to handle "if !foo"
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-      # @todo 6: flow sensitive typing needs to handle "else"
+      # REFILE: flow sensitive typing needs to handle "else"
       # @todo 5: flow sensitive typing needs to handle ternary operator
-      # @todo 5: flow sensitive typing needs to handle inner closures
+      # flow sensitive typing needs to handle inner closures
       # @todo 5: flow sensitive typing needs better handling of ||= on ivars
       # @todo 5: Translate to something flow sensitive typing understands
       # @todo 4: Should handle redefinition of types in simple contexts
-      # @todo 4: need boolish support for ? methods
+      # need boolish support for ? methods
       # @todo 4: should understand meaning of &.
       # @todo 4: Need support for reduce_class_type in UniqueType
-      # @todo 4: flow sensitive typing needs to handle 'return if'
+      # REFILE: flow sensitive typing needs to handle 'return if'
       # @todo 4: flow sensitive typing needs to handle || within &&
       # @todo 3: Need to handle implicit nil on else
       # @todo 3: flow sensitive typing needs better handling of ||= on lvars

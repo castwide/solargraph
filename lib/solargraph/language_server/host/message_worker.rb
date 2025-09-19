@@ -78,10 +78,8 @@ module Solargraph
           cancel_message || next_priority
         end
 
-        # @sg-ignore Declared return type ::Hash, nil does not match
-        #   inferred type ::Hash, ::Array<::Hash>, nil for
-        #   Solargraph::LanguageServer::Host::MessageWorker#cancel_message
         # @return [Hash, nil]
+        # @sg-ignore We should understand reassignment of variable to new type
         def cancel_message
           # Handle cancellations first
           idx = messages.find_index { |msg| msg['method'] == '$/cancelRequest' }

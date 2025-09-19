@@ -194,6 +194,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore flow sensitive typing needs to handle &&
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -311,7 +312,7 @@ module Solargraph
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
+      # @sg-ignore Need to add nil check here
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
       # @param full [String]
@@ -580,11 +581,9 @@ module Solargraph
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
-        # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
         new_map = Solargraph::SourceMap.map(source)
         source_map_hash[source.filename] = new_map
       else
-        # @sg-ignore flow sensitive typing needs to handle "else"
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end

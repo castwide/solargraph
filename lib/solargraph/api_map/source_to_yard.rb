@@ -62,10 +62,7 @@ module Solargraph
             next unless extend_object
             code_object = code_object_map[ref.parametrized_tag.to_s]
             next unless code_object
-            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             extend_object.class_mixins.push code_object
-            # @todo add spec showing why this next line is necessary
-            # @sg-ignore need to be able to resolve same method signature on two different types
             extend_object.instance_mixins.push code_object
           end
         end

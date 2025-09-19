@@ -81,7 +81,6 @@ module Solargraph
       # @param other [self]
       # @param attrs [Hash{::Symbol => Object}]
       #
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
       # @return [self]
       def combine_with(other, attrs={})
         raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class

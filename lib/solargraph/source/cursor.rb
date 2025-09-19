@@ -35,6 +35,7 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
@@ -130,6 +131,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
             if match
+              # @sg-ignore Need to add nil check here
               Position.from_offset(source.code, offset - match[0].length)
             else
               position

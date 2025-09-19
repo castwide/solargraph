@@ -97,10 +97,8 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
-        # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
         res = constants.dereference(ref)
         return unless res
-        # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
         res + type.substring
       end
 
@@ -212,9 +210,7 @@ module Solargraph
         return [] if fqns.nil?
         if fqns.include?('::')
           parts = fqns.split('::')
-          # @sg-ignore flow sensitive typing needs to handle 'return if'
           name = parts.pop
-          # @sg-ignore flow sensitive typing needs to handle 'return if'
           base = parts.join('::')
         else
           base = ''
@@ -373,10 +369,8 @@ module Solargraph
         return type.simplify_literals.to_s if type.literal?
         ref = get_superclass(fq_sub_tag)
         return unless ref
-        # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
         res = constants.dereference(ref)
         return unless res
-        # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
         res + type.substring
       end
     end

@@ -251,7 +251,6 @@ module Solargraph
         def repaired_find_recipient_node cursor
           cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
           node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
-          # @sg-ignore investigate why Parser::AST#type isn't available here
           return node if node && node.type == :send
         end
 

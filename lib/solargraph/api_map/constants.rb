@@ -69,7 +69,6 @@ module Solargraph
         fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
         return unless fqns
 
-        # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
         fqns + type.substring
       end
 

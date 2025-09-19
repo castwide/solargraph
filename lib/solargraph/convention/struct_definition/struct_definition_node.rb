@@ -74,7 +74,6 @@ module Solargraph
 
           return false if keyword_init_param.nil?
 
-          # @sg-ignore Need to add nil check here
           keyword_init_param.children[0].children[1].type == :true
         end
 

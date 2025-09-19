@@ -73,8 +73,7 @@ module Solargraph
       def return_type_minus_exclusions(raw_return_type)
         @return_type_minus_exclusions ||=
           if exclude_return_type && raw_return_type
-            # TODO: Should either complain at strong level on .items
-            #   dereferences or not show ', nil' in hover docs'
+            # @sg-ignore flow sensitive typing needs to handle &&
             types = raw_return_type.items - exclude_return_type.items
             types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
             ComplexType.new(types)

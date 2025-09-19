@@ -66,9 +66,9 @@ module Solargraph
         #   s(:send, nil, :bar))
         # [4] pry(main)>
         conditional_node = if_node.children[0]
-        # @type [Parser::AST::Node]
+        # @type [Parser::AST::Node, nil]
         then_clause = if_node.children[1]
-        # @type [Parser::AST::Node]
+        # @type [Parser::AST::Node, nil]
         else_clause = if_node.children[2]
 
         true_ranges = []
@@ -370,7 +370,6 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         var_position = Range.from_node(node).start
 
-        # @sg-ignore flow sensitive typing needs to handle 'return if'
         pin = find_local(variable_name, var_position)
         return unless pin
 
@@ -403,7 +402,7 @@ module Solargraph
         "#{module_type_name}::#{class_node}"
       end
 
-      # @param clause_node [Parser::AST::Node]
+      # @param clause_node [Parser::AST::Node, nil]
       # @sg-ignore need boolish support for ? methods
       def always_breaks?(clause_node)
         clause_node&.type == :break

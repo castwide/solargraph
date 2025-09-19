@@ -45,26 +45,26 @@ module Solargraph
       source_map.source
     end
 
-    # @param inferred [ComplexType]
-    # @param expected [ComplexType]
+    # @param inferred [ComplexType, ComplexType::UniqueType]
+    # @param expected [ComplexType, ComplexType::UniqueType]
     def return_type_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :return_type)
     end
 
-    # @param inferred [ComplexType]
-    # @param expected [ComplexType]
+    # @param inferred [ComplexType, ComplexType::UniqueType]
+    # @param expected [ComplexType, ComplexType::UniqueType]
     def arg_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :method_call)
     end
 
-    # @param inferred [ComplexType]
-    # @param expected [ComplexType]
+    # @param inferred [ComplexType, ComplexType::UniqueType]
+    # @param expected [ComplexType, ComplexType::UniqueType]
     def assignment_conforms_to?(inferred, expected)
       conforms_to?(inferred, expected, :assignment)
     end
 
-    # @param inferred [ComplexType]
-    # @param expected [ComplexType]
+    # @param inferred [ComplexType, ComplexType::UniqueType]
+    # @param expected [ComplexType, ComplexType::UniqueType]
     # @param scenario [Symbol]
     def conforms_to?(inferred, expected, scenario)
       rules_arr = []
@@ -329,11 +329,8 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           # @sg-ignore flow sensitive typing needs to handle "if !foo"
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
-            # @sg-ignore need to be able to resolve same method signature on two different types
             unless closest.generic? || ignored_pins.include?(found)
-              # @sg-ignore need to be able to resolve same method signature on two different types
               if closest.defined?
-                # @sg-ignore need to be able to resolve same method signature on two different types
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest.rooted_tags}")
               else
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
@@ -470,9 +467,7 @@ module Solargraph
             # @todo Some level (strong, I guess) should require the param here
             else
               argtype = argchain.infer(api_map, closure_pin, locals)
-              # @sg-ignore flow sensitive typing needs to handle "else"
               argtype = argtype.self_to_type(closure_pin.context)
-              # @sg-ignore flow sensitive typing needs to handle "else"
               if argtype.defined? && ptype.defined? && !arg_conforms_to?(argtype, ptype)
                 errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                 return errors
@@ -512,6 +507,7 @@ module Solargraph
           if data.nil?
             # @todo Some level (strong, I guess) should require the param here
           else
+            # @type [ComplexType, ComplexType::UniqueType]
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
@@ -652,9 +648,9 @@ module Solargraph
           missing = base
           base = base.base
         end
-        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         all_closest = all_found.map { |pin| pin.typify(api_map) }
         closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         if !found || closest.defined? || internal?(found)
           return false
         end

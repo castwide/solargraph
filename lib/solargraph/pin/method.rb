@@ -79,7 +79,6 @@ module Solargraph
         end
       end
 
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
       def combine_with(other, attrs = {})
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
@@ -183,6 +182,7 @@ module Solargraph
       # @param return_type [ComplexType, nil]
       # @return [Signature]
       def generate_signature(parameters, return_type)
+        # @type [Pin::Signature, nil]
         block = nil
         yieldparam_tags = docstring.tags(:yieldparam)
         yieldreturn_tags = docstring.tags(:yieldreturn)
@@ -309,9 +309,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           qualified = type.qualify(api_map, namespace)
-          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -452,7 +450,6 @@ module Solargraph
           end
           next unless ref
 
-          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           docstring.add_tag(*ref.docstring.tags(:param))
         end
         self
@@ -577,7 +574,6 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, namespace)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
@@ -615,7 +611,6 @@ module Solargraph
           clip = api_map.clip_at(
             # @sg-ignore Need to add nil check here
             location.filename,
-            # @sg-ignore Need to add nil check here
             rng.ending
           )
           # @sg-ignore Need to add nil check here

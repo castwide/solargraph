@@ -333,7 +333,6 @@ module Solargraph
         end
       end
       return nil if gemspec.nil?
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
       [gemspec_or_preference(gemspec)]
     end
 

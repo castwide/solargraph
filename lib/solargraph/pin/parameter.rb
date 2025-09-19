@@ -261,7 +261,7 @@ module Solargraph
       # @param skip [::Array]
       #
       # @return [::Array<YARD::Tags::Tag>]
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
+      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner
@@ -284,7 +284,6 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

@@ -160,7 +160,6 @@ module Solargraph
               end
               break if type.defined?
             end
-            # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
@@ -217,7 +216,6 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -244,6 +242,7 @@ module Solargraph
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
+          # @sg-ignore Need to add nil check here
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
@@ -281,7 +280,6 @@ module Solargraph
         def super_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] if method_pin.nil?
-          # @sg-ignore Need to add nil check here
           pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
           pins.reject{|p| p.path == name_pin.path}
         end
