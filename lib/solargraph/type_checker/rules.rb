@@ -58,34 +58,33 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # Need to support nested flow sensitive types
-      # Need to add nil check here
-      # REFILE: flow sensitive typing needs to handle "return if foo.nil?"
-      # downcast output of Enumerable#select
-      # flow sensitive typing needs to handle &&
-      # REFILE: flow sensitive typing needs to handle "unless foo.nil?"
-      # @todo 13: flow sensitive typing needs to handle || with variables
-      # @todo 12: need to be able to resolve same method signature on two different types
+      # @todo 241: Need to add nil check here
+      # @todo 16: flow sensitive typing needs to handle || with variables
+      # @todo 10: flow sensitive typing needs to handle "return if foo.nil?"
+      # @todo 8: need to be able to resolve same method signature on two different types
       # @todo 9: Need to validate config
       # @todo 8: Should better support meaning of '&' in RBS
       # @todo 8: flow sensitive typing needs to handle "if !foo"
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-      # REFILE: flow sensitive typing needs to handle "else"
+      # @todo 6: flow sensitive typing needs to handle &&
       # @todo 5: flow sensitive typing needs to handle ternary operator
-      # flow sensitive typing needs to handle inner closures
+      # @todo 5: flow sensitive typing needs to handle inner closures
       # @todo 5: flow sensitive typing needs better handling of ||= on ivars
       # @todo 5: Translate to something flow sensitive typing understands
-      # @todo 4: Should handle redefinition of types in simple contexts
-      # need boolish support for ? methods
+      # @todo 5: Should handle redefinition of types in simple contexts
+      # @todo 3: flow sensitive typing needs to handle "if .nil? else"
+      # @todo 5: need boolish support for ? methods
       # @todo 4: should understand meaning of &.
       # @todo 4: Need support for reduce_class_type in UniqueType
-      # REFILE: flow sensitive typing needs to handle 'return if'
+      # @todo 4: Need to support nested flow sensitive types
       # @todo 4: flow sensitive typing needs to handle || within &&
-      # @todo 3: Need to handle implicit nil on else
+      # @todo 3: downcast output of Enumerable#select
+      # @todo 4: Need to handle implicit nil on else
       # @todo 3: flow sensitive typing needs better handling of ||= on lvars
-      # @todo 2: flow sensitive typing needs to handle if on ivars
-      # @todo 2: flow sensitive typing needs to handle "while foo""
+      # @todo 2: flow sensitive typing needs to handle "while foo"
       # @todo 1: flow sensitive typing needs to handle && with ivars
+      # @todo 1: flow sensitive typing needs to handle if on ivars
+      # @todo 1: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 1: investigate why Parser::AST#type isn't available here
       # @todo 1: flow sensitive typing needs to handle && with unrelated calls
       # @todo 1: flow sensitive typing needs to handle 'raise if'

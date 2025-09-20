@@ -60,7 +60,7 @@ module Solargraph
           fixed
         else
           result = commit text, fixed
-          # @sg-ignore flow sensitive typing needs to handle "else"
+          # @sg-ignore flow sensitive typing needs to handle "if .nil? else"
           off = Position.to_offset(text, range.start)
           # @sg-ignore Need to add nil check here
           match = result[0, off].match(/[.:]+\z/)

@@ -249,7 +249,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore flow sensitive typing needs to handle "else"
+            # @sg-ignore flow sensitive typing needs to handle "if .nil? else"
             num = cur if cur < num
           end
           ctxt += "#{p[num..-1]}" if started

@@ -17,7 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
-              # @sg-ignore flow sensitive typing needs to handle 'return if'
+              # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
