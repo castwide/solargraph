@@ -903,17 +903,17 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
   it 'uses ! to detect nilness' do
     source = Solargraph::Source.load_string(%(
-      class ReproBase; end
-      class Repro < ReproBase; end
-      # @type [ReproBase]
-      value = bar
-      while !is_done()
-        break unless value.is_a? Repro
-        value
+      class A
+        # @param a [Integer, nil]
+        # @return [Integer]
+        def foo a
+          return a unless !a
+          123
+        end
       end
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [7, 8])
-    expect(clip.infer.to_s).to eq('Repro')
+    clip = api_map.clip_at('test.rb', [5, 17])
+    expect(clip.infer.to_s).to eq('Integer')
   end
 end

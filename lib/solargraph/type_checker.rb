@@ -327,7 +327,7 @@ module Solargraph
           all_closest = all_found.map { |pin| pin.typify(api_map) }
           closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          # @sg-ignore flow sensitive typing needs to handle "if !foo"
+          # @sg-ignore Need to support nested flow sensitive types
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             unless closest.generic? || ignored_pins.include?(found)
               if closest.defined?
@@ -650,7 +650,7 @@ module Solargraph
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
         closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
-        # @sg-ignore flow sensitive typing needs to handle "if !foo"
+        # @sg-ignore Need to support nested flow sensitive types
         if !found || closest.defined? || internal?(found)
           return false
         end
@@ -754,7 +754,7 @@ module Solargraph
     # @sg-ignore need boolish support for ? methods
     def abstract? pin
       pin.docstring.has_tag?('abstract') ||
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore of low sensitive typing needs to handle ivars
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
@@ -815,7 +815,7 @@ module Solargraph
       problems.reject do |problem|
         node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
-        # @sg-ignore flow sensitive typing needs to handle "if !foo"
+        # @sg-ignore Unresolved call to !
         unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
           # :nocov:
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }

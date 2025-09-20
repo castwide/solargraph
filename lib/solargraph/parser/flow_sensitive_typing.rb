@@ -34,8 +34,8 @@ module Solargraph
         # can't assume if an and is false that every single condition
         # is false, so don't provide any false ranges to assert facts
         # on
-        process_conditional(lhs, true_ranges + [rhs_presence], [])
-        process_conditional(rhs, true_ranges, [])
+        process_expression(lhs, true_ranges + [rhs_presence], [])
+        process_expression(rhs, true_ranges, [])
       end
 
       # @param or_node [Parser::AST::Node]
@@ -63,8 +63,8 @@ module Solargraph
         # can't assume if an or is true that every single condition is
         # true, so don't provide true ranges to assert facts on
 
-        process_conditional(lhs, [], [rhs_presence])
-        process_conditional(rhs, [], [])
+        process_expression(lhs, [], [rhs_presence])
+        process_expression(rhs, [], [])
       end
 
       # @param node [Parser::AST::Node]
@@ -77,12 +77,17 @@ module Solargraph
 
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
+        process_bang(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_if(if_node)
+      def process_if(if_node, true_ranges = [], false_ranges = [])
+        return if if_node.type != :if
+
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
         #
@@ -99,9 +104,6 @@ module Solargraph
         then_clause = if_node.children[1]
         # @type [Parser::AST::Node, nil]
         else_clause = if_node.children[2]
-
-        true_ranges = []
-        false_ranges = []
 
         unless enclosing_breakable_pin.nil?
           rest_of_breakable_body = Range.new(get_node_end_position(if_node),
@@ -154,7 +156,7 @@ module Solargraph
                                     get_node_end_position(else_clause))
         end
 
-        process_conditional(conditional_node, true_ranges, false_ranges)
+        process_expression(conditional_node, true_ranges, false_ranges)
       end
 
       class << self
@@ -258,21 +260,24 @@ module Solargraph
         end
       end
 
-      # @param conditional_node [Parser::AST::Node]
+      # @param expression_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_conditional(conditional_node, true_ranges, false_ranges)
-        process_calls(conditional_node, true_ranges, false_ranges)
-        process_and(conditional_node, true_ranges, false_ranges)
-        process_or(conditional_node, true_ranges, false_ranges)
-        process_variable(conditional_node, true_ranges, false_ranges)
+      def process_expression(expression_node, true_ranges, false_ranges)
+        process_calls(expression_node, true_ranges, false_ranges)
+        process_and(expression_node, true_ranges, false_ranges)
+        process_or(expression_node, true_ranges, false_ranges)
+        process_variable(expression_node, true_ranges, false_ranges)
+        process_if(expression_node, true_ranges, false_ranges)
       end
 
       # @param call_node [Parser::AST::Node]
       # @param method_name [Symbol]
-      # @return [Array(String, String), nil] Type name and variable name
+      # @return [Array(String, String), nil] Tuple of rgument to
+      #   function, then receiver of function if it's a variable,
+      #   otherwise nil if no simple variable receiver
       def parse_call(call_node, method_name)
         return unless call_node&.type == :send && call_node.children[1] == method_name
         # Check if conditional node follows this pattern:
@@ -376,6 +381,30 @@ module Solargraph
         if_false[pin] ||= []
         if_false[pin] << { not_nil: true }
         process_facts(if_false, false_presences)
+      end
+
+      # @param bang_node [Parser::AST::Node]
+      # @return [Array(String, String), nil]
+      def parse_bang(bang_node)
+        parse_call(bang_node, :!)
+      end
+
+      # @param bang_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_bang(bang_node, true_presences, false_presences)
+        # pry(main)> require 'parser/current'; Parser::CurrentRuby.parse("!2")
+        # => s(:send,
+        #   s(:int, 2), :!)
+        #       end
+        return unless bang_node.type == :send && bang_node.children[1] == :!
+
+        receiver = bang_node.children[0]
+
+        # swap the two presences
+        process_expression(receiver, false_presences, true_presences)
       end
 
       # @param var_node [Parser::AST::Node]

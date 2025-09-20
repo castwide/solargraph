@@ -253,7 +253,6 @@ module Solargraph
 
       if !rbs_collection_pins.nil? && !yard_pins.nil?
         logger.debug { "Combining pins for #{gemspec.name}:#{gemspec.version}" }
-        # @sg-ignore sensitive typing needs to handle "unless foo.nil?"
         combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
         PinCache.serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = combined_pins

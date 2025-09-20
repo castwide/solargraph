@@ -57,11 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      # @sg-ignore flow sensitive typing needs to handle "if !foo"
+      # @sg-ignore flow sensitive typing needs to handle ivars
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        # @sg-ignore flow sensitive typing needs to handle "if !foo"
+        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_hash.delete @current.filename
-        # @sg-ignore flow sensitive typing needs to handle "if !foo"
+        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -75,9 +75,9 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Boolean]
-    # @sg-ignore flow sensitive typing needs to handle "if !foo"
+    # @sg-ignore flow sensitive typing needs to handle ivars
     def attached? filename
-      # @sg-ignore flow sensitive typing needs to handle "if !foo"
+      # @sg-ignore flow sensitive typing needs to handle ivars
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
@@ -190,10 +190,13 @@ module Solargraph
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
         # @sg-ignore Need to add nil check here
+        # @type [MatchData, nil]
         lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
         # @sg-ignore Need to add nil check here
+        # @type [MatchData, nil]
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore Need to add nil check here
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag

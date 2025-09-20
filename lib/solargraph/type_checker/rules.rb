@@ -58,29 +58,29 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 244: Need to add nil check here
-      # @todo 26: flow sensitive typing needs to handle ivars
-      # @todo 19: Translate to something flow sensitive typing understands
-      # @todo 12: flow sensitive typing needs to handle "if !foo"
+      # @todo 245: Need to add nil check here
+      # @todo 30: flow sensitive typing needs to handle ivars
+      # @todo 21: Translate to something flow sensitive typing understands
       # @todo 9: Need to validate config
       # @todo 8: Should better support meaning of '&' in RBS
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 7: flow sensitive typing needs to handle inner closures
+      # @todo 6: Need to support nested flow sensitive types
       # @todo 5: should understand meaning of &.
       # @todo 5: Should handle redefinition of types in simple contexts
       # @todo 5: need boolish support for ? methods
       # @todo 4: Need support for reduce_class_type in UniqueType
-      # @todo 4: Need to support nested flow sensitive types
       # @todo 4: Need to handle implicit nil on else
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars
       # @todo 2: EASY: flow sensitive typing needs to handle "while foo"
       # @todo 2: EASY: flow sensitive typing needs to handle "unless foo.nil?"
-      # @todo 1: EASY: flow sensitive typing needs to handle && on both sides
+      # @todo 2: EASY: flow sensitive typing needs to handle && on both sides
       # @todo 1: EASY: flow sensitive typing needs to handle 'raise if'
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
+      # @todo 1: Unresolved call to !
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end
