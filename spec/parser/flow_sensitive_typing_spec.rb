@@ -459,6 +459,26 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('nil')
   end
 
+  it 'uses .nil? and or in an unless' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [String, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr)
+        repr unless repr.nil? || repr.downcase
+        repr
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 33])
+    expect(clip.infer.rooted_tags).to eq('::String')
+
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+  end
+
   it 'uses varname and && in a simple if() - varname first' do
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]

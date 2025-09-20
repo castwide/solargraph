@@ -96,7 +96,6 @@ module Solargraph
           # @return [String, nil]
           def attribute_comments(attribute_node, attribute_name)
             data_comments = comments_for(attribute_node)
-            # @sg-ignore flow sensitive typing needs to handle || with variables
             return if data_comments.nil? || data_comments.empty?
 
             # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"

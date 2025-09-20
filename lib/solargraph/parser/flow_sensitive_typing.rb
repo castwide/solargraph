@@ -38,6 +38,35 @@ module Solargraph
         process_conditional(rhs, true_ranges, [])
       end
 
+      # @param or_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_or(or_node, true_ranges = [], false_ranges = [])
+        return unless or_node.type == :or
+
+        # @type [Parser::AST::Node]
+        lhs = or_node.children[0]
+        # @type [Parser::AST::Node]
+        rhs = or_node.children[1]
+
+        before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
+
+        rhs_presence = Range.new(before_rhs_pos,
+                                 get_node_end_position(rhs))
+
+        # can assume if an or is false that every single condition is
+        # false, so't provide false ranges to assert facts on
+
+        # can't assume if an or is true that every single condition is
+        # true, so don't provide true ranges to assert facts on
+
+        process_conditional(lhs, [], true_ranges + [rhs_presence])
+        process_conditional(rhs, [], true_ranges)
+      end
+
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       # @param false_presences [Array<Range>]
@@ -237,6 +266,7 @@ module Solargraph
       def process_conditional(conditional_node, true_ranges, false_ranges)
         process_calls(conditional_node, true_ranges, false_ranges)
         process_and(conditional_node, true_ranges, false_ranges)
+        process_or(conditional_node, true_ranges, false_ranges)
         process_variable(conditional_node, true_ranges, false_ranges)
       end
 

@@ -203,7 +203,6 @@ module Solargraph
 
       def documentation
         tag = param_tag
-        # @sg-ignore flow sensitive typing needs to handle || with variables
         return '' if tag.nil? || tag.text.nil?
         # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
         tag.text
