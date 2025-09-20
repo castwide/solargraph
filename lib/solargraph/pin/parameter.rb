@@ -152,7 +152,7 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          # @sg-ignore flow sensitive typing needs to handle || with variables
+          # @sg-ignore Translate to something flow sensitive typing understands
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           # @sg-ignore Need to add nil check here
           if @return_type.undefined?
@@ -249,7 +249,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          # @sg-ignore flow sensitive typing needs to handle || with variables
+          # @sg-ignore Translate to something flow sensitive typing understands
           return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED

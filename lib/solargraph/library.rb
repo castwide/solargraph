@@ -87,7 +87,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
-      # @sg-ignore flow sensitive typing needs to handle || with variables
+      # @sg-ignore flow sensitive typing needs to handle && with ivars
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -194,7 +194,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore flow sensitive typing needs to handle &&
+          # @sg-ignore flow sensitive typing needs to handle && on both sides
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
