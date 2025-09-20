@@ -52,8 +52,8 @@ module Solargraph
           code_object_map[pin.path].docstring = pin.docstring
           store.get_includes(pin.path).each do |ref|
             include_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
-            # @sg-ignore flow sensitive typing needs to handle || with variables
             unless include_object.nil? || include_object.nil?
+              # @sg-ignore flow sensitive typing needs to handle || with variables
               include_object.instance_mixins.push code_object_map[ref.parametrized_tag.to_s]
             end
           end
