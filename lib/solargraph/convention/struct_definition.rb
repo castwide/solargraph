@@ -17,7 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
-              # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
+              # @sg-ignore flow sensitive typing needs to handle ivars
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
@@ -40,7 +40,7 @@ module Solargraph
 
             pins.push initialize_method_pin
 
-            # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
+            # @sg-ignore flow sensitive typing needs to handle ivars
             struct_definition_node.attributes.map do |attribute_node, attribute_name|
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
@@ -54,7 +54,7 @@ module Solargraph
             end
 
             # define attribute accessors and instance variables
-            # @sg-ignore need to be able to resolve same method signature on two different types
+            # @sg-ignore flow sensitive typing needs to handle ivars
             struct_definition_node.attributes.each do |attribute_node, attribute_name|
               [attribute_name, "#{attribute_name}="].each do |name|
                 docs = docstring.tags.find { |t| t.tag_name == 'param' && t.name == attribute_name }
@@ -125,7 +125,7 @@ module Solargraph
           # @return [YARD::Docstring]
           def parse_comments
             struct_comments = comments_for(node) || ''
-            # @sg-ignore need to be able to resolve same method signature on two different types
+            # @sg-ignore Need to add nil check here
             struct_definition_node.attributes.each do |attr_node, attr_name|
               comment = comments_for(attr_node)
               next if comment.nil?

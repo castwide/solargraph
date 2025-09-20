@@ -113,7 +113,7 @@ module Solargraph
       def recipient
         @recipient ||= begin
           node = recipient_node
-          # @sg-ignore flow sensitive typing needs to handle ternary operator
+          # @sg-ignore Need to add nil check here
           node ? Cursor.new(source, Range.from_node(node).ending) : nil
         end
       end

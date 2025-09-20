@@ -290,8 +290,7 @@ module Solargraph
         def yield_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] unless method_pin
-
-          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
             signature_pin.proxy(return_type)
@@ -341,7 +340,7 @@ module Solargraph
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
-          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
+          # @sg-ignore flow sensitive typing needs to handle inner closures
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
 

@@ -87,7 +87,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
-      # @sg-ignore flow sensitive typing needs to handle && with ivars
+      # @sg-ignore flow sensitive typing needs to handle ivars
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -194,7 +194,6 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore flow sensitive typing needs to handle && on both sides
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -447,7 +446,7 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
-        # @sg-ignore flow sensitive typing needs to handle ternary operator
+        # @sg-ignore flow sensitive typing needs to handle ivars
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -557,7 +556,7 @@ module Solargraph
     # @sg-ignore flow sensitive typing needs to handle if foo && ...
     # @return [Solargraph::Source]
     def read filename
-      # @sg-ignore flow sensitive typing needs to handle && with ivars
+      # @sg-ignore flow sensitive typing needs to handle ivars
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
@@ -650,19 +649,19 @@ module Solargraph
     def report_cache_progress gem_name, pending
       @total ||= pending
       @total = pending if pending > @total
-      # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
+      # @sg-ignore flow sensitive typing needs to handle ivars
       finished = @total - pending
-      # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
+      # @sg-ignore flow sensitive typing needs to handle ivars
       pct = if @total.zero?
         0
       else
-        # @sg-ignore flow sensitive typing needs better handling of ||= on ivars
+        # @sg-ignore flow sensitive typing needs to handle ivars
         ((finished.to_f / @total.to_f) * 100).to_i
       end
       message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
       # "
       if @cache_progress
-        # @sg-ignore oflow sensitive typing needs to handle if on ivars
+        # @sg-ignore flow sensitive typing needs to handle ivars
         @cache_progress.report(message, pct)
       else
         @cache_progress = LanguageServer::Progress.new('Caching gem')

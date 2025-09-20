@@ -203,7 +203,7 @@ module Solargraph
               comments: p.text,
               name: name,
               decl: decl,
-              # @sg-ignore flow sensitive typing needs to handle ternary operator
+              # @sg-ignore flow sensitive typing needs to handle ivars
               presence: location ? location.range : nil,
               return_type: ComplexType.try_parse(*p.types),
               source: source
@@ -414,7 +414,7 @@ module Solargraph
                 comments: tag.docstring.all.to_s,
                 name: name,
                 decl: decl,
-                # @sg-ignore flow sensitive typing needs to handle ternary operator
+                # @sg-ignore flow sensitive typing needs to handle ivars
                 presence: location ? location.range : nil,
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads

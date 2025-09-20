@@ -25,7 +25,7 @@ module Solargraph
             end
           end
           @type = type
-          # @sg-ignore need to be able to resolve same method signature on two different types
+          # @sg-ignore Translate to something flow sensitive typing understands
           @literal_type = ComplexType.try_parse(@value.inspect)
           @complex_type = ComplexType.try_parse(type)
         end

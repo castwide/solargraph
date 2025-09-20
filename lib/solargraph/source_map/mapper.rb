@@ -136,8 +136,8 @@ module Solargraph
         when 'attribute'
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
+          # @type [String, nil]
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
-          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
               location: location,
@@ -151,7 +151,6 @@ module Solargraph
               source: :source_map
             )
           end
-          # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
           if t.nil? || t.include?('w')
             method_pin = Solargraph::Pin::Method.new(
               location: location,
@@ -239,6 +238,7 @@ module Solargraph
       # @return [String]
       def remove_inline_comment_hashes comment
         ctxt = ''
+        # @type [Integer, nil]
         num = nil
         started = false
         comment.lines.each { |l|
@@ -249,7 +249,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore flow sensitive typing needs to handle "if .nil? else"
+            # @sg-ignore Need to add nil check here
             num = cur if cur < num
           end
           ctxt += "#{p[num..-1]}" if started

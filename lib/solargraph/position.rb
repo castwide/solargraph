@@ -79,6 +79,7 @@ module Solargraph
     def self.from_offset text, offset
       cursor = 0
       line = 0
+      # @type [Integer, nil]
       character = nil
       text.lines.each do |l|
         line_length = l.length

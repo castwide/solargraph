@@ -657,7 +657,7 @@ module Solargraph
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
         sc_fqns = sc_new
-        # @sg-ignore need to be able to resolve same method signature on two different types
+        # @sg-ignore Should handle redefinition of types in simple contexts
         return true if sc_fqns == sup
       end
       false

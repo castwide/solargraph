@@ -45,7 +45,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle || within &&
+        # @sg-ignore flow sensitive typing needs to handle ivars
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
@@ -204,7 +204,7 @@ module Solargraph
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
-        # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?""
+        # @sg-ignore Translate to something flow sensitive typing understands
         tag.text
       end
 

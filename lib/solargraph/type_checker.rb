@@ -606,7 +606,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore flow sensitive typing needs to handle "return if foo.nil?"
+      # @sg-ignore Translate to something flow sensitive typing understands
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
@@ -754,7 +754,7 @@ module Solargraph
     # @sg-ignore need boolish support for ? methods
     def abstract? pin
       pin.docstring.has_tag?('abstract') ||
-        # @sg-ignore flow sensitive typing needs to handle || within &&
+        # @sg-ignore flow sensitive typing needs to handle ivars
         (pin.closure && pin.closure.docstring.has_tag?('abstract'))
     end
 
@@ -815,7 +815,7 @@ module Solargraph
       problems.reject do |problem|
         node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
-        # @sg-ignore need to be able to resolve same method signature on two different types
+        # @sg-ignore flow sensitive typing needs to handle "if !foo"
         unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
           # :nocov:
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }

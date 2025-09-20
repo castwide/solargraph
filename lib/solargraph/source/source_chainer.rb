@@ -38,7 +38,9 @@ module Solargraph
         return SourceChainer.chain(source, Position.new(position.line, position.character + 1)) if end_of_phrase.strip == '::' && source.code[Position.to_offset(source.code, position)].to_s.match?(/[a-z]/i)
         begin
           return Chain.new([]) if phrase.end_with?('..')
+          # @type [::Parser::AST::Node, nil]
           node = nil
+          # @type [::Parser::AST::Node, nil]
           parent = nil
           if !source.repaired? && source.parsed? && source.synchronized?
             tree = source.tree_at(position.line, position.column)
@@ -57,7 +59,6 @@ module Solargraph
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
         end
-        # @sg-ignore flow sensitive typing needs to handle || within &&
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
         # chain = NodeChainer.chain(node, source.filename, parent && parent.type == :block)
         chain = Parser.chain(node, source.filename, parent)
