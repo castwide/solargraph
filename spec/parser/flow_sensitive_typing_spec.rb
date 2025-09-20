@@ -580,17 +580,280 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
   # https://cse.buffalo.edu/~regan/cse305/RubyBNF.pdf
   # https://ruby-doc.org/docs/ruby-doc-bundle/Manual/man-1.4/syntax.html
-  it 'uses .nil? in a return if() in a method to refine types using nil checks'
-  it 'uses .nil? in a return if() in a block to refine types using nil checks'
-  it 'uses .nil? in a return if() in an unless to refine types using nil checks'
-  it 'uses .nil? in a return if() in a while to refine types using nil checks'
-  it 'uses .nil? in a return if() in an until to refine types using nil checks'
-  it 'uses .nil? in a return if() in a switch/case/else to refine types using nil checks'
-  it 'uses .nil? in a return if() in a ternary operator to refine types using nil checks'
-  it 'uses .nil? in a return if() in a begin/end to refine types using nil checks'
-  it 'uses .nil? in a return if() in a ||= to refine types using nil checks'
-  it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks'
-  it 'uses .nil? in a return if() in top level namespace to refine types using nil checks'
+  it 'uses .nil? in a return if() in a method to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          return if baz.nil?
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a return if() in a block to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @param arr [Array<Integer>]
+        # @return [void]
+        def bar(arr, baz: nil)
+          baz
+          arr.each do |item|
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    pending ('better scoping of return if in blocks')
+
+    clip = api_map.clip_at('test.rb', [9, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in an unless to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          unless rand
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    pending('better scoping of return if in unless')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in a while to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          while rand do
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in an until to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          until rand do
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in a switch/case/else to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          case rand
+          when 0..0.5
+            return if baz.nil?
+            baz
+          else
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    pending('better scoping of return if in case/when')
+
+    clip = api_map.clip_at('test.rb', [10, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [12, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in a ternary operator to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          rand > 0.5 ? (return if baz.nil?; baz) : baz
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 44])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    pending('better scoping of return if in ternary operator')
+
+    clip = api_map.clip_at('test.rb', [6, 51])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in a return if() in a begin/end to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          begin
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+        ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a return if() in a ||= to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          baz ||= begin
+            return if baz.nil?
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          begin
+            return if baz.nil?
+            baz
+          rescue StandardError
+            baz
+          ensure
+            baz
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [10, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    pending('better scoping of return if in begin/rescue/ensure')
+
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [14, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
 
   it 'provides a useful pin after a return if .nil?' do
     source = Solargraph::Source.load_string(%(
