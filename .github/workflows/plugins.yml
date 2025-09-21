@@ -109,7 +109,8 @@ jobs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
     runs-on: ubuntu-latest
     env:
-      SOLARGRAPH_CACHE: ${{ github.workspace }}/solargraph-rspec/vendor/solargraph/cache
+      SOLARGRAPH_CACHE: ${{ github.workspace }}/../solargraph-rspec/vendor/solargraph/cache
+      BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
     steps:
     - uses: actions/checkout@v3
     - name: clone https://github.com/lekemula/solargraph-rspec/
@@ -121,12 +122,17 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4
-        bundler-cache: true
+        bundler-cache: false
     - name: Install gems
       run: |
        cd ../solargraph-rspec
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-       bundle install
+       bundle config path ${{ env.BUNDLE_PATH }}
+       bundle install --jobs 4 --retry 3
+    - name: Configure .solargraph.yml
+      run: |
+        cd ../solargraph-rspec
+        cp .solargraph.yml.example .solargraph.yml
     - name: Solargraph generate RSpec gems YARD and RBS pins
       run: |
         cd ../solargraph-rspec
@@ -135,7 +141,7 @@ jobs:
     - name: Run specs
       run: |
         cd ../solargraph-rspec
-        bundle exec rspec
+        bundle exec rspec --format progress
 
   run_solargraph_rails_specs:
     # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
