@@ -23,14 +23,22 @@ module Solargraph
 
       def combine_with(other, attrs={})
         new_attrs = {
-          assignment: assert_same(other, :assignment),
+          # default values don't exist in RBS; it just tells you if
+          # the arg is optinal or not; prefer a provided value if we
+          # have one here, but don't be too picky otherwise, as it's
+          # ultimately just documentation, not something we use for
+          # inference or typechecking
+          #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+          assignment: choose(other, :assignment),
+
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Pin::Base#assert_same: other expected
-        #   Solargraph::Pin::Base, received self
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
