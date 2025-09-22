@@ -27,7 +27,7 @@ module Solargraph
           # @param argument [Parser::AST::Node] the argument of the operation
           #
           # @return [void]
-          def process_send_target(call, operator, argument)
+          def process_send_target call, operator, argument
             # if target is a call:
             # [10] pry(main)> Parser::CurrentRuby.parse("Foo.bar += baz")
             # => s(:op_asgn,
@@ -39,7 +39,7 @@ module Solargraph
             # [11] pry(main)>
             callee = call.children[0]
             call_method = call.children[1]
-            asgn_method = "#{call_method}=".to_sym
+            asgn_method = :"#{call_method}="
 
             # [8] pry(main)> Parser::CurrentRuby.parse("Foo.bar = Foo.bar + baz")
             # => s(:send,
@@ -63,7 +63,7 @@ module Solargraph
           # @param argument [Parser::AST::Node] the argument of the operation
           #
           # @return [void]
-          def process_vasgn_target(asgn, operator, argument)
+          def process_vasgn_target asgn, operator, argument
             # => s(:op_asgn,
             #      s(:lvasgn, :a), # asgn
             #      :+, # operator
