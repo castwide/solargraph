@@ -88,10 +88,8 @@ module Solargraph
               operator,
               argument
             ]
-            STDERR.puts("send_children is #{send_children.inspect}")
             send_node = node.updated(:send, send_children)
             new_asgn = node.updated(asgn.type, [variable_name,  send_node])
-            STDERR.puts("new_asgn: #{new_asgn}")
             NodeProcessor.process(new_asgn, region, pins, locals)
           end
         end
