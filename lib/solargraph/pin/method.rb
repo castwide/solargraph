@@ -556,7 +556,7 @@ module Solargraph
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.resolve(parts.first, *gates)
+          fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
         end

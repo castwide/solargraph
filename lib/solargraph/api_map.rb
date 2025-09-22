@@ -297,6 +297,8 @@ module Solargraph
       store.constants.qualify(tag, *gates)
     end
 
+    # @see Store::Constants#resolve
+    #
     # @param name [String]
     # @param gates [Array<String, Array<String>>]
     # @return [String, nil]

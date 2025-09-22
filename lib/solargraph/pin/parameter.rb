@@ -251,7 +251,7 @@ module Solargraph
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.resolve(parts.first, namespace)
+          fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
         end

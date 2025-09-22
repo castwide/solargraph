@@ -12,6 +12,11 @@ module Solargraph
 
       # Resolve a name to a fully qualified namespace or constant.
       #
+      # `Constants#resolve` is similar to `Constants#qualify`` in that its
+      # purpose is to find fully qualified (absolute) namespaces, except
+      # `#resolve`` is only concerned with real namespaces. It disregards
+      # parametrized types and special types like literals, self, and Boolean.
+      #
       # @param name [String]
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
@@ -51,7 +56,16 @@ module Solargraph
         return name if ['Boolean', 'self', nil].include?(name)
 
         gates.push '' unless gates.include?('')
-        resolve(name, gates)
+        fqns = resolve(name, gates)
+        return unless fqns
+        pin = store.get_path_pins(fqns).first
+        if pin.is_a?(Pin::Constant)
+          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
+          return unless const
+          resolve(const, pin.gates)
+        else
+          fqns
+        end
       end
 
       # @return [void]
@@ -78,36 +92,47 @@ module Solargraph
         resolved = nil
         base = gates
         parts = name.split('::')
+        first = nil
         parts.each.with_index do |nam, idx|
-          resolved = complex_resolve(nam, base, idx != parts.length - 1)
-          break unless resolved
-          base = [resolved]
+          resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
+          first ||= remainder
+          if resolved
+            base = [resolved]
+          else
+            return resolve(name, first) unless first.empty?
+          end
         end
         resolved
       end
 
+      # @todo I'm not sure of a better way to express the return value in YARD.
+      #   It's a tuple where the first element is a nullable string. Something
+      #   like `Array(String|nil, Array<String>)` would be more accurate.
+      #
       # @param name [String]
       # @param gates [Array<String>]
       # @param internal [Boolean] True if the name is not the last in the namespace
-      # @return [String, nil]
+      # @return [Array(Object, Array<String>)]
       def complex_resolve name, gates, internal
         resolved = nil
         gates.each.with_index do |gate, idx|
           resolved = simple_resolve(name, gate, internal)
-          return resolved if resolved
+          return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
-            mixin = resolve(ref.name, ref.reference_gates - [gate])
+            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}")
+            mixin = resolve(ref.name, ref.reference_gates - gates)
+            next unless mixin
             resolved = simple_resolve(name, mixin, internal)
-            return resolved if resolved
+            return [resolved, gates[(idx + 1)..]] if resolved
           end
         end
-        nil
+        [nil, []]
       end
 
       # @param name [String]
       # @param gate [String]
       # @param internal [Boolean] True if the name is not the last in the namespace
-      # @return [Pin::Constant, Pin::Namespace, nil]
+      # @return [String, nil]
       def simple_resolve name, gate, internal
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
         pin = store.get_path_pins(here).first
