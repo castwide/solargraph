@@ -72,8 +72,6 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             # @type [Parser::AST::Node]
             variable_name = asgn.children[0]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
-            STDERR.puts("variable_name is #{variable_name.inspect}")
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
