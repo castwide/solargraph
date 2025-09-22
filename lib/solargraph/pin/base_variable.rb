@@ -23,7 +23,13 @@ module Solargraph
 
       def combine_with(other, attrs={})
         attrs.merge({
-          assignment: assert_same(other, :assignment),
+          # default values don't exist in RBS parameters; it just
+          # tells you if the arg is optional or not.  Prefer a
+          # provided value if we have one here since we can't rely on
+          # it from RBS so we can infer from it and typecheck on it.
+          #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+          assignment: choose(other, :assignment),
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
         })
