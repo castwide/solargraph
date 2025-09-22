@@ -69,7 +69,6 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1005
             # @type [Parser::AST::Node]
             variable_name = asgn.children[0]
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
