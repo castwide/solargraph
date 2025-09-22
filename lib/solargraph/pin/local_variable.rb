@@ -10,28 +10,17 @@ module Solargraph
         @presence_certain
       end
 
-      # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
+      def initialize presence: nil, presence_certain: false, **splat
         super(**splat)
-        @assignment = assignment
         @presence = presence
         @presence_certain = presence_certain
       end
 
       def combine_with(other, attrs={})
         new_attrs = {
-          # default values don't exist in RBS; it just tells you if
-          # the arg is optinal or not; prefer a provided value if we
-          # have one here, but don't be too picky otherwise, as it's
-          # ultimately just documentation, not something we use for
-          # inference or typechecking
-          #
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
-          assignment: choose(other, :assignment),
-
           # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
