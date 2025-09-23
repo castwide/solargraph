@@ -10,15 +10,15 @@ module Solargraph
 
     # @param other [Object]
     # @return [Boolean]
-    def eql?(other)
+    def eql? other
       self.class.eql?(other.class) &&
         equality_fields.eql?(other.equality_fields)
     end
 
     # @param other [Object]
     # @return [Boolean]
-    def ==(other)
-      self.eql?(other)
+    def == other
+      eql?(other)
     end
 
     def hash

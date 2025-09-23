@@ -116,8 +116,8 @@ module Solargraph
     # @return [Boolean] True if at least one file was added to the workspace.
     def create_from_disk *filenames
       sources = filenames
-        .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
-        .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
+                .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
+                .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
       result = workspace.merge(*sources)
       sources.each { |source| maybe_map source }
       result
@@ -182,7 +182,7 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
-        lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        lft = source.code[0..offset - 1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
@@ -248,10 +248,10 @@ module Solargraph
       return [] unless pin
       result = []
       files = if only
-        [api_map.source_map(filename)]
-      else
-        (workspace.sources + (@current ? [@current] : []))
-      end
+                [api_map.source_map(filename)]
+              else
+                (workspace.sources + (@current ? [@current] : []))
+              end
       files.uniq(&:filename).each do |source|
         found = source.references(pin.name)
         found.select! do |loc|
@@ -273,7 +273,9 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
-            Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
+            Solargraph::Location.new(loc.filename,
+                                     Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line,
+                                                               loc.range.ending.column))
           end
         end
         result.concat(found.sort do |a, b|
@@ -303,14 +305,12 @@ module Solargraph
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
-        if source_map_hash.key?(full)
-          return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
-        end
+        return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0)) if source_map_hash.key?(full)
       end
       workspace.require_paths.each do |path|
         full = File.join path, pin.name
-        return_if_match.(full)
-        return_if_match.(full << ".rb")
+        return_if_match.call(full)
+        return_if_match.call(full << '.rb')
       end
       nil
     rescue FileNotFoundError
@@ -512,11 +512,11 @@ module Solargraph
       new_set = source_map.requires.map(&:name).to_set
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
-      filenames = ->{ _filenames ||= workspace.filenames.to_set }
+      filenames = -> { _filenames ||= workspace.filenames.to_set }
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
-          filenames[].include?(full) or filenames[].include?(full << ".rb")
+          filenames[].include?(full) or filenames[].include?(full << '.rb')
         end
       end
       @external_requires = nil
@@ -550,12 +550,9 @@ module Solargraph
     # @param error [FileNotFoundError]
     # @return [nil]
     def handle_file_not_found filename, error
-      if workspace.source(filename)
-        Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
-        nil
-      else
-        raise error
-      end
+      raise error unless workspace.source(filename)
+      Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+      nil
     end
 
     # @param source [Source, nil]
@@ -635,11 +632,11 @@ module Solargraph
       @total = pending if pending > @total
       finished = @total - pending
       pct = if @total.zero?
-        0
-      else
-        ((finished.to_f / @total.to_f) * 100).to_i
-      end
-      message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
+              0
+            else
+              ((finished.to_f / @total.to_f) * 100).to_i
+            end
+      message = "#{gem_name}#{" (+#{pending})" if pending > 0}"
       # "
       if @cache_progress
         @cache_progress.report(message, pct)

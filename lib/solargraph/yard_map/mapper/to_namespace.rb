@@ -21,7 +21,7 @@ module Solargraph
             type: code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
             visibility: code_object.visibility,
             closure: closure,
-            source: :yardoc,
+            source: :yardoc
           )
         end
       end

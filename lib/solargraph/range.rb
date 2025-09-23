@@ -25,7 +25,7 @@ module Solargraph
     end
 
     # @param other [BasicObject]
-    def <=>(other)
+    def <=> other
       return nil unless other.is_a?(Range)
       if start == other.start
         ending <=> other.ending
@@ -37,7 +37,7 @@ module Solargraph
     # Get a hash of the range. This representation is suitable for use in
     # the language server protocol.
     #
-    # @return [Hash<Symbol, Position>]
+    # @return [Hash{Symbol => Position}]
     def to_hash
       {
         start: start.to_hash,
@@ -82,9 +82,8 @@ module Solargraph
     # @param node [Parser::AST::Node]
     # @return [Range, nil]
     def self.from_node node
-      if node&.loc && node.loc.expression
-        from_expr(node.loc.expression)
-      end
+      return unless node&.loc && node.loc.expression
+      from_expr(node.loc.expression)
     end
 
     # Get a range from a Parser range, usually found in

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Solargraph
   # A container of source maps and workspace data to be cataloged in an ApiMap.
   #
