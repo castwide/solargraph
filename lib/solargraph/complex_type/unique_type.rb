@@ -409,12 +409,12 @@ module Solargraph
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
-      def qualify api_map, context = ''
-        out = transform do |t|
+      def qualify api_map, *gates
+        transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined?
-          recon = (t.rooted? ? '' : context)
-          fqns = api_map.qualify(t.name, recon)
+          next t if t.duck_type? || t.void? || t.undefined? || t.literal?
+          open = t.rooted? ? [''] : gates
+          fqns = api_map.qualify(t.non_literal_name, *open)
           if fqns.nil?
             next UniqueType::BOOLEAN if t.tag == 'Boolean'
             next UniqueType::UNDEFINED

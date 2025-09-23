@@ -166,20 +166,8 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        logger.debug { "Parameter#typify(self=#{desc} in #{closure.desc}) - starting" }
-        unless return_type.undefined?
-          out = return_type.qualify(api_map, closure.context.namespace)
-          logger.debug { "Parameter#typify(self=#{desc}, return_type=#{return_type.rooted_tags}, ) => #{out.rooted_tags} from declaration" }
-          return out
-        end
-        if closure.is_a?(Pin::Block)
-          out = typify_block_param(api_map)
-          logger.debug { "Parameter#typify(self=#{desc}) => #{out.rooted_tags} from block parameter" }
-        else
-          out = typify_method_param(api_map)
-          logger.debug { "Parameter#typify(self=#{desc}) => #{out.rooted_tags} from method parameter" }
-        end
-        out
+        return return_type.qualify(api_map, *closure.gates) unless return_type.undefined?
+        closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
       # @param atype [ComplexType]
@@ -235,7 +223,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
+          return ComplexType.try_parse(*found.types).qualify(api_map, *meth.closure.gates) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
       end
@@ -264,7 +252,7 @@ module Solargraph
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, namespace)
+          fqns = api_map.resolve(parts.first, namespace)
           return nil if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
         end

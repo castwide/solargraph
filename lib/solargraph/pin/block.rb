@@ -88,7 +88,7 @@ module Solargraph
                 end
                 after_generics
               else
-                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
+                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end
           end
@@ -133,7 +133,7 @@ module Solargraph
 
         logger.debug { "Block#maybe_rebind(): target=#{target}" }
 
-        out = ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        out = ComplexType.try_parse(*types).qualify(api_map, *receiver_pin.gates).self_to_type(target)
         logger.debug { "Block#maybe_rebind() => #{out}" }
         out
       end
