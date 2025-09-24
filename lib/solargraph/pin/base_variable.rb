@@ -89,7 +89,7 @@ module Solargraph
       def probe api_map
         if presence_certain? && return_type.defined?
           # flow sensitive typing has already figured out this type
-          return return_type.qualify(api_map, namespace)
+          return return_type.qualify(api_map, *gates)
         end
 
         unless @assignment.nil?
