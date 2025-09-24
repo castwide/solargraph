@@ -737,7 +737,6 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -811,7 +810,6 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
@@ -860,13 +858,17 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      ancestors = store.get_ancestors(alias_pin.full_context.namespace)
       original = nil
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
         next if ancestor_fqns.nil?
-        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+        ancestor_method_path = if alias_pin.original == 'new' && alias_pin.scope == :class
+                                 "#{ancestor_fqns}#initialize"
+                               else
+                                 "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+                               end
 
         # Search for the original method in the ancestor
         original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
@@ -878,14 +880,20 @@ module Solargraph
             break resolved if resolved
           end
 
-          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+          candidate_pin.is_a?(Pin::Method)
         end
 
         break if original
       end
+      if original.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}" }
+        return nil
+        # :nocov:
+      end
 
       # @sg-ignore ignore `received nil` for original
-      create_resolved_alias_pin(alias_pin, original) if original
+      create_resolved_alias_pin(alias_pin, original)
     end
 
     # Fast path for creating resolved alias pins without individual method stack lookups
