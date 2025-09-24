@@ -14,6 +14,10 @@ module Solargraph
           nil
         end
 
+        def inner_desc
+          super + ", tags=#{tags.inspect}, delete=#{delete.inspect}"
+        end
+
         # @param location [Location, nil]
         # @param name [String]
         # @param tags [::Array<YARD::Tags::Tag>]

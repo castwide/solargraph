@@ -302,7 +302,13 @@ module Solargraph
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
-        super
+        if name.end_with?('?')
+          logger.debug { "Method#typify(self=#{self}) => Boolean (? suffix)" }
+          ComplexType::BOOLEAN
+        else
+          logger.debug { "Method#typify(self=#{self}) => undefined" }
+          ComplexType::UNDEFINED
+        end
       end
 
       def documentation
