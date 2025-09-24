@@ -170,7 +170,6 @@ module Solargraph
               end
             end
         end
-        # @todo Should be able to probe type of name and data here
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
@@ -487,18 +486,25 @@ module Solargraph
 
     # @param param_details [Hash{String => Hash{Symbol => String, ComplexType}}]
     # @param pin [Pin::Method, Pin::Signature]
+    # @param relevant_pin [Pin::Method, Pin::Signature] the pin which is under inspection
     # @return [void]
-    def add_restkwarg_param_tag_details(param_details, pin)
+    def add_restkwarg_param_tag_details(param_details, pin, relevant_pin)
+      return unless pin.parameters.any? { |parameter| parameter.decl == :kwrestarg }
+
       # see if we have additional tags to pay attention to from YARD -
       # e.g., kwargs in a **restkwargs splat
       tags = pin.docstring.tags(:param)
       tags.each do |tag|
         next if param_details.key? tag.name.to_s
         next if tag.types.nil?
-        param_details[tag.name.to_s] = {
+        details = {
           tagged: tag.types.join(', '),
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         }
+        # don't complain about a param that didn't come from the pin we're looking at anyway
+        if details[:qualified].defined? || relevant_pin == pin
+          param_details[tag.name.to_s] = details
+        end
       end
     end
 
@@ -557,12 +563,12 @@ module Solargraph
       param_names = signature.parameter_names
 
       method_pin_stack.each do |method_pin|
-        add_restkwarg_param_tag_details(param_details, method_pin)
+        add_restkwarg_param_tag_details(param_details, method_pin, signature)
 
         # documentation of types in superclasses should fail back to
         # subclasses if the subclass hasn't documented something
         method_pin.signatures.each do |sig|
-          add_restkwarg_param_tag_details(param_details, sig)
+          add_restkwarg_param_tag_details(param_details, sig, signature)
           add_to_param_details param_details, param_names, signature_param_details(sig)
         end
       end

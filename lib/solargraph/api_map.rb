@@ -315,13 +315,13 @@ module Solargraph
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Extend>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Include>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end
