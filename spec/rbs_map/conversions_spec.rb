@@ -35,9 +35,9 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      subject(:alias_pin) { api_map.get_method_stack('Foo', 'bar?', scope: :class).first }
-
       let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :class).first }
+
+      subject(:alias_pin) { api_map.get_method_stack('Foo', 'bar?', scope: :class).first }
 
       it { should_not be_nil }
 
