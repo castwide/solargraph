@@ -59,7 +59,9 @@ describe Solargraph::RbsMap::CoreMap do
     expect(signature.block.parameters.map(&:return_type).map(&:to_s)).to eq(['String'])
   end
 
-  xit 'understands defaulted type parameters' do
+  it 'understands defaulted type parameters' do
+    pending('defaulted type parameter support')
+
     # @todo Enumerable#each's' return type not yet supported as _Each<>
     #   takes two type parameters, the second has a default value,
     #   Enumerable specifies it, but Solargraph doesn't support type
