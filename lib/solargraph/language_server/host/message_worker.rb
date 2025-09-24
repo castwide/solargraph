@@ -20,7 +20,7 @@ module Solargraph
         ].freeze
 
         # @param host [Host]
-        def initialize(host)
+        def initialize host
           @host = host
           @mutex = Mutex.new
           @resource = ConditionVariable.new
@@ -44,7 +44,7 @@ module Solargraph
 
         # @param message [Hash] The message to handle. Will be forwarded to Host#receive
         # @return [void]
-        def queue(message)
+        def queue message
           @mutex.synchronize do
             messages.push(message)
             @resource.signal

@@ -15,6 +15,7 @@ module Solargraph
       # @param node [Parser::AST::Node, nil]
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
+      # @param [Hash{Symbol => Object}] splat
       def initialize receiver: nil, args: [], context: nil, node: nil, **splat
         super(**splat, parameters: args)
         @receiver = receiver
@@ -37,7 +38,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
-      def destructure_yield_types(yield_types, parameters)
+      def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
@@ -48,7 +49,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
-      def typify_parameters(api_map)
+      def typify_parameters api_map
         chain = Parser.chain(receiver, filename, node)
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]

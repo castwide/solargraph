@@ -54,7 +54,9 @@ module Solargraph
       #
       # @return [Array<String>]
       def calculated
-        Solargraph.logger.info "Indexing workspace files in #{directory}" unless @calculated || directory.empty? || directory == '*'
+        unless @calculated || directory.empty? || directory == '*'
+          Solargraph.logger.info "Indexing workspace files in #{directory}"
+        end
         @calculated ||= included - excluded
       end
 
@@ -129,7 +131,7 @@ module Solargraph
         global_config = read_config(global_config_path)
 
         defaults = default_config
-        defaults.merge({'exclude' => []}) unless workspace_config.nil?
+        defaults.merge({ 'exclude' => [] }) unless workspace_config.nil?
 
         defaults
           .merge(global_config || {})
@@ -143,7 +145,7 @@ module Solargraph
       def read_config config_path = ''
         return nil if config_path.empty?
         return nil unless File.file?(config_path)
-        YAML.safe_load(File.read(config_path))
+        YAML.safe_load_file(config_path)
       end
 
       # @return [Hash{String => Array, Hash, Integer}]
@@ -159,7 +161,7 @@ module Solargraph
               'cops' => 'safe',
               'except' => [],
               'only' => [],
-              'extra_args' =>[]
+              'extra_args' => []
             }
           },
           'require_paths' => [],
@@ -173,12 +175,11 @@ module Solargraph
       # @param globs [Array<String>]
       # @return [Array<String>]
       def process_globs globs
-        result = globs.flat_map do |glob|
+        globs.flat_map do |glob|
           Dir[File.absolute_path(glob, directory)]
-            .map{ |f| f.gsub(/\\/, '/') }
+            .map { |f| f.gsub('\\', '/') }
             .select { |f| File.file?(f) }
         end
-        result
       end
 
       # Modify the included files based on excluded directories and get an
@@ -221,7 +222,7 @@ module Solargraph
       # @param glob [String]
       # @return [String]
       def glob_to_directory glob
-        glob.gsub(/(\/\*|\/\*\*\/\*\*?)$/, '')
+        glob.gsub(%r{(/\*|/\*\*/\*\*?)$}, '')
       end
 
       # @return [Array<String>]

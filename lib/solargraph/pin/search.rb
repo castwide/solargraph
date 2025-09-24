@@ -43,7 +43,7 @@ module Solargraph
         end
           .compact
           .sort { |a, b| b.match <=> a.match }
-          .map(&:pin)
+             .map(&:pin)
       end
 
       # @param str1 [String]

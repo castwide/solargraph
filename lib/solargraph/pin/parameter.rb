@@ -15,6 +15,7 @@ module Solargraph
 
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize decl: :arg, asgn_code: nil, **splat
         super(**splat)
         @asgn_code = asgn_code
@@ -29,21 +30,21 @@ module Solargraph
         super || closure&.type_location
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = {
           decl: assert_same(other, :decl),
           presence: choose(other, :presence),
-          asgn_code: choose(other, :asgn_code),
+          asgn_code: choose(other, :asgn_code)
         }.merge(attrs)
         super(other, new_attrs)
       end
 
       def keyword?
-        [:kwarg, :kwoptarg].include?(decl)
+        %i[kwarg kwoptarg].include?(decl)
       end
 
       def kwrestarg?
-        decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
+        decl == :kwrestarg || (assignment && %i[HASH hash].include?(assignment.type))
       end
 
       def needs_consistent_name?
@@ -52,21 +53,21 @@ module Solargraph
 
       # @return [String]
       def arity_decl
-        name = (self.name || '(anon)')
-        type = (return_type&.to_rbs || 'untyped')
+        name = self.name || '(anon)'
+        return_type&.to_rbs || 'untyped'
         case decl
         when :arg
-          ""
+          ''
         when :optarg
-          "?"
+          '?'
         when :kwarg
           "#{name}:"
         when :kwoptarg
           "?#{name}:"
         when :restarg
-          "*"
+          '*'
         when :kwrestarg
-          "**"
+          '**'
         else
           "(unknown decl: #{decl})"
         end
@@ -81,11 +82,11 @@ module Solargraph
       end
 
       def rest?
-        decl == :restarg || decl == :kwrestarg
+        %i[restarg kwrestarg].include?(decl)
       end
 
       def block?
-        [:block, :blockarg].include?(decl)
+        %i[block blockarg].include?(decl)
       end
 
       def to_rbs
@@ -172,7 +173,7 @@ module Solargraph
 
       # @param atype [ComplexType]
       # @param api_map [ApiMap]
-      def compatible_arg?(atype, api_map)
+      def compatible_arg? atype, api_map
         # make sure we get types from up the method
         # inheritance chain if we don't have them on this pin
         ptype = typify api_map
@@ -200,9 +201,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         block_pin = closure
-        if block_pin.is_a?(Pin::Block) && block_pin.receiver
-          return block_pin.typify_parameters(api_map)[index]
-        end
+        return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver
         ComplexType::UNDEFINED
       end
 
@@ -219,10 +218,13 @@ module Solargraph
             found = p
             break
           end
-          if found.nil? and !index.nil?
-            found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
+          if found.nil? and !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
+            found = params[index]
           end
-          return ComplexType.try_parse(*found.types).qualify(api_map, *meth.closure.gates) unless found.nil? || found.types.nil?
+          unless found.nil? || found.types.nil?
+            return ComplexType.try_parse(*found.types).qualify(api_map,
+                                                               *meth.closure.gates)
+          end
         end
         ComplexType::UNDEFINED
       end
