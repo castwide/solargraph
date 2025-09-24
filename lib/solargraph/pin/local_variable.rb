@@ -10,27 +10,24 @@ module Solargraph
         @presence_certain
       end
 
-      # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
+      def initialize presence: nil, presence_certain: false, **splat
         super(**splat)
-        @assignment = assignment
         @presence = presence
         @presence_certain = presence_certain
       end
 
       def combine_with(other, attrs={})
         new_attrs = {
-          assignment: assert_same(other, :assignment),
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Pin::Base#assert_same: other expected
-        #   Solargraph::Pin::Base, received self
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
