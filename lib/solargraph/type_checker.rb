@@ -489,8 +489,6 @@ module Solargraph
     # @param relevant_pin [Pin::Method, Pin::Signature] the pin which is under inspection
     # @return [void]
     def add_restkwarg_param_tag_details(param_details, pin, relevant_pin)
-      return unless pin.parameters.any? { |parameter| parameter.decl == :kwrestarg }
-
       # see if we have additional tags to pay attention to from YARD -
       # e.g., kwargs in a **restkwargs splat
       tags = pin.docstring.tags(:param)
@@ -502,7 +500,8 @@ module Solargraph
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         }
         # don't complain about a param that didn't come from the pin we're looking at anyway
-        if details[:qualified].defined? || relevant_pin == pin
+        if details[:qualified].defined? ||
+           relevant_pin.parameters.any? { |parameter| parameter.decl == :kwrestarg || parameter.name == tag.name.to_s }
           param_details[tag.name.to_s] = details
         end
       end
