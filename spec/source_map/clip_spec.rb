@@ -920,6 +920,7 @@ describe Solargraph::SourceMap::Clip do
 
   it 'finds inferred type definitions' do
     source = Solargraph::Source.load_string(%(
+      module OtherNamespace; end
       class OtherNamespace::MyClass; end
       module SomeNamespace
         class Foo
@@ -942,7 +943,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [13, 33])
     expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo']) # other_variable
-    clip = api_map.clip_at('test.rb', [17, 33])
+    clip = api_map.clip_at('test.rb', [18, 33])
     expect(clip.types.map(&:path)).to eq(['SomeNamespace::Foo', 'SomeNamespace::Bar', 'OtherNamespace::MyClass'])
   end
 

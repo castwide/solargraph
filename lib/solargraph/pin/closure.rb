@@ -51,15 +51,6 @@ module Solargraph
       end
 
       # @return [::Array<String>]
-      def gates
-        # @todo This check might not be necessary. There should always be a
-        #   root pin
-        # @sg-ignore flow sensitive typing needs to handle ivars
-        closure ? closure.gates : ['']
-      end
-
-      # @sg-ignore flow sensitive typing needs to handle ivars
-      # @return [::Array<String, nil>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end

@@ -12,6 +12,11 @@ module Solargraph
 
       # Resolve a name to a fully qualified namespace or constant.
       #
+      # `Constants#resolve` is similar to `Constants#qualify`` in that its
+      # purpose is to find fully qualified (absolute) namespaces, except
+      # `#resolve`` is only concerned with real namespaces. It disregards
+      # parametrized types and special types like literals, self, and Boolean.
+      #
       # @param name [String]
       # @param gates [Array<Array<String>, String>]
       # @return [String, nil]
@@ -41,35 +46,27 @@ module Solargraph
         cached_collect[flat] || collect_and_cache(flat)
       end
 
-      # Determine fully qualified tag for a given tag used inside the
-      # definition of another tag ("context"). This method will start
-      # the search in the specified context until it finds a match for
-      # the tag.
+      # Determine a fully qualified namespace for a given name referenced
+      # from the specified open gates. This method will search in each gate
+      # until it finds a match for the name.
       #
-      # Does not recurse into qualifying the type parameters, but
-      # returns any which were passed in unchanged.
-      #
-      # @param tag [String, nil] The namespace to
-      #   match, complete with generic parameters set to appropriate
-      #   values if available
-      # @param context_tag [String] The fully qualified context in which
-      #   the tag was referenced; start from here to resolve the name.
-      #   Should not be prefixed with '::'.
+      # @param name [String, nil] The namespace to match
+      # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
-      def qualify tag, context_tag = ''
-        return tag if ['Boolean', 'self', nil].include?(tag)
+      def qualify name, *gates
+        return name if ['Boolean', 'self', nil].include?(name)
 
-        type = ComplexType.try_parse(tag)
-        return unless type.defined?
-        return tag if type.literal?
-
-        context_type = ComplexType.try_parse(context_tag)
-        return unless context_type.defined?
-
-        fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
+        gates.push '' unless gates.include?('')
+        fqns = resolve(name, gates)
         return unless fqns
-
-        fqns + type.substring
+        pin = store.get_path_pins(fqns).first
+        if pin.is_a?(Pin::Constant)
+          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
+          return unless const
+          resolve(const, pin.gates)
+        else
+          fqns
+        end
       end
 
       # @return [void]
@@ -93,24 +90,60 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String, nil]
       def resolve_uncached name, gates
+        resolved = nil
+        base = gates
         parts = name.split('::')
-        here = parts.shift
-        resolved = simple_resolve(here, gates)
-        return resolved if parts.empty? || resolved.nil?
+        first = nil
+        parts.each.with_index do |nam, idx|
+          resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
+          first ||= remainder
+          if resolved
+            base = [resolved]
+          else
+            return resolve(name, first) unless first.empty?
+          end
+        end
+        resolved
+      end
 
-        final = "#{resolved}::#{parts.join('::')}".sub(/^::/, '')
-        final if store.namespace_exists?(final)
+      # @todo I'm not sure of a better way to express the return value in YARD.
+      #   It's a tuple where the first element is a nullable string. Something
+      #   like `Array(String|nil, Array<String>)` would be more accurate.
+      #
+      # @param name [String]
+      # @param gates [Array<String>]
+      # @param internal [Boolean] True if the name is not the last in the namespace
+      # @return [Array(Object, Array<String>)]
+      def complex_resolve name, gates, internal
+        resolved = nil
+        gates.each.with_index do |gate, idx|
+          resolved = simple_resolve(name, gate, internal)
+          return [resolved, gates[(idx + 1)..]] if resolved
+          store.get_ancestor_references(gate).each do |ref|
+            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}")
+            mixin = resolve(ref.name, ref.reference_gates - gates)
+            next unless mixin
+            resolved = simple_resolve(name, mixin, internal)
+            return [resolved, gates[(idx + 1)..]] if resolved
+          end
+        end
+        [nil, []]
       end
 
       # @param name [String]
-      # @param gates [Array<String>]
+      # @param gate [String]
+      # @param internal [Boolean] True if the name is not the last in the namespace
       # @return [String, nil]
-      def simple_resolve name, gates
-        gates.each do |gate|
-          here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
-          return here if store.namespace_exists?(here)
+      def simple_resolve name, gate, internal
+        here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
+        pin = store.get_path_pins(here).first
+        if pin.is_a?(Pin::Constant) && internal
+          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
+          return unless const
+          resolve(const, pin.gates)
+        else
+          pin&.path
         end
-        nil
       end
 
       # @param gates [Array<String>]

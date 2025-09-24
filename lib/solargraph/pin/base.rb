@@ -533,7 +533,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
       # Infer the pin's return type via static code analysis.
@@ -593,6 +593,18 @@ module Solargraph
       # @return [String]
       def identity
         @identity ||= "#{closure&.path}|#{name}|#{location}"
+      end
+
+      # The namespaces available for resolving the current namespace. Each gate
+      # should be a fully qualified namespace or the root namespace (i.e., an
+      # empty string.)
+      #
+      # Example: Given the name 'Bar' and the gates ['Foo', ''],
+      # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
+      #
+      # @return [Array<string>]
+      def gates
+        @gates ||= closure&.gates || ['']
       end
 
       # @return [String, nil]
