@@ -19,7 +19,6 @@ module Solargraph
       @ending = ending
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [start, ending]
     end
@@ -79,7 +78,7 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [Parser::AST::Node]
+    # @param node [AST::Node]
     # @return [Range, nil]
     def self.from_node node
       if node&.loc && node.loc.expression

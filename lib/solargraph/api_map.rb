@@ -215,7 +215,7 @@ module Solargraph
     # @param directory [String]
     # @param out [IO] The output stream for messages
     # @return [ApiMap]
-    def self.load_with_cache directory, out
+    def self.load_with_cache directory, out = $stdout
       api_map = load(directory)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
@@ -315,13 +315,13 @@ module Solargraph
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Extend>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Include>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end
@@ -737,7 +737,6 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -772,6 +771,9 @@ module Solargraph
 
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
+            # @sg-ignore Declared type Solargraph::Pin::Constant does
+            #   not match inferred type Solargraph::Pin::Constant,
+            #   Solargraph::Pin::Namespace, nil for variable const
             const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
@@ -811,7 +813,6 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
@@ -860,7 +861,7 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
       original = nil
 
       # Search each ancestor for the original method

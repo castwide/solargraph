@@ -388,7 +388,7 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
-      # @return [::Array<Pin::Method>]
+      # @return [::Array<Pin::Signature>]
       def overloads
         # Ignore overload tags with nil parameters. If it's not an array, the
         # tag's source is likely malformed.
