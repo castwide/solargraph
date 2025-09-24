@@ -3,6 +3,7 @@
 require 'benchmark'
 require 'thor'
 require 'yard'
+require 'yaml'
 
 module Solargraph
   class Shell < Thor
@@ -15,7 +16,7 @@ module Solargraph
 
     map %w[--version -v] => :version
 
-    desc "--version, -v", "Print the version"
+    desc '--version, -v', 'Print the version'
     # @return [void]
     def version
       puts Solargraph::VERSION
@@ -103,12 +104,63 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      api_map = Solargraph::ApiMap.load(Dir.pwd)
-      spec = Gem::Specification.find_by_name(gem, version)
-      api_map.cache_gem(spec, rebuild: options[:rebuild], out: $stdout)
+      gems(gem + (version ? "=#{version}" : ''))
+      # '
     end
 
-    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    desc 'gems [GEM[=VERSION]...] [STDLIB...] [core]', 'Cache documentation for
+         installed libraries'
+    long_desc %( This command will cache the
+    generated type documentation for the specified libraries.  While
+    Solargraph will generate this on the fly when needed, it takes
+    time.  This command will generate it in advance, which can be
+    useful for CI scenarios.
+
+        With no arguments, it will cache all libraries in the current
+        workspace.  If a gem or standard library name is specified, it
+        will cache that library's type documentation.
+
+        An equals sign after a gem will allow a specific gem version
+        to be cached.
+
+        The 'core' argument can be used to cache the type
+        documentation for the core Ruby libraries.
+
+        If the library is already cached, it will be rebuilt if the
+        --rebuild option is set.
+
+        Cached documentation is stored in #{PinCache.base_dir}, which
+        can be stored between CI runs.
+    )
+    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
+    # @param names [Array<String>]
+    # @return [void]
+    def gems *names
+      # print time with ms
+      workspace = Solargraph::Workspace.new('.')
+
+      if names.empty?
+        workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
+      else
+        $stderr.puts("Caching these gems: #{names}")
+        names.each do |name|
+          if name == 'core'
+            PinCache.cache_core(out: $stdout)
+            next
+          end
+
+          gemspec = workspace.find_gem(*name.split('='))
+          if gemspec.nil?
+            warn "Gem '#{name}' not found"
+          else
+            workspace.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
+          end
+        end
+        $stderr.puts "Documentation cached for #{names.count} gems."
+      end
+    end
+
+    desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.
@@ -118,39 +170,21 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+
       gems.each do |gem|
         if gem == 'core'
-          PinCache.uncache_core
+          PinCache.uncache_core(out: $stdout)
           next
         end
 
         if gem == 'stdlib'
-          PinCache.uncache_stdlib
+          PinCache.uncache_stdlib(out: $stdout)
           next
         end
 
         spec = Gem::Specification.find_by_name(gem)
-        PinCache.uncache_gem(spec, out: $stdout)
-      end
-    end
-
-    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @param names [Array<String>]
-    # @return [void]
-    def gems *names
-      api_map = ApiMap.load('.')
-      if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
-        STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
-      else
-        names.each do |name|
-          spec = Gem::Specification.find_by_name(*name.split('='))
-          do_cache spec, api_map
-        rescue Gem::MissingSpecError
-          warn "Gem '#{name}' not found"
-        end
-        STDERR.puts "Documentation cached for #{names.count} gems."
+        workspace.uncache_gem(spec, out: $stdout)
       end
     end
 
@@ -191,7 +225,6 @@ module Solargraph
           filecount += 1
           probcount += problems.length
         end
-        # "
       }
       puts "Typecheck finished in #{time.real} seconds."
       puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
@@ -257,15 +290,6 @@ module Solargraph
       end
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @param api_map [ApiMap]
-    # @return [void]
-    def do_cache gemspec, api_map
-      # @todo if the rebuild: option is passed as a positional arg,
-      #   typecheck doesn't complain on the below line
-      api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
     end
   end
 end

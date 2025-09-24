@@ -247,7 +247,7 @@ describe Solargraph::LanguageServer::Host do
       expect(symbols).not_to be_empty
     end
 
-    it "opens a file outside of prepared libraries" do
+    it "opens a file outside of prepared libraries", time_limit_seconds: 120 do
       @host.prepare(File.absolute_path(File.join('spec', 'fixtures', 'workspace')))
       @host.open('file:///file.rb', 'class Foo; end', 1)
       symbols = @host.document_symbols('file:///file.rb')

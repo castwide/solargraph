@@ -1,15 +1,8 @@
 # frozen_string_literal: true
 
 require 'prism'
-
-# Awaiting ability to use a version containing https://github.com/whitequark/parser/pull/1076
-#
-# @!parse
-#   class ::Parser::Base < ::Parser::Builder
-#     # @return [Integer]
-#     def version; end
-#   end
-#   class ::Parser::CurrentRuby < ::Parser::Base; end
+require 'ast'
+require 'parser'
 
 module Solargraph
   module Parser
@@ -84,6 +77,7 @@ module Solargraph
         # @param top [AST::Node]
         # @return [Array<AST::Node>]
         def inner_node_references name, top
+          # @type [Array<Parser::AST::Node>]
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
@@ -137,9 +131,7 @@ module Solargraph
         def string_ranges node
           return [] unless is_ast_node?(node)
           result = []
-          if node.type == :str
-            result.push Range.from_node(node)
-          end
+          result.push Range.from_node(node) if node.type == :str
           node.children.each do |child|
             result.concat string_ranges(child)
           end

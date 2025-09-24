@@ -22,7 +22,7 @@ module Solargraph
     # @param requires [Array<String>]
     # @param domains [Array<String>]
     # @param pins [Array<Pin::Base>]
-    # @param yard_plugins[Array<String>]
+    # @param yard_plugins [Array<String>]
     def initialize requires: [], domains: [], pins: [], yard_plugins: []
       @requires = requires
       @domains = domains
