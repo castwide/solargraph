@@ -737,7 +737,6 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -776,7 +775,8 @@ module Solargraph
             if const.is_a?(Pin::Namespace)
               result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
             elsif const.is_a?(Pin::Constant)
-              type = const.infer(self)
+              type = const.typify(self)
+              type = const.probe(self) unless type.defined?
               result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
             else
               referenced_tag = ref.parametrized_tag
@@ -811,7 +811,6 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
