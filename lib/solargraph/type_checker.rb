@@ -501,7 +501,7 @@ module Solargraph
         }
         # don't complain about a param that didn't come from the pin we're looking at anyway
         if details[:qualified].defined? ||
-           relevant_pin.parameters.any? { |parameter| parameter.decl == :kwrestarg || parameter.name == tag.name.to_s }
+           relevant_pin.parameter_names.include?(tag.name.to_s)
           param_details[tag.name.to_s] = details
         end
       end
