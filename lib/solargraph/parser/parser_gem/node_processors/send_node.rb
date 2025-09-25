@@ -66,7 +66,7 @@ module Solargraph
                   return process_children
                 end
                 # :nocov:
-                if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
+                if child.is_a?(::Parser::AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
                   matches.each do |pin|
@@ -198,7 +198,7 @@ module Solargraph
             elsif node.children[2].type == :sym || node.children[2].type == :str
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
-                # @type [Pin::Method]
+                # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 unless ref.nil?
                   pins.delete ref

@@ -17,7 +17,7 @@ module Solargraph
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
-      # @param block [Pin::Signature, nil, ::Symbol]
+      # @param block [Pin::Signature, nil, :undefined]
       # @param node [Parser::AST::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
