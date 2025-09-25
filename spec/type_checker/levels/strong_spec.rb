@@ -273,36 +273,41 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'resolves class name correctly in generic resolution' do
-      checker = type_checker(%(
-        module Foo
-          module Bar
-            class Symbol
-            end
-          end
-        end
-
-        module Foo
-          module Baz
-            class Quux
-              # @return [void]
-              def foo
-                objects_by_class(Bar::Symbol)
-              end
-
-              # @generic T
-              # @param klass [Class<generic<T>>]
-              # @return [Set<generic<T>>]
-              def objects_by_class klass
-                # @type [Set<generic<T>>]
-                s = Set.new
-                s
+    context 'with class name available in more than one gate' do
+      let(:checker) do
+        type_checker(%(
+          module Foo
+            module Bar
+              class Symbol
               end
             end
           end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
+
+          module Foo
+            module Baz
+              class Quux
+                # @return [void]
+                def foo
+                  objects_by_class(Bar::Symbol)
+                end
+
+                # @generic T
+                # @param klass [Class<generic<T>>]
+                # @return [Set<generic<T>>]
+                def objects_by_class klass
+                  # @type [Set<generic<T>>]
+                  s = Set.new
+                  s
+                end
+              end
+            end
+          end
+        ))
+      end
+
+      it 'resolves class name correctly in generic resolution' do
+        expect(checker.problems.map(&:message)).to be_empty
+      end
     end
   end
 end
