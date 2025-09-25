@@ -74,6 +74,14 @@ describe Solargraph::YardMap::Mapper do
     expect(inc).to be_a(Solargraph::Pin::Reference::Include)
   end
 
+  it 'adds corect gates' do
+    # Asssuming the ast gem exists because it's a known dependency
+    pin = pins_with('ast').find do |pin|
+      pin.is_a?(Solargraph::Pin::Namespace) && pin.name == 'Mixin' && pin.closure.path == 'AST::Processor'
+    end
+    expect(pin.gates).to eq(["AST::Processor::Mixin", "AST::Processor", "AST", ""])
+  end
+
   it 'adds extend references' do
     # Asssuming the yard gem exists because it's a known dependency
     gemspec = Gem::Specification.find_by_name('yard')
