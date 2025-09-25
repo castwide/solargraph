@@ -69,7 +69,7 @@ module Solargraph
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, meth.context.namespace)
+                arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end
           end
@@ -96,7 +96,7 @@ module Solargraph
         target = chain.base.infer(api_map, receiver_pin, locals)
         target = full_context unless target.defined?
 
-        ComplexType.try_parse(*types).qualify(api_map, receiver_pin.context.namespace).self_to_type(target)
+        ComplexType.try_parse(*types).qualify(api_map, *receiver_pin.gates).self_to_type(target)
       end
     end
   end

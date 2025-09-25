@@ -388,7 +388,7 @@ describe Solargraph::TypeChecker do
          'foo'.nil? # infers as 'false'
         end
       ))
-      expect(checker.problems.map(&:message)).to be_empty
+      expect(checker.problems).to be_empty
     end
   end
 end
