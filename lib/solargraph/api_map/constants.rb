@@ -24,9 +24,7 @@ module Solargraph
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
-        if flat.empty?
-          flat.push ''
-        end
+        flat.push '' if flat.empty?
         if cached_resolve.include? [name, flat]
           cached_result = cached_resolve[[name, flat]]
           # don't recurse
