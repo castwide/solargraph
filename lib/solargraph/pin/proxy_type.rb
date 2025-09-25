@@ -5,6 +5,7 @@ module Solargraph
     class ProxyType < Base
       # @param return_type [ComplexType]
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
+      # @param gates [Array<String>, nil]
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
         super(**splat)
         @gates = gates
