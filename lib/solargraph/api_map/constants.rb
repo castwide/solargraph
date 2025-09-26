@@ -12,14 +12,21 @@ module Solargraph
 
       # Resolve a name to a fully qualified namespace or constant.
       #
-      # `Constants#resolve` is similar to `Constants#qualify`` in that its
-      # purpose is to find fully qualified (absolute) namespaces, except
-      # `#resolve`` is only concerned with real namespaces. It disregards
-      # parametrized types and special types like literals, self, and Boolean.
+      # `Constants#resolve` finds fully qualified (absolute)
+      # namespaces based on relative names and the open gates
+      # (namespaces) provided.  Names must be runtime-visible (erased)
+      # non-literal types - e.g., TrueClass, NilClass, Integer and
+      # Hash instead of true, nil, 96, or Hash{String => Symbol}
       #
-      # @param name [String]
-      # @param gates [Array<Array<String>, String>]
-      # @return [String, nil]
+      # Note: You may want to be using #qualify.  Notably, #resolve:
+      # - will not gracefully handle nil, self and Boolean
+      # - will return a constant name instead of following its assignment
+      #
+      # @param name [String] Namespace which may relative and not be rooted.
+      # @param gates [Array<Array<String>, String>] Namespaces to search while resolving the name
+      #
+      # @return [String, nil] fully qualified namespace (i.e., is
+      #   absolute, but will not start with ::)
       def resolve(name, *gates)
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
@@ -33,7 +40,7 @@ module Solargraph
       # @param pin [Pin::Reference]
       # @return [String, nil]
       def dereference pin
-        resolve(pin.name, pin.reference_gates)
+        qualify(pin.name, pin.reference_gates)
       end
 
       # Collect a list of all constants defined in the specified gates.
