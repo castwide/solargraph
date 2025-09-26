@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class ProxyType < Base
       # @param return_type [ComplexType]
+      # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
