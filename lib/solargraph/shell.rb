@@ -278,7 +278,6 @@ module Solargraph
       when nil
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
-      when Pin::Method
       when Pin::Namespace
         # @sg-ignore Unresolved call to options
         if options[:references]
