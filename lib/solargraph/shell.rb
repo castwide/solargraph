@@ -257,7 +257,21 @@ module Solargraph
     # @return [void]
     def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
-      pins = api_map.get_path_pins path
+      is_method = path.include?('#') || path.include?('.')
+      if is_method && options[:stack]
+        scope, ns, meth = if path.include? '#'
+                            [:instance, *path.split('#', 2)]
+                          else
+                            [:class, *path.split('.', 2)]
+                          end
+
+        # @sg-ignore Wrong argument type for
+        #   Solargraph::ApiMap#get_method_stack: rooted_tag
+        #   expected String, received Array<String>
+        pins = api_map.get_method_stack(ns, meth, scope: scope)
+      else
+        pins = api_map.get_path_pins path
+      end
       references = {}
       pin = pins.first
       case pin
@@ -265,19 +279,6 @@ module Solargraph
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
       when Pin::Method
-        # @sg-ignore Unresolved call to options
-        if options[:stack]
-          scope, ns, meth = if path.include? '#'
-                              [:instance, *path.split('#', 2)]
-                            else
-                              [:class, *path.split('.', 2)]
-                            end
-
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::ApiMap#get_method_stack: rooted_tag
-          #   expected String, received Array<String>
-          pins = api_map.get_method_stack(ns, meth, scope: scope)
-        end
       when Pin::Namespace
         # @sg-ignore Unresolved call to options
         if options[:references]
