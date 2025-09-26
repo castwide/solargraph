@@ -79,7 +79,7 @@ describe Solargraph::YardMap::Mapper do
     pin = pins_with('ast').find do |pin|
       pin.is_a?(Solargraph::Pin::Namespace) && pin.name == 'Mixin' && pin.closure.path == 'AST::Processor'
     end
-    expect(pin.gates).to eq(["AST::Processor::Mixin", "AST::Processor", "AST", ""])
+    expect(pin.gates).to eq(['AST::Processor::Mixin', 'AST::Processor', 'AST', ''])
   end
 
   it 'adds extend references' do
