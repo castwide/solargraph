@@ -42,7 +42,7 @@ module Solargraph
       # @param pin [Pin::Reference]
       # @return [String, nil]
       def dereference pin
-        qualify_type(pin.type, pin.reference_gates)&.tag
+        qualify_type(pin.type, *pin.reference_gates)&.tag
       end
 
       # Collect a list of all constants defined in the specified gates.
@@ -63,7 +63,7 @@ module Solargraph
       # @return [String, nil] fully qualified tag
       def qualify tag, *gates
         type = ComplexType.try_parse(tag)
-        qualify_type(type)&.tag
+        qualify_type(type, *gates)&.tag
       end
 
       # @param type [ComplexType, nil] The type to match
@@ -72,18 +72,19 @@ module Solargraph
       # @return [ComplexType, nil] A new rooted ComplexType
       def qualify_type type, *gates
         return nil if type.nil?
-        return type if type.selfy? || type.literal? || type.tag == 'nil' || type.interface?
+        return type if type.selfy? || type.literal? || type.tag == 'nil' || type.interface? ||
+                       type.tag == 'Boolean'
 
         gates.push '' unless gates.include?('')
-        fqns = resolve(type.namespace, type.namespace)
+        fqns = resolve(type.rooted_namespace, *gates)
         return unless fqns
         pin = store.get_path_pins(fqns).first
         if pin.is_a?(Pin::Constant)
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
-          fqns = resolve(const, pin.gates)
+          fqns = resolve(const, *pin.gates)
         end
-        type.recreate(new_name: fqns, rooted: true)
+        type.recreate(new_name: fqns, make_rooted: true)
       end
 
       # @return [void]

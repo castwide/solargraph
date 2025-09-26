@@ -97,7 +97,7 @@ module Solargraph
         return unless ref
         res = constants.dereference(ref)
         return unless res
-        res + type.substring
+        res
       end
 
       # @param fqns [String]
