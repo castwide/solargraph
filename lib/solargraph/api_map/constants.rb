@@ -15,10 +15,12 @@ module Solargraph
       # `Constants#resolve` finds fully qualified (absolute)
       # namespaces based on relative names and the open gates
       # (namespaces) provided.  Names must be runtime-visible (erased)
-      # non-literal types - e.g., TrueClass, NilClass, Integer and
-      # Hash instead of true, nil, 96, or Hash{String => Symbol}
+      # non-literal types, non-duck, non-signature types - e.g.,
+      # TrueClass, NilClass, Integer and Hash instead of true, nil,
+      # 96, or Hash{String => Symbol}
       #
       # Note: You may want to be using #qualify.  Notably, #resolve:
+      # - does not handle anything with type parameters
       # - will not gracefully handle nil, self and Boolean
       # - will return a constant name instead of following its assignment
       #
@@ -40,7 +42,7 @@ module Solargraph
       # @param pin [Pin::Reference]
       # @return [String, nil]
       def dereference pin
-        qualify(pin.name, pin.reference_gates)
+        qualify_type(pin.type, pin.reference_gates)&.tag
       end
 
       # Collect a list of all constants defined in the specified gates.
@@ -52,27 +54,36 @@ module Solargraph
         cached_collect[flat] || collect_and_cache(flat)
       end
 
-      # Determine a fully qualified namespace for a given name referenced
-      # from the specified open gates. This method will search in each gate
-      # until it finds a match for the name.
+      # Determine a fully qualified namespace for a given tag
+      # referenced from the specified open gates. This method will
+      # search in each gate until it finds a match for the name.
       #
-      # @param name [String, nil] The namespace to match
+      # @param tag [String, nil] The type to match
       # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
-      def qualify name, *gates
-        return name if ['Boolean', 'self', nil].include?(name)
+      def qualify tag, *gates
+        type = ComplexType.try_parse(tag)
+        qualify_type(type)&.tag
+      end
+
+      # @param type [ComplexType, nil] The type to match
+      # @param gates [Array<String>]
+      #
+      # @return [ComplexType, nil] A new rooted ComplexType
+      def qualify_type type, *gates
+        return nil if type.nil?
+        return type if type.selfy? || type.literal? || type.tag == 'nil' || type.interface?
 
         gates.push '' unless gates.include?('')
-        fqns = resolve(name, gates)
+        fqns = resolve(type.namespace, type.namespace)
         return unless fqns
         pin = store.get_path_pins(fqns).first
         if pin.is_a?(Pin::Constant)
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
-          resolve(const, pin.gates)
-        else
-          fqns
+          fqns = resolve(const, pin.gates)
         end
+        type.recreate(new_name: fqns, rooted: true)
       end
 
       # @return [void]
