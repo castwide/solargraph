@@ -354,7 +354,7 @@ module Solargraph
         end
         # arbitrary way of choosing a pin
         # @sg-ignore Need _1 support
-        [val1, val2].compact.min_by { _1.best_location.to_s }
+        [val1, val2].compact.max_by { File.basename(_1.best_location.to_s) }
       end
 
       # @return [void]
