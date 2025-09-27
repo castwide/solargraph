@@ -15,7 +15,8 @@ module Solargraph
               closure = region.closure
             else
               closure = Solargraph::Pin::Namespace.new(
-                name: unpack_name(node.children[0])
+                name: unpack_name(node.children[0]),
+                source: :parser,
               )
             end
             pins.push Solargraph::Pin::Method.new(
