@@ -88,6 +88,57 @@ describe Solargraph::SourceMap do
     expect(locals).to be_empty
   end
 
+  it 'handles op_asgn case with assertions on' do
+    # set SOLARGRAPH_ASSERTS=onto test this
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+
+    expect do
+      map = Solargraph::SourceMap.load_string(%(
+            Foo.bar += baz
+       ), 'test.rb')
+      loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
+      locals = map.locals_at(loc)
+      expect(locals).to be_empty
+    end.not_to raise_error
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
+  it 'handles or_asgn case with assertions on' do
+    # set SOLARGRAPH_ASSERTS=onto test this
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+
+    expect do
+      map = Solargraph::SourceMap.load_string(%(
+            Foo.bar ||= baz
+       ), 'test.rb')
+      loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
+      locals = map.locals_at(loc)
+      expect(locals).to be_empty
+    end.not_to raise_error
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
+  it 'handles lvasgn case with assertions on' do
+    # set SOLARGRAPH_ASSERTS=onto test this
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+
+    expect do
+      map = Solargraph::SourceMap.load_string(%(
+            Foo.bar = baz
+       ), 'test.rb')
+      loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
+      locals = map.locals_at(loc)
+      expect(locals).to be_empty
+    end.not_to raise_error
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
   it 'scopes local variables correctly in class_eval blocks' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo; end
