@@ -58,7 +58,7 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 245: Need to add nil check here
+      # Need to add nil check here
       # @todo 30: flow sensitive typing needs to handle ivars
       # @todo 21: Translate to something flow sensitive typing understands
       # @todo 9: Need to validate config
@@ -66,8 +66,8 @@ module Solargraph
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 7: flow sensitive typing needs to handle inner closures
       # @todo 6: Need to support nested flow sensitive types
+      # @todo 6: Should handle redefinition of types in simple contexts
       # @todo 5: should understand meaning of &.
-      # @todo 5: Should handle redefinition of types in simple contexts
       # @todo 5: need boolish support for ? methods
       # @todo 4: Need support for reduce_class_type in UniqueType
       # @todo 4: Need to handle implicit nil on else
@@ -81,6 +81,8 @@ module Solargraph
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       # @todo 1: Unresolved call to !
+      # @todo 1: EASY: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: EASY: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end

@@ -19,6 +19,8 @@ module Solargraph
       #
       # @param name [String]
       # @param gates [Array<Array<String>, String>]
+      #
+      # @sg-ignore flow sensitive typing needs to eliminate literal from union with return if foo == :bar
       # @return [String, nil]
       def resolve(name, *gates)
         # @sg-ignore Need to add nil check here
@@ -63,10 +65,12 @@ module Solargraph
         return name if ['Boolean', 'self', nil].include?(name)
 
         gates.push '' unless gates.include?('')
+        # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
         fqns = resolve(name, gates)
         return unless fqns
         pin = store.get_path_pins(fqns).first
         if pin.is_a?(Pin::Constant)
+          # @sg-ignore Need to add nil check here
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
           resolve(const, pin.gates)
@@ -87,6 +91,7 @@ module Solargraph
 
       # @param name [String]
       # @param gates [Array<String>]
+      # @sg-ignore Should handle redefinition of types in simple contexts
       # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = :in_process
@@ -113,13 +118,13 @@ module Solargraph
         resolved
       end
 
-      # @todo I'm not sure of a better way to express the return value in YARD.
-      #   It's a tuple where the first element is a nullable string. Something
-      #   like `Array(String|nil, Array<String>)` would be more accurate.
       #
       # @param name [String]
       # @param gates [Array<String>]
       # @param internal [Boolean] True if the name is not the last in the namespace
+      # @sg-ignore I'm not sure of a better way to express the return value in YARD.
+      #   It's a tuple where the first element is a nullable string. Something
+      #   like `Array(String|nil, Array<String>)` would be more accurate.
       # @return [Array(Object, Array<String>)]
       def complex_resolve name, gates, internal
         resolved = nil
@@ -147,6 +152,7 @@ module Solargraph
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
         pin = store.get_path_pins(here).first
         if pin.is_a?(Pin::Constant) && internal
+          # @sg-ignore Need to add nil check here
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
           resolve(const, pin.gates)
