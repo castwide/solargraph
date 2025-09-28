@@ -13,8 +13,14 @@ module Solargraph
             operator = node.children[1]
             argument = node.children[2]
             if target.type == :send
+              # @sg-ignore Wrong argument type for
+              #   Solargraph::Parser::ParserGem::NodeProcessors::OpasgnNode#process_send_target:
+              #   operator expected Symbol, received Parser::AST::Node
               process_send_target(target, operator, argument)
             elsif target.type.to_s.end_with?('vasgn')
+              # @sg-ignore Wrong argument type for
+              #   Solargraph::Parser::ParserGem::NodeProcessors::OpasgnNode#process_vasgn_target:
+              #   operator expected Symbol, received Parser::AST::Node
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,

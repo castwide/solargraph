@@ -216,6 +216,7 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
+          # @sg-ignore Need to add a nil check here
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags,
                                                  source: :source_map)
         when 'macro'

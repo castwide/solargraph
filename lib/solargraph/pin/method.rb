@@ -309,6 +309,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
+          # @sg-ignore Need to add nil check here
           qualified = type.qualify(api_map, *closure.gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
