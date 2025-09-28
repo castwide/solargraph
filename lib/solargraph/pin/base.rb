@@ -581,7 +581,7 @@ module Solargraph
       # Example: Given the name 'Bar' and the gates ['Foo', ''],
       # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
       #
-      # @return [Array<string>]
+      # @return [Array<String>]
       def gates
         @gates ||= closure&.gates || ['']
       end
