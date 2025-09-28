@@ -252,13 +252,6 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
-    # An array of namespace names defined in the ApiMap.
-    #
-    # @return [Set<String>]
-    def namespaces
-      store.namespaces
-    end
-
     # True if the namespace exists.
     #
     # @param name [String] The namespace to match
@@ -877,6 +870,7 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
+      # @sg-ignore Need support for reduce_class_type in UniqueType
       ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
       # @type [Pin::Method, nil]
       original = nil

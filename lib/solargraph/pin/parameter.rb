@@ -181,6 +181,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
+        # @sg-ignore Need to add nil check here
         return return_type.qualify(api_map, *closure.gates) unless return_type.undefined?
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end

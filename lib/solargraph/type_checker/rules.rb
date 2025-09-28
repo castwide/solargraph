@@ -69,7 +69,7 @@ module Solargraph
       # @todo 6: Should handle redefinition of types in simple contexts
       # @todo 5: should understand meaning of &.
       # @todo 5: need boolish support for ? methods
-      # @todo 4: Need support for reduce_class_type in UniqueType
+      # Need support for reduce_class_type in UniqueType
       # @todo 4: Need to handle implicit nil on else
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars

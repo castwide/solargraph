@@ -118,13 +118,13 @@ module Solargraph
         resolved
       end
 
+      # @todo I'm not sure of a better way to express the return value in YARD.
+      #   It's a tuple where the first element is a nullable string. Something
+      #   like `Array(String|nil, Array<String>)` would be more accurate.
       #
       # @param name [String]
       # @param gates [Array<String>]
       # @param internal [Boolean] True if the name is not the last in the namespace
-      # @sg-ignore I'm not sure of a better way to express the return value in YARD.
-      #   It's a tuple where the first element is a nullable string. Something
-      #   like `Array(String|nil, Array<String>)` would be more accurate.
       # @return [Array(Object, Array<String>)]
       def complex_resolve name, gates, internal
         resolved = nil

@@ -72,6 +72,7 @@ module Solargraph
             next
           end
 
+          # @sg-ignore Need to add nil check here
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
             # @sg-ignore Translate to something flow sensitive typing understands
             next if pin.location.nil? || pin.location.filename.nil?
