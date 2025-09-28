@@ -51,6 +51,29 @@ describe Solargraph::RbsMap::Conversions do
       it { is_expected.to be_a(Solargraph::Pin::Method) }
     end
 
+    context 'with self alias to self method' do
+      subject(:alias_pin) { api_map.get_method_stack('Foo', 'bar?', scope: :class).first }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def self.bar: () -> String
+            alias self.bar? self.bar
+          end
+        RBS
+      end
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :class).first }
+
+      it { is_expected.not_to be_nil }
+
+      it { is_expected.to be_instance_of(Solargraph::Pin::Method) }
+
+      it 'finds the type' do
+        expect(alias_pin.return_type.tag).to eq('String')
+      end
+    end
+
     context 'with untyped response' do
       subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
 
