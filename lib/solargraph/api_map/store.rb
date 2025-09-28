@@ -253,6 +253,9 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      # @param fqns [String]
+      #
+      # @return [Array<Solargraph::Pin::Reference::Base>]
       def get_ancestor_references(fqns)
         (get_prepends(fqns) + get_includes(fqns) + [get_superclass(fqns)]).compact
       end
