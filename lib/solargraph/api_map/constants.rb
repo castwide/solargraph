@@ -119,7 +119,8 @@ module Solargraph
           resolved = simple_resolve(name, gate, internal)
           return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
-            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}")
+            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}") && ref.name.start_with?('::')
+
             mixin = resolve(ref.name, ref.reference_gates - gates)
             next unless mixin
             resolved = simple_resolve(name, mixin, internal)
