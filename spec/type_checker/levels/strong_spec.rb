@@ -272,5 +272,25 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'resolves constants inside modules inside classes' do
+      checker = type_checker(%(
+        class Bar
+          module Foo
+            CONSTANT = 'hi'
+          end
+        end
+
+        class Bar
+          include Foo
+
+          # @return [String]
+          def baz
+            CONSTANT
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
