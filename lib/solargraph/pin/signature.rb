@@ -9,7 +9,6 @@ module Solargraph
         super(**splat)
       end
 
-      # @sg-ignore flow sensitive typing needs to handle ivars
       def generics
         # @type [Array<::String, nil>]
         @generics ||= [].freeze

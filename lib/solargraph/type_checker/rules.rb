@@ -59,7 +59,7 @@ module Solargraph
       end
 
       # Need to add nil check here
-      # @todo 30: flow sensitive typing needs to handle ivars
+      # @todo flow sensitive typing needs to handle ivars
       # @todo 21: Translate to something flow sensitive typing understands
       # @todo 9: Need to validate config
       # @todo 8: Should better support meaning of '&' in RBS
