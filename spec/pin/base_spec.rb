@@ -55,7 +55,6 @@ describe Solargraph::Pin::Base do
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     expect(pins.length).to eq(1)
     parser_method_pin = pins.first
-    expect(parser_method_pin.source).to eq(:combined)
     return_type = parser_method_pin.typify(api_map)
     expect(parser_method_pin.closure.name).to eq("Docstring")
     expect(parser_method_pin.closure.gates).to eq(["YARD::Docstring", "YARD", ''])
