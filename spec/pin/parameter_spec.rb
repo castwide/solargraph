@@ -474,7 +474,7 @@ describe Solargraph::Pin::Parameter do
       expect(type.simple_tags).to eq('String')
     end
 
-    it 'infers types from kwoptarg values' do
+    it 'handles a relative type name case' do
       source = Solargraph::Source.load_string(%(
         module A
           module B
