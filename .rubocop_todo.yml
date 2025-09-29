@@ -453,7 +453,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 54
+  Max: 56
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
@@ -518,7 +518,12 @@ Naming/MemoizedInstanceVariableName:
 # Configuration parameters: MinNameLength, AllowNamesEndingInNumbers, AllowedNames, ForbiddenNames.
 # AllowedNames: as, at, by, cc, db, id, if, in, io, ip, of, on, os, pp, to
 Naming/MethodParameterName:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
+    - 'lib/solargraph/pin/base.rb'
+    - 'lib/solargraph/range.rb'
+    - 'lib/solargraph/source.rb'
+    - 'lib/solargraph/yard_map/mapper/to_method.rb'
 
 # Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
 # AllowedMethods: call
