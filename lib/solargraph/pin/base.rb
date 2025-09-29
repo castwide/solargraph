@@ -610,6 +610,7 @@ module Solargraph
       # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
       #
       # @return [Array<String>]
+      # @sg-ignore Solargraph::Pin::Base#gates return type could not be inferred
       def gates
         @gates ||= closure&.gates || ['']
       end

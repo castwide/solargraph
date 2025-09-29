@@ -103,6 +103,7 @@ module Solargraph
         return_type
       end
 
+      # @sg-ignore Solargraph::Pin::Namespace#gates return type could not be inferred
       def gates
         @gates ||= if path.empty?
           @open_gates
