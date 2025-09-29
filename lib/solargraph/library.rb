@@ -151,7 +151,7 @@ module Solargraph
     # @param filename [String]
     # @return [void]
     def close filename
-      # @sg-ignore should understand meaning of &.
+      # @sg-ignore need to improve handling of &.
       return unless @current&.filename == filename
 
       @current = nil
@@ -269,7 +269,7 @@ module Solargraph
         found.select! do |loc|
           # @sg-ignore Need to add nil check here
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
-          # @sg-ignore should understand meaning of &.
+          # @sg-ignore need to improve handling of &.
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'

@@ -58,24 +58,28 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # Need to add nil check here
-      # @todo flow sensitive typing needs to handle ivars
+      # @todo 246: Need to add nil check here
+      # @todo 28: flow sensitive typing needs to handle ivars
       # @todo 21: Translate to something flow sensitive typing understands
       # @todo 9: Need to validate config
-      # @todo 8: Should better support meaning of '&' in RBS
       # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      #   https://github.com/castwide/solargraph/pull/1097
       # @todo 7: flow sensitive typing needs to handle inner closures
       # @todo 6: Need to support nested flow sensitive types
       # @todo 6: Should handle redefinition of types in simple contexts
-      # @todo 5: should understand meaning of &.
       # @todo 5: need boolish support for ? methods
-      # Need support for reduce_class_type in UniqueType
+      # @todo 5: need to improve handling of &.
+      # @todo 5: Need support for reduce_class_type in UniqueType
       # @todo 4: Need to handle implicit nil on else
+      # @todo 4: EASY: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars
+      # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: EASY: flow sensitive typing needs to handle "while foo"
-      # @todo 2: EASY: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 2: EASY: flow sensitive typing needs to handle && on both sides
+      # @todo 1: flow sensitive typing needs to handle if !foo
+      # @todo 1: need to improve nil-removal of ||
+      # @todo 1: flow sensitive typing needs to handle return if foo.nil? || bar
       # @todo 1: EASY: flow sensitive typing needs to handle 'raise if'
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred

@@ -258,11 +258,11 @@ module Solargraph
         # @type [Integer, nil]
         last = nil
         comments.each_pair do |num, snip|
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore need to improve nil-removal of ||
           if !last || num == last + 1
             buffer.concat "#{snip.text}\n"
           else
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore flow sensitive typing needs to handle if !foo
             result[first_not_empty_from(last + 1)] = buffer.clone
             buffer.replace "#{snip.text}\n"
           end

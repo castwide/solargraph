@@ -25,7 +25,7 @@ module Solargraph
             end
           end
           @type = type
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore flow sensitive typing needs to handle ivars
           @literal_type = ComplexType.try_parse(@value.inspect)
           @complex_type = ComplexType.try_parse(type)
         end

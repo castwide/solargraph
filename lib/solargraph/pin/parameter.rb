@@ -21,12 +21,12 @@ module Solargraph
         @decl = decl
       end
 
-      # @sg-ignore Should better support meaning of '&' in RBS
+      # @sg-ignore need to improve nil-removal of ||
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore Should better support meaning of '&' in RBS
+      # @sg-ignore need to improve nil-removal of ||
       def location
         super || closure&.type_location
       end
@@ -152,7 +152,7 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           # @sg-ignore Need to add nil check here
           if @return_type.undefined?
@@ -249,7 +249,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore Need to add nil check here
           return ComplexType.try_parse(*found.types).qualify(api_map, *meth.closure.gates) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
@@ -259,8 +259,8 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param skip [::Array]
       #
+      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       # @return [::Array<YARD::Tags::Tag>]
-      # @sg-ignore Translate to something flow sensitive typing understands
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|
           next unless ref.tag_name == 'param' && ref.owner

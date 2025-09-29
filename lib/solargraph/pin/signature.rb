@@ -20,17 +20,17 @@ module Solargraph
 
       attr_writer :closure
 
-      # @sg-ignore Should better support meaning of '&' in RBS
+      # @sg-ignore need boolish support for ? methods
       def dodgy_return_type_source?
         super || closure&.dodgy_return_type_source?
       end
 
-      # @sg-ignore Should better support meaning of '&' in RBS
+      # @sg-ignore need to improve nil-removal of ||
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore Should better support meaning of '&' in RBS
+      # @sg-ignore need to improve nil-removal of ||
       def location
         super || closure&.location
       end

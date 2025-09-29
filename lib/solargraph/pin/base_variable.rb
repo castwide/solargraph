@@ -122,7 +122,7 @@ module Solargraph
       end
 
       def type_desc
-        # @sg-ignore should understand meaning of &.
+        # @sg-ignore need to improve handling of &.
         "#{super} = #{assignment&.type.inspect}"
       end
 
