@@ -74,7 +74,7 @@ module Solargraph
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars
       # @todo 2: Should better support meaning of '&' in RBS
-      # @todo 2: EASY: flow sensitive typing needs to handle "while foo"
+      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: EASY: flow sensitive typing needs to handle && on both sides
       # @todo 1: flow sensitive typing needs to handle if !foo
       # @todo 1: need to improve nil-removal of ||

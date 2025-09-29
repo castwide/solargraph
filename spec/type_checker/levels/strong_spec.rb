@@ -600,6 +600,21 @@ describe Solargraph::TypeChecker do
       end
     end
 
+    it 'handles "while foo" flow sensitive typing correctly' do
+      checker = type_checker(%(
+        # @param a [String, nil]
+        # @return [void]
+        def foo a = nil
+          b = a
+          while b
+              b.upcase
+              b = nil if rand > 0.5
+          end
+        end
+        ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'accepts ivar assignments and references with no intermediate calls as safe' do
       pending('flow sensitive typing needs to handle ivars correctly')
 

@@ -159,6 +159,41 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # @param while_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_while(while_node, true_ranges = [], false_ranges = [])
+        return if while_node.type != :while
+
+        #
+        # See if we can refine a type based on the result of 'if foo.nil?'
+        #
+        # [3] pry(main)> Parser::CurrentRuby.parse("while a; b; c; end")
+        # => s(:while,
+        #   s(:send, nil, :a),
+        #   s(:begin,
+        #     s(:send, nil, :b),
+        #     s(:send, nil, :c)))
+        # [4] pry(main)>
+        conditional_node = while_node.children[0]
+        # @type [Parser::AST::Node, nil]
+        do_clause = while_node.children[1]
+
+        unless do_clause.nil?
+          #
+          # If the condition is true we can assume things about the do clause
+          #
+          before_do_clause_loc = do_clause.location.expression.adjust(begin_pos: -1)
+          before_do_clause_pos = Position.new(before_do_clause_loc.line, before_do_clause_loc.column)
+          true_ranges << Range.new(before_do_clause_pos,
+                                   get_node_end_position(do_clause))
+        end
+
+        process_expression(conditional_node, true_ranges, false_ranges)
+      end
+
       class << self
         include Logging
       end
