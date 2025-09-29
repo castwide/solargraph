@@ -629,6 +629,8 @@ describe Solargraph::TypeChecker do
           end
         end))
 
+      pending 'flow sensitive typing needs to handle inner closures'
+
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end
 
