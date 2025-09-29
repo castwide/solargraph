@@ -106,6 +106,7 @@ module Solargraph
       # @param directive [YARD::Tags::Directive]
       # @return [void]
       def process_directive source_position, comment_position, directive
+        # @sg-ignore Need to add nil check here
         docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
         location = Location.new(@filename, Range.new(comment_position, comment_position))
         case directive.tag.tag_name
@@ -192,6 +193,7 @@ module Solargraph
         when 'parse'
           begin
             ns = closure_at(source_position)
+            # @sg-ignore Need to add nil check here
             src = Solargraph::Source.load_string(directive.tag.text, @source.filename)
             region = Parser::Region.new(source: src, closure: ns)
             # @todo These pins may need to be marked not explicit
