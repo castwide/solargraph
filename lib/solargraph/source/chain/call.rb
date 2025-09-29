@@ -136,6 +136,7 @@ module Solargraph
                 end
                 # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
+                # @sg-ignore Should handle redefinition of types in simple contexts
                 new_return_type = new_signature_pin.return_type
                 if head?
                   # If we're at the head of the chain, we called a
@@ -293,7 +294,7 @@ module Solargraph
         def yield_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] unless method_pin
-          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
+          # @sg-ignore flow sensitive typing needs to handle inner closures
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)

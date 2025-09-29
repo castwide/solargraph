@@ -611,8 +611,25 @@ describe Solargraph::TypeChecker do
               b = nil if rand > 0.5
           end
         end
-        ))
+      ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does flow sensitive typing even inside a block' do
+      checker = type_checker(%(
+        class Quux
+          # @param foo [String, nil]
+          #
+          # @return [void]
+          def baz(foo)
+            bar = foo
+            [].each do
+              bar.upcase unless bar.nil?
+            end
+          end
+        end))
+
+      expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end
 
     it 'accepts ivar assignments and references with no intermediate calls as safe' do

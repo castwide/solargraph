@@ -122,7 +122,7 @@ module Solargraph
       end
 
       def type_desc
-        # @sg-ignore need to improve handling of &.
+        # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
         "#{super} = #{assignment&.type.inspect}"
       end
 

@@ -151,9 +151,7 @@ module Solargraph
               pin.docstring.add_tag(tag)
               redefine_return_type pin, tag
               if new_pin
-                # @sg-ignore flow sensitive typing needs to handle inner closures
                 new_pin.docstring.add_tag(tag)
-                # @sg-ignore need to do a downcast check on new_pi here
                 redefine_return_type new_pin, tag
               end
             end

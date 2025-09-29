@@ -152,7 +152,7 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
+          # @sg-ignore flow sensitive typing needs to handle ivars
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           # @sg-ignore Need to add nil check here
           if @return_type.undefined?
@@ -259,7 +259,6 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param skip [::Array]
       #
-      # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
         heredoc.ref_tags.each do |ref|

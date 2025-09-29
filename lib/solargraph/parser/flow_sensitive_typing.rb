@@ -222,18 +222,14 @@ module Solargraph
           logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_name} - no pins with specific visibility" }
           return pins_with_name
         end
-        visible_pins_specific_to_this_closure = pins_with_specific_visibility.select { |p| p.closure == closure }
-        if visible_pins_specific_to_this_closure.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility} - no visible pins specific to this closure (#{closure})}" }
-          return pins_with_specific_visibility
-        end
+
         flow_defined_pins = pins_with_specific_visibility.select { |p| p.presence_certain? }
         if flow_defined_pins.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{visible_pins_specific_to_this_closure} - no flow-defined pins" }
-          return visible_pins_specific_to_this_closure
+          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility} - no flow-defined pins" }
+          return pins_with_specific_visibility
         end
 
-        logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{flow_defined_pins}" }
+        logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility}" }
 
         flow_defined_pins
       end
@@ -286,7 +282,6 @@ module Solargraph
             nilp = fact.fetch(:nil, nil)
             not_nilp = fact.fetch(:not_nil, nil)
             presences.each do |presence|
-              # @sg-ignore flow sensitive typing needs to handle "unless foo.nil?"
               add_downcast_local(pin, downcast_type_name, presence) unless downcast_type_name.nil?
               add_downcast_local(pin, 'nil', presence) if nilp == true
               add_downcast_local(pin, :not_nil, presence) if not_nilp == true

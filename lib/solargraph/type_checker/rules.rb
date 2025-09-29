@@ -62,15 +62,14 @@ module Solargraph
       # @todo 28: flow sensitive typing needs to handle ivars
       # @todo 21: Translate to something flow sensitive typing understands
       # @todo 9: Need to validate config
-      # @todo 7: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 8: Should handle redefinition of types in simple contexts
+      # @todo 8: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       #   https://github.com/castwide/solargraph/pull/1097
       # @todo 7: flow sensitive typing needs to handle inner closures
       # @todo 6: Need to support nested flow sensitive types
-      # @todo 6: Should handle redefinition of types in simple contexts
       # @todo 5: need boolish support for ? methods
       # @todo 5: need to improve handling of &.
       # @todo 5: Need support for reduce_class_type in UniqueType
-      # @todo 4: EASY: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars
       # @todo 2: Should better support meaning of '&' in RBS
