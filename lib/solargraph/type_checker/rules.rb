@@ -70,7 +70,6 @@ module Solargraph
       # @todo 5: need boolish support for ? methods
       # @todo 5: need to improve handling of &.
       # @todo 5: Need support for reduce_class_type in UniqueType
-      # @todo 4: Need to handle implicit nil on else
       # @todo 4: EASY: flow sensitive typing needs to handle "unless foo.nil?"
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: EASY: flow sensitive typing needs better handling of ||= on lvars

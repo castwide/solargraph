@@ -1066,7 +1066,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'does not complain on defaulted reader with detailed expression' do
+    it 'does not complain on defaulted reader with un-elsed if' do
       checker = type_checker(%(
         class Foo
           # @return [Integer, nil]
@@ -1081,7 +1081,21 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      pending('Need to handle implicit nil on else')
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with with un-elsed unless' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              unless rand
+                123
+              end
+          end
+        end
+      ))
 
       expect(checker.problems.map(&:message)).to eq([])
     end

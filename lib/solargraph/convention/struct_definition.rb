@@ -105,7 +105,6 @@ module Solargraph
 
           private
 
-          # @sg-ignore Need to handle implicit nil on else
           # @return [StructDefinition::StructDefintionNode, StructDefinition::StructAssignmentNode, nil]
           def struct_definition_node
             @struct_definition_node ||= if StructDefintionNode.match?(node)

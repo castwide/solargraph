@@ -118,7 +118,17 @@ module Solargraph
           elsif n.type == :or
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename), NodeChainer.chain(n.children[1], @filename, n)])
           elsif n.type == :if
-            result.push Chain::If.new([NodeChainer.chain(n.children[1], @filename), NodeChainer.chain(n.children[2], @filename, n)])
+            then_clause = if n.children[1]
+                            NodeChainer.chain(n.children[1], @filename, n)
+                          else
+                            Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
+                          end
+            else_clause = if n.children[2]
+                            NodeChainer.chain(n.children[2], @filename, n)
+                          else
+                            Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
+                          end
+            result.push Chain::If.new([then_clause, else_clause])
           elsif [:begin, :kwbegin].include?(n.type)
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass

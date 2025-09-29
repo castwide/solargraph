@@ -136,7 +136,6 @@ module Solargraph
       @gem_rbs_collection ||= read_rbs_collection_path
     end
 
-    # @sg-ignore Need to handle implicit nil on else
     # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||= begin
