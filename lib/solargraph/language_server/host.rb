@@ -582,6 +582,10 @@ module Solargraph
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
         library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)
+      rescue FileNotFoundError, InvalidOffsetError => e
+        Solargraph.logger.warn "[#{e.class}] #{e.message}"
+        Solargraph.logger.debug e.backtrace
+        []
       end
 
       # @param query [String]
