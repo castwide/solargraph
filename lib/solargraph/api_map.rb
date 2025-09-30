@@ -240,13 +240,6 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
-    # An array of namespace names defined in the ApiMap.
-    #
-    # @return [Set<String>]
-    def namespaces
-      store.namespaces
-    end
-
     # True if the namespace exists.
     #
     # @param name [String] The namespace to match
