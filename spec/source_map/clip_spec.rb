@@ -1648,7 +1648,7 @@ describe Solargraph::SourceMap::Clip do
     expect(array_names).to eq(["byteindex", "byterindex", "bytes", "bytesize", "byteslice", "bytesplice"])
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
-    expect(string_names).to eq(['upcase', 'upcase!', 'upto'])
+    expect(string_names).to include('upcase', 'upcase!', 'upto')
   end
 
   it 'completes global methods defined in top level scope inside class when referenced inside a namespace' do

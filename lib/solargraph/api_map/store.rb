@@ -151,11 +151,6 @@ module Solargraph
         fqns_pins(fqns).any?
       end
 
-      # @return [Set<String>]
-      def namespaces
-        index.namespaces
-      end
-
       # @return [Enumerable<Solargraph::Pin::Namespace>]
       def namespace_pins
         pins_by_class(Solargraph::Pin::Namespace)

@@ -34,7 +34,6 @@ Gemspec/OrderedDependencies:
 # Configuration parameters: Severity.
 Gemspec/RequireMFA:
   Exclude:
-    - 'solargraph.gemspec'
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
 
@@ -201,7 +200,6 @@ Layout/MultilineMethodCallIndentation:
 # SupportedStyles: aligned, indented
 Layout/MultilineOperationIndentation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host/dispatch.rb'
     - 'lib/solargraph/source.rb'
 
@@ -433,12 +431,6 @@ Lint/UnusedMethodArgument:
   Enabled: false
 
 # This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: ContextCreatingMethods, MethodCreatingMethods.
-Lint/UselessAccessModifier:
-  Exclude:
-    - 'lib/solargraph/api_map.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
 Lint/UselessAssignment:
   Enabled: false
 
@@ -554,7 +546,6 @@ Naming/VariableName:
 RSpec/Be:
   Exclude:
     - 'spec/rbs_map/stdlib_map_spec.rb'
-    - 'spec/rbs_map_spec.rb'
     - 'spec/source/source_chainer_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -577,7 +568,6 @@ RSpec/BeforeAfterAll:
     - '**/spec/rails_helper.rb'
     - '**/spec/support/**/*.rb'
     - 'spec/api_map_spec.rb'
-    - 'spec/doc_map_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
 
@@ -664,14 +654,6 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: have_received, receive
-RSpec/MessageSpies:
-  Exclude:
-    - 'spec/doc_map_spec.rb'
-    - 'spec/language_server/host/diagnoser_spec.rb'
-    - 'spec/language_server/host/message_worker_spec.rb'
-
 RSpec/MissingExampleGroupArgument:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
@@ -731,10 +713,6 @@ RSpec/RepeatedExample:
 RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
-
-RSpec/StubbedMock:
-  Exclude:
-    - 'spec/language_server/host/message_worker_spec.rb'
 
 # Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
 RSpec/VerifiedDoubles:

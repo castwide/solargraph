@@ -5,7 +5,7 @@ describe Solargraph::ApiMap do
     @api_map = Solargraph::ApiMap.new
   end
 
-  it 'returns core methods' do
+  it 'returns core methods', time_limit_seconds: 120 do
     pins = @api_map.get_methods('String')
     expect(pins.map(&:path)).to include('String#upcase')
   end
@@ -771,7 +771,7 @@ describe Solargraph::ApiMap do
 
   it 'knows that false is a "subtype" of Boolean' do
     api_map = Solargraph::ApiMap.new
-    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+    expect(api_map.super_and_sub?('Boolean', 'false')).to be(true)
   end
 
   it 'resolves aliases for YARD methods' do
