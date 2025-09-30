@@ -179,6 +179,7 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    #
     # @return [ApiMap]
     def self.load directory
       api_map = new
@@ -214,6 +215,7 @@ module Solargraph
     #
     # @param directory [String]
     # @param out [IO] The output stream for messages
+    #
     # @return [ApiMap]
     def self.load_with_cache directory, out
       api_map = load(directory)
@@ -259,7 +261,7 @@ module Solargraph
     #
     # @param namespace [String] The namespace
     # @param contexts [Array<String>] The contexts
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Constant, Solargraph::Pin::Namespace>]
     def get_constants namespace, *contexts
       namespace ||= ''
       gates = contexts.clone
@@ -289,12 +291,21 @@ module Solargraph
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The fully qualified context in which
+    # @param gates [Array<String>] The fully qualified context in which
     #   the tag was referenced; start from here to resolve the name.
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
-    def qualify tag, context_tag = ''
-      store.constants.qualify(tag, context_tag)
+    def qualify tag, *gates
+      store.constants.qualify(tag, *gates)
+    end
+
+    # @see Store::Constants#resolve
+    #
+    # @param name [String]
+    # @param gates [Array<String, Array<String>>]
+    # @return [String, nil]
+    def resolve name, *gates
+      store.constants.resolve(name, *gates)
     end
 
     # Get a fully qualified namespace from a reference pin.
@@ -306,13 +317,13 @@ module Solargraph
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Extend>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Include>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end
@@ -499,7 +510,8 @@ module Solargraph
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param preserve_generics [Boolean]
+    # @param preserve_generics [Boolean] True to preserve any
+    #   unresolved generic parameters, false to erase them
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
@@ -849,12 +861,11 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
       original = nil
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
-        ancestor_fqns = ComplexType.try_parse(ancestor_fqns).force_rooted.namespace
         next if ancestor_fqns.nil?
         ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
 
