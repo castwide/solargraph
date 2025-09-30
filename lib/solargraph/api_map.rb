@@ -192,9 +192,10 @@ module Solargraph
     end
 
     # @param out [IO, nil]
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
-    def cache_all!(out)
-      @doc_map.cache_all!(out)
+    def cache_all!(out, rebuild: false)
+      @doc_map.cache_all!(out, rebuild: rebuild)
     end
 
     # @param gemspec [Gem::Specification]
