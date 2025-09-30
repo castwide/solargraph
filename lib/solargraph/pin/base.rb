@@ -353,8 +353,15 @@ module Solargraph
           # :nocov:
         end
         # arbitrary way of choosing a pin
-        # @sg-ignore Need _1 support
-        [val1, val2].compact.min_by { _1.best_location.to_s }
+        [val1, val2].compact.max_by do |closure|
+          [
+            # maximize number of gates, as types in other combined pins may
+            # depend on those gates
+            closure.gates.length,
+            # use basename so that results don't vary system to system
+            File.basename(closure.best_location.to_s)
+          ]
+        end
       end
 
       # @return [void]
