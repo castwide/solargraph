@@ -34,7 +34,6 @@ Gemspec/OrderedDependencies:
 # Configuration parameters: Severity.
 Gemspec/RequireMFA:
   Exclude:
-    - 'solargraph.gemspec'
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
 
@@ -81,6 +80,7 @@ Layout/ElseAlignment:
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, DefLikeMacros, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
+    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/pin/delegated_method.rb'
 
@@ -334,7 +334,6 @@ Lint/EmptyClass:
 # Configuration parameters: AllowComments.
 Lint/EmptyFile:
   Exclude:
-    - 'lib/solargraph/foo.rb'
     - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -1104,6 +1103,7 @@ Style/RedundantRegexpEscape:
 Style/RedundantReturn:
   Exclude:
     - 'lib/solargraph/complex_type/type_methods.rb'
+    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
 
@@ -1131,14 +1131,11 @@ Style/RescueStandardError:
 # AllowedMethods: present?, blank?, presence, try, try!
 Style/SafeNavigation:
   Enabled: false
-<<<<<<< HEAD
-=======
 
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
     - 'lib/solargraph/doc_map.rb'
->>>>>>> origin/master
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
@@ -1239,15 +1236,11 @@ Style/YAMLFileRead:
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/ZeroLengthPredicate:
-<<<<<<< HEAD
-  Enabled: false
-=======
   Exclude:
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/source/chain/array.rb'
     - 'spec/language_server/protocol_spec.rb'
->>>>>>> origin/master
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.

@@ -603,7 +603,6 @@ module Solargraph
           report_cache_progress spec.name, pending
           kwargs = {}
           kwargs[:chdir] = workspace.directory.to_s if workspace.directory && !workspace.directory.empty?
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1005
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s,
                                     **kwargs)
           if s.success?

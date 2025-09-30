@@ -28,7 +28,6 @@ module Solargraph
         return
       end
 
-      # @sg-ignore
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       return if status.success?
       Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
