@@ -302,6 +302,23 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers method types from return nodes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def foo
+          bar
+        end
+      end
+      Foo.new.foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    type = clip.infer
+    expect(type.tag).to eq('Foo')
+  end
+
   it 'infers multiple method types from return nodes' do
     source = Solargraph::Source.load_string(%(
       def foo

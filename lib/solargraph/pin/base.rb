@@ -189,6 +189,10 @@ module Solargraph
           other.return_type
         elsif other.return_type.undefined?
           return_type
+        elsif return_type.erased_version_of?(other.return_type)
+          other.return_type
+        elsif other.return_type.erased_version_of?(return_type)
+          return_type
         elsif dodgy_return_type_source? && !other.dodgy_return_type_source?
           other.return_type
         elsif other.dodgy_return_type_source? && !dodgy_return_type_source?
@@ -305,10 +309,13 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
-        return false if other.nil?
+        if other.nil?
+          Solargraph.assert_or_log("combine_with_#{attr}_nil".to_sym,
+                                   "Other was passed in nil in assert_same on #{self}")
+          return send(attr)
+        end
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2

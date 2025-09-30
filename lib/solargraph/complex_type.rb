@@ -9,6 +9,7 @@ module Solargraph
     #   include TypeMethods
     include Equality
 
+    autoload :Conformance, 'solargraph/complex_type/conformance'
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
@@ -19,13 +20,12 @@ module Solargraph
       items = types.flat_map(&:items).uniq(&:to_s)
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
-        items.unshift(ComplexType::BOOLEAN)
+        items.unshift(UniqueType::BOOLEAN)
       end
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       @items = items
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [self.class, items]
     end
@@ -76,9 +76,13 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
+    # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    def map &block
-      @items.map &block
+    # @sg-ignore Declared return type
+    #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
+    #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
+    def map(&block)
+      @items.map(&block)
     end
 
     # @yieldparam [UniqueType]
@@ -97,12 +101,6 @@ module Solargraph
       @items.each do |item|
         item.each_unique_type &block
       end
-    end
-
-    # @param atype [ComplexType] type which may be assigned to this type
-    # @param api_map [ApiMap] The ApiMap that performs qualification
-    def can_assign?(api_map, atype)
-      any? { |ut| ut.can_assign?(api_map, atype) }
     end
 
     # @return [Integer]
@@ -177,6 +175,59 @@ module Solargraph
     # @return [String]
     def desc
       rooted_tags
+    end
+
+    # @param api_map [ApiMap]
+    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param situation [:method_call, :return_type, :assignment]
+    # @param allow_subtype_skew [Boolean] if false, check if any
+    #   subtypes of the expected type match the inferred type
+    # @param allow_reverse_match [Boolean] if true, check if any subtypes
+    #   of the expected type match the inferred type
+    # @param allow_empty_params [Boolean] if true, allow a general
+    #   inferred type without parameters to conform to a more specific
+    #   expected type
+    # @param allow_any_match [Boolean] if true, any unique type
+    #   matched in the inferred qualifies as a match
+    # @param allow_undefined [Boolean] if true, treat undefined as a
+    #   wildcard that matches anything
+    # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    # @param variance [:invariant, :covariant, :contravariant]
+    # @return [Boolean]
+    def conforms_to?(api_map, expected,
+                     situation,
+                     rules = [],
+                     variance: erased_variance(situation))
+      expected = expected.downcast_to_literal_if_possible
+      inferred = downcast_to_literal_if_possible
+
+      return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+
+      if rules.include? :allow_any_match
+        inferred.any? do |inf|
+          inf.conforms_to?(api_map, expected, situation, rules,
+                           variance: variance)
+        end
+      else
+        inferred.all? do |inf|
+          inf.conforms_to?(api_map, expected, situation, rules,
+                           variance: variance)
+        end
+      end
+    end
+
+    # @param api_map [ApiMap]
+    # @param expected [ComplexType]
+    # @param inferred [ComplexType]
+    # @return [Boolean]
+    def duck_types_match? api_map, expected, inferred
+      raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
+      expected.each do |exp|
+        next unless exp.duck_type?
+        quack = exp.to_s[1..]
+        return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
+      end
+      true
     end
 
     # @return [String]
@@ -257,6 +308,13 @@ module Solargraph
     # fully qualified
     def all_rooted?
       all?(&:all_rooted?)
+    end
+
+    # @param other [ComplexType, UniqueType]
+    def erased_version_of?(other)
+      return false if items.length != 1 || other.items.length != 1
+
+      @items.first.erased_version_of?(other.items.first)
     end
 
     # every top-level type has resolved to be fully qualified; see

@@ -34,13 +34,13 @@ module Solargraph
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
+        # @type [Set<generic<T>>]
         s = Set.new
         # @sg-ignore need to support destructured args in blocks
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
@@ -50,17 +50,17 @@ module Solargraph
         @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
@@ -115,7 +115,7 @@ module Solargraph
       end
 
       # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @param hash [Hash{String => Array<String>}]
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|

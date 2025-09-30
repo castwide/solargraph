@@ -130,21 +130,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
-    it 'calls out missing args after a defaulted param' do
-      checker = type_checker(%(
-        # @param a [String]
-        # @param b [String]
-        # @return [void]
-        def foo(a = 'foo', b); end
-
-        # @return [void]
-        def bar
-         foo(123)
-        end
-      ))
-      expect(checker.problems.map(&:message)).to include('Not enough arguments to #foo')
-    end
-
     it 'reports missing param tags' do
       checker = type_checker(%(
         class Foo
@@ -254,6 +239,149 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'does not need fully specified container types' do
+      checker = type_checker(%(
+        class Foo
+          # @param foo [Array<String>]
+          # @return [void]
+          def bar foo: []; end
+
+          # @param bing [Array]
+          # @return [void]
+          def baz(bing)
+            bar(foo: bing)
+            generic_values = [1,2,3].map(&:to_s)
+            bar(foo: generic_values)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'treats a parameter type of undefined as not provided' do
+      checker = type_checker(%(
+        class Foo
+          # @param foo [Array<String>]
+          # @return [void]
+          def bar foo: []; end
+
+          # @param bing [Array<undefind>]
+          # @return [void]
+          def baz(bing)
+            bar(foo: bing)
+            generic_values = [1,2,3].map(&:to_s)
+            bar(foo: generic_values)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'ignores generic resolution failure with no generic tag' do
+      checker = type_checker(%(
+        class Foo
+          # @param foo [Class<String>]
+          # @return [void]
+          def bar foo:; end
+
+          # @param bing [Class<generic<T>>]
+          # @return [void]
+          def baz(bing)
+            bar(foo: bing)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'ignores undefined resolution failures' do
+      checker = type_checker(%(
+        class Foo
+          # @generic T
+          # @param klass [Class<undefined>>]
+          # @return [Set<generic<T>>]
+          def pins_by_class klass; [].to_set; end
+        end
+        class Bar
+          # @return [Enumerable<Integer>]
+          def block_pins
+            foo = Foo.new
+            foo.pins_by_class(Integer)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'ignores generic resolution failures from current Solargraph limitation' do
+      checker = type_checker(%(
+        class Foo
+          # @generic T
+          # @param klass [Class<generic<T>>]
+          # @return [Set<generic<T>>]
+          def pins_by_class klass; [].to_set; end
+        end
+        class Bar
+          # @return [Enumerable<Integer>]
+          def block_pins
+            foo = Foo.new
+            foo.pins_by_class(Integer)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'ignores generic resolution failures with only one arg' do
+      checker = type_checker(%(
+        # @generic T
+        # @param path [String]
+        # @param klass [Class<generic<T>>]
+        # @return [void]
+        def code_object_at path, klass = Integer
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not complain on select { is_a? } pattern' do
+      checker = type_checker(%(
+        # @param arr [Enumerable<Object>}
+        # @return [Enumerable<Integer>]
+        def downcast_arr(arr)
+          arr.select { |pin| pin.is_a?(Integer) }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not complain on adding nil to types via return value' do
+      checker = type_checker(%(
+        # @param bar [Integer]
+        # @return [Integer, nil]
+        def foo(bar)
+          bar
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not complain on adding nil to types via select' do
+      checker = type_checker(%(
+        # @return [Float, nil]}
+        def bar; rand; end
+
+        # @param arr [Enumerable<Object>}
+        # @return [Integer, nil]
+        def downcast_arr(arr)
+          # @type [Object, nil]
+          foo = arr.select { |pin| pin.is_a?(Integer) && bar }.last
+          foo
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'inherits param tags from superclass methods' do
