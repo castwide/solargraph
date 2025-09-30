@@ -76,7 +76,7 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def data_node
           node.children[1]
         end
