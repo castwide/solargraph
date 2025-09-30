@@ -11,4 +11,9 @@ describe Solargraph::GemPins do
     expect(core_root.return_type.to_s).to eq('Pathname, nil')
     expect(core_root.location.filename).to end_with('environment_loader.rb')
   end
+
+  it 'does not error out when handed incorrect gemspec' do
+    gemspec = instance_double(Gem::Specification, name: 'foo', version: '1.0', gem_dir: '/not-there')
+    expect { Solargraph::GemPins.build_yard_pins([], gemspec) }.not_to raise_error
+  end
 end
