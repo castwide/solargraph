@@ -109,7 +109,6 @@ module Solargraph
 
       if recreate_docmap
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace, out: nil) # @todo Implement gem preferences
-        @gemspecs = @doc_map.workspace.gemspecs
         @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
