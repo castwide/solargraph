@@ -15,9 +15,6 @@ module Solargraph
         @pins ||= []
       end
 
-      # @return [Set<String>]
-      attr_reader :namespaces
-
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
@@ -95,6 +92,7 @@ module Solargraph
       end
 
       # @param new_pins [Enumerable<Pin::Base>]
+      #
       # @return [self]
       def catalog new_pins
         # @type [Hash{Class<generic<T>> => Set<generic<T>>}]
@@ -112,7 +110,6 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
-        map_include_pins
         map_overrides
         self
       end
@@ -122,34 +119,8 @@ module Solargraph
       # @return [void]
       def map_references klass, hash
         pins_by_class(klass).each do |pin|
-          store_parametric_reference(hash, pin)
+          hash[pin.namespace].push pin
         end
-      end
-
-      # @return [void]
-      def map_include_pins
-        pins_by_class(Solargraph::Pin::Reference::Include).each do |pin|
-          include_reference_pins[pin.namespace].push pin
-        end
-      end
-
-      # Add references to a map
-      #
-      # @param hash [Hash{String => Array<Pin::Reference>}]
-      # @param reference_pin [Pin::Reference]
-      #
-      # @return [void]
-      def store_parametric_reference(hash, reference_pin)
-        referenced_ns = reference_pin.name
-        referenced_tag_params = reference_pin.generic_values
-        referenced_tag = referenced_ns +
-                         if referenced_tag_params && referenced_tag_params.length > 0
-                           "<" + referenced_tag_params.join(', ') + ">"
-                         else
-                           ''
-                         end
-        referencing_ns = reference_pin.namespace
-        hash[referencing_ns].push referenced_tag
       end
 
       # @return [void]

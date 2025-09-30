@@ -137,7 +137,7 @@ module Solargraph
                 #
                 # qualify(), however, happens in the namespace where
                 # the docs were written - from the method pin.
-                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, p.namespace) if new_return_type.defined?
+                type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -267,7 +267,7 @@ module Solargraph
           return [] unless method_pin
 
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
-            return_type = signature_pin.return_type.qualify(api_map, name_pin.namespace)
+            return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
           end
         end
