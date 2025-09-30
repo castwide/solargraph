@@ -15,9 +15,6 @@ module Solargraph
         @pins ||= []
       end
 
-      # @return [Set<String>]
-      attr_reader :namespaces
-
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
@@ -95,6 +92,7 @@ module Solargraph
       end
 
       # @param new_pins [Enumerable<Pin::Base>]
+      #
       # @return [self]
       def catalog new_pins
         # @type [Hash{Class<generic<T>> => Set<generic<T>>}]

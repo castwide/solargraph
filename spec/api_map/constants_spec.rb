@@ -20,6 +20,42 @@ describe Solargraph::ApiMap::Constants do
       expect(resolved).to eq('Foo::Bar')
     end
 
+    it 'resolves straightforward mixins' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        module Bar
+          Baz = 'baz'
+        end
+
+        class Foo
+          include Bar
+        end
+      ), 'test.rb')
+
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = described_class.new(store)
+      pin = source_map.first_pin('Foo')
+      resolved = constants.resolve('Baz', pin.gates)
+      expect(resolved).to eq('Bar::Baz')
+    end
+
+    it 'resolves mixin living under same namespace' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        class Foo
+          module Bar
+            Baz = 'baz'
+          end
+
+          include Bar
+        end
+      ), 'test.rb')
+
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = described_class.new(store)
+      pin = source_map.first_pin('Foo')
+      resolved = constants.resolve('Baz', pin.gates)
+      expect(resolved).to eq('Foo::Bar::Baz')
+    end
+
     it 'returns namespaces for nested namespaces' do
       source_map = Solargraph::SourceMap.load_string(%(
         module Foo
