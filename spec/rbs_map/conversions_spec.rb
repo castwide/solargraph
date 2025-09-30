@@ -63,8 +63,6 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :class).first }
-
       it { is_expected.not_to be_nil }
 
       it { is_expected.to be_instance_of(Solargraph::Pin::Method) }
@@ -151,7 +149,6 @@ describe Solargraph::RbsMap::Conversions do
   if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('3.9.1')
     context 'with method pin for Open3.capture2e' do
       it 'accepts chdir kwarg' do
-        pending('https://github.com/castwide/solargraph/pull/1005')
         api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
 
         method_pin = api_map.pins.find do |pin|
