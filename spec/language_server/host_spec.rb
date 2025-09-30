@@ -239,9 +239,10 @@ describe Solargraph::LanguageServer::Host do
     end
 
     it 'logs FileNotFound errors' do
-      expect(Solargraph.logger).to receive(:warn).with(/FileNotFoundError/)
+      allow(Solargraph.logger).to receive(:warn)
       host = Solargraph::LanguageServer::Host.new
       host.references_from('file:///not_a_file.rb', 1, 1)
+      expect(Solargraph.logger).to have_received(:warn).with(/FileNotFoundError/)
     end
 
     it 'rescues InvalidOffset errors' do
@@ -251,10 +252,11 @@ describe Solargraph::LanguageServer::Host do
     end
 
     it 'logs InvalidOffset errors' do
-      expect(Solargraph.logger).to receive(:warn).with(/InvalidOffsetError/)
+      allow(Solargraph.logger).to receive(:warn)
       host = Solargraph::LanguageServer::Host.new
       host.open('file:///file.rb', 'class Foo; end', 1)
       host.references_from('file:///file.rb', 0, 100)
+      expect(Solargraph.logger).to have_received(:warn).with(/InvalidOffsetError/)
     end
   end
 
