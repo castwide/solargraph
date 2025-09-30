@@ -38,7 +38,6 @@ module Solargraph
         return nil if require.empty?
         return gemspecs_required_from_bundler if require == 'bundler/require'
 
-        # @sg-ignore Variable type could not be inferred for gemspec
         # @type [Gem::Specification, nil]
         gemspec = Gem::Specification.find_by_path(require)
         if gemspec.nil?
@@ -50,7 +49,6 @@ module Solargraph
             # See if we can make a good guess:
             potential_gemspec = Gem::Specification.find_by_name(gem_name_guess)
             file = "lib/#{require}.rb"
-            # @sg-ignore Unresolved call to files
             gemspec = potential_gemspec if potential_gemspec.files.any? { |gemspec_file| file == gemspec_file }
           rescue Gem::MissingSpecError
             logger.debug do
@@ -161,7 +159,6 @@ module Solargraph
             'puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }' \
             '.to_h.to_json }'
           ]
-          # @sg-ignore Unresolved call to capture3 on Module<Open3>
           o, e, s = Open3.capture3(*cmd)
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
