@@ -172,8 +172,12 @@ module Solargraph
     # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
+      logger.debug { "ApiMap#clip_at(filename=#{filename}, position=#{position}) - start" }
+
       position = Position.normalize(position)
-      clip(cursor_at(filename, position))
+      out = clip(cursor_at(filename, position))
+      logger.debug { "ApiMap#clip_at(filename=#{filename}, position=#{position}) => #{out}" }
+      out
     end
 
     # Create an ApiMap with a workspace in the specified directory.
@@ -263,6 +267,7 @@ module Solargraph
     # @param contexts [Array<String>] The contexts
     # @return [Array<Solargraph::Pin::Constant, Solargraph::Pin::Namespace>]
     def get_constants namespace, *contexts
+      logger.debug { "ApiMap#get_constants(namespace=#{namespace.inspect}, contexts=#{contexts.inspect})" }
       namespace ||= ''
       gates = contexts.clone
       gates.push '' if contexts.empty? && namespace.empty?
@@ -357,7 +362,9 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @return [Enumerable<Solargraph::Pin::ClassVariable>]
     def get_class_variable_pins(namespace)
-      prefer_non_nil_variables(store.get_class_variables(namespace))
+      out = prefer_non_nil_variables(store.get_class_variables(namespace))
+      logger.debug { "ApiMap#get_class_variable_pins(namespace=#{namespace.inspect}) => #{out}" }
+      out
     end
 
     # @return [Enumerable<Solargraph::Pin::Base>]

@@ -29,7 +29,9 @@ module Solargraph
                  else
                    ComplexType::UniqueType.new('Array', [], child_types, rooted: true, parameters_type: :fixed)
                  end
-          [Pin::ProxyType.anonymous(type, source: :chain)]
+          out = [Pin::ProxyType.anonymous(type, source: :chain)]
+          logger.debug { "Array#resolve(self=#{self}) => #{out}" }
+          out
         end
       end
     end

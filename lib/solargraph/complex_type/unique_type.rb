@@ -410,7 +410,7 @@ module Solargraph
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, *gates
-        transform do |t|
+        out = transform do |t|
           next t if t.name == GENERIC_TAG_NAME
           next t if t.duck_type? || t.void? || t.undefined? || t.literal?
           open = t.rooted? ? [''] : gates
@@ -421,6 +421,8 @@ module Solargraph
           end
           t.recreate(new_name: fqns, make_rooted: true)
         end
+        logger.debug { "UniqueType#qualify(self=#{rooted_tags.inspect}, gates=#{gates}) => #{out.rooted_tags.inspect}" }
+        out
       end
 
       def selfy?
@@ -468,7 +470,6 @@ module Solargraph
         '::FalseClass' => UniqueType::FALSE,
         '::NilClass' => UniqueType::NIL
       }.freeze
-
 
       include Logging
     end
