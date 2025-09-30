@@ -91,13 +91,6 @@ Layout/EmptyLines:
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Exclude:
-    - 'lib/solargraph/rbs_map/core_map.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
 # SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines
 Layout/EmptyLinesAroundModuleBody:
   Exclude:
@@ -285,7 +278,6 @@ Layout/TrailingWhitespace:
 # Configuration parameters: AllowedMethods, AllowedPatterns.
 Lint/AmbiguousBlockAssociation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -1108,7 +1100,6 @@ Style/RedundantFreeze:
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/RedundantInterpolation:
   Exclude:
-    - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/source_map/mapper.rb'
 
@@ -1133,7 +1124,6 @@ Style/RedundantRegexpEscape:
 # Configuration parameters: AllowMultipleReturnValues.
 Style/RedundantReturn:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/complex_type/type_methods.rb'
     - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
@@ -1268,7 +1258,11 @@ Style/YAMLFileRead:
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/ZeroLengthPredicate:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/language_server/host.rb'
+    - 'lib/solargraph/pin/method.rb'
+    - 'lib/solargraph/source/chain/array.rb'
+    - 'spec/language_server/protocol_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
@@ -1285,8 +1279,10 @@ YARD/MismatchName:
 
 YARD/TagTypeSyntax:
   Exclude:
+    - 'lib/solargraph/api_map/constants.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).

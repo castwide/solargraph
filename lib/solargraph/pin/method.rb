@@ -17,7 +17,7 @@ module Solargraph
 
       # @param visibility [::Symbol] :public, :protected, or :private
       # @param explicit [Boolean]
-      # @param block [Pin::Signature, nil, ::Symbol]
+      # @param block [Pin::Signature, nil, :undefined]
       # @param node [Parser::AST::Node, nil]
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
@@ -298,7 +298,7 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          qualified = type.qualify(api_map, namespace)
+          qualified = type.qualify(api_map, *closure.gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -556,7 +556,7 @@ module Solargraph
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, namespace)
+          fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
           path = fqns + ref[parts.first.length] + parts.last
         end
