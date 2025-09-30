@@ -421,7 +421,7 @@ module Solargraph
           end
           t.recreate(new_name: fqns, make_rooted: true)
         end
-        logger.debug { "UniqueType#qualify(self=#{rooted_tags.inspect}, context=#{context}) => #{out.rooted_tags.inspect}" }
+        logger.debug { "UniqueType#qualify(self=#{rooted_tags.inspect}, gates=#{gates}) => #{out.rooted_tags.inspect}" }
         out
       end
 

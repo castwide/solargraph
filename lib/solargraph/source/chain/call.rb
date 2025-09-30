@@ -109,7 +109,13 @@ module Solargraph
             atypes = []
             sorted_overloads.each do |ol|
               unless ol.arity_matches?(arguments, with_block?)
-                logger.debug { "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, name_pin.binder=#{name_pin.binder}) - rejecting #{ol} because arity did not match - arguments=#{arguments} vs parameters=#{ol.parameters}, with_block?=#{with_block?} vs ol.block=#{ol.block}" }
+                logger.debug {
+                  "Call#inferred_pins(word=#{word}, name_pin=#{name_pin}, " \
+                    "name_pin.binder=#{name_pin.binder}) - " \
+                    "rejecting #{ol} because arity did not match - " \
+                    "arguments=#{arguments} vs parameters=#{ol.parameters}, with_block?=#{with_block?} " \
+                    "vs ol.block=#{ol.block}"
+                }
                 next
               end
               match = true
@@ -135,7 +141,9 @@ module Solargraph
               if match
                 if ol.block && with_block?
                   block_atypes = ol.block.parameters.map(&:return_type)
-                  logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - ol.block.parameters=#{ol.block.parameters}, block_atypes=#{block_atypes.map(&:desc)}" }
+                  logger.debug {
+ "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, atypes=#{atypes.map(&:rooted_tags)}, name_pin=#{name_pin}) - ol.block.parameters=#{ol.block.parameters}, block_atypes=#{block_atypes.map(&:desc)}"
+                  }
                   if block.links.map(&:class) == [BlockSymbol]
                     # like the bar in foo(&:bar)
                     blocktype = block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)

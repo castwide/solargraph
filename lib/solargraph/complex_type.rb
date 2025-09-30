@@ -41,7 +41,7 @@ module Solargraph
         t.qualify api_map, *gates
       end
       out = ComplexType.new(types).reduce_object
-      logger.debug { "ComplexType#qualify(self=#{rooted_tags}, context=#{context.inspect}) => #{out.rooted_tags}" }
+      logger.debug { "ComplexType#qualify(self=#{rooted_tags}, gates=#{gates.inspect}) => #{out.rooted_tags}" }
       out
     end
 
