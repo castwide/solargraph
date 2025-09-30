@@ -34,7 +34,6 @@ Gemspec/OrderedDependencies:
 # Configuration parameters: Severity.
 Gemspec/RequireMFA:
   Exclude:
-    - 'solargraph.gemspec'
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
 
@@ -1269,6 +1268,7 @@ YARD/TagTypeSyntax:
   Exclude:
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
