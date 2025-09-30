@@ -116,14 +116,14 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type).to be_undefined
   end
 
-  it 'will not merge with changes in parameters' do
+  it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = Solargraph::Pin::Method.new(name: 'bar', parameters: %w[one two])
     pin2 = Solargraph::Pin::Method.new(name: 'bar', parameters: ['three'])
     expect(pin1.nearly?(pin2)).to be(false)
   end
 
-  it 'will not merge with changes in YARD return types' do
+  it 'does not merge with changes in YARD return types' do
     pin1 = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [String]')
     pin2 = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [Integer]')
     expect(pin1.nearly?(pin2)).to be(false)
@@ -485,8 +485,8 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Example#bar').first
     pin.resolve_ref_tag(api_map)
-    expect(pin.docstring.tags(:param).map(&:name)).to eq(['param1', 'param2'])
-    expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
+    expect(pin.docstring.tags(:param).map(&:name)).to eq(%w[param1 param2])
+    expect(pin.docstring.tags(:param).map(&:type)).to eq(%w[String Integer])
   end
 
   it 'resolves ref tags with namespaces' do
@@ -508,8 +508,8 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Example2#bar').first
     pin.resolve_ref_tag(api_map)
-    expect(pin.docstring.tags(:param).map(&:name)).to eq(['param1', 'param2'])
-    expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
+    expect(pin.docstring.tags(:param).map(&:name)).to eq(%w[param1 param2])
+    expect(pin.docstring.tags(:param).map(&:type)).to eq(%w[String Integer])
   end
 
   context 'as attribute' do

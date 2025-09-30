@@ -16,7 +16,7 @@ module Solargraph
               scope: scope,
               visibility: scope == :instance && name == 'initialize' ? :private : region.visibility,
               node: node,
-              source: :parser,
+              source: :parser
             )
             if region.visibility == :module_function
               pins.push Solargraph::Pin::Method.new(
@@ -28,7 +28,7 @@ module Solargraph
                 visibility: :public,
                 parameters: methpin.parameters,
                 node: methpin.node,
-                source: :parser,
+                source: :parser
               )
               pins.push Solargraph::Pin::Method.new(
                 location: methpin.location,
@@ -39,7 +39,7 @@ module Solargraph
                 visibility: :private,
                 parameters: methpin.parameters,
                 node: methpin.node,
-                source: :parser,
+                source: :parser
               )
             else
               pins.push methpin

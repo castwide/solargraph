@@ -16,11 +16,7 @@ module Solargraph
     # @type [Hash{String => RbsMap}]
     @@rbs_maps_hash = {}
 
-    attr_reader :library
-
-    attr_reader :rbs_collection_paths
-
-    attr_reader :rbs_collection_config_path
+    attr_reader :library, :rbs_collection_paths, :rbs_collection_config_path
 
     # @param library [String]
     # @param version [String, nil]
@@ -146,13 +142,13 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version
       @resolved = if loader.has_library?(library: library, version: version)
-        loader.add library: library, version: version
-        logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
-        true
-      else
-        logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
-        false
-      end
+                    loader.add library: library, version: version
+                    logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
+                    true
+                  else
+                    logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
+                    false
+                  end
     end
 
     # @return [String]
