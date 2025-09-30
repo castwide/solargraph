@@ -9,7 +9,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
       foo = Foo.new
     ), 1)
-    sleep 0.01
+    sleep 0.01 until host.libraries.all?(&:mapped?)
     rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
       'id' => 1,
       'method' => 'textDocument/rename',
