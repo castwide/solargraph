@@ -37,6 +37,7 @@ module Solargraph
           def other_class_eval?
             node.children[0].type == :send &&
               node.children[0].children[1] == :class_eval &&
+              # @sg-ignore Need to add nil check here
               [:cbase, :const].include?(node.children[0].children[0]&.type)
           end
         end

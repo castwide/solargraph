@@ -145,6 +145,7 @@ module Solargraph
 
     # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def rbs_collection_pins_in_memory
+      # @sg-ignore Need to add nil check here
       self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
     end
 

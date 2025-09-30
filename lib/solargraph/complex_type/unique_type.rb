@@ -47,6 +47,7 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
+          # @sg-ignore Need to add nil check here
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
@@ -137,6 +138,7 @@ module Solargraph
         return 'NilClass' if name == 'nil'
         return 'Boolean' if ['true', 'false'].include?(name)
         return 'Symbol' if name[0] == ':'
+        # @sg-ignore Need to add nil check here
         return 'String' if ['"', "'"].include?(name[0])
         return 'Integer' if name.match?(/^-?\d+$/)
         name
@@ -338,6 +340,7 @@ module Solargraph
           return self unless type_param && generics_to_resolve.include?(type_param)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
+            # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
             resolved_generic_values[type_param] = context_type
           end
           if new_binding
@@ -406,6 +409,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
+              # @sg-ignore Translate to something flow sensitive typing understands
               context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else

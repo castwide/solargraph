@@ -18,6 +18,7 @@ module Solargraph
       # @sg-ignore need to improve handling of &.
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
+        # @sg-ignore Need to add nil check here
         super(name: name, **splat)
 
         @receiver_chain = receiver
@@ -52,7 +53,6 @@ module Solargraph
       %i[typify realize infer probe].each do |method|
         # @param api_map [ApiMap]
         define_method(method) do |api_map|
-          # @sg-ignore Unresolved call to resolve_method
           resolve_method(api_map)
           # @sg-ignore Need to set context correctly in define_method blocks
           @resolved_method ? @resolved_method.send(method, api_map) : super(api_map)

@@ -51,6 +51,7 @@ module Solargraph
         # @type [String, nil]
         data = nil
         if rbs_collection_config_path
+          # @sg-ignore flow sensitive typing needs to handle ivars
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
           if lockfile_path.exist?
             collection_config = RBS::Collection::Config.from_path lockfile_path
@@ -67,6 +68,7 @@ module Solargraph
             'unresolved'
           end
         else
+          # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
           Digest::SHA1.hexdigest(data)
         end
       end

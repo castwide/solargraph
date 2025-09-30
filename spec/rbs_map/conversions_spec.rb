@@ -63,8 +63,6 @@ describe Solargraph::RbsMap::Conversions do
         RBS
       end
 
-      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :class).first }
-
       it { is_expected.not_to be_nil }
 
       it { is_expected.to be_instance_of(Solargraph::Pin::Method) }

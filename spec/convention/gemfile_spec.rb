@@ -33,7 +33,6 @@ describe Solargraph::Convention::Gemfile do
         instance_eval File.read local_gemfile if File.exist? local_gemfile
       ))
 
-      pending('should warn on source')
       expect(checker.problems.map(&:message).sort)
         .to eq(['Unrecognized keyword argument bad_name to Bundler::Dsl#gemspec',
                 'Wrong argument type for Bundler::Dsl#source: source expected String, received Class<File>'].sort)

@@ -204,9 +204,11 @@ module Solargraph
           return_type
         else
           all_items = return_type.items + other.return_type.items
-          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.rooted_tag }
+          # @sg-ignore Need support for reduce_class_type in UniqueType
+          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
             # assume this was a declaration that should have said 'self'
-            all_items.delete_if { |item| item.rooted_tag == context.rooted_tag }
+            # @sg-ignore Need support for reduce_class_type in UniqueType
+            all_items.delete_if { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
           end
           ComplexType.new(all_items)
         end
@@ -609,8 +611,8 @@ module Solargraph
       # Example: Given the name 'Bar' and the gates ['Foo', ''],
       # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
       #
+      # @sg-ignore Need to look at infer handling of recursive methods
       # @return [Array<String>]
-      # @sg-ignore Solargraph::Pin::Base#gates return type could not be inferred
       def gates
         @gates ||= closure&.gates || ['']
       end

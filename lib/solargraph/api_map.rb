@@ -154,6 +154,7 @@ module Solargraph
     # @param name [String, nil]
     # @return [YARD::Tags::MacroDirective, nil]
     def named_macro name
+      # @sg-ignore Need to add nil check here
       store.named_macros[name]
     end
 

@@ -62,6 +62,7 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
       def qualify name, *gates
+        # @sg-ignore Need to look at Tuple#include? handling
         return name if ['Boolean', 'self', nil].include?(name)
 
         gates.push '' unless gates.include?('')
@@ -244,6 +245,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def inner_get_constants fqns, visibility, skip
         return [] if fqns.nil? || skip.include?(fqns)
+        # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
         skip.add fqns
         result = []
 
@@ -261,6 +263,7 @@ module Solargraph
         sc_ref = store.get_superclass(fqns)
         if sc_ref
           fqsc = dereference(sc_ref)
+          # @sg-ignore Need to add nil check here
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end
         result

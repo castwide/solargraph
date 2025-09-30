@@ -35,6 +35,7 @@ module Solargraph
           # but Foo does not exist.
           parts = name.split('::')
           name = parts.pop
+          # @sg-ignore Need to look at Tuple#include? handling
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
             ''
           else

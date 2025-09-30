@@ -273,11 +273,11 @@ module Solargraph
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
-          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
-              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else
@@ -419,6 +419,7 @@ module Solargraph
       workspace.config.reporters.each do |line|
         if line == 'all!'
           Diagnostics.reporters.each do |reporter_name|
+            # @sg-ignore Need to add nil check here
             repargs[Diagnostics.reporter(reporter_name)] ||= []
           end
         else
@@ -426,7 +427,9 @@ module Solargraph
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          # @sg-ignore flow sensitive typing needs to handle 'raise if'
           repargs[reporter] ||= []
+          # @sg-ignore flow sensitive typing needs to handle 'raise if'
           repargs[reporter].concat args
         end
       end
@@ -651,6 +654,7 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       @total = pending if pending > @total
       # @sg-ignore flow sensitive typing needs to handle ivars
       finished = @total - pending

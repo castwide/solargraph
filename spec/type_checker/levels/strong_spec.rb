@@ -109,7 +109,7 @@ describe Solargraph::TypeChecker do
 
     it 'does not complain on array dereference' do
       checker = type_checker(%(
-        # @param idx [Integer, nil] an index
+        # @param idx [Integer] an index
         # @param arr [Array<Integer>] an array of integers
         #
         # @return [void]
