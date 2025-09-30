@@ -428,7 +428,7 @@ describe 'YARD type specifier list parsing' do
       it 'squashes literal types when simplifying literals of same type' do
         api_map = Solargraph::ApiMap.new
         type = Solargraph::ComplexType.parse('1, 2, 3')
-        type = type.qualify(api_map)
+        type = type.qualify(api_map, '')
         expect(type.to_s).to eq('1, 2, 3')
         expect(type.tags).to eq('1, 2, 3')
         expect(type.simple_tags).to eq('Integer')
