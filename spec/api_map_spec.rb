@@ -432,8 +432,9 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin#bar')
   end
 
-  # pending https://github.com/apiology/solargraph/pull/4
-  xit 'understands tuples inherit from regular arrays' do
+  it 'understands tuples inherit from regular arrays' do
+    pending('Fix to remove trailing generic<> after resolution')
+
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
     expect(method_pin).to_not be_nil
@@ -771,7 +772,7 @@ describe Solargraph::ApiMap do
 
   it 'knows that false is a "subtype" of Boolean' do
     api_map = Solargraph::ApiMap.new
-    expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
+    expect(api_map.super_and_sub?('Boolean', 'false')).to be(true)
   end
 
   it 'resolves aliases for YARD methods' do
