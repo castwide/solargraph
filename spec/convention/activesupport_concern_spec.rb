@@ -127,6 +127,8 @@ describe Solargraph::Convention::ActiveSupportConcern do
       # See
       # https://github.com/ruby/gem_rbs_collection/blob/main/gems/activerecord/6.0/activerecord-generated.rbs
       # for full RBS
+      subject(:method_pins) { api_map.get_method_stack('MyActiveRecord', 'abstract_class', scope: :class) }
+
       let(:rbs) do
         <<~RBS
           module MyActiveRecord
@@ -146,8 +148,6 @@ describe Solargraph::Convention::ActiveSupportConcern do
           end
         RBS
       end
-
-      subject(:method_pins) { api_map.get_method_stack('MyActiveRecord', 'abstract_class', scope: :class) }
 
       it { should_not be_empty }
 
