@@ -34,7 +34,6 @@ Gemspec/OrderedDependencies:
 # Configuration parameters: Severity.
 Gemspec/RequireMFA:
   Exclude:
-    - 'solargraph.gemspec'
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
 
@@ -88,13 +87,6 @@ Layout/EmptyLineBetweenDefs:
 # This cop supports safe autocorrection (--autocorrect).
 Layout/EmptyLines:
   Enabled: false
-
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Exclude:
-    - 'lib/solargraph/rbs_map/core_map.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
@@ -1266,6 +1258,7 @@ YARD/TagTypeSyntax:
   Exclude:
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
