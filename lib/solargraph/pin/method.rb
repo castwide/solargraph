@@ -12,6 +12,8 @@ module Solargraph
 
       attr_writer :signatures
 
+      attr_writer :comments
+
       # @return [Parser::AST::Node]
       attr_reader :node
 
@@ -127,7 +129,7 @@ module Solargraph
         block&.reset_generated!
         @signatures&.each(&:reset_generated!)
         signature_help = nil
-        documentation = nil
+        @documentation = nil
       end
 
       def all_rooted?
