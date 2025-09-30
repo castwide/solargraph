@@ -22,7 +22,7 @@ module Solargraph
             visibility: code_object.visibility,
             closure: closure,
             gates: closure.gates,
-            source: :yardoc,
+            source: :yardoc
           )
         end
       end

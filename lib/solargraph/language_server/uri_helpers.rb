@@ -14,7 +14,7 @@ module Solargraph
       # @param uri [String]
       # @return [String]
       def uri_to_file uri
-        decode(uri).sub(/^file\:(?:\/\/)?/, '').sub(/^\/([a-z]\:)/i, '\1')
+        decode(uri).sub(%r{^file:(?://)?}, '').sub(%r{^/([a-z]:)}i, '\1')
       end
 
       # Convert a file path to a URI.
@@ -22,7 +22,7 @@ module Solargraph
       # @param file [String]
       # @return [String]
       def file_to_uri file
-        "file://#{encode(file.gsub(/^([a-z]\:)/i, '/\1'))}"
+        "file://#{encode(file.gsub(/^([a-z]:)/i, '/\1'))}"
       end
 
       # Encode text to be used as a URI path component in LSP.

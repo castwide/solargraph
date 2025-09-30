@@ -45,7 +45,7 @@ module Solargraph
         # @param name [String]
         # @return [Array<Location>]
         def references source, name
-          if name.end_with?("=")
+          if name.end_with?('=')
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]
@@ -86,17 +86,17 @@ module Solargraph
 
         # @return [Source::Chain]
         def chain *args
-          NodeChainer.chain *args
+          NodeChainer.chain(*args)
         end
 
         # @return [Source::Chain]
         def chain_string *args
-          NodeChainer.load_string *args
+          NodeChainer.load_string(*args)
         end
 
         # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
         def process_node *args
-          Solargraph::Parser::NodeProcessor.process *args
+          Solargraph::Parser::NodeProcessor.process(*args)
         end
 
         # @param node [Parser::AST::Node]

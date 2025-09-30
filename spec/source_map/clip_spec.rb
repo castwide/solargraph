@@ -93,7 +93,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 12])
-    expect(clip.complete.pins.map(&:name)).to eq (['@foo'])
+    expect(clip.complete.pins.map(&:name)).to eq(['@foo'])
   end
 
   it 'completes instance variables' do
@@ -648,7 +648,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 8])
     # @todo expect(clip.infer.tags).to eq('""')
     expect(clip.infer.tags).to eq('String')
-    expect(clip.infer.simple_tags).to eq("String")
+    expect(clip.infer.simple_tags).to eq('String')
   end
 
   it 'completes instance variable methods in rebound blocks' do
@@ -1645,7 +1645,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     array_names = api_map.clip_at('test.rb', [5, 22]).complete.pins.map(&:name)
-    expect(array_names).to eq(["byteindex", "byterindex", "bytes", "bytesize", "byteslice", "bytesplice"])
+    expect(array_names).to eq(%w[byteindex byterindex bytes bytesize byteslice bytesplice])
 
     string_names = api_map.clip_at('test.rb', [6, 22]).complete.pins.map(&:name)
     expect(string_names).to eq(['upcase', 'upcase!', 'upto'])
@@ -2728,7 +2728,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
     # The order of the types can vary between platforms
-    expect(clip.infer.items.map(&:to_s).sort).to eq(["123", ":foo", "String"])
+    expect(clip.infer.items.map(&:to_s).sort).to eq(['123', ':foo', 'String'])
   end
 
   it 'does not map Module methods into an Object' do

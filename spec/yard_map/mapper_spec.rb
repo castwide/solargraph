@@ -68,7 +68,7 @@ describe Solargraph::YardMap::Mapper do
     gemspec = Gem::Specification.find_by_name('ast')
     Solargraph::Yardoc.cache([], gemspec)
     pins = Solargraph::YardMap::Mapper.new(Solargraph::Yardoc.load!(gemspec)).map
-    inc= pins.find do |pin|
+    inc = pins.find do |pin|
       pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'AST::Processor::Mixin' && pin.closure.path == 'AST::Processor'
     end
     expect(inc).to be_a(Solargraph::Pin::Reference::Include)

@@ -1,5 +1,5 @@
 describe Solargraph::SourceMap do
-  it "locates named path pins" do
+  it 'locates named path pins' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar; end
@@ -9,15 +9,17 @@ describe Solargraph::SourceMap do
     expect(pin.path).to eq('Foo#bar')
   end
 
-  it "queries symbols using fuzzy matching" do
+  it 'queries symbols using fuzzy matching' do
     map = Solargraph::SourceMap.load_string(%(
       class FooBar
         def baz_qux; end
       end
     ))
-    expect(map.query_symbols("foo")).to eq(map.document_symbols)
-    expect(map.query_symbols("foobar")).to eq(map.document_symbols)
-    expect(map.query_symbols("bazqux")).to eq(map.document_symbols.select{ |pin_namespace| pin_namespace.name == "baz_qux" })
+    expect(map.query_symbols('foo')).to eq(map.document_symbols)
+    expect(map.query_symbols('foobar')).to eq(map.document_symbols)
+    expect(map.query_symbols('bazqux')).to eq(map.document_symbols.select { |pin_namespace|
+      pin_namespace.name == 'baz_qux'
+    })
   end
 
   it 'returns all pins, except for references as document symbols' do
@@ -37,7 +39,7 @@ describe Solargraph::SourceMap do
 
   it 'includes convention pins in document symbols' do
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(source_map)
+      def local source_map
         source_map.document_symbols # call memoized method
 
         Solargraph::Environ.new(
@@ -65,7 +67,7 @@ describe Solargraph::SourceMap do
     Solargraph::Convention.unregister dummy_convention
   end
 
-  it "locates block pins" do
+  it 'locates block pins' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         100.times do
@@ -149,7 +151,7 @@ describe Solargraph::SourceMap do
       end
     ), 'test.rb')
     locals = map.locals_at(Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 0, 5, 0))).map(&:name)
-    expect(locals).to eq(['x', 'foo'])
+    expect(locals).to eq(%w[x foo])
   end
 
   it 'updates cached inference when the ApiMap changes' do

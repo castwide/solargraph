@@ -436,7 +436,7 @@ describe Solargraph::ApiMap do
   xit 'understands tuples inherit from regular arrays' do
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
-    expect(method_pin).to_not be_nil
+    expect(method_pin).not_to be_nil
     expect(method_pin.path).to eq('Array#include?')
     parameter_type = method_pin.signatures.first.parameters.first.return_type
     expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")

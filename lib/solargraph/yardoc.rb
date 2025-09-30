@@ -14,7 +14,7 @@ module Solargraph
     # @param yard_plugins [Array<String>] The names of YARD plugins to use.
     # @param gemspec [Gem::Specification]
     # @return [String] The path to the cached yardoc.
-    def cache(yard_plugins, gemspec)
+    def cache yard_plugins, gemspec
       path = PinCache.yardoc_path gemspec
       return path if cached?(gemspec)
 
@@ -34,7 +34,7 @@ module Solargraph
     # True if the gem yardoc is cached.
     #
     # @param gemspec [Gem::Specification]
-    def cached?(gemspec)
+    def cached? gemspec
       yardoc = File.join(PinCache.yardoc_path(gemspec), 'complete')
       File.exist?(yardoc)
     end
@@ -42,7 +42,7 @@ module Solargraph
     # True if another process is currently building the yardoc cache.
     #
     # @param gemspec [Gem::Specification]
-    def processing?(gemspec)
+    def processing? gemspec
       yardoc = File.join(PinCache.yardoc_path(gemspec), 'processing')
       File.exist?(yardoc)
     end
@@ -53,7 +53,7 @@ module Solargraph
     #
     # @param gemspec [Gem::Specification]
     # @return [Array<YARD::CodeObjects::Base>]
-    def load!(gemspec)
+    def load! gemspec
       YARD::Registry.load! PinCache.yardoc_path gemspec
       YARD::Registry.all
     end
