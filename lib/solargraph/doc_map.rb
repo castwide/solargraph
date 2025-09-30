@@ -255,7 +255,7 @@ module Solargraph
       self.class.inspect
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_bundler
       # @todo Handle projects with custom Bundler/Gemfile setups
       return unless workspace.gemfile?
@@ -278,7 +278,7 @@ module Solargraph
       end
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_external_bundle
       logger.info 'Fetching gemspecs required from external bundle'
       return [] unless workspace&.directory

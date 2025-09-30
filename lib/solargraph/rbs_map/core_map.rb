@@ -5,12 +5,13 @@ module Solargraph
     # Ruby core pins
     #
     class CoreMap
+      include Logging
 
       def resolved?
         true
       end
 
-      FILLS_DIRECTORY = File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills')
+      FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
       def initialize; end
 

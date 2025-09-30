@@ -909,5 +909,26 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'resolves namespace gate conflicts' do
+      checker = type_checker(%(
+        class Base
+          class Target
+          end
+        end
+
+        module Other
+          class Base
+          end
+
+          class Deep
+            # @return [Base::Target]
+            def foo
+            end
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
