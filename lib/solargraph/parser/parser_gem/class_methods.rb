@@ -77,7 +77,7 @@ module Solargraph
         # @param top [AST::Node]
         # @return [Array<AST::Node>]
         def inner_node_references name, top
-          # @type [Array<Parser::AST::Node>]
+          # @type [Array<AST::Node>]
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }

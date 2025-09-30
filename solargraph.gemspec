@@ -23,9 +23,11 @@ Gem::Specification.new do |s|
   s.metadata["bug_tracker_uri"] = "https://github.com/castwide/solargraph/issues"
   s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
   s.metadata["source_code_uri"] = "https://github.com/castwide/solargraph"
+  s.metadata["rubygems_mfa_required"] = "true"
 
   s.required_ruby_version = '>= 3.0'
 
+  s.add_runtime_dependency 'ast', '~> 2.4.3'
   s.add_runtime_dependency 'backport', '~> 1.2'
   s.add_runtime_dependency 'benchmark', '~> 0.4'
   s.add_runtime_dependency 'bundler', '~> 2.0'
@@ -36,6 +38,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'logger', '~> 1.6'
   s.add_runtime_dependency 'observer', '~> 0.1'
   s.add_runtime_dependency 'ostruct', '~> 0.6'
+  s.add_runtime_dependency 'open3', '~> 0.2.1'
   s.add_runtime_dependency 'parser', '~> 3.0'
   s.add_runtime_dependency 'prism', '~> 1.4'
   s.add_runtime_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.4']
@@ -52,6 +55,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake', '~> 13.2'
   s.add_development_dependency 'rspec', '~> 3.5'
   s.add_development_dependency 'rspec-time-guard', '~> 0.2.0'
+  #
   # very specific development-time RuboCop version patterns for CI
   # stability - feel free to update in an isolated PR
   #

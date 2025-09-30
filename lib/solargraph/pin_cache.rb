@@ -482,7 +482,7 @@ module Solargraph
       end
 
       # @param require [String]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def deserialize_stdlib_require require
         load(stdlib_require_path(require))
       end
@@ -499,7 +499,7 @@ module Solargraph
         File.join(work_dir, 'core.ser')
       end
 
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def deserialize_core
         load(core_path)
       end
@@ -517,7 +517,7 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def deserialize_yard_gem(gemspec)
         load(yard_gem_path(gemspec))
       end
@@ -550,7 +550,7 @@ module Solargraph
 
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def deserialize_rbs_collection_gem(gemspec, hash)
         load(rbs_collection_path(gemspec, hash))
       end
@@ -586,7 +586,7 @@ module Solargraph
 
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def deserialize_combined_gem gemspec, hash
         load(combined_path(gemspec, hash))
       end

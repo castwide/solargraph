@@ -21,8 +21,7 @@ AllCops:
     - "vendor/**/.*"
   TargetRubyVersion: 3.0
 
-# we don't use the spec/solargraph directory, instead keeping things
-# directly under spec.
+# We don't use the spec/solargraph directory
 RSpec/SpecFilePathFormat:
   Enabled: false
 

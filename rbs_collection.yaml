@@ -1,6 +1,7 @@
 # Download sources
 sources:
   - type: local
+    name: shims
     path: sig/shims
 
   - type: git
@@ -8,7 +9,6 @@ sources:
     remote: https://github.com/ruby/gem_rbs_collection.git
     revision: main
     repo_dir: gems
-
 
 # A directory to install the downloaded RBSs
 path: .gem_rbs_collection

@@ -121,6 +121,12 @@ describe Solargraph::Workspace do
                                            File.absolute_path('spec/fixtures/workspace/ext')])
   end
 
+  it 'ignores gemspecs in excluded directories' do
+    # vendor/**/* is excluded by default
+    workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
+    expect(workspace.require_paths).to eq(['spec/fixtures/vendored/lib'])
+  end
+
   it 'rescues errors loading files into sources' do
     config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
     expect {

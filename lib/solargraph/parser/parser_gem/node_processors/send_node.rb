@@ -198,7 +198,7 @@ module Solargraph
             elsif node.children[2].type == :sym || node.children[2].type == :str
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
-                # @type [Pin::Method]
+                # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 unless ref.nil?
                   pins.delete ref

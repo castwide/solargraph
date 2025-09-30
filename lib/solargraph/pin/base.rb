@@ -195,9 +195,9 @@ module Solargraph
           return_type
         else
           all_items = return_type.items + other.return_type.items
-          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.rooted_tag }
+          if all_items.any? { |item| item.selfy? } && all_items.any? { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
             # assume this was a declaration that should have said 'self'
-            all_items.delete_if { |item| item.rooted_tag == context.rooted_tag }
+            all_items.delete_if { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
           end
           ComplexType.new(all_items)
         end
@@ -353,8 +353,15 @@ module Solargraph
           # :nocov:
         end
         # arbitrary way of choosing a pin
-        # @sg-ignore Need _1 support
-        [val1, val2].compact.min_by { _1.best_location.to_s }
+        [val1, val2].compact.max_by do |closure|
+          [
+            # maximize number of gates, as types in other combined pins may
+            # depend on those gates
+            closure.gates.length,
+            # use basename so that results don't vary system to system
+            File.basename(closure.best_location.to_s)
+          ]
+        end
       end
 
       # @return [void]
@@ -513,7 +520,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
       # Infer the pin's return type via static code analysis.
@@ -574,12 +581,24 @@ module Solargraph
         @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
+      # The namespaces available for resolving the current namespace. Each gate
+      # should be a fully qualified namespace or the root namespace (i.e., an
+      # empty string.)
+      #
+      # Example: Given the name 'Bar' and the gates ['Foo', ''],
+      # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
+      #
+      # @return [Array<String>]
+      def gates
+        @gates ||= closure&.gates || ['']
+      end
+
       # @return [String, nil]
       def to_rbs
         return_type.to_rbs
       end
 
-      # @return [String]
+      # @return [String, nil]
       def type_desc
         rbs = to_rbs
         # RBS doesn't have a way to represent a Class<x> type

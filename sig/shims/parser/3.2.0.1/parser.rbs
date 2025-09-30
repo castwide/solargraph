@@ -46,6 +46,8 @@ module Parser
     class Node < ::AST::Node
       attr_reader location: Source::Map
       alias loc location
+
+      def children: () -> Array[self]
     end
 
     class Processor
