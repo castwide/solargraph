@@ -48,12 +48,15 @@ module Solargraph
         @binder || context
       end
 
+      # @param api_map [Solargraph::ApiMap]
+      # @return [void]
+      def rebind api_map; end
+
       # @return [::Array<String>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + return_type.to_rbs
       end
