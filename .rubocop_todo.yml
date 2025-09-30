@@ -1265,6 +1265,7 @@ YARD/MismatchName:
 
 YARD/TagTypeSyntax:
   Exclude:
+    - 'lib/solargraph/api_map/constants.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
     - 'lib/solargraph/pin/method.rb'
