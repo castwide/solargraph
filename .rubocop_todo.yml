@@ -34,7 +34,6 @@ Gemspec/OrderedDependencies:
 # Configuration parameters: Severity.
 Gemspec/RequireMFA:
   Exclude:
-    - 'solargraph.gemspec'
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
     - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
 
@@ -458,7 +457,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 54
+  Max: 56
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
