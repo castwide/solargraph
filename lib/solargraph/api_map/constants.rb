@@ -142,15 +142,10 @@ module Solargraph
       # @param gate [String]
       # @param internal [Boolean] True if the name is not the last in the namespace
       # @return [String, nil]
-      def simple_resolve name, gate, internal
-        here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
-        pin = store.get_path_pins(here).first
-        if pin.is_a?(Pin::Constant) && internal
-          const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
-          return unless const
-          resolve(const, pin.gates)
-        else
-          pin&.path
+      def simple_resolve name, gates
+        gates.each do |gate|
+          here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
+          return here if store.namespace_exists?(here)
         end
       end
 
