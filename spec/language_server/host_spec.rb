@@ -232,6 +232,32 @@ describe Solargraph::LanguageServer::Host do
     end
   end
 
+  describe '#references_from' do
+    it 'rescues FileNotFound errors' do
+      host = Solargraph::LanguageServer::Host.new
+      expect { host.references_from('file:///not_a_file.rb', 1, 1) }.not_to raise_error
+    end
+
+    it 'logs FileNotFound errors' do
+      expect(Solargraph.logger).to receive(:warn).with(/FileNotFoundError/)
+      host = Solargraph::LanguageServer::Host.new
+      host.references_from('file:///not_a_file.rb', 1, 1)
+    end
+
+    it 'rescues InvalidOffset errors' do
+      host = Solargraph::LanguageServer::Host.new
+      host.open('file:///file.rb', 'class Foo; end', 1)
+      expect { host.references_from('file:///file.rb', 0, 100) }.not_to raise_error
+    end
+
+    it 'logs InvalidOffset errors' do
+      expect(Solargraph.logger).to receive(:warn).with(/InvalidOffsetError/)
+      host = Solargraph::LanguageServer::Host.new
+      host.open('file:///file.rb', 'class Foo; end', 1)
+      host.references_from('file:///file.rb', 0, 100)
+    end
+  end
+
   describe "Workspace variations" do
     before :each do
       @host = Solargraph::LanguageServer::Host.new
