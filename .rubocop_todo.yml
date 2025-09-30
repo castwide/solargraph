@@ -91,13 +91,6 @@ Layout/EmptyLines:
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Exclude:
-    - 'lib/solargraph/rbs_map/core_map.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: EnforcedStyle.
 # SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines
 Layout/EmptyLinesAroundModuleBody:
   Exclude:
