@@ -315,13 +315,13 @@ module Solargraph
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Extend>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Include>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end
@@ -737,7 +737,6 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
@@ -811,7 +810,6 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
