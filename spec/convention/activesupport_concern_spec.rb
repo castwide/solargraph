@@ -127,7 +127,7 @@ describe Solargraph::Convention::ActiveSupportConcern do
       # See
       # https://github.com/ruby/gem_rbs_collection/blob/main/gems/activerecord/6.0/activerecord-generated.rbs
       # for full RBS
-      subject(:method_pins) { api_map.get_method_stack('MyActiveRecord', 'abstract_class', scope: :class) }
+      subject(:method_pins) { api_map.get_method_stack('MyActiveRecord::Base', 'abstract_class', scope: :class) }
 
       let(:rbs) do
         <<~RBS
@@ -151,7 +151,13 @@ describe Solargraph::Convention::ActiveSupportConcern do
 
       it { should_not be_empty }
 
-      it { should be_a(Solargraph::Pin::Method) }
+      it "has one item" do
+        expect(method_pins.size).to eq(1)
+      end
+
+      it "is a Pin::Method" do
+        expect(method_pins.first).to be_a(Solargraph::Pin::Method)
+      end
     end
 
     # https://github.com/castwide/solargraph/issues/1042
