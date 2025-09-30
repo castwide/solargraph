@@ -101,6 +101,7 @@ module Solargraph
         tag
       end
 
+      # @return [self]
       def simplify_literals
         transform do |t|
           next t unless t.literal?
@@ -112,10 +113,12 @@ module Solargraph
         non_literal_name != name
       end
 
+      # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
         #
@@ -167,6 +170,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def desc
         rooted_tags
       end
@@ -251,7 +255,7 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
+      # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
@@ -276,7 +280,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType]
+      # @param context_type [UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -405,12 +409,12 @@ module Solargraph
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
-      def qualify api_map, context = ''
+      def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined?
-          recon = (t.rooted? ? '' : context)
-          fqns = api_map.qualify(t.name, recon)
+          next t if t.duck_type? || t.void? || t.undefined? || t.literal?
+          open = t.rooted? ? [''] : gates
+          fqns = api_map.qualify(t.non_literal_name, *open)
           if fqns.nil?
             next UniqueType::BOOLEAN if t.tag == 'Boolean'
             next UniqueType::UNDEFINED
@@ -442,6 +446,7 @@ module Solargraph
         !can_root_name? || @rooted
       end
 
+      # @param name_to_check [String]
       def can_root_name?(name_to_check = name)
         self.class.can_root_name?(name_to_check)
       end

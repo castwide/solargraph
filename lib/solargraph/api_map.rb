@@ -13,6 +13,7 @@ module Solargraph
     autoload :SourceToYard,   'solargraph/api_map/source_to_yard'
     autoload :Store,          'solargraph/api_map/store'
     autoload :Index,          'solargraph/api_map/index'
+    autoload :Constants,      'solargraph/api_map/constants'
 
     # @return [Array<String>]
     attr_reader :unresolved_requires
@@ -65,7 +66,7 @@ module Solargraph
       # @todo This implementation is incomplete. It should probably create a
       #   Bench.
       @source_map_hash = {}
-      implicit.clear
+      conventions_environ.clear
       cache.clear
       store.update @@core_map.pins, pins
       self
@@ -74,10 +75,11 @@ module Solargraph
     # Map a single source.
     #
     # @param source [Source]
+    # @param live [Boolean] True for live source map (active editor file)
     # @return [self]
-    def map source
+    def map source, live: false
       map = Solargraph::SourceMap.map(source)
-      catalog Bench.new(source_maps: [map])
+      catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end
 
@@ -88,12 +90,12 @@ module Solargraph
     def catalog bench
       @source_map_hash = bench.source_map_hash
       iced_pins = bench.icebox.flat_map(&:pins)
-      live_pins = bench.live_map&.pins || []
-      implicit.clear
+      live_pins = bench.live_map&.all_pins || []
+      conventions_environ.clear
       source_map_hash.each_value do |map|
-        implicit.merge map.environ
+        conventions_environ.merge map.conventions_environ
       end
-      unresolved_requires = (bench.external_requires + implicit.requires + bench.workspace.config.required).to_a.compact.uniq
+      unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
                      @doc_map&.uncached_yard_gemspecs&.any? ||
                      @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
@@ -102,7 +104,7 @@ module Solargraph
         @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, implicit.pins, iced_pins, live_pins)
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
     end
@@ -111,7 +113,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, implicit, @doc_map, @unresolved_requires]
+      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
     end
 
     # @return [DocMap]
@@ -134,7 +136,7 @@ module Solargraph
       @doc_map.uncached_yard_gemspecs
     end
 
-    # @return [Array<Pin::Base>]
+    # @return [Enumerable<Pin::Base>]
     def core_pins
       @@core_map.pins
     end
@@ -151,8 +153,8 @@ module Solargraph
     end
 
     # @return [Environ]
-    def implicit
-      @implicit ||= Environ.new
+    def conventions_environ
+      @conventions_environ ||= Environ.new
     end
 
     # @param filename [String]
@@ -177,6 +179,7 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    #
     # @return [ApiMap]
     def self.load directory
       api_map = new
@@ -212,6 +215,7 @@ module Solargraph
     #
     # @param directory [String]
     # @param out [IO] The output stream for messages
+    #
     # @return [ApiMap]
     def self.load_with_cache directory, out
       api_map = load(directory)
@@ -257,22 +261,16 @@ module Solargraph
     #
     # @param namespace [String] The namespace
     # @param contexts [Array<String>] The contexts
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Constant, Solargraph::Pin::Namespace>]
     def get_constants namespace, *contexts
       namespace ||= ''
-      contexts.push '' if contexts.empty?
-      cached = cache.get_constants(namespace, contexts)
-      return cached.clone unless cached.nil?
-      skip = Set.new
-      result = []
-      contexts.each do |context|
-        fqns = qualify(namespace, context)
-        visibility = [:public]
-        visibility.push :private if fqns == context
-        result.concat inner_get_constants(fqns, visibility, skip)
-      end
-      cache.set_constants(namespace, contexts, result)
-      result
+      gates = contexts.clone
+      gates.push '' if contexts.empty? && namespace.empty?
+      gates.push namespace unless namespace.empty?
+      store.constants
+           .collect(gates)
+           .select { |pin| namespace.empty? || contexts.empty? || pin.namespace == namespace }
+           .select { |pin| pin.visibility == :public || pin.namespace == namespace }
     end
 
     # @param namespace [String]
@@ -293,59 +291,39 @@ module Solargraph
     # @param tag [String, nil] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
-    # @param context_tag [String] The fully qualified context in which
+    # @param gates [Array<String>] The fully qualified context in which
     #   the tag was referenced; start from here to resolve the name.
     #   Should not be prefixed with '::'.
     # @return [String, nil] fully qualified tag
-    def qualify tag, context_tag = ''
-      return tag if ['Boolean', 'self', nil].include?(tag)
-
-      context_type = ComplexType.try_parse(context_tag).force_rooted
-      return unless context_type
-
-      type = ComplexType.try_parse(tag)
-      return unless type
-      return tag if type.literal?
-
-      context_type = ComplexType.try_parse(context_tag)
-      return unless context_type
-
-      fqns = qualify_namespace(type.rooted_namespace, context_type.rooted_namespace)
-      return unless fqns
-
-      fqns + type.substring
+    def qualify tag, *gates
+      store.constants.qualify(tag, *gates)
     end
 
-    # Determine fully qualified namespace for a given namespace used
-    # inside the definition of another tag ("context"). This method
-    # will start the search in the specified context until it finds a
-    # match for the namespace.
+    # @see Store::Constants#resolve
     #
-    # @param namespace [String, nil] The namespace to
-    #   match
-    # @param context_namespace [String] The context namespace in which the
-    #   tag was referenced; start from here to resolve the name
-    # @return [String, nil] fully qualified namespace
-    def qualify_namespace(namespace, context_namespace = '')
-      cached = cache.get_qualified_namespace(namespace, context_namespace)
-      return cached.clone unless cached.nil?
-      result = if namespace.start_with?('::')
-                 inner_qualify(namespace[2..-1], '', Set.new)
-               else
-                 inner_qualify(namespace, context_namespace, Set.new)
-               end
-      cache.set_qualified_namespace(namespace, context_namespace, result)
-      result
+    # @param name [String]
+    # @param gates [Array<String, Array<String>>]
+    # @return [String, nil]
+    def resolve name, *gates
+      store.constants.resolve(name, *gates)
+    end
+
+    # Get a fully qualified namespace from a reference pin.
+    #
+    # @param pin [Pin::Reference]
+    # @return [String, nil]
+    def dereference(pin)
+      store.constants.dereference(pin)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Extend>]
     def get_extends(fqns)
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
+    # @return [Array<Pin::Reference::Include>]
     def get_includes(fqns)
       store.get_includes(fqns)
     end
@@ -360,15 +338,15 @@ module Solargraph
       result = []
       used = [namespace]
       result.concat store.get_instance_variables(namespace, scope)
-      sc = qualify_lower(store.get_superclass(namespace), namespace)
-      until sc.nil? || used.include?(sc)
-        used.push sc
-        result.concat store.get_instance_variables(sc, scope)
-        sc = qualify_lower(store.get_superclass(sc), sc)
+      sc_fqns = namespace
+      while (sc = store.get_superclass(sc_fqns))
+        sc_fqns = store.constants.dereference(sc)
+        result.concat store.get_instance_variables(sc_fqns, scope)
       end
       result
     end
 
+    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
     # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
     def visible_pins(*args, **kwargs, &blk)
       Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
@@ -420,7 +398,7 @@ module Solargraph
       skip = Set.new
       if rooted_tag == ''
         # @todo Implement domains
-        implicit.domains.each do |domain|
+        conventions_environ.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
           result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
@@ -532,13 +510,24 @@ module Solargraph
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param preserve_generics [Boolean]
+    # @param preserve_generics [Boolean] True to preserve any
+    #   unresolved generic parameters, false to erase them
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
-      methods = get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+      namespace_pin = store.get_path_pins(fqns).first
+      methods = if namespace_pin.is_a?(Pin::Constant)
+                  type = namespace_pin.infer(self)
+                  if type.defined?
+                    namespace_pin = store.get_path_pins(type.namespace).first
+                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
+                  else
+                    []
+                  end
+                else
+                  get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
+                end
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -648,13 +637,22 @@ module Solargraph
     # @param sub [String] The subclass
     # @return [Boolean]
     def super_and_sub?(sup, sub)
-      fqsup = qualify(sup)
-      cls = qualify(sub)
-      tested = []
-      until fqsup.nil? || cls.nil? || tested.include?(cls)
-        return true if cls == fqsup
-        tested.push cls
-        cls = qualify_superclass(cls)
+      sup = ComplexType.try_parse(sup)
+      sub = ComplexType.try_parse(sub)
+      # @todo If two literals are different values of the same type, it would
+      #   make more sense for super_and_sub? to return true, but there are a
+      #   few callers that currently expect this to be false.
+      return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      sup = sup.simplify_literals.to_s
+      sub = sub.simplify_literals.to_s
+      return true if sup == sub
+      sc_fqns = sub
+      while (sc = store.get_superclass(sc_fqns))
+        sc_new = store.constants.dereference(sc)
+        # Cyclical inheritance is invalid
+        return false if sc_new == sc_fqns
+        sc_fqns = sc_new
+        return true if sc_fqns == sup
       end
       false
     end
@@ -667,7 +665,7 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { |inc_tag| ComplexType.parse(inc_tag).name }.include?(module_ns)
+      store.get_includes(host_ns).map { |inc_tag| inc_tag.parametrized_tag.name }.include?(module_ns)
     end
 
     # @param pins [Enumerable<Pin::Base>]
@@ -753,10 +751,15 @@ module Solargraph
       skip.add reqstr
       result = []
       environ = Convention.for_object(self, rooted_tag, scope, visibility, deep, skip, no_core)
-      result.concat environ.pins
+      # ensure we start out with any immediate methods in this
+      # namespace so we roughly match the same ordering of get_methods
+      # and obey the 'deep' instruction
+      direct_convention_methods, convention_methods_by_reference = environ.pins.partition { |p| p.namespace == rooted_tag }
+      result.concat direct_convention_methods
+
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
-          fqim = qualify(im, fqns)
+          fqim = store.constants.dereference(im)
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -767,10 +770,21 @@ module Solargraph
       logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
       result.concat methods
       if deep
+        result.concat convention_methods_by_reference
+
         if scope == :instance
-          store.get_includes(fqns).reverse.each do |include_tag|
-            rooted_include_tag = qualify(include_tag, rooted_tag)
-            result.concat inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+          store.get_includes(fqns).reverse.each do |ref|
+            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
+            if const.is_a?(Pin::Namespace)
+              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
+            elsif const.is_a?(Pin::Constant)
+              type = const.infer(self)
+              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
+            else
+              referenced_tag = ref.parametrized_tag
+              next unless referenced_tag.defined?
+              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
+            end
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
@@ -779,7 +793,7 @@ module Solargraph
         else
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
-            fqem = qualify(em, fqns)
+            fqem = store.constants.dereference(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
@@ -800,95 +814,15 @@ module Solargraph
       result
     end
 
-    # @param fqns [String]
-    # @param visibility [Array<Symbol>]
-    # @param skip [Set<String>]
-    # @return [Array<Pin::Base>]
-    def inner_get_constants fqns, visibility, skip
-      return [] if fqns.nil? || skip.include?(fqns)
-      skip.add fqns
-      result = []
-      store.get_prepends(fqns).each do |is|
-        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
-      end
-      result.concat store.get_constants(fqns, visibility)
-                    .sort { |a, b| a.name <=> b.name }
-      store.get_includes(fqns).each do |is|
-        result.concat inner_get_constants(qualify(is, fqns), [:public], skip)
-      end
-      fqsc = qualify_superclass(fqns)
-      unless %w[Object BasicObject].include?(fqsc)
-        result.concat inner_get_constants(fqsc, [:public], skip)
-      end
-      result
-    end
-
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
     end
 
-    # @param namespace [String]
-    # @param context [String]
-    # @return [String, nil]
-    def qualify_lower namespace, context
-      qualify namespace, context.split('::')[0..-2].join('::')
-    end
-
     # @param fq_sub_tag [String]
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
-      fq_sub_type = ComplexType.try_parse(fq_sub_tag)
-      fq_sub_ns = fq_sub_type.name
-      sup_tag = store.get_superclass(fq_sub_tag)
-      sup_type = ComplexType.try_parse(sup_tag)
-      sup_ns = sup_type.name
-      return nil if sup_tag.nil?
-      parts = fq_sub_ns.split('::')
-      last = parts.pop
-      parts.pop if last == sup_ns
-      qualify(sup_tag, parts.join('::'))
-    end
-
-    # @param name [String] Namespace to fully qualify
-    # @param root [String] The context to search
-    # @param skip [Set<String>] Contexts already searched
-    # @return [String, nil] Fully qualified ("rooted") namespace
-    def inner_qualify name, root, skip
-      return name if name == ComplexType::GENERIC_TAG_NAME
-      return nil if name.nil?
-      return nil if skip.include?(root)
-      skip.add root
-      possibles = []
-      if name == ''
-        if root == ''
-          return ''
-        else
-          return inner_qualify(root, '', skip)
-        end
-      else
-        return name if root == '' && store.namespace_exists?(name)
-        roots = root.to_s.split('::')
-        while roots.length > 0
-          fqns = roots.join('::') + '::' + name
-          return fqns if store.namespace_exists?(fqns)
-          incs = store.get_includes(roots.join('::'))
-          incs.each do |inc|
-            foundinc = inner_qualify(name, inc, skip)
-            possibles.push foundinc unless foundinc.nil?
-          end
-          roots.pop
-        end
-        if possibles.empty?
-          incs = store.get_includes('')
-          incs.each do |inc|
-            foundinc = inner_qualify(name, inc, skip)
-            possibles.push foundinc unless foundinc.nil?
-          end
-        end
-        return name if store.namespace_exists?(name)
-        return possibles.last
-      end
+      store.qualify_superclass fq_sub_tag
     end
 
     # Get the namespace's type (Class or Module).
@@ -927,12 +861,12 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+      ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
       original = nil
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
-        ancestor_fqns = ComplexType.parse(ancestor_fqns).force_rooted.namespace
+        next if ancestor_fqns.nil?
         ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
 
         # Search for the original method in the ancestor
@@ -1012,9 +946,9 @@ module Solargraph
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
-    # @param namespace_pin [Pin::Namespace]
+    # @param namespace_pin [Pin::Namespace, Pin::Constant]
     def has_generics?(namespace_pin)
-      namespace_pin && !namespace_pin.generics.empty?
+      namespace_pin.is_a?(Pin::Namespace) && !namespace_pin.generics.empty?
     end
 
     # @param namespace_pin [Pin::Namespace]

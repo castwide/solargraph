@@ -37,6 +37,7 @@ module Solargraph
                                       .to_h
     end
 
+    # @return [Set<SourceMap>]
     def icebox
       @icebox ||= (source_maps - [live_map])
     end

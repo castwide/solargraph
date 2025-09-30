@@ -69,8 +69,15 @@ module Solargraph
         Solargraph.assert_or_log(:best_location, "Neither location nor type_location provided - #{path} #{source} #{self.class}")
       end
 
+      # @return [Pin::Closure, nil]
+      def closure
+        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        # @type [Pin::Closure, nil]
+        @closure
+      end
+
       # @param other [self]
-      # @param attrs [Hash{Symbol => Object}]
+      # @param attrs [Hash{::Symbol => Object}]
       #
       # @return [self]
       def combine_with(other, attrs={})
@@ -218,7 +225,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @param attr [Symbol]
+      # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
       def choose_node(other, attr)
@@ -298,7 +305,8 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @return [Object, nil]
+      # @sg-ignore
+      # @return [undefined]
       def assert_same(other, attr)
         return false if other.nil?
         val1 = send(attr)
@@ -329,6 +337,8 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
+      #
+      # @sg-ignore Missing @return tag for Solargraph::Pin::Base#choose_pin_attr
       # @return [undefined]
       def choose_pin_attr(other, attr)
         # @type [Pin::Base, nil]
@@ -336,11 +346,14 @@ module Solargraph
         # @type [Pin::Base, nil]
         val2 = other.send(attr)
         if val1.class != val2.class
+          # :nocov:
           Solargraph.assert_or_log("combine_with_#{attr}_class".to_sym,
                                    "Inconsistent #{attr.inspect} class values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self.#{attr} = #{val1.inspect}\nother.#{attr} = #{val2.inspect}")
           return val1
+          # :nocov:
         end
         # arbitrary way of choosing a pin
+        # @sg-ignore Need _1 support
         [val1, val2].compact.min_by { _1.best_location.to_s }
       end
 
@@ -443,7 +456,7 @@ module Solargraph
       # Pin equality is determined using the #nearly? method and also
       # requiring both pins to have the same location.
       #
-      # @param other [self]
+      # @param other [Object]
       def == other
         return false unless nearly? other
         comments == other.comments && location == other.location
@@ -500,7 +513,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
-        return_type.qualify(api_map, namespace)
+        return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
       # Infer the pin's return type via static code analysis.
@@ -561,12 +574,24 @@ module Solargraph
         @identity ||= "#{closure&.path}|#{name}|#{location}"
       end
 
+      # The namespaces available for resolving the current namespace. Each gate
+      # should be a fully qualified namespace or the root namespace (i.e., an
+      # empty string.)
+      #
+      # Example: Given the name 'Bar' and the gates ['Foo', ''],
+      # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
+      #
+      # @return [Array<String>]
+      def gates
+        @gates ||= closure&.gates || ['']
+      end
+
       # @return [String, nil]
       def to_rbs
         return_type.to_rbs
       end
 
-      # @return [String]
+      # @return [String, nil]
       def type_desc
         rbs = to_rbs
         # RBS doesn't have a way to represent a Class<x> type

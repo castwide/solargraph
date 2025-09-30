@@ -21,16 +21,21 @@ module Solargraph
         @parameters = parameters
       end
 
+      # @return [String]
       def method_namespace
         closure.namespace
       end
 
+      # @param other [self]
+      #
+      # @return [Pin::Signature, nil]
       def combine_blocks(other)
         if block.nil?
           other.block
         elsif other.block.nil?
           block
         else
+          # @type [Pin::Signature, nil]
           choose_pin_attr(other, :block)
         end
       end
@@ -57,6 +62,9 @@ module Solargraph
         []
       end
 
+      # @param other [self]
+      #
+      # @return [Array<Pin::Parameter>]
       def choose_parameters(other)
         raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
         parameters.zip(other.parameters).map do |param, other_param|
@@ -70,6 +78,7 @@ module Solargraph
         end
       end
 
+      # @return [Array<Pin::Parameter>]
       def blockless_parameters
         if parameters.last&.block?
           parameters[0..-2]
@@ -78,6 +87,7 @@ module Solargraph
         end
       end
 
+      # @return [Array]
       def arity
         [generics, blockless_parameters.map(&:arity_decl), block&.arity]
       end
@@ -125,6 +135,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def method_name
         raise "closure was nil in #{self.inspect}" if closure.nil?
         @method_name ||= closure.name
@@ -197,11 +208,11 @@ module Solargraph
         true
       end
 
+      # @return [Integer]
       def mandatory_positional_param_count
         parameters.count(&:arg?)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
       end

@@ -23,7 +23,7 @@ module Solargraph
     attr_reader :rbs_collection_config_path
 
     # @param library [String]
-    # @param version [String, nil
+    # @param version [String, nil]
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @param rbs_collection_paths [Array<Pathname, String>]
     def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: []
@@ -42,13 +42,13 @@ module Solargraph
       @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
     end
 
-    # @sg-ignore
     # @return [String] representing the version of the RBS info fetched
     #   for the given library.  Must change when the RBS info is
     #   updated upstream for the same library and version.  May change
     #   if the config for where information comes form changes.
     def cache_key
       @hextdigest ||= begin
+        # @type [String, nil]
         data = nil
         if rbs_collection_config_path
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
@@ -72,7 +72,7 @@ module Solargraph
       end
     end
 
-    # @param gemspec [Gem::Specification]
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param rbs_collection_path [String, Pathname, nil]
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @return [RbsMap]

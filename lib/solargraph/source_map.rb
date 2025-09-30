@@ -21,6 +21,11 @@ module Solargraph
       data.pins
     end
 
+    # @return [Array<Pin::Base>]
+    def all_pins
+      pins + convention_pins
+    end
+
     # @return [Array<Pin::LocalVariable>]
     def locals
       data.locals
@@ -30,13 +35,18 @@ module Solargraph
     def initialize source
       @source = source
 
-      environ.merge Convention.for_local(self) unless filename.nil?
-      self.convention_pins = environ.pins
+      conventions_environ.merge Convention.for_local(self) unless filename.nil?
+      # FIXME: unmemoizing the document_symbols in case it was called and memoized from any of conventions above
+      # this is to ensure that the convention_pins from all conventions are used in the document_symbols.
+      # solargraph-rails is known to use this method to get the document symbols. It should probably be removed.
+      @document_symbols = nil
+      self.convention_pins = conventions_environ.pins
       @pin_select_cache = {}
     end
 
-    # @param klass [Class]
-    # @return [Array<Pin::Base>]
+    # @generic T
+    # @param klass [Class<generic<T>>]
+    # @return [Array<generic<T>>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
     end
@@ -67,8 +77,8 @@ module Solargraph
     end
 
     # @return [Environ]
-    def environ
-      @environ ||= Environ.new
+    def conventions_environ
+      @conventions_environ ||= Environ.new
     end
 
     # all pins except Solargraph::Pin::Reference::Reference
@@ -114,9 +124,12 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Namespace,Pin::Method,Pin::Block]
-    def locate_block_pin line, character
-      _locate_pin line, character, Pin::Namespace, Pin::Method, Pin::Block
+    def locate_closure_pin line, character
+      _locate_pin line, character, Pin::Closure
     end
+
+    # @deprecated Please use locate_closure_pin instead
+    alias locate_block_pin locate_closure_pin
 
     # @param name [String]
     # @return [Array<Location>]
@@ -158,10 +171,15 @@ module Solargraph
 
     private
 
+    # @return [Hash{Class => Array<Pin::Base>}]
+    # @return [Array<Pin::Base>]
+    attr_writer :convention_pins
+
     def pin_class_hash
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
+    # @return [Data]
     def data
       @data ||= Data.new(source)
     end
@@ -169,14 +187,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def convention_pins
       @convention_pins || []
-    end
-
-    # @param pins [Array<Pin::Base>]
-    # @return [Array<Pin::Base>]
-    def convention_pins=(pins)
-      # unmemoizing the document_symbols in case it was called from any of conventions
-      @document_symbols = nil
-      @convention_pins = pins
     end
 
     # @param line [Integer]

@@ -12,6 +12,8 @@ module Solargraph
         # @return [Pin::Base]
         attr_reader :pin
 
+        # @param match [Float] The match score for the pin
+        # @param pin [Pin::Base]
         def initialize match, pin
           @match = match
           @pin = pin
@@ -48,7 +50,7 @@ module Solargraph
       # @param str2 [String]
       # @return [Float]
       def fuzzy_string_match str1, str2
-        return (1.0 + (str2.length.to_f / str1.length.to_f)) if str1.downcase.include?(str2.downcase)
+        return 1.0 + (str2.length.to_f / str1.length.to_f) if str1.downcase.include?(str2.downcase)
         JaroWinkler.similarity(str1, str2, ignore_case: true)
       end
     end

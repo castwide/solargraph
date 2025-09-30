@@ -17,6 +17,32 @@ module Solargraph
         super(**splat)
         @generic_values = generic_values
       end
+
+      # @return [String]
+      def parameter_tag
+        @parameter_tag ||= if generic_values&.any?
+                             "<#{generic_values.join(', ')}>"
+                           else
+                             ''
+                           end
+      end
+
+      # @return [ComplexType]
+      def parametrized_tag
+        @parametrized_tag ||= ComplexType.try_parse(
+          name +
+          if generic_values&.length&.> 0
+            "<#{generic_values.join(', ')}>"
+          else
+            ''
+          end
+        )
+      end
+
+      # @return [Array<String>]
+      def reference_gates
+        closure.gates
+      end
     end
   end
 end

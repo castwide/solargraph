@@ -15,7 +15,9 @@ module Solargraph
       #
       # @return [void]
       def process_and(and_node, true_ranges = [])
+        # @type [Parser::AST::Node]
         lhs = and_node.children[0]
+        # @type [Parser::AST::Node]
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -42,7 +44,9 @@ module Solargraph
         #   s(:send, nil, :bar))
         # [4] pry(main)>
         conditional_node = if_node.children[0]
+        # @type [Parser::AST::Node]
         then_clause = if_node.children[1]
+        # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 
         true_ranges = []
@@ -156,6 +160,8 @@ module Solargraph
 
       # @param conditional_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      #
+      # @return [void]
       def process_conditional(conditional_node, true_ranges)
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
@@ -165,7 +171,7 @@ module Solargraph
       end
 
       # @param isa_node [Parser::AST::Node]
-      # @return [Array(String, String)]
+      # @return [Array(String, String), nil]
       def parse_isa(isa_node)
         return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
@@ -224,7 +230,7 @@ module Solargraph
       def type_name(node)
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node.type == :const
+        return unless node&.type == :const
         module_node = node.children[0]
         class_node = node.children[1]
 

@@ -94,7 +94,8 @@ module Solargraph
       # processed, caller is responsible for sending the response.
       #
       # @param request [Hash{String => unspecified}] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
+      #
+      # @return [Solargraph::LanguageServer::Message::Base, Solargraph::LanguageServer::Request, nil] The message handler.
       def receive request
         if request['method']
           logger.info "Host received ##{request['id']} #{request['method']}"
@@ -299,6 +300,7 @@ module Solargraph
         end
       end
 
+      # @return [String]
       def command_path
         options['commandPath'] || 'solargraph'
       end
@@ -533,7 +535,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Solargraph::SourceMap::Completion]
+      # @return [Solargraph::SourceMap::Completion, nil]
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column
@@ -547,7 +549,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def definitions_at uri, line, column
         library = library_for(uri)
         library.definitions_at(uri_to_file(uri), line, column)
@@ -556,7 +558,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def type_definitions_at uri, line, column
         library = library_for(uri)
         library.type_definitions_at(uri_to_file(uri), line, column)
@@ -716,7 +718,7 @@ module Solargraph
       # A hash of client requests by ID. The host uses this to keep track of
       # pending responses.
       #
-      # @return [Hash{Integer => Solargraph::LanguageServer::Host}]
+      # @return [Hash{Integer => Solargraph::LanguageServer::Request}]
       def requests
         @requests ||= {}
       end

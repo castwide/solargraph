@@ -177,8 +177,10 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -210,7 +212,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def deserialize_yard_pin_cache gemspec
       if yard_pins_in_memory.key?([gemspec.name, gemspec.version])
         return yard_pins_in_memory[[gemspec.name, gemspec.version]]
@@ -335,10 +337,12 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Gem::Specification]
     def gemspec_or_preference gemspec
+      # :nocov: dormant feature
       return gemspec unless preference_map.key?(gemspec.name)
       return gemspec if gemspec.version == preference_map[gemspec.name].version
 
-      change_gemspec_version gemspec, preference_map[by_path.name].version
+      change_gemspec_version gemspec, preference_map[gemspec.name].version
+      # :nocov:
     end
 
     # @param gemspec [Gem::Specification]
@@ -377,7 +381,7 @@ module Solargraph
       self.class.inspect
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_bundler
       # @todo Handle projects with custom Bundler/Gemfile setups
       return unless workspace.gemfile?
@@ -400,7 +404,7 @@ module Solargraph
       end
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_external_bundle
       logger.info 'Fetching gemspecs required from external bundle'
       return [] unless workspace&.directory

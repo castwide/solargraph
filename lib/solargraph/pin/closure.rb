@@ -8,6 +8,7 @@ module Solargraph
 
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
+      # @param generic_defaults [Hash{String => ComplexType}]
       def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
         @scope = scope
@@ -15,6 +16,7 @@ module Solargraph
         @generic_defaults = generic_defaults
       end
 
+      # @return [Hash{String => ComplexType}]
       def generic_defaults
         @generic_defaults ||= {}
       end
@@ -46,19 +48,15 @@ module Solargraph
         @binder || context
       end
 
-      # @return [::Array<String>]
-      def gates
-        # @todo This check might not be necessary. There should always be a
-        #   root pin
-        closure ? closure.gates : ['']
-      end
+      # @param api_map [Solargraph::ApiMap]
+      # @return [void]
+      def rebind api_map; end
 
       # @return [::Array<String>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + return_type.to_rbs
       end

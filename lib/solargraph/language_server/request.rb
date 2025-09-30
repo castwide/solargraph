@@ -11,11 +11,14 @@ module Solargraph
       end
 
       # @param result [Object]
-      # @return [void]
+      # @generic T
+      # @yieldreturn [generic<T>]
+      # @return [generic<T>, nil]
       def process result
         @block.call(result) unless @block.nil?
       end
 
+      # @return [void]
       def send_response
         # noop
       end

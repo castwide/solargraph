@@ -163,9 +163,10 @@ module Solargraph
             generic_defaults[param.name.to_s] = ComplexType.parse(tag).force_rooted
           end
         end
+        class_name = decl.name.relative!.to_s
         class_pin = Solargraph::Pin::Namespace.new(
           type: :class,
-          name: decl.name.relative!.to_s,
+          name: class_name,
           closure: Solargraph::Pin::ROOT_PIN,
           comments: decl.comment&.string,
           type_location: location_decl_to_pin_location(decl.location),
@@ -180,11 +181,12 @@ module Solargraph
         if decl.super_class
           type = build_type(decl.super_class.name, decl.super_class.args)
           generic_values = type.all_params.map(&:to_s)
+          superclass_name = decl.super_class.name.to_s
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
             generic_values: generic_values,
-            name: decl.super_class.name.relative!.to_s,
+            name: superclass_name,
             source: :rbs
           )
         end
@@ -476,7 +478,15 @@ module Solargraph
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin, source: :rbs, type_location: type_location)
+          inner_rest_positional_type =
+            ComplexType.try_parse(other_type_to_tag(type.type.rest_positionals.type))
+          rest_positional_type = ComplexType::UniqueType.new('Array',
+                                                             [],
+                                                             [inner_rest_positional_type],
+                                                             rooted: true, parameters_type: :list)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin,
+                                                         source: :rbs, type_location: type_location,
+                                                         return_type: rest_positional_type,)
         end
         type.type.trailing_positionals.each do |param|
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
@@ -699,13 +709,13 @@ module Solargraph
       # @return [ComplexType::UniqueType]
       def build_type(type_name, type_args = [])
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |a| other_type_to_tag(a) }.reject { |t| t == 'undefined' }.map do |t|
+        params = type_args.map { |a| other_type_to_tag(a) }.map do |t|
           ComplexType.try_parse(t).force_rooted
         end
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params, rooted: true, parameters_type: :list)
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
         end
       end
 

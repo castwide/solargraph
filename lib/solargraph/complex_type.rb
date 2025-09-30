@@ -33,12 +33,12 @@ module Solargraph
     # @param api_map [ApiMap]
     # @param context [String]
     # @return [ComplexType]
-    def qualify api_map, context = ''
+    def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
         next t if ['nil', 'void', 'undefined'].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
-        t.qualify api_map, context
+        t.qualify api_map, *gates
       end
       ComplexType.new(types).reduce_object
     end
@@ -155,10 +155,12 @@ module Solargraph
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def tags
       map(&:tag).join(', ')
     end
 
+    # @return [String]
     def simple_tags
       simplify_literals.tags
     end
@@ -172,10 +174,12 @@ module Solargraph
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
+    # @return [String]
     def desc
       rooted_tags
     end
 
+    # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
     end
@@ -200,6 +204,7 @@ module Solargraph
       any?(&:generic?)
     end
 
+    # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
     end
@@ -241,6 +246,7 @@ module Solargraph
     def reduce_class_type
       new_items = items.flat_map do |type|
         next type unless ['Module', 'Class'].include?(type.name)
+        next type if type.all_params.empty?
 
         type.all_params
       end
