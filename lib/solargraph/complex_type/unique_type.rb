@@ -280,7 +280,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType]
+      # @param context_type [UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -446,6 +446,7 @@ module Solargraph
         !can_root_name? || @rooted
       end
 
+      # @param name_to_check [String]
       def can_root_name?(name_to_check = name)
         self.class.can_root_name?(name_to_check)
       end
