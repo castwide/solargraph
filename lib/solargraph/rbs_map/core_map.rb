@@ -24,10 +24,17 @@ module Solargraph
         if cache
           @pins.replace cache
         else
-          loader.add(path: Pathname(FILLS_DIRECTORY))
+          @pins.concat conversions.pins
+
+          # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+          fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+          fill_loader.add(path: Pathname(FILLS_DIRECTORY))
           out&.puts 'Caching RBS pins for Ruby core'
-          @pins = conversions.pins
+          fill_conversions = Conversions.new(loader: fill_loader)
+          @pins.concat fill_conversions.pins
+
           @pins.concat RbsMap::CoreFills::ALL
+
           processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           @pins.replace processed
 
@@ -40,10 +47,6 @@ module Solargraph
       # @return [Enumerable<Pin::Base>]
       def cache_core out: $stderr
         pins out: out
-      end
-
-      def loader
-        @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
       end
 
       private
