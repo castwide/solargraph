@@ -134,7 +134,7 @@ module Solargraph
         end
       end
 
-      # @return [Mutex]
+      # @return [Thread::Mutex]
       def mutex
         @mutex ||= Mutex.new
       end

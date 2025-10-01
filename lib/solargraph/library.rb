@@ -522,7 +522,7 @@ module Solargraph
       @external_requires = nil
     end
 
-    # @return [Mutex]
+    # @return [Thread::Mutex]
     def mutex
       @mutex ||= Mutex.new
     end
