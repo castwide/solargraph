@@ -45,7 +45,7 @@ module Solargraph
       def visible_at?(other_closure, other_loc)
         # @sg-ignore Need to add nil check here
         location.filename == other_loc.filename &&
-          presence.include?(other_loc.range.start) &&
+          presence&.include?(other_loc.range.start) &&
           # @sg-ignore Need to add nil check here
           match_named_closure(other_closure, closure)
       end
