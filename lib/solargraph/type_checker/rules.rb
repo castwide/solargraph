@@ -66,7 +66,7 @@ module Solargraph
       # @todo 7: flow sensitive typing needs to handle inner closures
       # @todo 6: Need to support nested flow sensitive types
       # @todo 5: need boolish support for ? methods
-      # @todo 5: need to improve handling of &.
+      # need to improve handling of &.
       # @todo 5: flow sensitive typing needs to handle return if foo.nil? || bar
       # @todo 4: Translate to something flow sensitive typing understands
       # @todo 3: downcast output of Enumerable#select

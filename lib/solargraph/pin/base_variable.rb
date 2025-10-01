@@ -57,10 +57,6 @@ module Solargraph
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
       end
 
-      def return_type
-        @return_type ||= generate_complex_type
-      end
-
       def nil_assignment?
         # this will always be false - should it be return_type ==
         #   ComplexType::NIL or somesuch?
@@ -105,8 +101,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
-        if presence_certain? && return_type.defined?
+        if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type
+          # @sg-ignore need to improve handling of &.
           return return_type.qualify(api_map, *gates)
         end
 
@@ -144,7 +141,14 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
+      # @return [ComplexType, nil]
+      def return_type
+        return_type_minus_exclusions(@return_type || generate_complex_type)
+      end
+
       private
+
+      attr_reader :exclude_return_type
 
       # @param needle [Pin::Base]
       # @param haystack [Pin::Base]
