@@ -35,12 +35,16 @@ jobs:
           - ruby-version: '3.2'
           # only include the 3.3 variants we include later
           - ruby-version: '3.3'
+          # only include the 3.4 variants we include later
+          - ruby-version: '3.3'
         include:
           - ruby-version: '3.1'
             rbs-version: '3.6.1'
           - ruby-version: '3.2'
             rbs-version: '3.9.4'
           - ruby-version: '3.3'
+            rbs-version: '4.0.0.dev.4'
+          - ruby-version: '3.4'
             rbs-version: '4.0.0.dev.4'
     steps:
     - uses: actions/checkout@v3
