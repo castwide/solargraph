@@ -36,7 +36,7 @@ jobs:
           # only include the 3.3 variants we include later
           - ruby-version: '3.3'
           # only include the 3.4 variants we include later
-          - ruby-version: '3.3'
+          - ruby-version: '3.4'
         include:
           - ruby-version: '3.1'
             rbs-version: '3.6.1'
