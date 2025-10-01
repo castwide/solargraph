@@ -53,6 +53,18 @@ module Solargraph
         super(other, attrs)
       end
 
+      def combine_with(other, attrs={})
+        new_attrs = {
+          assignment: assert_same(other, :assignment),
+          presence_certain: assert_same(other, :presence_certain?),
+          exclude_return_type: combine_types(other, :exclude_return_type),
+        }.merge(attrs)
+        new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
+        new_attrs[:presence_certain] = assert_same(other, :presence_certain) unless attrs.key?(:presence_certain)
+
+        super(other, new_attrs)
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
@@ -98,10 +110,7 @@ module Solargraph
         types
       end
 
-      # @return [ComplexType, nil]
-      def exclude_return_type
-        nil
-      end
+      attr_reader :exclude_return_type
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
@@ -185,7 +194,6 @@ module Solargraph
       def return_type_minus_exclusions(raw_return_type)
         @return_type_minus_exclusions ||=
           if exclude_return_type && raw_return_type
-            # @sg-ignore flow sensitive typing needs to handle ivars
             types = raw_return_type.items - exclude_return_type.items
             types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
             ComplexType.new(types)
