@@ -6,7 +6,7 @@ describe Solargraph::Source::Chain::InstanceVariable do
     bar_pin = Solargraph::Pin::InstanceVariable.new(closure: closure, name: '@foo')
     api_map = Solargraph::ApiMap.new
     api_map.index [closure, methpin, foo_pin, bar_pin]
-    link = Solargraph::Source::Chain::InstanceVariable.new('@foo', nil)
+    link = Solargraph::Source::Chain::InstanceVariable.new('@foo', nil, nil)
     pins = link.resolve(api_map, methpin, [])
     expect(pins.length).to eq(1)
     expect(pins.first.name).to eq('@foo')

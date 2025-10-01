@@ -94,7 +94,7 @@ module Solargraph
           elsif [:lvar, :lvasgn].include?(n.type)
             result.push Chain::Call.new(n.children[0].to_s, Location.from_node(n))
           elsif [:ivar, :ivasgn].include?(n.type)
-            result.push Chain::InstanceVariable.new(n.children[0].to_s, n)
+            result.push Chain::InstanceVariable.new(n.children[0].to_s, n, Location.from_node(n))
           elsif [:cvar, :cvasgn].include?(n.type)
             result.push Chain::ClassVariable.new(n.children[0].to_s)
           elsif [:gvar, :gvasgn].include?(n.type)
