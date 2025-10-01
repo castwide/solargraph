@@ -204,7 +204,7 @@ module Solargraph
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
-        # @sg-ignore Translate to something flow sensitive typing understands
+        # @sg-ignore flow sensitive typing needs to handle ivars
         tag.text
       end
 

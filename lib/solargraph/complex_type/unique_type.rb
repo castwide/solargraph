@@ -409,7 +409,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
-              # @sg-ignore Translate to something flow sensitive typing understands
+              # @sg-ignore Need to add nil check here
               context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else

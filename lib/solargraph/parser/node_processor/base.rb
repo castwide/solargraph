@@ -68,7 +68,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def named_path_pin position
           pins.select do |pin|
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore Need to add nil check here
             pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)
           end.last
         end

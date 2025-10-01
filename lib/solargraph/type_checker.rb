@@ -655,7 +655,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore flow sensitive typing needs to handle ivars
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
