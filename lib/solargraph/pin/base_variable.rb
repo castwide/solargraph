@@ -131,6 +131,7 @@ module Solargraph
       # @return [ComplexType]
       def generate_complex_type
         tag = docstring.tag(:type)
+        # TODO this should be complaining about returning nil
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         ComplexType.new
       end
