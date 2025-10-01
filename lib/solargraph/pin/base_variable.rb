@@ -11,14 +11,32 @@ module Solargraph
 
       attr_accessor :mass_assignment
 
+      # @return [Range, nil]
+      attr_reader :presence
+
+      # @return [Boolean]
+      attr_reader :presence_certain
+
+      def presence_certain?
+        @presence_certain
+      end
+
+      # @param presence [Range, nil]
+      # @param presence_certain [Boolean]
       # @param return_type [ComplexType, nil]
+      # @param exclude_return_type [ComplexType, nil] Ensure any return
+      #   type returned will never include these unique types in the
+      #   unique types of its complex type
       # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, return_type: nil, **splat
+      def initialize assignment: nil, presence: nil, presence_certain: false, return_type: nil, exclude_return_type: nil, **splat
         super(**splat)
         @assignment = assignment
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = nil
         @return_type = return_type
+        @presence = presence
+        @presence_certain = presence_certain
+        @exclude_return_type = exclude_return_type
       end
 
       def combine_with(other, attrs={})

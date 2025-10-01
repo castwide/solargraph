@@ -3,32 +3,6 @@
 module Solargraph
   module Pin
     class LocalVariable < BaseVariable
-      # @return [Range]
-      attr_reader :presence
-
-      # @return [Boolean]
-      attr_reader :presence_certain
-
-      def presence_certain?
-        @presence_certain
-      end
-
-      # @param assignment [AST::Node, nil]
-      # @param presence [Range, nil]
-      # @param presence_certain [Boolean]
-      # @param exclude_return_type [ComplexType, nil] Ensure any return
-      #   type returned will never include these unique types in the
-      #   unique types of its complex type
-      # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false,
-                     exclude_return_type: nil, **splat
-        super(**splat)
-        @assignment = assignment
-        @presence = presence
-        @presence_certain = presence_certain
-        @exclude_return_type = exclude_return_type
-      end
-
       def combine_with(other, attrs={})
         new_attrs = {
           assignment: assert_same(other, :assignment),
