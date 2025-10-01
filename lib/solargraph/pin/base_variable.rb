@@ -39,6 +39,11 @@ module Solargraph
         @exclude_return_type = exclude_return_type
       end
 
+      def reset_generated!
+        @return_type_minus_exclusions = nil
+        super
+      end
+
       def combine_with(other, attrs={})
         attrs.merge({
           assignment: assert_same(other, :assignment),
@@ -144,6 +149,16 @@ module Solargraph
       # @return [ComplexType, nil]
       def return_type
         return_type_minus_exclusions(@return_type || generate_complex_type)
+      end
+
+      # @param other_closure [Pin::Closure]
+      # @param other_loc [Location]
+      def visible_at?(other_closure, other_loc)
+        # @sg-ignore Need to add nil check here
+        location.filename == other_loc.filename &&
+          presence&.include?(other_loc.range.start) &&
+          # @sg-ignore Need to add nil check here
+          match_named_closure(other_closure, closure)
       end
 
       private
