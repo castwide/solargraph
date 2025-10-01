@@ -370,7 +370,6 @@ Lint/NonAtomicFileOperation:
 # This cop supports safe autocorrection (--autocorrect).
 Lint/ParenthesesAsGroupedExpression:
   Exclude:
-    - 'lib/solargraph.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/source_map/clip_spec.rb'
@@ -1288,6 +1287,7 @@ YARD/TagTypeSyntax:
   Exclude:
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
