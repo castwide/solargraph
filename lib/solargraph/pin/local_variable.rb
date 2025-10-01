@@ -15,23 +15,6 @@ module Solargraph
         super(other, new_attrs)
       end
 
-      # @param other [self]
-      # @param attr [::Symbol]
-      #
-      # @return [ComplexType, nil]
-      def combine_types(other, attr)
-        # @type [ComplexType, nil]
-        type1 = send(attr)
-        # @type [ComplexType, nil]
-        type2 = other.send(attr)
-        if type1 && type2
-          types = (type1.items + type2.items).uniq
-          ComplexType.new(types)
-        else
-          type1 || type2
-        end
-      end
-
       def reset_generated!
         @return_type_minus_exclusions = nil
         super
@@ -74,33 +57,6 @@ module Solargraph
       private
 
       attr_reader :exclude_return_type
-
-      # @param tag1 [String]
-      # @param tag2 [String]
-      # @return [Boolean]
-      def match_tags tag1, tag2
-        # @todo This is an unfortunate hack made necessary by a discrepancy in
-        #   how tags indicate the root namespace. The long-term solution is to
-        #   standardize it, whether it's `Class<>`, an empty string, or
-        #   something else.
-        tag1 == tag2 ||
-          (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
-      end
-
-      # @param needle [Pin::Base]
-      # @param haystack [Pin::Base]
-      # @return [Boolean]
-      def match_named_closure needle, haystack
-        return true if needle == haystack || haystack.is_a?(Pin::Block)
-        cursor = haystack
-        until cursor.nil?
-          return true if needle.path == cursor.path
-          return false if cursor.path && !cursor.path.empty?
-          # @sg-ignore Need to add nil check here
-          cursor = cursor.closure
-        end
-        false
-      end
     end
   end
 end

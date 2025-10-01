@@ -146,6 +146,53 @@ module Solargraph
 
       private
 
+      # @param needle [Pin::Base]
+      # @param haystack [Pin::Base]
+      # @return [Boolean]
+      def match_named_closure needle, haystack
+        return true if needle == haystack || haystack.is_a?(Pin::Block)
+        cursor = haystack
+        until cursor.nil?
+          return true if needle.path == cursor.path
+          return false if cursor.path && !cursor.path.empty?
+          # @sg-ignore Need to add nil check here
+          cursor = cursor.closure
+        end
+        false
+      end
+
+      # @param raw_return_type [ComplexType, nil]
+      # @return [ComplexType, nil]
+      def return_type_minus_exclusions(raw_return_type)
+        @return_type_minus_exclusions ||=
+          if exclude_return_type && raw_return_type
+            # @sg-ignore flow sensitive typing needs to handle ivars
+            types = raw_return_type.items - exclude_return_type.items
+            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+            ComplexType.new(types)
+          else
+            raw_return_type
+          end
+        @return_type_minus_exclusions
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [ComplexType, nil]
+      def combine_types(other, attr)
+        # @type [ComplexType, nil]
+        type1 = send(attr)
+        # @type [ComplexType, nil]
+        type2 = other.send(attr)
+        if type1 && type2
+          types = (type1.items + type2.items).uniq
+          ComplexType.new(types)
+        else
+          type1 || type2
+        end
+      end
+
       # @return [ComplexType]
       def generate_complex_type
         tag = docstring.tag(:type)
