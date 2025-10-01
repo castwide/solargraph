@@ -50,19 +50,9 @@ module Solargraph
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
         })
+        attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
+        attrs[:presence_certain] = assert_same(other, :presence_certain) unless attrs.key?(:presence_certain)
         super(other, attrs)
-      end
-
-      def combine_with(other, attrs={})
-        new_attrs = {
-          assignment: assert_same(other, :assignment),
-          presence_certain: assert_same(other, :presence_certain?),
-          exclude_return_type: combine_types(other, :exclude_return_type),
-        }.merge(attrs)
-        new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
-        new_attrs[:presence_certain] = assert_same(other, :presence_certain) unless attrs.key?(:presence_certain)
-
-        super(other, new_attrs)
       end
 
       def completion_item_kind
