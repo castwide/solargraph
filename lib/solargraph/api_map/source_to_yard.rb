@@ -46,13 +46,13 @@ module Solargraph
           store.get_includes(pin.path).each do |ref|
             include_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
             unless include_object.nil? || include_object.nil?
-              include_object.instance_mixins.push code_object_map[ref.parametrized_tag.to_s]
+              include_object.instance_mixins.push code_object_map[ref.type.to_s]
             end
           end
           store.get_extends(pin.path).each do |ref|
             extend_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
             next unless extend_object
-            code_object = code_object_map[ref.parametrized_tag.to_s]
+            code_object = code_object_map[ref.type.to_s]
             next unless code_object
             extend_object.class_mixins.push code_object
             # @todo add spec showing why this next line is necessary
