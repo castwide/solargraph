@@ -144,6 +144,9 @@ module Solargraph
         gemspec.dependencies - gemspec.development_dependencies
       end
 
+      # Return the gems which would be required by Bundler.require
+      #
+      # @see https://bundler.io/guides/groups.html
       # @return [Array<Gem::Specification>]
       def auto_required_gemspecs_from_bundler
         # @todo Handle projects with custom Bundler/Gemfile setups
