@@ -319,7 +319,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore Untyped method Solargraph::Pin::Base#assert_same could not be inferred
+      # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
         if other.nil?
