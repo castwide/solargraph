@@ -63,11 +63,6 @@ module Solargraph
             end
           end
         end
-        # @todo the 'requires' provided in Environ is being used
-        #   by plugins to pass gem names instead of require paths
-        #   - need to expand Environ to provide a place to put gem
-        #   names and get new plugins out before retiring this.
-        gemspec ||= find_gem(gem_name_guess)
         return nil if gemspec.nil?
 
         [gemspec_or_preference(gemspec)]
