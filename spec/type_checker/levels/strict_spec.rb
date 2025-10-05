@@ -61,7 +61,7 @@ describe Solargraph::TypeChecker do
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
+      api_map = Solargraph::ApiMap.load '.'
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
@@ -699,6 +699,19 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+
+    it 'validates parameters in function calls' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar); end
+
+        def baz
+          foo(123)
+        end
+        ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received 123'])
     end
 
     it 'validates inferred return types with complex tags' do
