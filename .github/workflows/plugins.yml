@@ -129,6 +129,7 @@ jobs:
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
        bundle config path ${{ env.BUNDLE_PATH }}
        bundle install --jobs 4 --retry 3
+       bundle exec appraisal install
     - name: Configure .solargraph.yml
       run: |
         cd ../solargraph-rspec
@@ -137,11 +138,11 @@ jobs:
       run: |
         cd ../solargraph-rspec
         rspec_gems=$(bundle exec ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
-        bundle exec solargraph gems $rspec_gems
+        bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs
       run: |
         cd ../solargraph-rspec
-        bundle exec rspec --format progress
+        bundle exec appraisal rspec --format progress
 
   run_solargraph_rails_specs:
     # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
