@@ -309,6 +309,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
+      # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
         if other.nil?
