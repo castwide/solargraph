@@ -261,8 +261,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         end
 
         it 'returns the preferred gemspec' do
-          pending('https://github.com/castwide/solargraph/pull/1006')
-
           gemspecs = described_class.new(dir_path, preferences: preferences)
           specs = gemspecs.resolve_require('backport')
           backport = specs.find { |spec| spec.name == 'backport' }
@@ -281,8 +279,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
           end
 
           it 'returns the gemspec we do have' do
-            pending('https://github.com/castwide/solargraph/pull/1006')
-
             gemspecs = described_class.new(dir_path, preferences: preferences)
             specs = gemspecs.resolve_require('backport')
             backport = specs.find { |spec| spec.name == 'backport' }
