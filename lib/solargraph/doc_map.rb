@@ -23,7 +23,7 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
       uncached_yard_gemspecs.concat(uncached_rbs_collection_gemspecs)
-                            .sort
+                            .sort_by { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
                             .uniq { |gemspec| "#{gemspec.name}:#{gemspec.version}" }
     end
 
