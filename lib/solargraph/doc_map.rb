@@ -176,10 +176,10 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -206,7 +206,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def deserialize_yard_pin_cache gemspec
       if yard_pins_in_memory.key?([gemspec.name, gemspec.version])
         return yard_pins_in_memory[[gemspec.name, gemspec.version]]

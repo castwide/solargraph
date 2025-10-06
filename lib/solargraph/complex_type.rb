@@ -33,12 +33,12 @@ module Solargraph
     # @param api_map [ApiMap]
     # @param context [String]
     # @return [ComplexType]
-    def qualify api_map, context = ''
+    def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
         next t if ['nil', 'void', 'undefined'].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
-        t.qualify api_map, context
+        t.qualify api_map, *gates
       end
       ComplexType.new(types).reduce_object
     end
@@ -246,6 +246,7 @@ module Solargraph
     def reduce_class_type
       new_items = items.flat_map do |type|
         next type unless ['Module', 'Class'].include?(type.name)
+        next type if type.all_params.empty?
 
         type.all_params
       end
