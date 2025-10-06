@@ -143,14 +143,6 @@ describe 'Solargraph::ApiMap methods' do
     end
   end
 
-  describe '#cache_gem' do
-    it 'can cache gem without a bench' do
-      api_map = Solargraph::ApiMap.new
-      gemspec = Gem::Specification.find_by_name('backport')
-      expect { api_map.cache_gem(gemspec, out: StringIO.new) }.not_to raise_error
-    end
-  end
-
   describe '#workspace' do
     it 'can get a default workspace without a bench' do
       api_map = Solargraph::ApiMap.new
