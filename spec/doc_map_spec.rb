@@ -42,13 +42,17 @@ describe Solargraph::DocMap do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
       unprovided_solargraph_rspec_requires = [
-        'rspec-rails',
         'actionmailer',
+        'actionpack'
         'activerecord',
-        'shoulda-matchers',
-        'rspec-sidekiq',
+        'activesupport',
         'airborne',
-        'activesupport'
+        'rspec-core',
+        'rspec-expectations',
+        'rspec-mocks',
+        'rspec-rails',
+        'rspec-sidekiq',
+        'shoulda-matchers',
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
