@@ -105,7 +105,7 @@ module Solargraph
     # @param out [IO, nil] output stream for logging
     # @return [void]
     def cache(gemspec, rebuild: false, out: nil)
-      build_yard = uncached_yard_gemspecs.include?(gemspec) || rebuild
+      build_yard = uncached_yard_gemspecs.map { |gs| "#{gs.name}:#{gs.version}" }.include?("#{gemspec.name}:#{gemspec.version}") || rebuild
       build_rbs_collection = uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
       if build_yard || build_rbs_collection
         type = []
