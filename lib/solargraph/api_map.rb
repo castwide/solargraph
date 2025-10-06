@@ -123,8 +123,10 @@ module Solargraph
       [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
     end
 
-    # @return [DocMap, nil]
-    attr_reader :doc_map
+    # @return [DocMap]
+    def doc_map
+      @doc_map ||= DocMap.new([], [], Workspace.new('.'))
+    end
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
@@ -189,15 +191,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_all_for_doc_map! out
-      @doc_map.cache_doc_map_gems!(out)
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @param rebuild [Boolean]
-    # @param out [IO, nil]
-    # @return [void]
-    def cache_gem(gemspec, rebuild: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+      doc_map.cache_doc_map_gems!(out)
     end
 
     class << self
@@ -676,7 +670,7 @@ module Solargraph
 
     # @return [Workspace, nil]
     def workspace
-      @doc_map&.workspace
+      doc_map.workspace
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in

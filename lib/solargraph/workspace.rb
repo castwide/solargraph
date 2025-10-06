@@ -22,7 +22,8 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String] TODO: Document and test '' and '*' semantics
+    # @todo Remove '' and '*' special cases
+    # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
@@ -66,7 +67,7 @@ module Solargraph
     def global_environ
       # empty docmap, since the result needs to work in any possible
       # context here
-      @global_environ ||= Convention.for_global(DocMap.new([], [], self))
+      @global_environ ||= Convention.for_global(DocMap.new([], [], self, out: nil))
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -193,6 +194,29 @@ module Solargraph
       Gem::Specification.find_by_name(name, version)
     rescue Gem::MissingSpecError
       nil
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_all_for_workspace! out, rebuild: false
+      PinCache.cache_core(out: out) unless PinCache.core?
+
+      # @type [Array<Gem::Specification>]
+      gem_specs = Gem::Specification.to_a
+      # try any possible standard libraries, but be quiet about it
+      stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
+      specs = (gem_specs + stdlib_specs)
+      specs.each do |spec|
+        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+      end
+      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      # do this after so that we prefer stdlib requires from gems,
+      # which are likely to be newer and have more pins
+      pin_cache.cache_all_stdlibs(out: out)
+
+      out&.puts "Documentation cached for core, standard library and gems."
     end
 
     # Synchronize the workspace from the provided updater.
