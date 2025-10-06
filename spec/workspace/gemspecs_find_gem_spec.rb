@@ -62,7 +62,6 @@ describe Solargraph::Workspace::Gemspecs, '#find_gem' do
       end
 
       it 'complains' do
-        pending("implementation")
         gemspec
 
         expect(out.string).to include('install the gem checkoff ')
@@ -92,7 +91,6 @@ describe Solargraph::Workspace::Gemspecs, '#find_gem' do
       end
 
       it 'complains' do
-        pending("implementation")
         gemspec
 
         expect(out.string).to include('install the gem checkoff:1.0.0')

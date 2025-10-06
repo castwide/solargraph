@@ -33,6 +33,17 @@ describe Solargraph::DocMap do
     end
   end
 
+  context 'understands rspec + rspec-mocks require pattern' do
+    let(:requires) do
+      ['rspec-mocks']
+    end
+
+    it 'generates pins from gems' do
+      ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
+      expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
+    end
+  end
+
   context 'with an invalid require' do
     let(:requires) do
       ['not_a_gem']
@@ -42,17 +53,13 @@ describe Solargraph::DocMap do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
       unprovided_solargraph_rspec_requires = [
-        'actionmailer',
-        'actionpack',
-        'activerecord',
-        'activesupport',
-        'airborne',
-        'rspec-core',
-        'rspec-expectations',
-        'rspec-mocks',
         'rspec-rails',
+        'actionmailer',
+        'activerecord',
+        'shoulda-matchers',
         'rspec-sidekiq',
-        'shoulda-matchers'
+        'airborne',
+        'activesupport'
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])

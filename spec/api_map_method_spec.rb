@@ -110,15 +110,15 @@ describe 'Solargraph::ApiMap methods' do
     end
   end
 
-  describe '#get_method_stack' do
+  describe '#get_method_stack', time_limit_seconds: 240 do
     let(:out) { StringIO.new }
     let(:api_map) { Solargraph::ApiMap.load_with_cache(Dir.pwd, out) }
 
-    context 'with stdlib that has vital dependencies' do
+    context 'with stdlib that has vital dependencies', time_limit_seconds: 240 do
       let(:external_requires) { ['yaml'] }
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
-      it 'handles the YAML gem aliased to Psych' do
+      it 'handles the YAML gem aliased to Psych', time_limit_seconds: 240 do
         expect(method_stack).not_to be_empty
       end
     end
@@ -146,7 +146,8 @@ describe 'Solargraph::ApiMap methods' do
   describe '#cache_gem' do
     it 'can cache gem without a bench' do
       api_map = Solargraph::ApiMap.new
-      expect { api_map.cache_gem('rake', out: StringIO.new) }.not_to raise_error
+      gemspec = Gem::Specification.find_by_name('backport')
+      expect { api_map.cache_gem(gemspec, out: StringIO.new) }.not_to raise_error
     end
   end
 
