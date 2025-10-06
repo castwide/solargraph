@@ -59,7 +59,8 @@ describe Solargraph::DocMap do
         'shoulda-matchers',
         'rspec-sidekiq',
         'airborne',
-        'activesupport'
+        'activesupport',
+        'actionpack'
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
@@ -125,7 +126,9 @@ describe Solargraph::DocMap do
     let(:requires) { ['rspec'] }
 
     it 'collects dependencies' do
-      expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
+      # we include doc_map.requires as solargraph-rspec will bring it
+      # in directly and we exclude it from dependencies
+      expect(doc_map.dependencies.map(&:name) + doc_map.requires).to include('rspec-core')
     end
   end
 
