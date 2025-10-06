@@ -43,7 +43,7 @@ describe Solargraph::DocMap do
       # includes these gems.  In our case, it doesn't!
       unprovided_solargraph_rspec_requires = [
         'actionmailer',
-        'actionpack'
+        'actionpack',
         'activerecord',
         'activesupport',
         'airborne',
@@ -52,7 +52,7 @@ describe Solargraph::DocMap do
         'rspec-mocks',
         'rspec-rails',
         'rspec-sidekiq',
-        'shoulda-matchers',
+        'shoulda-matchers'
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
