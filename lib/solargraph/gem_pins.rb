@@ -41,15 +41,6 @@ module Solargraph
       out
     end
 
-    # @param yard_plugins [Array<String>] The names of YARD plugins to use.
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build_yard_pins(yard_plugins, gemspec)
-      Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
-      YardMap::Mapper.new(yardoc, gemspec).map
-    end
-
     # @param yard_pins [Array<Pin::Base>]
     # @param rbs_pins [Array<Pin::Base>]
     #
@@ -68,7 +59,9 @@ module Solargraph
         end
 
         out = combine_method_pins(rbs_pin, yard_pin)
-        logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
+        logger.debug do
+          "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}"
+        end
         out
       end
       in_rbs_only = rbs_pins.select do |pin|

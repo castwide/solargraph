@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'prism'
+require 'ast'
+require 'parser'
 
 module Solargraph
   module Parser

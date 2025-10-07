@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'yaml'
 
 module Solargraph
   # A workspace consists of the files in a project's directory and the
@@ -9,7 +10,10 @@ module Solargraph
   # in an associated Library or ApiMap.
   #
   class Workspace
+    include Logging
+
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
     autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
@@ -19,15 +23,21 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
+    # @todo Remove '' and '*' special cases
     # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = directory
+      raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
+
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
-      @gemnames = []
       require_plugins
     end
 
@@ -42,6 +52,68 @@ module Solargraph
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
+    end
+
+    # @return [Solargraph::PinCache]
+    def pin_cache
+      @pin_cache ||= fresh_pincache
+    end
+
+    # @param stdlib_name [String]
+    #
+    # @return [Array<String>]
+    def stdlib_dependencies stdlib_name
+      gemspecs.stdlib_dependencies(stdlib_name)
+    end
+
+    # @return [Environ]
+    def global_environ
+      # empty docmap, since the result needs to work in any possible
+      # context here
+      @global_environ ||= Convention.for_global(DocMap.new([], self, out: nil))
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
+    # @return [void]
+    def cache_gem gemspec, out: nil, rebuild: false
+      pin_cache.cache_gem(gemspec: gemspec, out: out, rebuild: rebuild)
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [IO, nil] output stream for logging
+    #
+    # @return [void]
+    def uncache_gem gemspec, out: nil
+      pin_cache.uncache_gem(gemspec, out: out)
+    end
+
+    # @return [Solargraph::PinCache]
+    def fresh_pincache
+      PinCache.new(rbs_collection_path: rbs_collection_path,
+                   rbs_collection_config_path: rbs_collection_config_path,
+                   yard_plugins: yard_plugins,
+                   directory: directory)
+    end
+
+    # @return [Array<String>]
+    def yard_plugins
+      @yard_plugins ||= global_environ.yard_plugins.sort.uniq
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec, out: $stderr
+      gemspecs.fetch_dependencies(gemspec, out: out)
+    end
+
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    # @return [Array<Gem::Specification>]
+    def resolve_require require
+      gemspecs.resolve_require(require)
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -121,12 +193,44 @@ module Solargraph
 
     # @return [String, nil]
     def rbs_collection_config_path
-      @rbs_collection_config_path ||= begin
-        unless directory.empty? || directory == '*'
-          yaml_file = File.join(directory, 'rbs_collection.yaml')
-          yaml_file if File.file?(yaml_file)
+      @rbs_collection_config_path ||=
+        begin
+          unless directory.empty? || directory == '*'
+            yaml_file = File.join(directory, 'rbs_collection.yaml')
+            yaml_file if File.file?(yaml_file)
+          end
         end
+    end
+
+    # @param name [String]
+    # @param version [String, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem name, version = nil
+      gemspecs.find_gem(name, version)
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_all_for_workspace! out, rebuild: false
+      PinCache.cache_core(out: out) unless PinCache.core?
+
+      # @type [Array<Gem::Specification>]
+      gem_specs = gemspecs.all_gemspecs_from_bundle
+      # try any possible standard libraries, but be quiet about it
+      stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| gemspecs.find_gem(stdlib, out: nil) }.compact
+      specs = (gem_specs + stdlib_specs)
+      specs.each do |spec|
+        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
       end
+      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      # do this after so that we prefer stdlib requires from gems,
+      # which are likely to be newer and have more pins
+      pin_cache.cache_all_stdlibs(out: out)
+
+      out&.puts "Documentation cached for core, standard library and gems."
     end
 
     # Synchronize the workspace from the provided updater.
@@ -148,12 +252,9 @@ module Solargraph
       directory
     end
 
-    # True if the workspace has a root Gemfile.
-    #
-    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-    #
-    def gemfile?
-      directory && File.file?(File.join(directory, 'Gemfile'))
+    # @return [Solargraph::Workspace::Gemspecs]
+    def gemspecs
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory_or_nil)
     end
 
     private
@@ -174,7 +275,10 @@ module Solargraph
       source_hash.clear
       unless directory.empty? || directory == '*'
         size = config.calculated.length
-        raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
+        if config.max_files > 0 and size > config.max_files
+          raise WorkspaceTooLargeError,
+                "The workspace is too large to index (#{size} files, #{config.max_files} max)"
+        end
         config.calculated.each do |filename|
           begin
             source_hash[filename] = Solargraph::Source.load(filename)
