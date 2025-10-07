@@ -23,7 +23,8 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String] TODO: Document and test '' and '*' semantics
+    # @todo Remove '' and '*' special cases
+    # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
