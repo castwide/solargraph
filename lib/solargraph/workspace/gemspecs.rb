@@ -83,9 +83,10 @@ module Solargraph
       # @todo space for future expansion from other merges
       #
       # @param stdlib_name [String]
+      # @param stdlib_version [String, nil]
       #
       # @return [Array<String>]
-      def stdlib_dependencies stdlib_name
+      def stdlib_dependencies stdlib_name, stdlib_version = nil
         []
       end
 
@@ -119,6 +120,7 @@ module Solargraph
         gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
           next if deps[runtime_dep.name]
 
+          # TODO Why doesn't this just delegate to find_gem?  Add comment or change
           Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
           dep = gemspecs.find { |dep| dep.name == runtime_dep.name }
           dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
@@ -131,7 +133,10 @@ module Solargraph
           deps[dep.name] ||= dep
         end
 
-        gem_dep_gemspecs.values.compact.uniq(&:name)
+        (gem_dep_gemspecs.values.compact +
+         # try stdlib as well
+         stdlib_dependencies(gemspec.name, gemspec.version)).
+           uniq(&:name)
       end
 
       # Returns all gemspecs directly depended on by this workspace's
