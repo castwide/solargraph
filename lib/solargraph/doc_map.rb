@@ -92,14 +92,16 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Set<Gem::Specification>]
+    # @return [Array<Gem::Specification>]
     # @param out [IO]
     def dependencies out: $stderr
       @dependencies ||=
         begin
-          all_deps = gemspecs.flat_map { |spec| fetch_dependencies(spec, out: out) }
+          all_deps = gemspecs.
+                       flat_map { |spec| fetch_dependencies(spec, out: out) }.
+                       uniq(&:name)
           existing_gems = gemspecs.map(&:name)
-          all_deps.reject { |gemspec| existing_gems.include? gemspec.name }.to_set
+          all_deps.reject { |gemspec| existing_gems.include? gemspec.name }
         end
     end
 
