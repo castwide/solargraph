@@ -80,16 +80,6 @@ module Solargraph
         nil
       end
 
-      # @todo space for future expansion from other merges
-      #
-      # @param stdlib_name [String]
-      # @param stdlib_version [String, nil]
-      #
-      # @return [Array<String>]
-      def stdlib_dependencies stdlib_name, stdlib_version = nil
-        []
-      end
-
       # @param name [String]
       # @param version [String, nil]
       # @param out [IO, nil] output stream for logging
@@ -126,10 +116,11 @@ module Solargraph
           deps[dep.name] ||= dep
         end
 
-        (gem_dep_gemspecs.values.compact +
-         # try stdlib as well
-         stdlib_dependencies(gemspec.name, gemspec.version))
-          .uniq(&:name)
+        # RBS tracks implicit dependencies, like how the YAML standard
+        # library implies pulling in the psych library.
+        stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+        stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
+        (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end
 
       # Returns all gemspecs directly depended on by this workspace's
