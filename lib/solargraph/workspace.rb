@@ -170,6 +170,11 @@ module Solargraph
       gemspecs.find_gem(name, version)
     end
 
+    # @return [Array<Gem::Specification>]
+    def all_gemspecs_from_bundle
+      gemspecs.all_gemspecs_from_bundle
+    end
+
     # Synchronize the workspace from the provided updater.
     #
     # @param updater [Source::Updater]
