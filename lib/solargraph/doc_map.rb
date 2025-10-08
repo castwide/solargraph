@@ -97,9 +97,9 @@ module Solargraph
     def dependencies out: $stderr
       @dependencies ||=
         begin
-          all_deps = gemspecs.
-                       flat_map { |spec| fetch_dependencies(spec, out: out) }.
-                       uniq(&:name)
+          all_deps = gemspecs
+                       .flat_map { |spec| fetch_dependencies(spec, out: out) }
+                       .uniq(&:name)
           existing_gems = gemspecs.map(&:name)
           all_deps.reject { |gemspec| existing_gems.include? gemspec.name }
         end
