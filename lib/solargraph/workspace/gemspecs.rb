@@ -80,6 +80,14 @@ module Solargraph
         nil
       end
 
+      # @param stdlib_name [String]
+      #
+      # @return [Array<String>]
+      def stdlib_dependencies stdlib_name
+        deps = RbsMap::StdlibMap.stdlib_dependencies(stdlib_name, nil) || []
+        deps.map { |dep| dep['name'] }.compact
+      end
+
       # @param name [String]
       # @param version [String, nil]
       # @param out [IO, nil] output stream for logging
