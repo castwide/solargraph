@@ -80,6 +80,15 @@ module Solargraph
         nil
       end
 
+      # @todo space for future expansion from other merges
+      #
+      # @param stdlib_name [String]
+      #
+      # @return [Array<String>]
+      def stdlib_dependencies stdlib_name
+        []
+      end
+
       # @param name [String]
       # @param version [String, nil]
       # @param out [IO, nil] output stream for logging

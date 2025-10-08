@@ -47,6 +47,13 @@ module Solargraph
       @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
+    # @param stdlib_name [String]
+    #
+    # @return [Array<String>]
+    def stdlib_dependencies stdlib_name
+      gemspecs.stdlib_dependencies(stdlib_name)
+    end
+
     # @param out [IO, nil] output stream for logging
     # @param gemspec [Gem::Specification]
     # @return [Array<Gem::Specification>]
