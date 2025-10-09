@@ -8,9 +8,7 @@ name: Plugin
 on:
   push:
     branches: [master]
-  pull_request:
-    branches:
-      - '*'
+  pull_request: [master]
 
 permissions:
   contents: read
