@@ -97,7 +97,7 @@ module Solargraph
         return unless ref
         res = constants.dereference(ref)
         return unless res
-        res + type.substring
+        res
       end
 
       # @param fqns [String]
@@ -240,7 +240,7 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
-            refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
+            refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
               queue << ref
