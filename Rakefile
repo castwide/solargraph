@@ -9,7 +9,7 @@ task :console do
 end
 
 desc "Run the type checker"
-task typecheck: [:typecheck_typed]
+task typecheck: [:typecheck_strong]
 
 desc "Run the type checker at typed level - return code issues provable without annotations being correct"
 task :typecheck_typed do
