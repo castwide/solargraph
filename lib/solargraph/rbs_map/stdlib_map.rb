@@ -33,6 +33,22 @@ module Solargraph
         end
       end
 
+      # @return [RBS::Collection::Sources::Stdlib]
+      def self.source
+        @source ||= RBS::Collection::Sources::Stdlib.instance
+      end
+
+      # @param name [String]
+      # @param version [String, nil]
+      # @return [Array<Hash{String => String}>, nil]
+      def self.stdlib_dependencies name, version = nil
+        if source.has?(name, version)
+          source.dependencies_of(name, version)
+        else
+          []
+        end
+      end
+
       # @param library [String]
       # @return [StdlibMap]
       def self.load library
