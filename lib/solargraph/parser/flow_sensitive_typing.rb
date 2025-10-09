@@ -12,9 +12,10 @@ module Solargraph
 
       # @param and_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_and(and_node, true_ranges = [])
+      def process_and(and_node, true_ranges = [], false_ranges = [])
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
@@ -25,7 +26,7 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_isa(lhs, true_ranges + [rhs_presence])
+        process_isa(lhs, true_ranges + [rhs_presence], [])
       end
 
       # @param if_node [Parser::AST::Node]
@@ -50,6 +51,7 @@ module Solargraph
         else_clause = if_node.children[2]
 
         true_ranges = []
+        false_ranges = []
         if always_breaks?(else_clause)
           unless enclosing_breakable_pin.nil?
             rest_of_breakable_body = Range.new(get_node_end_position(if_node),
@@ -68,7 +70,7 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
-        process_expression(conditional_node, true_ranges)
+        process_expression(conditional_node, true_ranges, false_ranges)
       end
 
       class << self
@@ -160,13 +162,14 @@ module Solargraph
 
       # @param conditional_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_expression(conditional_node, true_ranges)
+      def process_expression(conditional_node, true_ranges, false_ranges)
         if conditional_node.type == :send
-          process_isa(conditional_node, true_ranges)
+          process_isa(conditional_node, true_ranges, false_ranges)
         elsif conditional_node.type == :and
-          process_and(conditional_node, true_ranges)
+          process_and(conditional_node, true_ranges, false_ranges)
         end
       end
 
@@ -208,9 +211,10 @@ module Solargraph
 
       # @param isa_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_isa(isa_node, true_presences)
+      def process_isa(isa_node, true_presences, false_presences)
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         isa_position = Range.from_node(isa_node).start
