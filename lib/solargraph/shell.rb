@@ -80,6 +80,7 @@ module Solargraph
         end
       end
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
+        # @sg-ignore Unresolved call to to_yaml
         file.puts conf.to_yaml
       end
       STDOUT.puts "Configuration file initialized."
