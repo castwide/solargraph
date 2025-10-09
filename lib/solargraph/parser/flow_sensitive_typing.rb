@@ -68,7 +68,7 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
-        process_conditional(conditional_node, true_ranges)
+        process_expression(conditional_node, true_ranges)
       end
 
       class << self
@@ -162,7 +162,7 @@ module Solargraph
       # @param true_ranges [Array<Range>]
       #
       # @return [void]
-      def process_conditional(conditional_node, true_ranges)
+      def process_expression(conditional_node, true_ranges)
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
         elsif conditional_node.type == :and
