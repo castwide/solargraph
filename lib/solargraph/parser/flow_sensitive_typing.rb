@@ -16,6 +16,8 @@ module Solargraph
       #
       # @return [void]
       def process_and(and_node, true_ranges = [], false_ranges = [])
+        return unless and_node.type == :and
+
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
@@ -26,13 +28,32 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_isa(lhs, true_ranges + [rhs_presence], [])
+
+        # can't assume if an and is false that every single condition
+        # is false, so don't provide any false ranges to assert facts
+        # on
+        process_expression(lhs, true_ranges + [rhs_presence], [])
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_calls(node, true_presences, false_presences)
+        return unless node.type == :send
+
+        process_isa(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_if(if_node)
+      def process_if(if_node, true_ranges = [], false_ranges = [])
+        return if if_node.type != :if
+
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
         #
@@ -50,8 +71,6 @@ module Solargraph
         # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 
-        true_ranges = []
-        false_ranges = []
         if always_breaks?(else_clause)
           unless enclosing_breakable_pin.nil?
             rest_of_breakable_body = Range.new(get_node_end_position(if_node),
@@ -160,43 +179,53 @@ module Solargraph
         end
       end
 
-      # @param conditional_node [Parser::AST::Node]
+      # @param expression_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_expression(conditional_node, true_ranges, false_ranges)
-        if conditional_node.type == :send
-          process_isa(conditional_node, true_ranges, false_ranges)
-        elsif conditional_node.type == :and
-          process_and(conditional_node, true_ranges, false_ranges)
+      def process_expression(expression_node, true_ranges, false_ranges)
+        process_calls(expression_node, true_ranges, false_ranges)
+        process_and(expression_node, true_ranges, false_ranges)
+      end
+
+      # @param call_node [Parser::AST::Node]
+      # @param method_name [Symbol]
+      # @return [Array(String, String), nil] Tuple of rgument to
+      #   function, then receiver of function if it's a variable,
+      #   otherwise nil if no simple variable receiver
+      def parse_call(call_node, method_name)
+        return unless call_node&.type == :send && call_node.children[1] == method_name
+        # Check if conditional node follows this pattern:
+        #   s(:send,
+        #     s(:send, nil, :foo), :is_a?,
+        #     s(:const, nil, :Baz)),
+        #
+        call_receiver = call_node.children[0]
+        call_arg = type_name(call_node.children[2])
+
+        # check if call_receiver looks like this:
+        #  s(:send, nil, :foo)
+        # and set variable_name to :foo
+        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
+          variable_name = call_receiver.children[1].to_s
         end
+        # or like this:
+        # (lvar :repr)
+        variable_name = call_receiver.children[0].to_s if call_receiver&.type == :lvar
+        return unless variable_name
+
+        [call_arg, variable_name]
       end
 
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
       def parse_isa(isa_node)
-        return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
-        # Check if conditional node follows this pattern:
-        #   s(:send,
-        #     s(:send, nil, :foo), :is_a?,
-        #     s(:const, nil, :Baz)),
-        isa_receiver = isa_node.children[0]
-        isa_type_name = type_name(isa_node.children[2])
-        return unless isa_type_name
+        call_type_name, variable_name = parse_call(isa_node, :is_a?)
 
-        # check if isa_receiver looks like this:
-        #  s(:send, nil, :foo)
-        # and set variable_name to :foo
-        if isa_receiver&.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
-          variable_name = isa_receiver.children[1].to_s
-        end
-        # or like this:
-        # (lvar :repr)
-        variable_name = isa_receiver.children[0].to_s if isa_receiver&.type == :lvar
-        return unless variable_name
+        return unless call_type_name
 
-        [isa_type_name, variable_name]
+        [call_type_name, variable_name]
       end
 
       # @param variable_name [String]
