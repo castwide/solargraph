@@ -54,7 +54,7 @@ def undercover
   cmd = 'bundle exec undercover ' \
         '--simplecov coverage/combined/coverage.json ' \
         '--exclude-files "Rakefile,spec/*,spec/**/*,lib/solargraph/version.rb" ' \
-        '--compare origin/extract_gemspecs_logic_from_doc_map'
+        '--compare origin/master'
   output, status = Bundler.with_unbundled_env do
     Open3.capture2e(cmd)
   end
