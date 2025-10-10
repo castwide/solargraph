@@ -107,11 +107,9 @@ module Solargraph
       def probe api_map
         if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type
-          # has been downcast - let's include only the common bits,
-          # trusting that the other ones have been proven not to be
-          # included
+          # has been downcast - use the type it figured out
           # @sg-ignore flow sensitive typing needs to handle && on both sides
-          return ComplexType.new(super.items & return_type.items).qualify(api_map, *gates)
+          return return_type.qualify(api_map, *gates)
         end
 
         unless @assignment.nil?
