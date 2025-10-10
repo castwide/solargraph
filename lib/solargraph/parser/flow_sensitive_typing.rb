@@ -44,6 +44,7 @@ module Solargraph
         return unless node.type == :send
 
         process_isa(node, true_presences, false_presences)
+        process_nilp(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -81,7 +82,7 @@ module Solargraph
 
         unless then_clause.nil?
           #
-          # Add specialized locals for the then clause range
+          # If the condition is true we can assume things about the then clause
           #
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
@@ -171,9 +172,11 @@ module Solargraph
         #
         facts_by_pin.each_pair do |pin, facts|
           facts.each do |fact|
-            downcast_type_name = fact.fetch(:type)
+            downcast_type_name = fact.fetch(:type, nil)
+            nilp = fact.fetch(:nil, nil)
             presences.each do |presence|
-              add_downcast_local(pin, downcast_type_name, presence)
+              add_downcast_local(pin, downcast_type_name, presence) unless downcast_type_name.nil?
+              add_downcast_local(pin, 'nil', presence) if nilp == true
             end
           end
         end
@@ -257,6 +260,36 @@ module Solargraph
         process_facts(if_true, true_presences)
       end
 
+      # @param nilp_node [Parser::AST::Node]
+      # @return [Array(String, String), nil]
+      def parse_nilp(nilp_node)
+        parse_call(nilp_node, :nil?)
+      end
+
+      # @param nilp_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_nilp(nilp_node, true_presences, false_presences)
+        nilp_arg, variable_name = parse_nilp(nilp_node)
+        return if variable_name.nil? || variable_name.empty?
+        # if .nil? got an argument, move on, this isn't the situation
+        # we're looking for and typechecking will cover any invalid
+        # ones
+        return unless nilp_arg.nil?
+
+        nilp_position = Range.from_node(nilp_node).start
+
+        pin = find_local(variable_name, nilp_position)
+        return unless pin
+
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { nil: true }
+        process_facts(if_true, true_presences)
+      end
+
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
@@ -264,7 +297,9 @@ module Solargraph
         # e.g.,
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
+        # @type [Parser::AST::Node, nil]
         module_node = node.children[0]
+        # @type [Parser::AST::Node, nil]
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?

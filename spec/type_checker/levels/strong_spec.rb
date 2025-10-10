@@ -4,6 +4,22 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'respects pin visibility' do
+      checker = type_checker(%(
+        class Foo
+          # Get the namespace's type (Class or Module).
+          #
+          # @param baz [Integer, nil]
+          # @return [Integer, nil]
+          def foo baz = 123
+            return nil if baz.nil?
+            baz
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index

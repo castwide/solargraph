@@ -318,8 +318,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses nil? and && in a simple if() to refine nilness - nil? first' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       # @param throw_the_dice [Boolean]
@@ -914,8 +912,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'provides a useful pin after a return if .nil?' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class A
         # @param b [Hash{String => String}]
