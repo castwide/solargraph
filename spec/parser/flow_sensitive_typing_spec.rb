@@ -212,6 +212,30 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Float')
   end
 
+  it 'uses varname in a simple if()' do
+    source = Solargraph::Source.load_string(%(
+      # @param repr [Integer, nil]
+      # @param throw_the_dice [Boolean]
+      def verify_repro(repr, throw_the_dice)
+        repr
+        if repr
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('nil')
+  end
+
   it 'uses varname in a "break unless" statement in a while to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
