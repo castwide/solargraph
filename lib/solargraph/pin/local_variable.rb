@@ -21,6 +21,18 @@ module Solargraph
         @presence_certain = presence_certain
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type.qualify(api_map, *gates)
+        end
+
+        super
+      end
+
       def combine_with(other, attrs={})
         new_attrs = {
           assignment: assert_same(other, :assignment),

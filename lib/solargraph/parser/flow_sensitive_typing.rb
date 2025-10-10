@@ -12,9 +12,12 @@ module Solargraph
 
       # @param and_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_and(and_node, true_ranges = [])
+      def process_and(and_node, true_ranges = [], false_ranges = [])
+        return unless and_node.type == :and
+
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
@@ -25,13 +28,33 @@ module Solargraph
 
         rhs_presence = Range.new(before_rhs_pos,
                                  get_node_end_position(rhs))
-        process_isa(lhs, true_ranges + [rhs_presence])
+
+        # can't assume if an and is false that every single condition
+        # is false, so don't provide any false ranges to assert facts
+        # on
+        process_expression(lhs, true_ranges + [rhs_presence], [])
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_calls(node, true_presences, false_presences)
+        return unless node.type == :send
+
+        process_isa(node, true_presences, false_presences)
+        process_nilp(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_if(if_node)
+      def process_if(if_node, true_ranges = [], false_ranges = [])
+        return if if_node.type != :if
+
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
         #
@@ -49,7 +72,6 @@ module Solargraph
         # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 
-        true_ranges = []
         if always_breaks?(else_clause)
           unless enclosing_breakable_pin.nil?
             rest_of_breakable_body = Range.new(get_node_end_position(if_node),
@@ -60,7 +82,7 @@ module Solargraph
 
         unless then_clause.nil?
           #
-          # Add specialized locals for the then clause range
+          # If the condition is true we can assume things about the then clause
           #
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
@@ -68,7 +90,7 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
-        process_conditional(conditional_node, true_ranges)
+        process_expression(conditional_node, true_ranges, false_ranges)
       end
 
       class << self
@@ -150,50 +172,63 @@ module Solargraph
         #
         facts_by_pin.each_pair do |pin, facts|
           facts.each do |fact|
-            downcast_type_name = fact.fetch(:type)
+            downcast_type_name = fact.fetch(:type, nil)
+            nilp = fact.fetch(:nil, nil)
             presences.each do |presence|
-              add_downcast_local(pin, downcast_type_name, presence)
+              add_downcast_local(pin, downcast_type_name, presence) unless downcast_type_name.nil?
+              add_downcast_local(pin, 'nil', presence) if nilp == true
             end
           end
         end
       end
 
-      # @param conditional_node [Parser::AST::Node]
+      # @param expression_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_conditional(conditional_node, true_ranges)
-        if conditional_node.type == :send
-          process_isa(conditional_node, true_ranges)
-        elsif conditional_node.type == :and
-          process_and(conditional_node, true_ranges)
+      def process_expression(expression_node, true_ranges, false_ranges)
+        process_calls(expression_node, true_ranges, false_ranges)
+        process_and(expression_node, true_ranges, false_ranges)
+      end
+
+      # @param call_node [Parser::AST::Node]
+      # @param method_name [Symbol]
+      # @return [Array(String, String), nil] Tuple of rgument to
+      #   function, then receiver of function if it's a variable,
+      #   otherwise nil if no simple variable receiver
+      def parse_call(call_node, method_name)
+        return unless call_node&.type == :send && call_node.children[1] == method_name
+        # Check if conditional node follows this pattern:
+        #   s(:send,
+        #     s(:send, nil, :foo), :is_a?,
+        #     s(:const, nil, :Baz)),
+        #
+        call_receiver = call_node.children[0]
+        call_arg = type_name(call_node.children[2])
+
+        # check if call_receiver looks like this:
+        #  s(:send, nil, :foo)
+        # and set variable_name to :foo
+        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
+          variable_name = call_receiver.children[1].to_s
         end
+        # or like this:
+        # (lvar :repr)
+        variable_name = call_receiver.children[0].to_s if call_receiver&.type == :lvar
+        return unless variable_name
+
+        [call_arg, variable_name]
       end
 
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
       def parse_isa(isa_node)
-        return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
-        # Check if conditional node follows this pattern:
-        #   s(:send,
-        #     s(:send, nil, :foo), :is_a?,
-        #     s(:const, nil, :Baz)),
-        isa_receiver = isa_node.children[0]
-        isa_type_name = type_name(isa_node.children[2])
-        return unless isa_type_name
+        call_type_name, variable_name = parse_call(isa_node, :is_a?)
 
-        # check if isa_receiver looks like this:
-        #  s(:send, nil, :foo)
-        # and set variable_name to :foo
-        if isa_receiver&.type == :send && isa_receiver.children[0].nil? && isa_receiver.children[1].is_a?(Symbol)
-          variable_name = isa_receiver.children[1].to_s
-        end
-        # or like this:
-        # (lvar :repr)
-        variable_name = isa_receiver.children[0].to_s if isa_receiver&.type == :lvar
-        return unless variable_name
+        return unless call_type_name
 
-        [isa_type_name, variable_name]
+        [call_type_name, variable_name]
       end
 
       # @param variable_name [String]
@@ -208,9 +243,10 @@ module Solargraph
 
       # @param isa_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_isa(isa_node, true_presences)
+      def process_isa(isa_node, true_presences, false_presences)
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         isa_position = Range.from_node(isa_node).start
@@ -224,6 +260,36 @@ module Solargraph
         process_facts(if_true, true_presences)
       end
 
+      # @param nilp_node [Parser::AST::Node]
+      # @return [Array(String, String), nil]
+      def parse_nilp(nilp_node)
+        parse_call(nilp_node, :nil?)
+      end
+
+      # @param nilp_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_nilp(nilp_node, true_presences, false_presences)
+        nilp_arg, variable_name = parse_nilp(nilp_node)
+        return if variable_name.nil? || variable_name.empty?
+        # if .nil? got an argument, move on, this isn't the situation
+        # we're looking for and typechecking will cover any invalid
+        # ones
+        return unless nilp_arg.nil?
+
+        nilp_position = Range.from_node(nilp_node).start
+
+        pin = find_local(variable_name, nilp_position)
+        return unless pin
+
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { nil: true }
+        process_facts(if_true, true_presences)
+      end
+
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
@@ -231,7 +297,9 @@ module Solargraph
         # e.g.,
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
+        # @type [Parser::AST::Node, nil]
         module_node = node.children[0]
+        # @type [Parser::AST::Node, nil]
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
