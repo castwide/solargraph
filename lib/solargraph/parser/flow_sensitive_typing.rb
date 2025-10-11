@@ -295,7 +295,6 @@ module Solargraph
       # @return [Solargraph::Pin::LocalVariable, nil]
       def find_local(variable_name, position)
         pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
-        return unless pins.length == 1
         pins.first
       end
 

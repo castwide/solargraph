@@ -311,8 +311,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses nil? in a simple if() to refine nilness' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       def verify_repro(repr)
@@ -558,8 +556,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses variable in a simple if() to refine types' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       def verify_repro(repr)
