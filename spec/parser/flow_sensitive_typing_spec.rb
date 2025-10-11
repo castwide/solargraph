@@ -255,8 +255,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses varname in a "break if" statement in a while to refine types' do
-    pending 'lib/solargraph/pin/breakable.rb'
-
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
       class Repro < ReproBase; end

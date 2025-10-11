@@ -102,10 +102,15 @@ module Solargraph
         # @type [Parser::AST::Node]
         else_clause = if_node.children[2]
 
-        if always_breaks?(else_clause)
-          unless enclosing_breakable_pin.nil?
-            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
-                                               get_node_end_position(enclosing_breakable_pin.node))
+        unless enclosing_breakable_pin.nil?
+          rest_of_breakable_body = Range.new(get_node_end_position(if_node),
+                                             get_node_end_position(enclosing_breakable_pin.node))
+
+          if always_breaks?(then_clause)
+            false_ranges << rest_of_breakable_body
+          end
+
+          if always_breaks?(else_clause)
             true_ranges << rest_of_breakable_body
           end
         end
