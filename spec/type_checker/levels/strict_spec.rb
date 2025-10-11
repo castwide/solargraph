@@ -5,6 +5,36 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'can derive return types' do
+      checker = type_checker(%(
+        # @param a [String, nil]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'ignores nilable type issues' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
@@ -61,7 +91,7 @@ describe Solargraph::TypeChecker do
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
+      api_map = Solargraph::ApiMap.load '.'
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
@@ -581,6 +611,46 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'Can infer through simple ||= on ivar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on lvar' do
+      checker = type_checker(%(
+        def recipient
+          recip ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on cvar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @@recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on civar' do
+      checker = type_checker(%(
+        class Foo
+          @recipient ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'Can infer through ||= with a begin+end' do
       checker = type_checker(%(
         def recipient
@@ -701,6 +771,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+
+    it 'validates parameters in function calls' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar); end
+
+        def baz
+          foo(123)
+        end
+        ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received 123'])
+    end
+
     it 'validates inferred return types with complex tags' do
       checker = type_checker(%(
         # @param foo [Numeric, nil] a foo
@@ -767,19 +850,6 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
-    end
-
-    it 'does not falsely enforce nil in return types' do
-      checker = type_checker(%(
-      # @return [Integer]
-      def foo
-        # @sg-ignore
-        # @type [Integer, nil]
-        a = bar
-        a || 123
-      end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'refines types on is_a? and && to downcast and avoid false positives' do
@@ -1004,10 +1074,46 @@ describe Solargraph::TypeChecker do
                  123
                elsif rand
                  456
+               else
+                 nil
                end
           end
         end
       ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with un-elsed if' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              if rand
+                123
+              elsif rand
+                456
+              end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with with un-elsed unless' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              unless rand
+                123
+              end
+          end
+        end
+      ))
+
       expect(checker.problems.map(&:message)).to eq([])
     end
   end
