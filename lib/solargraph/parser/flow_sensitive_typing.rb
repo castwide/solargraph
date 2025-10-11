@@ -35,6 +35,35 @@ module Solargraph
         process_expression(lhs, true_ranges + [rhs_presence], [])
       end
 
+      # @param or_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_or(or_node, true_ranges = [], false_ranges = [])
+        return unless or_node.type == :or
+
+        # @type [Parser::AST::Node]
+        lhs = or_node.children[0]
+        # @type [Parser::AST::Node]
+        rhs = or_node.children[1]
+
+        before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
+
+        rhs_presence = Range.new(before_rhs_pos,
+                                 get_node_end_position(rhs))
+
+        # can assume if an or is false that every single condition is
+        # false, so't provide false ranges to assert facts on
+
+        # can't assume if an or is true that every single condition is
+        # true, so don't provide true ranges to assert facts on
+
+        process_expression(lhs, [], [rhs_presence])
+        process_expression(rhs, [], [])
+      end
+
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       # @param false_presences [Array<Range>]
@@ -201,6 +230,7 @@ module Solargraph
       def process_expression(expression_node, true_ranges, false_ranges)
         process_calls(expression_node, true_ranges, false_ranges)
         process_and(expression_node, true_ranges, false_ranges)
+        process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
       end
 
@@ -300,6 +330,11 @@ module Solargraph
         if_true[pin] ||= []
         if_true[pin] << { nil: true }
         process_facts(if_true, true_presences)
+
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { not_nil: true }
+        process_facts(if_false, false_presences)
       end
 
       # @param var_node [Parser::AST::Node]

@@ -492,8 +492,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? and or in an unless' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       # @param repr [String, nil]
       # @param throw_the_dice [Boolean]
