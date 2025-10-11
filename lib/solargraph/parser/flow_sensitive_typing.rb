@@ -33,6 +33,7 @@ module Solargraph
         # is false, so don't provide any false ranges to assert facts
         # on
         process_expression(lhs, true_ranges + [rhs_presence], [])
+        process_expression(rhs, true_ranges, [])
       end
 
       # @param or_node [Parser::AST::Node]
