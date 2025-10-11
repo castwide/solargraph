@@ -125,6 +125,16 @@ module Solargraph
                                    get_node_end_position(then_clause))
         end
 
+        unless else_clause.nil?
+          #
+          # If the condition is true we can assume things about the else clause
+          #
+          before_else_clause_loc = else_clause.location.expression.adjust(begin_pos: -1)
+          before_else_clause_pos = Position.new(before_else_clause_loc.line, before_else_clause_loc.column)
+          false_ranges << Range.new(before_else_clause_pos,
+                                    get_node_end_position(else_clause))
+        end
+
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
