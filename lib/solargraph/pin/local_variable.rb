@@ -13,12 +13,40 @@ module Solargraph
       # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
+      # @param exclude_return_type [ComplexType, nil] Ensure any return
+      #   type returned will never include these unique types in the
+      #   unique types of its complex type
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
+      def initialize assignment: nil, presence: nil, presence_certain: false, exclude_return_type: nil,
+                     **splat
         super(**splat)
         @assignment = assignment
         @presence = presence
         @presence_certain = presence_certain
+        @exclude_return_type = exclude_return_type
+      end
+
+      def reset_generated!
+        @return_type_minus_exclusions = nil
+        super
+      end
+
+      # @return [ComplexType, nil]
+      def return_type
+        return_type_minus_exclusions(@return_type || generate_complex_type)
+      end
+
+      # @param raw_return_type [ComplexType, nil]
+      # @return [ComplexType, nil]
+      def return_type_minus_exclusions(raw_return_type)
+        @return_type_minus_exclusions ||=
+          if exclude_return_type && raw_return_type
+            types = raw_return_type.items - exclude_return_type.items
+            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+            ComplexType.new(types)
+          else
+            raw_return_type
+          end
       end
 
       # @param api_map [ApiMap]
@@ -59,6 +87,8 @@ module Solargraph
       end
 
       private
+
+      attr_reader :exclude_return_type
 
       # @param tag1 [String]
       # @param tag2 [String]
