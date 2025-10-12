@@ -6,6 +6,7 @@ module Solargraph
     #
     class Method < Callable
       include Solargraph::Parser::NodeMethods
+      include CompoundStatementable
 
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility

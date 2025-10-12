@@ -605,8 +605,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in an if to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -629,8 +627,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   # https://cse.buffalo.edu/~regan/cse305/RubyBNF.pdf
   # https://ruby-doc.org/docs/ruby-doc-bundle/Manual/man-1.4/syntax.html
   it 'uses .nil? in a return if() in a method to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -819,8 +815,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in a begin/end to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -848,8 +842,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in a ||= to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
