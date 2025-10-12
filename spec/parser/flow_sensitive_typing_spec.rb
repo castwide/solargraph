@@ -528,8 +528,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses varname and && in a simple if() - varname second' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       # @param repr [Integer, nil]
       # @param throw_the_dice [Boolean]
@@ -674,8 +672,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in an unless to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -751,8 +747,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in a switch/case/else to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -784,8 +778,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in a ternary operator to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
@@ -869,8 +861,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_nilp'
-
     source = Solargraph::Source.load_string(%(
       class Foo
         # @param baz [::Boolean, nil]
