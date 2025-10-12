@@ -40,6 +40,11 @@ module Solargraph
 
         private
 
+        # @return [Solargraph::Location]
+        def location
+          get_node_location(node)
+        end
+
         # @return [Solargraph::Position]
         def position
           Position.new(node.loc.line, node.loc.column)
