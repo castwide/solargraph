@@ -77,6 +77,7 @@ module Solargraph
 
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
+        process_bang(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -370,6 +371,30 @@ module Solargraph
         if_false[pin] ||= []
         if_false[pin] << { not_nil: true }
         process_facts(if_false, false_presences)
+      end
+
+      # @param bang_node [Parser::AST::Node]
+      # @return [Array(String, String), nil]
+      def parse_bang(bang_node)
+        parse_call(bang_node, :!)
+      end
+
+      # @param bang_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_bang(bang_node, true_presences, false_presences)
+        # pry(main)> require 'parser/current'; Parser::CurrentRuby.parse("!2")
+        # => s(:send,
+        #   s(:int, 2), :!)
+        #       end
+        return unless bang_node.type == :send && bang_node.children[1] == :!
+
+        receiver = bang_node.children[0]
+
+        # swap the two presences
+        process_expression(receiver, false_presences, true_presences)
       end
 
       # @param var_node [Parser::AST::Node]

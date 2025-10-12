@@ -944,8 +944,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
   end
 
   it 'uses ! to detect nilness' do
-    pending 'lib/solargraph/parser/flow_sensitive_typing.rb#parse_bang'
-
     source = Solargraph::Source.load_string(%(
       class A
         # @param a [Integer, nil]
