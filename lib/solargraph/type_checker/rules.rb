@@ -58,7 +58,7 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # @todo 260: Need to add nil check here
+      # @todo 262: Need to add nil check here
       # @todo 39: flow sensitive typing needs to handle ivars
       # @todo 9: Need to validate config
       # @todo 8: Should handle redefinition of types in simple contexts

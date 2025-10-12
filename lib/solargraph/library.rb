@@ -559,7 +559,7 @@ module Solargraph
     #
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
-    # @sg-ignore flow sensitive typing needs to handle if foo && ...
+    # @sg-ignore flow sensitive typing needs to handle ivars
     # @return [Solargraph::Source]
     def read filename
       # @sg-ignore flow sensitive typing needs to handle ivars

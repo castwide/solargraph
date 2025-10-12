@@ -73,7 +73,7 @@ module Solargraph
           attr_reader :current
 
           # @return [Gem::Version]
-          # @sg-ignore flow sensitive typing needs to handle "if foo ... else"
+          # @sg-ignore flow sensitive typing needs to handle ivars
           def available
             if !@available && !@fetched
               @fetched = true
