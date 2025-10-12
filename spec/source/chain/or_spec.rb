@@ -1,7 +1,5 @@
 describe Solargraph::Source::Chain::Or do
   it 'handles simple nil-removal' do
-    pending 'flow-sensitive typing improvements'
-
     source = Solargraph::Source.load_string(%(
       # @param a [Integer, nil]
       def foo a

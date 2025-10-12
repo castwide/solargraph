@@ -21,8 +21,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not falsely enforce nil in return types' do
-      pending 'flow-sensitive typing improvements'
-
       checker = type_checker(%(
       # @return [Integer]
       def foo

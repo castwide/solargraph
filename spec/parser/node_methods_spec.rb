@@ -185,8 +185,6 @@ describe Solargraph::Parser::NodeMethods do
   end
 
   it "handles top 'or' nodes" do
-    pending 'flow-sensitive typing improvements'
-
     node = Solargraph::Parser.parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
     expect(rets.length).to eq(1)
@@ -336,8 +334,6 @@ describe Solargraph::Parser::NodeMethods do
   end
 
   it "handles top 'or' nodes" do
-    pending 'flow-sensitive typing improvements'
-
     node = Solargraph::Parser.parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
     expect(rets.map(&:type)).to eq([:or])
