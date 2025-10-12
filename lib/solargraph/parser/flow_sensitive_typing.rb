@@ -5,9 +5,11 @@ module Solargraph
 
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
-      def initialize(locals, enclosing_breakable_pin = nil)
+      # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatementable, nil]
+      def initialize(locals, enclosing_breakable_pin, enclosing_compound_statement_pin)
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
+        @enclosing_compound_statement_pin = enclosing_compound_statement_pin
       end
 
       # @param and_node [Parser::AST::Node]
@@ -112,6 +114,24 @@ module Solargraph
 
           if always_breaks?(else_clause)
             true_ranges << rest_of_breakable_body
+          end
+        end
+
+        unless enclosing_compound_statement_pin.nil?
+          rest_of_returnable_body = Range.new(get_node_end_position(if_node),
+                                              get_node_end_position(enclosing_compound_statement_pin.node))
+
+          #
+          # if one of the clauses always leaves the compound
+          # statement, we can assume things about the rest of the
+          # compound statement
+          #
+          if always_leaves_compound_statement?(then_clause)
+            false_ranges << rest_of_returnable_body
+          end
+
+          if always_leaves_compound_statement?(else_clause)
+            true_ranges << rest_of_returnable_body
           end
         end
 
@@ -412,9 +432,15 @@ module Solargraph
         clause_node&.type == :break
       end
 
+      # @param clause_node [Parser::AST::Node, nil]
+      def always_leaves_compound_statement?(clause_node)
+        # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
+        [:return, :raise, :next, :redo, :retry].include?(clause_node&.type)
+      end
+
       attr_reader :locals
 
-      attr_reader :enclosing_breakable_pin
+      attr_reader :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end
   end
 end

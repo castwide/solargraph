@@ -51,6 +51,12 @@ module Solargraph
           pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position)}.last
         end
 
+        # @sg-ignore downcast output of Enumerable#select
+        # @return [Solargraph::Pin::CompoundStatementable, nil]
+        def enclosing_compound_statement_pin
+          pins.select{|pin| pin.is_a?(Pin::CompoundStatementable) && pin.location&.range&.contain?(position)}.last
+        end
+
         # @param subregion [Region]
         # @return [void]
         def process_children subregion = region

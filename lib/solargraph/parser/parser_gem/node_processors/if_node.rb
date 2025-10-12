@@ -10,7 +10,9 @@ module Solargraph
           def process
             process_children
 
-            FlowSensitiveTyping.new(locals, enclosing_breakable_pin).process_if(node)
+            FlowSensitiveTyping.new(locals,
+                                    enclosing_breakable_pin,
+                                    enclosing_compound_statement_pin).process_if(node)
           end
         end
       end

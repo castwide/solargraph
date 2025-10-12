@@ -38,6 +38,8 @@ module Solargraph
     autoload :Until,            'solargraph/pin/until'
     autoload :While,            'solargraph/pin/while'
     autoload :Callable,         'solargraph/pin/callable'
+    autoload :CompoundStatementable,
+             'solargraph/pin/compound_statementable'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil, source: :pin_rb)
   end
