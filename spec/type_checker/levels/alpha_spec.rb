@@ -42,7 +42,7 @@ describe Solargraph::TypeChecker do
         # @param b [String, nil]
         # @return [void]
         def bar(b)
-         foo(b)
+          foo(b)
         end
       ))
       expect(checker.problems.map(&:message))

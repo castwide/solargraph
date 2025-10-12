@@ -7,6 +7,9 @@ module Solargraph
 
       # @return [Parser::AST::Node]
       attr_reader :node
+
+      # @return [Location, nil]
+      attr_reader :location
     end
   end
 end

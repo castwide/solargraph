@@ -224,7 +224,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
           repr
         end
       end
-  ), 'test.rb')
+    ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
@@ -720,6 +720,34 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
     clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses foo in a a while to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @param other [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil, other: nil)
+          baz
+          while baz do
+            baz
+            baz = other
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [11, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 

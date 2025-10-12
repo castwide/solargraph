@@ -347,8 +347,7 @@ module Solargraph
       #
       # @return [Solargraph::Pin::LocalVariable, nil]
       def find_local(variable_name, position)
-        pins = locals.select { |pin| pin.name == variable_name && pin.presence&.include?(position) }
-        # return unless pins.length == 1
+        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
         pins.first
       end
 
@@ -480,7 +479,9 @@ module Solargraph
         # e.g.,
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
+        # @type [Parser::AST::Node, nil]
         module_node = node.children[0]
+        # @type [Parser::AST::Node, nil]
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
