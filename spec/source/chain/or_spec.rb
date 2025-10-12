@@ -17,8 +17,6 @@ describe Solargraph::Source::Chain::Or do
   end
 
   it 'removes nil from more complex cases' do
-    pending 'flow-sensitive typing improvements'
-
     source = Solargraph::Source.load_string(%(
       def foo
         out = ENV['BAR'] ||

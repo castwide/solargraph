@@ -237,6 +237,11 @@ module Solargraph
       @items.any?(&:nil_type?)
     end
 
+    # @return [ComplexType]
+    def without_nil
+      ComplexType.new(@items.reject(&:nil_type?))
+    end
+
     # @return [Array<ComplexType>]
     def all_params
       @items.first.all_params || []
