@@ -63,8 +63,8 @@ module Solargraph
         # can't assume if an or is true that every single condition is
         # true, so don't provide true ranges to assert facts on
 
-        process_expression(lhs, [], [rhs_presence])
-        process_expression(rhs, [], [])
+        process_expression(lhs, [], false_ranges + [rhs_presence])
+        process_expression(rhs, [], false_ranges)
       end
 
       # @param node [Parser::AST::Node]

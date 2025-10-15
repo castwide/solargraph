@@ -404,7 +404,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
     clip = api_map.clip_at('test.rb', [8, 10])
-    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+    expect(clip.infer.rooted_tags).to eq('::Integer')
   end
 
   it 'uses nil? and || in a simple if() - nil? second' do
@@ -428,7 +428,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
     clip = api_map.clip_at('test.rb', [8, 10])
-    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+    expect(clip.infer.rooted_tags).to eq('::Integer')
   end
 
   it 'uses varname and || in a simple if() - varname first' do
@@ -450,8 +450,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
-
-    pending('supporting else after || on varname')
 
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
@@ -477,8 +475,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending('supporting else after || on varname')
-
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
   end
@@ -497,7 +493,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::String')
 
     clip = api_map.clip_at('test.rb', [4, 8])
-    expect(clip.infer.rooted_tags).to eq('::String, nil')
+    expect(clip.infer.rooted_tags).to eq('::String')
 
     clip = api_map.clip_at('test.rb', [5, 8])
     expect(clip.infer.rooted_tags).to eq('::String, nil')
