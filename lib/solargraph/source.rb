@@ -268,7 +268,6 @@ module Solargraph
           end
           last = num
         end
-        # @sg-ignore Need to add nil check here
         result[first_not_empty_from(last + 1)] = buffer unless buffer.empty? || last.nil?
         result
       end

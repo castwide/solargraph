@@ -340,7 +340,6 @@ module Solargraph
           return self unless type_param && generics_to_resolve.include?(type_param)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
-            # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
             resolved_generic_values[type_param] = context_type
           end
           if new_binding

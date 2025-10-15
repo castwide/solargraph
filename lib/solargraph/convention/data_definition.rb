@@ -97,7 +97,6 @@ module Solargraph
             data_comments = comments_for(attribute_node)
             return if data_comments.nil? || data_comments.empty?
 
-            # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
             data_comments.split("\n").find do |row|
               row.include?(attribute_name)
             end&.gsub('@param', '@return')&.gsub(attribute_name, '')

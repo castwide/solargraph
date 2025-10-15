@@ -68,7 +68,6 @@ module Solargraph
             'unresolved'
           end
         else
-          # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
           Digest::SHA1.hexdigest(data)
         end
       end
@@ -160,6 +159,7 @@ module Solargraph
       end
     end
 
+    # @sg-ignore Need to add nil check here
     # @return [String]
     def short_name
       # @sg-ignore Need to add nil check here

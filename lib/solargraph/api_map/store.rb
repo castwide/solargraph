@@ -83,10 +83,8 @@ module Solargraph
       # @return [Pin::Reference::Superclass, nil]
       def get_superclass fqns
         return nil if fqns.nil? || fqns.empty?
-        # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
-        # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 

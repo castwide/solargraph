@@ -58,17 +58,21 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
+      # pending code fixes:
+      #
       # @todo 262: Need to add nil check here
-      # @todo 39: flow sensitive typing needs to handle ivars
       # @todo 9: Need to validate config
+      # @todo 4: Translate to something flow sensitive typing understands
+      #
+      # flow-sensitive typing could handle:
+      #
+      # @todo 39: flow sensitive typing needs to handle ivars
       # @todo 8: Should handle redefinition of types in simple contexts
       # @todo 7: Need support for reduce_class_type in UniqueType
       # @todo 7: flow sensitive typing needs to handle inner closures
       # @todo 6: Need to support nested flow sensitive types
       # @todo 5: need boolish support for ? methods
-      # @todo 5: need to improve handling of &.
-      # @todo 5: flow sensitive typing needs to handle return if foo.nil? || bar
-      # @todo 4: Translate to something flow sensitive typing understands
+      # @todo 4: need to improve handling of &.
       # @todo 4: flow sensitive typing needs to handle && on both sides
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: flow sensitive typing needs better handling of ||= on lvars

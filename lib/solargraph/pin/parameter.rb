@@ -152,7 +152,6 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          # @sg-ignore flow sensitive typing needs to handle ivars
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
           # @sg-ignore Need to add nil check here
           if @return_type.undefined?
@@ -201,10 +200,10 @@ module Solargraph
         ptype.generic?
       end
 
+      # @sg-ignore flow sensitive typing needs to handle ivars
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
-        # @sg-ignore flow sensitive typing needs to handle ivars
         tag.text
       end
 

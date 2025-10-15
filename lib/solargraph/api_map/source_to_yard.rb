@@ -53,7 +53,6 @@ module Solargraph
           store.get_includes(pin.path).each do |ref|
             include_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
             unless include_object.nil? || include_object.nil?
-              # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
               include_object.instance_mixins.push code_object_map[ref.parametrized_tag.to_s]
             end
           end

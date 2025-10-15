@@ -245,7 +245,6 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def inner_get_constants fqns, visibility, skip
         return [] if fqns.nil? || skip.include?(fqns)
-        # @sg-ignore flow sensitive typing needs to handle return if foo.nil? || bar
         skip.add fqns
         result = []
 

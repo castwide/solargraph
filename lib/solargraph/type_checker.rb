@@ -337,7 +337,6 @@ module Solargraph
           all_closest = all_found.map { |pin| pin.typify(api_map) }
           closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          # @sg-ignore Need to support nested flow sensitive types
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
             # @sg-ignore Need to add nil check here
             unless closest.generic? || ignored_pins.include?(found)
@@ -699,7 +698,6 @@ module Solargraph
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
         closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
-        # @sg-ignore Need to support nested flow sensitive types
         if !found || closest.defined? || internal?(found)
           return false
         end
