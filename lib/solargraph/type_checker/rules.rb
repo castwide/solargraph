@@ -69,13 +69,13 @@ module Solargraph
       # @todo 5: need to improve handling of &.
       # @todo 5: flow sensitive typing needs to handle return if foo.nil? || bar
       # @todo 4: Translate to something flow sensitive typing understands
+      # @todo 4: flow sensitive typing needs to handle && on both sides
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: flow sensitive typing needs better handling of ||= on lvars
       # @todo 3: flow sensitive typing needs to handle 'raise if'
       # @todo 2: Need to look at Tuple#include? handling
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: flow sensitive typing needs to handle && on both sides
       # @todo 2: Need a downcast here
       # @todo 1: Need to look at infer handling of recursive methods
       # @todo 1: flow sensitive typing needs to handle if !foo
