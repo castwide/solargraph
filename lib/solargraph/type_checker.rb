@@ -745,8 +745,8 @@ module Solargraph
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
         end
       end
-      args.push Solargraph::Parser.chain_string('{}') if with_opts
-      args.push Solargraph::Parser.chain_string('&') if with_block
+      args.push Solargraph::Parser.chain_string('{}', filename, pin.position.line) if with_opts
+      args.push Solargraph::Parser.chain_string('&', filename, pin.position.line) if with_block
       args
     end
 

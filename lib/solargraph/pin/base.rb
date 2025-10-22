@@ -81,7 +81,6 @@ module Solargraph
       #
       # @return [self]
       def combine_with(other, attrs={})
-        raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
 
@@ -572,6 +571,7 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        result.reset_generated!
         result
       end
 
@@ -616,7 +616,7 @@ module Solargraph
 
       # @return [String]
       def inner_desc
-        closure_info = closure&.desc
+        closure_info = closure&.name.inspect
         binder_info = binder&.desc
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
       end

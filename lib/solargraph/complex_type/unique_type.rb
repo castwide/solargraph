@@ -437,6 +437,17 @@ module Solargraph
         end
       end
 
+      # @return [ComplexType]
+      def reduce_class_type
+        new_items = items.flat_map do |type|
+          next type unless ['Module', 'Class'].include?(type.name)
+          next type if type.all_params.empty?
+
+          type.all_params
+        end
+        ComplexType.new(new_items)
+      end
+
       def all_rooted?
         return true if name == GENERIC_TAG_NAME
         rooted? && all_params.all?(&:rooted?)

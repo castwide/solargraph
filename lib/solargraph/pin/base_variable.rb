@@ -6,28 +6,52 @@ module Solargraph
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
 
-      # @return [Parser::AST::Node, nil]
-      attr_reader :assignment
+      # @return [Array<Parser::AST::Node>]
+      attr_reader :assignments
 
       attr_accessor :mass_assignment
 
       # @param return_type [ComplexType, nil]
-      # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, return_type: nil, **splat
+      # @param assignment [Parser::AST::Node, nil] First assignment
+      #   that was made to this variable
+      # @param assignments [Array<Parser::AST::Node>] Possible
+      #   assignments that may have been made to this variable
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil, **splat
         super(**splat)
-        @assignment = assignment
+        @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
-        @mass_assignment = nil
+        @mass_assignment = mass_assignment
         @return_type = return_type
       end
 
+      def reset_generated!
+        @assignment = nil
+        super
+      end
+
       def combine_with(other, attrs={})
-        attrs.merge({
-          assignment: assert_same(other, :assignment),
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+        new_assignments = combine_assignments(other)
+        new_attrs = attrs.merge({
+          assignments: new_assignments,
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
-        })
-        super(other, attrs)
+                                })
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+        super(other, new_attrs)
+      end
+
+      # @return [Parser::AST::Node, nil]
+      def assignment
+        @assignment ||= assignments.last
+      end
+
+      # @param other [self]
+      #
+      # @return [::Array<Parser::AST::Node>]
+      def combine_assignments(other)
+        (other.assignments + assignments).uniq
       end
 
       def completion_item_kind
@@ -80,11 +104,13 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
-        unless @assignment.nil?
-          types = return_types_from_node(@assignment, api_map)
-          return ComplexType.new(types.uniq) unless types.empty?
-        end
+        assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        return type_from_assignment unless type_from_assignment.nil?
 
+        # @todo should handle merging types from mass assignments as
+        #   well so that we can do better flow sensitive typing with
+        #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
@@ -95,7 +121,7 @@ module Solargraph
               type.all_params.first
             end
           end.compact!
-          return ComplexType.new(types.uniq) unless types.empty?
+          return ComplexType.new(types.uniq).qualify(api_map, *gates) unless types.empty?
         end
 
         ComplexType::UNDEFINED
@@ -112,6 +138,64 @@ module Solargraph
       end
 
       private
+
+      # See if this variable is visible within 'other_closure'
+      #
+      # @param other_closure [Pin::Closure]
+      # @return [Boolean]
+      def visible_in_closure? other_closure
+        needle = closure
+        haystack = other_closure
+
+        cursor = haystack
+
+        until cursor.nil?
+          if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
+            # methods can't see local variables declared in their
+            # parent closure
+            return false
+          end
+
+          if cursor.binder.namespace == needle.binder.namespace
+            return true
+          end
+
+          if cursor.return_type == needle.context
+            return true
+          end
+
+          if scope == :instance && cursor.is_a?(Pin::Namespace)
+            # classes and modules can't see local variables declared
+            # in their parent closure, so stop here
+            return false
+          end
+
+          cursor = cursor.closure
+        end
+        false
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [ComplexType, nil]
+      def combine_types(other, attr)
+        # @type [ComplexType, nil]
+        type1 = send(attr)
+        # @type [ComplexType, nil]
+        type2 = other.send(attr)
+        if type1 && type2
+          types = (type1.items + type2.items).uniq
+          ComplexType.new(types)
+        else
+          type1 || type2
+        end
+      end
+
+      # @return [::Symbol]
+      def scope
+        :instance
+      end
 
       # @return [ComplexType]
       def generate_complex_type

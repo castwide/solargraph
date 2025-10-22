@@ -78,7 +78,7 @@ module Solargraph
       # @param phrase [String]
       # @return [Array<Solargraph::Pin::Base>]
       def translate phrase
-        chain = Parser.chain(Parser.parse(phrase))
+        chain = Parser.chain(Parser.parse(phrase, cursor.filename, cursor.position.line))
         chain.define(api_map, closure, locals)
       end
 

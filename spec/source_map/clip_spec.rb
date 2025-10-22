@@ -1230,7 +1230,7 @@ describe Solargraph::SourceMap::Clip do
     updated = source.synchronize(updater)
     api_map.map updated
     clip = api_map.clip_at('test.rb', [2, 8])
-    expect(clip.complete.pins.first.path).to start_with('Array#')
+    expect(clip.complete.pins.first&.path).to start_with('Array#')
   end
 
   it 'selects local variables using gated scopes' do
@@ -2007,7 +2007,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
-    clip = api_map.clip_at('test.rb', [8, 6])
+    clip = api_map.clip_at('test.rb', [9, 6])
     type = clip.infer
     expect(type.tags).to eq('Integer')
 
@@ -2712,7 +2712,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq(':foo, 123, nil')
+    expect(clip.infer.to_s).to eq('123, :foo, nil')
   end
 
   it 'expands type with conditional reassignments' do

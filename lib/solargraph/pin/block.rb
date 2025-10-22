@@ -12,14 +12,16 @@ module Solargraph
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
+      # @param binder [Pin::Namespace, nil]
       # @param node [Parser::AST::Node, nil]
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
-      def initialize receiver: nil, args: [], context: nil, node: nil, **splat
+      def initialize receiver: nil, binder: nil, args: [], context: nil, node: nil, **splat
         super(**splat, parameters: args)
         @receiver = receiver
         @context = context
         @return_type = ComplexType.parse('::Proc')
+        @rebind = binder if binder
         @node = node
       end
 
@@ -85,7 +87,7 @@ module Solargraph
       def maybe_rebind api_map
         return ComplexType::UNDEFINED unless receiver
 
-        chain = Parser.chain(receiver, location.filename)
+        chain = Parser.chain(receiver, location.filename, node)
         locals = api_map.source_map(location.filename).locals_at(location)
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
@@ -93,8 +95,15 @@ module Solargraph
         types = receiver_pin.docstring.tag(:yieldreceiver)&.types
         return ComplexType::UNDEFINED unless types&.any?
 
-        target = chain.base.infer(api_map, receiver_pin, locals)
-        target = full_context unless target.defined?
+        name_pin = self
+        # if we have Foo.bar { |x| ... }, and the bar method references self...
+        target = if chain.base.defined?
+                   # figure out Foo
+                   chain.base.infer(api_map, name_pin, locals)
+                 else
+                   # if not, any self there must be the context of our closure
+                   closure.full_context
+                 end
 
         ComplexType.try_parse(*types).qualify(api_map, *receiver_pin.gates).self_to_type(target)
       end
