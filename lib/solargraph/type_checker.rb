@@ -745,7 +745,8 @@ module Solargraph
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
         end
       end
-      starting_line = pin.location&.range&.start&.line || 0
+      pin_location = pin.location
+      starting_line = pin_location ? pin_location.range.start.line : 0
       args.push Solargraph::Parser.chain_string('{}', filename, starting_line) if with_opts
       args.push Solargraph::Parser.chain_string('&', filename, starting_line) if with_block
       args
