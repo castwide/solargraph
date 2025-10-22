@@ -42,6 +42,7 @@ module Solargraph
                         asgn_code: asgn_code
                       }
                     end
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs.merge(attrs))
       end
 

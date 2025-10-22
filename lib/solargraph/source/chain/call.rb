@@ -325,7 +325,6 @@ module Solargraph
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we need to be able to see them
 
-          # @sg-ignore Need to add nil check here
           block.infer(api_map, block_pin, locals)
         end
       end

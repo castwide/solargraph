@@ -6,6 +6,7 @@ module Solargraph
   #
   class Location
     include Equality
+    include Comparable
 
     # @return [String]
     attr_reader :filename

@@ -91,7 +91,7 @@ module Solargraph
           location: location,
           type_location: type_location,
           name: combined_name,
-          closure: choose_pin_attr_with_same_name(other, :closure),
+          closure: combine_closure(other),
           comments: choose_longer(other, :comments),
           source: :combined,
           docstring: choose(other, :docstring),
@@ -144,6 +144,12 @@ module Solargraph
         return self.directives if other.directives.empty?
         return other.directives if directives.empty?
         [directives + other.directives].uniq
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        choose_pin_attr_with_same_name(other, :closure)
       end
 
       # @param other [self]
@@ -307,7 +313,6 @@ module Solargraph
       # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
-        return false if other.nil?
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2

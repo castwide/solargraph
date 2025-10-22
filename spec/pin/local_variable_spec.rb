@@ -30,28 +30,6 @@ describe Solargraph::Pin::LocalVariable do
     # should indicate which one should override in the range situation
   end
 
-  it "asserts on attempt to merge namespace changes" do
-    map1 = Solargraph::SourceMap.load_string(%(
-      class Foo
-        foo = 'foo'
-      end
-    ))
-    pin1 = map1.locals.first
-    map2 = Solargraph::SourceMap.load_string(%(
-      class Bar
-        foo = 'foo'
-      end
-    ))
-    pin2 = map2.locals.first
-    # set env variable 'FOO' to 'true' in block
-
-    with_env_var('SOLARGRAPH_ASSERTS', 'on') do
-      expect(Solargraph.asserts_on?(:combine_with_closure_name)).to be true
-      expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :closure name/)
-    end
-  end
-
-
   describe '#visible_at?' do
     it 'detects scoped methods in rebound blocks' do
       source = Solargraph::Source.load_string(%(

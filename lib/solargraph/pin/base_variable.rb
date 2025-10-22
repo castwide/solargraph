@@ -35,11 +35,23 @@ module Solargraph
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
           assignments: new_assignments,
-          mass_assignment: assert_same(other, :mass_assignment),
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+          mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
                                 })
         # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
+      end
+
+      # @param other [self]
+      #
+      # @return [Array(Parser::AST::Node, Integer), nil]
+      #
+      # @sg-ignore
+      #   Solargraph::Pin::BaseVariable#combine_mass_assignment return
+      #   type could not be inferred
+      def combine_mass_assignment(other)
+        assert_same(other, :mass_assignment)
       end
 
       # @return [Parser::AST::Node, nil]

@@ -46,6 +46,30 @@ module Solargraph
           presence.start == other_loc.range.start
       end
 
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
+
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
@@ -70,6 +94,15 @@ module Solargraph
           return other.return_type
         end
         combine_types(other, :return_type)
+      end
+
+      # @param other [self]
+      #
+      # @return [Array(AST::Node, Integer), nil]
+      def combine_mass_assignment(other)
+        # @todo pick first non-nil arbitrarily - we don't yet support
+        #   mass assignment merging
+        mass_assignment || other.mass_assignment
       end
 
       def probe api_map
