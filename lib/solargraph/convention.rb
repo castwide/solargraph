@@ -63,7 +63,17 @@ module Solargraph
     # @generic T
     # @param conv [Convention::Base]
     # @yieldreturn [generic<T>]
+    #
     # @return [generic<T>]
+    #
+    # @sg-ignore Need some kind of better yield typing here, as well
+    #   as better ensure handling - without ensure gives 'Declared
+    #   return type generic<T> does not match inferred type
+    #   ::Solargraph::Convention for
+    #   Solargraph::Convention.with_default_convention_source', with
+    #   ensure
+    #   givesSolargraph::Convention.with_default_convention_source
+    #   return type could not be inferred
     def self.with_default_convention_source(conv)
       Thread.current[Pin::Base::DEFAULT_SOURCE_THREAD_LOCAL_KEY] = @@default_source_name[conv]
       yield
