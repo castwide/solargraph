@@ -5,6 +5,10 @@ module Solargraph
     # The base class for map pins.
     #
     class Base
+      # used in a thread local to specify which source to use if not
+      # specified in initializer
+      DEFAULT_SOURCE_THREAD_LOCAL_KEY = :solargraph_default_pin_source
+
       include Common
       include Conversions
       include Documenting
@@ -52,7 +56,7 @@ module Solargraph
         @closure = closure
         @name = name
         @comments = comments
-        @source = source
+        @source = source || Thread.current[DEFAULT_SOURCE_THREAD_LOCAL_KEY]
         @identity = nil
         @docstring = docstring
         @directives = directives

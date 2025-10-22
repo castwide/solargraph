@@ -16,6 +16,14 @@ module Solargraph
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
 
+    # What source symbol we'll use for pins if the convention doesn't
+    # provide it itself
+    #
+    # @type [Hash<Convention::Base, Symbol>]
+    @@default_source_name = Hash.new do |h, conv|
+      h[conv] = (conv.class.name.split('::').map(&:downcase) - ['convention']).join('_').downcase
+    end
+
     # @param convention [Class<Convention::Base>]
     # @return [void]
     def self.register convention
@@ -33,7 +41,9 @@ module Solargraph
     def self.for_local(source_map)
       result = Environ.new
       @@conventions.each do |conv|
-        result.merge conv.local(source_map)
+        with_default_convention_source(conv) do
+          result.merge conv.local(source_map)
+        end
       end
       result
     end
@@ -43,9 +53,22 @@ module Solargraph
     def self.for_global(doc_map)
       result = Environ.new
       @@conventions.each do |conv|
-        result.merge conv.global(doc_map)
+        with_default_convention_source(conv) do
+          result.merge conv.global(doc_map)
+        end
       end
       result
+    end
+
+    # @generic T
+    # @param conv [Convention::Base]
+    # @yieldreturn [generic<T>]
+    # @return [generic<T>]
+    def self.with_default_convention_source(conv)
+      Thread.current[Pin::Base::DEFAULT_SOURCE_THREAD_LOCAL_KEY] = @@default_source_name[conv]
+      yield
+    ensure
+      Thread.current[Pin::Base::DEFAULT_SOURCE_THREAD_LOCAL_KEY] = nil
     end
 
     # Provides any additional method pins based on the described object.
@@ -64,8 +87,10 @@ module Solargraph
                         deep, skip, no_core
       result = Environ.new
       @@conventions.each do |conv|
-        result.merge conv.object(api_map, rooted_tag, scope, visibility,
-                                 deep, skip, no_core)
+        with_default_convention_source(conv) do
+          result.merge conv.object(api_map, rooted_tag, scope, visibility,
+                                   deep, skip, no_core)
+        end
       end
       result
     end

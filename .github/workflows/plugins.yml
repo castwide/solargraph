@@ -43,7 +43,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
       run: bundle exec rake spec
   rails:
@@ -72,7 +72,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
       run: bundle exec rake spec
   rspec:
@@ -101,7 +101,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: SOLARGRAPH_ASSERTS=on bundle exec solargraph typecheck --level typed
     - name: Ensure specs still run
       run: bundle exec rake spec
 
