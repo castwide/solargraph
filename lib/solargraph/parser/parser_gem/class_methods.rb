@@ -12,7 +12,7 @@ module Solargraph
         #   can find relevant local variables later even if this is just
         #   a subset of the file in question
         # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet})]
-        def parse_with_comments code, filename, starting_line
+        def parse_with_comments code, filename, starting_line = 0
           node = parse(code, filename, starting_line)
           comments = CommentRipper.new(code, filename, 0).parse
           [node, comments]
