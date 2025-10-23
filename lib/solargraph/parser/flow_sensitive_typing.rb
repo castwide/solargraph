@@ -466,6 +466,7 @@ module Solargraph
       # @param clause_node [Parser::AST::Node, nil]
       def always_leaves_compound_statement?(clause_node)
         # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
+        # @sg-ignore Need to look at Tuple#include? handling
         [:return, :raise, :next, :redo, :retry].include?(clause_node&.type)
       end
 

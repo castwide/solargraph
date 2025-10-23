@@ -169,8 +169,8 @@ module Solargraph
             end
           end
         when 'visibility'
-
             kind = directive.tag.text&.to_sym
+            # @sg-ignore Need to look at Tuple#include? handling
             return unless [:private, :protected, :public].include?(kind)
 
             name = directive.tag.name

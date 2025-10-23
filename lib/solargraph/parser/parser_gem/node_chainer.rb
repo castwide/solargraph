@@ -170,7 +170,6 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Source::Chain, nil]
         def passed_block node
-          # @sg-ignore need to improve handling of &.
           return unless node == @node && @parent&.type == :block
 
           # @sg-ignore Need to add nil check here

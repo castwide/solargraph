@@ -172,7 +172,6 @@ module Solargraph
       end
 
       def type_desc
-        # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
         "#{super} = #{assignment&.type.inspect}"
       end
 
@@ -193,9 +192,8 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore need to improve handling of &.
+      # @sg-ignore flow sensitive typing needs to handle ivars
       def starts_at?(other_loc)
-        # @sg-ignore need to improve handling of &.
         location&.filename == other_loc.filename &&
           presence &&
           # @sg-ignore flow sensitive typing needs to handle ivars

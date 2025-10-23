@@ -8,6 +8,8 @@ module Solargraph
           '<or>'
         end
 
+        attr_reader :links
+
         # @param links [::Array<Chain>]
         def initialize links
           @links = links

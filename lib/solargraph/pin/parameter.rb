@@ -21,12 +21,10 @@ module Solargraph
         @decl = decl
       end
 
-      # @sg-ignore need to improve handling of &.
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore need to improve handling of &.
       def location
         super || closure&.type_location
       end

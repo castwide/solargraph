@@ -311,7 +311,6 @@ module Solargraph
           return decl
         end
         type = see_reference(api_map) || typify_from_super(api_map)
-        # @sg-ignore Need to add nil check here
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
           # @sg-ignore Need to add nil check here

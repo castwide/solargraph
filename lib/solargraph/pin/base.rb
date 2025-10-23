@@ -613,7 +613,6 @@ module Solargraph
       # Example: Given the name 'Bar' and the gates ['Foo', ''],
       # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
       #
-      # @sg-ignore need to improve handling of &.
       # @return [Array<String>]
       def gates
         @gates ||= closure&.gates || ['']
@@ -642,7 +641,6 @@ module Solargraph
 
       # @return [String]
       def inner_desc
-        # @sg-ignore need to improve handling of &.
         closure_info = closure&.name.inspect
         binder_info = binder&.desc
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"

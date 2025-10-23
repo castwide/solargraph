@@ -20,17 +20,15 @@ module Solargraph
 
       attr_writer :closure
 
-      # @sg-ignore need boolish support for ? methods
+      # @ sg-ignore need boolish support for ? methods
       def dodgy_return_type_source?
         super || closure&.dodgy_return_type_source?
       end
 
-      # @sg-ignore need to improve handling of &.
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore need to improve handling of &.
       def location
         super || closure&.location
       end

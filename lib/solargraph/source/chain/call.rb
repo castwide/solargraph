@@ -58,15 +58,16 @@ module Solargraph
           # will be nil or result as if binder were not nil -
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
-          # @sg-ignore ComplexType::UniqueType needs without_nil
+
+          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore signature isn't down-selected
+          # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact
           end
-          # @sg-ignore signature isn't down-selected
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
             pin_groups = []
           end
@@ -313,7 +314,6 @@ module Solargraph
         # @param context [ComplexType, ComplexType::UniqueType]
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
-        # @sg-ignore Need to add nil check here
         # @return [ComplexType, nil]
         def block_symbol_call_type(api_map, context, block_parameter_types, locals)
           # Ruby's shorthand for sending the passed in method name

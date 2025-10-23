@@ -143,7 +143,6 @@ module Solargraph
           #
           # @return [String]
           def tag_string(tag)
-            # @sg-ignore need to improve handling of &.
             tag&.types&.join(',') || 'undefined'
           end
 

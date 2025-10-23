@@ -15,7 +15,6 @@ module Solargraph
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
       # @param name [String, nil]
       # @param receiver_method_name [String, nil] the method name that will be called on the receiver (defaults to :name).
-      # @sg-ignore need to improve handling of &.
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
         # @sg-ignore Need to add nil check here
