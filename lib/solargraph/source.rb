@@ -258,11 +258,9 @@ module Solargraph
         # @type [Integer, nil]
         last = nil
         comments.each_pair do |num, snip|
-          # @sg-ignore need to improve nil-removal of ||
           if !last || num == last + 1
             buffer.concat "#{snip.text}\n"
           else
-            # @sg-ignore flow sensitive typing needs to handle if !foo
             result[first_not_empty_from(last + 1)] = buffer.clone
             buffer.replace "#{snip.text}\n"
           end
@@ -419,7 +417,7 @@ module Solargraph
       end
       @finalized = true
       begin
-        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename, 0)
         @parsed = true
         @repaired = @code
       rescue Parser::SyntaxError, EncodingError => e
@@ -435,7 +433,7 @@ module Solargraph
         end
         error_ranges.concat(changes.map(&:range))
         begin
-          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename)
+          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename, 0)
           @parsed = true
         rescue Parser::SyntaxError, EncodingError => e
           @node = nil

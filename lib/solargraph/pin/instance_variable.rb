@@ -17,7 +17,6 @@ module Solargraph
         closure.binder.scope
       end
 
-      # @sg-ignore Need support for reduce_class_type in UniqueType
       # @return [ComplexType]
       def context
         @context ||= begin
@@ -25,7 +24,6 @@ module Solargraph
           if scope == :class
             ComplexType.parse("::Class<#{result.rooted_namespace}>")
           else
-            # @sg-ignore Need support for reduce_class_type in UniqueType
             result.reduce_class_type
           end
         end

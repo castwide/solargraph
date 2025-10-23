@@ -50,8 +50,11 @@ module Solargraph
     # @return [Boolean]
     def contain? position
       position = Position.normalize(position)
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if position.line < start.line || position.line > ending.line
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if position.line == start.line && position.character < start.character
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if position.line == ending.line && position.character > ending.character
       true
     end
@@ -63,6 +66,7 @@ module Solargraph
     # @return [Boolean]
     def include? position
       position = Position.normalize(position)
+      # @sg-ignore Should handle redefinition of types in simple contexts
       contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 

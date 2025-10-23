@@ -60,37 +60,39 @@ module Solargraph
 
       # pending code fixes:
       #
-      # @todo 262: Need to add nil check here
+      # @todo 265: Need to add nil check here
       # @todo 9: Need to validate config
-      # @todo 4: Translate to something flow sensitive typing understands
+      # @todo 3: Translate to something flow sensitive typing understands
       #
-      # flow-sensitive typing could handle:
+      # flow-sensitive typing could handle (~100):
       #
       # @todo 39: flow sensitive typing needs to handle ivars
       # @todo 8: Should handle redefinition of types in simple contexts
-      # @todo 7: Need support for reduce_class_type in UniqueType
+      # @todo 7: need to improve handling of &.
       # @todo 7: flow sensitive typing needs to handle inner closures
-      # @todo 6: Need to support nested flow sensitive types
       # @todo 5: need boolish support for ? methods
-      # @todo 4: need to improve handling of &.
-      # @todo 4: flow sensitive typing needs to handle && on both sides
+      # @todo 5: flow sensitive typing needs to handle && on both sides
+      # @todo 4: Need to understand .is_a? <not nil> implies not nil
+      # @todo 4: flow sensitive typing needs better handling of ||= on lvars
+      # @todo 4: @type should override probed type
       # @todo 3: downcast output of Enumerable#select
-      # @todo 3: flow sensitive typing needs better handling of ||= on lvars
       # @todo 3: flow sensitive typing needs to handle 'raise if'
+      # @todo 2: should warn on nil dereference below
       # @todo 2: Need to look at Tuple#include? handling
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: Need a downcast here
+      # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
+      # @todo 1: flow sensitive typing handling else from is_a? with union types
       # @todo 1: Need to look at infer handling of recursive methods
-      # @todo 1: flow sensitive typing needs to handle if !foo
       # @todo 1: need to improve nil-removal of ||
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: To make JSON strongly typed we'll need a record syntax
       # @todo 1: Untyped method Solargraph::Pin::Base#assert_same could not be inferred
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       # @todo 1: Unresolved call to !
-      # @todo 1: EASY: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
-      # @todo 1: EASY: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
+      # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end

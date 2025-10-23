@@ -140,7 +140,8 @@ module Solargraph
       # @return [ComplexType]
       # @sg-ignore
       def infer api_map, name_pin, locals
-        cache_key = [node, node&.location, links, name_pin&.return_type, locals]
+        # includes binder as it is mutable in Pin::Block
+        cache_key = [node, node&.location, links, name_pin&.return_type, name_pin&.binder, locals]
         if @@inference_invalidation_key == api_map.hash
           cached = @@inference_cache[cache_key]
           return cached if cached

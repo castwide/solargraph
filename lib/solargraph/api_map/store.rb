@@ -242,8 +242,11 @@ module Solargraph
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
             refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
+              # @sg-ignore We should understand reassignment of variable to new type
               next if ref.nil? || ref.empty? || visited.include?(ref)
+              # @sg-ignore We should understand reassignment of variable to new type
               ancestors << ref
+              # @sg-ignore We should understand reassignment of variable to new type
               queue << ref
             end
           end

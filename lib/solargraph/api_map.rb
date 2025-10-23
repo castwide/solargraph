@@ -353,10 +353,27 @@ module Solargraph
       result
     end
 
-    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
-    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
-    def visible_pins(*args, **kwargs, &blk)
-      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
+    # Find a variable pin by name and where it is used.
+    #
+    # Resolves our most specific view of this variable's type by
+    # preferring pins created by flow-sensitive typing when we have
+    # them based on the Closure and Location.
+    #
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location]
+    #
+    # @return [Pin::LocalVariable, nil]
+    def var_at_location(locals, name, closure, location)
+      with_correct_name = locals.select { |pin| pin.name == name}
+      with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
+      vars_at_location = with_presence.reject do |pin|
+        (!pin.visible_at?(closure, location) &&
+         !pin.starts_at?(location))
+      end
+
+      vars_at_location.inject(&:combine_with)
     end
 
     # Get an array of class variable pins for a namespace.
@@ -649,8 +666,11 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sup = sup.simplify_literals.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
@@ -660,7 +680,6 @@ module Solargraph
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
         sc_fqns = sc_new
-        # @sg-ignore Should handle redefinition of types in simple contexts
         return true if sc_fqns == sup
       end
       false
@@ -871,7 +890,6 @@ module Solargraph
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
     def resolve_method_alias(alias_pin)
-      # @sg-ignore Need support for reduce_class_type in UniqueType
       ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
       # @type [Pin::Method, nil]
       original = nil

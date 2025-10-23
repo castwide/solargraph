@@ -23,6 +23,8 @@ module Solargraph
         items.unshift(UniqueType::BOOLEAN)
       end
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
+      # @todo shouldn't need this cast - if statement above adds an 'Array' type
+      # @type [Array<UniqueType>]
       @items = items
     end
 

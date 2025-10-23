@@ -19,7 +19,6 @@ module Solargraph
           @pins = cached_pins
           @resolved = true
           @loaded = true
-          # @sg-ignore flow sensitive typing needs to handle inner closures
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
         else
           super

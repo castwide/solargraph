@@ -115,7 +115,6 @@ module Solargraph
             param.dup
           else
             param.resolve_generics_from_context(generics_to_resolve,
-                                                # @sg-ignore flow sensitive typing needs to handle inner closures
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)
           end

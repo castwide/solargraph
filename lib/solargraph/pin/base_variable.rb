@@ -6,16 +6,13 @@ module Solargraph
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
 
-      # @return [Parser::AST::Node, nil]
-      attr_reader :assignment
+      # @return [Array<Parser::AST::Node>]
+      attr_reader :assignments
 
       attr_accessor :mass_assignment
 
       # @return [Range, nil]
       attr_reader :presence
-
-      # @return [Boolean]
-      attr_reader :presence_certain
 
       def presence_certain?
         @presence_certain
@@ -27,12 +24,16 @@ module Solargraph
       # @param exclude_return_type [ComplexType, nil] Ensure any return
       #   type returned will never include these unique types in the
       #   unique types of its complex type
-      # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, presence: nil, presence_certain: false, return_type: nil, exclude_return_type: nil, **splat
+      # @param assignment [Parser::AST::Node, nil] First assignment
+      #   that was made to this variable
+      # @param assignments [Array<Parser::AST::Node>] Possible
+      #   assignments that may have been made to this variable
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil, presence: nil, presence_certain: false, return_type: nil, exclude_return_type: nil, **splat
         super(**splat)
-        @assignment = assignment
+        @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
-        @mass_assignment = nil
+        @mass_assignment = mass_assignment
         @return_type = return_type
         @presence = presence
         @presence_certain = presence_certain
@@ -41,18 +42,46 @@ module Solargraph
 
       def reset_generated!
         @return_type_minus_exclusions = nil
+        @assignment = nil
         super
       end
 
+      def inner_desc
+        super + ", presence=#{presence.inspect}, presence_certain=#{presence_certain?}, exclude_return_type=#{exclude_return_type.inspect}, assignments=#{assignments}"
+      end
+
       def combine_with(other, attrs={})
-        attrs.merge({
-          assignment: assert_same(other, :assignment),
-          mass_assignment: assert_same(other, :mass_assignment),
+        new_assignments = combine_assignments(other)
+        new_attrs = attrs.merge({
+          assignments: new_assignments,
+          mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
+          presence: combine_presence(other),
+          presence_certain: combine_presence_certain(other),
+          exclude_return_type: combine_types(other, :exclude_return_type)
         })
-        attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
-        attrs[:presence_certain] = assert_same(other, :presence_certain) unless attrs.key?(:presence_certain)
-        super(other, attrs)
+        super(other, new_attrs)
+      end
+
+      # @param other [self]
+      #
+      # @return [Array(AST::Node, Integer), nil]
+      def combine_mass_assignment(other)
+        # @todo pick first non-nil arbitrarily - we don't yet support
+        #   mass assignment merging
+        mass_assignment || other.mass_assignment
+      end
+
+      # @return [Parser::AST::Node, nil]
+      def assignment
+        @assignment ||= assignments.last
+      end
+
+      # @param other [self]
+      #
+      # @return [::Array<Parser::AST::Node>]
+      def combine_assignments(other)
+        (assignments + other.assignments).uniq
       end
 
       def completion_item_kind
@@ -112,13 +141,14 @@ module Solargraph
           return return_type.qualify(api_map, *gates)
         end
 
-        unless @assignment.nil?
-          # @sg-ignore sensitive typing needs to handle "unless foo.nil?"
-          types = return_types_from_node(@assignment, api_map)
-          exclude_items = exclude_return_type&.items&.uniq
-          return ComplexType.new(types.flat_map(&:items).uniq - (exclude_items || [])) unless types.empty?
-        end
+        assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
+        exclude_items = exclude_return_type&.items&.uniq
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq - (exclude_items || [])) unless assignment_types.empty?
+        return type_from_assignment unless type_from_assignment.nil?
 
+        # @todo should handle merging types from mass assignments as
+        #   well so that we can do better flow sensitive typing with
+        #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
@@ -129,7 +159,7 @@ module Solargraph
               type.all_params.first
             end
           end.compact!
-          return ComplexType.new(types.uniq) unless types.empty?
+          return ComplexType.new(types.uniq).qualify(api_map, *gates) unless types.empty?
         end
 
         ComplexType::UNDEFINED
@@ -153,6 +183,7 @@ module Solargraph
 
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
+      # @sg-ignore Need to add nil check here
       def visible_at?(other_closure, other_loc)
         # @sg-ignore Need to add nil check here
         location.filename == other_loc.filename &&
@@ -161,20 +192,118 @@ module Solargraph
           match_named_closure(other_closure, closure)
       end
 
+      # @param other_loc [Location]
+      # @sg-ignore need to improve handling of &.
+      def starts_at?(other_loc)
+        # @sg-ignore need to improve handling of &.
+        location&.filename == other_loc.filename &&
+          presence &&
+          # @sg-ignore flow sensitive typing needs to handle && on both sides
+          presence.start == other_loc.range.start
+      end
+
+      # Narrow the presence range to the intersection of both.
+      #
+      # @param other [self]
+      #
+      # @return [Range, nil]
+      def combine_presence(other)
+        return presence || other.presence if presence.nil? || other.presence.nil?
+
+        if presence_certain? && !other.presence_certain?
+          return presence
+        elsif other.presence_certain? && !presence_certain?
+          return other.presence
+        end
+
+        # @sg-ignore flow sensitive typing needs to handle ivars
+        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
+      end
+
+      # If a certain pin is being combined with an uncertain pin, we
+      # end up with a certain result
+      #
+      # @param other [self]
+      #
+      # @return [Boolean]
+      def combine_presence_certain(other)
+        presence_certain? || other.presence_certain?
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        # @sg-ignore flow sensitive typing needs to handle ivars
+        if closure.location.nil? || other.closure.location.nil?
+          # @sg-ignore flow sensitive typing needs to handle ivars
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        # @sg-ignore flow sensitive typing needs to handle ivars
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
+
+      # @param other_closure [Pin::Closure]
+      # @param other_loc [Location]
+      def visible_at?(other_closure, other_loc)
+        # @sg-ignore flow sensitive typing needs to handle ivars
+        location.filename == other_loc.filename &&
+          # @sg-ignore flow sensitive typing needs to handle ivars
+          (!presence || presence.include?(other_loc.range.start)) &&
+          visible_in_closure?(other_closure)
+      end
+
       private
 
-      attr_reader :exclude_return_type
-
-      # @param needle [Pin::Base]
-      # @param haystack [Pin::Base]
+      # See if this variable is visible within 'other_closure'
+      #
+      # @param other_closure [Pin::Closure]
       # @return [Boolean]
-      def match_named_closure needle, haystack
-        return true if needle == haystack || haystack.is_a?(Pin::Block)
+      def visible_in_closure? other_closure
+        needle = closure
+        return false if closure.nil?
+        haystack = other_closure
+
         cursor = haystack
+
         until cursor.nil?
-          return true if needle.path == cursor.path
-          return false if cursor.path && !cursor.path.empty?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
+            # methods can't see local variables declared in their
+            # parent closure
+            return false
+          end
+
+          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          if cursor.binder.namespace == needle.binder.namespace
+            return true
+          end
+
+          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          if cursor.return_type == needle.context
+            return true
+          end
+
+          if scope == :instance && cursor.is_a?(Pin::Namespace)
+            # classes and modules can't see local variables declared
+            # in their parent closure, so stop here
+            return false
+          end
+
           cursor = cursor.closure
         end
         false
@@ -195,6 +324,20 @@ module Solargraph
       end
 
       # @param other [self]
+      # @return [ComplexType, nil]
+      def combine_return_type(other)
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type
+        end
+        if other.presence_certain? && other.return_type&.defined?
+          return other.return_type
+        end
+        combine_types(other, :return_type)
+      end
+
+      # @param other [self]
       # @param attr [::Symbol]
       #
       # @return [ComplexType, nil]
@@ -209,6 +352,11 @@ module Solargraph
         else
           type1 || type2
         end
+      end
+
+      # @return [::Symbol]
+      def scope
+        :instance
       end
 
       # @return [ComplexType]

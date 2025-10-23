@@ -217,16 +217,19 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure {
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+        # @sg-ignore We should understand reassignment of variable to new type
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
             pin.typify api_map
             pin.probe api_map
           rescue StandardError => e
-            # @sg-ignore Need to add nil check here
+            # @todo to add nil check here
+            # @todo should warn on nil dereference below
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @todo Need to add nil check here
+            # @todo should warn on nil dereference below
             STDERR.puts e.backtrace.join("\n")
             exit 1
           end

@@ -79,7 +79,6 @@ module Solargraph
         end
 
         # @return [Hash, nil]
-        # @sg-ignore We should understand reassignment of variable to new type
         def cancel_message
           # Handle cancellations first
           idx = messages.find_index { |msg| msg['method'] == '$/cancelRequest' }

@@ -218,7 +218,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
-    it 'understands complex use of other' do
+    it 'understands complex use of self' do
       checker = type_checker(%(
         class A
           # @param other [self]
@@ -644,8 +644,6 @@ describe Solargraph::TypeChecker do
             end
           end
         end))
-
-      pending 'flow sensitive typing needs to handle inner closures'
 
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end

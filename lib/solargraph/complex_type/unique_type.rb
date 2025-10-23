@@ -31,8 +31,6 @@ module Solargraph
         if name.start_with?('::')
           name = name[2..-1]
           rooted = true
-        # @sg-ignore out of scope of the above [2..-1], which is what
-        #   is making solargraph think 'name' is nilable
         elsif !can_root_name?(name)
           rooted = true
         else
@@ -519,6 +517,17 @@ module Solargraph
       # @yieldreturn [Boolean]
       def any? &block
         block.yield self
+      end
+
+      # @return [ComplexType]
+      def reduce_class_type
+        new_items = items.flat_map do |type|
+          next type unless ['Module', 'Class'].include?(type.name)
+          next type if type.all_params.empty?
+
+          type.all_params
+        end
+        ComplexType.new(new_items)
       end
 
       def all_rooted?

@@ -310,7 +310,8 @@ module Solargraph
           # blocks in the AST include the method call as well, so the
           # node returned by #call_nodes_from needs to be backed out
           # one closure
-          # @sg-ignore Need to add nil check here
+          # @todo Need to add nil check here
+          # @todo Should warn on nil deference here
           closure_pin = closure_pin.closure
         end
         # @sg-ignore Need to add nil check here
@@ -318,6 +319,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
+        # @sg-ignore Need to add nil check here
         type = chain.infer(api_map, closure_pin, locals)
         if type.undefined? && !rules.ignore_all_undefined?
           base = chain
@@ -328,6 +330,7 @@ module Solargraph
           all_found = []
           closest = ComplexType::UNDEFINED
           until base.links.first.undefined?
+            # @sg-ignore Need to add nil check here
             all_found = base.define(api_map, closure_pin, locals)
             found = all_found.first
             break if found
@@ -349,6 +352,7 @@ module Solargraph
             end
           end
         end
+        # @sg-ignore Need to add nil check here
         result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
       end
       result
@@ -521,7 +525,9 @@ module Solargraph
           else
             # @type [ComplexType, ComplexType::UniqueType]
             ptype = data[:qualified]
+            # @sg-ignore @type should override probed type
             ptype = ptype.self_to_type(pin.context)
+            # @sg-ignore @type should override probed type
             unless ptype.undefined?
               # @type [ComplexType]
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
@@ -549,7 +555,9 @@ module Solargraph
       result = []
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
+        # @type [ComplexType]
         ptype = params[pname.to_s][:qualified]
+        # @sg-ignore @type should override probed type
         ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, closure_pin, locals)
         argtype = argtype.self_to_type(closure_pin.context)
@@ -822,8 +830,10 @@ module Solargraph
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
         end
       end
-      args.push Solargraph::Parser.chain_string('{}') if with_opts
-      args.push Solargraph::Parser.chain_string('&') if with_block
+      pin_location = pin.location
+      starting_line = pin_location ? pin_location.range.start.line : 0
+      args.push Solargraph::Parser.chain_string('{}', filename, starting_line) if with_opts
+      args.push Solargraph::Parser.chain_string('&', filename, starting_line) if with_block
       args
     end
 

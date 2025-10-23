@@ -225,7 +225,9 @@ module Solargraph
       end
 
       # @yieldparam [UniqueType]
-      # @return [Enumerator<UniqueType>]
+      # @return [void]
+      # @overload each_unique_type()
+      #   @return [Enumerator<UniqueType>]
       def each_unique_type &block
         return enum_for(__method__) unless block_given?
         yield self

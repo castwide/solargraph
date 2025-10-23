@@ -25,7 +25,6 @@ module Solargraph
                                 decl: get_decl(u),
                                 source: :parser
                               )
-                  # @sg-ignore Translate to something flow sensitive typing understands
                   callable.parameters.push locals.last
                 end
               end

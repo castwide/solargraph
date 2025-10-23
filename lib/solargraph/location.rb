@@ -6,6 +6,7 @@ module Solargraph
   #
   class Location
     include Equality
+    include Comparable
 
     # @return [String]
     attr_reader :filename
@@ -13,9 +14,11 @@ module Solargraph
     # @return [Solargraph::Range]
     attr_reader :range
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param range [Solargraph::Range]
     def initialize filename, range
+      raise "Use nil to represent no-file" if filename&.empty?
+
       @filename = filename
       @range = range
     end
@@ -25,7 +28,6 @@ module Solargraph
     end
 
     # @param other [self]
-    # @sg-ignore Why does Solargraph think this should return 0, nil?
     def <=>(other)
       return nil unless other.is_a?(Location)
       if filename == other.filename
@@ -64,9 +66,12 @@ module Solargraph
     # @return [Location, nil]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
+      filename = node.loc.expression.source_buffer.name
+      # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
+      filename = nil if filename.empty?
       range = Range.from_node(node)
       # @sg-ignore Need to add nil check here
-      self.new(node.loc.expression.source_buffer.name, range)
+      self.new(filename, range)
     end
 
     # @param other [BasicObject]

@@ -51,39 +51,26 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = if head?
-            api_map.visible_pins(locals, word, name_pin, location)
-          else
-            # @type [Array<Solargraph::Pin::LocalVariable>]
-            []
-          end
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::Source::Chain::Call#inferred_pins: pins
-          #   expected Enumerable<Solargraph::Pin::Method>, received
-          #   Array<Solargraph::Pin::LocalVariable>, Array - need to
-          #   look through logic to understand whether this is dead
-          #   code
-          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
-          # @sg-ignore Unresolved call to map on void, ::Enumerator<::Solargraph::ComplexType::UniqueType>
+          found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          # @sg-ignore signature isn't down-selected
           pin_groups = name_pin.binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact
           end
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+          # @sg-ignore signature isn't down-selected
           if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
             pin_groups = []
           end
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           pins = pin_groups.flatten.uniq(&:path)
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
 
         private
 
-        # @param pins [::Enumerable<Pin::Method>]
+        # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
@@ -98,7 +85,6 @@ module Solargraph
             # passing a block, we want to find a signature that will
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
-
             with_block, without_block = overloads.partition(&:block?)
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
@@ -115,7 +101,7 @@ module Solargraph
                   break
                 end
                 arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                        gates: name_pin.gates,
+                                                        gates: name_pin.gates, closure: name_pin.closure,
                                                         source: :chain)
                 atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
@@ -168,9 +154,11 @@ module Solargraph
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
+              # @sg-ignore We should understand reassignment of variable to new type
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
               result = process_directive(p, api_map, name_pin.context, locals)
+              # @sg-ignore We should understand reassignment of variable to new type
               next result unless result.return_type.undefined?
             end
             p
@@ -178,7 +166,6 @@ module Solargraph
           logger.debug { "Call#inferred_pins(name_pin.binder=#{name_pin.binder}, word=#{word}, pins=#{pins.map(&:desc)}, name_pin=#{name_pin}) - result=#{result}" }
           out = result.map do |pin|
             if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
-              # @sg-ignore TODO: UniqueType needs to support reduce_class_type
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
@@ -272,6 +259,7 @@ module Solargraph
         def find_method_pin(name_pin)
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
+            # @sg-ignore Need to understand .is_a? <not nil> implies not nil
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
@@ -355,11 +343,12 @@ module Solargraph
         def block_call_type(api_map, name_pin, locals)
           return nil unless with_block?
 
-          block_context_pin = name_pin
           block_pin = find_block_pin(api_map)
-          block_context_pin = block_pin.closure if block_pin
+
+          # We use the block pin as the closure, as the parameters
+          # here will only be defined inside the block itself and we need to be able to see them
           # @sg-ignore Need to add nil check here
-          block.infer(api_map, block_context_pin, locals)
+          block.infer(api_map, block_pin, locals)
         end
       end
     end
