@@ -53,8 +53,15 @@ module Solargraph
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          binder = name_pin.binder
+          # this is a q_call - i.e., foo&.bar - assume result of call
+          # will be nil or result as if binder were not nil -
+          # chain.rb#maybe_nil will add the nil type later, we just
+          # need to worry about the not-nil case
+          # @sg-ignore ComplexType::UniqueType needs without_nil
+          binder = binder.without_nil if nullable?
           # @sg-ignore signature isn't down-selected
-          pin_groups = name_pin.binder.each_unique_type.map do |context|
+          pin_groups = binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact

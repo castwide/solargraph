@@ -123,6 +123,13 @@ module Solargraph
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # @return [self]
+      def without_nil
+        return UniqueType::UNDEFINED if nil_type?
+
+        self
+      end
+
       # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md
