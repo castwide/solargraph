@@ -525,7 +525,7 @@ module Solargraph
       #
       # @return [Boolean]
       def maybe_directives?
-        # @sg-ignore flow sensitive typing needs to handle && on both sides
+        # @sg-ignore flow sensitive typing needs to handle ivars
         return !@directives.empty? if defined?(@directives) && @directives
         @maybe_directives ||= comments.include?('@!')
       end
@@ -613,7 +613,7 @@ module Solargraph
       # Example: Given the name 'Bar' and the gates ['Foo', ''],
       # the fully qualified namespace should be 'Foo::Bar' or 'Bar'.
       #
-      # @sg-ignore Need to look at infer handling of recursive methods
+      # @sg-ignore need to improve handling of &.
       # @return [Array<String>]
       def gates
         @gates ||= closure&.gates || ['']

@@ -331,7 +331,7 @@ module Solargraph
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
-          # @sg-ignore flow sensitive typing needs to handle inner closures
+          # @sg-ignore Need to add nil check here
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
 

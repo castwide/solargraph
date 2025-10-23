@@ -872,7 +872,7 @@ module Solargraph
       problems.reject do |problem|
         node = source.node_at(problem.location.range.start.line, problem.location.range.start.column)
         ignored = node && source.comments_for(node)&.include?('@sg-ignore')
-        # @sg-ignore Unresolved call to !
+        # @sg-ignore need boolish support for ? methods
         unless !ignored || all_sg_ignore_lines.include?(problem.location.range.start.line)
           # :nocov:
           Solargraph.assert_or_log(:sg_ignore) { "@sg-ignore accounting issue - node is #{node}" }

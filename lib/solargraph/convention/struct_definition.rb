@@ -142,8 +142,8 @@ module Solargraph
           # @param tag [YARD::Tags::Tag, nil] The param tag for this attribute.xtract_
           #
           # @return [String]
-          # @sg-ignore need to improve nil-removal of ||
           def tag_string(tag)
+            # @sg-ignore need to improve handling of &.
             tag&.types&.join(',') || 'undefined'
           end
 

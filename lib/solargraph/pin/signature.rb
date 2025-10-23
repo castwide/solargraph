@@ -25,12 +25,12 @@ module Solargraph
         super || closure&.dodgy_return_type_source?
       end
 
-      # @sg-ignore need to improve nil-removal of ||
+      # @sg-ignore need to improve handling of &.
       def type_location
         super || closure&.type_location
       end
 
-      # @sg-ignore need to improve nil-removal of ||
+      # @sg-ignore need to improve handling of &.
       def location
         super || closure&.location
       end

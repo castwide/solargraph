@@ -137,7 +137,7 @@ module Solargraph
         if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type
           # has been downcast - use the type it figured out
-          # @sg-ignore flow sensitive typing needs to handle && on both sides
+          # @sg-ignore flow sensitive typing needs to handle ivars
           return return_type.qualify(api_map, *gates)
         end
 
@@ -198,7 +198,7 @@ module Solargraph
         # @sg-ignore need to improve handling of &.
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore flow sensitive typing needs to handle && on both sides
+          # @sg-ignore flow sensitive typing needs to handle ivars
           presence.start == other_loc.range.start
       end
 
