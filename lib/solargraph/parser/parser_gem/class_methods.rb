@@ -22,7 +22,7 @@ module Solargraph
         # @param filename [String]
         # @param starting_line [Integer]
         # @return [Parser::AST::Node]
-        def parse code, filename, starting_line
+        def parse code, filename, starting_line = 0
           buffer = ::Parser::Source::Buffer.new(filename, starting_line)
           buffer.source = code
           parser.parse(buffer)
