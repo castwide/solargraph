@@ -50,12 +50,8 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = if head?
-            api_map.visible_pins(locals, word, name_pin, location)
-          else
-            []
-          end
-          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
+          found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
@@ -67,7 +63,7 @@ module Solargraph
 
         private
 
-        # @param pins [::Enumerable<Pin::Method>]
+        # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
@@ -98,7 +94,10 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context, source: :chain), locals)
+                arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                        closure: name_pin.closure,
+                                                        source: :chain)
+                atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
                   match = false
                   break
@@ -309,7 +308,7 @@ module Solargraph
         # @return [Pin::Block, nil]
         def find_block_pin(api_map)
           node_location = Solargraph::Location.from_node(block.node)
-          return if  node_location.nil?
+          return if node_location.nil?
           block_pins = api_map.get_block_pins
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
@@ -322,10 +321,11 @@ module Solargraph
         def block_call_type(api_map, name_pin, locals)
           return nil unless with_block?
 
-          block_context_pin = name_pin
           block_pin = find_block_pin(api_map)
-          block_context_pin = block_pin.closure if block_pin
-          block.infer(api_map, block_context_pin, locals)
+          # We use the block pin as the closure, as the parameters
+          # here will only be defined inside the block itself and we need to be able to see them
+
+          block.infer(api_map, block_pin, locals)
         end
       end
     end

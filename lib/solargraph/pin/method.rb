@@ -22,7 +22,10 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
+      # @param context [ComplexType, nil]
+      # @param binder [ComplexType, nil]
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
+                     context: nil, binder: nil,
                      **splat
         super(**splat)
         @visibility = visibility
@@ -32,6 +35,8 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @context = context if context
+        @binder = binder if binder
       end
 
       # @return [Array<Pin::Signature>]

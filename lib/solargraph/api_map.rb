@@ -346,10 +346,26 @@ module Solargraph
       result
     end
 
-    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
-    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
-    def visible_pins(*args, **kwargs, &blk)
-      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
+    # Find a variable pin by name and where it is used.
+    #
+    # Resolves our most specific view of this variable's type by
+    # preferring pins created by flow-sensitive typing when we have
+    # them based on the Closure and Location.
+    #
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location]
+    #
+    # @return [Pin::LocalVariable, nil]
+    def var_at_location(locals, name, closure, location)
+      with_correct_name = locals.select { |pin| pin.name == name}
+      with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
+      vars_at_location = with_presence.reject do |pin|
+        (!pin.visible_at?(closure, location) &&
+         !pin.starts_at?(location))
+      end
+      vars_at_location.inject(&:combine_with)
     end
 
     # Get an array of class variable pins for a namespace.
