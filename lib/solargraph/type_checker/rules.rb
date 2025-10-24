@@ -68,7 +68,7 @@ module Solargraph
       # flow-sensitive typing could handle (~100):
       #
       # @todo 51 flow sensitive typing needs to handle ivars
-      # @todo 8: Should handle redefinition of types in simple contexts
+      # @todo 9: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
       # @todo 4: (*) flow sensitive typing needs better handling of ||= on lvars
       # @todo 4: Need to look at Tuple#include? handling

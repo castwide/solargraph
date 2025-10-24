@@ -229,7 +229,7 @@ module Solargraph
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
             # @todo Need to add nil check here
-            # @todo should warn on nil dereference below
+            # @todo Should handle redefinition of types in simple contexts
             STDERR.puts e.backtrace.join("\n")
             exit 1
           end
