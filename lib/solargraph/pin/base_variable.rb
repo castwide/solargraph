@@ -279,19 +279,19 @@ module Solargraph
         cursor = haystack
 
         until cursor.nil?
-          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          # @sg-ignore Need to add nil check here
           if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
             # methods can't see local variables declared in their
             # parent closure
             return false
           end
 
-          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          # @sg-ignore Need to add nil check here
           if cursor.binder.namespace == needle.binder.namespace
             return true
           end
 
-          # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+          # @sg-ignore Need to add nil check here
           if cursor.return_type == needle.context
             return true
           end

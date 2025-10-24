@@ -267,7 +267,7 @@ module Solargraph
         def find_method_pin(name_pin)
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Need to understand .is_a? <not nil> implies not nil
+            # @sg-ignore Flow sensitive typing could figure out this is not nil at both entrypoints
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
