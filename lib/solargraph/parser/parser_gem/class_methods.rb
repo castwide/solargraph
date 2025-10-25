@@ -7,7 +7,7 @@ module Solargraph
     module ParserGem
       module ClassMethods
         # @param code [String]
-        # @param filename [String]
+        # @param filename [String, nil]
         # @param starting_line [Integer] must be provided so that we
         #   can find relevant local variables later even if this is just
         #   a subset of the file in question
