@@ -114,7 +114,8 @@ module Solargraph
       # @return [ComplexType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        exclude_items = exclude_return_type&.items&.uniq
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq - (exclude_items || [])) unless assignment_types.empty?
         return type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
