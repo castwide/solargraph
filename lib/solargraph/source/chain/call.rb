@@ -96,6 +96,7 @@ module Solargraph
                 end
                 arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
                                                         closure: name_pin.closure,
+                                                        gates: name_pin.gates,
                                                         source: :chain)
                 atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
