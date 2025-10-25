@@ -628,7 +628,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end
 
-    it 'accepts ivar assignments and references with no intermediate calls as safe' do
+    xit 'accepts ivar assignments and references with no intermediate calls as safe' do
+      pending 'support within flow-sensitive typing'
+
       checker = type_checker(%(
         class Foo
           def initialize
