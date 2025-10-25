@@ -110,6 +110,11 @@ module Solargraph
         types
       end
 
+      # @return [nil]
+      def exclude_return_type
+        nil
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
