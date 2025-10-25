@@ -133,6 +133,19 @@ module Solargraph
         combine_types(other, :return_type)
       end
 
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          # @sg-ignore flow sensitive typing needs to handle ivars
+          return return_type.qualify(api_map, *gates)
+        end
+
+        super
+      end
+
       private
 
       attr_reader :exclude_return_type
