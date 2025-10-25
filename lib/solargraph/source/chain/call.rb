@@ -52,7 +52,7 @@ module Solargraph
           return yield_pins(api_map, name_pin) if word == 'yield'
 
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          return inferred_pins(found, api_map, name_pin, locals) unless found.nil?
+          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           pin_groups = name_pin.binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
