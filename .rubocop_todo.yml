@@ -452,7 +452,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 56
+  Max: 57
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
