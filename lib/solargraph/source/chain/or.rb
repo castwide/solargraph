@@ -20,7 +20,7 @@ module Solargraph
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
             # @sg-ignore Unresolved call to without_nil on
-            #   ::Solargraph::ComplexType
+            #   Solargraph::ComplexType
             combined_type = combined_type.without_nil
           end
 
