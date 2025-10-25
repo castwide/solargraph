@@ -353,7 +353,6 @@ module Solargraph
       # @param context [Context]
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
-      # @sg-ignore
       # @return [Symbol]
       def calculate_method_visibility(decl, context, closure, scope, name)
         override_key = [closure.path, scope, name]

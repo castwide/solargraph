@@ -297,10 +297,6 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Rooted type issue here - "Declared return type
-      #   ::Enumerable<::Solargraph::Pin::Symbol> does not match
-      #   inferred type ::Set<::Symbol> for
-      #   Solargraph::ApiMap::Store#symbols"
       # @return [Enumerable<Solargraph::Pin::Symbol>]
       def symbols
         index.pins_by_class(Pin::Symbol)
