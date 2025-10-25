@@ -81,7 +81,7 @@ module Solargraph
       #
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
-        (assignments + other.assignments).uniq
+        (other.assignments + assignments).uniq
       end
 
       def completion_item_kind

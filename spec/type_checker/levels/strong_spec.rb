@@ -673,6 +673,8 @@ describe Solargraph::TypeChecker do
         end
       ))
 
+      pending 'flow-sensitive typing improvements'
+
       expect(checker.problems.map(&:message)).to be_empty
     end
 

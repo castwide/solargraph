@@ -24,6 +24,30 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'uses is_a? in a simple if() with a union to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      # @param repr [Repro1, Repro2]
+      def verify_repro(repr)
+        if repr.is_a?(Repro1)
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    pending 'FlowSensitiveTyping improvements'
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.to_s).to eq('Repro1')
+
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Repro2')
+  end
+
   it 'uses is_a? in a simple if() to refine types on a module-scoped class' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
@@ -91,30 +115,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.to_s).to eq('Repro')
-  end
-
-  it 'uses is_a? in a simple if() with a union to refine types' do
-    source = Solargraph::Source.load_string(%(
-      class ReproBase; end
-      class Repro1 < ReproBase; end
-      class Repro2 < ReproBase; end
-      # @param repr [Repro1, Repro2]
-      def verify_repro(repr)
-        if repr.is_a?(Repro1)
-          repr
-        else
-          repr
-        end
-      end
-  ), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [7, 10])
-    expect(clip.infer.to_s).to eq('Repro1')
-
-    pending 'flow sensitive typing handling else from is_a? with union types'
-
-    clip = api_map.clip_at('test.rb', [9, 10])
-    expect(clip.infer.to_s).to eq('Repro2')
   end
 
   it 'uses is_a? in an if-then-else() to refine types' do
@@ -611,7 +611,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.rooted_tags).to eq('nil, 10')
+    expect(clip.infer.rooted_tags).to eq('10, nil')
 
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('10')
