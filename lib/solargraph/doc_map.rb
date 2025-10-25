@@ -178,6 +178,7 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
+      # @sg-ignore Need better typing for Hash[]
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
       # @type [Array<Gem::Specification>]

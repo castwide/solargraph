@@ -71,9 +71,6 @@ module Solargraph
       # @param comment [String]
       # @return [void]
       def process_comment source_position, comment_position, comment
-        # @sg-ignore Wrong argument type for String#=~: object
-        #   expected String::_MatchAgainst<String, undefined>, received
-        #   Regexp
         return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
@@ -122,6 +119,8 @@ module Solargraph
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
+            # @sg-ignore Variable type could not be inferred for method_gen_pins
+            # @type [Array<Solargraph::Pin::Base>]
             method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last
             return if gen_pin.nil?
@@ -262,9 +261,6 @@ module Solargraph
 
       # @return [void]
       def process_comment_directives
-        # @sg-ignore Wrong argument type for String#=~: object
-        #   expected String::_MatchAgainst<String, undefined>, received
-        #   Regexp
         return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|

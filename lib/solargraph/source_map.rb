@@ -50,7 +50,6 @@ module Solargraph
     # @generic T
     # @param klass [Class<generic<T>>]
     #
-    # @sg-ignore Need better generic inference here
     # @return [Array<generic<T>>]
     def pins_by_class klass
       @pin_select_cache[klass] ||= pin_class_hash.select { |key, _| key <= klass }.values.flatten
