@@ -23,7 +23,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: '3.4' # keep same as typecheck.yml
         bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -43,7 +43,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
   rails:
@@ -54,7 +54,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: '3.4' # keep same as typecheck.yml
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -72,7 +72,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
   rspec:
@@ -83,7 +83,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: '3.4' # keep same as typecheck.yml
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -101,7 +101,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
 
