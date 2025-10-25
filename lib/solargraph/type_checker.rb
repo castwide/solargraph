@@ -103,7 +103,7 @@ module Solargraph
       # @param code [String]
       # @param filename [String, nil]
       # @param level [Symbol]
-      # @param api_map [Solargraph::ApiMap]
+      # @param api_map [Solargraph::ApiMap, nil]
       # @return [self]
       def load_string code, filename = nil, level = :normal, api_map: nil
         source = Solargraph::Source.load_string(code, filename)
