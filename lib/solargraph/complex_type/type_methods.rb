@@ -43,6 +43,10 @@ module Solargraph
         @rooted_tag ||= rooted_name + rooted_substring
       end
 
+      def interface?
+        name.start_with?('_')
+      end
+
       # @return [Boolean]
       def duck_type?
         @duck_type ||= name.start_with?('#')

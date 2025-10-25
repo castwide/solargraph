@@ -43,11 +43,13 @@ module Solargraph
       # solargraph-rails is known to use this method to get the document symbols. It should probably be removed.
       @document_symbols = nil
       self.convention_pins = conventions_environ.pins
+      # @type [Hash{Class<Pin::Base> => Array<Pin::Base>}]
       @pin_select_cache = {}
     end
 
     # @generic T
     # @param klass [Class<generic<T>>]
+    #
     # @sg-ignore Need better generic inference here
     # @return [Array<generic<T>>]
     def pins_by_class klass
@@ -178,7 +180,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_writer :convention_pins
 
-    # @return [Hash{Class => Array<Pin::Base>}]
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
