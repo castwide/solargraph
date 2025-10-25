@@ -559,26 +559,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'resolves constants inside modules inside classes' do
-      checker = type_checker(%(
-        class Bar
-          module Foo
-            CONSTANT = 'hi'
-          end
-        end
-
-        class Bar
-          include Foo
-
-          # @return [String]
-          def baz
-            CONSTANT
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     context 'with class name available in more than one gate' do
       let(:checker) do
         type_checker(%(
@@ -614,6 +594,26 @@ describe Solargraph::TypeChecker do
       it 'resolves class name correctly in generic resolution' do
         expect(checker.problems.map(&:message)).to be_empty
       end
+    end
+
+    it 'resolves constants inside modules inside classes' do
+      checker = type_checker(%(
+        class Bar
+          module Foo
+            CONSTANT = 'hi'
+          end
+        end
+
+        class Bar
+          include Foo
+
+          # @return [String]
+          def baz
+            CONSTANT
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'handles "while foo" flow sensitive typing correctly' do
