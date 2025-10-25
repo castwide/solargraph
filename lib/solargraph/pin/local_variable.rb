@@ -67,6 +67,7 @@ module Solargraph
         new_attrs = attrs.merge({
           presence: combine_presence(other),
           presence_certain: combine_presence_certain(other),
+          exclude_return_type: combine_types(other, :exclude_return_type)
         })
         super(other, new_attrs)
       end
