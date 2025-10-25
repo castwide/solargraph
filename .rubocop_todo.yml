@@ -1146,7 +1146,12 @@ Style/SlicingWithRange:
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowModifier.
 Style/SoleNestedConditional:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/complex_type/unique_type.rb'
+    - 'lib/solargraph/pin/parameter.rb'
+    - 'lib/solargraph/source.rb'
+    - 'lib/solargraph/source/source_chainer.rb'
+    - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 Style/StderrPuts:

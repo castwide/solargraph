@@ -12,11 +12,51 @@ module Solargraph
 
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
+      # @param exclude_return_type [ComplexType, nil] Ensure any return
+      #   type returned will never include these unique types in the
+      #   unique types of its complex type
       # @param splat [Hash]
-      def initialize presence: nil, presence_certain: false, **splat
+      def initialize assignment: nil, presence: nil, presence_certain: false, exclude_return_type: nil,
+                     **splat
         super(**splat)
         @presence = presence
         @presence_certain = presence_certain
+        @exclude_return_type = exclude_return_type
+      end
+
+      def reset_generated!
+        @return_type_minus_exclusions = nil
+        super
+      end
+
+      # @return [ComplexType, nil]
+      def return_type
+        return_type_minus_exclusions(@return_type || generate_complex_type)
+      end
+
+      # @param raw_return_type [ComplexType, nil]
+      # @return [ComplexType, nil]
+      def return_type_minus_exclusions(raw_return_type)
+        @return_type_minus_exclusions ||=
+          if exclude_return_type && raw_return_type
+            types = raw_return_type.items - exclude_return_type.items
+            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+            ComplexType.new(types)
+          else
+            raw_return_type
+          end
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type.qualify(api_map, *gates)
+        end
+
+        super
       end
 
       def combine_with(other, attrs={})
@@ -94,6 +134,22 @@ module Solargraph
           return other.return_type
         end
         combine_types(other, :return_type)
+      end
+
+      private
+
+      attr_reader :exclude_return_type
+
+      # @param tag1 [String]
+      # @param tag2 [String]
+      # @return [Boolean]
+      def match_tags tag1, tag2
+        # @todo This is an unfortunate hack made necessary by a discrepancy in
+        #   how tags indicate the root namespace. The long-term solution is to
+        #   standardize it, whether it's `Class<>`, an empty string, or
+        #   something else.
+        tag1 == tag2 ||
+          (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
       end
 
       # @param other [self]

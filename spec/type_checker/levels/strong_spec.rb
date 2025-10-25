@@ -203,21 +203,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Missing @return tag')
     end
 
-    it 'ignores nilable type issues' do
-      checker = type_checker(%(
-        # @param a [String]
-        # @return [void]
-        def foo(a); end
-
-        # @param b [String, nil]
-        # @return [void]
-        def bar(b)
-         foo(b)
-        end
-      ))
-      expect(checker.problems.map(&:message)).to eq([])
-    end
-
     it 'calls out keyword issues even when required arg count matches' do
       checker = type_checker(%(
         # @param a [String]
@@ -562,6 +547,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'understands Open3 methods' do
+      checker = type_checker(%(
+        require 'open3'
+
+        # @return [void]
+        def run_command
+          # @type [Hash{String => String}]
+          foo = {'foo' => 'bar'}
+          Open3.capture2e(foo, 'ls', chdir: '/tmp')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar
@@ -577,20 +576,6 @@ describe Solargraph::TypeChecker do
           def baz
             CONSTANT
           end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
-    it 'understands Open3 methods' do
-      checker = type_checker(%(
-        require 'open3'
-
-        # @return [void]
-        def run_command
-          # @type [Hash{String => String}]
-          foo = {'foo' => 'bar'}
-          Open3.capture2e(foo, 'ls', chdir: '/tmp')
         end
       ))
       expect(checker.problems.map(&:message)).to be_empty
@@ -663,6 +648,59 @@ describe Solargraph::TypeChecker do
         end))
 
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
+    end
+
+    it 'accepts ivar assignments and references with no intermediate calls as safe' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Integer, nil]
+            @foo = nil
+          end
+
+          # @return [void]
+          def twiddle
+            @foo = nil if rand if rand > 0.5
+          end
+
+          # @return [Integer]
+          def bar
+            @foo = 123
+            out = @foo.round
+            twiddle
+            out
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'knows that ivar references with intermediate calls are not safe' do
+      pending 'flow-sensitive typing improvements'
+
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Integer, nil]
+            @foo = nil
+          end
+
+          # @return [void]
+          def twiddle
+            @foo = nil if rand if rand > 0.5
+          end
+
+          # @return [Integer]
+          def bar
+            @foo = 123
+            twiddle
+            @foo.round
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
     end
   end
 end

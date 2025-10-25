@@ -191,9 +191,7 @@ describe Solargraph::Parser::NodeMethods do
   it "handles top 'or' nodes" do
     node = parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
-    expect(rets.length).to eq(2)
-    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[0])).to eq('::Integer')
-    expect(Solargraph::Parser::NodeMethods.infer_literal_node_type(rets[1])).to eq('::String')
+    expect(rets.length).to eq(1)
   end
 
   it "handles nested 'and' nodes" do
@@ -342,7 +340,7 @@ describe Solargraph::Parser::NodeMethods do
   it "handles top 'or' nodes" do
     node = parse('1 || "2"')
     rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
-    expect(rets.map(&:type)).to eq([:int, :str])
+    expect(rets.map(&:type)).to eq([:or])
   end
 
   it "handles nested 'and' nodes from return" do

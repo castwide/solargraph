@@ -233,8 +233,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
@@ -257,8 +255,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         value
       end
   ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.to_s).to eq('ReproBase')
@@ -275,8 +271,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         value
       end
   ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.to_s).to eq('ReproBase')
@@ -341,7 +335,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
@@ -367,8 +360,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
 
@@ -392,8 +383,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
@@ -422,8 +411,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
   end
@@ -447,8 +434,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
@@ -474,8 +459,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
   end
@@ -500,8 +483,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
   end
@@ -515,8 +496,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         repr
       end
   ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 33])
     expect(clip.infer.rooted_tags).to eq('::String')
@@ -545,8 +524,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
 
@@ -571,13 +548,11 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
 
     clip = api_map.clip_at('test.rb', [8, 10])
-    expect(clip.infer.rooted_tags).to eq('::Integer, nil')
+    expect(clip.infer.rooted_tags).to eq('nil')
   end
 
   it 'uses variable in a simple if() to refine types' do
@@ -596,8 +571,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Integer')
@@ -618,8 +591,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 8])
     expect(clip.infer.rooted_tags).to eq('10, nil')
@@ -646,8 +617,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       end
     ), 'test.rb')
 
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
@@ -666,8 +635,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-
-    pending 'FlowSensitiveTyping improvements'
 
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [6, 10])
@@ -695,7 +662,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
-    pending 'FlowSensitiveTyping improvements'
+    pending('better scoping of return if in blocks')
 
     clip = api_map.clip_at('test.rb', [9, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
@@ -724,8 +691,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
@@ -749,8 +714,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-
-    pending 'FlowSensitiveTyping improvements'
 
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 12])
@@ -781,8 +744,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
@@ -804,8 +765,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-
-    pending 'FlowSensitiveTyping improvements'
 
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 12])
@@ -832,8 +791,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
-
-    pending 'FlowSensitiveTyping improvements'
 
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [8, 12])
@@ -864,8 +821,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [6, 44])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
@@ -899,8 +854,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
@@ -927,8 +880,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
@@ -960,8 +911,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
-
-    pending 'FlowSensitiveTyping improvements'
 
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
@@ -997,8 +946,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.to_s).to eq('String')
 
-    pending 'FlowSensitiveTyping improvements'
-
     clip = api_map.clip_at('test.rb', [7, 17])
     expect(clip.infer.to_s).to eq('nil')
 
@@ -1017,8 +964,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
   ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 17])
     expect(clip.infer.to_s).to eq('Integer')
