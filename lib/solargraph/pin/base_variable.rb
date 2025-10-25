@@ -31,15 +31,12 @@ module Solargraph
       end
 
       def combine_with(other, attrs={})
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
           assignments: new_assignments,
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
                                 })
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
