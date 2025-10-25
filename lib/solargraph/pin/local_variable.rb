@@ -68,7 +68,6 @@ module Solargraph
           presence: combine_presence(other),
           presence_certain: combine_presence_certain(other),
         })
-
         super(other, new_attrs)
       end
 
