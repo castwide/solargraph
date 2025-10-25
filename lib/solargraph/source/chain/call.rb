@@ -50,13 +50,18 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
+
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
-          pins = name_pin.binder.each_unique_type.flat_map do |context|
+          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
+          pin_groups = name_pin.binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact
           end
+          if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
+            pin_groups = []
+          end
+          pins = pin_groups.flatten.uniq(&:path)
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
