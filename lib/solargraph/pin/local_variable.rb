@@ -16,7 +16,7 @@ module Solargraph
       #   type returned will never include these unique types in the
       #   unique types of its complex type
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, exclude_return_type: nil,
+      def initialize presence: nil, presence_certain: false, exclude_return_type: nil,
                      **splat
         super(**splat)
         @presence = presence
@@ -159,16 +159,6 @@ module Solargraph
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
         mass_assignment || other.mass_assignment
-      end
-
-      def probe api_map
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already probed this type - use
-          # the type it figured out
-          return return_type.qualify(api_map, *gates)
-        end
-
-        super
       end
 
       # Narrow the presence range to the intersection of both.
