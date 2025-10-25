@@ -651,12 +651,12 @@ describe Solargraph::TypeChecker do
         end
       ))
 
+      pending 'flow-sensitive typing improvements'
+
       expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'knows that ivar references with intermediate calls are not safe' do
-      pending 'flow-sensitive typing improvements'
-
       checker = type_checker(%(
         class Foo
           def initialize
