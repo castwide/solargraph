@@ -219,8 +219,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'understands complex use of self' do
-      pending 'https://github.com/castwide/solargraph/pull/1050'
-
       checker = type_checker(%(
         class A
           # @param other [self]
