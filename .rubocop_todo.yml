@@ -1269,7 +1269,12 @@ YARD/MismatchName:
   Enabled: false
 
 YARD/TagTypeSyntax:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/api_map/constants.rb'
+    - 'lib/solargraph/language_server/host.rb'
+    - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/pin/method.rb'
+    - 'lib/solargraph/type_checker.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
