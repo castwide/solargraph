@@ -344,7 +344,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             unless closest.generic? || ignored_pins.include?(found)
               if closest.defined?
-                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest.rooted_tags}")
+                result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
               else
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
               end
