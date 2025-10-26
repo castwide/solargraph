@@ -242,6 +242,7 @@ module Solargraph
         def find_method_pin(name_pin)
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
+            # @sg-ignore Reassignment as a function of itself issue
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
