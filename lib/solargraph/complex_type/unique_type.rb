@@ -343,7 +343,7 @@ module Solargraph
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
           # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
-          return self unless generics_to_resolve.include?(type_param)
+          return self unless generics_to_resolve.include? type_param
           # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
