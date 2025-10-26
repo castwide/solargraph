@@ -13,15 +13,6 @@ module Solargraph
             FlowSensitiveTyping.new(locals,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_if(node)
-
-            pins.push Solargraph::Pin::If.new(
-              location: get_node_location(node),
-              closure: region.closure,
-              node: node,
-              comments: comments_for(node),
-              source: :parser,
-            )
-            process_children region
           end
         end
       end
