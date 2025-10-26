@@ -60,7 +60,7 @@ module Solargraph
 
       # pending code fixes (~280):
       #
-      # @todo 267: Need to add nil check here
+      # @todo 264: Need to add nil check here
       # @todo 9: Need to validate config
       # @todo 3: Translate to something flow sensitive typing understands
       # @todo 2: Need a downcast here
@@ -70,6 +70,7 @@ module Solargraph
       # @todo 51 flow sensitive typing needs to handle ivars
       # @todo 9: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
+      # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: (*) flow sensitive typing needs better handling of ||= on lvars
       # @todo 4: Need to look at Tuple#include? handling
       # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
@@ -87,7 +88,6 @@ module Solargraph
       # @todo 1: ComplexType::UniqueType needs without_nil
       # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
-      # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 1: Flow sensitive typing could figure out this is not nil at both entrypoints
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
