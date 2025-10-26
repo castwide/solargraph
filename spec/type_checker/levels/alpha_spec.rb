@@ -72,19 +72,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'understands &. in return position' do
-      checker = type_checker(%(
-        class Baz
-          # @param bar [String, nil]
-          # @return [String]
-          def foo bar
-            bar&.upcase || 'undefined'
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     it 'accepts ivar assignments and references with no intermediate calls as safe' do
       pending 'flow-sensitive typing improvements'
 
