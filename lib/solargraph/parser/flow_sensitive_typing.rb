@@ -213,7 +213,6 @@ module Solargraph
         downcast_not_type ||= pin.exclude_return_type if pin.exclude_return_type&.defined?
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
-          presence_certain: true,
           location: pin.location,
           closure: pin.closure,
           name: pin.name,
