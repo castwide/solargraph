@@ -667,8 +667,11 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sup = sup.simplify_literals.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
