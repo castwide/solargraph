@@ -226,7 +226,6 @@ module Solargraph
         path = File.join(*path_segments)
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
-          # @sg-ignore Need to add nil check here
           out.puts "Clearing pin cache in #{path}" unless out.nil?
         end
       end

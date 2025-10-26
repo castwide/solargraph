@@ -78,8 +78,7 @@ module Solargraph
 
         unless resolver
           # @sg-ignore Need to add nil check here
-          Solargraph.logger.warn \
-            "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
+          Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
 
