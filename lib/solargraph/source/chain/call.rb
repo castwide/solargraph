@@ -51,6 +51,7 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
+
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           binder = name_pin.binder

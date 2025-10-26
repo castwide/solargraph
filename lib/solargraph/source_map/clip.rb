@@ -14,7 +14,6 @@ module Solargraph
         closure_pin = closure
         # @sg-ignore Need to add nil check here
         closure_pin.rebind(api_map) if closure_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(closure_pin.receiver).contain?(cursor.range.start)
-        @in_block = nil
       end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
@@ -76,15 +75,6 @@ module Solargraph
       # @return [::Array<String>]
       def gates
         closure.gates
-      end
-
-      # @sg-ignore need boolish support for ? methods
-      def in_block?
-        return @in_block unless @in_block.nil?
-        @in_block = begin
-          tree = cursor.source.tree_at(cursor.position.line, cursor.position.column)
-          Parser.is_ast_node?(tree[1]) && [:block, :ITER].include?(tree[1].type)
-        end
       end
 
       # @param phrase [String]
