@@ -311,7 +311,9 @@ module Solargraph
 
     # @return [ComplexType]
     def without_nil
-      ComplexType.new(@items.reject(&:nil_type?))
+      new_items = @items.reject(&:nil_type?)
+      return ComplexType::UNDEFINED if new_items.empty?
+      ComplexType.new(new_items)
     end
 
     # @return [Array<ComplexType>]
