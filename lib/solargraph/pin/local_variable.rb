@@ -147,6 +147,7 @@ module Solargraph
 
       private
 
+      # @return [ComplexType, nil]
       attr_reader :exclude_return_type
 
       # @param tag1 [String]

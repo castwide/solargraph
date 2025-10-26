@@ -40,6 +40,8 @@ module Solargraph
         context.namespace.to_s
       end
 
+      # @sg-ignore Solargraph::Pin::Common#binder return type could
+      #   not be inferred
       # @return [ComplexType]
       def binder
         @binder || context

@@ -34,6 +34,8 @@ module Solargraph
     # @param source [Source]
     def initialize source
       @source = source
+      # @type [Array<Pin::Base>, nil]
+      @convention_pins = nil
 
       conventions_environ.merge Convention.for_local(self) unless filename.nil?
       # FIXME: unmemoizing the document_symbols in case it was called and memoized from any of conventions above

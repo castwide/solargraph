@@ -240,9 +240,13 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
+            # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
+              # @sg-ignore We should understand reassignment of variable to new type
               next if ref.nil? || ref.empty? || visited.include?(ref)
+              # @sg-ignore We should understand reassignment of variable to new type
               ancestors << ref
+              # @sg-ignore We should understand reassignment of variable to new type
               queue << ref
             end
           end

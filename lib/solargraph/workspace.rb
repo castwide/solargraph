@@ -137,6 +137,7 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @sg-ignore Need to validate config
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'
