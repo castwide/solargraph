@@ -6,10 +6,6 @@ module Solargraph
       # @param source [Solargraph::Source]
       def initialize source
         @source = source
-        # @type [Array<Solargraph::Pin::Base>, nil]
-        @pins = nil
-        # @type [Array<Solargraph::Pin::LocalVariable>, nil]
-        @locals = nil
       end
 
       # @return [Array<Solargraph::Pin::Base>]
