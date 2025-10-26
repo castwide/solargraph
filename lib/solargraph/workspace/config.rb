@@ -120,9 +120,8 @@ module Solargraph
 
       # @return [String]
       def global_config_path
-        out = ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
-              File.join(Dir.home, '.config', 'solargraph', 'config.yml')
-        out
+        ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
+          File.join(Dir.home, '.config', 'solargraph', 'config.yml')
       end
 
       # @return [String]
