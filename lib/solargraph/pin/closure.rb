@@ -44,8 +44,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Solargraph::Pin::Closure#binder return type could not be inferred
-      # @return [Solargraph::ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def binder
         @binder || context
       end
