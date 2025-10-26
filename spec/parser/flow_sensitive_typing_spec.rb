@@ -209,6 +209,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         value
       end
   ), 'test.rb')
+
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 6])
     expect(clip.infer.to_s).to eq('Array<Numeric>')
@@ -233,6 +234,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
     ), 'test.rb')
+
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
@@ -255,6 +257,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         value
       end
   ), 'test.rb')
+
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.to_s).to eq('ReproBase')
@@ -271,6 +274,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         value
       end
   ), 'test.rb')
+
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.to_s).to eq('ReproBase')
@@ -287,6 +291,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       bar = Foo.new
       bar
   ), 'test.rb')
+
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [6, 6])
     expect(clip.infer.to_s).to eq('Foo')
