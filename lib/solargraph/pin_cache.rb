@@ -220,6 +220,7 @@ module Solargraph
       end
 
       # @param path_segments [Array<String>]
+      # @param out [IO, nil]
       # @return [void]
       def uncache *path_segments, out: nil
         path = File.join(*path_segments)
@@ -231,6 +232,7 @@ module Solargraph
       end
 
       # @return [void]
+      # @param out [IO, nil]
       # @param path_segments [Array<String>]
       # @param out [StringIO, IO, nil]
       # @todo need to warn when no @param exists for 'out'

@@ -17,7 +17,7 @@ module Solargraph
       # Generate the data.
       #
       # @param source [Source]
-      # @return [Array]
+      # @return [Array(Array<Solargraph::Pin::Base>, Array<Solargraph::LocalVariable>)]
       def map source
         @source = source
         @filename = source.filename
@@ -46,7 +46,7 @@ module Solargraph
 
       class << self
         # @param source [Source]
-        # @return [Array]
+        # @return [Array(Array<Solargraph::Pin::Base>, Array<Solargraph::LocalVariable>)]
         def map source
           return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source

@@ -65,7 +65,7 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           match = result[0, off].match(/[.:]+\z/)
           if match
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Reassignment as a function of itself issue
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
           end
           result
