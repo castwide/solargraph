@@ -197,6 +197,22 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Repro')
   end
 
+  it 'uses is_a? in a "break unless" statement in a while to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase]
+      value = bar
+      while !is_done()
+        break unless value.is_a? Repro
+        value
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
   it 'uses unless is_a? in a ".each" block to refine types' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<Numeric>]
