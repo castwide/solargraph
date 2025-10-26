@@ -15,16 +15,12 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def pins
         generate
-        # @type [Array<Solargraph::Pin::Base>]
-        empty_pins = []
-        @pins || empty_pins
+        @pins || []
       end
 
       # @return [Array<Solargraph::Pin::LocalVariable>]
       def locals
         generate
-        # @type [Array<Pin::LocalVariable>]
-        empty_locals = []
         @locals || []
       end
 
