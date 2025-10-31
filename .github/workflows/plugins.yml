@@ -94,6 +94,12 @@ jobs:
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
         bundle update rbs
+        # /opt/hostedtoolcache/Ruby/3.4.7/x64/lib/ruby/3.4.0/bundler/runtime.rb:317:in
+        # 'Bundler::Runtime#check_for_activated_spec!': You have
+        # already activated date 3.5.0, but your Gemfile requires date
+        # 3.4.1. Prepending `bundle exec` to your command may solve
+        # this. (Gem::LoadError)
+        bundle update date
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
