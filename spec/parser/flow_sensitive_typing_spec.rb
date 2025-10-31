@@ -795,8 +795,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
-    pending('better scoping of return if in case/when')
-
     clip = api_map.clip_at('test.rb', [10, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
