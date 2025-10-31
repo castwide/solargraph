@@ -5,7 +5,7 @@ module Solargraph
 
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
-      # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatementable, nil]
+      # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
       def initialize(locals, enclosing_breakable_pin, enclosing_compound_statement_pin)
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
@@ -118,7 +118,7 @@ module Solargraph
           end
         end
 
-        unless enclosing_compound_statement_pin.nil?
+        unless enclosing_compound_statement_pin.node.nil?
           rest_of_returnable_body = Range.new(get_node_end_position(if_node),
                                               get_node_end_position(enclosing_compound_statement_pin.node))
 

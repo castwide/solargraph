@@ -57,9 +57,9 @@ module Solargraph
         end
 
         # @sg-ignore downcast output of Enumerable#select
-        # @return [Solargraph::Pin::CompoundStatementable, nil]
+        # @return [Solargraph::Pin::CompoundStatement, nil]
         def enclosing_compound_statement_pin
-          pins.select{|pin| pin.is_a?(Pin::CompoundStatementable) && pin.location&.range&.contain?(position)}.last
+          pins.select{|pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position)}.last
         end
 
         # @param subregion [Region]
