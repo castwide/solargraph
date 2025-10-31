@@ -39,12 +39,17 @@ module Solargraph
     # Just because statement #1 in a sequence is executed, it doesn't
     # mean that future ones will.  Consider the effect of
     # break/next/return/raise/etc. on control flow.
-    module CompoundStatementable
-      # @return [Parser::AST::Node]
+    class CompoundStatement < Pin::Base
       attr_reader :node
 
-      # @return [Location, nil]
-      attr_reader :location
+      # @param receiver [Parser::AST::Node, nil]
+      # @param node [Parser::AST::Node, nil]
+      # @param context [ComplexType, nil]
+      # @param args [::Array<Parameter>]
+      def initialize node: nil, **splat
+        super(**splat)
+        @node = node
+      end
     end
   end
 end
