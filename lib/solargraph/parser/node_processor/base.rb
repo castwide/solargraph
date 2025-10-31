@@ -56,7 +56,7 @@ module Solargraph
           pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position)}.last
         end
 
-        # @sg-ignore downcast output of Enumerable#select
+        # @todo downcast output of Enumerable#select
         # @return [Solargraph::Pin::CompoundStatement, nil]
         def enclosing_compound_statement_pin
           pins.select{|pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position)}.last
