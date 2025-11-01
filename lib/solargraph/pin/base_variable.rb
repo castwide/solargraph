@@ -45,10 +45,10 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-  def initialize assignment: nil, assignments: [], mass_assignment: nil,
-                 presence: nil, return_type: nil,
-                 intersection_return_type: nil, exclude_return_type: nil,
-                 **splat
+      def initialize assignment: nil, assignments: [], mass_assignment: nil,
+                     presence: nil, return_type: nil,
+                     intersection_return_type: nil, exclude_return_type: nil,
+                     **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
@@ -77,7 +77,7 @@ module Solargraph
           return_type: combine_return_type(other),
           presence: combine_presence(other),
           intersection_return_type: combine_types(other, :intersection_return_type),
-          exclude_return_type: combine_types(other, :exclude_return_type),
+          exclude_return_type: combine_types(other, :exclude_return_type)
         })
         super(other, new_attrs)
       end
