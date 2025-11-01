@@ -57,7 +57,6 @@ module Solargraph
       end
 
       def reset_generated!
-        @return_type_minus_exclusions = nil
         @assignment = nil
         super
       end
@@ -94,11 +93,6 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
-      end
-
-      def reset_generated!
-        @return_type_minus_exclusions = nil
-        super
       end
 
       def inner_desc
@@ -345,20 +339,6 @@ module Solargraph
           cursor = cursor.closure
         end
         false
-      end
-
-      # @param raw_return_type [ComplexType, nil]
-      # @return [ComplexType, nil]
-      def return_type_minus_exclusions(raw_return_type)
-        @return_type_minus_exclusions ||=
-          if exclude_return_type && raw_return_type
-            types = raw_return_type.items - exclude_return_type.items
-            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-            ComplexType.new(types)
-          else
-            raw_return_type
-          end
-        @return_type_minus_exclusions
       end
 
       # @param other [self]
