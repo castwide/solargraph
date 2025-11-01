@@ -46,12 +46,12 @@ module Solargraph
         @exclude_return_type = exclude_return_type
       end
 
+      # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
       # @param intersection_return_type [ComplexType, nil]
-      # @param presence [Range]
       # @param source [Symbol]
-      def downcast exclude_return_type: nil, intersection_return_type: nil,
-                   presence:, source: self.source
+      def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
+                   source: self.source
         result = dup
         result.exclude_return_type = exclude_return_type
         result.intersection_return_type = intersection_return_type
