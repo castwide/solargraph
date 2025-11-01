@@ -210,7 +210,7 @@ module Solargraph
       # @return [void]
       def add_downcast_local(pin, presence:, downcast_type:, downcast_not_type:)
         # @todo Create pin#update method
-        new_pin = pin.class.new(
+        new_pin = Pin::LocalVariable.new(
           location: pin.location,
           closure: pin.closure,
           name: pin.name,
@@ -223,6 +223,7 @@ module Solargraph
           source: :flow_sensitive_typing
         )
         new_pin.reset_generated!
+        new_pin = pin.combine_with(new_pin)
         locals.push(new_pin)
       end
 
