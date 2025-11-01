@@ -344,20 +344,6 @@ module Solargraph
       # @param other [self]
       # @return [ComplexType, nil]
       def combine_return_type(other)
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already figured out this type
-          # has been downcast - use the type it figured out
-          return return_type
-        end
-        if other.presence_certain? && other.return_type&.defined?
-          return other.return_type
-        end
-        combine_types(other, :return_type)
-      end
-
-      # @param other [self]
-      # @return [ComplexType, nil]
-      def combine_return_type(other)
         combine_types(other, :return_type)
       end
 
