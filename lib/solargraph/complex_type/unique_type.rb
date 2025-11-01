@@ -109,6 +109,40 @@ module Solargraph
         end
       end
 
+      # @param exclude_types [ComplexType, nil]
+      # @param api_map [ApiMap]
+      # @return [ComplexType, self]
+      def exclude exclude_types, api_map
+        return self if exclude_types.nil?
+
+        types = items - exclude_types.items
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
+      # @see https://en.wikipedia.org/wiki/Intersection_type
+      #
+      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @param api_map [ApiMap]
+      # @return [self, ComplexType]
+      def intersect_with intersection_type, api_map
+        return self if intersection_type.nil?
+        return intersection_type if undefined?
+        types = []
+        # try to find common types via conformance
+        items.each do |ut|
+          intersection_type.each do |int_type|
+            if ut.can_assign?(api_map, int_type)
+              types << int_type
+            elsif int_type.can_assign?(api_map, ut)
+              types << ut
+            end
+          end
+        end
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
       def literal?
         non_literal_name != name
       end
@@ -237,7 +271,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param atype [ComplexType] type which may be assigned to this type
+      # @param atype [ComplexType, self] type which may be assigned to this type
       def can_assign?(api_map, atype)
         logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
         downcasted_atype = atype.downcast_to_literal_if_possible
@@ -246,6 +280,11 @@ module Solargraph
         end
         logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
         out
+      end
+
+      # @yieldreturn [Boolean]
+      def all? &block
+        block.yield self
       end
 
       # @return [UniqueType]
