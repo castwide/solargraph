@@ -6,22 +6,12 @@ module Solargraph
       # @return [Range, nil]
       attr_reader :presence
 
-      def presence_certain?
-        @presence_certain
-      end
-
       # @param presence [Range, nil]
-      # @param presence_certain [Boolean]
-      # @param exclude_return_type [ComplexType, nil] Ensure any return
-      #   type returned will never include these unique types in the
-      #   unique types of its complex type
       # @param splat [Hash]
-      def initialize presence: nil, presence_certain: false, exclude_return_type: nil,
+      def initialize presence: nil,
                      **splat
         super(**splat)
         @presence = presence
-        @presence_certain = presence_certain
-        @exclude_return_type = exclude_return_type
       end
 
       def reset_generated!
@@ -29,34 +19,8 @@ module Solargraph
         super
       end
 
-      # @return [ComplexType, nil]
-      def return_type
-        return_type_minus_exclusions(@return_type || generate_complex_type)
-      end
-
-      # @param raw_return_type [ComplexType, nil]
-      # @return [ComplexType, nil]
-      def return_type_minus_exclusions(raw_return_type)
-        @return_type_minus_exclusions ||=
-          if exclude_return_type && raw_return_type
-            types = raw_return_type.items - exclude_return_type.items
-            types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-            ComplexType.new(types)
-          else
-            raw_return_type
-          end
-      end
-
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
-      def probe api_map
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already figured out this type
-          # has been downcast - use the type it figured out
-          return return_type.qualify(api_map, *gates)
-        end
-
-        super
+      def inner_desc
+        super + ", presence=#{presence.inspect}"
       end
 
       def combine_with(other, attrs={})
@@ -66,14 +30,8 @@ module Solargraph
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
           presence: combine_presence(other),
-          presence_certain: combine_presence_certain(other),
-          exclude_return_type: combine_types(other, :exclude_return_type)
         })
         super(other, new_attrs)
-      end
-
-      def inner_desc
-        super + ", presence=#{presence.inspect}, presence_certain=#{presence_certain?}"
       end
 
       # @param other_loc [Location]
@@ -115,6 +73,13 @@ module Solargraph
           visible_in_closure?(other_closure)
       end
 
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
+      end
+
       def to_rbs
         (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
       end
@@ -131,18 +96,6 @@ module Solargraph
           return other.return_type
         end
         combine_types(other, :return_type)
-      end
-
-      # @param api_map [ApiMap]
-      # @return [ComplexType]
-      def probe api_map
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already figured out this type
-          # has been downcast - use the type it figured out
-          return return_type.qualify(api_map, *gates)
-        end
-
-        super
       end
 
       private

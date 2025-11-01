@@ -1219,6 +1219,7 @@ Style/TrailingCommaInHashLiteral:
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/closure.rb'
     - 'lib/solargraph/pin/local_variable.rb'
+    - 'lib/solargraph/pin/parameter.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports safe autocorrection (--autocorrect).

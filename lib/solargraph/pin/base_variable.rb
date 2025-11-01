@@ -17,12 +17,37 @@ module Solargraph
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil, **splat
+      # @param exclude_return_type [ComplexType, nil] Ensure any
+      #   return type returned will never include any of these unique
+      #   types in the unique types of its complex type.
+      #
+      #   Example: If a return type is 'Float | Integer | nil' and the
+      #   exclude_return_type is 'Integer', the resulting return
+      #   type will be 'Float | nil' because Integer is excluded.
+      # @param intersection_return_type [ComplexType, nil] Ensure each unique
+      #   return type is compatible with at least one element of this
+      #   complex type.  If a ComplexType used as a return type is an
+      #   union type - we can return any of these - these are
+      #   intersection types - everything we return needs to meet at least
+      #   one of these unique types.
+      #
+      #   Example: If a return type is 'Numeric | nil' and the
+      #   intersection_return_type is 'Float | nil', the resulting return
+      #   type will be 'Float | nil' because Float is compatible
+      #   with Numeric and nil is compatible with nil.
+      # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
+      # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
+                     intersection_return_type: nil, exclude_return_type: nil,
+                     **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
         @return_type = return_type
+        @intersection_return_type = intersection_return_type
+        @exclude_return_type = exclude_return_type
       end
 
       def reset_generated!
@@ -36,7 +61,9 @@ module Solargraph
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
-                                })
+          intersection_return_type: combine_types(other, :intersection_return_type),
+          exclude_return_type: combine_types(other, :exclude_return_type),
+        })
         super(other, new_attrs)
       end
 
@@ -63,6 +90,15 @@ module Solargraph
         (other.assignments + assignments).uniq
       end
 
+      def reset_generated!
+        @return_type_minus_exclusions = nil
+        super
+      end
+
+      def inner_desc
+        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
+      end
+
       def completion_item_kind
         Solargraph::LanguageServer::CompletionItemKinds::VARIABLE
       end
@@ -70,10 +106,6 @@ module Solargraph
       # @return [Integer]
       def symbol_kind
         Solargraph::LanguageServer::SymbolKinds::VARIABLE
-      end
-
-      def return_type
-        @return_type ||= generate_complex_type
       end
 
       def nil_assignment?
@@ -110,18 +142,13 @@ module Solargraph
         types
       end
 
-      # @return [nil]
-      def exclude_return_type
-        nil
-      end
-
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
         exclude_items = exclude_return_type&.items&.uniq
         type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq - (exclude_items || [])) unless assignment_types.empty?
-        return type_from_assignment unless type_from_assignment.nil?
+        return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
         #   well so that we can do better flow sensitive typing with
@@ -136,7 +163,10 @@ module Solargraph
               type.all_params.first
             end
           end.compact!
-          return ComplexType.new(types.uniq).qualify(api_map, *gates) unless types.empty?
+
+          return ComplexType::UNDEFINED if types.empty?
+
+          return adjust_type api_map, ComplexType.new(types.uniq).qualify(api_map, *gates)
         end
 
         ComplexType::UNDEFINED
@@ -152,7 +182,55 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
+      # @return [ComplexType, nil]
+      def return_type
+        generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
+      end
+
+      def typify api_map
+        raw_return_type = super
+
+        adjust_type(api_map, raw_return_type)
+      end
+
       private
+
+      attr_reader :exclude_return_type, :intersection_return_type
+
+      # @param api_map [ApiMap]
+      # @param raw_return_type [ComplexType, ComplexType::UniqueType]
+      #
+      # @return [ComplexType, ComplexType::UniqueType]
+      def adjust_type(api_map, raw_return_type)
+        qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
+        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        minus_exclusions.intersect_with qualified_intersection, api_map
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
 
       # See if this variable is visible within 'other_closure'
       #
@@ -160,6 +238,8 @@ module Solargraph
       # @return [Boolean]
       def visible_in_closure? other_closure
         needle = closure
+        return false if closure.nil?
+
         haystack = other_closure
 
         cursor = haystack
@@ -191,6 +271,12 @@ module Solargraph
       end
 
       # @param other [self]
+      # @return [ComplexType, nil]
+      def combine_return_type(other)
+        combine_types(other, :return_type)
+      end
+
+      # @param other [self]
       # @param attr [::Symbol]
       #
       # @return [ComplexType, nil]
@@ -212,11 +298,11 @@ module Solargraph
         :instance
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, nil]
       def generate_complex_type
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
-        ComplexType.new
+        nil
       end
     end
   end
