@@ -60,7 +60,7 @@ module Solargraph
 
       # pending code fixes (~280):
       #
-      # @todo 264: Need to add nil check here
+      # Need to add nil check here
       # @todo 9: Need to validate config
       # @todo 3: Translate to something flow sensitive typing understands
       # @todo 2: Need a downcast here

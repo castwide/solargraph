@@ -538,7 +538,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, nil]
+      # @return [ComplexType, ComplexType::UniqueType, nil]
       def see_reference api_map
         docstring.ref_tags.each do |ref|
           next unless ref.tag_name == 'return' && ref.owner
@@ -570,7 +570,7 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
-      # @return [ComplexType, nil]
+      # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
         if parts.first.empty? || parts.one?

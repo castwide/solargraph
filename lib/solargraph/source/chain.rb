@@ -157,7 +157,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable>]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
         if pins.empty?
@@ -215,9 +215,9 @@ module Solargraph
       # @param context [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def infer_from_definitions pins, context, api_map, locals
-        # @type [::Array<ComplexType>]
+        # @type [::Array<ComplexType, ComplexType::UniqueType>]
         types = []
         unresolved_pins = []
         # @todo this param tag shouldn't be needed to probe the type
@@ -278,8 +278,8 @@ module Solargraph
         type.self_to_type(context.return_type)
       end
 
-      # @param type [ComplexType]
-      # @return [ComplexType]
+      # @param type [ComplexType, ComplexType::UniqueType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def maybe_nil type
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?

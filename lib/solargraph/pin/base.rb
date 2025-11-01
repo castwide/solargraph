@@ -542,7 +542,7 @@ module Solargraph
       # provided ApiMap.
       #
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def typify api_map
         return_type.qualify(api_map, *(closure&.gates || ['']))
       end
@@ -550,14 +550,14 @@ module Solargraph
       # Infer the pin's return type via static code analysis.
       #
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         typify api_map
       end
 
       # @deprecated Use #typify and/or #probe instead
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def infer api_map
         Solargraph::Logging.logger.warn "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
         type = typify(api_map)
@@ -590,7 +590,7 @@ module Solargraph
       # the return type and the #proxied? setting, the proxy should be a clone
       # of the original.
       #
-      # @param return_type [ComplexType, nil]
+      # @param return_type [ComplexType, ComplexType::UniqueType, nil]
       # @return [self]
       def proxy return_type
         result = dup
@@ -681,7 +681,7 @@ module Solargraph
       # @return [Boolean]
       attr_writer :proxied
 
-      # @return [ComplexType, nil]
+      # @return [ComplexType, ComplexType::UniqueType, nil]
       attr_writer :return_type
 
       attr_writer :docstring

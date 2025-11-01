@@ -525,9 +525,7 @@ module Solargraph
           else
             # @type [ComplexType, ComplexType::UniqueType]
             ptype = data[:qualified]
-            # @sg-ignore @type should override probed type
             ptype = ptype.self_to_type(pin.context)
-            # @sg-ignore @type should override probed type
             unless ptype.undefined?
               # @type [ComplexType]
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
@@ -557,7 +555,6 @@ module Solargraph
         next unless params.key?(pname.to_s)
         # @type [ComplexType]
         ptype = params[pname.to_s][:qualified]
-        # @sg-ignore @type should override probed type
         ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, closure_pin, locals)
         argtype = argtype.self_to_type(closure_pin.context)
