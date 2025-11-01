@@ -60,22 +60,22 @@ module Solargraph
 
       # pending code fixes (~280):
       #
-      # Need to add nil check here
+      # @todo 263: Need to add nil check herea
       # @todo 9: Need to validate config
       # @todo 3: Translate to something flow sensitive typing understands
       # @todo 2: Need a downcast here
       #
       # flow-sensitive typing could handle (~100):
       #
-      # @todo 51 flow sensitive typing needs to handle ivars
+      # @todo 47: flow sensitive typing needs to handle ivars
       # @todo 9: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
+      # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: (*) flow sensitive typing needs better handling of ||= on lvars
-      # @todo 4: Need to look at Tuple#include? handling
-      # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: flow sensitive typing needs to handle 'raise if'
+      # @todo 2: Need to look at Tuple#include? handling
       # @todo 2: should warn on nil dereference below
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
