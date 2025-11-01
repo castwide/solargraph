@@ -46,6 +46,17 @@ module Solargraph
         @exclude_return_type = exclude_return_type
       end
 
+      def downcast exclude_return_type: nil, intersection_return_type: nil,
+                   presence: presence, source: source
+        result = dup
+        result.exclude_return_type = exclude_return_type
+        result.intersection_return_type = intersection_return_type
+        result.source = source
+        result.presence = presence
+        result.reset_generated!
+        result
+      end
+
       def combine_with(other, attrs={})
         attrs.merge({
           assignment: assert_same(other, :assignment),
@@ -176,9 +187,13 @@ module Solargraph
         exclude_return_type || intersection_return_type
       end
 
-      private
+      protected
 
-      attr_reader :exclude_return_type, :intersection_return_type
+      attr_accessor :exclude_return_type, :intersection_return_type
+
+      attr_writer :presence
+
+      private
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
