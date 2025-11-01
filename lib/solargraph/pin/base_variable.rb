@@ -15,9 +15,6 @@ module Solargraph
       attr_reader :presence
 
       # @param return_type [ComplexType, nil]
-      # @param exclude_return_type [ComplexType, nil] Ensure any return
-      #   type returned will never include these unique types in the
-      #   unique types of its complex type
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -65,10 +62,6 @@ module Solargraph
         super
       end
 
-      def inner_desc
-        super + ", presence=#{presence.inspect}, exclude_return_type=#{exclude_return_type.inspect}, assignments=#{assignments}"
-      end
-
       def combine_with(other, attrs={})
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
@@ -109,7 +102,7 @@ module Solargraph
       end
 
       def inner_desc
-        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
+        super + ", presence=#{presence.inspect}, intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}, assignments=#{assignments}"
       end
 
       def completion_item_kind
