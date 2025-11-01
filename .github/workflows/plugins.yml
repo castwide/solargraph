@@ -125,11 +125,18 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: |
-       cd ../solargraph-rspec
-       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-       bundle config path ${{ env.BUNDLE_PATH }}
-       bundle install --jobs 4 --retry 3
-       bundle exec appraisal install
+        cd ../solargraph-rspec
+        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+        bundle config path ${{ env.BUNDLE_PATH }}
+        bundle install --jobs 4 --retry 3
+        bundle exec appraisal install
+        # /opt/hostedtoolcache/Ruby/3.4.7/x64/lib/ruby/3.4.0/bundler/runtime.rb:317:in
+        # 'Bundler::Runtime#check_for_activated_spec!': You have
+        # already activated date 3.5.0, but your Gemfile requires date
+        # 3.4.1. Prepending `bundle exec` to your command may solve
+        # this. (Gem::LoadError)
+        bundle exec appraisal install
+        bundle exec appraisal update date
     - name: Configure .solargraph.yml
       run: |
         cd ../solargraph-rspec
@@ -137,6 +144,7 @@ jobs:
     - name: Solargraph generate RSpec gems YARD and RBS pins
       run: |
         cd ../solargraph-rspec
+
         rspec_gems=$(bundle exec ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
         bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs

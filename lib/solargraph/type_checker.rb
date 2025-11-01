@@ -368,7 +368,6 @@ module Solargraph
     def argument_problems_for chain, api_map, closure_pin, locals, location
       result = []
       base = chain
-      # @type last_base_link [Solargraph::Source::Chain::Call]
       last_base_link = base.links.last
       return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
