@@ -14,8 +14,15 @@ module Solargraph
         @presence = presence
       end
 
-      def reset_generated!
-        @return_type_minus_exclusions = nil
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return adjust_type api_map, return_type.qualify(api_map, *gates)
+        end
+
         super
       end
 
@@ -87,14 +94,6 @@ module Solargraph
       # @param other [self]
       # @return [ComplexType, nil]
       def combine_return_type(other)
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already figured out this type
-          # has been downcast - use the type it figured out
-          return return_type
-        end
-        if other.presence_certain? && other.return_type&.defined?
-          return other.return_type
-        end
         combine_types(other, :return_type)
       end
 
@@ -133,16 +132,6 @@ module Solargraph
         return presence || other.presence if presence.nil? || other.presence.nil?
 
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
-      end
-
-      # If a certain pin is being combined with an uncertain pin, we
-      # end up with a certain result
-      #
-      # @param other [self]
-      #
-      # @return [Boolean]
-      def combine_presence_certain(other)
-        presence_certain? || other.presence_certain?
       end
     end
   end
