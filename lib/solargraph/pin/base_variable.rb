@@ -58,7 +58,9 @@ module Solargraph
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
       # @param intersection_return_type [ComplexType, nil]
-      # @param source [Symbol]
+      # @param source [::Symbol]
+      #
+      # @return [self]
       def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
                    source: self.source
         result = dup
@@ -217,6 +219,7 @@ module Solargraph
 
       attr_accessor :exclude_return_type, :intersection_return_type
 
+      # @return [Range]
       attr_writer :presence
 
       private
