@@ -61,6 +61,23 @@ module Solargraph
         super
       end
 
+      # @param presence [Range]
+      # @param exclude_return_type [ComplexType, nil]
+      # @param intersection_return_type [ComplexType, nil]
+      # @param source [::Symbol]
+      #
+      # @return [self]
+      def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
+                   source: self.source
+        result = dup
+        result.exclude_return_type = exclude_return_type
+        result.intersection_return_type = intersection_return_type
+        result.source = source
+        result.presence = presence
+        result.reset_generated!
+        result
+      end
+
       def combine_with(other, attrs={})
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
@@ -259,9 +276,19 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
-      private
+      # @sg-ignore need boolish support for ? methods
+      def presence_certain?
+        exclude_return_type || intersection_return_type
+      end
 
-      attr_reader :exclude_return_type, :intersection_return_type
+      protected
+
+      attr_accessor :exclude_return_type, :intersection_return_type
+
+      # @return [Range]
+      attr_writer :presence
+
+      private
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]

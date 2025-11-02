@@ -209,22 +209,10 @@ module Solargraph
       #
       # @return [void]
       def add_downcast_local(pin, presence:, downcast_type:, downcast_not_type:)
-        # @todo Create pin#update method
-        new_pin = Solargraph::Pin::LocalVariable.new(
-          location: pin.location,
-          closure: pin.closure,
-          name: pin.name,
-          assignment: pin.assignment,
-          comments: pin.comments,
-          presence: presence,
-          intersection_return_type: downcast_type,
-          exclude_return_type: downcast_not_type,
-          return_type: pin.return_type,
-          source: :flow_sensitive_typing
-        )
-        new_pin.reset_generated!
-        # @sg-ignore wrong self assignment in return type here
-        new_pin = pin.combine_with(new_pin)
+        new_pin = pin.downcast(exclude_return_type: downcast_not_type,
+                               intersection_return_type: downcast_type,
+                               source: :flow_sensitive_typing,
+                               presence: presence)
         locals.push(new_pin)
       end
 
@@ -434,7 +422,7 @@ module Solargraph
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
         if_false = {}
         if_false[pin] ||= []
-        if_false[pin] << { type: ComplexType::NIL }
+        if_false[pin] << { type: ComplexType.parse('nil, false') }
         process_facts(if_false, false_presences)
       end
 
