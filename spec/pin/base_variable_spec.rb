@@ -46,8 +46,6 @@ describe Solargraph::Pin::BaseVariable do
   end
 
   it "understands proc kwarg parameters aren't affected by @type" do
-    pending 'better kwarg handling in type checker'
-
     code = %(
       # @return [Proc]
       def foo
