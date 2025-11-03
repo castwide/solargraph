@@ -125,6 +125,8 @@ jobs:
         bundler-cache: false
     - name: Install gems
       run: |
+       set -x
+
        cd ../solargraph-rspec
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
        bundle config path ${{ env.BUNDLE_PATH }}
