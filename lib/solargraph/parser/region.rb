@@ -24,17 +24,16 @@ module Solargraph
       attr_reader :lvars
 
       # @param source [Source]
-      # @param namespace [String]
       # @param closure [Pin::Closure, nil]
-      # @param binder [ComplexType, ComplexType::SimpleType, nil]
+      # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
       # @param lvars [Array<Symbol>]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
-                     binder: nil,
-                     scope: nil, visibility: :public, lvars: []
+                     binder: nil, scope: nil, visibility: :public, lvars: []
         @source = source
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
+        @binder = binder
         @scope = scope
         @visibility = visibility
         @lvars = lvars
@@ -48,6 +47,7 @@ module Solargraph
       # Generate a new Region with the provided attribute changes.
       #
       # @param closure [Pin::Closure, nil]
+      # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @param lvars [Array<Symbol>, nil]
