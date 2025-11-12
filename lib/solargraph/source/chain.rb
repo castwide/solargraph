@@ -87,16 +87,16 @@ module Solargraph
       #   Requirements for name_pin:
       #
       #     * name_pin.context: This should be a type representing the
-      #       namespace where we can look up non-local variables and
-      #       method names.  If it is a Class<X>, we will look up
-      #       :class scoped methods/variables.
+      #       namespace where we can look up non-local variables.  If
+      #       it is a Class<X>, we will look up :class scoped
+      #       instance variables.
       #
       #     * name_pin.binder: Used for method call lookups only
       #       (Chain::Call links).  For method calls as the first
       #       element in the chain, 'name_pin.binder' should be the
       #       same as name_pin.context above.  For method calls later
-      #       in the chain (e.g., 'b' in a.b.c), it should represent
-      #       'a'.
+      #       in the chain, it changes.  (e.g., for 'b' in a.b.c, it
+      #       should represent the type of 'a').
       #
       # @param locals [::Array<Pin::LocalVariable>] Any local
       #   variables / method parameters etc visible by the statement
