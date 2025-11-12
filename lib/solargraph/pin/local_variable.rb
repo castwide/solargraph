@@ -96,15 +96,6 @@ module Solargraph
         combine_types(other, :return_type)
       end
 
-      # @param other [self]
-      #
-      # @return [Array(AST::Node, Integer), nil]
-      def combine_mass_assignment(other)
-        # @todo pick first non-nil arbitrarily - we don't yet support
-        #   mass assignment merging
-        mass_assignment || other.mass_assignment
-      end
-
       def probe api_map
         if presence_certain? && return_type&.defined?
           # flow sensitive typing has already probed this type - use

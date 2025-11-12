@@ -45,13 +45,11 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(Parser::AST::Node, Integer), nil]
-      #
-      # @sg-ignore
-      #   Solargraph::Pin::BaseVariable#combine_mass_assignment return
-      #   type could not be inferred
+      # @return [Array(AST::Node, Integer), nil]
       def combine_mass_assignment(other)
-        assert_same(other, :mass_assignment)
+        # @todo pick first non-nil arbitrarily - we don't yet support
+        #   mass assignment merging
+        mass_assignment || other.mass_assignment
       end
 
       # @return [Parser::AST::Node, nil]
