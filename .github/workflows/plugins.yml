@@ -125,8 +125,9 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        # solargraph-rspec's tests run against 3.1, 3.2 and 3.3
-        ruby-version: '3.1'
+        # solargraph-rspec's tests run against 3.1, 3.2 and 3.3, but
+        # fail on 3.1 as of 2025-11-12
+        ruby-version: '3.2'
         bundler-cache: false
     - name: Install gems
       run: |
