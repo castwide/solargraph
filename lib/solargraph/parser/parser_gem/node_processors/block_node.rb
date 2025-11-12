@@ -13,14 +13,23 @@ module Solargraph
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
               clazz_name = unpack_name(node.children[0].children[0])
-              binder = ComplexType.try_parse("Class<#{clazz_name}>")
+              # instance variables should come from the Class<T> type
+              context = ComplexType.try_parse("Class<#{clazz_name}>")
+              # when resolving method calls inside this block, we
+              # should be working inside Class<T>, not T - that's the
+              # whole point of 'class_eval'.  e.g., def foo defines it
+              # as an instance method in the class, like Foo.def
+              # instead of Foo.new.def
+              binder = context
+
               scope = :class
             end
+            binder ||= region.binder
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: region.closure,
               node: node,
-              context: binder,
+              context: context,
               binder: binder,
               receiver: node.children[0],
               comments: comments_for(node),
@@ -28,7 +37,9 @@ module Solargraph
               source: :parser
             )
             pins.push block_pin
-            process_children region.update(closure: block_pin)
+            # A 'def' inside creates an instance method
+            child_scope = :instance
+            process_children region.update(closure: block_pin, scope: child_scope, binder: binder)
           end
 
           private

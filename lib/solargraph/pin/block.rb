@@ -21,8 +21,9 @@ module Solargraph
         @receiver = receiver
         @context = context
         @return_type = ComplexType.parse('::Proc')
-        @rebind = binder if binder
+        @binder = binder if binder
         @node = node
+        @name = '<block>'
       end
 
       # @param api_map [ApiMap]
@@ -32,7 +33,14 @@ module Solargraph
       end
 
       def binder
-        @rebind&.defined? ? @rebind : closure.binder
+        out = @rebind if @rebind&.defined?
+        out ||= @binder
+        out ||= closure.binder
+      end
+
+      def context
+        @context = @rebind if @rebind&.defined?
+        super
       end
 
       # @param yield_types [::Array<ComplexType>]
@@ -89,6 +97,7 @@ module Solargraph
 
         chain = Parser.chain(receiver, location.filename, node)
         locals = api_map.source_map(location.filename).locals_at(location)
+        closure.rebind api_map
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 

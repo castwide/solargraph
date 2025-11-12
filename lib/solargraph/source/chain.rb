@@ -78,11 +78,11 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       #
-      # @param name_pin [Pin::Base] A pin
-      # representing the place in which expression is evaluated (e.g.,
-      # a Method pin, or a Module or Class pin if not run within a
-      # method - both in terms of the closure around the chain, as well
-      # as the self type used for any method calls in head position.
+      # @param name_pin [Pin::Base] A pin representing the closure in
+      #   which expression is evaluated (e.g., a Method pin, or a
+      #   Module or Class pin if not run within a method - both in
+      #   terms of the closure around the chain, as well as the self
+      #   type used for any method calls in head position.
       #
       #   Requirements for name_pin:
       #

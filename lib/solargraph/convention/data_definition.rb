@@ -71,7 +71,7 @@ module Solargraph
                                                   comments: attribute_comments(attribute_node, attribute_name))
             end
 
-            process_children region.update(closure: nspin, visibility: :public)
+            process_children region.update(closure: nspin, scope: :instance, visibility: :public)
 
             false
           end

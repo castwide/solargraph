@@ -9,6 +9,8 @@ module Solargraph
       # @return [Pin::Closure]
       attr_reader :closure
 
+      attr_reader :binder
+
       # @return [Symbol]
       attr_reader :scope
 
@@ -24,13 +26,14 @@ module Solargraph
       # @param source [Source]
       # @param namespace [String]
       # @param closure [Pin::Closure, nil]
+      # @param binder [ComplexType, ComplexType::SimpleType, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
       # @param lvars [Array<Symbol>]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
+                     binder: nil,
                      scope: nil, visibility: :public, lvars: []
         @source = source
-        # @closure = closure
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @scope = scope
         @visibility = visibility
@@ -49,10 +52,11 @@ module Solargraph
       # @param visibility [Symbol, nil]
       # @param lvars [Array<Symbol>, nil]
       # @return [Region]
-      def update closure: nil, scope: nil, visibility: nil, lvars: nil
+      def update closure: nil, binder: nil, scope: nil, visibility: nil, lvars: nil
         Region.new(
           source: source,
           closure: closure || self.closure,
+          binder: binder || closure&.binder || self.closure.binder,
           scope: scope || self.scope,
           visibility: visibility || self.visibility,
           lvars: lvars || self.lvars
