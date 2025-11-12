@@ -6,16 +6,23 @@ module Solargraph
       # @!method source
       #   @abstract
       #   @return [Source, nil]
+      # @!method reset_generated!
+      #   @abstract
+      #   @return [void]
       # @type @closure [Pin::Closure, nil]
 
       # @return [Location]
       attr_reader :location
 
+      # @param value [Location]
+      # @return [void]
       def location=(value)
         @location = value
         reset_generated!
       end
 
+      # @param value [Pin::Closure]
+      # @return [void]
       def closure=(value)
         @closure = value
         reset_generated!
