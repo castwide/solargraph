@@ -11,6 +11,16 @@ module Solargraph
       # @return [Location]
       attr_reader :location
 
+      def location=(value)
+        @location = value
+        reset_generated!
+      end
+
+      def closure=(value)
+        @closure = value
+        reset_generated!
+      end
+
       # @sg-ignore Solargraph::Pin::Common#closure return type could not be inferred
       # @return [Pin::Closure, nil]
       def closure
