@@ -96,8 +96,7 @@ module Solargraph
               end
             end
 
-            # the child here is the struct body, which uses Class<Foo> as the binder
-            process_children region.update(closure: nspin, scope: :instance, visibility: :public)
+            process_children region.update(closure: nspin, visibility: :public)
             false
           end
 

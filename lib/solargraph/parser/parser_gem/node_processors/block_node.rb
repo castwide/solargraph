@@ -14,6 +14,7 @@ module Solargraph
             if other_class_eval?
               clazz_name = unpack_name(node.children[0].children[0])
               # instance variables should come from the Class<T> type
+              # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
               # when resolving method calls inside this block, we
               # should be working inside Class<T>, not T - that's the
@@ -21,10 +22,8 @@ module Solargraph
               # as an instance method in the class, like Foo.def
               # instead of Foo.new.def
               binder = context
-
               scope = :class
             end
-            binder ||= region.binder
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: region.closure,
@@ -37,9 +36,7 @@ module Solargraph
               source: :parser
             )
             pins.push block_pin
-            # A 'def' inside creates an instance method
-            child_scope = :instance
-            process_children region.update(closure: block_pin, scope: child_scope, binder: binder)
+            process_children region.update(closure: block_pin)
           end
 
           private
