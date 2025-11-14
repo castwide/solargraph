@@ -16,12 +16,6 @@ module Solargraph
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
-              # when resolving method calls inside this block, we
-              # should be working inside Class<T>, not T - that's the
-              # whole point of 'class_eval'.  e.g., def foo defines it
-              # as an instance method in the class, like Foo.def
-              # instead of Foo.new.def
-              binder = context
               scope = :class
             end
             block_pin = Solargraph::Pin::Block.new(
@@ -29,7 +23,6 @@ module Solargraph
               closure: region.closure,
               node: node,
               context: context,
-              binder: binder,
               receiver: node.children[0],
               comments: comments_for(node),
               scope: scope,

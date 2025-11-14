@@ -34,8 +34,7 @@ module Solargraph
 
       def binder
         out = @rebind if @rebind&.defined?
-        out ||= @binder
-        out ||= closure.binder
+        out ||= super
       end
 
       def context
