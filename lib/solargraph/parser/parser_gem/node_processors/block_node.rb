@@ -9,7 +9,6 @@ module Solargraph
 
           def process
             location = get_node_location(node)
-            binder = nil
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
               clazz_name = unpack_name(node.children[0].children[0])
