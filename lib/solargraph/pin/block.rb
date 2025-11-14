@@ -12,16 +12,14 @@ module Solargraph
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
-      # @param binder [Pin::Namespace, nil]
       # @param node [Parser::AST::Node, nil]
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
-      def initialize receiver: nil, binder: nil, args: [], context: nil, node: nil, **splat
+      def initialize receiver: nil, args: [], context: nil, node: nil, **splat
         super(**splat, parameters: args)
         @receiver = receiver
         @context = context
         @return_type = ComplexType.parse('::Proc')
-        @binder = binder if binder
         @node = node
         @name = '<block>'
       end
