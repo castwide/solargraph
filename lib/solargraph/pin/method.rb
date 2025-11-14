@@ -34,7 +34,6 @@ module Solargraph
         @signatures = signatures
         @anon_splat = anon_splat
         @context = context if context
-        @binder = binder if binder
       end
 
       # @return [Array<Pin::Signature>]
