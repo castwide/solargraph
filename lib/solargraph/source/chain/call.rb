@@ -94,10 +94,7 @@ module Solargraph
                   match = ol.parameters.any?(&:restarg?)
                   break
                 end
-                arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                        closure: name_pin.closure,
-                                                        source: :chain)
-                atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+                atype = atypes[idx] ||= arg.infer(api_map, Pin::ProxyType.anonymous(name_pin.context, source: :chain), locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
                   match = false
                   break
