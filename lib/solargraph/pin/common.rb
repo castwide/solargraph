@@ -6,6 +6,9 @@ module Solargraph
       # @!method source
       #   @abstract
       #   @return [Source, nil]
+      # @!method reset_generated!
+      #   @abstract
+      #   @return [void]
       # @type @closure [Pin::Closure, nil]
 
       # @return [Location]
@@ -16,9 +19,7 @@ module Solargraph
       def closure=(value)
         @closure = value
         # remove cached values generated from closure
-        @context = nil
-        @binder = nil
-        @path = nil
+        reset_generated!
       end
 
       # @sg-ignore Solargraph::Pin::Common#closure return type could not be inferred
