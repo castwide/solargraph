@@ -362,6 +362,8 @@ module Solargraph
       with_correct_name = locals.select { |pin| pin.name == name}
       with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
       vars_at_location = with_presence.reject do |pin|
+        # visible_at? excludes the starting position, but we want to
+        # include it for this purpose
         (!pin.visible_at?(closure, location) &&
          !pin.starts_at?(location))
       end
