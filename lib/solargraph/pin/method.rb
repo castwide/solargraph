@@ -23,10 +23,8 @@ module Solargraph
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
       # @param context [ComplexType, nil]
-      # @param binder [ComplexType, nil]
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, binder: nil,
-                     **splat
+                     context: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
