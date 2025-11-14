@@ -6,9 +6,6 @@ module Solargraph
       # @!method source
       #   @abstract
       #   @return [Source, nil]
-      # @!method reset_generated!
-      #   @abstract
-      #   @return [void]
       # @type @closure [Pin::Closure, nil]
 
       # @return [Location]
