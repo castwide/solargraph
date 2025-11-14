@@ -94,7 +94,6 @@ module Solargraph
 
         chain = Parser.chain(receiver, location.filename, node)
         locals = api_map.source_map(location.filename).locals_at(location)
-        closure.rebind api_map
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
