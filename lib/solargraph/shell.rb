@@ -286,29 +286,45 @@ module Solargraph
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
           references[:superclass] = superclass_pin if superclass_pin
         end
+      when Pin::Method
+        if options[:references]
+          ([pin] + pin.signatures).compact.each do |sig|
+            sig.parameters.each do |param|
+              references[param.name] = param
+            end
+            if sig.block
+              references[:block] = sig.block
+            end
+          end
+        end
       end
 
       pins.each do |pin|
-        # @sg-ignore Unresolved call to options
-        if options[:typify] || options[:probe]
+        present_pin(pin, api_map)
+      end
+
+      references.each do |key, refpin|
+        puts "\n# #{key.to_s.capitalize}:\n\n"
+        present_pin(refpin, api_map)
+      end
+    end
+
+    private
+
+    # @param pin [Solargraph::Pin::Base]
+    # @return [void]
+    def present_pin pin, api_map
+      if options[:typify] || options[:probe]
           type = ComplexType::UNDEFINED
           # @sg-ignore Unresolved call to options
           type = pin.typify(api_map) if options[:typify]
           # @sg-ignore Unresolved call to options
           type = pin.probe(api_map) if options[:probe] && type.undefined?
           print_type(type)
-          next
-        end
-
+      else
         print_pin(pin)
       end
-      references.each do |key, refpin|
-        puts "\n# #{key.to_s.capitalize}:\n\n"
-        print_pin(refpin)
-      end
     end
-
-    private
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
