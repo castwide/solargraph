@@ -52,6 +52,7 @@ jobs:
       run: |
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
+        bundle list
     - name: Run tests
       run: bundle exec rake spec
   undercover:
