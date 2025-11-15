@@ -55,6 +55,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.0'
+        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        rubygems: latest
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
