@@ -37,6 +37,14 @@ jobs:
           - ruby-version: '3.3'
           # only include the 3.4 variants we include later
           - ruby-version: '3.4'
+          # Missing require in 'rbs collection update' - hopefully
+          # fixed in next RBS release
+          - ruby-version: 'head'
+            rbs-version: '4.0.0.dev.4'
+          - ruby-version: 'head'
+            rbs-version: '3.9.4'
+          - ruby-version: 'head'
+            rbs-version: '3.6.1'
         include:
           - ruby-version: '3.1'
             rbs-version: '3.6.1'
@@ -52,6 +60,10 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
+        # see https://github.com/castwide/solargraph/actions/runs/19391419903/job/55485410493?pr=1119
+        #
+        # match version in Gemfile.lock and use same version below
+        bundler: 2.5.23
         bundler-cache: false
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
@@ -63,8 +75,13 @@ jobs:
       run: echo "gem 'tsort'" >> .Gemfile
     - name: Install gems
       run: |
-        bundle install
+        bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
+        bundle list
+        bundle exec solargraph pin 'Bundler::Dsl#source'
+    - name: Update types
+      run: |
+        bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
