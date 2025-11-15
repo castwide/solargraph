@@ -35,6 +35,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
+        # see https://github.com/castwide/solargraph/actions/runs/19391419903/job/55485410493?pr=1119
+        bundler: Gemfile.lock
         bundler-cache: false
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
