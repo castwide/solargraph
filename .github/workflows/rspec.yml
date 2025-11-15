@@ -61,6 +61,7 @@ jobs:
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
         bundle list
+        bundle exec solargraph pin 'Bundler::Dsl#source'
     - name: Update types
       run: |
         bundle exec rbs collection update
