@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+# turn off warning diagnostics from Ruby
+$VERBOSE=nil
+
 require 'solargraph'
 
 Solargraph::Shell.start(ARGV)
