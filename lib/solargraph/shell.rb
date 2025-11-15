@@ -287,6 +287,7 @@ module Solargraph
           references[:superclass] = superclass_pin if superclass_pin
         end
       when Pin::Method
+        # @sg-ignore Unresolved call to options
         if options[:references]
           ([pin] + pin.signatures).compact.each do |sig|
             sig.parameters.each do |param|
@@ -312,8 +313,10 @@ module Solargraph
     private
 
     # @param pin [Solargraph::Pin::Base]
+    # @param api_map [Solargraph::ApiMap]
     # @return [void]
     def present_pin pin, api_map
+      # @sg-ignore Unresolved call to options
       if options[:typify] || options[:probe]
           type = ComplexType::UNDEFINED
           # @sg-ignore Unresolved call to options
