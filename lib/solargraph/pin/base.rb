@@ -175,6 +175,9 @@ module Solargraph
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
         @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
         reset_conversions
       end
 
