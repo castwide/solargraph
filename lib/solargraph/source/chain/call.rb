@@ -94,6 +94,7 @@ module Solargraph
             # passing a block, we want to find a signature that will
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
+
             with_block, without_block = overloads.partition(&:block?)
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
@@ -110,7 +111,8 @@ module Solargraph
                   break
                 end
                 arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                        gates: name_pin.gates, closure: name_pin.closure,
+                                                        closure: name_pin.closure,
+                                                        gates: name_pin.gates,
                                                         source: :chain)
                 atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
                 unless param.compatible_arg?(atype, api_map) || param.restarg?
