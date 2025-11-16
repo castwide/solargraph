@@ -651,14 +651,6 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: have_received, receive
-RSpec/MessageSpies:
-  Exclude:
-    - 'spec/doc_map_spec.rb'
-    - 'spec/language_server/host/diagnoser_spec.rb'
-    - 'spec/language_server/host/message_worker_spec.rb'
-
 RSpec/MissingExampleGroupArgument:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
@@ -718,10 +710,6 @@ RSpec/RepeatedExample:
 RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
-
-RSpec/StubbedMock:
-  Exclude:
-    - 'spec/language_server/host/message_worker_spec.rb'
 
 # Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
 RSpec/VerifiedDoubles:

@@ -79,25 +79,25 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       #
-      # @param name_pin [Pin::Base] A pin
-      # representing the place in which expression is evaluated (e.g.,
-      # a Method pin, or a Module or Class pin if not run within a
-      # method - both in terms of the closure around the chain, as well
-      # as the self type used for any method calls in head position.
+      # @param name_pin [Pin::Base] A pin representing the closure in
+      #   which expression is evaluated (e.g., a Method pin, or a
+      #   Module or Class pin if not run within a method - both in
+      #   terms of the closure around the chain, as well as the self
+      #   type used for any method calls in head position.
       #
       #   Requirements for name_pin:
       #
       #     * name_pin.context: This should be a type representing the
-      #       namespace where we can look up non-local variables and
-      #       method names.  If it is a Class<X>, we will look up
-      #       :class scoped methods/variables.
+      #       namespace where we can look up non-local variables.  If
+      #       it is a Class<X>, we will look up :class scoped
+      #       instance variables.
       #
       #     * name_pin.binder: Used for method call lookups only
       #       (Chain::Call links).  For method calls as the first
       #       element in the chain, 'name_pin.binder' should be the
       #       same as name_pin.context above.  For method calls later
-      #       in the chain (e.g., 'b' in a.b.c), it should represent
-      #       'a'.
+      #       in the chain, it changes.  (e.g., for 'b' in a.b.c, it
+      #       should represent the type of 'a').
       #
       # @param locals [::Array<Pin::LocalVariable>] Any local
       #   variables / method parameters etc visible by the statement
@@ -212,11 +212,11 @@ module Solargraph
       private
 
       # @param pins [::Array<Pin::Base>]
-      # @param context [Pin::Base]
+      # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType, ComplexType::UniqueType]
-      def infer_from_definitions pins, context, api_map, locals
+      def infer_from_definitions pins, name_pin, api_map, locals
         # @type [::Array<ComplexType, ComplexType::UniqueType>]
         types = []
         unresolved_pins = []
@@ -232,8 +232,11 @@ module Solargraph
           @@inference_stack.pop
           if type.defined?
             if type.generic?
+              # @todo even at strong, no typechecking complaint
+              #   happens when a [Pin::Base,nil] is passed into a method
+              #   that accepts only [Pin::Namespace] as an argument
               # @sg-ignore Need to add nil check here
-              type = type.resolve_generics(pin.closure, context.binder)
+              type = type.resolve_generics(pin.closure, name_pin.binder)
             end
             types << type
           else
@@ -270,12 +273,11 @@ module Solargraph
                else
                  ComplexType.new(types)
                end
-        if context.nil? || context.return_type.undefined?
+        if name_pin.nil? || name_pin.context.undefined?
           # up to downstream to resolve self type
           return type
         end
-
-        type.self_to_type(context.return_type)
+        type.self_to_type(name_pin.context)
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]

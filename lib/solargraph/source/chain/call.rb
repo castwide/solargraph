@@ -268,7 +268,7 @@ module Solargraph
         def find_method_pin(name_pin)
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Reassignment as a function of itself issue
+            # @sg-ignore Need to support this in flow-sensitive typing
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
@@ -354,7 +354,8 @@ module Solargraph
           block_pin = find_block_pin(api_map)
 
           # We use the block pin as the closure, as the parameters
-          # here will only be defined inside the block itself and we need to be able to see them
+          # here will only be defined inside the block itself and we
+          # need to be able to see them
           # @sg-ignore Need to add nil check here
           block.infer(api_map, block_pin, locals)
         end

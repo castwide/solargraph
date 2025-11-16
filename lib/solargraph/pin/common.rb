@@ -6,13 +6,23 @@ module Solargraph
       # @!method source
       #   @abstract
       #   @return [Source, nil]
+      # @!method reset_generated!
+      #   @abstract
+      #   @return [void]
       # @type @closure [Pin::Closure, nil]
       # @type @binder [ComplexType, ComplexType::UniqueType, nil]
 
       # @return [Location]
-      attr_reader :location
+      attr_accessor :location
 
-      # @sg-ignore Solargraph::Pin::Common#closure return type could not be inferred
+      # @param value [Pin::Closure]
+      # @return [void]
+      def closure=(value)
+        @closure = value
+        # remove cached values generated from closure
+        reset_generated!
+      end
+
       # @return [Pin::Closure, nil]
       def closure
         Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure

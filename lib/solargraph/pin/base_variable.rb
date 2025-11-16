@@ -328,44 +328,34 @@ module Solargraph
         other.closure
       end
 
-      # See if this variable is visible within 'other_closure'
+      # See if this variable is visible within 'viewing_closure'
       #
-      # @param other_closure [Pin::Closure]
+      # @param viewing_closure [Pin::Closure]
       # @return [Boolean]
-      def visible_in_closure? other_closure
-        needle = closure
+      def visible_in_closure? viewing_closure
         return false if closure.nil?
-        haystack = other_closure
 
-        cursor = haystack
+        # if we're declared at top level, we can't be seen from within
+        # methods declared tere
 
-        until cursor.nil?
-          # @sg-ignore Need to add nil check here
-          if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
-            # methods can't see local variables declared in their
-            # parent closure
-            return false
-          end
+        # @sg-ignore Need to add nil check here
+        return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
 
-          # @sg-ignore Need to add nil check here
-          if cursor.binder.namespace == needle.binder.namespace
-            return true
-          end
+        # @sg-ignore Need to add nil check here
+        return true if viewing_closure.binder.namespace == closure.binder.namespace
 
-          # @sg-ignore Need to add nil check here
-          if cursor.return_type == needle.context
-            return true
-          end
+        # @sg-ignore Need to add nil check here
+        return true if viewing_closure.return_type == closure.context
 
-          if scope == :instance && cursor.is_a?(Pin::Namespace)
-            # classes and modules can't see local variables declared
-            # in their parent closure, so stop here
-            return false
-          end
+        # classes and modules can't see local variables declared
+        # in their parent closure, so stop here
+        return false if scope == :instance && viewing_closure.is_a?(Pin::Namespace)
 
-          cursor = cursor.closure
-        end
-        false
+        parent_of_viewing_closure = viewing_closure.closure
+
+        return false if parent_of_viewing_closure.nil?
+
+        visible_in_closure?(parent_of_viewing_closure)
       end
 
       # @param other [self]

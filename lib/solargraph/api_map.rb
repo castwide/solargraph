@@ -369,6 +369,8 @@ module Solargraph
       with_correct_name = locals.select { |pin| pin.name == name}
       with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
       vars_at_location = with_presence.reject do |pin|
+        # visible_at? excludes the starting position, but we want to
+        # include it for this purpose
         (!pin.visible_at?(closure, location) &&
          !pin.starts_at?(location))
       end
@@ -561,7 +563,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -570,7 +572,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Enumerable<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end

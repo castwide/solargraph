@@ -12,17 +12,16 @@ module Solargraph
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
-      # @param binder [ComplexType, nil]
       # @param node [Parser::AST::Node, nil]
       # @param context [ComplexType, nil]
       # @param args [::Array<Parameter>]
-      def initialize receiver: nil, binder: nil, args: [], context: nil, node: nil, **splat
+      def initialize receiver: nil, args: [], context: nil, node: nil, **splat
         super(**splat, parameters: args)
         @receiver = receiver
         @context = context
-        @rebind = binder if binder
-        @node = node
         @return_type = ComplexType.parse('::Proc')
+        @node = node
+        @name = '<block>'
       end
 
       # @param api_map [ApiMap]
@@ -32,8 +31,13 @@ module Solargraph
       end
 
       def binder
-        # @sg-ignore Need to add nil check here
-        @rebind&.defined? ? @rebind : closure.binder
+        out = @rebind if @rebind&.defined?
+        out ||= super
+      end
+
+      def context
+        @context = @rebind if @rebind&.defined?
+        super
       end
 
       # @param yield_types [::Array<ComplexType>]

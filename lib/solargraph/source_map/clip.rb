@@ -209,7 +209,7 @@ module Solargraph
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
             elsif cursor.word.start_with?('@')
-              return package_completions(api_map.get_instance_variable_pins(closure.binder.namespace, closure.binder.scope))
+              return package_completions(api_map.get_instance_variable_pins(closure.full_context.namespace, closure.context.scope))
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
