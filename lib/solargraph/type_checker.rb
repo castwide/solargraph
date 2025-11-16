@@ -215,6 +215,7 @@ module Solargraph
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
+          # @sg-ignore Need typed hashes
           # @type [ComplexType]
           type = data[:qualified]
           if type.undefined?
