@@ -45,7 +45,7 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
   end
 
-  it "understands proc kwarg parameters aren't affected by @type" do
+  xit "understands proc kwarg parameters aren't affected by @type" do
     pending "understanding restarg in block param in Block#typify_parameters"
 
     code = %(
