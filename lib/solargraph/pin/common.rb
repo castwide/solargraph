@@ -22,7 +22,6 @@ module Solargraph
         reset_generated!
       end
 
-      # @sg-ignore Solargraph::Pin::Common#closure return type could not be inferred
       # @return [Pin::Closure, nil]
       def closure
         Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
