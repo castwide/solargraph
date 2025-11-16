@@ -50,7 +50,7 @@ module Solargraph
         rank > LEVELS[:typed]
       end
 
-      def loose_unions?
+      def require_all_unique_types_match_expected_on_lhs?
         rank < LEVELS[:alpha]
       end
 
