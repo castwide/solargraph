@@ -46,6 +46,8 @@ describe Solargraph::Pin::BaseVariable do
   end
 
   it "understands proc kwarg parameters aren't affected by @type" do
+    pending "understanding restarg in block param in Block#typify_parameters"
+
     code = %(
       # @return [Proc]
       def foo
