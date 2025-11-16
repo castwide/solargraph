@@ -165,8 +165,7 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        exclude_items = exclude_return_type&.items&.uniq
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq - (exclude_items || [])) unless assignment_types.empty?
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
@@ -322,7 +321,7 @@ module Solargraph
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore flow sensitive typing needs to handle ivars
         return closure if closure.location <= other.closure.location
 
         other.closure

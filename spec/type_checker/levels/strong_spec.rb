@@ -648,6 +648,31 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end
 
+    it 'accepts ivar assignments and references with no intermediate calls as safe' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Integer, nil]
+            @foo = nil
+          end
+
+          # @return [void]
+          def twiddle
+            @foo = nil if rand if rand > 0.5
+          end
+
+          # @return [Integer]
+          def bar
+            @foo = 123
+            out = @foo.round
+            twiddle
+            out
+          end
+      ))
+
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves self correctly in chained method calls' do
       checker = type_checker(%(
         class Foo
@@ -668,6 +693,31 @@ describe Solargraph::TypeChecker do
       ))
 
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'knows that ivar references with intermediate calls are not safe' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Integer, nil]
+            @foo = nil
+          end
+
+          # @return [void]
+          def twiddle
+            @foo = nil if rand if rand > 0.5
+          end
+
+          # @return [Integer]
+          def bar
+            @foo = 123
+            twiddle
+            @foo.round
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
     end
   end
 end
