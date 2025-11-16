@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class LocalVariable < BaseVariable
-      # @return [Range]
+      # @return [Range, nil]
       attr_reader :presence
 
       # @param presence [Range, nil]
@@ -31,13 +31,49 @@ module Solargraph
       end
 
       def combine_with(other, attrs={})
-        new_attrs = {}.merge(attrs)
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Pin::Base#assert_same: other expected
-        #   Solargraph::Pin::Base, received self
-        new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
+        # keep this as a parameter
+        return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
+
+        new_attrs = attrs.merge({
+          presence: combine_presence(other),
+        })
 
         super(other, new_attrs)
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, presence_certain=#{presence_certain?}"
+      end
+
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
       end
 
       # @param other_closure [Pin::Closure]
@@ -46,9 +82,8 @@ module Solargraph
       def visible_at?(other_closure, other_loc)
         # @sg-ignore Need to add nil check here
         location.filename == other_loc.filename &&
-          presence&.include?(other_loc.range.start) &&
-          # @sg-ignore Need to add nil check here
-          match_named_closure(other_closure, closure)
+          (!presence || presence.include?(other_loc.range.start)) &&
+          visible_in_closure?(other_closure)
       end
 
       # @param other_loc [Location]
@@ -64,32 +99,39 @@ module Solargraph
 
       private
 
-      attr_reader :exclude_return_type
-
-      # @param tag1 [String]
-      # @param tag2 [String]
-      # @return [Boolean]
-      def match_tags tag1, tag2
-        # @todo This is an unfortunate hack made necessary by a discrepancy in
-        #   how tags indicate the root namespace. The long-term solution is to
-        #   standardize it, whether it's `Class<>`, an empty string, or
-        #   something else.
-        tag1 == tag2 ||
-          (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
+      # @param other [self]
+      # @return [ComplexType, nil]
+      def combine_return_type(other)
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type
+        end
+        if other.presence_certain? && other.return_type&.defined?
+          return other.return_type
+        end
+        combine_types(other, :return_type)
       end
 
-      # @param needle [Pin::Base]
-      # @param haystack [Pin::Base]
+      # Narrow the presence range to the intersection of both.
+      #
+      # @param other [self]
+      #
+      # @return [Range, nil]
+      def combine_presence(other)
+        return presence || other.presence if presence.nil? || other.presence.nil?
+
+        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
+      end
+
+      # If a certain pin is being combined with an uncertain pin, we
+      # end up with a certain result
+      #
+      # @param other [self]
+      #
       # @return [Boolean]
-      def match_named_closure needle, haystack
-        return true if needle == haystack || haystack.is_a?(Pin::Block)
-        cursor = haystack
-        until cursor.nil?
-          return true if needle.path == cursor.path
-          return false if cursor.path && !cursor.path.empty?
-          cursor = cursor.closure
-        end
-        false
+      def combine_presence_certain(other)
+        presence_certain? || other.presence_certain?
       end
     end
   end

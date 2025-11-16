@@ -6,14 +6,15 @@ module Solargraph
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
 
-      # @return [Parser::AST::Node, nil]
-      attr_reader :assignment
+      # @return [Array<Parser::AST::Node>]
+      attr_reader :assignments
 
       attr_accessor :mass_assignment
 
       # @param return_type [ComplexType, nil]
       # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
       # @param assignment [Parser::AST::Node, nil]
+      # @param assignments [::Array<Parser::AST::Node>]
       # @param exclude_return_type [ComplexType, nil] Ensure any
       #   return type returned will never include any of these unique
       #   types in the unique types of its complex type.
@@ -35,13 +36,13 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-      def initialize assignment: nil, mass_assignment: nil, return_type: nil,
+      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
                      **splat
         super(**splat)
-        @assignment = assignment
+        @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
-        @mass_assignment = nil
+        @mass_assignment = mass_assignment
         @return_type = return_type
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
@@ -64,10 +65,16 @@ module Solargraph
         result
       end
 
+      def reset_generated!
+        @assignment = nil
+        super
+      end
+
       def combine_with(other, attrs={})
+        new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
-          assignment: assert_same(other, :assignment),
-          mass_assignment: assert_same(other, :mass_assignment),
+          assignments: new_assignments,
+          mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
           # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           intersection_return_type: combine_types(other, :intersection_return_type),
@@ -94,6 +101,18 @@ module Solargraph
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
         mass_assignment || other.mass_assignment
+      end
+
+      # @return [Parser::AST::Node, nil]
+      def assignment
+        @assignment ||= assignments.last
+      end
+
+      # @param other [self]
+      #
+      # @return [::Array<Parser::AST::Node>]
+      def combine_assignments(other)
+        (other.assignments + assignments).uniq
       end
 
       def completion_item_kind
@@ -142,10 +161,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
-        unless @assignment.nil?
-          types = return_types_from_node(@assignment, api_map)
-          return adjust_type api_map, ComplexType.new(types.uniq) unless types.empty?
-        end
+        assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
         #   well so that we can do better flow sensitive typing with
@@ -281,6 +299,30 @@ module Solargraph
       # @return [ComplexType, nil]
       def combine_return_type(other)
         combine_types(other, :return_type)
+      end
+
+      # See if this variable is visible within 'viewing_closure'
+      #
+      # @param viewing_closure [Pin::Closure]
+      # @return [Boolean]
+      def visible_in_closure? viewing_closure
+        # if we're declared at top level, we can't be seen from within
+        # methods declared tere
+        return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
+
+        return true if viewing_closure.binder.namespace == closure.binder.namespace
+
+        return true if viewing_closure.return_type == closure.context
+
+        # classes and modules can't see local variables declared
+        # in their parent closure, so stop here
+        return false if scope == :instance && viewing_closure.is_a?(Pin::Namespace)
+
+        parent_of_viewing_closure = viewing_closure.closure
+
+        return false if parent_of_viewing_closure.nil?
+
+        visible_in_closure?(parent_of_viewing_closure)
       end
 
       # @param other [self]

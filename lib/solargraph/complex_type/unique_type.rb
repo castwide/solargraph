@@ -294,6 +294,10 @@ module Solargraph
         block.yield self
       end
 
+      def nullable?
+        nil_type?
+      end
+
       # @return [UniqueType]
       def downcast_to_literal_if_possible
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
@@ -481,6 +485,17 @@ module Solargraph
           next t if t.name != 'self'
           object_type_dst
         end
+      end
+
+      # @return [ComplexType]
+      def reduce_class_type
+        new_items = items.flat_map do |type|
+          next type unless ['Module', 'Class'].include?(type.name)
+          next type if type.all_params.empty?
+
+          type.all_params
+        end
+        ComplexType.new(new_items)
       end
 
       def all_rooted?

@@ -81,7 +81,6 @@ module Solargraph
       #
       # @return [self]
       def combine_with(other, attrs={})
-        raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
 
@@ -92,7 +91,7 @@ module Solargraph
           location: location,
           type_location: type_location,
           name: combined_name,
-          closure: choose_pin_attr_with_same_name(other, :closure),
+          closure: combine_closure(other),
           comments: choose_longer(other, :comments),
           source: :combined,
           docstring: choose(other, :docstring),
@@ -148,6 +147,12 @@ module Solargraph
       end
 
       # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        choose_pin_attr_with_same_name(other, :closure)
+      end
+
+      # @param other [self]
       # @return [String]
       def combine_name(other)
         if needs_consistent_name? || other.needs_consistent_name?
@@ -170,6 +175,9 @@ module Solargraph
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
         @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
         reset_conversions
       end
 
@@ -308,7 +316,6 @@ module Solargraph
       # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
-        return false if other.nil?
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
@@ -617,7 +624,7 @@ module Solargraph
 
       # @return [String]
       def inner_desc
-        closure_info = closure&.desc
+        closure_info = closure&.name.inspect
         binder_info = binder&.desc
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
       end
@@ -643,10 +650,6 @@ module Solargraph
         else
           " at (#{location.inspect} and #{type_location.inspect})"
         end
-      end
-
-      # @return [void]
-      def reset_generated!
       end
 
       protected
