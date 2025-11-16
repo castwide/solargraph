@@ -65,10 +65,10 @@ module Solargraph
       register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
       register :until,        ParserGem::NodeProcessors::UntilNode
+      register :when,         ParserGem::NodeProcessors::WhenNode
       register :while,        ParserGem::NodeProcessors::WhileNode
       register :and,          ParserGem::NodeProcessors::AndNode
       register :or,           ParserGem::NodeProcessors::OrNode
-      register :when,         ParserGem::NodeProcessors::WhenNode
     end
   end
 end
