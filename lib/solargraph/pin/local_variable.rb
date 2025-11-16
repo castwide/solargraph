@@ -23,12 +23,9 @@ module Solargraph
         # keep this as a parameter
         return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence: combine_presence(other),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: combine_presence_certain(other),
         })
 

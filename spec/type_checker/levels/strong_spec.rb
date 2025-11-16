@@ -234,8 +234,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'understands complex use of self' do
-      pending 'https://github.com/castwide/solargraph/pull/1050'
-
       checker = type_checker(%(
         class A
           # @param other [self]
@@ -678,6 +676,28 @@ describe Solargraph::TypeChecker do
         end))
 
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
+    end
+
+    it 'resolves self correctly in chained method calls' do
+      checker = type_checker(%(
+        class Foo
+          # @param other [self]
+          #
+          # @return [Symbol, nil]
+          def bar(other)
+            # @type [Symbol, nil]
+            baz(other)
+          end
+
+          # @param other [self]
+          #
+          # @sg-ignore Missing @return tag
+          # @return [undefined]
+          def baz(other); end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to be_empty
     end
   end
 end
