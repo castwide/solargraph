@@ -210,11 +210,11 @@ module Solargraph
       private
 
       # @param pins [::Array<Pin::Base>]
-      # @param context [Pin::Base]
+      # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType]
-      def infer_from_definitions pins, context, api_map, locals
+      def infer_from_definitions pins, name_pin, api_map, locals
         # @type [::Array<ComplexType>]
         types = []
         unresolved_pins = []
@@ -233,7 +233,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              type = type.resolve_generics(pin.closure, context.binder)
+              type = type.resolve_generics(pin.closure, name_pin.binder)
             end
             types << type
           else
@@ -270,12 +270,11 @@ module Solargraph
                else
                  ComplexType.new(types)
                end
-        if context.nil? || context.return_type.undefined?
+        if name_pin.nil? || name_pin.context.undefined?
           # up to downstream to resolve self type
           return type
         end
-
-        type.self_to_type(context.return_type)
+        type.self_to_type(name_pin.context)
       end
 
       # @param type [ComplexType]

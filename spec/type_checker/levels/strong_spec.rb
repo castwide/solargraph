@@ -627,5 +627,27 @@ describe Solargraph::TypeChecker do
 
       expect(checker.problems.map(&:location).map(&:range).map(&:start)).to be_empty
     end
+
+    it 'resolves self correctly in chained method calls' do
+      checker = type_checker(%(
+        class Foo
+          # @param other [self]
+          #
+          # @return [Symbol, nil]
+          def bar(other)
+            # @type [Symbol, nil]
+            baz(other)
+          end
+
+          # @param other [self]
+          #
+          # @sg-ignore Missing @return tag
+          # @return [undefined]
+          def baz(other); end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
