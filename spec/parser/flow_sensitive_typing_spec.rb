@@ -354,7 +354,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [4, 8])
     expect(clip.infer.rooted_tags).to eq('::Integer, nil')
 
-
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('nil')
 
