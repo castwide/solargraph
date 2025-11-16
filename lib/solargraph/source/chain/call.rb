@@ -293,6 +293,7 @@ module Solargraph
         def yield_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] unless method_pin
+
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
@@ -354,7 +355,6 @@ module Solargraph
           return nil unless with_block?
 
           block_pin = find_block_pin(api_map)
-
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
