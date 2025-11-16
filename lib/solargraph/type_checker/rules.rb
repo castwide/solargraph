@@ -51,7 +51,7 @@ module Solargraph
       end
 
       def require_all_unique_types_match_expected_on_lhs?
-        rank < LEVELS[:alpha]
+        rank >= LEVELS[:alpha]
       end
 
       def validate_tags?
