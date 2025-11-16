@@ -23,7 +23,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -54,7 +54,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -83,7 +83,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
