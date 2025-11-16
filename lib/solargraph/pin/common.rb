@@ -6,10 +6,21 @@ module Solargraph
       # @!method source
       #   @abstract
       #   @return [Source, nil]
+      # @!method reset_generated!
+      #   @abstract
+      #   @return [void]
       # @type @closure [Pin::Closure, nil]
 
       # @return [Location]
-      attr_reader :location
+      attr_accessor :location
+
+      # @param value [Pin::Closure]
+      # @return [void]
+      def closure=(value)
+        @closure = value
+        # remove cached values generated from closure
+        reset_generated!
+      end
 
       # @sg-ignore Solargraph::Pin::Common#closure return type could not be inferred
       # @return [Pin::Closure, nil]

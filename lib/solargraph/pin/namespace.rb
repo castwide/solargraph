@@ -48,6 +48,12 @@ module Solargraph
         @name = name
       end
 
+      def reset_generated!
+        @return_type = nil
+        @full_context = nil
+        @path = nil
+      end
+
       def to_rbs
         "#{@type.to_s} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end

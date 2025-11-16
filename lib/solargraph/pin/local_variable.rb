@@ -102,18 +102,6 @@ module Solargraph
       # @return [ComplexType, nil]
       attr_reader :exclude_return_type
 
-      # @param tag1 [String]
-      # @param tag2 [String]
-      # @return [Boolean]
-      def match_tags tag1, tag2
-        # @todo This is an unfortunate hack made necessary by a discrepancy in
-        #   how tags indicate the root namespace. The long-term solution is to
-        #   standardize it, whether it's `Class<>`, an empty string, or
-        #   something else.
-        tag1 == tag2 ||
-          (['', 'Class<>'].include?(tag1) && ['', 'Class<>'].include?(tag2))
-      end
-
       # @param other [self]
       #
       # @return [Array(AST::Node, Integer), nil]

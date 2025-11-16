@@ -86,13 +86,11 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(Parser::AST::Node, Integer), nil]
-      #
-      # @sg-ignore
-      #   Solargraph::Pin::BaseVariable#combine_mass_assignment return
-      #   type could not be inferred
+      # @return [Array(AST::Node, Integer), nil]
       def combine_mass_assignment(other)
-        assert_same(other, :mass_assignment)
+        # @todo pick first non-nil arbitrarily - we don't yet support
+        #   mass assignment merging
+        mass_assignment || other.mass_assignment
       end
 
       # @return [Parser::AST::Node, nil]
@@ -259,42 +257,30 @@ module Solargraph
         other.closure
       end
 
-      # See if this variable is visible within 'other_closure'
+      # See if this variable is visible within 'viewing_closure'
       #
-      # @param other_closure [Pin::Closure]
+      # @param viewing_closure [Pin::Closure]
       # @return [Boolean]
-      def visible_in_closure? other_closure
-        needle = closure
+      def visible_in_closure? viewing_closure
         return false if closure.nil?
 
-        haystack = other_closure
+        # if we're declared at top level, we can't be seen from within
+        # methods declared tere
+        return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
 
-        cursor = haystack
+        return true if viewing_closure.binder.namespace == closure.binder.namespace
 
-        until cursor.nil?
-          if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
-            # methods can't see local variables declared in their
-            # parent closure
-            return false
-          end
+        return true if viewing_closure.return_type == closure.context
 
-          if cursor.binder.namespace == needle.binder.namespace
-            return true
-          end
+        # classes and modules can't see local variables declared
+        # in their parent closure, so stop here
+        return false if scope == :instance && viewing_closure.is_a?(Pin::Namespace)
 
-          if cursor.return_type == needle.context
-            return true
-          end
+        parent_of_viewing_closure = viewing_closure.closure
 
-          if scope == :instance && cursor.is_a?(Pin::Namespace)
-            # classes and modules can't see local variables declared
-            # in their parent closure, so stop here
-            return false
-          end
+        return false if parent_of_viewing_closure.nil?
 
-          cursor = cursor.closure
-        end
-        false
+        visible_in_closure?(parent_of_viewing_closure)
       end
 
       # @param other [self]

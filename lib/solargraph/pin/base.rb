@@ -175,6 +175,9 @@ module Solargraph
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
         @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
         reset_conversions
       end
 
@@ -585,7 +588,6 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
-        result.reset_generated!
         result
       end
 
