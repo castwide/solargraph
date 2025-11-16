@@ -17,8 +17,7 @@ module Solargraph
           types = @links.map { |link| link.infer(api_map, name_pin, locals) }
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
-            # @sg-ignore Unresolved call to without_nil on
-            #   Solargraph::ComplexType
+            # @sg-ignore Unresolved call to without_nil on Solargraph::ComplexType
             combined_type = combined_type.without_nil
           end
 

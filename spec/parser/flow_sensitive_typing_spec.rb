@@ -38,8 +38,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       end
   ), 'test.rb')
-    pending 'FlowSensitiveTyping improvements'
-
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.to_s).to eq('Repro1')

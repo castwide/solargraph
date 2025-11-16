@@ -34,7 +34,6 @@ module Solargraph
         # keep this as a parameter
         return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
 
-        new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
           presence: combine_presence(other),
         })
@@ -91,25 +90,10 @@ module Solargraph
         (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
       end
 
-      # @param other [self]
-      # @return [ComplexType, nil]
-      def combine_return_type(other)
-        combine_types(other, :return_type)
-      end
-
       private
 
       # @return [ComplexType, nil]
       attr_reader :exclude_return_type
-
-      # @param other [self]
-      #
-      # @return [Array(AST::Node, Integer), nil]
-      def combine_mass_assignment(other)
-        # @todo pick first non-nil arbitrarily - we don't yet support
-        #   mass assignment merging
-        mass_assignment || other.mass_assignment
-      end
 
       # Narrow the presence range to the intersection of both.
       #

@@ -360,6 +360,18 @@ module Solargraph
         nil_type?
       end
 
+      # @param api_map [ApiMap] The ApiMap that performs qualification
+      # @param atype [ComplexType, self] type which may be assigned to this type
+      def can_assign?(api_map, atype)
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
+        downcasted_atype = atype.downcast_to_literal_if_possible
+        out = downcasted_atype.all? do |autype|
+          autype.name == name || api_map.super_and_sub?(name, autype.name)
+        end
+        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
+        out
+      end
+
       # @yieldreturn [Boolean]
       def all? &block
         block.yield self

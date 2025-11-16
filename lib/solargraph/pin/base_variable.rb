@@ -84,6 +84,10 @@ module Solargraph
         super(other, new_attrs)
       end
 
+      def inner_desc
+        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
+      end
+
       # @param other [self]
       #
       # @return [Array(AST::Node, Integer), nil]
@@ -103,10 +107,6 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
-      end
-
-      def inner_desc
-        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
       end
 
       def completion_item_kind
@@ -156,8 +156,7 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        exclude_items = exclude_return_type&.items&.uniq
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq - (exclude_items || [])) unless assignment_types.empty?
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
@@ -247,6 +246,7 @@ module Solargraph
         end
 
         # if filenames are different, this will just pick one
+        # @todo flow sensitive typing needs to handle ivars
         return closure if closure.location <= other.closure.location
 
         other.closure
