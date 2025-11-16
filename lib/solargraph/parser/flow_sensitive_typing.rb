@@ -316,6 +316,12 @@ module Solargraph
         if_true[pin] ||= []
         if_true[pin] << { type: ComplexType.parse(isa_type_name) }
         process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
+        process_facts(if_false, false_presences)
       end
 
       # @param nilp_node [Parser::AST::Node]
