@@ -12,6 +12,7 @@ module Solargraph
       attr_accessor :mass_assignment
 
       # @param return_type [ComplexType, nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
       # @param assignment [Parser::AST::Node, nil]
       # @param exclude_return_type [ComplexType, nil] Ensure any
       #   return type returned will never include any of these unique
@@ -64,7 +65,7 @@ module Solargraph
       end
 
       def combine_with(other, attrs={})
-        attrs.merge({
+        new_attrs = attrs.merge({
           assignment: assert_same(other, :assignment),
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
@@ -73,7 +74,8 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           exclude_return_type: combine_types(other, :exclude_return_type),
         })
-        super(other, attrs)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+        super(other, new_attrs)
       end
 
       def reset_generated!
