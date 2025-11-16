@@ -35,6 +35,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'understands Class<File> is not the same as String' do
+      checker = type_checker(%(
+          # @param str [String]
+          # @return [void]
+          def foo str; end
+
+          foo File
+        ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
