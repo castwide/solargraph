@@ -76,12 +76,9 @@ module Solargraph
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           intersection_return_type: combine_types(other, :intersection_return_type),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           exclude_return_type: combine_types(other, :exclude_return_type),
         })
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
@@ -252,7 +249,7 @@ module Solargraph
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @todo flow sensitive typing needs to handle ivars
         return closure if closure.location <= other.closure.location
 
         other.closure
