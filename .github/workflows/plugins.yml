@@ -180,6 +180,8 @@ jobs:
         # solargraph-rails supports Ruby 3.0+
         ruby-version: '3.0'
         bundler-cache: false
+        # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
+        rubygems: latest
         bundler: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
