@@ -14,7 +14,7 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @todo To make JSON strongly typed we'll need a record syntax
+      # @todo Need typed hashes
       # @return [Hash{String => undefined, nil}]
       attr_reader :raw_data
 

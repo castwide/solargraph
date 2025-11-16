@@ -58,16 +58,16 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
-      # pending code fixes (~280):
+      # pending code fixes (277):
       #
-      # @todo 263: Need to add nil check herea
+      # @todo 263: Need to add nil check here
       # @todo 9: Need to validate config
       # @todo 3: Translate to something flow sensitive typing understands
       # @todo 2: Need a downcast here
       #
-      # flow-sensitive typing could handle (~100):
+      # flow-sensitive typing could handle (96):
       #
-      # @todo 47: flow sensitive typing needs to handle ivars
+      # @todo 48: flow sensitive typing needs to handle ivars
       # @todo 9: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
@@ -76,19 +76,14 @@ module Solargraph
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: flow sensitive typing needs to handle 'raise if'
       # @todo 2: Need to look at Tuple#include? handling
-      # @todo 2: should warn on nil dereference below
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: Need to handle duck-typed method calls on union types
+      # @todo 2: Need typed hashes
+      # @todo 1: should warn on nil dereference below
       # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
-      # @todo 1: flow sensitive typing handling else from is_a? with union types
       # @todo 1: flow sensitive typing needs to handle constants
-      # @todo 1: To make JSON strongly typed we'll need a record syntax
-      # @todo 1: signature isn't down-selected
-      # @todo 1: ComplexType::UniqueType needs without_nil
-      # @todo 1: foo = 1; foo = 2 if bar? should be of type 'Integer', not 'Integer, nil'
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
-      # @todo 1: Flow sensitive typing could figure out this is not nil at both entrypoints
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]
       end
