@@ -181,7 +181,7 @@ module Solargraph
       api_map =
         Solargraph::ApiMap.load_with_cache(directory, $stdout,
                                            loose_unions:
-                                             rules.require_all_unique_types_match_expected_on_lhs?)
+                                             !rules.require_all_unique_types_match_expected_on_lhs?)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
