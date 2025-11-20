@@ -3,11 +3,13 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
-      # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
+      # @param locals [Array<Solargraph::Pin::LocalVariable>]
+      # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize(locals, enclosing_breakable_pin, enclosing_compound_statement_pin)
+      def initialize(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin)
         @locals = locals
+        @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
       end
@@ -202,37 +204,43 @@ module Solargraph
 
       private
 
-      # @param pin [Pin::LocalVariable]
+      # @param pin [Pin::BaseVariable]
       # @param presence [Range]
       # @param downcast_type [ComplexType, nil]
       # @param downcast_not_type [ComplexType, nil]
       #
       # @return [void]
-      def add_downcast_local(pin, presence:, downcast_type:, downcast_not_type:)
+      def add_downcast_var(pin, presence:, downcast_type:, downcast_not_type:)
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
                                presence: presence)
-        locals.push(new_pin)
+        if pin.is_a?(Pin::LocalVariable)
+          locals.push(new_pin)
+        elsif pin.is_a?(Pin::InstanceVariable)
+          ivars.push(new_pin)
+        else
+          raise "Tried to add invalid pin type #{pin.class} in FlowSensitiveTyping"
+        end
       end
 
-      # @param facts_by_pin [Hash{Pin::LocalVariable => Array<Hash{:type, :not_type => ComplexType}>}]
+      # @param facts_by_pin [Hash{Pin::BaseVariable => Array<Hash{:type, :not_type => ComplexType}>}]
       # @param presences [Array<Range>]
       #
       # @return [void]
       def process_facts(facts_by_pin, presences)
         #
-        # Add specialized locals for the rest of the block
+        # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
             presences.each do |presence|
-              add_downcast_local(pin,
-                                 presence: presence,
-                                 downcast_type: downcast_type,
-                                 downcast_not_type: downcast_not_type)
+              add_downcast_var(pin,
+                               presence: presence,
+                               downcast_type: downcast_type,
+                               downcast_not_type: downcast_not_type)
             end
           end
         end
@@ -274,7 +282,8 @@ module Solargraph
         end
         # or like this:
         # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if call_receiver&.type == :lvar
+        # @sg-ignore Need to look at Tuple#include? handling
+        variable_name = call_receiver.children[0].to_s if [:lvar, :ivar].include?(call_receiver&.type)
         return unless variable_name
 
         [call_arg, variable_name]
@@ -293,11 +302,17 @@ module Solargraph
       # @param variable_name [String]
       # @param position [Position]
       #
-      # @return [Solargraph::Pin::LocalVariable, nil]
-      def find_local(variable_name, position)
-        # @sg-ignore Need to add nil check here
-        pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
-        pins.first
+      # @sg-ignore Solargraph::Parser::FlowSensitiveTyping#find_var
+      #   return type could not be inferred
+      # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
+      def find_var(variable_name, position)
+        if variable_name.start_with?('@')
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
+        else
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
+        end
       end
 
       # @param isa_node [Parser::AST::Node]
@@ -311,16 +326,16 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         isa_position = Range.from_node(isa_node).start
 
-        pin = find_local(variable_name, isa_position)
+        pin = find_var(variable_name, isa_position)
         return unless pin
 
-        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
         if_true = {}
         if_true[pin] ||= []
         if_true[pin] << { type: ComplexType.parse(isa_type_name) }
         process_facts(if_true, true_presences)
 
-        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
         if_false = {}
         if_false[pin] ||= []
         if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
@@ -348,7 +363,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         nilp_position = Range.from_node(nilp_node).start
 
-        pin = find_local(variable_name, nilp_position)
+        pin = find_var(variable_name, nilp_position)
         return unless pin
 
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
@@ -410,7 +425,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         var_position = Range.from_node(node).start
 
-        pin = find_local(variable_name, var_position)
+        pin = find_var(variable_name, var_position)
         return unless pin
 
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
@@ -460,6 +475,8 @@ module Solargraph
       end
 
       attr_reader :locals
+
+      attr_reader :ivars
 
       attr_reader :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end

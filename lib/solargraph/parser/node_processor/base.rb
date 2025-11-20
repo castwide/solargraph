@@ -16,15 +16,20 @@ module Solargraph
         # @return [Array<Pin::LocalVariable>]
         attr_reader :locals
 
+        # @return [Array<Pin::InstanceVariable>]
+        attr_reader :ivars
+
         # @param node [Parser::AST::Node]
         # @param region [Region]
         # @param pins [Array<Pin::Base>]
         # @param locals [Array<Pin::LocalVariable>]
-        def initialize node, region, pins, locals
+        # @param ivars [Array<Pin::InstanceVariable>]
+        def initialize node, region, pins, locals, ivars
           @node = node
           @region = region
           @pins = pins
           @locals = locals
+          @ivars = ivars
           @processed_children = false
         end
 
@@ -69,7 +74,7 @@ module Solargraph
           @processed_children = true
           node.children.each do |child|
             next unless Parser.is_ast_node?(child)
-            NodeProcessor.process(child, subregion, pins, locals)
+            NodeProcessor.process(child, subregion, pins, locals, ivars)
           end
         end
 

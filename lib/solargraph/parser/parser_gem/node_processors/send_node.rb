@@ -228,9 +228,9 @@ module Solargraph
                     node: ref.node,
                     source: :parser)
                   pins.push mm, cm
-                  pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
-                    pins.delete ivar
-                    pins.push Solargraph::Pin::InstanceVariable.new(
+                  ivars.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
+                    ivars.delete ivar
+                    ivars.push Solargraph::Pin::InstanceVariable.new(
                       location: ivar.location,
                       closure: cm,
                       name: ivar.name,
@@ -238,7 +238,7 @@ module Solargraph
                       assignment: ivar.assignment,
                       source: :parser
                     )
-                    pins.push Solargraph::Pin::InstanceVariable.new(
+                    ivars.push Solargraph::Pin::InstanceVariable.new(
                       location: ivar.location,
                       closure: mm,
                       name: ivar.name,
@@ -250,7 +250,7 @@ module Solargraph
                 end
               end
             elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals
+              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 

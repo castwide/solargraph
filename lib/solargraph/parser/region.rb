@@ -40,6 +40,14 @@ module Solargraph
         source.filename
       end
 
+      # @return [Pin::Namespace, nil]
+      def namespace_pin
+        ns = closure
+        # @sg-ignore flow sensitive typing needs to handle while
+        ns = ns.closure while ns && !ns.is_a?(Pin::Namespace)
+        ns
+      end
+
       # Generate a new Region with the provided attribute changes.
       #
       # @param closure [Pin::Closure, nil]

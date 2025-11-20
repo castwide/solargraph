@@ -33,6 +33,7 @@ module Solargraph
       # @type [Source, nil]
       @current = nil
       @sync_count = 0
+      @cache_progress = nil
     end
 
     def inspect
@@ -57,11 +58,8 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      # @sg-ignore flow sensitive typing needs to handle ivars
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_hash.delete @current.filename
-        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -75,9 +73,7 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Boolean]
-    # @sg-ignore flow sensitive typing needs to handle ivars
     def attached? filename
-      # @sg-ignore flow sensitive typing needs to handle ivars
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
@@ -87,7 +83,6 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
-      # @sg-ignore flow sensitive typing needs to handle ivars
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -453,7 +448,6 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
-        # @sg-ignore flow sensitive typing needs to handle ivars
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -560,10 +554,8 @@ module Solargraph
     #
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
-    # @sg-ignore flow sensitive typing needs to handle ivars
     # @return [Solargraph::Source]
     def read filename
-      # @sg-ignore flow sensitive typing needs to handle ivars
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
@@ -657,19 +649,18 @@ module Solargraph
       @total ||= pending
       # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       @total = pending if pending > @total
-      # @sg-ignore flow sensitive typing needs to handle ivars
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       finished = @total - pending
-      # @sg-ignore flow sensitive typing needs to handle ivars
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       pct = if @total.zero?
         0
       else
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
         ((finished.to_f / @total.to_f) * 100).to_i
       end
       message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
       # "
       if @cache_progress
-        # @sg-ignore flow sensitive typing needs to handle ivars
         @cache_progress.report(message, pct)
       else
         @cache_progress = LanguageServer::Progress.new('Caching gem')

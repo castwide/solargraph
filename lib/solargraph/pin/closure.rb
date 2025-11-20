@@ -44,11 +44,6 @@ module Solargraph
         end
       end
 
-      # @return [ComplexType, ComplexType::UniqueType]
-      def binder
-        @binder || context
-      end
-
       # @param api_map [Solargraph::ApiMap]
       # @return [void]
       def rebind api_map; end

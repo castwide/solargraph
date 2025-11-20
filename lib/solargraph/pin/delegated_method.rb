@@ -71,6 +71,9 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       # @return [Pin::Method, nil]
+      # @sg-ignore Declared return type ::Solargraph::Pin::Method, nil
+      #   does not match inferred type nil, false for
+      #   Solargraph::Pin::DelegatedMethod#resolve_method
       def resolve_method api_map
         return if @resolved_method
 

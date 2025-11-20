@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             loc = get_node_location(node)
-            pins.push Solargraph::Pin::InstanceVariable.new(
+            ivars.push Solargraph::Pin::InstanceVariable.new(
               location: loc,
               closure: region.closure,
               name: node.children[0].to_s,
@@ -22,7 +22,7 @@ module Solargraph
               # @type [Pin::Closure, nil]
               named_path = named_path_pin(here)
               if named_path.is_a?(Pin::Method)
-                pins.push Solargraph::Pin::InstanceVariable.new(
+                ivars.push Solargraph::Pin::InstanceVariable.new(
                   location: loc,
                   closure: Pin::Namespace.new(type: :module, closure: region.closure.closure, name: region.closure.name),
                   name: node.children[0].to_s,

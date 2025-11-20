@@ -112,7 +112,8 @@ module Solargraph
         case directive.tag.tag_name
         when 'method'
           namespace = closure_at(source_position) || @pins.first
-          # @sg-ignore Need to add nil check here
+          # @todo Missed nil violation
+          # @todo Need to add nil check here
           if namespace.location.range.start.line < comment_position.line
             namespace = closure_at(comment_position)
           end
@@ -177,7 +178,8 @@ module Solargraph
 
             name = directive.tag.name
             closure = closure_at(source_position) || @pins.first
-            # @sg-ignore Need to add nil check here
+            # @todo Missed nil violation
+            # @todo Need to add nil check here
             if closure.location.range.start.line < comment_position.line
               closure = closure_at(comment_position)
             end
@@ -205,7 +207,10 @@ module Solargraph
             else
               comment_position.line
             end
-            Parser.process_node(src.node, region, @pins)
+            locals = []
+            ivars = []
+            Parser.process_node(src.node, region, @pins, locals, ivars)
+            @pins.concat ivars
             # @sg-ignore Need to add nil check here
             @pins[index..-1].each do |p|
               # @todo Smelly instance variable access
@@ -217,7 +222,8 @@ module Solargraph
           end
         when 'domain'
           namespace = closure_at(source_position) || Pin::ROOT_PIN
-          # @sg-ignore Need to add nil check here
+          # @todo Missed nil violation
+          # @todo Need to add nil check here
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
           # @sg-ignore Need to add a nil check here

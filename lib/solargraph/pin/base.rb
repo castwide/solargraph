@@ -528,7 +528,6 @@ module Solargraph
       #
       # @return [Boolean]
       def maybe_directives?
-        # @sg-ignore flow sensitive typing needs to handle ivars
         return !@directives.empty? if defined?(@directives) && @directives
         @maybe_directives ||= comments.include?('@!')
       end

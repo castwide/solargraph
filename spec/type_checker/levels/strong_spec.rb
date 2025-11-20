@@ -717,7 +717,73 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
+      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round on Integer, nil"])
+    end
+
+    it 'performs simple flow-sensitive typing on lvars' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [Integer, nil]
+          # @return [::Boolean, ::Integer]
+          def foo bar
+            !bar || bar.abs
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'performs simple flow-sensitive typing on ivars' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [::Integer, nil]
+          def initialize bar: nil
+            @bar = bar
+          end
+
+          # @return [::Boolean, ::Integer]
+          def foo
+            !@bar || @bar.abs
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'performs complex flow-sensitive typing on ivars' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [::Array<Integer>, nil]
+          def initialize bar: nil
+            @bar = bar
+          end
+
+          def maybe_bar?
+            return !@bar.empty? if defined?(@bar) && @bar
+            false
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'supports !@x.nil && @x.y' do
+      checker = type_checker(%(
+        class Bar
+          # @param foo [String, nil]
+          def initialize(foo)
+            @foo = foo
+          end
+
+          def foo?
+            !@foo.nil? && @foo.upcase == 'FOO'
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
   end
 end

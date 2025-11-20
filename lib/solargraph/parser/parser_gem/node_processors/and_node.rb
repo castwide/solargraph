@@ -11,6 +11,7 @@ module Solargraph
             process_children
 
             FlowSensitiveTyping.new(locals,
+                                    ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_and(node)
           end

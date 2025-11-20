@@ -483,6 +483,7 @@ Metrics/ModuleLength:
 Metrics/ParameterLists:
   Exclude:
     - 'lib/solargraph/api_map.rb'
+    - 'lib/solargraph/parser/node_processor.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
@@ -825,7 +826,6 @@ Style/EmptyLambdaParameter:
 Style/EmptyMethod:
   Exclude:
     - 'lib/solargraph/language_server/message/client/register_capability.rb'
-    - 'lib/solargraph/pin/base.rb'
     - 'spec/fixtures/formattable.rb'
     - 'spec/fixtures/rdoc-lib/lib/example.rb'
     - 'spec/fixtures/workspace-with-gemfile/lib/thing.rb'
@@ -1209,8 +1209,6 @@ Style/TrailingCommaInHashLiteral:
   Exclude:
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/closure.rb'
-    - 'lib/solargraph/pin/parameter.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -1219,7 +1217,6 @@ Style/TrailingCommaInHashLiteral:
 Style/TrivialAccessors:
   Exclude:
     - 'lib/solargraph/language_server/message/extended/check_gem_version.rb'
-    - 'lib/solargraph/pin/keyword.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 Style/WhileUntilModifier:

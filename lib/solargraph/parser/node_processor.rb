@@ -36,8 +36,9 @@ module Solargraph
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
       # @param locals [Array<Pin::LocalVariable>]
-      # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
-      def self.process node, region = Region.new, pins = [], locals = []
+      # @param ivars [Array<Pin::InstanceVariable>]
+      # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>, Array<Pin::InstanceVariable>)]
+      def self.process node, region = Region.new, pins = [], locals = [], ivars = []
         if pins.empty?
           pins.push Pin::Namespace.new(
             location: region.source.location,
@@ -45,17 +46,17 @@ module Solargraph
             source: :parser,
           )
         end
-        return [pins, locals] unless Parser.is_ast_node?(node)
+        return [pins, locals, ivars] unless Parser.is_ast_node?(node)
         node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
         node_processor_classes.each do |klass|
-          processor = klass.new(node, region, pins, locals)
+          processor = klass.new(node, region, pins, locals, ivars)
           process_next = processor.process
 
           break unless process_next
         end
 
-        [pins, locals]
+        [pins, locals, ivars]
       end
     end
   end

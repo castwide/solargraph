@@ -30,7 +30,7 @@ module Solargraph
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals)
+            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
           end
         end
       end

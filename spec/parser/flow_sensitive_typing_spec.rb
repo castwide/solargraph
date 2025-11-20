@@ -978,4 +978,24 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [5, 17])
     expect(clip.infer.to_s).to eq('Integer')
   end
+
+
+  it 'supports !@x.nil && @x.y' do
+    source = Solargraph::Source.load_string(%(
+      class Bar
+        # @param foo [String, nil]
+        def initialize(foo)
+          @foo = foo
+        end
+
+        def foo?
+          out = !@foo.nil? && @foo.upcase == 'FOO'
+          out
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Boolean')
+  end
 end
