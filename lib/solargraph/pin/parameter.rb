@@ -50,7 +50,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         decl == :kwrestarg || (assignment && [:HASH, :hash].include?(assignment.type))
       end
 
@@ -207,7 +207,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle ivars
+      # @sg-ignore flow sensitive typing needs to handle attrs
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?

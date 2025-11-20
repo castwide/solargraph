@@ -36,16 +36,16 @@ module Solargraph
           end
           if pin.type == :class
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
-              # @sg-ignore flow sensitive typing needs to handle ivars
+              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
-              # @sg-ignore flow sensitive typing needs to handle ivars
+              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             }
           else
             code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
-              # @sg-ignore flow sensitive typing needs to handle ivars
+              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
-              # @sg-ignore flow sensitive typing needs to handle ivars
+              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             }
           end
@@ -73,9 +73,9 @@ module Solargraph
 
           # @sg-ignore Need to add nil check here
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
-            # @sg-ignore flow sensitive typing needs to handle ivars
+            # @sg-ignore flow sensitive typing needs to handle attrs
             next if pin.location.nil? || pin.location.filename.nil?
-            # @sg-ignore flow sensitive typing needs to handle ivars
+            # @sg-ignore flow sensitive typing needs to handle attrs
             obj.add_file pin.location.filename, pin.location.range.start.line
           }
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)

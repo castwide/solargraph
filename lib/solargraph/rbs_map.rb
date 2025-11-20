@@ -51,7 +51,7 @@ module Solargraph
         # @type [String, nil]
         data = nil
         if rbs_collection_config_path
-          # @sg-ignore flow sensitive typing needs to handle ivars
+          # @sg-ignore flow sensitive typing needs to handle attrs
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
           if lockfile_path.exist?
             collection_config = RBS::Collection::Config.from_path lockfile_path

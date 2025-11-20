@@ -12,7 +12,8 @@ module Solargraph
       # @type @closure [Pin::Closure, nil]
       # @type @binder [ComplexType, ComplexType::UniqueType, nil]
 
-      # @return [Location]
+      # @todo Missed nil violation
+      # @return [Location, nil]
       attr_accessor :location
 
       # @param value [Pin::Closure]

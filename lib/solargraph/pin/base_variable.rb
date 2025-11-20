@@ -206,11 +206,11 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore flow sensitive typing needs to handle ivars
+      # @sg-ignore flow sensitive typing needs to handle attrs
       def starts_at?(other_loc)
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore flow sensitive typing needs to handle ivars
+          # @sg-ignore flow sensitive typing needs to handle attrs
           presence.start == other_loc.range.start
       end
 
@@ -228,7 +228,7 @@ module Solargraph
           return other.presence
         end
 
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
       end
 
@@ -246,14 +246,14 @@ module Solargraph
           return closure || other.closure
         end
 
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         if closure.location.nil? || other.closure.location.nil?
-          # @sg-ignore flow sensitive typing needs to handle ivars
+          # @sg-ignore flow sensitive typing needs to handle attrs
           return closure.location.nil? ? other.closure : closure
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         return closure if closure.location <= other.closure.location
 
         other.closure
@@ -262,9 +262,9 @@ module Solargraph
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         location.filename == other_loc.filename &&
-          # @sg-ignore flow sensitive typing needs to handle ivars
+          # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end
@@ -321,7 +321,7 @@ module Solargraph
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         return closure if closure.location <= other.closure.location
 
         other.closure

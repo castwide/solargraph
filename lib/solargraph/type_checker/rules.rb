@@ -58,6 +58,11 @@ module Solargraph
         rank >= LEVELS[:alpha]
       end
 
+      #
+      # False negatives:
+      #
+      # @todo 3: Missed nil violation
+      #
       # pending code fixes (277):
       #
       # @todo 263: Need to add nil check here
@@ -67,12 +72,13 @@ module Solargraph
       #
       # flow-sensitive typing could handle (96):
       #
-      # @todo 48: flow sensitive typing needs to handle ivars
+      # @todo 33: flow sensitive typing needs to handle attrs
+      # @todo 14: flow sensitive typing needs to handle ivars
       # @todo 9: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 4: flow sensitive typing needs better handling of ||= on lvars
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
-      # @todo 4: (*) flow sensitive typing needs better handling of ||= on lvars
       # @todo 3: downcast output of Enumerable#select
       # @todo 3: flow sensitive typing needs to handle 'raise if'
       # @todo 2: Need to look at Tuple#include? handling
@@ -83,6 +89,7 @@ module Solargraph
       # @todo 1: should warn on nil dereference below
       # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 1: flow sensitive typing needs to handle constants
+      # @todo 1: flow sensitive typing needs to handle while
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
       def require_all_unique_types_match_expected?
         rank >= LEVELS[:strong]

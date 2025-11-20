@@ -440,7 +440,7 @@ module Solargraph
       # @return [String, nil]
       def filename
         return nil if location.nil?
-        # @sg-ignore flow sensitive typing needs to handle ivars
+        # @sg-ignore flow sensitive typing needs to handle attrs
         location.filename
       end
 
@@ -477,7 +477,7 @@ module Solargraph
       def nearly? other
         self.class == other.class &&
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle ivars
+          # @sg-ignore flow sensitive typing needs to handle attrs
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           (comments == other.comments ||
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
