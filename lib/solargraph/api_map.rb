@@ -359,20 +359,18 @@ module Solargraph
     # preferring pins created by flow-sensitive typing when we have
     # them based on the Closure and Location.
     #
-    # @param locals [Array<Pin::LocalVariable>]
+    # @param candidates [Array<Pin::BaseVariable>]
     # @param name [String]
     # @param closure [Pin::Closure]
     # @param location [Location]
     #
-    # @return [Pin::LocalVariable, nil]
-    def var_at_location(locals, name, closure, location)
-      with_correct_name = locals.select { |pin| pin.name == name}
-      with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
-      vars_at_location = with_presence.reject do |pin|
+    # @return [Pin::BaseVariable, nil]
+    def var_at_location(candidates, name, closure, location)
+      with_correct_name = candidates.select { |pin| pin.name == name}
+      vars_at_location = with_correct_name.reject do |pin|
         # visible_at? excludes the starting position, but we want to
         # include it for this purpose
-        (!pin.visible_at?(closure, location) &&
-         !pin.starts_at?(location))
+        (!pin.visible_at?(closure, location) && !pin.starts_at?(location))
       end
 
       vars_at_location.inject(&:combine_with)
