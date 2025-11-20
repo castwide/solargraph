@@ -998,4 +998,31 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [9, 10])
     expect(clip.infer.to_s).to eq('Boolean')
   end
+
+  it 'uses is_a? with instance variables to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      class Example
+        # @param value [ReproBase]
+        def initialize(value)
+          @value = value
+        end
+
+        def check
+          if @value.is_a?(Repro)
+            @value
+          else
+            @value
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 12])
+    expect(clip.infer.to_s).to eq('Repro')
+
+    clip = api_map.clip_at('test.rb', [13, 12])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
 end
