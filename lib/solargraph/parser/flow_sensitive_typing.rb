@@ -60,7 +60,7 @@ module Solargraph
                                  get_node_end_position(rhs))
 
         # can assume if an or is false that every single condition is
-        # false, so't provide false ranges to assert facts on
+        # false, so provide false ranges to assert facts on
 
         # can't assume if an or is true that every single condition is
         # true, so don't provide true ranges to assert facts on
