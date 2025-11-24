@@ -248,7 +248,6 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
-        process_if(expression_node, true_ranges, false_ranges)
       end
 
       # @param call_node [Parser::AST::Node]
