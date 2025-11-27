@@ -61,7 +61,7 @@ module Solargraph
       #
       # False negatives:
       #
-      # @todo 3: Missed nil violation
+      # @todo 4: Missed nil violation
       #
       # pending code fixes (277):
       #

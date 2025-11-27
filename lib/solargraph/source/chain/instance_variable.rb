@@ -19,7 +19,7 @@ module Solargraph
 
         private
 
-        # TODO: This should fail typechecking - ivar is nullable
+        # @todo: Missed nil violation
         # @return [Location]
         attr_reader :location
       end
