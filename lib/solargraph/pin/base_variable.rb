@@ -11,6 +11,9 @@ module Solargraph
 
       attr_accessor :mass_assignment
 
+      # @return [Range, nil]
+      attr_reader :presence
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -38,9 +41,10 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      # @param presence [Range, nil]
       def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     **splat
+                     presence: nil, **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
@@ -48,6 +52,7 @@ module Solargraph
         @return_type = return_type
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
+        @presence = presence
       end
 
       def reset_generated!
@@ -80,6 +85,7 @@ module Solargraph
           return_type: combine_return_type(other),
           intersection_return_type: combine_types(other, :intersection_return_type),
           exclude_return_type: combine_types(other, :exclude_return_type),
+          presence: combine_presence(other),
         })
         super(other, new_attrs)
       end
@@ -107,6 +113,10 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       def completion_item_kind
@@ -207,6 +217,56 @@ module Solargraph
         exclude_return_type || intersection_return_type
       end
 
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
+      end
+
+      # Narrow the presence range to the intersection of both.
+      #
+      # @param other [self]
+      #
+      # @return [Range, nil]
+      def combine_presence(other)
+        return presence || other.presence if presence.nil? || other.presence.nil?
+
+        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
+
+      # @param other_closure [Pin::Closure]
+      # @param other_loc [Location]
+      def visible_at?(other_closure, other_loc)
+        location.filename == other_loc.filename &&
+          (!presence || presence.include?(other_loc.range.start)) &&
+          visible_in_closure?(other_closure)
+      end
+
       protected
 
       attr_accessor :exclude_return_type, :intersection_return_type
@@ -261,6 +321,7 @@ module Solargraph
 
         # if we're declared at top level, we can't be seen from within
         # methods declared tere
+
         return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
 
         return true if viewing_closure.binder.namespace == closure.binder.namespace
