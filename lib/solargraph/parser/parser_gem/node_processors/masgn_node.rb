@@ -38,7 +38,7 @@ module Solargraph
                       # lvasgn is a local variable
                       locals.find { |l| l.location == location }
                     elsif lhs.type == :ivasgn
-                      # e.g., ivasgn is an instance variable, etc
+                      # ivasgn is an instance variable assignment
                       ivars.find { |iv| iv.location == location }
                     else
                       pins.find { |iv| iv.location == location && iv.is_a?(Pin::BaseVariable) }
