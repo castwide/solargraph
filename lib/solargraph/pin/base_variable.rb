@@ -20,7 +20,6 @@ module Solargraph
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-      # @param presence [Range, nil]
       # @param exclude_return_type [ComplexType, nil] Ensure any
       #   return type returned will never include any of these unique
       #   types in the unique types of its complex type.
@@ -42,10 +41,10 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-      def initialize assignment: nil, assignments: [], mass_assignment: nil,
-                     presence: nil, return_type: nil,
+      # @param presence [Range, nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     **splat
+                     presence: nil, **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
@@ -84,9 +83,9 @@ module Solargraph
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
-          presence: combine_presence(other),
           intersection_return_type: combine_types(other, :intersection_return_type),
-          exclude_return_type: combine_types(other, :exclude_return_type)
+          exclude_return_type: combine_types(other, :exclude_return_type),
+          presence: combine_presence(other)
         })
         super(other, new_attrs)
       end
@@ -205,6 +204,17 @@ module Solargraph
         generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
       end
 
+      def typify api_map
+        raw_return_type = super
+
+        adjust_type(api_map, raw_return_type)
+      end
+
+      # @sg-ignore need boolish support for ? methods
+      def presence_certain?
+        exclude_return_type || intersection_return_type
+      end
+
       # @param other_loc [Location]
       # @sg-ignore flow sensitive typing needs to handle attrs
       def starts_at?(other_loc)
@@ -267,17 +277,6 @@ module Solargraph
           # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
-      end
-
-      def typify api_map
-        raw_return_type = super
-
-        adjust_type(api_map, raw_return_type)
-      end
-
-      # @sg-ignore need boolish support for ? methods
-      def presence_certain?
-        exclude_return_type || intersection_return_type
       end
 
       protected
