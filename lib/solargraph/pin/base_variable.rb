@@ -11,18 +11,28 @@ module Solargraph
 
       attr_accessor :mass_assignment
 
+      # @return [Range, nil]
+      attr_reader :presence
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
       # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
-      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil, **splat
+      # @param presence [Range, nil]
+      # @param presence_certain [Boolean]
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil,
+                     presence: nil, presence_certain: false, return_type: nil,
+                     **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
         @return_type = return_type
+        @presence = presence
+        @presence_certain = presence_certain
       end
 
       def reset_generated!
@@ -36,6 +46,8 @@ module Solargraph
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
+          presence: combine_presence(other),
+          presence_certain: combine_presence_certain(other),
         })
         super(other, new_attrs)
       end
@@ -49,6 +61,16 @@ module Solargraph
         mass_assignment || other.mass_assignment
       end
 
+      # If a certain pin is being combined with an uncertain pin, we
+      # end up with a certain result
+      #
+      # @param other [self]
+      #
+      # @return [Boolean]
+      def combine_presence_certain(other)
+        presence_certain? || other.presence_certain?
+      end
+
       # @return [Parser::AST::Node, nil]
       def assignment
         @assignment ||= assignments.last
@@ -59,6 +81,10 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       def completion_item_kind
@@ -109,7 +135,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
         type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
@@ -144,6 +170,65 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
+      end
+
+      # Narrow the presence range to the intersection of both.
+      #
+      # @param other [self]
+      #
+      # @return [Range, nil]
+      def combine_presence(other)
+        return presence || other.presence if presence.nil? || other.presence.nil?
+
+        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
+
+      # @param other_closure [Pin::Closure]
+      # @param other_loc [Location]
+      def visible_at?(other_closure, other_loc)
+        location.filename == other_loc.filename &&
+          (!presence || presence.include?(other_loc.range.start)) &&
+          visible_in_closure?(other_closure)
+      end
+
+      def presence_certain?
+        @presence_certain
+      end
+
+      protected
+
+      # @return [Range]
+      attr_writer :presence
+
       private
 
       # See if this variable is visible within 'viewing_closure'
@@ -151,8 +236,11 @@ module Solargraph
       # @param viewing_closure [Pin::Closure]
       # @return [Boolean]
       def visible_in_closure? viewing_closure
+        return false if closure.nil?
+
         # if we're declared at top level, we can't be seen from within
         # methods declared tere
+
         return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
 
         return true if viewing_closure.binder.namespace == closure.binder.namespace
@@ -168,6 +256,20 @@ module Solargraph
         return false if parent_of_viewing_closure.nil?
 
         visible_in_closure?(parent_of_viewing_closure)
+      end
+
+      # @param other [self]
+      # @return [ComplexType, nil]
+      def combine_return_type(other)
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type
+        end
+        if other.presence_certain? && other.return_type&.defined?
+          return other.return_type
+        end
+        combine_types(other, :return_type)
       end
 
       # @param other [self]
