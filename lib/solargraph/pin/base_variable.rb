@@ -50,9 +50,9 @@ module Solargraph
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
         @return_type = return_type
-        @presence = presence
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
+        @presence = presence
       end
 
       def reset_generated!
@@ -85,7 +85,7 @@ module Solargraph
           return_type: combine_return_type(other),
           intersection_return_type: combine_types(other, :intersection_return_type),
           exclude_return_type: combine_types(other, :exclude_return_type),
-          presence: combine_presence(other)
+          presence: combine_presence(other),
         })
         super(other, new_attrs)
       end
@@ -231,12 +231,6 @@ module Solargraph
       # @return [Range, nil]
       def combine_presence(other)
         return presence || other.presence if presence.nil? || other.presence.nil?
-
-        if presence_certain? && !other.presence_certain?
-          return presence
-        elsif other.presence_certain? && !presence_certain?
-          return other.presence
-        end
 
         # @sg-ignore flow sensitive typing needs to handle attrs
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
