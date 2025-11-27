@@ -90,10 +90,6 @@ module Solargraph
         super(other, new_attrs)
       end
 
-      def inner_desc
-        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
-      end
-
       # @param other [self]
       #
       # @return [Array(AST::Node, Integer), nil]
@@ -116,7 +112,7 @@ module Solargraph
       end
 
       def inner_desc
-        super + ", presence=#{presence.inspect}, assignments=#{assignments}"
+        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}, presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       def completion_item_kind
