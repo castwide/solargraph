@@ -194,6 +194,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless self.class == other.class
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         tag == other.tag
       end
 

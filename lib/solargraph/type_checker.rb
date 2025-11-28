@@ -462,6 +462,7 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
               # @sg-ignore Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
