@@ -32,11 +32,13 @@ module Solargraph
             next
           end
           if pin.type == :class
+            # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
               next if pin.location.nil? || pin.location.filename.nil?
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             }
           else
+            # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
               next if pin.location.nil? || pin.location.filename.nil?
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
@@ -65,6 +67,7 @@ module Solargraph
             next
           end
 
+          # @param obj [YARD::CodeObjects::RootObject]
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
             next if pin.location.nil? || pin.location.filename.nil?
             obj.add_file pin.location.filename, pin.location.range.start.line

@@ -460,7 +460,9 @@ module Solargraph
           else
             ptype = data[:qualified]
             unless ptype.undefined?
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               argtype = argchain.infer(api_map, closure_pin, locals)
+              # @sg-ignore Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end

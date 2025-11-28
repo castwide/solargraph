@@ -231,6 +231,7 @@ module Solargraph
                       closure: cm,
                       name: ivar.name,
                       comments: ivar.comments,
+                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )
@@ -239,6 +240,7 @@ module Solargraph
                       closure: mm,
                       name: ivar.name,
                       comments: ivar.comments,
+                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )
