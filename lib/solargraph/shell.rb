@@ -273,6 +273,7 @@ module Solargraph
       else
         pins = api_map.get_path_pins path
       end
+      # @type [Hash{Symbol => Pin::Base}]
       references = {}
       pin = pins.first
       case pin
