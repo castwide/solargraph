@@ -172,7 +172,9 @@ module Solargraph
         # sniff based on param tags
         new_type = closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
 
-        adjust_type api_map, new_type
+        return adjust_type api_map, new_type.self_to_type(full_context) if new_type.defined?
+
+        adjust_type api_map, super.self_to_type(full_context)
       end
 
       # @param atype [ComplexType]

@@ -4,6 +4,23 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'understands self type when passed as parameter' do
+      checker = type_checker(%(
+        class Location
+          # @return [String]
+          attr_reader :filename
+
+          # @param other [self]
+          def <=>(other)
+            return nil unless other.is_a?(Location)
+
+            filename <=> other.filename
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index
