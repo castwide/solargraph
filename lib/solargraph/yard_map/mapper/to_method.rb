@@ -11,7 +11,7 @@ module Solargraph
           ["Rails::Engine", :class, "find_root_with_flag"] => :public
         }
 
-        # @param code_object [YARD::CodeObjects::Base]
+        # @param code_object [YARD::CodeObjects::MethodObject]
         # @param name [String, nil]
         # @param scope [Symbol, nil]
         # @param visibility [Symbol, nil]

@@ -123,6 +123,21 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'provides nil checking on calls from parameters without assignments' do
+      pending('https://github.com/castwide/solargraph/pull/1127')
+
+      checker = type_checker(%(
+        # @param baz [String, nil]
+        #
+        # @return [String]
+        def quux(baz)
+          baz.upcase # ERROR: Unresolved call to upcase on String, nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+                                                     'Unresolved call to upcase on String, nil'])
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer] an index
