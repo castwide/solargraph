@@ -40,7 +40,7 @@ module Solargraph
 
       def combine_return_type(other)
         out = super
-        if out.undefined?
+        if out&.undefined?
           # allow our return_type method to provide a better type
           # using :param tag
           out = nil
