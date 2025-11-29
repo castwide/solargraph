@@ -722,5 +722,33 @@ describe Solargraph::TypeChecker do
 
       expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
     end
+
+    it 'uses cast type instead of defined type' do
+      checker = type_checker(%(
+        # frozen_string_literal: true
+
+        class Base; end
+
+        class Subclass < Base
+          # @return [String]
+          attr_reader :bar
+        end
+
+        class Foo
+          # @param bases [::Array<Base>]
+          # @return [void]
+          def baz(bases)
+            # @param sub [Subclass]
+            bases.each do |sub|
+              puts sub.bar
+            end
+          end
+        end
+      ))
+
+      # expect 'sub' to be treated as 'Subclass' inside the block, and
+      # an error when trying to declare sub as Subclass
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
+    end
   end
 end
