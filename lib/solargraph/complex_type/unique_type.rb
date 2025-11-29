@@ -481,6 +481,13 @@ module Solargraph
         [block.yield(self)]
       end
 
+      # @yieldparam t [self]
+      # @yieldreturn [self]
+      # @return [Enumerable<self>]
+      def each &block
+        [self].each &block
+      end
+
       # @return [Array<UniqueType>]
       def to_a
         [self]
