@@ -789,13 +789,10 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore Should handle redefinition of types in simple contexts
         if [:kwarg, :kwoptarg, :kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore Should handle redefinition of types in simple contexts
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore Should handle redefinition of types in simple contexts
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else

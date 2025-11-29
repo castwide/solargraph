@@ -738,7 +738,9 @@ module Solargraph
         build_type(type_name, type_args).tags
       end
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [RBS::Types::Bases::Base,Object] RBS type object.
+      #   Note: Generally these extend from RBS::Types::Bases::Base,
+      #   but not all.
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
@@ -795,6 +797,7 @@ module Solargraph
           # e.g., singleton(String)
           type_tag(type.name)
         else
+          # all types should include location
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end

@@ -303,9 +303,7 @@ module Solargraph
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
-        # @sg-ignore Need to handle restarg parameters in block parameters
         if source_map_hash.key?(full)
-          # @sg-ignore Need to handle restarg parameters in block parameters
           return Location.new(full, Solargraph::Range.from_to(0, 0, 0, 0))
         end
       end
