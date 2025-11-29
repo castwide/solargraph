@@ -52,12 +52,9 @@ module Solargraph
           assignment: assert_same(other, :assignment),
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           intersection_return_type: combine_types(other, :intersection_return_type),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           exclude_return_type: combine_types(other, :exclude_return_type),
         })
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
