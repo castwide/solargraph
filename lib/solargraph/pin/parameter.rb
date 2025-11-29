@@ -45,6 +45,16 @@ module Solargraph
         super(other, new_attrs.merge(attrs))
       end
 
+      def combine_return_type(other)
+        out = super
+        if out.undefined?
+          # allow our return_type method to provide a better type
+          # using :param tag
+          out = nil
+        end
+        out
+      end
+
       def keyword?
         [:kwarg, :kwoptarg].include?(decl)
       end
