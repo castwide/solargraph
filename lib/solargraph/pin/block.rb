@@ -63,9 +63,11 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
+        # @param meth [Pin::Method]
         meths.each do |meth|
           next if meth.block.nil?
 
+          # @sg-ignore flow sensitive typing needs to handle attrs
           yield_types = meth.block.parameters.map(&:return_type)
           # 'arguments' is what the method says it will yield to the
           # block; 'parameters' is what the block accepts

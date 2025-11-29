@@ -4,6 +4,24 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'understands self type when passed as parameter' do
+      checker = type_checker(%(
+        class Location
+          # @return [String]
+          attr_reader :filename
+
+          # @param other [self]
+          # @return [-1, 0, 1, nil]
+          def <=>(other)
+            return nil unless other.is_a?(Location)
+
+            filename <=> other.filename
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not misunderstand types during flow-sensitive typing' do
       checker = type_checker(%(
         class A
@@ -121,6 +139,19 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'provides nil checking on calls from parameters without assignments' do
+      checker = type_checker(%(
+        # @param baz [String, nil]
+        #
+        # @return [String]
+        def quux(baz)
+          baz.upcase # ERROR: Unresolved call to upcase on String, nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+                                                     'Unresolved call to upcase on String, nil'])
     end
 
     it 'does not complain on array dereference' do
@@ -718,6 +749,34 @@ describe Solargraph::TypeChecker do
       ))
 
       expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
+    end
+
+    it 'uses cast type instead of defined type' do
+      checker = type_checker(%(
+        # frozen_string_literal: true
+
+        class Base; end
+
+        class Subclass < Base
+          # @return [String]
+          attr_reader :bar
+        end
+
+        class Foo
+          # @param bases [::Array<Base>]
+          # @return [void]
+          def baz(bases)
+            # @param sub [Subclass]
+            bases.each do |sub|
+              puts sub.bar
+            end
+          end
+        end
+      ))
+
+      # expect 'sub' to be treated as 'Subclass' inside the block, and
+      # an error when trying to declare sub as Subclass
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
   end
 end

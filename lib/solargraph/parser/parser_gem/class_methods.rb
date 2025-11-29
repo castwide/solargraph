@@ -137,11 +137,15 @@ module Solargraph
         def string_ranges node
           return [] unless is_ast_node?(node)
           result = []
+          # @sg-ignore Translate to something flow sensitive typing understands
           result.push Range.from_node(node) if node.type == :str
+          # @sg-ignore Translate to something flow sensitive typing understands
           node.children.each do |child|
             result.concat string_ranges(child)
           end
+          # @sg-ignore Translate to something flow sensitive typing understands
           if node.type == :dstr && node.children.last.nil?
+            # @sg-ignore Translate to something flow sensitive typing understands
             last = node.children[-2]
             # @sg-ignore Need to add nil check here
             unless last.nil?

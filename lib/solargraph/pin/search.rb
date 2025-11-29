@@ -42,6 +42,9 @@ module Solargraph
           Result.new(match, pin) if match > 0.7
         end
           .compact
+          # @param a [self]
+          # @param b [self]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           .sort { |a, b| b.match <=> a.match }
           .map(&:pin)
       end

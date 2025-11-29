@@ -248,6 +248,7 @@ module Solargraph
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
+        # @sg-ignore Need to add nil check here
         return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
       end
       true
@@ -447,6 +448,7 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
+          # @param char [String]
           type_string&.each_char do |char|
             if char == '='
               #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0

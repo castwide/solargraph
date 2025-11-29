@@ -17,7 +17,7 @@ module Solargraph
       # Generate the data.
       #
       # @param source [Source]
-      # @return [Array(Array<Solargraph::Pin::Base>, Array<Solargraph::LocalVariable>)]
+      # @return [Array]
       def map source
         @source = source
         @filename = source.filename
@@ -46,7 +46,7 @@ module Solargraph
 
       class << self
         # @param source [Source]
-        # @return [Array(Array<Solargraph::Pin::Base>, Array<Solargraph::LocalVariable>)]
+        # @return [Array]
         def map source
           return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source
@@ -119,8 +119,6 @@ module Solargraph
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
-            # @sg-ignore Variable type could not be inferred for method_gen_pins
-            # @type [Array<Solargraph::Pin::Base>]
             method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last
             return if gen_pin.nil?
@@ -138,7 +136,6 @@ module Solargraph
         when 'attribute'
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
-          # @type [String, nil]
           t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
@@ -171,6 +168,7 @@ module Solargraph
             end
           end
         when 'visibility'
+
             kind = directive.tag.text&.to_sym
             # @sg-ignore Need to look at Tuple#include? handling
             return unless [:private, :protected, :public].include?(kind)
@@ -217,10 +215,10 @@ module Solargraph
           end
         when 'domain'
           namespace = closure_at(source_position) || Pin::ROOT_PIN
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Should handle redefinition of types in simple contexts
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
-          # @sg-ignore Need to add a nil check here
+          # @sg-ignore Need to add nil check here
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags,
                                                  source: :source_map)
         when 'macro'
@@ -240,7 +238,6 @@ module Solargraph
       # @return [String]
       def remove_inline_comment_hashes comment
         ctxt = ''
-        # @type [Integer, nil]
         num = nil
         started = false
         comment.lines.each { |l|
@@ -265,6 +262,7 @@ module Solargraph
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
           src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)
+          # @sg-ignore Need to add nil check here
           com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end

@@ -288,7 +288,9 @@ module Solargraph
     # @return [void]
     def inner_folding_ranges top, result = [], parent = nil
       return unless Parser.is_ast_node?(top)
+      # @sg-ignore Translate to something flow sensitive typing understands
       if FOLDING_NODE_TYPES.include?(top.type)
+        # @sg-ignore Translate to something flow sensitive typing understands
         range = Range.from_node(top)
         # @sg-ignore Need to add nil check here
         if result.empty? || range.start.line > result.last.start.line
@@ -296,6 +298,7 @@ module Solargraph
           result.push range unless range.ending.line - range.start.line < 2
         end
       end
+      # @sg-ignore Translate to something flow sensitive typing understands
       top.children.each do |child|
         inner_folding_ranges(child, result, top.type)
       end
@@ -368,9 +371,11 @@ module Solargraph
     def string_nodes_in n
       result = []
       if Parser.is_ast_node?(n)
+        # @sg-ignore Translate to something flow sensitive typing understands
         if n.type == :str || n.type == :dstr || n.type == :STR || n.type == :DSTR
           result.push n
         else
+          # @sg-ignore Translate to something flow sensitive typing understands
           n.children.each{ |c| result.concat string_nodes_in(c) }
         end
       end
