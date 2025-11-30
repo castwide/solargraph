@@ -74,8 +74,7 @@ module Solargraph
       #
       # @todo 35: flow sensitive typing needs to handle attrs
       # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
-      # @todo 14: flow sensitive typing needs to handle ivars
-      # Should handle redefinition of types in simple contexts
+      # @todo 12: Should handle redefinition of types in simple contexts
       # @todo 6: need boolish support for ? methods
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 4: flow sensitive typing needs better handling of ||= on lvars
