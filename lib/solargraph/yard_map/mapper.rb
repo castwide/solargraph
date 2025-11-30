@@ -39,13 +39,17 @@ module Solargraph
           nspin = ToNamespace.make(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
           @namespace_pins[code_object.path] = nspin
           result.push nspin
+          # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
           if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
             # This method of superclass detection is a bit of a hack. If
             # the superclass is a Proxy, it is assumed to be undefined in its
             # yardoc and converted to a fully qualified namespace.
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               "::#{code_object.superclass}"
             else
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               code_object.superclass.to_s
             end
             result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin, source: :yard_map)

@@ -45,6 +45,16 @@ module Solargraph
         super(other, new_attrs.merge(attrs))
       end
 
+      def combine_return_type(other)
+        out = super
+        if out&.undefined?
+          # allow our return_type method to provide a better type
+          # using :param tag
+          out = nil
+        end
+        out
+      end
+
       def keyword?
         [:kwarg, :kwoptarg].include?(decl)
       end
@@ -183,12 +193,15 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
+        new_type = super
+        return new_type if new_type.defined?
+
         # sniff based on param tags
         new_type = closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
 
-        return adjust_type api_map, new_type if new_type.defined?
+        return adjust_type api_map, new_type.self_to_type(full_context) if new_type.defined?
 
-        adjust_type api_map, super
+        adjust_type api_map, super.self_to_type(full_context)
       end
 
       # @param atype [ComplexType]
@@ -270,8 +283,12 @@ module Solargraph
       #
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
+        # This should actually be an intersection type
+        # @param ref [YARD::Tags::Tag, Solargraph::Yard::Tags::RefTag]
         heredoc.ref_tags.each do |ref|
+          # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'param' && ref.owner
+          # @todo ref should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map, skip)
           return result unless result.nil?
         end

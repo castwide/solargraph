@@ -278,6 +278,7 @@ module Solargraph
       def assert_same_macros(other)
         return unless self.source == :yardoc && other.source == :yardoc
         assert_same_count(other, :macros)
+        # @param [YARD::Tags::MacroDirective]
         assert_same_array_content(other, :macros) { |macro| macro.tag.name }
       end
 
@@ -380,8 +381,11 @@ module Solargraph
           [
             # maximize number of gates, as types in other combined pins may
             # depend on those gates
+
+            # @sg-ignore Need better handling of #compact
             closure.gates.length,
             # use basename so that results don't vary system to system
+            # @sg-ignore Need better handling of #compact
             File.basename(closure.best_location.to_s)
           ]
         end
@@ -476,12 +480,16 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         self.class == other.class &&
+          # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
           # @sg-ignore flow sensitive typing needs to handle attrs
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
+          # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
+            # @sg-ignore Translate to something flow sensitive typing understands
             (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives, other.directives)) &&
-            compare_docstring_tags(docstring, other.docstring))
+             # @sg-ignore Translate to something flow sensitive typing understands
+             compare_docstring_tags(docstring, other.docstring))
           )
       end
 
@@ -491,6 +499,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
+        # @sg-ignore Should add more explicit type check on other
         comments == other.comments && location == other.location
       end
 

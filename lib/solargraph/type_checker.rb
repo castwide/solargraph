@@ -217,7 +217,6 @@ module Solargraph
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
-          # @sg-ignore Need typed hashes
           # @type [ComplexType]
           type = data[:qualified]
           if type.undefined?
@@ -241,7 +240,7 @@ module Solargraph
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
-          if declared.defined?
+          if declared.defined? && pin.assignment
             if rules.validate_tags?
               inferred = pin.probe(api_map)
               if inferred.undefined?
@@ -262,7 +261,7 @@ module Solargraph
           elsif !pin.is_a?(Pin::Parameter) && !resolved_constant?(pin)
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
-        else
+        elsif pin.assignment
           inferred = pin.probe(api_map)
           if inferred.undefined? && declared_externally?(pin)
             ignored_pins.push pin
@@ -423,9 +422,7 @@ module Solargraph
     # @param location [Location]
     # @param locals [Array<Pin::LocalVariable>]
     # @param closure_pin [Pin::Closure]
-    # @sg-ignore Unresolved type Hash{String => undefined] for params
-    #   param on Solargraph::TypeChecker#signature_argument_problems_for
-    # @param params [Hash{String => undefined]
+    # @param params [Hash{String => undefined}]
     # @param arguments [Array<Source::Chain>]
     # @param sig [Pin::Signature]
     # @param pin [Pin::Method]
@@ -680,8 +677,10 @@ module Solargraph
 
     # @param pin [Pin::BaseVariable]
     def declared_externally? pin
-      return true if pin.assignment.nil?
+      raise "No assignment found" if pin.assignment.nil?
+
       chain = Solargraph::Parser.chain(pin.assignment, filename)
+      # @sg-ignore flow sensitive typing needs to handle attrs
       rng = Solargraph::Range.from_node(pin.assignment)
       # @sg-ignore Need to add nil check here
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
@@ -819,11 +818,15 @@ module Solargraph
       args = []
       with_opts = false
       with_block = false
+      # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
+        # @sg-ignore Should handle redefinition of types in simple contexts
         if [:kwarg, :kwoptarg, :kwrestarg].include?(pin.decl)
           with_opts = true
+        # @sg-ignore Should handle redefinition of types in simple contexts
         elsif pin.decl == :block
           with_block = true
+        # @sg-ignore Should handle redefinition of types in simple contexts
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else
@@ -845,6 +848,7 @@ module Solargraph
     # @return [Set<Integer>]
     def all_sg_ignore_lines
       source.associated_comments.select do |_line, text|
+        # @sg-ignore Need to add nil check here
         text.include?('@sg-ignore')
       end.keys.to_set
     end

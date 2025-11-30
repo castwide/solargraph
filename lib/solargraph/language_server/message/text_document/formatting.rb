@@ -18,6 +18,7 @@ module Solargraph
 
             require_rubocop(config['version'])
             options, paths = ::RuboCop::Options.new.parse(args)
+            # @sg-ignore Unresolved call to []=
             options[:stdin] = original
 
             # Ensure only one instance of RuboCop::Runner is running at
@@ -28,6 +29,7 @@ module Solargraph
                 ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
               end
             end
+            # @sg-ignore Unresolved call to []=
             result = options[:stdin]
 
             log_corrections(corrections)

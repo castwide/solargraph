@@ -179,8 +179,6 @@ jobs:
         # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
         rubygems: latest
         bundler: latest
-        # https://github.com/castwide/solargraph/actions/runs/19410641794/job/55531497679?pr=1123
-        rubygems: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
