@@ -36,7 +36,6 @@ module Solargraph
     end
     alias required requires
 
-    # @sg-ignore Translate to something flow sensitive typing understands
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
       if @uncached_gemspecs.nil?
