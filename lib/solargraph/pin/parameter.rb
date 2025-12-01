@@ -136,7 +136,7 @@ module Solargraph
       end
 
       def reset_generated!
-        @return_type = nil
+        @return_type = nil if param_tag
         super
       end
 
