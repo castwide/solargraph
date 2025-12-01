@@ -135,6 +135,11 @@ module Solargraph
                     end
       end
 
+      def reset_generated!
+        @return_type = nil
+        super
+      end
+
       # @return [ComplexType]
       def return_type
         if @return_type.nil?
