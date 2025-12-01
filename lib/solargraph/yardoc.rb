@@ -35,8 +35,8 @@ module Solargraph
     end
 
     # @param gem_yardoc_path [String] the path to the yardoc cache of a particular gem
-    # @param gemspec [Gem::Specification]
-    # @param out [IO, nil] where to log messages
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [StringIO, IO, nil] where to log messages
     # @return [Array<Pin::Base>]
     def build_pins gem_yardoc_path, gemspec, out: $stderr
       yardoc = load!(gem_yardoc_path)

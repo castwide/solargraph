@@ -36,6 +36,7 @@ module Solargraph
     end
     alias required requires
 
+    # @sg-ignore Translate to something flow sensitive typing understands
     # @return [Array<Gem::Specification>]
     def uncached_gemspecs
       if @uncached_gemspecs.nil?
@@ -66,7 +67,7 @@ module Solargraph
     end
 
     # Cache all pins needed for the sources in this doc_map
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     # @return [void]
     def cache_doc_map_gems! out
       unless uncached_gemspecs.empty?
@@ -109,7 +110,7 @@ module Solargraph
     #
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     #
     # @return [void]
     def cache gemspec, rebuild: false, out: nil
@@ -235,6 +236,7 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec, out: nil
       # @param spec [Gem::Dependency]
+      # @param deps [Set<Gem::Specification>]
       only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
         dep = Gem.loaded_specs[spec.name]

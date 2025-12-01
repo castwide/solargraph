@@ -43,7 +43,7 @@ module Solargraph
     CACHE_KEY_STDLIB = 'stdlib'
     CACHE_KEY_LOCAL = 'local'
 
-    # @param cache_key [String]
+    # @param cache_key [String, nil]
     # @return [String, nil] a description of the source of the RBS info
     def self.rbs_source_desc cache_key
       case cache_key

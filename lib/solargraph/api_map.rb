@@ -30,7 +30,7 @@ module Solargraph
       index pins
     end
 
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     # @return [void]
     def self.reset_core out: nil
       @@core_map = RbsMap::CoreMap.new
@@ -136,7 +136,7 @@ module Solargraph
       @@core_map.pins
     end
 
-    # @param name [String]
+    # @param name [String, nil]
     # @return [YARD::Tags::MacroDirective, nil]
     def named_macro name
       store.named_macros[name]
@@ -186,7 +186,7 @@ module Solargraph
       api_map
     end
 
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_all_for_doc_map! out
       @doc_map.cache_doc_map_gems!(out)
@@ -209,7 +209,7 @@ module Solargraph
     #
     #
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, StringIO, nil] The output stream for messages
     #
     # @return [ApiMap]
     def self.load_with_cache directory, out = $stderr
