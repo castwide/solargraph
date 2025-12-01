@@ -71,7 +71,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     #
     # @return [void]
@@ -80,7 +80,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     #
     # @return [void]
     def uncache_gem gemspec, out: nil

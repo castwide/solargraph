@@ -22,7 +22,7 @@ module Solargraph
         @pins = cache_core(out: out)
       end
 
-      # @param out [IO, nil] output stream for logging
+      # @param out [StringIO, IO, nil] output stream for logging
       # @return [Array<Pin::Base>]
       def cache_core out: $stderr
         new_pins = []
