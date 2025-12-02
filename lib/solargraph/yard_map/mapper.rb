@@ -39,10 +39,11 @@ module Solargraph
           @namespace_pins[code_object.path] = nspin
           result.push nspin
           if code_object.is_a?(YARD::CodeObjects::ClassObject) and !code_object.superclass.nil?
-            # This method of superclass detection is a bit of a hack. If
-            # the superclass is a Proxy, it is assumed to be undefined in its
-            # yardoc and converted to a fully qualified namespace.
-            superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
+            # This method of superclass detection is a bit of a
+            # hack. If the superclass is a Proxy that can't be
+            # resolved', it is assumed to be undefined in its yardoc
+            # and converted to a fully qualified namespace.
+            superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy) && code_object.type == :proxy
               "::#{code_object.superclass}"
             else
               code_object.superclass.to_s

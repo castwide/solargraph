@@ -205,7 +205,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         block_pin = closure
-        if block_pin.is_a?(Pin::Block) && block_pin.receiver
+        if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
           return block_pin.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED
