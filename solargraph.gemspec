@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'ast', '~> 2.4.3'
   s.add_runtime_dependency 'backport', '~> 1.2'
   s.add_runtime_dependency 'benchmark', '~> 0.4'
-  s.add_runtime_dependency 'bundler', '~> 2.0'
+  s.add_runtime_dependency 'bundler', '>= 2.0'
   s.add_runtime_dependency 'diff-lcs', '~> 1.4'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.6', '>= 1.6.1'
   s.add_runtime_dependency 'kramdown', '~> 2.3'
