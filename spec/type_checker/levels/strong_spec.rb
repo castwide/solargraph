@@ -4,6 +4,21 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'provides nil checking on calls from parameters without assignments' do
+      pending('https://github.com/castwide/solargraph/pull/1127')
+
+      checker = type_checker(%(
+        # @param baz [String, nil]
+        #
+        # @return [String]
+        def quux(baz)
+          baz.upcase # ERROR: Unresolved call to upcase on String, nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+                                                     'Unresolved call to upcase on String, nil'])
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index
@@ -95,6 +110,29 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
+    end
+
+    it 'understands complex use of other' do
+      checker = type_checker(%(
+        class A
+          # @param other [self]
+          #
+          # @return [void]
+          def foo other; end
+
+          # @param other [self]
+          #
+          # @return [void]
+          def bar(other); end
+        end
+
+        class B < A
+          def bar(other)
+            foo(other)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'calls out type issues even when keyword issues are there' do
