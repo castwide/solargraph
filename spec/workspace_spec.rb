@@ -122,6 +122,7 @@ describe Solargraph::Workspace do
   end
 
   it 'ignores gemspecs in excluded directories' do
+    # vendor/**/* is excluded by default
     workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
     expect(workspace.require_paths).to eq([File.absolute_path('spec/fixtures/vendored/lib')])
   end
