@@ -32,6 +32,8 @@ jobs:
           # Missing require in 'rbs collection update' - hopefully
           # fixed in next RBS release
           - ruby-version: '4.0'
+            rbs-version: '3.6.1'
+          - ruby-version: '4.0'
             rbs-version: '4.0.0.dev.4'
     steps:
     - uses: actions/checkout@v3
