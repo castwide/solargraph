@@ -119,6 +119,7 @@ module Solargraph
           result
         end
 
+        # @sg-ignore Wrong argument type for AST::Node.new: type expected AST::_ToSym, received :nil
         NIL_NODE = ::Parser::AST::Node.new(:nil)
 
         # @param node [Parser::AST::Node]
