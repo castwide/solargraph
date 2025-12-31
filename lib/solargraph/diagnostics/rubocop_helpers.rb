@@ -24,7 +24,6 @@ module Solargraph
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - "\
-                \ # @sg-ignore Unresolved call to version on String
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
