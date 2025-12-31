@@ -24,7 +24,6 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1050

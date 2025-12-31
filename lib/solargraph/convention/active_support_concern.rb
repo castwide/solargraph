@@ -80,7 +80,7 @@ module Solargraph
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "Handling class include include_tag=#{include_tag}"
           end
-          module_extends = api_map.get_extends(rooted_include_tag).map(&:parametrized_tag).map(&:to_s)
+          module_extends = api_map.get_extends(rooted_include_tag).map(&:type).map(&:to_s)
           logger.debug do
             "ActiveSupportConcern#object(#{fqns}, #{scope}, #{visibility}, #{deep}) - " \
               "found module extends of #{rooted_include_tag}: #{module_extends}"
