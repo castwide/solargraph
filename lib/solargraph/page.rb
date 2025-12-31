@@ -27,7 +27,6 @@ module Solargraph
       end
 
       # @param text [String]
-      # @sg-ignore https://github.com/lsegal/yard/pull/1615
       # @return [String]
       def htmlify text
         # @type [String]
