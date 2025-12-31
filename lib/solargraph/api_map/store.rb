@@ -17,7 +17,7 @@ module Solargraph
         index.pins
       end
 
-      # @param pinsets [Array<Enumerable<Pin::Base>>]
+      # @param pinsets [Array<Array<Pin::Base>>]
       #   - pinsets[0] = core Ruby pins
       #   - pinsets[1] = documentation/gem pins
       #   - pinsets[2] = convention pins
@@ -57,9 +57,10 @@ module Solargraph
 
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
+          # @sg-ignore flow-sensitive typing not smart enough to handle this case
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         }
       end
@@ -70,6 +71,7 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         all_pins = namespace_children(fqns).select do |pin|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
         GemPins.combine_method_pins_by_path(all_pins)
@@ -97,7 +99,7 @@ module Solargraph
         return unless ref
         res = constants.dereference(ref)
         return unless res
-        res + type.substring
+        res
       end
 
       # @param fqns [String]
@@ -134,7 +136,8 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @return [Enumerable<Solargraph::Pin::Base>]
+      #
+      # @return [Enumerable<Solargraph::Pin::ClassVariable>]
       def get_class_variables(fqns)
         namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
       end
@@ -148,11 +151,6 @@ module Solargraph
       # @return [Boolean]
       def namespace_exists?(fqns)
         fqns_pins(fqns).any?
-      end
-
-      # @return [Set<String>]
-      def namespaces
-        index.namespaces
       end
 
       # @return [Enumerable<Solargraph::Pin::Namespace>]
@@ -244,7 +242,8 @@ module Solargraph
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
             next if refs.nil?
-            refs.map(&:parametrized_tag).map(&:to_s).each do |ref|
+            # @param ref [String]
+            refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
               queue << ref
@@ -255,6 +254,9 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      # @param fqns [String]
+      #
+      # @return [Array<Solargraph::Pin::Reference>]
       def get_ancestor_references(fqns)
         (get_prepends(fqns) + get_includes(fqns) + [get_superclass(fqns)]).compact
       end
@@ -271,8 +273,9 @@ module Solargraph
         @indexes.last
       end
 
-      # @param pinsets [Array<Enumerable<Pin::Base>>]
-      # @return [Boolean]
+      # @param pinsets [Array<Array<Pin::Base>>]
+      #
+      # @return [void]
       def catalog pinsets
         @pinsets = pinsets
         # @type [Array<Index>]
@@ -291,6 +294,9 @@ module Solargraph
 
       # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
+        # @param h [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
+        # @param base [String]
+        # @param name [String]
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
           value = namespace_children(base).select { |pin| pin.name == name && pin.is_a?(Pin::Namespace) }
           h[[base, name]] = value

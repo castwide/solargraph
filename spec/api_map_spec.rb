@@ -1,7 +1,6 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
-  # rubocop:disable RSpec/InstanceVariable
   before :all do
     @api_map = Solargraph::ApiMap.new
   end
@@ -880,6 +879,4 @@ describe Solargraph::ApiMap do
     clip = api_map.clip_at('test.rb', [18, 4])
     expect(clip.infer.to_s).to eq('Integer')
   end
-
-  # rubocop:enable RSpec/InstanceVariable
 end

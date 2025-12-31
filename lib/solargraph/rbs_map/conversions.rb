@@ -65,6 +65,7 @@ module Solargraph
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
@@ -426,6 +427,7 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [void]
       def method_def_to_sigs decl, pin
+        # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
@@ -466,33 +468,50 @@ module Solargraph
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
+          # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
+          # @sg-ignore RBS generic type understanding issue
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted, source: :rbs, type_location: type_location)
         end
         type.type.optional_positionals.each do |param|
+          # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
                                                          type_location: type_location,
                                                          source: :rbs)
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin, source: :rbs, type_location: type_location)
+          inner_rest_positional_type =
+            ComplexType.try_parse(other_type_to_tag(type.type.rest_positionals.type))
+          rest_positional_type = ComplexType::UniqueType.new('Array',
+                                                             [],
+                                                             [inner_rest_positional_type],
+                                                             rooted: true, parameters_type: :list)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin,
+                                                         source: :rbs, type_location: type_location,
+                                                         return_type: rest_positional_type,)
         end
         type.type.trailing_positionals.each do |param|
+          # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, source: :rbs, type_location: type_location)
         end
         type.type.required_keywords.each do |orig, param|
+          # @sg-ignore RBS generic type understanding issue
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
                                                          source: :rbs, type_location: type_location)
         end
         type.type.optional_keywords.each do |orig, param|
+          # @sg-ignore RBS generic type understanding issue
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
                                                          type_location: type_location,
                                                          source: :rbs)
@@ -784,7 +803,9 @@ module Solargraph
       # @param namespace [Pin::Namespace]
       # @return [void]
       def add_mixins decl, namespace
+        # @param mixin [RBS::AST::Members::Include, RBS::AST::Members::Members::Extend, RBS::AST::Members::Members::Prepend]
         decl.each_mixin do |mixin|
+          # @todo are we handling prepend correctly?
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
           type = build_type(mixin.name, mixin.args)
           generic_values = type.all_params.map(&:to_s)

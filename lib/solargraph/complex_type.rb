@@ -105,6 +105,21 @@ module Solargraph
       any? { |ut| ut.can_assign?(api_map, atype) }
     end
 
+    # @param new_name [String, nil]
+    # @param make_rooted [Boolean, nil]
+    # @param new_key_types [Array<ComplexType>, nil]
+    # @param rooted [Boolean, nil]
+    # @param new_subtypes [Array<ComplexType>, nil]
+    # @return [self]
+    def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
+      ComplexType.new(map do |ut|
+                        ut.recreate(new_name: new_name,
+                                    make_rooted: make_rooted,
+                                    new_key_types: new_key_types,
+                                    new_subtypes: new_subtypes)
+                      end)
+    end
+
     # @return [Integer]
     def length
       @items.length
@@ -246,6 +261,7 @@ module Solargraph
     def reduce_class_type
       new_items = items.flat_map do |type|
         next type unless ['Module', 'Class'].include?(type.name)
+        next type if type.all_params.empty?
 
         type.all_params
       end
@@ -323,6 +339,7 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
+          # @param char [String]
           type_string&.each_char do |char|
             if char == '='
               #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0

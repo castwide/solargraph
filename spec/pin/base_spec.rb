@@ -48,4 +48,17 @@ describe Solargraph::Pin::Base do
     pin = Solargraph::Pin::Base.new(name: 'Foo', comments: '@return [undefined]')
     expect(pin.link_documentation).to eq('Foo')
   end
+
+  it 'deals well with known closure combination issue' do
+    Solargraph::Shell.new.uncache('yard')
+    api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+    pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
+    expect(pins.length).to eq(1)
+    parser_method_pin = pins.first
+    return_type = parser_method_pin.typify(api_map)
+    expect(parser_method_pin.closure.name).to eq("Docstring")
+    expect(parser_method_pin.closure.gates).to eq(["YARD::Docstring", "YARD", ''])
+    expect(return_type).to be_defined
+    expect(parser_method_pin.typify(api_map).rooted_tags).to eq('::YARD::DocstringParser')
+  end
 end

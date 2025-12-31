@@ -19,11 +19,17 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String]
+    # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = directory
+      raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
+
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
@@ -112,23 +118,6 @@ module Solargraph
         return true if File.file?(full) || File.file?(full << ".rb")
       end
       false
-    end
-
-    # True if the workspace contains at least one gemspec file.
-    #
-    # @return [Boolean]
-    def gemspec?
-      !gemspecs.empty?
-    end
-
-    # Get an array of all gemspec files in the workspace.
-    #
-    # @return [Array<String>]
-    def gemspecs
-      return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
-        config.allow? gs
-      end
     end
 
     # @return [String, nil]

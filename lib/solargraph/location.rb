@@ -71,6 +71,7 @@ module Solargraph
     # @param other [BasicObject]
     def == other
       return false unless other.is_a?(Location)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       filename == other.filename and range == other.range
     end
 

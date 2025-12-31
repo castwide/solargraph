@@ -36,15 +36,12 @@ module Solargraph
                 process_autoload
               elsif method_name == :private_constant
                 process_private_constant
-              # @sg-ignore
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
-              # @sg-ignore
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
-            # @sg-ignore
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
               pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser)
             end
@@ -66,7 +63,7 @@ module Solargraph
                   return process_children
                 end
                 # :nocov:
-                if child.is_a?(AST::Node) && (child.type == :sym || child.type == :str)
+                if child.is_a?(::Parser::AST::Node) && (child.type == :sym || child.type == :str)
                   name = child.children[0].to_s
                   matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
                   matches.each do |pin|
@@ -198,7 +195,7 @@ module Solargraph
             elsif node.children[2].type == :sym || node.children[2].type == :str
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
-                # @type [Pin::Method]
+                # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 unless ref.nil?
                   pins.delete ref
@@ -231,6 +228,7 @@ module Solargraph
                       closure: cm,
                       name: ivar.name,
                       comments: ivar.comments,
+                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )
@@ -239,6 +237,7 @@ module Solargraph
                       closure: mm,
                       name: ivar.name,
                       comments: ivar.comments,
+                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )

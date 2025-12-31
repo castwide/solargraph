@@ -128,7 +128,7 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Hash{Array(String, String) => Array<Gem::Specification>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_yard_gems_in_memory
       @yard_gems_in_memory ||= {}
     end
@@ -177,10 +177,10 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
-      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String, Array<Gem::Specification>), undefined>, received Array<Array(String, Array<Gem::Specification>)>
+      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -212,7 +212,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Base>, nil]
     def deserialize_yard_pin_cache gemspec
       if yard_pins_in_memory.key?([gemspec.name, gemspec.version])
         return yard_pins_in_memory[[gemspec.name, gemspec.version]]
@@ -359,13 +359,16 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec
       # @param spec [Gem::Dependency]
+      # @param deps [Set<Gem::Specification>]
       only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
         dep = Gem.loaded_specs[spec.name]
         # @todo is next line necessary?
+        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
+        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
       end.to_a
     end
@@ -381,7 +384,7 @@ module Solargraph
       self.class.inspect
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_bundler
       # @todo Handle projects with custom Bundler/Gemfile setups
       return unless workspace.gemfile?
@@ -404,7 +407,7 @@ module Solargraph
       end
     end
 
-    # @return [Array<Gem::Specification>]
+    # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_external_bundle
       logger.info 'Fetching gemspecs required from external bundle'
       return [] unless workspace&.directory
