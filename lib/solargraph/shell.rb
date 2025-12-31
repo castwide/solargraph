@@ -79,6 +79,7 @@ module Solargraph
           conf['extensions'].push m
         end
       end
+      # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
@@ -241,6 +242,63 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
+    desc 'pin [PATH]', 'Describe a pin', hide: true
+    option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
+    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
+    option :references, type: :boolean, desc: 'Show references', default: false
+    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
+    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
+    # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
+    # @return [void]
+    def pin path
+      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+      is_method = path.include?('#') || path.include?('.')
+      if is_method && options[:stack]
+        scope, ns, meth = if path.include? '#'
+                            [:instance, *path.split('#', 2)]
+                          else
+                            [:class, *path.split('.', 2)]
+                          end
+
+        # @sg-ignore Wrong argument type for
+        #   Solargraph::ApiMap#get_method_stack: rooted_tag
+        #   expected String, received Array<String>
+        pins = api_map.get_method_stack(ns, meth, scope: scope)
+      else
+        pins = api_map.get_path_pins path
+      end
+      # @type [Hash{Symbol => Pin::Base}]
+      references = {}
+      pin = pins.first
+      case pin
+      when nil
+        $stderr.puts "Pin not found for path '#{path}'"
+        exit 1
+      when Pin::Namespace
+        if options[:references]
+          superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
+          superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
+          references[:superclass] = superclass_pin if superclass_pin
+        end
+      end
+
+      pins.each do |pin|
+        if options[:typify] || options[:probe]
+          type = ComplexType::UNDEFINED
+          type = pin.typify(api_map) if options[:typify]
+          type = pin.probe(api_map) if options[:probe] && type.undefined?
+          print_type(type)
+          next
+        end
+
+        print_pin(pin)
+      end
+      references.each do |key, refpin|
+        puts "\n# #{key.to_s.capitalize}:\n\n"
+        print_pin(refpin)
+      end
+    end
+
     private
 
     # @param pin [Solargraph::Pin::Base]
@@ -266,6 +324,26 @@ module Solargraph
       # @todo if the rebuild: option is passed as a positional arg,
       #   typecheck doesn't complain on the below line
       api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+    end
+
+    # @param type [ComplexType]
+    # @return [void]
+    def print_type(type)
+      if options[:rbs]
+        puts type.to_rbs
+      else
+        puts type.rooted_tag
+      end
+    end
+
+    # @param pin [Solargraph::Pin::Base]
+    # @return [void]
+    def print_pin(pin)
+      if options[:rbs]
+        puts pin.to_rbs
+      else
+        puts pin.inspect
+      end
     end
   end
 end

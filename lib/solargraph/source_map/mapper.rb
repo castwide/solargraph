@@ -70,7 +70,6 @@ module Solargraph
       # @param comment [String]
       # @return [void]
       def process_comment source_position, comment_position, comment
-        # @sg-ignore Wrong argument type for String#=~: object expected String::_MatchAgainst<String, undefined>, received Regexp
         return unless comment.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         cmnt = remove_inline_comment_hashes(comment)
         parse = Solargraph::Source.parse_docstring(cmnt)
@@ -245,7 +244,6 @@ module Solargraph
 
       # @return [void]
       def process_comment_directives
-        # @sg-ignore Wrong argument type for String#=~: object expected String::_MatchAgainst<String, undefined>, received Regexp
         return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|

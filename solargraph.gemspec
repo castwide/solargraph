@@ -2,6 +2,7 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/lib'
 require 'solargraph/version'
 require 'date'
 
+# @param s [Gem::Specification]
 Gem::Specification.new do |s|
   s.name        = 'solargraph'
   s.version     = Solargraph::VERSION
@@ -23,13 +24,14 @@ Gem::Specification.new do |s|
   s.metadata["bug_tracker_uri"] = "https://github.com/castwide/solargraph/issues"
   s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
   s.metadata["source_code_uri"] = "https://github.com/castwide/solargraph"
+  s.metadata["rubygems_mfa_required"] = "true"
 
   s.required_ruby_version = '>= 3.0'
 
   s.add_runtime_dependency 'ast', '~> 2.4.3'
   s.add_runtime_dependency 'backport', '~> 1.2'
   s.add_runtime_dependency 'benchmark', '~> 0.4'
-  s.add_runtime_dependency 'bundler', '~> 2.0'
+  s.add_runtime_dependency 'bundler', '>= 2.0'
   s.add_runtime_dependency 'diff-lcs', '~> 1.4'
   s.add_runtime_dependency 'jaro_winkler', '~> 1.6', '>= 1.6.1'
   s.add_runtime_dependency 'kramdown', '~> 2.3'
