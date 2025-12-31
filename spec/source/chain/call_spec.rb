@@ -627,4 +627,41 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [3, 8])
     expect(clip.infer.rooted_tags).to eq('::String')
   end
+
+  it 'sends proper gates in ProxyType' do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        module Bar
+          class Symbol
+          end
+        end
+      end
+
+      module Foo
+        module Baz
+          class Quux
+            # @return [void]
+            def foo
+              s = objects_by_class(Bar::Symbol)
+              s
+            end
+
+            # @generic T
+            # @param klass [Class<generic<T>>]
+            # @return [Set<generic<T>>]
+            def objects_by_class klass
+              # @type [Set<generic<T>>]
+              s = Set.new
+              s
+            end
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    clip = api_map.clip_at('test.rb', [14, 14])
+    expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
+  end
 end
