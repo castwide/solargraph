@@ -202,7 +202,7 @@ module Solargraph
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
-          if declared.defined?
+          if declared.defined? && pin.assignment
             if rules.validate_tags?
               inferred = pin.probe(api_map)
               if inferred.undefined?
@@ -223,7 +223,7 @@ module Solargraph
           elsif !pin.is_a?(Pin::Parameter) && !resolved_constant?(pin)
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)
           end
-        else
+        elsif pin.assignment
           inferred = pin.probe(api_map)
           if inferred.undefined? && declared_externally?(pin)
             ignored_pins.push pin
@@ -427,6 +427,7 @@ module Solargraph
             # @todo Some level (strong, I guess) should require the param here
             else
               argtype = argchain.infer(api_map, closure_pin, locals)
+              argtype = argtype.self_to_type(closure_pin.context)
               if argtype.defined? && ptype.defined? && !any_types_match?(api_map, ptype, argtype)
                 errors.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
                 return errors
@@ -466,8 +467,11 @@ module Solargraph
             # @todo Some level (strong, I guess) should require the param here
           else
             ptype = data[:qualified]
+            ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              argtype = argchain.infer(api_map, closure_pin, locals)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
+              argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
+              # @sg-ignore Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
@@ -493,7 +497,9 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
         ptype = params[pname.to_s][:qualified]
+        ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, closure_pin, locals)
+        argtype = argtype.self_to_type(closure_pin.context)
         if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
           result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
         end
@@ -611,7 +617,8 @@ module Solargraph
 
     # @param pin [Pin::BaseVariable]
     def declared_externally? pin
-      return true if pin.assignment.nil?
+      raise "No assignment found" if pin.assignment.nil?
+
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       rng = Solargraph::Range.from_node(pin.assignment)
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)

@@ -43,6 +43,10 @@ module Solargraph
         @rooted_tag ||= rooted_name + rooted_substring
       end
 
+      def interface?
+        name.start_with?('_')
+      end
+
       # @return [Boolean]
       def duck_type?
         @duck_type ||= name.start_with?('#')
@@ -190,6 +194,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless self.class == other.class
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         tag == other.tag
       end
 
