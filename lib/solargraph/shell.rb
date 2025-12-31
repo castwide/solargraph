@@ -79,6 +79,7 @@ module Solargraph
           conf['extensions'].push m
         end
       end
+      # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
@@ -266,6 +267,7 @@ module Solargraph
       else
         pins = api_map.get_path_pins path
       end
+      # @type [Hash{Symbol => Pin::Base}]
       references = {}
       pin = pins.first
       case pin
