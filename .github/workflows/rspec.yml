@@ -40,13 +40,13 @@ jobs:
           - ruby-version: '3.4'
           # only include the 4.0 variants we include later
           - ruby-version: '4.0'
-          # Missing require in 'rbs collection update' - hopefully
-          # fixed in next RBS release
           - ruby-version: '4.0'
             rbs-version: '4.0.0.dev.4'
           - ruby-version: 'head'
             rbs-version: '3.9.4'
-          - ruby-version: 'head'
+          # Missing require in 'rbs collection update' - hopefully
+          # fixed in next RBS release
+          - ruby-version: '4.0'
             rbs-version: '3.6.1'
         include:
           - ruby-version: '3.1'
