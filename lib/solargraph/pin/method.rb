@@ -538,7 +538,7 @@ module Solargraph
         docstring.ref_tags.each do |ref|
           # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'return' && ref.owner
-          # @sg-ignore ref should actually be an intersection type
+          # @todo ref should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map)
           return result unless result.nil?
         end
