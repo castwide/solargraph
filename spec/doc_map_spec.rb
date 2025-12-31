@@ -75,7 +75,6 @@ describe Solargraph::DocMap do
         Solargraph::Environ.new(
           requires: ['convention_gem1', 'convention_gem2']
         )
->>>>>>> origin/master
       end
     end
 
