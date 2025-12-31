@@ -79,6 +79,7 @@ module Solargraph
           conf['extensions'].push m
         end
       end
+      # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
@@ -241,24 +242,17 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
-    # @sg-ignore Unresolved call to desc
     desc 'pin [PATH]', 'Describe a pin', hide: true
-    # @sg-ignore Unresolved call to option
     option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
-    # @sg-ignore Unresolved call to option
     option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
-    # @sg-ignore Unresolved call to option
     option :references, type: :boolean, desc: 'Show references', default: false
-    # @sg-ignore Unresolved call to option
     option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
-    # @sg-ignore Unresolved call to option
     option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
       is_method = path.include?('#') || path.include?('.')
-      # @sg-ignore Unresolved call to options
       if is_method && options[:stack]
         scope, ns, meth = if path.include? '#'
                             [:instance, *path.split('#', 2)]
@@ -281,7 +275,6 @@ module Solargraph
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
       when Pin::Namespace
-        # @sg-ignore Unresolved call to options
         if options[:references]
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
@@ -290,12 +283,9 @@ module Solargraph
       end
 
       pins.each do |pin|
-        # @sg-ignore Unresolved call to options
         if options[:typify] || options[:probe]
           type = ComplexType::UNDEFINED
-          # @sg-ignore Unresolved call to options
           type = pin.typify(api_map) if options[:typify]
-          # @sg-ignore Unresolved call to options
           type = pin.probe(api_map) if options[:probe] && type.undefined?
           print_type(type)
           next
@@ -339,7 +329,6 @@ module Solargraph
     # @param type [ComplexType]
     # @return [void]
     def print_type(type)
-      # @sg-ignore Unresolved call to options
       if options[:rbs]
         puts type.to_rbs
       else
@@ -350,7 +339,6 @@ module Solargraph
     # @param pin [Solargraph::Pin::Base]
     # @return [void]
     def print_pin(pin)
-      # @sg-ignore Unresolved call to options
       if options[:rbs]
         puts pin.to_rbs
       else

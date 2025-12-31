@@ -21,22 +21,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', 'head']
-        rbs-version: ['3.6.1', '3.9.4', '4.0.0.dev.4']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', '4.0']
+        rbs-version: ['3.6.1', '3.9.5', '4.0.0.dev.4']
         # Ruby 3.0 doesn't work with RBS 3.9.4 or 4.0.0.dev.4
         exclude:
           - ruby-version: '3.0'
-            rbs-version: '3.9.4'
+            rbs-version: '3.9.5'
           - ruby-version: '3.0'
             rbs-version: '4.0.0.dev.4'
-          # Missing require in 'rbs collection update' - hopefully
-          # fixed in next RBS release
-          - ruby-version: 'head'
-            rbs-version: '4.0.0.dev.4'
-          - ruby-version: 'head'
-            rbs-version: '3.9.4'
-          - ruby-version: 'head'
+          - ruby-version: '4.0'
             rbs-version: '3.6.1'
+          - ruby-version: '4.0'
+            rbs-version: '4.0.0.dev.4'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby

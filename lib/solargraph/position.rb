@@ -112,6 +112,7 @@ module Solargraph
 
     def == other
       return false unless other.is_a?(Position)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       line == other.line and character == other.character
     end
   end
