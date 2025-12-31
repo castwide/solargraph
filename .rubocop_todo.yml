@@ -1156,7 +1156,6 @@ Style/StringLiterals:
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
   Exclude:
-    - 'lib/solargraph/pin/base_variable.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/signature.rb'
