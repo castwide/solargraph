@@ -96,9 +96,13 @@ module Solargraph
             # reject it regardless
 
             with_block, without_block = overloads.partition(&:block?)
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @type Array<Pin::Signature>
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
               match = true

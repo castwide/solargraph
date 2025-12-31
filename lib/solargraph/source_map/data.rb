@@ -10,6 +10,7 @@ module Solargraph
 
       # @sg-ignore Translate to something flow sensitive typing understands
       # @return [Array<Solargraph::Pin::Base>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def pins
         generate
         @pins || []

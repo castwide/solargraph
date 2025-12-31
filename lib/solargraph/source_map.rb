@@ -191,6 +191,7 @@ module Solargraph
     end
 
     # @return [Array<Pin::Base>]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1100
     def convention_pins
       @convention_pins || []
     end

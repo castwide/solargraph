@@ -366,6 +366,7 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+
       def nullable?
         nil_type?
       end

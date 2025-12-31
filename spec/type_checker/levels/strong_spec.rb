@@ -36,6 +36,23 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'understands self type when passed as parameter' do
+      checker = type_checker(%(
+        class Location
+          # @return [String]
+          attr_reader :filename
+
+          # @param other [self]
+          def <=>(other)
+            return nil unless other.is_a?(Location)
+
+            filename <=> other.filename
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'respects pin visibility in if/nil? pattern' do
       checker = type_checker(%(
         class Foo

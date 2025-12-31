@@ -112,8 +112,8 @@ module Solargraph
         source = Solargraph::Source.load_string(code, filename)
         rules = Rules.new(level)
         api_map ||= Solargraph::ApiMap.new(loose_unions:
-                                           !rules.require_all_unique_types_match_expected_on_lhs?)
         # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+                                             !rules.require_all_unique_types_match_expected_on_lhs?)
         api_map.map(source)
         new(filename, api_map: api_map, level: level, rules: rules)
       end
@@ -236,7 +236,7 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
+        # @todo Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
@@ -530,7 +530,7 @@ module Solargraph
               # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               # @type [ComplexType]
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
-              # @sg-ignore Unresolved call to defined?
+              # @todo Unresolved call to defined?
               if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
