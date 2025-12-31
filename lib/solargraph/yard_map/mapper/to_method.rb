@@ -90,6 +90,7 @@ module Solargraph
             # HACK: Skip `nil` and `self` parameters that are sometimes emitted
             # for methods defined in C
             # See https://github.com/castwide/solargraph/issues/345
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1114
             code_object.parameters.select { |a| a[0] && a[0] != 'self' }.map do |a|
               Solargraph::Pin::Parameter.new(
                 location: location,

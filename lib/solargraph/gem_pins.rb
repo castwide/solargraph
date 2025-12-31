@@ -48,6 +48,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def self.build_yard_pins(yard_plugins, gemspec)
       Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
+      return [] unless Yardoc.cached?(gemspec)
       yardoc = Yardoc.load!(gemspec)
       YardMap::Mapper.new(yardoc, gemspec).map
     end
