@@ -192,7 +192,7 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
+        # @todo Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
@@ -462,9 +462,8 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
-              # @sg-ignore Unresolved call to defined?
+              # @todo Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
