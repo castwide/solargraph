@@ -234,7 +234,7 @@ module Solargraph
     # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load_with_cache directory, out = nil, loose_unions: true
+    def self.load_with_cache directory, out = $stdout, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }

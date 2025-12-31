@@ -23,7 +23,6 @@ module Solargraph
       @range = range
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [filename, range]
     end

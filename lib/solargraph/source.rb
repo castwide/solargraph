@@ -187,7 +187,7 @@ module Solargraph
       frag.strip.gsub(/,$/, '')
     end
 
-    # @param node [Parser::AST::Node]
+    # @param node [AST::Node]
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)

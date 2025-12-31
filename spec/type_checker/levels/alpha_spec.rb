@@ -34,8 +34,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'reports nilable type issues' do
-      pending 'flow-sensitive typing improvements'
-
       checker = type_checker(%(
         # @param a [String]
         # @return [void]

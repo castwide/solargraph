@@ -56,8 +56,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'reports mismatched key and subtypes' do
-      pending 'generic typechecking improvements'
-
       checker = type_checker(%(
         # @return [Hash{String => String}]
         def foo

@@ -50,15 +50,35 @@ module Solargraph
         rank > LEVELS[:typed]
       end
 
-      def loose_unions?
-        rank < LEVELS[:alpha]
+      def require_all_unique_types_match_expected_on_lhs?
+        rank >= LEVELS[:alpha]
       end
 
       def validate_tags?
         rank > LEVELS[:normal]
       end
 
-      def require_all_return_types_match_inferred?
+      def require_inferred_type_params?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_all_unique_types_match_declared?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_no_undefined_args?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_generics_resolved?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_interfaces_resolved?
+        rank >= LEVELS[:alpha]
+      end
+
+      def require_downcasts?
         rank >= LEVELS[:alpha]
       end
 
