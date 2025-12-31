@@ -43,6 +43,7 @@ describe Solargraph::TypeChecker do
           attr_reader :filename
 
           # @param other [self]
+          # @return [-1, 0, 1, nil]
           def <=>(other)
             return nil unless other.is_a?(Location)
 
