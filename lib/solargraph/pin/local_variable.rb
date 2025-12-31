@@ -21,12 +21,10 @@ module Solargraph
 
       def combine_with(other, attrs={})
         new_attrs = {
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
