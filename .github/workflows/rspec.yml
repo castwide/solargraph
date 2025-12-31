@@ -52,7 +52,7 @@ jobs:
           - ruby-version: '3.2'
             rbs-version: '3.8.1'
           - ruby-version: '3.3'
-            rbs-version: '3.8.5'
+            rbs-version: '3.9.5'
           - ruby-version: '3.4'
             rbs-version: '3.10.0'
           - ruby-version: '3.4'
