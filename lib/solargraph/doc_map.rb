@@ -180,7 +180,6 @@ module Solargraph
       # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
-      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -359,13 +358,16 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def fetch_dependencies gemspec
       # @param spec [Gem::Dependency]
+      # @param deps [Set<Gem::Specification>]
       only_runtime_dependencies(gemspec).each_with_object(Set.new) do |spec, deps|
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
         dep = Gem.loaded_specs[spec.name]
         # @todo is next line necessary?
+        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
+        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
       end.to_a
     end
