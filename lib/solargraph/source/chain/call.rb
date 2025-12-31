@@ -71,6 +71,7 @@ module Solargraph
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             overloads = p.signatures
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
@@ -79,10 +80,15 @@ module Solargraph
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
 
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             with_block, without_block = overloads.partition(&:block?)
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @type Array<Pin::Signature>
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
               match = true
@@ -141,6 +147,7 @@ module Solargraph
               end
               break if type.defined?
             end
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?

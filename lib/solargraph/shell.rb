@@ -279,7 +279,6 @@ module Solargraph
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
       when Pin::Namespace
-        # @sg-ignore Unresolved call to options
         if options[:references]
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
