@@ -116,6 +116,7 @@ module Solargraph
         # @param runtime_dep [Gem::Dependency]
         # @param deps [Hash{String => Gem::Specification}]
         gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
+          # @sg-ignore Unresolved call to requirement on Gem::Dependency
           dep = find_gem(runtime_dep.name, runtime_dep.requirement)
           next unless dep
 
@@ -170,7 +171,7 @@ module Solargraph
                                                             end
                                                             nil
                                                           end
-                                                          # yay!
+                                                        # yay!
 
                                                         when Bundler::LazySpecification
                                                           # materializing didn't work.  Let's look in the local
@@ -180,8 +181,11 @@ module Solargraph
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification into a Gem::Specification
+                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                           specish = specish.stub
+                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                           if specish.respond_to?(:spec)
+                                                            # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                             specish.spec
                                                           else
                                                             # turn the crank again
@@ -190,8 +194,8 @@ module Solargraph
                                                         else
                                                           @@warned_on_gem_type ||= false
                                                           unless @@warned_on_gem_type
-                                                            logger.warn 'Unexpected type while resolving gem: ' \
-                                                                        "#{specish.class}"
+                                                            # @sg-ignore Unresolved call to class on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
+                                                            logger.warn "Unexpected type while resolving gem: #{specish.class}"
                                                             @@warned_on_gem_type = true
                                                           end
                                                           nil
