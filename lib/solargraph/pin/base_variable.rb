@@ -28,7 +28,6 @@ module Solargraph
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
         })
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1050
         super(other, new_attrs)
       end
 
@@ -106,6 +105,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
+        # @sg-ignore Should add type check on other
         assignment == other.assignment
       end
 
