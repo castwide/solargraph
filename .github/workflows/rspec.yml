@@ -38,8 +38,12 @@ jobs:
           # only include the 4.0 variants we include later
           - ruby-version: '4.0'
           # Don't exclude 'head' - let's test all RBS versions we
-          # can there
-
+          # can there.
+          #
+          #
+          # Just exclude some odd-ball compatibility issues we can't
+          # work around:
+          #
           # https://github.com/castwide/solargraph/actions/runs/20627923548/job/59241444380?pr=1102
           - ruby-version: 'head'
             rbs-version: '3.6.1'
@@ -56,6 +60,8 @@ jobs:
             rbs-version: '3.8.1'
           - ruby-version: '3.3'
             rbs-version: '3.9.5'
+          - ruby-version: '3.3'
+            rbs-version: '3.10.0'
           - ruby-version: '3.4'
             rbs-version: '3.10.0'
           - ruby-version: '3.4'
