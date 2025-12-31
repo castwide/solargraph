@@ -32,9 +32,6 @@ module Solargraph
 
       def combine_with(other, attrs={})
         new_attrs = {}.merge(attrs)
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::Pin::Base#assert_same: other expected
-        #   Solargraph::Pin::Base, received self
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         super(other, new_attrs)
@@ -42,12 +39,12 @@ module Solargraph
 
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
-      # @sg-ignore Need to add nil check here
+      # @todo Need to add nil check here
       def visible_at?(other_closure, other_loc)
-        # @sg-ignore Need to add nil check here
+        # @todo Need to add nil check here
         location.filename == other_loc.filename &&
           presence&.include?(other_loc.range.start) &&
-          # @sg-ignore Need to add nil check here
+          # @todo Need to add nil check here
           match_named_closure(other_closure, closure)
       end
 

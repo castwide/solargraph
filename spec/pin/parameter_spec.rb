@@ -475,8 +475,6 @@ describe Solargraph::Pin::Parameter do
     end
 
     it 'handles a relative type name case' do
-      pending 'flow-sensitive typing improvements'
-
       source = Solargraph::Source.load_string(%(
         module A
           module B

@@ -644,8 +644,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'sends proper gates in ProxyType' do
-    pending 'Proxytype improvements'
-
     source = Solargraph::Source.load_string(%(
       module Foo
         module Bar
