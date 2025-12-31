@@ -26,7 +26,7 @@ jobs:
         # Ruby 3.0 doesn't work with RBS 3.9.4 or 4.0.0.dev.4
         exclude:
           # only include the 3.0 variants we include later
-          - ruby-version: '3.1'
+          - ruby-version: '3.0'
           # only include the 3.1 variants we include later
           - ruby-version: '3.1'
           # only include the 3.2 variants we include later
