@@ -510,7 +510,7 @@ module Solargraph
       workspace.pin_cache
     end
 
-    # @return [Hash{String => Set<String>}]
+    # @return [Hash{String => Array<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
     end
