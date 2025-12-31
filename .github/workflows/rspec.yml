@@ -40,10 +40,12 @@ jobs:
           # Don't exclude 'head' - let's test all RBS versions we
           # can there
 
-          # - ruby-version: '4.0'
-          #   rbs-version: '3.6.1'
-          # - ruby-version: 'head'
-          #   rbs-version: '3.6.1'
+          # For some reason 'rbs collection install' is broken in
+          # 4.0.0.dev.4 on newer Rubies:
+          #
+          # https://github.com/castwide/solargraph/actions/runs/20627923548/job/59241444380?pr=1102
+          - ruby-version: 'head'
+            rbs-version: '4.0.0.dev.4'
         include:
           - ruby-version: '3.0'
             rbs-version: '3.6.1'
