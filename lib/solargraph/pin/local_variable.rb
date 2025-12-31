@@ -3,17 +3,6 @@
 module Solargraph
   module Pin
     class LocalVariable < BaseVariable
-      # @return [Range, nil]
-      attr_reader :presence
-
-      # @param presence [Range, nil]
-      # @param splat [Hash]
-      def initialize presence: nil,
-                     **splat
-        super(**splat)
-        @presence = presence
-      end
-
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def probe api_map
@@ -24,10 +13,6 @@ module Solargraph
         end
 
         super
-      end
-
-      def inner_desc
-        super + ", presence=#{presence.inspect}"
       end
 
       def combine_with(other, attrs={})
@@ -86,13 +71,6 @@ module Solargraph
           visible_in_closure?(other_closure)
       end
 
-      # @param other_loc [Location]
-      def starts_at?(other_loc)
-        location&.filename == other_loc.filename &&
-          presence &&
-          presence.start == other_loc.range.start
-      end
-
       def to_rbs
         (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
       end
@@ -111,27 +89,6 @@ module Solargraph
           return other.return_type
         end
         combine_types(other, :return_type)
-      end
-
-      # Narrow the presence range to the intersection of both.
-      #
-      # @param other [self]
-      #
-      # @return [Range, nil]
-      def combine_presence(other)
-        return presence || other.presence if presence.nil? || other.presence.nil?
-
-        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
-      end
-
-      # If a certain pin is being combined with an uncertain pin, we
-      # end up with a certain result
-      #
-      # @param other [self]
-      #
-      # @return [Boolean]
-      def combine_presence_certain(other)
-        presence_certain? || other.presence_certain?
       end
     end
   end

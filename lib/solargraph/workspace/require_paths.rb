@@ -76,7 +76,6 @@ module Solargraph
                "spec = eval(File.read('#{gemspec_file_path}'), TOPLEVEL_BINDING, '#{gemspec_file_path}'); " \
                'return unless Gem::Specification === spec; ' \
                'puts({name: spec.name, paths: spec.require_paths}.to_json)']
-        # @sg-ignore Unresolved call to capture3 on Module<Open3>
         o, e, s = Open3.capture3(*cmd)
         if s.success?
           begin
@@ -84,6 +83,7 @@ module Solargraph
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
           rescue StandardError => e
+            # @sg-ignore Flow-sensitive typing should allow redefinition of 'e'
             Solargraph.logger.warn "Error reading #{gemspec_file_path}: [#{e.class}] #{e.message}"
             []
           end

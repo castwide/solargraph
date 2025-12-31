@@ -123,6 +123,21 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'provides nil checking on calls from parameters without assignments' do
+      pending('https://github.com/castwide/solargraph/pull/1127')
+
+      checker = type_checker(%(
+        # @param baz [String, nil]
+        #
+        # @return [String]
+        def quux(baz)
+          baz.upcase # ERROR: Unresolved call to upcase on String, nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+                                                     'Unresolved call to upcase on String, nil'])
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer] an index
@@ -545,40 +560,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'understands Open3 methods' do
-      checker = type_checker(%(
-        require 'open3'
-
-        # @return [void]
-        def run_command
-          # @type [Hash{String => String}]
-          foo = {'foo' => 'bar'}
-          Open3.capture2e(foo, 'ls', chdir: '/tmp')
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
-    it 'resolves constants inside modules inside classes' do
-      checker = type_checker(%(
-        class Bar
-          module Foo
-            CONSTANT = 'hi'
-          end
-        end
-
-        class Bar
-          include Foo
-
-          # @return [String]
-          def baz
-            CONSTANT
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     context 'with class name available in more than one gate' do
       let(:checker) do
         type_checker(%(
@@ -614,6 +595,40 @@ describe Solargraph::TypeChecker do
       it 'resolves class name correctly in generic resolution' do
         expect(checker.problems.map(&:message)).to be_empty
       end
+    end
+
+    it 'resolves constants inside modules inside classes' do
+      checker = type_checker(%(
+        class Bar
+          module Foo
+            CONSTANT = 'hi'
+          end
+        end
+
+        class Bar
+          include Foo
+
+          # @return [String]
+          def baz
+            CONSTANT
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'understands Open3 methods' do
+      checker = type_checker(%(
+        require 'open3'
+
+        # @return [void]
+        def run_command
+          # @type [Hash{String => String}]
+          foo = {'foo' => 'bar'}
+          Open3.capture2e(foo, 'ls', chdir: '/tmp')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'handles "while foo" flow sensitive typing correctly' do

@@ -51,6 +51,7 @@ module Solargraph
     # @param other [Object]
     def eql?(other)
       self.class == other.class &&
+        # @sg-ignore Flow sensitive typing needs to handle self.class == other.class
         equality_fields == other.equality_fields
     end
 
@@ -254,13 +255,6 @@ module Solargraph
     # @return [Enumerable<Solargraph::Pin::Keyword>]
     def keyword_pins
       store.pins_by_class(Pin::Keyword)
-    end
-
-    # An array of namespace names defined in the ApiMap.
-    #
-    # @return [Set<String>]
-    def namespaces
-      store.namespaces
     end
 
     # True if the namespace exists.
@@ -702,7 +696,7 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { |inc_tag| inc_tag.parametrized_tag.name }.include?(module_ns)
+      store.get_includes(host_ns).map { |inc_tag| inc_tag.type.name }.include?(module_ns)
     end
 
     # @param pins [Enumerable<Pin::Base>]
@@ -811,17 +805,8 @@ module Solargraph
 
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
-            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
-            if const.is_a?(Pin::Namespace)
-              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
-            elsif const.is_a?(Pin::Constant)
-              type = const.infer(self)
-              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
-            else
-              referenced_tag = ref.parametrized_tag
-              next unless referenced_tag.defined?
-              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
-            end
+            in_tag = dereference(ref)
+            result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
@@ -830,7 +815,7 @@ module Solargraph
         else
           logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
           store.get_extends(fqns).reverse.each do |em|
-            fqem = store.constants.dereference(em)
+            fqem = dereference(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
