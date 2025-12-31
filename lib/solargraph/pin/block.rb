@@ -61,6 +61,7 @@ module Solargraph
         locals = clip.locals - [self]
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
+        # @param meth [Pin::Method]
         meths.each do |meth|
           next if meth.block.nil?
 

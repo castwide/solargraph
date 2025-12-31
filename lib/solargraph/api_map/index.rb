@@ -17,16 +17,22 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
+        # @param h [String]
+        # @param k [Array<Pin::Namespace>]
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def pin_class_hash
+        # @param h [String]
+        # @param k [Array<Pin::Base>]
         @pin_class_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def path_pin_hash
+        # @param h [String]
+        # @param k [Array<Pin::Base>]
         @path_pin_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
@@ -42,26 +48,36 @@ module Solargraph
 
       # @return [Hash{String => Array<String>}]
       def include_references
+        # @param h [String]
+        # @param k [Array<String>]
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_reference_pins
+        # @param h [String]
+        # @param k [Array<Pin::Reference::Include>]
         @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<String>}]
       def extend_references
+        # @param h [String]
+        # @param k [Array<String>]
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<String>}]
       def prepend_references
+        # @param h [String]
+        # @param k [Array<String>]
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<String>}]
       def superclass_references
+        # @param h [String]
+        # @param k [Array<String>]
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
@@ -99,12 +115,18 @@ module Solargraph
         @pin_select_cache = {}
         pins.concat new_pins
         set = new_pins.to_set
+        # @param k [String]
+        # @param v [Set<Pin::Base>]
         set.classify(&:class)
-           .map { |k, v| pin_class_hash[k].concat v.to_a }
+          .map { |k, v| pin_class_hash[k].concat v.to_a }
+        # @param k [String]
+        # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
-           .map { |k, v| namespace_hash[k].concat v.to_a }
+          .map { |k, v| namespace_hash[k].concat v.to_a }
+        # @param k [String]
+        # @param v [Set<Pin::Base>]
         set.classify(&:path)
-           .map { |k, v| path_pin_hash[k].concat v.to_a }
+          .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
         map_references Pin::Reference::Prepend, prepend_references
@@ -114,10 +136,13 @@ module Solargraph
         self
       end
 
-      # @param klass [Class<Pin::Reference>]
-      # @param hash [Hash{String => Array<Pin::Reference>}]
+      # @generic T
+      # @param klass [Class<generic<T>>]
+      # @param hash [Hash{String => generic<T>}]
+      #
       # @return [void]
       def map_references klass, hash
+        # @param pin [generic<T>]
         pins_by_class(klass).each do |pin|
           hash[pin.namespace].push pin
         end
@@ -125,6 +150,7 @@ module Solargraph
 
       # @return [void]
       def map_overrides
+        # @param ovr [Pin::Reference::Override]
         pins_by_class(Pin::Reference::Override).each do |ovr|
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
