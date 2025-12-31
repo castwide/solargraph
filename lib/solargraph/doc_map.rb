@@ -181,6 +181,9 @@ module Solargraph
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
       # @type [Array<Gem::Specification>]
+      # @sg-ignore Wrong argument type for Hash.[]: arg_0 expected _ToHash<Array(String,
+      #   Array<Gem::Specification>), undefined>, received
+      #   Array<Array(String, Array<Gem::Specification>)>
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
       paths.each do |path|
