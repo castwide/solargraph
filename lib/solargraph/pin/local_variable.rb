@@ -4,11 +4,12 @@ module Solargraph
   module Pin
     class LocalVariable < BaseVariable
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
-        if presence_certain? && return_type&.defined?
+        if presence_certain? && return_type && return_type&.defined?
           # flow sensitive typing has already figured out this type
           # has been downcast - use the type it figured out
+          # @sg-ignore Flow-sensitive typing should support ivars
           return adjust_type api_map, return_type.qualify(api_map, *gates)
         end
 
@@ -22,10 +23,12 @@ module Solargraph
         super
       end
 
+      # @sg-ignore Flow-sensitive typing should support ivars
       # @param other_loc [Location]
       def starts_at?(other_loc)
         location&.filename == other_loc.filename &&
           presence &&
+          # @sg-ignore Flow-sensitive typing should support ivars
           presence.start == other_loc.range.start
       end
 
@@ -43,11 +46,14 @@ module Solargraph
           return closure || other.closure
         end
 
+        # @sg-ignore Flow-sensitive typing should support ivars
         if closure.location.nil? || other.closure.location.nil?
+          # @sg-ignore Flow-sensitive typing should support ivars
           return closure.location.nil? ? other.closure : closure
         end
 
         # if filenames are different, this will just pick one
+          # @sg-ignore Flow-sensitive typing should support ivars
         return closure if closure.location <= other.closure.location
 
         other.closure
@@ -56,7 +62,9 @@ module Solargraph
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
+        # @sg-ignore Need to add nil check here
         location.filename == other_loc.filename &&
+          # @sg-ignore Flow-sensitive typing should support ||
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end

@@ -418,6 +418,11 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
+              # @sg-ignore Wrong argument type for
+              #   Solargraph::Pin::Method#parse_overload_param: name
+              #   expected String, received String, generic<A>,
+              #   generic<B>, generic<C>, generic<D>, generic<E>,
+              #   generic<F>, generic<G>, generic<H>
               name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(
                 location: location,
@@ -427,6 +432,11 @@ module Solargraph
                 decl: decl,
                 # @sg-ignore flow sensitive typing needs to handle attrs
                 presence: location ? location.range : nil,
+                # @sg-ignore Wrong argument type for
+                #   Solargraph::Pin::Method#param_type_from_name: name
+                #   expected String, received String, generic<A>,
+                #   generic<B>, generic<C>, generic<D>, generic<E>,
+                #   generic<F>, generic<G>, generic<H>
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
               )
@@ -553,7 +563,7 @@ module Solargraph
         docstring.ref_tags.each do |ref|
           # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'return' && ref.owner
-          # @todo ref should actually be an intersection type
+          # @sg-ignore should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map)
           return result unless result.nil?
         end

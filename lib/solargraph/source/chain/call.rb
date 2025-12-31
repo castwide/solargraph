@@ -127,7 +127,7 @@ module Solargraph
               if match
                 if ol.block && with_block?
                   block_atypes = ol.block.parameters.map(&:return_type)
-                  # @sg-ignore Need to add nil check here
+                  # @todo Need to add nil check here
                   if block.links.map(&:class) == [BlockSymbol]
                     # like the bar in foo(&:bar)
                     blocktype = block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
@@ -137,7 +137,6 @@ module Solargraph
                 end
                 # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil, blocktype)
-                # @sg-ignore Should handle redefinition of types in simple contexts
                 new_return_type = new_signature_pin.return_type
                 if head?
                   # If we're at the head of the chain, we called a
@@ -159,7 +158,7 @@ module Solargraph
                 #
                 # qualify(), however, happens in the namespace where
                 # the docs were written - from the method pin.
-                # @sg-ignore Need to add nil check here
+                # @todo Need to add nil check here
                 type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates) if new_return_type.defined?
                 type ||= ComplexType::UNDEFINED
               end

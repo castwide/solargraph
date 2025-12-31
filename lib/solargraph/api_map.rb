@@ -805,6 +805,7 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
             in_tag = dereference(ref)
+            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
