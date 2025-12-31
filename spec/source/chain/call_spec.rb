@@ -600,8 +600,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'correctly looks up civars' do
-    pending('better civar support')
-
     source = Solargraph::Source.load_string(%(
       class Foo
         BAZ = /aaa/
