@@ -27,6 +27,8 @@ module Solargraph
     def self.combine_method_pins(*pins)
       # @type [Pin::Method, nil]
       combined_pin = nil
+      # @param memo [Pin::Method, nil]
+      # @param pin [Pin::Method]
       out = pins.reduce(combined_pin) do |memo, pin|
         next pin if memo.nil?
         if memo == pin && memo.source != :combined
@@ -46,6 +48,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def self.build_yard_pins(yard_plugins, gemspec)
       Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
+      return [] unless Yardoc.cached?(gemspec)
       yardoc = Yardoc.load!(gemspec)
       YardMap::Mapper.new(yardoc, gemspec).map
     end
@@ -64,6 +67,7 @@ module Solargraph
         next yard_pin unless rbs_pin && yard_pin.is_a?(Pin::Method)
 
         unless rbs_pin
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
           next yard_pin
         end
