@@ -22,13 +22,17 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String] TODO: Document and test '' and '*' semantics
+    # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
-      @directory = directory
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources

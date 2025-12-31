@@ -237,8 +237,12 @@ module Solargraph
       # @param skip [::Array]
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
+        # This should actually be an intersection type
+        # @param ref [YARD::Tags::Tag, Solargraph::Yard::Tags::RefTag]
         heredoc.ref_tags.each do |ref|
+          # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'param' && ref.owner
+          # @sg-ignore ref should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map, skip)
           return result unless result.nil?
         end

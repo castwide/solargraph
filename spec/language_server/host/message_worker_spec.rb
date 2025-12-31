@@ -8,5 +8,6 @@ describe Solargraph::LanguageServer::Host::MessageWorker do
     worker.queue(message)
     expect(worker.messages).to eq [message]
     worker.tick
+    expect(host).to have_received(:receive).with(message)
   end
 end

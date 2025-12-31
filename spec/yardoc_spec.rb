@@ -40,6 +40,9 @@ describe Solargraph::Yardoc do
   describe '#build_docs' do
     let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
     let(:gemspec) { workspace.find_gem('rubocop') }
+    let(:api_map) { Solargraph::ApiMap.new }
+    let(:doc_map) { api_map.doc_map }
+    let(:gemspec) { Gem::Specification.find_by_path('rubocop') }
     let(:output) { '' }
 
     before do
@@ -104,7 +107,7 @@ describe Solargraph::Yardoc do
 
         described_class.build_docs(gem_yardoc_path, [], gemspec)
 
-        expect(called_with[0]['BUNDLE_GEMFILE']).to start_with('/')
+        expect(called_with[0]['BUNDLE_GEMFILE']).to eq(File.absolute_path('Gemfile'))
       end
     end
   end
