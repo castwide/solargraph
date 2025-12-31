@@ -12,8 +12,9 @@ module Solargraph
       attr_accessor :mass_assignment
 
       # @param return_type [ComplexType, nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
       # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, return_type: nil, **splat
+      def initialize assignment: nil, return_type: nil, mass_assignment: nil, **splat
         super(**splat)
         @assignment = assignment
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
@@ -22,12 +23,12 @@ module Solargraph
       end
 
       def combine_with(other, attrs={})
-        attrs.merge({
+        new_attrs = attrs.merge({
           assignment: assert_same(other, :assignment),
           mass_assignment: assert_same(other, :mass_assignment),
           return_type: combine_return_type(other),
         })
-        super(other, attrs)
+        super(other, new_attrs)
       end
 
       def completion_item_kind
@@ -104,6 +105,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
+        # @sg-ignore Should add type check on other
         assignment == other.assignment
       end
 

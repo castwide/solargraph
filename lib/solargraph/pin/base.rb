@@ -259,6 +259,7 @@ module Solargraph
       def assert_same_macros(other)
         return unless self.source == :yardoc && other.source == :yardoc
         assert_same_count(other, :macros)
+        # @param [YARD::Tags::MacroDirective]
         assert_same_array_content(other, :macros) { |macro| macro.tag.name }
       end
 
@@ -466,6 +467,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
+        # @sg-ignore Should add more explicit type check on other
         comments == other.comments && location == other.location
       end
 
