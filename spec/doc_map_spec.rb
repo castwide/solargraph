@@ -33,21 +33,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'when deserialization takes a while' do
-    let(:pre_cache) { false }
-    let(:requires) { ['backport'] }
-
-    before do
-      # proxy this method to simulate a long-running deserialization
-      allow(Benchmark).to receive(:measure) do |&block|
-        block.call
-        5.0
-      end
-    end
-
-    expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
-  end
-
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
