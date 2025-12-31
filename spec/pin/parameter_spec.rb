@@ -473,5 +473,33 @@ describe Solargraph::Pin::Parameter do
       type = pin.probe(api_map)
       expect(type.simple_tags).to eq('String')
     end
+
+    it 'handles a relative type name case' do
+      source = Solargraph::Source.load_string(%(
+        module A
+          module B
+            class Method
+            end
+          end
+        end
+
+        module A
+          module B
+            class C < B::Method
+              # @param alt [Method]
+              # @return [B::Method, nil]
+              def resolve_method alt
+                alt
+              end
+            end
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+
+      clip = api_map.clip_at('test.rb', [14, 16])
+      expect(clip.infer.rooted_tags).to eq('::A::B::Method')
+    end
   end
 end
