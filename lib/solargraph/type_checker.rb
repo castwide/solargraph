@@ -284,8 +284,11 @@ module Solargraph
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
+          # @sg-ignore Change to something flow-sensitive typing understands
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
+            # @sg-ignore Change to something flow-sensitive typing understands
             unless closest.generic? || ignored_pins.include?(found)
+              # @sg-ignore Change to something flow-sensitive typing understands
               if closest.defined?
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
               else
@@ -629,6 +632,7 @@ module Solargraph
           base = base.base
         end
         closest = found.typify(api_map) if found
+        # @sg-ignore Change to something flow-sensitive typing understands
         if !found || closest.defined? || internal?(found)
           return false
         end
