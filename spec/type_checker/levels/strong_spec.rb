@@ -4,6 +4,21 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'provides nil checking on calls from parameters without assignments' do
+      pending('https://github.com/castwide/solargraph/pull/1127')
+
+      checker = type_checker(%(
+        # @param baz [String, nil]
+        #
+        # @return [String]
+        def quux(baz)
+          baz.upcase # ERROR: Unresolved call to upcase on String, nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+                                                     'Unresolved call to upcase on String, nil'])
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer, nil] an index
@@ -95,6 +110,29 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
+    end
+
+    it 'understands complex use of other' do
+      checker = type_checker(%(
+        class A
+          # @param other [self]
+          #
+          # @return [void]
+          def foo other; end
+
+          # @param other [self]
+          #
+          # @return [void]
+          def bar(other); end
+        end
+
+        class B < A
+          def bar(other)
+            foo(other)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'calls out type issues even when keyword issues are there' do
@@ -271,6 +309,43 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    context 'with class name available in more than one gate' do
+      let(:checker) do
+        type_checker(%(
+          module Foo
+            module Bar
+              class Symbol
+              end
+            end
+          end
+
+          module Foo
+            module Baz
+              class Quux
+                # @return [void]
+                def foo
+                  objects_by_class(Bar::Symbol)
+                end
+
+                # @generic T
+                # @param klass [Class<generic<T>>]
+                # @return [Set<generic<T>>]
+                def objects_by_class klass
+                  # @type [Set<generic<T>>]
+                  s = Set.new
+                  s
+                end
+              end
+            end
+          end
+        ))
+      end
+
+      it 'resolves class name correctly in generic resolution' do
+        expect(checker.problems.map(&:message)).to be_empty
+      end
     end
 
     it 'resolves constants inside modules inside classes' do

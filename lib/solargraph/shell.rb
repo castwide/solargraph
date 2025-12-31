@@ -79,6 +79,7 @@ module Solargraph
           conf['extensions'].push m
         end
       end
+      # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
@@ -268,6 +269,7 @@ module Solargraph
       else
         pins = api_map.get_path_pins path
       end
+      # @type [Hash{Symbol => Pin::Base}]
       references = {}
       pin = pins.first
       case pin
@@ -324,6 +326,26 @@ module Solargraph
       # @todo if the rebuild: option is passed as a positional arg,
       #   typecheck doesn't complain on the below line
       api_map.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
+    end
+
+    # @param type [ComplexType]
+    # @return [void]
+    def print_type(type)
+      if options[:rbs]
+        puts type.to_rbs
+      else
+        puts type.rooted_tag
+      end
+    end
+
+    # @param pin [Solargraph::Pin::Base]
+    # @return [void]
+    def print_pin(pin)
+      if options[:rbs]
+        puts pin.to_rbs
+      else
+        puts pin.inspect
+      end
     end
 
     # @param type [ComplexType]
