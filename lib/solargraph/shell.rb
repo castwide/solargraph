@@ -79,6 +79,7 @@ module Solargraph
           conf['extensions'].push m
         end
       end
+      # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
@@ -282,26 +283,28 @@ module Solargraph
     # @return [void]
     def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
-      pins = api_map.get_path_pins path
+      is_method = path.include?('#') || path.include?('.')
+      if is_method && options[:stack]
+        scope, ns, meth = if path.include? '#'
+                            [:instance, *path.split('#', 2)]
+                          else
+                            [:class, *path.split('.', 2)]
+                          end
+
+        # @sg-ignore Wrong argument type for
+        #   Solargraph::ApiMap#get_method_stack: rooted_tag
+        #   expected String, received Array<String>
+        pins = api_map.get_method_stack(ns, meth, scope: scope)
+      else
+        pins = api_map.get_path_pins path
+      end
+      # @type [Hash{Symbol => Pin::Base}]
       references = {}
       pin = pins.first
       case pin
       when nil
         $stderr.puts "Pin not found for path '#{path}'"
         exit 1
-      when Pin::Method
-        if options[:stack]
-          scope, ns, meth = if path.include? '#'
-                              [:instance, *path.split('#', 2)]
-                            else
-                              [:class, *path.split('.', 2)]
-                            end
-
-          # @sg-ignore Wrong argument type for
-          #   Solargraph::ApiMap#get_method_stack: rooted_tag
-          #   expected String, received Array<String>
-          pins = api_map.get_method_stack(ns, meth, scope: scope)
-        end
       when Pin::Namespace
         if options[:references]
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)

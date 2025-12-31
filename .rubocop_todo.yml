@@ -457,7 +457,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 54
+  Max: 56
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
@@ -1266,6 +1266,7 @@ YARD/MismatchName:
 
 YARD/TagTypeSyntax:
   Exclude:
+    - 'lib/solargraph/api_map/constants.rb'
     - 'lib/solargraph/language_server/host.rb'
     - 'lib/solargraph/parser/comment_ripper.rb'
     - 'lib/solargraph/pin/method.rb'
