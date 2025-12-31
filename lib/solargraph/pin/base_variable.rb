@@ -90,7 +90,7 @@ module Solargraph
           intersection_return_type: combine_types(other, :intersection_return_type),
           exclude_return_type: combine_types(other, :exclude_return_type),
           presence: combine_presence(other),
-          presence_certain: combine_presence_certain(other),
+          presence_certain: combine_presence_certain(other)
         })
         super(other, new_attrs)
       end

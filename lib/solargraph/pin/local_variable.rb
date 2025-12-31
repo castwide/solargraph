@@ -53,7 +53,7 @@ module Solargraph
         end
 
         # if filenames are different, this will just pick one
-          # @sg-ignore Flow-sensitive typing should support ivars
+        # @sg-ignore Flow-sensitive typing should support ivars
         return closure if closure.location <= other.closure.location
 
         other.closure
