@@ -907,7 +907,6 @@ module Solargraph
         break if original
       end
 
-      # @sg-ignore ignore `received nil` for original
       create_resolved_alias_pin(alias_pin, original) if original
     end
 

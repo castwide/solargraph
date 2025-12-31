@@ -795,6 +795,9 @@ module Solargraph
           # e.g., singleton(String)
           type_tag(type.name)
         else
+          # RBS doesn't provide a common base class for its type AST nodes'
+          #
+          # @sg-ignore Unresolved call to location on Object
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end

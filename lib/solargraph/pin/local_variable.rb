@@ -19,15 +19,7 @@ module Solargraph
         # keep this as a parameter
         return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
 
-        new_attrs = attrs.merge({
-          presence: combine_presence(other),
-        })
-
-        super(other, new_attrs)
-      end
-
-      def inner_desc
-        super + ", presence=#{presence.inspect}, presence_certain=#{presence_certain?}"
+        super
       end
 
       # @param other_loc [Location]

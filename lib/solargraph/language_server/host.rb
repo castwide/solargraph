@@ -301,6 +301,7 @@ module Solargraph
       end
 
       # @return [String]
+      # @sg-ignore Need detailed hash types
       def command_path
         options['commandPath'] || 'solargraph'
       end

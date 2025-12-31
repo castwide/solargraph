@@ -92,11 +92,6 @@ module Solargraph
         super(other, new_attrs)
       end
 
-      def reset_generated!
-        @return_type_minus_exclusions = nil
-        super
-      end
-
       def inner_desc
         super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}, presence=#{presence.inspect}, assignments=#{assignments}"
       end

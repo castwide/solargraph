@@ -230,7 +230,7 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
+        # @todo Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
@@ -327,8 +327,11 @@ module Solargraph
           all_closest = all_found.map { |pin| pin.typify(api_map) }
           closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
           # @todo remove the internal_or_core? check at a higher-than-strict level
+          # @sg-ignore Change to something flow-sensitive typing understands
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
+            # @sg-ignore Change to something flow-sensitive typing understands
             unless closest.generic? || ignored_pins.include?(found)
+              # @sg-ignore Change to something flow-sensitive typing understands
               if closest.defined?
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
               else
@@ -677,6 +680,7 @@ module Solargraph
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
         closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+        # @sg-ignore Change to something flow-sensitive typing understands
         if !found || closest.defined? || internal?(found)
           return false
         end
