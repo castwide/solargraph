@@ -174,7 +174,6 @@ module Solargraph
     def typecheck *files
       directory = File.realpath(options[:directory])
       workspace = Solargraph::Workspace.new(directory)
-      # @sg-ignore Unresolved call to options
       level = options[:level].to_sym
       rules = workspace.rules(level)
       api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
@@ -188,7 +187,6 @@ module Solargraph
 
       time = Benchmark.measure {
         files.each do |file|
-          # @sg-ignore Unresolved call to options
           checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym, workspace: workspace)
           problems = checker.problems
           next if problems.empty?
