@@ -54,7 +54,7 @@ module Solargraph
       # Collect a list of all constants defined in the specified gates.
       #
       # @param gates [Array<Array<String>, String>]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def collect(*gates)
         flat = gates.flatten
         cached_collect[flat] || collect_and_cache(flat)
@@ -145,7 +145,7 @@ module Solargraph
           resolved = simple_resolve(name, gate, internal)
           return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
-            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}")
+            return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}") && ref.name.start_with?('::')
 
             mixin = resolve(ref.name, ref.reference_gates)
             next unless mixin
@@ -174,7 +174,7 @@ module Solargraph
       end
 
       # @param gates [Array<String>]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def collect_and_cache gates
         skip = Set.new
         cached_collect[gates] = gates.flat_map do |gate|
@@ -187,7 +187,7 @@ module Solargraph
         @cached_resolve ||= {}
       end
 
-      # @return [Hash{Array<String> => Array<Pin::Base>}]
+      # @return [Hash{Array<String> => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
       def cached_collect
         @cached_collect ||= {}
       end
@@ -232,7 +232,7 @@ module Solargraph
             return fqns if store.namespace_exists?(fqns)
             incs = store.get_includes(roots.join('::'))
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc.parametrized_tag.to_s, skip)
+              foundinc = inner_qualify(name, inc.type.to_s, skip)
               possibles.push foundinc unless foundinc.nil?
             end
             roots.pop
@@ -240,7 +240,7 @@ module Solargraph
           if possibles.empty?
             incs = store.get_includes('')
             incs.each do |inc|
-              foundinc = inner_qualify(name, inc.parametrized_tag.to_s, skip)
+              foundinc = inner_qualify(name, inc.type.to_s, skip)
               possibles.push foundinc unless foundinc.nil?
             end
           end
@@ -252,7 +252,7 @@ module Solargraph
       # @param fqns [String]
       # @param visibility [Array<Symbol>]
       # @param skip [Set<String>]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def inner_get_constants fqns, visibility, skip
         return [] if fqns.nil? || skip.include?(fqns)
         skip.add fqns

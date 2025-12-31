@@ -20,9 +20,11 @@ module Solargraph
           gem_lib_path = File.join(gem_path, 'lib')
           $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)
         rescue Gem::MissingSpecVersionError => e
+          # @type [Array<Gem::Specification>]
+          specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - "\
-                "did find: [#{e.specs.map { |s| s.version.version }.join(', ')}]"
+                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
       end
@@ -36,6 +38,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
+        # @sg-ignore
         options[:stdin] = code
         [options, paths]
       end

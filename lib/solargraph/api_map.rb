@@ -39,6 +39,7 @@ module Solargraph
     # @param other [Object]
     def eql?(other)
       self.class == other.class &&
+        # @sg-ignore Flow sensitive typing needs to handle self.class == other.class
         equality_fields == other.equality_fields
     end
 
@@ -238,13 +239,6 @@ module Solargraph
     # @return [Enumerable<Solargraph::Pin::Keyword>]
     def keyword_pins
       store.pins_by_class(Pin::Keyword)
-    end
-
-    # An array of namespace names defined in the ApiMap.
-    #
-    # @return [Set<String>]
-    def namespaces
-      store.namespaces
     end
 
     # True if the namespace exists.
@@ -537,7 +531,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -546,7 +540,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Enumerable<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end
