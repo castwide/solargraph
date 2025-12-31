@@ -23,7 +23,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -54,7 +54,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -83,7 +83,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: 3.4
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -105,30 +105,64 @@ jobs:
     - name: Ensure specs still run
       run: bundle exec rake spec
 
-  # run_solargraph_rspec_specs:
-  #   # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: clone https://github.com/lekemula/solargraph-rspec/
-  #     run: |
-  #      cd ..
-  #      git clone https://github.com/lekemula/solargraph-rspec.git
-  #      cd solargraph-rspec
-  #   - name: Set up Ruby
-  #     uses: ruby/setup-ruby@v1
-  #     with:
-  #       ruby-version: '3.0'
-  #       bundler-cache: false
-  #   - name: Install gems
-  #     run: |
-  #      cd ../solargraph-rspec
-  #      echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-  #      bundle install
-  #   - name: Run specs
-  #     run: |
-  #       cd ../solargraph-rspec
-  #       bundle exec rake spec
+  run_solargraph_rspec_specs:
+    # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
+    runs-on: ubuntu-latest
+    env:
+      SOLARGRAPH_CACHE: ${{ github.workspace }}/../solargraph-rspec/vendor/solargraph/cache
+      BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
+    steps:
+    - uses: actions/checkout@v3
+    - name: clone https://github.com/lekemula/solargraph-rspec/
+      run: |
+       cd ..
+       # git clone https://github.com/lekemula/solargraph-rspec.git
+
+       # pending https://github.com/lekemula/solargraph-rspec/pull/30
+       git clone https://github.com/apiology/solargraph-rspec.git
+       cd solargraph-rspec
+       git checkout reset_closures
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.1'
+        rubygems: latest
+        bundler-cache: false
+    - name: Install gems
+      run: |
+       set -x
+
+       cd ../solargraph-rspec
+       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+       bundle config path ${{ env.BUNDLE_PATH }}
+       bundle install --jobs 4 --retry 3
+       bundle exec appraisal install
+       # @todo some kind of appraisal/bundle conflict?
+       #   https://github.com/castwide/solargraph/actions/runs/19038710934/job/54369767122?pr=1116
+       #   /home/runner/work/solargraph/solargraph-rspec/vendor/bundle/ruby/3.1.0/gems/bundler-2.6.9/lib/bundler/runtime.rb:317:in
+       #   `check_for_activated_spec!': You have already activated date
+       #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
+       #   `bundle exec` to your command may solve
+       #   this. (Gem::LoadError)
+       bundle exec appraisal update date
+       # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
+       # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
+       # We update manually to the latest
+       bundle exec appraisal update rspec-rails
+    - name: Configure .solargraph.yml
+      run: |
+        cd ../solargraph-rspec
+        cp .solargraph.yml.example .solargraph.yml
+    - name: Solargraph generate RSpec gems YARD and RBS pins
+      run: |
+        cd ../solargraph-rspec
+        bundle exec appraisal rbs collection update
+        rspec_gems=$(bundle exec appraisal ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
+        bundle exec appraisal solargraph gems $rspec_gems
+    - name: Run specs
+      run: |
+        cd ../solargraph-rspec
+        bundle exec appraisal rspec --format progress
 
   run_solargraph_rails_specs:
     # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
