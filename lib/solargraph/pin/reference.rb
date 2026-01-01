@@ -19,8 +19,8 @@ module Solargraph
       end
 
       # @return [ComplexType]
-      def parametrized_tag
-        @parametrized_tag ||= ComplexType.try_parse(
+      def type
+        @type ||= ComplexType.try_parse(
           name +
           if generic_values&.length&.> 0
             "<#{generic_values.join(', ')}>"
@@ -28,6 +28,11 @@ module Solargraph
             ''
           end
         )
+      end
+
+      # @return [Array<String>]
+      def reference_gates
+        closure.gates
       end
     end
   end

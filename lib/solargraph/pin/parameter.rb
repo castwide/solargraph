@@ -166,7 +166,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
-        return return_type.qualify(api_map, closure.context.namespace) unless return_type.undefined?
+        return return_type.qualify(api_map, *closure.gates) unless return_type.undefined?
         closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
       end
 
@@ -222,7 +222,7 @@ module Solargraph
           if found.nil? and !index.nil?
             found = params[index] if params[index] && (params[index].name.nil? || params[index].name.empty?)
           end
-          return ComplexType.try_parse(*found.types).qualify(api_map, meth.context.namespace) unless found.nil? || found.types.nil?
+          return ComplexType.try_parse(*found.types).qualify(api_map, *meth.closure.gates) unless found.nil? || found.types.nil?
         end
         ComplexType::UNDEFINED
       end
@@ -232,8 +232,12 @@ module Solargraph
       # @param skip [::Array]
       # @return [::Array<YARD::Tags::Tag>]
       def see_reference heredoc, api_map, skip = []
+        # This should actually be an intersection type
+        # @param ref [YARD::Tags::Tag, Solargraph::Yard::Tags::RefTag]
         heredoc.ref_tags.each do |ref|
+          # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'param' && ref.owner
+          # @sg-ignore ref should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map, skip)
           return result unless result.nil?
         end

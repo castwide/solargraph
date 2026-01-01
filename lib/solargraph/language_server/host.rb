@@ -94,7 +94,8 @@ module Solargraph
       # processed, caller is responsible for sending the response.
       #
       # @param request [Hash{String => unspecified}] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
+      #
+      # @return [Solargraph::LanguageServer::Message::Base, Solargraph::LanguageServer::Request, nil] The message handler.
       def receive request
         if request['method']
           logger.info "Host received ##{request['id']} #{request['method']}"
@@ -503,6 +504,7 @@ module Solargraph
                 name: 'new',
                 scope: :class,
                 location: pin.location,
+                # @sg-ignore Unresolved call to parameters on Solargraph::Pin::Base
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
@@ -534,7 +536,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Solargraph::SourceMap::Completion]
+      # @return [Solargraph::SourceMap::Completion, nil]
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column
@@ -548,7 +550,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def definitions_at uri, line, column
         library = library_for(uri)
         library.definitions_at(uri_to_file(uri), line, column)
@@ -557,7 +559,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def type_definitions_at uri, line, column
         library = library_for(uri)
         library.type_definitions_at(uri_to_file(uri), line, column)
@@ -581,6 +583,10 @@ module Solargraph
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
         library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)
+      rescue FileNotFoundError, InvalidOffsetError => e
+        Solargraph.logger.warn "[#{e.class}] #{e.message}"
+        Solargraph.logger.debug e.backtrace
+        []
       end
 
       # @param query [String]

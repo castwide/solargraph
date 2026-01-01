@@ -27,13 +27,15 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [Pin::Block, nil]
+      #
+      # @return [Pin::Signature, nil]
       def combine_blocks(other)
         if block.nil?
           other.block
         elsif other.block.nil?
           block
         else
+          # @type [Pin::Signature, nil]
           choose_pin_attr(other, :block)
         end
       end
@@ -61,9 +63,12 @@ module Solargraph
       end
 
       # @param other [self]
+      #
       # @return [Array<Pin::Parameter>]
       def choose_parameters(other)
         raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
+        # @param param [Pin::Parameter]
+        # @param other_param [Pin::Parameter]
         parameters.zip(other.parameters).map do |param, other_param|
           if param.nil? && other_param.block?
             other_param
@@ -210,7 +215,6 @@ module Solargraph
         parameters.count(&:arg?)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
       end

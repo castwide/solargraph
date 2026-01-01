@@ -138,11 +138,17 @@ module Solargraph
 
       def eql?(other)
         self.class == other.class &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @name == other.name &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @key_types == other.key_types &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @subtypes == other.subtypes &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @rooted == other.rooted? &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @all_params == other.all_params &&
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           @parameters_type == other.parameters_type
       end
 
@@ -280,7 +286,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType]
+      # @param context_type [UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -409,12 +415,12 @@ module Solargraph
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param context [String] The namespace from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
-      def qualify api_map, context = ''
+      def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined?
-          recon = (t.rooted? ? '' : context)
-          fqns = api_map.qualify(t.name, recon)
+          next t if t.duck_type? || t.void? || t.undefined? || t.literal?
+          open = t.rooted? ? [''] : gates
+          fqns = api_map.qualify(t.non_literal_name, *open)
           if fqns.nil?
             next UniqueType::BOOLEAN if t.tag == 'Boolean'
             next UniqueType::UNDEFINED
@@ -446,6 +452,7 @@ module Solargraph
         !can_root_name? || @rooted
       end
 
+      # @param name_to_check [String]
       def can_root_name?(name_to_check = name)
         self.class.can_root_name?(name_to_check)
       end
