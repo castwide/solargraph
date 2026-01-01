@@ -35,6 +35,8 @@ jobs:
       run: |
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
+        echo 'gem "nokogiri"' >> .Gemfile
+        bundle config set --local force_ruby_platform true
         bundle install
         bundle update rbs
     - name: Configure to use plugins
@@ -67,6 +69,8 @@ jobs:
     - name: Install gems
       run: |
         echo 'gem "solargraph-rails"' > .Gemfile
+        echo 'gem "nokogiri"' >> .Gemfile
+        bundle config set --local force_ruby_platform true
         bundle install
         bundle update rbs
     - name: Configure to use plugins
@@ -96,6 +100,8 @@ jobs:
     - name: Install gems
       run: |
         echo 'gem "solargraph-rspec"' >> .Gemfile
+        echo 'gem "nokogiri"' >> .Gemfile
+        bundle config set --local force_ruby_platform true
         bundle install
         bundle update rbs
     - name: Configure to use plugins
