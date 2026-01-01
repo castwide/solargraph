@@ -21,14 +21,23 @@ module Solargraph
     # @return [ApiMap]
     attr_reader :api_map
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param api_map [ApiMap, nil]
-    # @param level [Symbol]
-    def initialize filename, api_map: nil, level: :normal
+    # @param level [Symbol] Don't complain about anything above this level
+    # @param workspace [Workspace, nil] Workspace to use for loading
+    #   type checker rules modified by user config
+    # @param type_checker_rules [Hash{Symbol => Symbol}] Overrides for
+    #   type checker rules - e.g., :report_undefined => :strong
+    # @param rules [Rules] Type checker rules object
+    def initialize filename,
+                   api_map: nil,
+                   level: :normal,
+                   workspace: filename ? Workspace.new(File.dirname(filename)) : nil,
+                   rules: workspace ? workspace.rules(level) : Rules.new(level, {})
       @filename = filename
       # @todo Smarter directory resolution
       @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
-      @rules = Rules.new(level)
+      @rules = rules
       # @type [Array<Range>]
       @marked_ranges = []
     end
