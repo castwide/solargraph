@@ -103,6 +103,12 @@ module Solargraph
       @yard_plugins ||= global_environ.yard_plugins.sort.uniq
     end
 
+    # @param level [Symbol]
+    # @return [TypeChecker::Rules]
+    def rules(level)
+      @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
+    end
+
     # Merge the source. A merge will update the existing source for the file
     # or add it to the sources if the workspace is configured to include it.
     # The source is ignored if the configuration excludes it.
