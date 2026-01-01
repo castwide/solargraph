@@ -178,8 +178,9 @@ module Solargraph
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
+      workspace = Solargraph::Workspace.new(directory)
       level = options[:level].to_sym
-      rules = Solargraph::TypeChecker::Rules.new(level)
+      rules = workspace.rules(level)
       api_map =
         Solargraph::ApiMap.load_with_cache(directory, $stdout,
                                            loose_unions:
@@ -193,7 +194,7 @@ module Solargraph
       filecount = 0
       time = Benchmark.measure {
         files.each do |file|
-          checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym)
+          checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym, workspace: workspace)
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
