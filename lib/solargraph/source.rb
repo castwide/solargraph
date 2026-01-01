@@ -15,7 +15,7 @@ module Solargraph
 
     include EncodingFixes
 
-    # @return [String]
+    # @return [String, nil]
     attr_reader :filename
 
     # @return [String]
