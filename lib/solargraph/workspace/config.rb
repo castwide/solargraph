@@ -63,6 +63,7 @@ module Solargraph
       # namespace. It's typically used to identify available DSLs.
       #
       # @return [Array<String>]
+      # @sg-ignore Need to validate config
       def domains
         raw_data['domains']
       end
@@ -70,6 +71,7 @@ module Solargraph
       # An array of required paths to add to the workspace.
       #
       # @return [Array<String>]
+      # @sg-ignore Need to validate config
       def required
         raw_data['require']
       end
@@ -83,6 +85,7 @@ module Solargraph
 
       # An array of reporters to use for diagnostics.
       #
+      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def reporters
         raw_data['reporters']
@@ -90,6 +93,7 @@ module Solargraph
 
       # A hash of options supported by the formatter
       #
+      # @sg-ignore Need to validate config
       # @return [Hash]
       def formatter
         raw_data['formatter']
@@ -97,6 +101,7 @@ module Solargraph
 
       # An array of plugins to require.
       #
+      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def plugins
         raw_data['plugins']
@@ -104,9 +109,19 @@ module Solargraph
 
       # The maximum number of files to parse from the workspace.
       #
+      # @sg-ignore Need to validate config
       # @return [Integer]
       def max_files
         raw_data['max_files']
+      end
+
+      # @return [Hash{Symbol => Symbol}]
+      def type_checker_rules
+        # @type [Hash{String => String}]
+        raw_rules = raw_data.fetch('type_checker', {}).fetch('rules', {})
+        raw_rules.to_h do |k, v|
+          [k.to_sym, v.to_sym]
+        end
       end
 
       private
@@ -161,6 +176,9 @@ module Solargraph
               'only' => [],
               'extra_args' =>[]
             }
+          },
+          'type_checker' => {
+            'rules' => { }
           },
           'require_paths' => [],
           'plugins' => [],
