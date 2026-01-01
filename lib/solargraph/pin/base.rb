@@ -554,9 +554,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [self]
       def realize api_map
-        return self if return_type.defined?
+        return self if return_type.defined? && return_type.all_rooted?
         type = typify(api_map)
-        return proxy(type) if type.defined?
+        return proxy(type) if type.defined? && type.all_rooted?
         type = probe(api_map)
         return self if type.undefined?
         result = proxy(type)
@@ -574,6 +574,7 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        result.reset_generated!
         result
       end
 
@@ -648,6 +649,8 @@ module Solargraph
 
       # @return [void]
       def reset_generated!
+        @docstring = nil
+        @directives = nil
       end
 
       protected
@@ -679,6 +682,15 @@ module Solargraph
           parse = Solargraph::Source.parse_docstring(comments)
           @docstring = parse.to_docstring
           @directives = parse.directives
+        end
+        if @return_type&.defined?
+          @docstring ||= Solargraph::Source.parse_docstring("\n").to_docstring
+          rooted_types = @return_type.items.map(&:rooted_tag)
+          if @docstring.tags(:return)&.length == 1
+            @docstring.tag(:return).types = rooted_types
+          else
+            @docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_types))
+          end
         end
       end
 
