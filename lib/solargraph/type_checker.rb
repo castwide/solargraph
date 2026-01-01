@@ -101,8 +101,7 @@ module Solargraph
       # @return [self]
       def load filename, level = :normal
         source = Solargraph::Source.load(filename)
-        workspace = Workspace.new(File.dirname(filename))
-        rules = workspace.rules(level)
+        rules = Rules.new(level, {})
         api_map = Solargraph::ApiMap.new(loose_unions:
                                            !rules.require_all_unique_types_match_expected_on_lhs?)
         api_map.map(source)
@@ -116,8 +115,7 @@ module Solargraph
       # @return [self]
       def load_string code, filename = nil, level = :normal, api_map: nil
         source = Solargraph::Source.load_string(code, filename)
-        workspace = Workspace.new(File.dirname(filename))
-        rules = workspace.rules(level)
+        rules = Rules.new(level, {})
         api_map ||= Solargraph::ApiMap.new(loose_unions:
                                              !rules.require_all_unique_types_match_expected_on_lhs?)
         api_map.map(source)
