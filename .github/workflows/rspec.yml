@@ -51,6 +51,7 @@ jobs:
             rbs-version: '3.8.1'
           - ruby-version: 'head'
             rbs-version: '4.0.0.dev.4'
+          - ruby-version: 'head' # TEMP
         include:
           - ruby-version: '3.0'
             rbs-version: '3.6.1'
@@ -89,8 +90,6 @@ jobs:
       run: |
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
-        bundle list
-        bundle exec solargraph pin 'Bundler::Dsl#source'
     - name: Update types
       run: |
         bundle exec rbs collection update
