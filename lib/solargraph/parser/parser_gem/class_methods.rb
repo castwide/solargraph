@@ -19,6 +19,7 @@ module Solargraph
         # @param filename [String, nil]
         # @param line [Integer]
         # @return [Parser::AST::Node]
+        # @sg-ignore Need to handle type of 'raise'
         def parse code, filename = nil, line = 0
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code

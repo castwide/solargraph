@@ -215,8 +215,13 @@ module Solargraph
         parameters.count(&:arg?)
       end
 
+      # @return [String]
+      def parameters_to_rbs
+        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ')
+      end
+
       def to_rbs
-        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+        parameters_to_rbs + '-> ' + return_type.to_rbs
       end
 
       def block?

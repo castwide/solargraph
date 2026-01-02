@@ -37,21 +37,21 @@ module Solargraph
       # @param signature_pins [Array<Pin::Signature>]
       # @return [Array<Pin::Signature>]
       def combine_all_signature_pins(*signature_pins)
-        # @type [Hash{Array => Array<Pin::Signature>}]
-        by_arity = {}
+        # @type [Hash{String => Array<Pin::Signature>}]
+        by_rbs = {}
         signature_pins.each do |signature_pin|
-          by_arity[signature_pin.arity] ||= []
-          by_arity[signature_pin.arity] << signature_pin
+          by_rbs[signature_pin.parameters_to_rbs] ||= []
+          by_rbs[signature_pin.parameters_to_rbs] << signature_pin
         end
-        by_arity.transform_values! do |same_arity_pins|
+        by_rbs.transform_values! do |same_rbs_pins|
           # @param memo [Pin::Signature, nil]
           # @param signature [Pin::Signature]
-          same_arity_pins.reduce(nil) do |memo, signature|
+          same_rbs_pins.reduce(nil) do |memo, signature|
             next signature if memo.nil?
             memo.combine_with(signature)
           end
         end
-        by_arity.values.flatten
+        by_rbs.values.flatten
       end
 
       # @param other [Pin::Method]
