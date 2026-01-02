@@ -60,8 +60,28 @@ module Solargraph
         report?(:validate_tags, :typed)
       end
 
-      def require_all_return_types_match_inferred?
-        report?(:require_all_return_types_match_inferred, :alpha)
+      def require_inferred_type_params?
+        report?(:require_inferred_type_params, :alpha)
+      end
+
+      def require_all_unique_types_match_declared?
+        report?(:require_all_unique_types_match_declared, :alpha)
+      end
+
+      def require_no_undefined_args?
+        report?(:require_no_undefined_args, :alpha)
+      end
+
+      def require_generics_resolved?
+        report?(:require_generics_resolved, :alpha)
+      end
+
+      def require_interfaces_resolved?
+        report?(:require_interfaces_resolved, :alpha)
+      end
+
+      def require_downcasts?
+        report?(:require_downcasts, :alpha)
       end
 
       # We keep this at strong because if you added an @ sg-ignore to
