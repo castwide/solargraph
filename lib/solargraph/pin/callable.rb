@@ -219,9 +219,14 @@ module Solargraph
         parameters.count(&:arg?)
       end
 
-      def to_rbs
+      # @return [String]
+      def parameters_to_rbs
         # @sg-ignore Need to add nil check here
-        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ')
+      end
+
+      def to_rbs
+        parameters_to_rbs + '-> ' + (return_type&.to_rbs || 'untyped')
       end
 
       def block?
