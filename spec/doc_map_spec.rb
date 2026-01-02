@@ -64,7 +64,7 @@ describe Solargraph::DocMap do
       uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
       allow(workspace).to receive_messages(fresh_pincache: pincache)
       allow(Gem::Specification).to receive(:find_by_path).with('uncached_gem').and_return(uncached_gemspec)
-      allow(workspace).to receive(:global_environ).and_return(Solargraph::Environ.new)
+      allow(workspace).to receive_messages(stdlib_dependencies: [], global_environ: Solargraph::Environ.new)
       allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
       expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
     end
