@@ -30,7 +30,9 @@ module Solargraph
         # @return [::Parser::Base]
         def parser
           @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.all_errors_are_fatal = true
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.ignore_warnings      = true
           end
         end
