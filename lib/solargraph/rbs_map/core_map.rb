@@ -15,10 +15,10 @@ module Solargraph
 
       def initialize; end
 
+      # @param out [IO, nil] output stream for logging
       # @return [Enumerable<Pin::Base>]
-      def pins
+      def pins out: $stderr
         return @pins if @pins
-
         @pins = []
         cache = PinCache.deserialize_core
         if cache
@@ -29,6 +29,7 @@ module Solargraph
           # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
           fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
           fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+          out&.puts 'Caching RBS pins for Ruby core'
           fill_conversions = Conversions.new(loader: fill_loader)
           @pins.concat fill_conversions.pins
 
@@ -40,6 +41,12 @@ module Solargraph
           PinCache.serialize_core @pins
         end
         @pins
+      end
+
+      # @param out [IO, nil] output stream for logging
+      # @return [Enumerable<Pin::Base>]
+      def cache_core out: $stderr
+        pins out: out
       end
 
       private
