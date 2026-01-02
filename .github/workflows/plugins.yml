@@ -122,7 +122,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4
+        ruby-version: '3.1'
         bundler-cache: false
     - name: Install gems
       run: |
