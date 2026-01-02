@@ -19,11 +19,17 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String]
+    # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = directory
+      raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
+
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
@@ -44,6 +50,12 @@ module Solargraph
       @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
+    # @param level [Symbol]
+    # @return [TypeChecker::Rules]
+    def rules(level)
+      @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
+    end
+
     # Merge the source. A merge will update the existing source for the file
     # or add it to the sources if the workspace is configured to include it.
     # The source is ignored if the configuration excludes it.
@@ -51,6 +63,7 @@ module Solargraph
     # @param sources [Array<Solargraph::Source>]
     # @return [Boolean] True if the source was added to the workspace
     def merge *sources
+      # @sg-ignore Need to add nil check here
       unless directory == '*' || sources.all? { |source| source_hash.key?(source.filename) }
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
@@ -58,7 +71,9 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
+        # @sg-ignore Need to add nil check here
         if directory == "*" || config.calculated.include?(source.filename)
+          # @sg-ignore Need to add nil check here
           source_hash[source.filename] = source
           includes_any = true
         end
@@ -139,6 +154,7 @@ module Solargraph
 
     # @sg-ignore Need to validate config
     # @return [String]
+    # @sg-ignore Need to validate config
     def command_path
       server['commandPath'] || 'solargraph'
     end

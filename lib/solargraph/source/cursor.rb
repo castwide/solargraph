@@ -19,7 +19,7 @@ module Solargraph
         @position = Position.normalize(position)
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         source.filename
       end

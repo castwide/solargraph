@@ -303,6 +303,7 @@ module Solargraph
 
       # @sg-ignore Need to validate config
       # @return [String]
+      # @sg-ignore Need detailed hash types
       def command_path
         # @type [String]
         options['commandPath'] || 'solargraph'

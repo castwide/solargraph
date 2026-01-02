@@ -22,6 +22,7 @@ module Solargraph
         items.delete_if { |i| i.name == 'false' || i.name == 'true' }
         items.unshift(UniqueType::BOOLEAN)
       end
+      # @type [Array<UniqueType>]
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       # @todo shouldn't need this cast - if statement above adds an 'Array' type
       # @type [Array<UniqueType>]

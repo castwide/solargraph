@@ -55,6 +55,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4 # keep same as typecheck.yml
+        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        rubygems: latest
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -121,7 +123,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.1'
+        ruby-version: 3.4
         rubygems: latest
         bundler-cache: false
     - name: Install gems

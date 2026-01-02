@@ -53,8 +53,8 @@ module Solargraph
         context.namespace.to_s
       end
 
-      # @sg-ignore Need to be able to do @type with a variable name
       # @return [ComplexType, ComplexType::UniqueType]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def binder
         @binder || context
       end

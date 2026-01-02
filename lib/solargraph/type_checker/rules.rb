@@ -20,7 +20,8 @@ module Solargraph
       attr_reader :rank
 
       # @param level [Symbol]
-      def initialize level
+      # @param overrides [Hash{Symbol => Symbol}]
+      def initialize level, overrides
         @rank = if LEVELS.key?(level)
           LEVELS[level]
         else
@@ -28,34 +29,39 @@ module Solargraph
           0
         end
         @level = LEVELS[LEVELS.values.index(@rank)]
+        @overrides = overrides
       end
 
       def ignore_all_undefined?
-        rank < LEVELS[:strict]
+        !report_undefined?
+      end
+
+      def report_undefined?
+        report?(:report_undefined, :strict)
       end
 
       def validate_consts?
-        rank >= LEVELS[:strict]
+        report?(:validate_consts, :strict)
       end
 
       def validate_calls?
-        rank >= LEVELS[:strict]
+        report?(:validate_calls, :strict)
       end
 
       def require_type_tags?
-        rank >= LEVELS[:strong]
+        report?(:validate_type_tags, :strong)
       end
 
       def must_tag_or_infer?
-        rank > LEVELS[:typed]
+        report?(:must_tag_or_infer, :strict)
       end
 
       def validate_tags?
-        rank > LEVELS[:normal]
+        report?(:validate_tags, :typed)
       end
 
       def require_inferred_type_params?
-        rank >= LEVELS[:alpha]
+        report?(:require_inferred_type_params, :alpha)
       end
 
       #
@@ -95,27 +101,27 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to handle while
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
       def require_all_unique_types_match_expected?
-        rank >= LEVELS[:strong]
+        report?(:require_all_unique_types_match_expected, :strong)
       end
 
       def require_all_unique_types_match_expected_on_lhs?
-        rank >= LEVELS[:strong]
+        report?(:require_all_unique_types_match_expected_on_lhs, :strong)
       end
 
       def require_no_undefined_args?
-        rank >= LEVELS[:alpha]
+        report?(:require_no_undefined_args, :alpha)
       end
 
       def require_generics_resolved?
-        rank >= LEVELS[:alpha]
+        report?(:require_generics_resolved, :alpha)
       end
 
       def require_interfaces_resolved?
-        rank >= LEVELS[:alpha]
+        report?(:require_interfaces_resolved, :alpha)
       end
 
       def require_downcasts?
-        rank >= LEVELS[:alpha]
+        report?(:require_downcasts, :alpha)
       end
 
       # We keep this at strong because if you added an @ sg-ignore to
@@ -123,7 +129,15 @@ module Solargraph
       # get a false positive - we don't run stronger level checks than
       # requested for performance reasons
       def validate_sg_ignores?
-        rank >= LEVELS[:strong]
+        report?(:validate_sg_ignores, :strong)
+      end
+
+      private
+
+      # @param type [Symbol]
+      # @param level [Symbol]
+      def report?(type, level)
+        rank >= LEVELS[@overrides.fetch(type, level)]
       end
     end
   end
