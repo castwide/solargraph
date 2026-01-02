@@ -240,11 +240,9 @@ module Solargraph
         Solargraph.logger.info "Adding #{spec.name} dependency for #{gemspec.name}"
         dep = Gem.loaded_specs[spec.name]
         # @todo is next line necessary?
-        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         dep ||= Gem::Specification.find_by_name(spec.name, spec.requirement)
         deps.merge fetch_dependencies(dep) if deps.add?(dep)
       rescue Gem::MissingSpecError
-        # @sg-ignore Unresolved call to requirement on Gem::Dependency
         Solargraph.logger.warn "Gem dependency #{spec.name} #{spec.requirement} for #{gemspec.name} not found in RubyGems."
       end.to_a
     end
@@ -252,7 +250,17 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Array<Gem::Dependency>]
     def only_runtime_dependencies gemspec
-      gemspec.dependencies - gemspec.development_dependencies
+      gemspec_deps = gemspec.dependencies - gemspec.development_dependencies
+      stdlib_dep_names = workspace.stdlib_dependencies(gemspec.name)
+      stdlib_deps = workspace.stdlib_dependencies(gemspec.name).flat_map do |dep_name|
+        # already know about this dependency
+        next [] if gemspec_deps.any? { |dep| dep.name == dep_name }
+
+        stdlib_specs = resolve_path_to_gemspecs(dep_name) || []
+
+        stdlib_specs.map { |spec| Gem::Dependency.new spec.name, "= #{spec.version}" }
+      end
+      gemspec_deps + stdlib_deps
     end
 
 

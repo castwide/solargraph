@@ -51,7 +51,6 @@ jobs:
             rbs-version: '3.8.1'
           - ruby-version: 'head'
             rbs-version: '4.0.0.dev.4'
-          - ruby-version: 'head' # TEMP
         include:
           - ruby-version: '3.0'
             rbs-version: '3.6.1'
