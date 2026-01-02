@@ -18,16 +18,20 @@ module Solargraph
     def build_docs gem_yardoc_path, yard_plugins, gemspec
       return if docs_built?(gem_yardoc_path)
 
-      Solargraph.logger.info "Saving yardoc for #{gemspec.name} #{gemspec.version} into #{gem_yardoc_path}"
-      cmd = "yardoc --db #{gem_yardoc_path} --no-output --plugin solargraph"
-      yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
-      Solargraph.logger.debug { "Running: #{cmd}" }
-      # @todo set these up to run in parallel
-      unless File.exist?(gemspec.gem_dir)
+      unless Dir.exist? gemspec.gem_dir
+        # Can happen in at least some (old?) RubyGems versions when we
+        # have a gemspec describing a standard library like bundler.
+        #
+        # https://github.com/apiology/solargraph/actions/runs/17650140201/job/50158676842?pr=10
         Solargraph.logger.info { "Bad info from gemspec - #{gemspec.gem_dir} does not exist" }
         return
       end
 
+      Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
+      cmd = "yardoc --db #{gem_yardoc_path} --no-output --plugin solargraph"
+      yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
+      Solargraph.logger.debug { "Running: #{cmd}" }
+      # @todo set these up to run in parallel
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       return if status.success?
       Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }

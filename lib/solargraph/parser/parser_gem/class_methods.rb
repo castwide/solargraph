@@ -23,9 +23,6 @@ module Solargraph
           buffer = ::Parser::Source::Buffer.new(filename, line)
           buffer.source = code
           parser.parse(buffer)
-        # @sg-ignore Unresolved type Parser::SyntaxError,
-        #   Parser::UnknownEncodingInMagicComment for variable e
-        #   https://github.com/castwide/solargraph/pull/1005
         rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
           raise Parser::SyntaxError, e.message
         end
@@ -33,7 +30,9 @@ module Solargraph
         # @return [::Parser::Base]
         def parser
           @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.all_errors_are_fatal = true
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.ignore_warnings      = true
           end
         end

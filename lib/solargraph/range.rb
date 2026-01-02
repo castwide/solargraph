@@ -27,9 +27,12 @@ module Solargraph
     # @param other [BasicObject]
     def <=>(other)
       return nil unless other.is_a?(Range)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       if start == other.start
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         ending <=> other.ending
       else
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         start <=> other.start
       end
     end
@@ -98,6 +101,7 @@ module Solargraph
 
     def == other
       return false unless other.is_a?(Range)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       start == other.start && ending == other.ending
     end
 

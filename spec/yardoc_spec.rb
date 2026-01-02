@@ -104,7 +104,7 @@ describe Solargraph::Yardoc do
 
         described_class.build_docs(gem_yardoc_path, [], gemspec)
 
-        expect(called_with[0]['BUNDLE_GEMFILE']).to start_with('/')
+        expect(called_with[0]['BUNDLE_GEMFILE']).to eq(File.absolute_path('Gemfile'))
       end
     end
   end

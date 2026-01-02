@@ -29,7 +29,11 @@ module Solargraph
     def initialize directory = '', config = nil, server = {}
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
-      @directory = directory
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
@@ -98,6 +102,12 @@ module Solargraph
     # @return [Array<String>]
     def yard_plugins
       @yard_plugins ||= global_environ.yard_plugins.sort.uniq
+    end
+
+    # @param level [Symbol]
+    # @return [TypeChecker::Rules]
+    def rules(level)
+      @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
     end
 
     # Merge the source. A merge will update the existing source for the file
