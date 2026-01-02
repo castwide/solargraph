@@ -116,12 +116,9 @@ jobs:
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
-       # git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone https://github.com/lekemula/solargraph-rspec.git
 
-       # pending https://github.com/lekemula/solargraph-rspec/pull/30
-       git clone https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
-       git checkout reset_closures
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
