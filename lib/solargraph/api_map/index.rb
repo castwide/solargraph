@@ -138,7 +138,7 @@ module Solargraph
 
       # @generic T
       # @param klass [Class<generic<T>>]
-      # @param hash [Hash{String => generic<T>}]
+      # @param hash [Hash{String => Array<generic<T>>}]
       #
       # @return [void]
       def map_references klass, hash
