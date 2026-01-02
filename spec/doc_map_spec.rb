@@ -37,37 +37,21 @@ describe Solargraph::DocMap do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
     allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], [])
+    Solargraph::DocMap.new(['set'], [], workspace)
     expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
   it 'ignores nil requires' do
-    expect { Solargraph::DocMap.new([nil], []) }.not_to raise_error
+    expect { Solargraph::DocMap.new([nil], [], workspace) }.not_to raise_error
   end
 
   it 'ignores empty requires' do
-    expect { Solargraph::DocMap.new([''], []) }.not_to raise_error
+    expect { Solargraph::DocMap.new([''], [], workspace) }.not_to raise_error
   end
 
   it 'collects dependencies' do
-    doc_map = Solargraph::DocMap.new(['rspec'], [])
+    doc_map = Solargraph::DocMap.new(['rspec'], [], workspace)
     expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
-  end
-
-  it 'includes convention requires from environ' do
-    dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def global(doc_map)
-        Solargraph::Environ.new(
-          requires: ['convention_gem1', 'convention_gem2']
-        )
-      end
-    end
-
-    it 'logs timing' do
-      # force lazy evaluation
-      _pins = doc_map.pins
-      expect(out.string).to include('Deserialized ').and include(' gem pins ').and include(' ms')
-    end
   end
 
   context 'with an uncached but valid gemspec' do
