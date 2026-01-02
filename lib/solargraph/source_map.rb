@@ -65,7 +65,7 @@ module Solargraph
       @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
     end
 
-    # @return [String]
+    # @return [String, nil]
     def filename
       source.filename
     end

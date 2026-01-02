@@ -48,6 +48,7 @@ module Solargraph
         # @param source [Source]
         # @return [Array]
         def map source
+          # @sg-ignore Need to add nil check here
           return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source
         end
@@ -119,7 +120,6 @@ module Solargraph
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
-            # @sg-ignore Unresolved call to is_a?
             # @type [Array<Pin::Method>]
             method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last

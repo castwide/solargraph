@@ -35,7 +35,7 @@ module Solargraph
         @lvars = lvars
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         source.filename
       end

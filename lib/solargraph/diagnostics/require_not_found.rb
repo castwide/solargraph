@@ -10,6 +10,7 @@ module Solargraph
         return [] unless source.parsed? && source.synchronized?
         result = []
         refs = {}
+        # @sg-ignore Need to add nil check here
         map = api_map.source_map(source.filename)
         map.requires.each { |ref| refs[ref.name] = ref }
         api_map.missing_docs.each do |r|

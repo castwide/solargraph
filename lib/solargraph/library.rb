@@ -490,10 +490,13 @@ module Solargraph
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
+      # @sg-ignore Need to add nil check here
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename]
       else
         false
@@ -503,7 +506,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore Need to add nil check here
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -534,6 +539,7 @@ module Solargraph
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
       filenames = ->{ _filenames ||= workspace.filenames.to_set }
+      # @sg-ignore Need to add nil check here
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -585,11 +591,15 @@ module Solargraph
     # @return [void]
     def maybe_map source
       return unless source
+      # @sg-ignore Need to add nil check here
       return unless @current == source || workspace.has_file?(source.filename)
+      # @sg-ignore Need to add nil check here
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
+        # @sg-ignore Need to add nil check here
         source_map_hash[source.filename] = new_map
       else
+        # @sg-ignore Need to add nil check here
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end

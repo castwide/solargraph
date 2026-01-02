@@ -620,6 +620,7 @@ module Solargraph
     # @param cursor [Source::Cursor]
     # @return [SourceMap::Clip]
     def clip cursor
+      # @sg-ignore Need to add nil check here
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
       SourceMap::Clip.new(self, cursor)
