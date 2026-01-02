@@ -166,10 +166,13 @@ module Solargraph
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
               redefine_return_type pin, tag
-              if new_pin
-                new_pin.docstring.add_tag(tag)
-                redefine_return_type new_pin, tag
-              end
+              pin.reset_generated!
+
+              next unless new_pin
+
+              new_pin.docstring.add_tag(tag)
+              redefine_return_type new_pin, tag
+              new_pin.reset_generated!
             end
           end
         end
@@ -186,7 +189,6 @@ module Solargraph
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
-        pin.reset_generated!
       end
     end
   end
