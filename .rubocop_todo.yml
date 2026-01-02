@@ -106,7 +106,6 @@ Layout/EndOfLine:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -575,7 +574,6 @@ RSpec/BeforeAfterAll:
     - '**/spec/rails_helper.rb'
     - '**/spec/support/**/*.rb'
     - 'spec/api_map_spec.rb'
-    - 'spec/doc_map_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
 
@@ -1174,7 +1172,6 @@ Style/StringLiterals:
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
   Exclude:
-    - 'lib/solargraph/pin/base_variable.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/signature.rb'
