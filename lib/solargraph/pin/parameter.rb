@@ -30,12 +30,19 @@ module Solargraph
       end
 
       def combine_with(other, attrs={})
-        new_attrs = {
-          decl: assert_same(other, :decl),
-          presence: choose(other, :presence),
-          asgn_code: choose(other, :asgn_code),
-        }.merge(attrs)
-        super(other, new_attrs)
+        # Parameters can be combined with local variables
+        new_attrs = if other.is_a?(Parameter)
+                      {
+                        decl: assert_same(other, :decl),
+                        asgn_code: choose(other, :asgn_code)
+                      }
+                    else
+                      {
+                        decl: decl,
+                        asgn_code: asgn_code
+                      }
+                    end
+        super(other, new_attrs.merge(attrs))
       end
 
       def keyword?

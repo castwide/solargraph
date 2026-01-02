@@ -50,12 +50,8 @@ module Solargraph
         def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
-          found = if head?
-            api_map.visible_pins(locals, word, name_pin, location)
-          else
-            []
-          end
-          return inferred_pins(found, api_map, name_pin, locals) unless found.empty?
+          found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           pins = name_pin.binder.each_unique_type.flat_map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
@@ -67,7 +63,7 @@ module Solargraph
 
         private
 
-        # @param pins [::Enumerable<Pin::Method>]
+        # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
@@ -75,6 +71,7 @@ module Solargraph
         def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             overloads = p.signatures
             # next p if overloads.empty?
             type = ComplexType::UNDEFINED
@@ -83,10 +80,15 @@ module Solargraph
             # use it.  If we didn't pass a block, the logic below will
             # reject it regardless
 
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             with_block, without_block = overloads.partition(&:block?)
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @type Array<Pin::Signature>
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
+            # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
               match = true
@@ -145,6 +147,7 @@ module Solargraph
               end
               break if type.defined?
             end
+            # @sg-ignore Flow-sensitive typing should handle is_a? and next
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
@@ -246,6 +249,7 @@ module Solargraph
         def find_method_pin(name_pin)
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
+            # @sg-ignore Reassignment as a function of itself issue
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
@@ -313,7 +317,7 @@ module Solargraph
         # @return [Pin::Block, nil]
         def find_block_pin(api_map)
           node_location = Solargraph::Location.from_node(block.node)
-          return if  node_location.nil?
+          return if node_location.nil?
           block_pins = api_map.get_block_pins
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
@@ -326,10 +330,11 @@ module Solargraph
         def block_call_type(api_map, name_pin, locals)
           return nil unless with_block?
 
-          block_context_pin = name_pin
           block_pin = find_block_pin(api_map)
-          block_context_pin = block_pin.closure if block_pin
-          block.infer(api_map, block_context_pin, locals)
+          # We use the block pin as the closure, as the parameters
+          # here will only be defined inside the block itself and we
+          # need to be able to see them
+          block.infer(api_map, block_pin, locals)
         end
       end
     end

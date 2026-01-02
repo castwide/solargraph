@@ -6,29 +6,85 @@ module Solargraph
       # include Solargraph::Source::NodeMethods
       include Solargraph::Parser::NodeMethods
 
-      # @return [Parser::AST::Node, nil]
-      attr_reader :assignment
+      # @return [Array<Parser::AST::Node>]
+      attr_reader :assignments
 
       attr_accessor :mass_assignment
 
+      # @return [Range, nil]
+      attr_reader :presence
+
       # @param return_type [ComplexType, nil]
-      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
-      # @param assignment [Parser::AST::Node, nil]
-      def initialize assignment: nil, return_type: nil, mass_assignment: nil, **splat
+      # @param assignment [Parser::AST::Node, nil] First assignment
+      #   that was made to this variable
+      # @param assignments [Array<Parser::AST::Node>] Possible
+      #   assignments that may have been made to this variable
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      # @param presence [Range, nil]
+      # @param presence_certain [Boolean]
+      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
+      def initialize assignment: nil, assignments: [], mass_assignment: nil,
+                     presence: nil, presence_certain: false, return_type: nil,
+                     **splat
         super(**splat)
-        @assignment = assignment
+        @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
-        @mass_assignment = nil
+        @mass_assignment = mass_assignment
         @return_type = return_type
+        @presence = presence
+        @presence_certain = presence_certain
+      end
+
+      def reset_generated!
+        @assignment = nil
+        super
       end
 
       def combine_with(other, attrs={})
+        new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
-          assignment: assert_same(other, :assignment),
-          mass_assignment: assert_same(other, :mass_assignment),
+          assignments: new_assignments,
+          mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
+          presence: combine_presence(other),
+          presence_certain: combine_presence_certain(other),
         })
         super(other, new_attrs)
+      end
+
+      # @param other [self]
+      #
+      # @return [Array(AST::Node, Integer), nil]
+      def combine_mass_assignment(other)
+        # @todo pick first non-nil arbitrarily - we don't yet support
+        #   mass assignment merging
+        mass_assignment || other.mass_assignment
+      end
+
+      # If a certain pin is being combined with an uncertain pin, we
+      # end up with a certain result
+      #
+      # @param other [self]
+      #
+      # @return [Boolean]
+      def combine_presence_certain(other)
+        presence_certain? || other.presence_certain?
+      end
+
+      # @return [Parser::AST::Node, nil]
+      def assignment
+        @assignment ||= assignments.last
+      end
+
+      # @param other [self]
+      #
+      # @return [::Array<Parser::AST::Node>]
+      def combine_assignments(other)
+        (other.assignments + assignments).uniq
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       def completion_item_kind
@@ -79,13 +135,15 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
-        unless @assignment.nil?
-          types = return_types_from_node(@assignment, api_map)
-          return ComplexType.new(types.uniq) unless types.empty?
-        end
+        assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
+        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        return type_from_assignment unless type_from_assignment.nil?
 
+        # @todo should handle merging types from mass assignments as
+        #   well so that we can do better flow sensitive typing with
+        #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
@@ -113,7 +171,129 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
+      end
+
+      # Narrow the presence range to the intersection of both.
+      #
+      # @param other [self]
+      #
+      # @return [Range, nil]
+      def combine_presence(other)
+        return presence || other.presence if presence.nil? || other.presence.nil?
+
+        Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        return closure if self.closure == other.closure
+
+        # choose first defined, as that establishes the scope of the variable
+        if closure.nil? || other.closure.nil?
+          Solargraph.assert_or_log(:varible_closure_missing) do
+            "One of the local variables being combined is missing a closure: " \
+              "#{self.inspect} vs #{other.inspect}"
+          end
+          return closure || other.closure
+        end
+
+        if closure.location.nil? || other.closure.location.nil?
+          return closure.location.nil? ? other.closure : closure
+        end
+
+        # if filenames are different, this will just pick one
+        return closure if closure.location <= other.closure.location
+
+        other.closure
+      end
+
+      # @param other_closure [Pin::Closure]
+      # @param other_loc [Location]
+      def visible_at?(other_closure, other_loc)
+        location.filename == other_loc.filename &&
+          (!presence || presence.include?(other_loc.range.start)) &&
+          visible_in_closure?(other_closure)
+      end
+
+      def presence_certain?
+        @presence_certain
+      end
+
+      protected
+
+      # @return [Range]
+      attr_writer :presence
+
       private
+
+      # See if this variable is visible within 'viewing_closure'
+      #
+      # @param viewing_closure [Pin::Closure]
+      # @return [Boolean]
+      def visible_in_closure? viewing_closure
+        return false if closure.nil?
+
+        # if we're declared at top level, we can't be seen from within
+        # methods declared tere
+
+        return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
+
+        return true if viewing_closure.binder.namespace == closure.binder.namespace
+
+        return true if viewing_closure.return_type == closure.context
+
+        # classes and modules can't see local variables declared
+        # in their parent closure, so stop here
+        return false if scope == :instance && viewing_closure.is_a?(Pin::Namespace)
+
+        parent_of_viewing_closure = viewing_closure.closure
+
+        return false if parent_of_viewing_closure.nil?
+
+        visible_in_closure?(parent_of_viewing_closure)
+      end
+
+      # @param other [self]
+      # @return [ComplexType, nil]
+      def combine_return_type(other)
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return return_type
+        end
+        if other.presence_certain? && other.return_type&.defined?
+          return other.return_type
+        end
+        combine_types(other, :return_type)
+      end
+
+      # @param other [self]
+      # @param attr [::Symbol]
+      #
+      # @return [ComplexType, nil]
+      def combine_types(other, attr)
+        # @type [ComplexType, nil]
+        type1 = send(attr)
+        # @type [ComplexType, nil]
+        type2 = other.send(attr)
+        if type1 && type2
+          types = (type1.items + type2.items).uniq
+          ComplexType.new(types)
+        else
+          type1 || type2
+        end
+      end
+
+      # @return [::Symbol]
+      def scope
+        :instance
+      end
 
       # @return [ComplexType]
       def generate_complex_type

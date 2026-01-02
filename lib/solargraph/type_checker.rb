@@ -471,9 +471,8 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
-              # @sg-ignore Unresolved call to defined?
+              # @todo Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
@@ -751,18 +750,23 @@ module Solargraph
       with_opts = false
       with_block = false
       pin.parameters.each do |pin|
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         if [:kwarg, :kwoptarg, :kwrestarg].include?(pin.decl)
           with_opts = true
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         elsif pin.decl == :block
           with_block = true
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
         end
       end
-      args.push Solargraph::Parser.chain_string('{}') if with_opts
-      args.push Solargraph::Parser.chain_string('&') if with_block
+      pin_location = pin.location
+      starting_line = pin_location ? pin_location.range.start.line : 0
+      args.push Solargraph::Parser.chain_string('{}', filename, starting_line) if with_opts
+      args.push Solargraph::Parser.chain_string('&', filename, starting_line) if with_block
       args
     end
 

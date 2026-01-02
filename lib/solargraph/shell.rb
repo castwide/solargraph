@@ -150,6 +150,10 @@ module Solargraph
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          warn "Gem '#{name}' failed while loading"
+          warn e.message
+          warn e.backtrace.join("\n")
         end
         STDERR.puts "Documentation cached for #{names.count} gems."
       end
