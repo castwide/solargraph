@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class Closure < Base
+    class Closure < CompoundStatement
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
@@ -44,6 +44,7 @@ module Solargraph
         end
       end
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def binder
         @binder || context
       end

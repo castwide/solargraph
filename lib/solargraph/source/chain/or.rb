@@ -15,7 +15,12 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           types = @links.map { |link| link.infer(api_map, name_pin, locals) }
-          [Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.new(types.uniq), source: :chain)]
+          combined_type = Solargraph::ComplexType.new(types)
+          unless types.all?(&:nullable?)
+            combined_type = combined_type.without_nil
+          end
+
+          [Solargraph::Pin::ProxyType.anonymous(combined_type, source: :chain)]
         end
       end
     end

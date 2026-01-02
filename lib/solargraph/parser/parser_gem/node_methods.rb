@@ -119,7 +119,6 @@ module Solargraph
           result
         end
 
-        # @sg-ignore Wrong argument type for AST::Node.new: type expected AST::_ToSym, received :nil
         NIL_NODE = ::Parser::AST::Node.new(:nil)
 
         # @param node [Parser::AST::Node]
@@ -303,7 +302,6 @@ module Solargraph
         module DeepInference
           class << self
             CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
-            CONDITIONAL_ALL = [:or]
             ONLY_ONE_CHILD = [:return]
             FIRST_TWO_CHILDREN = [:rescue]
             COMPOUND_STATEMENTS = [:begin, :kwbegin]
@@ -350,8 +348,6 @@ module Solargraph
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                 result.concat reduce_to_value_nodes(node.children[1..-1])
                 # result.push NIL_NODE unless node.children[2]
-              elsif CONDITIONAL_ALL.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children)
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif FIRST_TWO_CHILDREN.include?(node.type)

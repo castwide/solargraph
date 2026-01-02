@@ -201,6 +201,7 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
+        # @todo Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
@@ -292,8 +293,11 @@ module Solargraph
           end
           closest = found.typify(api_map) if found
           # @todo remove the internal_or_core? check at a higher-than-strict level
+          # @sg-ignore Change to something flow-sensitive typing understands
           if !found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))
+            # @sg-ignore Change to something flow-sensitive typing understands
             unless closest.generic? || ignored_pins.include?(found)
+              # @sg-ignore Change to something flow-sensitive typing understands
               if closest.defined?
                 result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
               else
@@ -317,7 +321,6 @@ module Solargraph
     def argument_problems_for chain, api_map, closure_pin, locals, location
       result = []
       base = chain
-      # @type last_base_link [Solargraph::Source::Chain::Call]
       last_base_link = base.links.last
       return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
@@ -471,9 +474,8 @@ module Solargraph
             ptype = data[:qualified]
             ptype = ptype.self_to_type(pin.context)
             unless ptype.undefined?
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1127
               argtype = argchain.infer(api_map, closure_pin, locals).self_to_type(closure_pin.context)
-              # @sg-ignore Unresolved call to defined?
+              # @todo Unresolved call to defined?
               if argtype.defined? && ptype && !any_types_match?(api_map, ptype, argtype)
                 result.push Problem.new(location, "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
               end
@@ -639,6 +641,7 @@ module Solargraph
           base = base.base
         end
         closest = found.typify(api_map) if found
+        # @sg-ignore Change to something flow-sensitive typing understands
         if !found || closest.defined? || internal?(found)
           return false
         end
