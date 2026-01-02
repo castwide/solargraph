@@ -1,51 +1,55 @@
 describe 'NodeChainer' do
+  def chain_string str
+    Solargraph::Parser.chain_string(str, 'file.rb', 0)
+  end
+
   it "recognizes self keywords" do
-    chain = Solargraph::Parser.chain_string('self.foo')
+    chain = chain_string('self.foo')
     expect(chain.links.first.word).to eq('self')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
   end
 
   it "recognizes super keywords" do
-    chain = Solargraph::Parser.chain_string('super.foo')
+    chain = chain_string('super.foo')
     expect(chain.links.first.word).to eq('super')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ZSuper)
   end
 
   it "recognizes constants" do
-    chain = Solargraph::Parser.chain_string('Foo::Bar')
+    chain = chain_string('Foo::Bar')
     expect(chain.links.length).to eq(1)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
     expect(chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
   it "splits method calls with arguments and blocks" do
-    chain = Solargraph::Parser.chain_string('var.meth1(1, 2).meth2 do; end')
+    chain = chain_string('var.meth1(1, 2).meth2 do; end')
     expect(chain.links.map(&:word)).to eq(['var', 'meth1', 'meth2'])
   end
 
   it "recognizes literals" do
-    chain = Solargraph::Parser.chain_string('"string"')
+    chain = chain_string('"string"')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('100')
+    chain = chain_string('100')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('[1, 2, 3]')
+    chain = chain_string('[1, 2, 3]')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('{ foo: "bar" }')
+    chain = chain_string('{ foo: "bar" }')
     expect(chain).to be_literal
   end
 
   it "recognizes instance variables" do
-    chain = Solargraph::Parser.chain_string('@foo')
+    chain = chain_string('@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::InstanceVariable)
   end
 
   it "recognizes class variables" do
-    chain = Solargraph::Parser.chain_string('@@foo')
+    chain = chain_string('@@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ClassVariable)
   end
 
   it "recognizes global variables" do
-    chain = Solargraph::Parser.chain_string('$foo')
+    chain = chain_string('$foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::GlobalVariable)
   end
 

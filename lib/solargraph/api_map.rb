@@ -24,9 +24,21 @@ module Solargraph
     attr_reader :missing_docs
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    def initialize pins: []
+    # @param loose_unions [Boolean] if true, a potential type can be
+    #   inferred if ANY of the UniqueTypes in the base chain's
+    #   ComplexType match it. If false, every single UniqueTypes in
+    #   the base must be ALL able to independently provide this
+    #   type.  The former is useful during completion, but the
+    #   latter is best for typechecking at higher levels.
+    #
+    #   Currently applies only to selecting potential methods to
+    #   select in a Call link, but is likely to expand in the
+    #   future to similar situations.
+    #
+    def initialize pins: [], loose_unions: true
       @source_map_hash = {}
       @cache = Cache.new
+      @loose_unions = loose_unions
       index pins
     end
 
@@ -51,6 +63,8 @@ module Solargraph
     def hash
       equality_fields.hash
     end
+
+    attr_reader :loose_unions
 
     def to_s
       self.class.to_s
@@ -114,7 +128,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
+      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires, @missing_docs, @loose_unions]
     end
 
     # @return [DocMap]
@@ -180,10 +194,11 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load directory
-      api_map = new
+    def self.load directory, loose_unions: true
+      api_map = new(loose_unions: loose_unions)
       workspace = Solargraph::Workspace.new(directory)
       # api_map.catalog Bench.new(workspace: workspace)
       library = Library.new(workspace)
@@ -215,18 +230,19 @@ module Solargraph
     #
     #
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, nil] The output stream for messages
+    # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load_with_cache directory, out
-      api_map = load(directory)
+    def self.load_with_cache directory, out = $stdout, loose_unions: true
+      api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
         return api_map
       end
 
       api_map.cache_all!(out)
-      load(directory)
+      load(directory, loose_unions: loose_unions)
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -340,10 +356,28 @@ module Solargraph
       result
     end
 
-    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
-    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
-    def visible_pins(*args, **kwargs, &blk)
-      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
+    # Find a variable pin by name and where it is used.
+    #
+    # Resolves our most specific view of this variable's type by
+    # preferring pins created by flow-sensitive typing when we have
+    # them based on the Closure and Location.
+    #
+    # @param locals [Array<Pin::LocalVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location]
+    #
+    # @return [Pin::LocalVariable, nil]
+    def var_at_location(locals, name, closure, location)
+      with_correct_name = locals.select { |pin| pin.name == name}
+      with_presence = with_correct_name.reject { |pin| pin.presence.nil? }
+      vars_at_location = with_presence.reject do |pin|
+        # visible_at? excludes the starting position, but we want to
+        # include it for this purpose
+        (!pin.visible_at?(closure, location) &&
+         !pin.starts_at?(location))
+      end
+      vars_at_location.inject(&:combine_with)
     end
 
     # Get an array of class variable pins for a namespace.
@@ -636,8 +670,11 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
+      # @sg-ignore We should understand reassignment of variable to new type
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sup = sup.simplify_literals.to_s
+      # @sg-ignore We should understand reassignment of variable to new type
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
@@ -870,7 +907,6 @@ module Solargraph
         break if original
       end
 
-      # @sg-ignore ignore `received nil` for original
       create_resolved_alias_pin(alias_pin, original) if original
     end
 

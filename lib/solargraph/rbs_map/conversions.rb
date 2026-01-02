@@ -96,7 +96,7 @@ module Solargraph
         type = build_type(decl.name, decl.args)
         generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
-          name: decl.name.relative!.to_s,
+          name: type.rooted_name,
           type_location: location_decl_to_pin_location(decl.location),
           generic_values: generic_values,
           closure: closure,
@@ -232,6 +232,8 @@ module Solargraph
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
 
+        raise "Invalid type for module declaration: #{module_pin.class}" unless module_pin.is_a?(Pin::Namespace)
+
         add_mixins decl, module_pin.closure
       end
 
@@ -352,7 +354,6 @@ module Solargraph
       # @param context [Context]
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
-      # @sg-ignore
       # @return [Symbol]
       def calculate_method_visibility(decl, context, closure, scope, name)
         override_key = [closure.path, scope, name]
@@ -737,7 +738,7 @@ module Solargraph
         build_type(type_name, type_args).tags
       end
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [Object]
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
@@ -794,6 +795,9 @@ module Solargraph
           # e.g., singleton(String)
           type_tag(type.name)
         else
+          # RBS doesn't provide a common base class for its type AST nodes'
+          #
+          # @sg-ignore Unresolved call to location on Object
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
