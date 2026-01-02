@@ -512,7 +512,8 @@ module Solargraph
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first
       methods = if namespace_pin.is_a?(Pin::Constant)
-                  type = namespace_pin.infer(self)
+                  type = namespace_pin.typify(self)
+                  type = namespace_pin.probe(self) unless type.defined?
                   if type.defined?
                     namespace_pin = store.get_path_pins(type.namespace).first
                     get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
