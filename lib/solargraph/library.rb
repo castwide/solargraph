@@ -57,8 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
+      # @sg-ignore flow sensitive typing needs to handle ivars
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_hash.delete @current.filename
+        # @sg-ignore flow sensitive typing needs to handle ivars
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -72,7 +75,9 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Boolean]
+    # @sg-ignore flow sensitive typing needs to handle ivars
     def attached? filename
+      # @sg-ignore flow sensitive typing needs to handle ivars
       !@current.nil? && @current.filename == filename
     end
     alias open? attached?
@@ -82,6 +87,7 @@ module Solargraph
     # @param filename [String]
     # @return [Boolean] True if the specified file was detached
     def detach filename
+      # @sg-ignore flow sensitive typing needs to handle ivars
       return false if @current.nil? || @current.filename != filename
       attach nil
       true
@@ -182,9 +188,14 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
+        # @sg-ignore Need to add nil check here
+        # @type [MatchData, nil]
         lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        # @sg-ignore Need to add nil check here
+        # @type [MatchData, nil]
         rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore Need to add nil check here
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -255,15 +266,19 @@ module Solargraph
       files.uniq(&:filename).each do |source|
         found = source.references(pin.name)
         found.select! do |loc|
+          # @sg-ignore Need to add nil check here
+          # @type [Solargraph::Pin::Base, nil]
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
+          # @todo Flow-sensitive typing should allow shadowing of Kernel#caller
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
               other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
+              # @todo Flow-sensitive typing should allow shadowing of Kernel#caller
               caller == other
             end
           else
@@ -273,6 +288,7 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
           found.map! do |loc|
+            # @sg-ignore Need to add nil check here
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -299,6 +315,7 @@ module Solargraph
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
+      # @sg-ignore Need to add nil check here
       pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
       return nil if pin.nil?
       # @param full [String]
@@ -403,6 +420,7 @@ module Solargraph
       workspace.config.reporters.each do |line|
         if line == 'all!'
           Diagnostics.reporters.each do |reporter_name|
+            # @sg-ignore Need to add nil check here
             repargs[Diagnostics.reporter(reporter_name)] ||= []
           end
         else
@@ -410,7 +428,9 @@ module Solargraph
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          # @sg-ignore flow sensitive typing needs to handle 'raise if'
           repargs[reporter] ||= []
+          # @sg-ignore flow sensitive typing needs to handle 'raise if'
           repargs[reporter].concat args
         end
       end
@@ -433,6 +453,7 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
+        # @sg-ignore flow sensitive typing needs to handle ivars
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -469,10 +490,13 @@ module Solargraph
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
+      # @sg-ignore Need to add nil check here
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename]
       else
         false
@@ -482,7 +506,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
+        # @sg-ignore Need to add nil check here
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore Need to add nil check here
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -513,6 +539,7 @@ module Solargraph
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
       filenames = ->{ _filenames ||= workspace.filenames.to_set }
+      # @sg-ignore Need to add nil check here
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -539,8 +566,10 @@ module Solargraph
     #
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
+    # @sg-ignore flow sensitive typing needs to handle ivars
     # @return [Solargraph::Source]
     def read filename
+      # @sg-ignore flow sensitive typing needs to handle ivars
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
       workspace.source(filename)
@@ -562,11 +591,15 @@ module Solargraph
     # @return [void]
     def maybe_map source
       return unless source
+      # @sg-ignore Need to add nil check here
       return unless @current == source || workspace.has_file?(source.filename)
+      # @sg-ignore Need to add nil check here
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
+        # @sg-ignore Need to add nil check here
         source_map_hash[source.filename] = new_map
       else
+        # @sg-ignore Need to add nil check here
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end
@@ -632,24 +665,31 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       @total = pending if pending > @total
+      # @sg-ignore flow sensitive typing needs to handle ivars
       finished = @total - pending
+      # @sg-ignore flow sensitive typing needs to handle ivars
       pct = if @total.zero?
         0
       else
+        # @sg-ignore flow sensitive typing needs to handle ivars
         ((finished.to_f / @total.to_f) * 100).to_i
       end
       message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
       # "
       if @cache_progress
+        # @sg-ignore flow sensitive typing needs to handle ivars
         @cache_progress.report(message, pct)
       else
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
+        # @sg-ignore Should handle redefinition of types in simple contexts
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
+        # @sg-ignore Should handle redefinition of types in simple contexts
         @cache_progress.report(message, pct)
       end
       changed

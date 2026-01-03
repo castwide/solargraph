@@ -32,9 +32,10 @@ module Solargraph
           fill_conversions = Conversions.new(loader: fill_loader)
           @pins.concat fill_conversions.pins
 
+          # add some overrides
           @pins.concat RbsMap::CoreFills::ALL
-
-          processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
+          # process overrides, then remove any which couldn't be resolved
+          processed = ApiMap::Store.new(@pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
           @pins.replace processed
 
           PinCache.serialize_core @pins

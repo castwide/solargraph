@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 
-# @todo PR the RBS gem to add this
-# @!parse
-#   module ::Gem
-#    class SpecFetcher; end
-#   end
-
 module Solargraph
   module LanguageServer
     module Message
@@ -64,6 +58,7 @@ module Solargraph
               end
             elsif fetched?
               Solargraph::Logging.logger.warn error
+              # @sg-ignore Need to add nil check here
               host.show_message(error, MessageTypes::ERROR) if params['verbose']
             end
             set_result({
@@ -78,6 +73,7 @@ module Solargraph
           attr_reader :current
 
           # @return [Gem::Version]
+          # @sg-ignore Need to add nil check here
           def available
             if !@available && !@fetched
               @fetched = true

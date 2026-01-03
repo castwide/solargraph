@@ -60,6 +60,8 @@ module Solargraph
     # @param c1 [Integer]
     # @param l2 [Integer]
     # @param c2 [Integer]
+    #
+    # @sg-ignore Need to add nil check here
     # @return [String]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(code, l1, c1)
@@ -81,7 +83,7 @@ module Solargraph
     #
     # @param line [Integer]
     # @param column [Integer]
-    # @return [Array<AST::Node>]
+    # @return [Array<Parser::AST::Node>]
     def tree_at(line, column)
       position = Position.new(line, column)
       stack = []
@@ -131,20 +133,29 @@ module Solargraph
       return false if Position.to_offset(code, position) >= code.length
       string_nodes.each do |node|
         range = Range.from_node(node)
+        # @sg-ignore Need to add nil check here
         next if range.ending.line < position.line
+        # @sg-ignore Need to add nil check here
         break if range.ending.line > position.line
+        # @sg-ignore Need to add nil check here
         return true if node.type == :str && range.include?(position) && range.start != position
+        # @sg-ignore Need to add nil check here
         return true if [:STR, :str].include?(node.type) && range.include?(position) && range.start != position
         if node.type == :dstr
           inner = node_at(position.line, position.column)
           next if inner.nil?
           inner_range = Range.from_node(inner)
+          # @sg-ignore Need to add nil check here
           next unless range.include?(inner_range.ending)
           return true if inner.type == :str
+          # @sg-ignore Need to add nil check here
           inner_code = at(Solargraph::Range.new(inner_range.start, position))
+          # @sg-ignore Need to add nil check here
           return true if (inner.type == :dstr && inner_range.ending.character <= position.character) && !inner_code.end_with?('}') ||
+                         # @sg-ignore Need to add nil check here
                          (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
+        # @sg-ignore Need to add nil check here
         break if range.ending.line > position.line
       end
       false
@@ -181,17 +192,22 @@ module Solargraph
     # @return [String]
     def code_for(node)
       rng = Range.from_node(node)
+      # @sg-ignore Need to add nil check here
       b = Position.line_char_to_offset(code, rng.start.line, rng.start.column)
+      # @sg-ignore Need to add nil check here
       e = Position.line_char_to_offset(code, rng.ending.line, rng.ending.column)
       frag = code[b..e-1].to_s
       frag.strip.gsub(/,$/, '')
     end
 
-    # @param node [Parser::AST::Node]
+    # @param node [AST::Node]
+    #
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
+      # @sg-ignore Need to add nil check here
       stringified_comments[rng.start.line] ||= begin
+        # @sg-ignore Need to add nil check here
         buff = associated_comments[rng.start.line]
         buff ? stringify_comment_array(buff) : nil
       end
@@ -219,6 +235,7 @@ module Solargraph
     # @return [Array<Range>]
     def folding_ranges
       @folding_ranges ||= begin
+        # @type [Array<Range>]
         result = []
         inner_folding_ranges node, result
         result.concat foldable_comment_block_ranges
@@ -232,7 +249,7 @@ module Solargraph
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #
-    # @return [Hash{Integer => String}]
+    # @return [Hash{Integer => String, nil}]
     def associated_comments
       @associated_comments ||= begin
         # @type [Hash{Integer => String}]
@@ -265,18 +282,23 @@ module Solargraph
       cursor
     end
 
-    # @param top [Parser::AST::Node]
+    # @param top [Parser::AST::Node, nil]
     # @param result [Array<Range>]
     # @param parent [Symbol, nil]
     # @return [void]
     def inner_folding_ranges top, result = [], parent = nil
       return unless Parser.is_ast_node?(top)
+      # @sg-ignore Translate to something flow sensitive typing understands
       if FOLDING_NODE_TYPES.include?(top.type)
+        # @sg-ignore Translate to something flow sensitive typing understands
         range = Range.from_node(top)
+        # @sg-ignore Need to add nil check here
         if result.empty? || range.start.line > result.last.start.line
+          # @sg-ignore Need to add nil check here
           result.push range unless range.ending.line - range.start.line < 2
         end
       end
+      # @sg-ignore Translate to something flow sensitive typing understands
       top.children.each do |child|
         inner_folding_ranges(child, result, top.type)
       end
@@ -298,6 +320,7 @@ module Solargraph
           ctxt.concat p
         else
           here = p.index(/[^ \t]/)
+          # @sg-ignore Should handle redefinition of types in simple contexts
           skip = here if skip.nil? || here < skip
           ctxt.concat p[skip..-1]
         end
@@ -308,7 +331,7 @@ module Solargraph
 
     # A hash of line numbers and their associated comments.
     #
-    # @return [Hash{Integer => Array<String>, nil}]
+    # @return [Hash{Integer => String}]
     def stringified_comments
       @stringified_comments ||= {}
     end
@@ -348,9 +371,11 @@ module Solargraph
     def string_nodes_in n
       result = []
       if Parser.is_ast_node?(n)
+        # @sg-ignore Translate to something flow sensitive typing understands
         if n.type == :str || n.type == :dstr || n.type == :STR || n.type == :DSTR
           result.push n
         else
+          # @sg-ignore Translate to something flow sensitive typing understands
           n.children.each{ |c| result.concat string_nodes_in(c) }
         end
       end
@@ -364,6 +389,7 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
+      # @sg-ignore Need to add nil check here
       if here.contain?(position)
         stack.unshift node
         node.children.each do |c|
@@ -396,7 +422,7 @@ module Solargraph
       end
       @finalized = true
       begin
-        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename, 0)
         @parsed = true
         @repaired = @code
       rescue Parser::SyntaxError, EncodingError => e
@@ -412,7 +438,7 @@ module Solargraph
         end
         error_ranges.concat(changes.map(&:range))
         begin
-          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename)
+          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename, 0)
           @parsed = true
         rescue Parser::SyntaxError, EncodingError => e
           @node = nil

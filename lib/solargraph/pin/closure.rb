@@ -2,12 +2,12 @@
 
 module Solargraph
   module Pin
-    class Closure < Base
+    class Closure < CompoundStatement
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
       # @param scope [::Symbol] :class or :instance
-      # @param generics [::Array<Pin::Parameter>, nil]
+      # @param generics [::Array<Pin::String>, nil]
       # @param generic_defaults [Hash{String => ComplexType}]
       def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
         super(**splat)
@@ -44,6 +44,7 @@ module Solargraph
         end
       end
 
+      # @return [ComplexType, ComplexType::UniqueType]
       def binder
         @binder || context
       end

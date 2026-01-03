@@ -11,6 +11,7 @@ module Solargraph
           def process
             if node.children[1] # Exception local variable name
               here = get_node_start_position(node.children[1])
+              # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
               loc = get_node_location(node.children[1])
               types = if node.children[0].nil?

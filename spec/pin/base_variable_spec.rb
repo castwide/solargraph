@@ -44,4 +44,21 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.to_rbs).to eq('(1 | nil)')
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
   end
+
+  xit "understands proc kwarg parameters aren't affected by @type" do
+    pending "understanding restarg in block param in Block#typify_parameters"
+
+    code = %(
+      # @return [Proc]
+      def foo
+        # @type [Proc]
+        # @param layout [Boolean]
+        @render_method = proc { |layout = false|
+          123 if layout
+        }
+      end
+    )
+    checker = Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
+    expect(checker.problems.map(&:message)).to eq([])
+  end
 end

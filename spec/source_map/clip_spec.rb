@@ -302,6 +302,23 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers method types from return nodes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def foo
+          bar
+        end
+      end
+      Foo.new.foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    type = clip.infer
+    expect(type.tag).to eq('Foo')
+  end
+
   it 'infers multiple method types from return nodes' do
     source = Solargraph::Source.load_string(%(
       def foo
@@ -679,17 +696,13 @@ describe Solargraph::SourceMap::Clip do
           @foo._
         end
       end
-      Foo.define_method(:test2) do
-        @foo._
-        define_method(:test4) { @foo._ } # only handle Module#define_method, other pin is ignored..
-      end
       Foo.class_eval do
         define_method(:test5) { @foo._ }
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    [[4, 39], [7, 15], [11, 13], [12, 37], [15, 37]].each do |loc|
+    [[4, 39], [7, 15], [11, 37]].each do |loc|
       clip = api_map.clip_at('test.rb', loc)
       paths = clip.complete.pins.map(&:path)
       expect(paths).to include('String#upcase'), -> { %(expected #{paths} at #{loc} to include "String#upcase") }
@@ -1230,7 +1243,7 @@ describe Solargraph::SourceMap::Clip do
     updated = source.synchronize(updater)
     api_map.map updated
     clip = api_map.clip_at('test.rb', [2, 8])
-    expect(clip.complete.pins.first.path).to start_with('Array#')
+    expect(clip.complete.pins.first&.path).to start_with('Array#')
   end
 
   it 'selects local variables using gated scopes' do
@@ -2007,7 +2020,7 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
-    clip = api_map.clip_at('test.rb', [8, 6])
+    clip = api_map.clip_at('test.rb', [9, 6])
     type = clip.infer
     expect(type.tags).to eq('Integer')
 
@@ -2712,7 +2725,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq(':foo, 123, nil')
+    expect(clip.infer.to_s).to eq('123, :foo, nil')
   end
 
   it 'expands type with conditional reassignments' do

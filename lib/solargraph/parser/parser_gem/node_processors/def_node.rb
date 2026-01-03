@@ -8,10 +8,15 @@ module Solargraph
           def process
             name = node.children[0].to_s
             scope = region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance)
+            # specify context explicitly instead of relying on
+            # closure, as they may differ (e.g., defs inside
+            # class_eval)
+            method_context = scope == :instance ? region.closure.binder.namespace_type : region.closure.binder
             methpin = Solargraph::Pin::Method.new(
               location: get_node_location(node),
               closure: region.closure,
               name: name,
+              context: method_context,
               comments: comments_for(node),
               scope: scope,
               visibility: scope == :instance && name == 'initialize' ? :private : region.visibility,
@@ -23,6 +28,7 @@ module Solargraph
                 location: methpin.location,
                 closure: methpin.closure,
                 name: methpin.name,
+                context: method_context,
                 comments: methpin.comments,
                 scope: :class,
                 visibility: :public,
@@ -34,6 +40,7 @@ module Solargraph
                 location: methpin.location,
                 closure: methpin.closure,
                 name: methpin.name,
+                context: method_context,
                 comments: methpin.comments,
                 scope: :instance,
                 visibility: :private,
