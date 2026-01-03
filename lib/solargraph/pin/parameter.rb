@@ -72,6 +72,11 @@ module Solargraph
         end
       end
 
+      # @return [String]
+      def type_arity_decl
+        arity_decl + return_type.items.count.to_s
+      end
+
       def arg?
         decl == :arg
       end

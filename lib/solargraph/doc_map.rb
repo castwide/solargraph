@@ -346,7 +346,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param version [Gem::Version]
+    # @param version [Gem::Version, String]
     # @return [Gem::Specification]
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")

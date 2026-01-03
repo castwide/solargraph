@@ -34,26 +34,6 @@ module Solargraph
         @anon_splat = anon_splat
       end
 
-      # @param signature_pins [Array<Pin::Signature>]
-      # @return [Array<Pin::Signature>]
-      def combine_all_signature_pins(*signature_pins)
-        # @type [Hash{Array => Array<Pin::Signature>}]
-        by_arity = {}
-        signature_pins.each do |signature_pin|
-          by_arity[signature_pin.arity] ||= []
-          by_arity[signature_pin.arity] << signature_pin
-        end
-        by_arity.transform_values! do |same_arity_pins|
-          # @param memo [Pin::Signature, nil]
-          # @param signature [Pin::Signature]
-          same_arity_pins.reduce(nil) do |memo, signature|
-            next signature if memo.nil?
-            memo.combine_with(signature)
-          end
-        end
-        by_arity.values.flatten
-      end
-
       # @param other [Pin::Method]
       # @return [::Symbol]
       def combine_visibility(other)
@@ -63,20 +43,6 @@ module Solargraph
           visibility
         else
           assert_same(other, :visibility)
-        end
-      end
-
-      # @param other [Pin::Method]
-      # @return [Array<Pin::Signature>]
-      def combine_signatures(other)
-        all_undefined = signatures.all? { |sig| sig.return_type.undefined? }
-        other_all_undefined = other.signatures.all? { |sig| sig.return_type.undefined? }
-        if all_undefined && !other_all_undefined
-          other.signatures
-        elsif other_all_undefined && !all_undefined
-          signatures
-        else
-          combine_all_signature_pins(*signatures, *other.signatures)
         end
       end
 
@@ -484,6 +450,71 @@ module Solargraph
       end
 
       private
+
+      # @param other [Pin::Method]
+      # @return [Array<Pin::Signature>]
+      def combine_signatures(other)
+        all_undefined = signatures.all? { |sig| !sig.return_type&.defined? }
+        other_all_undefined = other.signatures.all? { |sig| !sig.return_type&.defined? }
+        if all_undefined && !other_all_undefined
+          other.signatures
+        elsif other_all_undefined && !all_undefined
+          signatures
+        else
+          combine_signatures_by_type_arity(*signatures, *other.signatures)
+        end
+      end
+
+      # @param signature_pins [Array<Pin::Signature>]
+      #
+      # @return [Array<Pin::Signature>]
+      def combine_signatures_by_type_arity(*signature_pins)
+        # @type [Hash{Array => Array<Pin::Signature>}]
+        by_type_arity = {}
+        signature_pins.each do |signature_pin|
+          by_type_arity[signature_pin.type_arity] ||= []
+          by_type_arity[signature_pin.type_arity] << signature_pin
+        end
+
+        by_type_arity.transform_values! do |same_type_arity_signatures|
+          combine_same_type_arity_signatures same_type_arity_signatures
+        end
+        by_type_arity.values.flatten
+      end
+
+      # @param same_type_arity_signatures [Array<Pin::Signature>]
+      #
+      # @return [Array<Pin::Signature>]
+      def combine_same_type_arity_signatures(same_type_arity_signatures)
+        # This is an O(n^2) operation, so bail out if n is not small
+        return same_type_arity_signatures if same_type_arity_signatures.length > 10
+
+        # @param old_signatures [Array<Pin::Signature>]
+        # @param new_signature [Pin::Signature]
+        same_type_arity_signatures.reduce([]) do |old_signatures, new_signature|
+          next [new_signature] if old_signatures.empty?
+
+          found_merge = false
+          old_signatures.flat_map do |old_signature|
+            potential_new_signature = old_signature.combine_with(new_signature)
+
+            if potential_new_signature.type_arity == old_signature.type_arity
+              # the number of types in each parameter and return type
+              # match, so we found compatible signatures to merge.  If
+              # we increased the number of types, we'd potentially
+              # have taken away the ability to use parameter types to
+              # choose the correct return type (while Ruby doesn't
+              # dispatch based on type, RBS does distinguish overloads
+              # based on types, not just arity, allowing for type
+              # information describing how methods behave based on
+              # their input types)
+              old_signatures - [old_signature] + [potential_new_signature]
+            else
+              old_signatures + [new_signature]
+            end
+          end
+        end
+      end
 
       # @param name [String]
       # @param asgn [Boolean]
