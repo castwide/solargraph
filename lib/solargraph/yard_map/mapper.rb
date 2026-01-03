@@ -43,7 +43,8 @@ module Solargraph
             # hack. If the superclass is a Proxy that can't be
             # resolved', it is assumed to be undefined in its yardoc
             # and converted to a fully qualified namespace.
-            superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy) && code_object.type == :proxy
+            #
+            superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
               "::#{code_object.superclass}"
             else
               code_object.superclass.to_s
