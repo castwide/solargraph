@@ -112,7 +112,7 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        [return_type&.items.count.to_s] + type_arity
+        [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 
       # @param generics_to_resolve [Enumerable<String>]
