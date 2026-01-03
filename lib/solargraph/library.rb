@@ -58,8 +58,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
+      # @sg-ignore Need to add nil check here
       if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
+        # @sg-ignore Need to add nil check here
         source_map_hash.delete @current.filename
+        # @sg-ignore Need to add nil check here
         source_map_external_require_hash.delete @current.filename
         @external_requires = nil
       end
@@ -448,6 +451,7 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
+        # @sg-ignore Need to add nil check here
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
