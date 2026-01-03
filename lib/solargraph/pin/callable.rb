@@ -89,9 +89,23 @@ module Solargraph
         end
       end
 
-      # @return [Array]
+      # e.g., [["T"], "", "?", "foo:"] - parameter arity declarations,
+      #   ignoring positional names.  Used to match signatures.
+      #
+      # @return [Array<Array<String>, String>]
       def arity
         [generics, blockless_parameters.map(&:arity_decl), block&.arity]
+      end
+
+      # e.g., [["T"], "1", "?3", "foo:5"] - parameter arity
+      #   declarations, including the number of unique types in each
+      #   parameter.  Used to determine whether combining two
+      #   signatures has lost useful information mapping specific
+      #   parameter types to specific return types.
+      #
+      # @return [Array<Array<String>, String>]
+      def type_arity
+        [generics, blockless_parameters.map(&:type_arity_decl), block&.arity]
       end
 
       # @param generics_to_resolve [Enumerable<String>]
@@ -101,6 +115,7 @@ module Solargraph
       # @param yield_return_type_context [ComplexType, nil]
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
+      #
       # @return [self]
       def resolve_generics_from_context(generics_to_resolve,
                                         arg_types = nil,
@@ -150,6 +165,7 @@ module Solargraph
       # @param yield_return_type_context [ComplexType, nil]
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
+      #
       # @return [self]
       def resolve_generics_from_context_until_complete(generics_to_resolve,
                                                        arg_types = nil,
