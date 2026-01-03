@@ -103,9 +103,16 @@ module Solargraph
       #   signatures has lost useful information mapping specific
       #   parameter types to specific return types.
       #
-      # @return [Array<Array<String>, String>]
+      # @return [Array<Array, String>]
       def type_arity
-        [generics, blockless_parameters.map(&:type_arity_decl), block&.arity]
+        [generics, blockless_parameters.map(&:type_arity_decl), block&.type_arity]
+      end
+
+      # Same as type_arity, but includes return type arity at the front.
+      #
+      # @return [Array<Array, String, nil>]
+      def full_type_arity
+        [return_type&.items.count.to_s] + type_arity
       end
 
       # @param generics_to_resolve [Enumerable<String>]
