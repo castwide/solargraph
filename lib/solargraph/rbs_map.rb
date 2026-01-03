@@ -160,9 +160,7 @@ module Solargraph
     end
 
     # @return [String]
-    # @sg-ignore Need to add nil check here
     def short_name
-      # @sg-ignore Need to add nil check here
       self.class.name.split('::').last
     end
   end
