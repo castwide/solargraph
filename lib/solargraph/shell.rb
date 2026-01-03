@@ -150,6 +150,11 @@ module Solargraph
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          warn "Gem '#{name}' failed while loading"
+          warn e.message
+          # @sg-ignore Need to add nil check here
+          warn e.backtrace.join("\n")
         end
         STDERR.puts "Documentation cached for #{names.count} gems."
       end
@@ -176,7 +181,10 @@ module Solargraph
       workspace = Solargraph::Workspace.new(directory)
       level = options[:level].to_sym
       rules = workspace.rules(level)
-      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+      api_map =
+        Solargraph::ApiMap.load_with_cache(directory, $stdout,
+                                           loose_unions:
+                                             !rules.require_all_unique_types_match_expected_on_lhs?)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
@@ -184,10 +192,9 @@ module Solargraph
         files.map! { |file| File.realpath(file) }
       end
       filecount = 0
-
       time = Benchmark.measure {
         files.each do |file|
-          checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym, workspace: workspace)
+          checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym, workspace: workspace)
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
@@ -219,19 +226,25 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure {
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+        # @sg-ignore We should understand reassignment of variable to new type
         api_map.pins.each do |pin|
           begin
             puts pin_description(pin) if options[:verbose]
             pin.typify api_map
             pin.probe api_map
           rescue StandardError => e
+            # @todo to add nil check here
+            # @todo should warn on nil dereference below
             STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
             STDERR.puts "[#{e.class}]: #{e.message}"
+            # @todo Need to add nil check here
+            # @todo Should handle redefinition of types in simple contexts
             STDERR.puts e.backtrace.join("\n")
             exit 1
           end
         end
       }
+      # @sg-ignore Need to add nil check here
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
@@ -309,6 +322,7 @@ module Solargraph
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
         if pin.closure
+          # @sg-ignore Need to add nil check here
           "#{pin.closure.path} | #{pin.name}"
         else
           "#{pin.context.namespace} | #{pin.name}"
@@ -316,6 +330,7 @@ module Solargraph
       else
         pin.path
       end
+      # @sg-ignore Need to add nil check here
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
@@ -329,7 +344,7 @@ module Solargraph
       api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
     end
 
-    # @param type [ComplexType]
+    # @param type [ComplexType, ComplexType::UniqueType]
     # @return [void]
     def print_type(type)
       if options[:rbs]

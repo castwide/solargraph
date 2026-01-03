@@ -9,7 +9,6 @@ describe Solargraph::Pin::Base, '#combine_with' do
   end
 
   it 'combines return types with another method without type parameters' do
-    pending('logic being added to handle this case')
     pin1 = Solargraph::Pin::Method.new(name: 'foo', parameters: [], comments: '@return [Array<String>]')
     pin2 = Solargraph::Pin::Method.new(name: 'foo', parameters: [], comments: '@return [Array]')
     combined = pin1.combine_with(pin2)

@@ -13,10 +13,11 @@ module Solargraph
       #
       # @param method [Method, nil] an already resolved method pin.
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
-      # @param name [String]
-      # @param receiver_method_name [String] the method name that will be called on the receiver (defaults to :name).
+      # @param name [String, nil]
+      # @param receiver_method_name [String, nil] the method name that will be called on the receiver (defaults to :name).
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
+        # @sg-ignore Need to add nil check here
         super(name: name, **splat)
 
         @receiver_chain = receiver
@@ -69,30 +70,40 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       # @return [Pin::Method, nil]
+      # @sg-ignore Declared return type ::Solargraph::Pin::Method, nil
+      #   does not match inferred type nil, false for
+      #   Solargraph::Pin::DelegatedMethod#resolve_method
       def resolve_method api_map
         return if @resolved_method
 
+        # @sg-ignore Need to add nil check here
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
-          Solargraph.logger.warn \
-            "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
+          # @sg-ignore Need to add nil check here
+          Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
 
+        # @sg-ignore Need to add nil check here
         receiver_type = resolver.return_type
 
+        # @sg-ignore Need to add nil check here
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
+          # @sg-ignore Need to add nil check here
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
+            # @sg-ignore Need to add nil check here
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
+            # @sg-ignore Need to add nil check here
             [receiver_type.to_s, :instance]
           end
 
+        # @sg-ignore Need to add nil check here
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
       end

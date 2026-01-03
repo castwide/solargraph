@@ -17,6 +17,7 @@ module Solargraph
               type: :class,
               location: loc,
               closure: region.closure,
+              # @sg-ignore flow sensitive typing needs to handle attrs
               name: struct_definition_node.class_name,
               docstring: docstring,
               visibility: :public,
@@ -39,6 +40,7 @@ module Solargraph
 
             pins.push initialize_method_pin
 
+            # @sg-ignore flow sensitive typing needs to handle attrs
             struct_definition_node.attributes.map do |attribute_node, attribute_name|
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
@@ -52,6 +54,7 @@ module Solargraph
             end
 
             # define attribute accessors and instance variables
+            # @sg-ignore flow sensitive typing needs to handle attrs
             struct_definition_node.attributes.each do |attribute_node, attribute_name|
               [attribute_name, "#{attribute_name}="].each do |name|
                 docs = docstring.tags.find { |t| t.tag_name == 'param' && t.name == attribute_name }
@@ -102,7 +105,7 @@ module Solargraph
 
           private
 
-          # @return [StructDefintionNode, StructAssignmentNode, nil]
+          # @return [StructDefinition::StructDefintionNode, StructDefinition::StructAssignmentNode, nil]
           def struct_definition_node
             @struct_definition_node ||= if StructDefintionNode.match?(node)
                                           StructDefintionNode.new(node)
@@ -121,6 +124,7 @@ module Solargraph
           # @return [YARD::Docstring]
           def parse_comments
             struct_comments = comments_for(node) || ''
+            # @sg-ignore Need to add nil check here
             struct_definition_node.attributes.each do |attr_node, attr_name|
               comment = comments_for(attr_node)
               next if comment.nil?

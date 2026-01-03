@@ -43,6 +43,7 @@ module Solargraph
           data: {
             path: path,
             return_type: return_type.tag,
+            # @sg-ignore flow sensitive typing needs to handle attrs
             location: (location ? location.to_hash : nil),
             deprecated: deprecated?
           }
@@ -80,7 +81,7 @@ module Solargraph
 
       # Get a markdown-flavored link to a documentation page.
       #
-      # @return [String]
+      # @return [String, nil]
       def link_documentation
         @link_documentation ||= generate_link
       end

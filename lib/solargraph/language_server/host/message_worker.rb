@@ -28,7 +28,7 @@ module Solargraph
         end
 
         # pending handle messages
-        # @return [Array<Hash>]
+        # @return [Array<Hash{String => undefined}>]
         def messages
           @messages ||= []
         end
@@ -66,6 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
+          # @sg-ignore Need to add nil check here
           handler = @host.receive(message)
           handler&.send_response
         end

@@ -57,6 +57,7 @@ module Solargraph
 
   # @param type [Symbol] Type of assert.
   def self.asserts_on?(type)
+    # @sg-ignore Translate to something flow sensitive typing understands
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'

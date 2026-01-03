@@ -6,6 +6,7 @@ module Solargraph
   #
   class Location
     include Equality
+    include Comparable
 
     # @return [String]
     attr_reader :filename
@@ -13,14 +14,15 @@ module Solargraph
     # @return [Solargraph::Range]
     attr_reader :range
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param range [Solargraph::Range]
     def initialize filename, range
+      raise "Use nil to represent no-file" if filename&.empty?
+
       @filename = filename
       @range = range
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [filename, range]
     end
@@ -64,14 +66,17 @@ module Solargraph
     # @return [Location, nil]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
+      filename = node.loc.expression.source_buffer.name
+      # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
+      filename = nil if filename.empty?
       range = Range.from_node(node)
-      self.new(node.loc.expression.source_buffer.name, range)
+      # @sg-ignore Need to add nil check here
+      self.new(filename, range)
     end
 
     # @param other [BasicObject]
     def == other
       return false unless other.is_a?(Location)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       filename == other.filename and range == other.range
     end
 

@@ -60,7 +60,7 @@ module Solargraph
       pins.concat @environ.pins
     end
 
-    # @param out [IO]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_all!(out)
       # if we log at debug level:
@@ -80,7 +80,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_yard_pins(gemspec, out)
       pins = GemPins.build_yard_pins(yard_plugins, gemspec)
@@ -89,7 +89,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param out [IO]
+    # @param out [StringIO, IO, nil]
     # @return [void]
     def cache_rbs_collection_pins(gemspec, out)
       rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
@@ -103,7 +103,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
-    # @param out [IO, nil] output stream for logging
+    # @param out [StringIO, IO, nil] output stream for logging
     # @return [void]
     def cache(gemspec, rebuild: false, out: nil)
       build_yard = uncached_yard_gemspecs.include?(gemspec) || rebuild
@@ -145,6 +145,7 @@ module Solargraph
 
     # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def rbs_collection_pins_in_memory
+      # @sg-ignore Need to add nil check here
       self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
     end
 
@@ -177,10 +178,9 @@ module Solargraph
       @uncached_yard_gemspecs = []
       @uncached_rbs_collection_gemspecs = []
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
-      # @sg-ignore Need support for RBS duck interfaces like _ToHash
+      # @sg-ignore Need better typing for Hash[]
       # @type [Array<String>]
       paths = Hash[without_gemspecs].keys
-      # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
 
@@ -346,7 +346,7 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
-    # @param version [Gem::Version]
+    # @param version [Gem::Version, String]
     # @return [Gem::Specification]
     def change_gemspec_version gemspec, version
       Gem::Specification.find_by_name(gemspec.name, "= #{version}")
@@ -387,8 +387,11 @@ module Solargraph
     # @return [Array<Gem::Specification>, nil]
     def gemspecs_required_from_bundler
       # @todo Handle projects with custom Bundler/Gemfile setups
+      # @sg-ignore Need to add nil check here
       return unless workspace.gemfile?
 
+      # @todo: redundant check
+      # @sg-ignore Need to add nil check here
       if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
         # Find only the gems bundler is now using
         Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
@@ -432,6 +435,7 @@ module Solargraph
           end.compact
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{workspace&.directory}: #{e}"
+          nil
         end
       end
     end

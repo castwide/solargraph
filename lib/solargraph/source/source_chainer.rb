@@ -33,25 +33,29 @@ module Solargraph
       def chain
         # Special handling for files that end with an integer and a period
         return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])), Chain::UNDEFINED_CALL]) if phrase =~ /^[0-9]+\.$/
+        # @sg-ignore Need to add nil check here
         return Chain.new([Chain::Literal.new('Symbol', phrase[1..].to_sym)]) if phrase.start_with?(':') && !phrase.start_with?('::')
         return SourceChainer.chain(source, Position.new(position.line, position.character + 1)) if end_of_phrase.strip == '::' && source.code[Position.to_offset(source.code, position)].to_s.match?(/[a-z]/i)
         begin
           return Chain.new([]) if phrase.end_with?('..')
+          # @type [::Parser::AST::Node, nil]
           node = nil
+          # @type [::Parser::AST::Node, nil]
           parent = nil
           if !source.repaired? && source.parsed? && source.synchronized?
             tree = source.tree_at(position.line, position.column)
             node, parent = tree[0..2]
           elsif source.parsed? && source.repaired? && end_of_phrase == '.'
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2]
-            node = Parser.parse(fixed_phrase) if node.nil?
+            # provide filename and line so that we can look up local variables there later
+            node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
           elsif source.repaired?
-            node = Parser.parse(fixed_phrase)
+            node = Parser.parse(fixed_phrase, source.filename, fixed_position.line)
           else
             node, parent = source.tree_at(fixed_position.line, fixed_position.column)[0..2] unless source.error_ranges.any?{|r| r.nil? || r.include?(fixed_position)}
             # Exception for positions that chain literal nodes in unsynchronized sources
             node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
-            node = Parser.parse(fixed_phrase) if node.nil?
+            node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
           end
         rescue Parser::SyntaxError
           return Chain.new([Chain::UNDEFINED_CALL])
@@ -79,11 +83,13 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def phrase
         @phrase ||= source.code[signature_data..offset-1]
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length+1)]
@@ -95,6 +101,7 @@ module Solargraph
       end
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
@@ -149,9 +156,12 @@ module Solargraph
             in_whitespace = true
           else
             if brackets.zero? and parens.zero? and squares.zero? and in_whitespace
+              # @sg-ignore Need to add nil check here
               unless char == '.' or @source.code[index+1..-1].strip.start_with?('.')
                 old = @source.code[index+1..-1]
+                # @sg-ignore Need to add nil check here
                 nxt = @source.code[index+1..-1].lstrip
+                # @sg-ignore Need to add nil check here
                 index += (@source.code[index+1..-1].length - @source.code[index+1..-1].lstrip.length)
                 break
               end

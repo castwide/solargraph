@@ -175,7 +175,7 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
-      # @param out [IO, nil]
+      # @param out [StringIO, IO, nil]
       # @return [void]
       def uncache_gem(gemspec, out: nil)
         uncache(yardoc_path(gemspec), out: out)
@@ -192,6 +192,7 @@ module Solargraph
       private
 
       # @param file [String]
+      # @sg-ignore Marshal.load evaluates to boolean here which is wrong
       # @return [Array<Solargraph::Pin::Base>, nil]
       def load file
         return nil unless File.file?(file)
@@ -219,6 +220,7 @@ module Solargraph
       end
 
       # @param path_segments [Array<String>]
+      # @param out [IO, nil]
       # @return [void]
       def uncache *path_segments, out: nil
         path = File.join(*path_segments)
@@ -229,7 +231,10 @@ module Solargraph
       end
 
       # @return [void]
+      # @param out [IO, nil]
       # @param path_segments [Array<String>]
+      # @param out [StringIO, IO, nil]
+      # @todo need to warn when no @param exists for 'out'
       def uncache_by_prefix *path_segments, out: nil
         path = File.join(*path_segments)
         glob = "#{path}*"

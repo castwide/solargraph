@@ -66,7 +66,7 @@ module Solargraph
           end.compact
         end
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def body_node
           node.children[2]
         end
@@ -81,8 +81,10 @@ module Solargraph
           node.children[1]
         end
 
+        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
+          # @sg-ignore Need to add nil check here
           data_node.children[2..-1]
         end
       end
