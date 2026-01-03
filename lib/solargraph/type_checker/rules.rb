@@ -23,11 +23,11 @@ module Solargraph
       # @param overrides [Hash{Symbol => Symbol}]
       def initialize level, overrides
         @rank = if LEVELS.key?(level)
-          LEVELS[level]
-        else
-          Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
-          0
-        end
+                  LEVELS[level]
+                else
+                  Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
+                  0
+                end
         @level = LEVELS[LEVELS.values.index(@rank)]
         @overrides = overrides
       end
@@ -76,7 +76,7 @@ module Solargraph
 
       # @param type [Symbol]
       # @param level [Symbol]
-      def report?(type, level)
+      def report? type, level
         rank >= LEVELS[@overrides.fetch(type, level)]
       end
     end

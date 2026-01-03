@@ -9,7 +9,8 @@ module Solargraph
       # @param scope [::Symbol] :class or :instance
       # @param generics [::Array<Pin::Parameter>, nil]
       # @param generic_defaults [Hash{String => ComplexType}]
-      def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
+      # @param [Hash{Symbol => Object}] splat
+      def initialize scope: :class, generics: nil, generic_defaults: {}, **splat
         super(**splat)
         @scope = scope
         @generics = generics
@@ -25,10 +26,10 @@ module Solargraph
       # @param attrs [Hash{Symbol => Object}]
       #
       # @return [self]
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = {
           scope: assert_same(other, :scope),
-          generics: generics.empty? ? other.generics : generics,
+          generics: generics.empty? ? other.generics : generics
         }.merge(attrs)
         super(other, new_attrs)
       end

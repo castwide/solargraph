@@ -14,9 +14,7 @@ module Solargraph
             suggestions.each do |pin|
               parts = []
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
-              if !this_link.nil? && this_link != last_link
-                parts.push this_link
-              end
+              parts.push this_link if !this_link.nil? && this_link != last_link
               parts.push "`#{pin.detail}`" unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
               parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               unless parts.empty?
@@ -41,8 +39,8 @@ module Solargraph
           # @return [Hash{Symbol => Hash{Symbol => String}}, nil]
           def contents_or_nil contents
             stripped = contents
-              .map(&:strip)
-              .reject { |c| c.empty? }
+                       .map(&:strip)
+                       .reject { |c| c.empty? }
             return nil if stripped.empty?
             {
               contents: {

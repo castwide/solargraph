@@ -3,7 +3,8 @@
 module Solargraph::LanguageServer::Message::TextDocument
   class References < Base
     def process
-      locs = host.references_from(params['textDocument']['uri'], params['position']['line'], params['position']['character'])
+      locs = host.references_from(params['textDocument']['uri'], params['position']['line'],
+                                  params['position']['character'])
       result = locs.map do |loc|
         {
           uri: file_to_uri(loc.filename),

@@ -88,7 +88,7 @@ module Solargraph
               argument
             ]
             send_node = node.updated(:send, send_children)
-            new_asgn = node.updated(asgn.type, [variable_name,  send_node])
+            new_asgn = node.updated(asgn.type, [variable_name, send_node])
             NodeProcessor.process(new_asgn, region, pins, locals)
           end
         end

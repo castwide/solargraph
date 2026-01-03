@@ -62,9 +62,9 @@ describe Solargraph::DocMap do
 
   it 'includes convention requires from environ' do
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def global(doc_map)
+      def global doc_map
         Solargraph::Environ.new(
-          requires: ['convention_gem1', 'convention_gem2']
+          requires: %w[convention_gem1 convention_gem2]
         )
       end
     end

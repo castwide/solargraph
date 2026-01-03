@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      DIRECTIVE_REGEXP = /(@\!method|@\!attribute|@\!visibility|@\!domain|@\!macro|@\!parse|@\!override)/.freeze
+      DIRECTIVE_REGEXP = /(@!method|@!attribute|@!visibility|@!domain|@!macro|@!parse|@!override)/
 
       # Generate the data.
       #
@@ -28,10 +28,10 @@ module Solargraph
         @locals.each { |l| l.source = :code }
         process_comment_directives
         [@pins, @locals]
-      # rescue Exception => e
-      #   Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
-      #   Solargraph.logger.warn e.backtrace.join("\n")
-      #   [[], []]
+        # rescue Exception => e
+        #   Solargraph.logger.warn "Error mapping #{source.filename}: [#{e.class}] #{e.message}"
+        #   Solargraph.logger.warn e.backtrace.join("\n")
+        #   [[], []]
       end
 
       # @param filename [String]
@@ -61,8 +61,8 @@ module Solargraph
 
       # @param position [Solargraph::Position]
       # @return [Solargraph::Pin::Closure]
-      def closure_at(position)
-        pins.select{|pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position)}.last
+      def closure_at position
+        pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
       end
 
       # @param source_position [Position]
@@ -108,9 +108,7 @@ module Solargraph
         case directive.tag.tag_name
         when 'method'
           namespace = closure_at(source_position) || @pins.first
-          if namespace.location.range.start.line < comment_position.line
-            namespace = closure_at(comment_position)
-          end
+          namespace = closure_at(comment_position) if namespace.location.range.start.line < comment_position.line
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
@@ -119,19 +117,20 @@ module Solargraph
             return if gen_pin.nil?
             # Move the location to the end of the line so it gets recognized
             # as originating from a comment
-            shifted = Solargraph::Position.new(comment_position.line, @code.lines[comment_position.line].to_s.chomp.length)
+            shifted = Solargraph::Position.new(comment_position.line,
+                                               @code.lines[comment_position.line].to_s.chomp.length)
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
             gen_pin.instance_variable_set(:@location, Solargraph::Location.new(@filename, Range.new(shifted, shifted)))
             gen_pin.instance_variable_set(:@explicit, false)
             @pins.push gen_pin
-          rescue Parser::SyntaxError => e
+          rescue Parser::SyntaxError
             # @todo Handle error in directive
           end
         when 'attribute'
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
-          t = (directive.tag.types.nil? || directive.tag.types.empty?) ? nil : directive.tag.types.flatten.join('')
+          t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.flatten.join('')
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
               location: location,
@@ -157,31 +156,33 @@ module Solargraph
               source: :source_map
             )
             pins.push method_pin
-            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last, source: :source_map)
+            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last,
+                                                          source: :source_map)
             if pins.last.return_type.defined?
-              pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '), 'value')
+              pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '),
+                                                              'value')
             end
           end
         when 'visibility'
 
-            kind = directive.tag.text&.to_sym
-            return unless [:private, :protected, :public].include?(kind)
+          kind = directive.tag.text&.to_sym
+          return unless %i[private protected public].include?(kind)
 
-            name = directive.tag.name
-            closure = closure_at(source_position) || @pins.first
-            if closure.location.range.start.line < comment_position.line
-              closure = closure_at(comment_position)
+          name = directive.tag.name
+          closure = closure_at(source_position) || @pins.first
+          closure = closure_at(comment_position) if closure.location.range.start.line < comment_position.line
+          if closure.is_a?(Pin::Method) && no_empty_lines?(comment_position.line, source_position.line)
+            # @todo Smelly instance variable access
+            closure.instance_variable_set(:@visibility, kind)
+          else
+            matches = pins.select do |pin|
+              pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance
             end
-            if closure.is_a?(Pin::Method) && no_empty_lines?(comment_position.line, source_position.line)
+            matches.each do |pin|
               # @todo Smelly instance variable access
-              closure.instance_variable_set(:@visibility, kind)
-            else
-              matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance }
-              matches.each do |pin|
-                # @todo Smelly instance variable access
-                pin.instance_variable_set(:@visibility, kind)
-              end
+              pin.instance_variable_set(:@visibility, kind)
             end
+          end
 
         when 'parse'
           begin
@@ -191,17 +192,17 @@ module Solargraph
             # @todo These pins may need to be marked not explicit
             index = @pins.length
             loff = if @code.lines[comment_position.line].strip.end_with?('@!parse')
-              comment_position.line + 1
-            else
-              comment_position.line
-            end
+                     comment_position.line + 1
+                   else
+                     comment_position.line
+                   end
             Parser.process_node(src.node, region, @pins)
             @pins[index..-1].each do |p|
               # @todo Smelly instance variable access
               p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
               p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
             end
-          rescue Parser::SyntaxError => e
+          rescue Parser::SyntaxError
             # @todo Handle parser errors in !parse directives
           end
         when 'domain'
@@ -217,7 +218,7 @@ module Solargraph
 
       # @param line1 [Integer]
       # @param line2 [Integer]
-      def no_empty_lines?(line1, line2)
+      def no_empty_lines? line1, line2
         @code.lines[line1..line2].none? { |line| line.strip.empty? }
       end
 
@@ -227,7 +228,7 @@ module Solargraph
         ctxt = ''
         num = nil
         started = false
-        comment.lines.each { |l|
+        comment.lines.each do |l|
           # Trim the comment and minimum leading whitespace
           p = l.encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
           if num.nil? && !p.strip.empty?
@@ -238,7 +239,7 @@ module Solargraph
             num = cur if cur < num
           end
           ctxt += "#{p[num..-1]}" if started
-        }
+        end
         ctxt
       end
 
@@ -247,7 +248,14 @@ module Solargraph
         return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
         @source.associated_comments.each do |line, comments|
-          src_pos = line ? Position.new(line, code_lines[line].to_s.chomp.index(/[^\s]/) || 0) : Position.new(code_lines.length, 0)
+          src_pos = if line
+                      Position.new(line,
+                                   code_lines[line].to_s.chomp.index(/[^\s]/) || 0)
+                    else
+                      Position.new(
+                        code_lines.length, 0
+                      )
+                    end
           com_pos = Position.new(line + 1 - comments.lines.length, 0)
           process_comment(src_pos, com_pos, comments)
         end

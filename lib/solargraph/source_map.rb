@@ -60,7 +60,9 @@ module Solargraph
     #
     # @return [Integer]
     def api_hash
-      @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
+      @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select do |pin|
+        pin.namespace.to_s > ''
+      end + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
     end
 
     # @return [String]
@@ -141,7 +143,7 @@ module Solargraph
 
     # @param location [Location]
     # @return [Array<Pin::LocalVariable>]
-    def locals_at(location)
+    def locals_at location
       return [] if location.filename != filename
       closure = locate_named_path_pin(location.range.start.line, location.range.start.character)
       locals.select { |pin| pin.visible_at?(closure, location) }
@@ -202,7 +204,9 @@ module Solargraph
         # @todo Attribute pins should not be treated like closures, but
         #   there's probably a better way to handle it
         next if pin.is_a?(Pin::Method) && pin.attribute?
-        found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
+        found = pin if (klasses.empty? || klasses.any? do |kls|
+          pin.is_a?(kls)
+        end) && pin.location.range.contain?(position)
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

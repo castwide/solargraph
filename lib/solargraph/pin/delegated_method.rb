@@ -15,6 +15,7 @@ module Solargraph
       # @param receiver [Source::Chain, nil] the source code used to resolve the receiver for this delegated method.
       # @param name [String]
       # @param receiver_method_name [String] the method name that will be called on the receiver (defaults to :name).
+      # @param [Hash{Symbol => Object}] splat
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
         super(name: name, **splat)
@@ -33,7 +34,6 @@ module Solargraph
 
         @resolved_method&.send(:location)
       end
-
 
       def type_location
         return super if super
@@ -58,7 +58,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      def resolvable?(api_map)
+      def resolvable? api_map
         resolve_method(api_map)
         !!@resolved_method
       end
@@ -101,7 +101,7 @@ module Solargraph
       #
       # @param chain [Source::Chain]
       # @return [String]
-      def print_chain(chain)
+      def print_chain chain
         out = +''
         chain.links.each_with_index do |link, index|
           if index > 0

@@ -5,7 +5,7 @@ module Solargraph
 
       # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
-      def initialize(locals, enclosing_breakable_pin = nil)
+      def initialize locals, enclosing_breakable_pin = nil
         @locals = locals
         @enclosing_breakable_pin = enclosing_breakable_pin
       end
@@ -14,7 +14,7 @@ module Solargraph
       # @param true_ranges [Array<Range>]
       #
       # @return [void]
-      def process_and(and_node, true_ranges = [])
+      def process_and and_node, true_ranges = []
         # @type [Parser::AST::Node]
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
@@ -31,7 +31,7 @@ module Solargraph
       # @param if_node [Parser::AST::Node]
       #
       # @return [void]
-      def process_if(if_node)
+      def process_if if_node
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
         #
@@ -50,12 +50,10 @@ module Solargraph
         else_clause = if_node.children[2]
 
         true_ranges = []
-        if always_breaks?(else_clause)
-          unless enclosing_breakable_pin.nil?
-            rest_of_breakable_body = Range.new(get_node_end_position(if_node),
-                                               get_node_end_position(enclosing_breakable_pin.node))
-            true_ranges << rest_of_breakable_body
-          end
+        if always_breaks?(else_clause) && !enclosing_breakable_pin.nil?
+          rest_of_breakable_body = Range.new(get_node_end_position(if_node),
+                                             get_node_end_position(enclosing_breakable_pin.node))
+          true_ranges << rest_of_breakable_body
         end
 
         unless then_clause.nil?
@@ -87,30 +85,42 @@ module Solargraph
       # @param location [Location]
       #
       # @return [Array<Pin::LocalVariable>]
-      def self.visible_pins(pins, name, closure, location)
+      def self.visible_pins pins, name, closure, location
         logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location})" }
         pins_with_name = pins.select { |p| p.name == name }
         if pins_with_name.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => [] - no pins with name" }
+          logger.debug do
+            "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => [] - no pins with name"
+          end
           return []
         end
-        pins_with_specific_visibility = pins.select { |p| p.name == name && p.presence && p.visible_at?(closure, location) }
+        pins_with_specific_visibility = pins.select do |p|
+          p.name == name && p.presence && p.visible_at?(closure, location)
+        end
         if pins_with_specific_visibility.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_name} - no pins with specific visibility" }
+          logger.debug do
+            "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_name} - no pins with specific visibility"
+          end
           return pins_with_name
         end
         visible_pins_specific_to_this_closure = pins_with_specific_visibility.select { |p| p.closure == closure }
         if visible_pins_specific_to_this_closure.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility} - no visible pins specific to this closure (#{closure})}" }
+          logger.debug do
+            "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{pins_with_specific_visibility} - no visible pins specific to this closure (#{closure})}"
+          end
           return pins_with_specific_visibility
         end
         flow_defined_pins = pins_with_specific_visibility.select { |p| p.presence_certain? }
         if flow_defined_pins.empty?
-          logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{visible_pins_specific_to_this_closure} - no flow-defined pins" }
+          logger.debug do
+            "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{visible_pins_specific_to_this_closure} - no flow-defined pins"
+          end
           return visible_pins_specific_to_this_closure
         end
 
-        logger.debug { "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{flow_defined_pins}" }
+        logger.debug do
+          "FlowSensitiveTyping#visible_pins(name=#{name}, closure=#{closure}, location=#{location}) => #{flow_defined_pins}"
+        end
 
         flow_defined_pins
       end
@@ -124,7 +134,7 @@ module Solargraph
       # @param presence [Range]
       #
       # @return [void]
-      def add_downcast_local(pin, downcast_type_name, presence)
+      def add_downcast_local pin, downcast_type_name, presence
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
           location: pin.location,
@@ -144,7 +154,7 @@ module Solargraph
       # @param presences [Array<Range>]
       #
       # @return [void]
-      def process_facts(facts_by_pin, presences)
+      def process_facts facts_by_pin, presences
         #
         # Add specialized locals for the rest of the block
         #
@@ -162,7 +172,7 @@ module Solargraph
       # @param true_ranges [Array<Range>]
       #
       # @return [void]
-      def process_conditional(conditional_node, true_ranges)
+      def process_conditional conditional_node, true_ranges
         if conditional_node.type == :send
           process_isa(conditional_node, true_ranges)
         elsif conditional_node.type == :and
@@ -172,7 +182,7 @@ module Solargraph
 
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
-      def parse_isa(isa_node)
+      def parse_isa isa_node
         return unless isa_node&.type == :send && isa_node.children[1] == :is_a?
         # Check if conditional node follows this pattern:
         #   s(:send,
@@ -200,7 +210,7 @@ module Solargraph
       # @param position [Position]
       #
       # @return [Solargraph::Pin::LocalVariable, nil]
-      def find_local(variable_name, position)
+      def find_local variable_name, position
         pins = locals.select { |pin| pin.name == variable_name && pin.presence.include?(position) }
         return unless pins.length == 1
         pins.first
@@ -210,7 +220,7 @@ module Solargraph
       # @param true_presences [Array<Range>]
       #
       # @return [void]
-      def process_isa(isa_node, true_presences)
+      def process_isa isa_node, true_presences
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         isa_position = Range.from_node(isa_node).start
@@ -227,7 +237,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
-      def type_name(node)
+      def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
@@ -243,13 +253,11 @@ module Solargraph
       end
 
       # @param clause_node [Parser::AST::Node]
-      def always_breaks?(clause_node)
+      def always_breaks? clause_node
         clause_node&.type == :break
       end
 
-      attr_reader :locals
-
-      attr_reader :enclosing_breakable_pin
+      attr_reader :locals, :enclosing_breakable_pin
     end
   end
 end

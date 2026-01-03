@@ -43,7 +43,7 @@ module Solargraph
 
           # @param corrections [String]
           # @return [void]
-          def log_corrections(corrections)
+          def log_corrections corrections
             corrections = corrections&.strip
             return if corrections&.empty?
 
@@ -56,7 +56,7 @@ module Solargraph
 
           # @param file_uri [String]
           # @return [Hash{String => undefined}]
-          def config_for(file_uri)
+          def config_for file_uri
             conf = host.formatter_config(file_uri)
             return {} unless conf.is_a?(Hash)
 
@@ -71,10 +71,10 @@ module Solargraph
             args = [
               config['cops'] == 'all' ? '-A' : '-a',
               '--cache', 'false',
-              '--format', formatter_class(config).name,
+              '--format', formatter_class(config).name
             ]
 
-            ['except', 'only'].each do |arg|
+            %w[except only].each do |arg|
               cops = cop_list(config[arg])
               args += ["--#{arg}", cops] if cops
             end
@@ -86,7 +86,7 @@ module Solargraph
           # @param config [Hash{String => String}]
           # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
-          def formatter_class(config)
+          def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
               # @sg-ignore
               BlankRubocopFormatter
@@ -99,7 +99,7 @@ module Solargraph
 
           # @param value [Array, String]
           # @return [String, nil]
-          def cop_list(value)
+          def cop_list value
             # @type [String]
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)

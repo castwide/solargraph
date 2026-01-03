@@ -118,15 +118,15 @@ module Solargraph
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
-          .map { |k, v| pin_class_hash[k].concat v.to_a }
+           .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
-          .map { |k, v| namespace_hash[k].concat v.to_a }
+           .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
-          .map { |k, v| path_pin_hash[k].concat v.to_a }
+           .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
         map_references Pin::Reference::Prepend, prepend_references
@@ -156,9 +156,7 @@ module Solargraph
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
           pins.each do |pin|
-            new_pin = if pin.path.end_with?('#initialize')
-                        path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
-                      end
+            new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
               pin.docstring.delete_tags tag
               new_pin.docstring.delete_tags tag if new_pin

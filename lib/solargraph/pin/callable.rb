@@ -14,6 +14,7 @@ module Solargraph
       # @param block [Signature, nil]
       # @param return_type [ComplexType, nil]
       # @param parameters [::Array<Pin::Parameter>]
+      # @param [Hash{Symbol => Object}] splat
       def initialize block: nil, return_type: nil, parameters: [], **splat
         super(**splat)
         @block = block
@@ -29,7 +30,7 @@ module Solargraph
       # @param other [self]
       #
       # @return [Pin::Signature, nil]
-      def combine_blocks(other)
+      def combine_blocks other
         if block.nil?
           other.block
         elsif other.block.nil?
@@ -44,10 +45,10 @@ module Solargraph
       # @param attrs [Hash{Symbol => Object}]
       #
       # @return [self]
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = {
           block: combine_blocks(other),
-          return_type: combine_return_type(other),
+          return_type: combine_return_type(other)
         }.merge(attrs)
         new_attrs[:parameters] = choose_parameters(other).clone.freeze unless new_attrs.key?(:parameters)
         super(other, new_attrs)
@@ -65,8 +66,10 @@ module Solargraph
       # @param other [self]
       #
       # @return [Array<Pin::Parameter>]
-      def choose_parameters(other)
-        raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{self.arity}, \nother.arity=#{other.arity}" if other.arity != arity
+      def choose_parameters other
+        if other.arity != arity
+          raise "Trying to combine two pins with different arities - \nself =#{inspect}, \nother=#{other.inspect}, \n\n self.arity=#{arity}, \nother.arity=#{other.arity}"
+        end
         # @param param [Pin::Parameter]
         # @param other_param [Pin::Parameter]
         parameters.zip(other.parameters).map do |param, other_param|
@@ -102,12 +105,12 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context(generics_to_resolve,
+      def resolve_generics_from_context generics_to_resolve,
                                         arg_types = nil,
                                         return_type_context = nil,
                                         yield_arg_types = nil,
                                         yield_return_type_context = nil,
-                                        resolved_generic_values: {})
+                                        resolved_generic_values: {}
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
@@ -118,10 +121,12 @@ module Solargraph
                                                 resolved_generic_values: resolved_generic_values)
           end
         end
-        callable.block = block.resolve_generics_from_context(generics_to_resolve,
-                                                              yield_arg_types,
-                                                              yield_return_type_context,
-                                                              resolved_generic_values: resolved_generic_values) if callable.block?
+        if callable.block?
+          callable.block = block.resolve_generics_from_context(generics_to_resolve,
+                                                               yield_arg_types,
+                                                               yield_return_type_context,
+                                                               resolved_generic_values: resolved_generic_values)
+        end
         callable
       end
 
@@ -139,7 +144,7 @@ module Solargraph
 
       # @return [String]
       def method_name
-        raise "closure was nil in #{self.inspect}" if closure.nil?
+        raise "closure was nil in #{inspect}" if closure.nil?
         @method_name ||= closure.name
       end
 
@@ -151,12 +156,12 @@ module Solargraph
       # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
-      def resolve_generics_from_context_until_complete(generics_to_resolve,
+      def resolve_generics_from_context_until_complete generics_to_resolve,
                                                        arg_types = nil,
                                                        return_type_context = nil,
                                                        yield_arg_types = nil,
                                                        yield_return_type_context = nil,
-                                                       resolved_generic_values: {})
+                                                       resolved_generic_values: {}
         # See
         # https://github.com/soutaro/steep/tree/master/lib/steep/type_inference
         # and
@@ -174,7 +179,7 @@ module Solargraph
                                                 resolved_generic_values: resolved_generic_values)
         if last_resolved_generic_values == resolved_generic_values
           # erase anything unresolved
-          return new_pin.erase_generics(self.generics)
+          return new_pin.erase_generics(generics)
         end
         new_pin.resolve_generics_from_context_until_complete(generics_to_resolve,
                                                              arg_types,
@@ -188,7 +193,7 @@ module Solargraph
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
-      def transform_types(&transform)
+      def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         callable = super(&transform)
         callable.block = block.transform_types(&transform) if block?
@@ -216,7 +221,9 @@ module Solargraph
       end
 
       def to_rbs
-        rbs_generics + '(' + parameters.map { |param| param.to_rbs }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
+        rbs_generics + '(' + parameters.map { |param|
+          param.to_rbs
+        }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ') + '-> ' + return_type.to_rbs
       end
 
       def block?

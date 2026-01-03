@@ -101,7 +101,7 @@ describe Solargraph::Convention::ActiveSupportConcern do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end
@@ -149,13 +149,13 @@ describe Solargraph::Convention::ActiveSupportConcern do
         RBS
       end
 
-      it { should_not be_empty }
+      it { is_expected.not_to be_empty }
 
-      it "has one item" do
+      it 'has one item' do
         expect(method_pins.size).to eq(1)
       end
 
-      it "is a Pin::Method" do
+      it 'is a Pin::Method' do
         expect(method_pins.first).to be_a(Solargraph::Pin::Method)
       end
     end

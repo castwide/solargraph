@@ -15,7 +15,7 @@ module Solargraph
 
     map %w[--version -v] => :version
 
-    desc "--version, -v", "Print the version"
+    desc '--version, -v', 'Print the version'
     # @return [void]
     def version
       puts Solargraph::VERSION
@@ -30,15 +30,15 @@ module Solargraph
       port = options[:port]
       port = available_port if port.zero?
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+        warn "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -47,15 +47,15 @@ module Solargraph
     def stdio
       require 'backport'
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
+        warn "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
 
@@ -63,11 +63,11 @@ module Solargraph
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     # @param directory [String]
     # @return [void]
-    def config(directory = '.')
+    def config directory = '.'
       matches = []
       if options[:extensions]
         Gem::Specification.each do |g|
-          if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
+          if g.name.match(/^solargraph-[A-Za-z0-9_-]*?-ext/)
             require g.name
             matches.push g.name
           end
@@ -83,7 +83,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      STDOUT.puts "Configuration file initialized."
+      STDOUT.puts 'Configuration file initialized.'
     end
 
     desc 'clear', 'Delete all cached documentation'
@@ -92,7 +92,7 @@ module Solargraph
     )
     # @return [void]
     def clear
-      puts "Deleting all cached documentation (gems, core and stdlib)"
+      puts 'Deleting all cached documentation (gems, core and stdlib)'
       Solargraph::PinCache.clear
     end
     map 'clear-cache' => :clear
@@ -109,7 +109,7 @@ module Solargraph
       api_map.cache_gem(spec, rebuild: options[:rebuild], out: $stdout)
     end
 
-    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.
@@ -143,7 +143,7 @@ module Solargraph
       api_map = ApiMap.load('.')
       if names.empty?
         Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
-        STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
+        warn "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
           spec = Gem::Specification.find_by_name(*name.split('='))
@@ -151,7 +151,7 @@ module Solargraph
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
         end
-        STDERR.puts "Documentation cached for #{names.count} gems."
+        warn "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -168,14 +168,14 @@ module Solargraph
 
       Type checking levels are normal, typed, strict, and strong.
     )
-    option :level, type: :string, aliases: [:mode, :m, :l], desc: 'Type checking level', default: 'normal'
+    option :level, type: :string, aliases: %i[mode m l], desc: 'Type checking level', default: 'normal'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     # @return [void]
     def typecheck *files
       directory = File.realpath(options[:directory])
       workspace = Solargraph::Workspace.new(directory)
       level = options[:level].to_sym
-      rules = workspace.rules(level)
+      workspace.rules(level)
       api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
       probcount = 0
       if files.empty?
@@ -185,20 +185,22 @@ module Solargraph
       end
       filecount = 0
 
-      time = Benchmark.measure {
+      time = Benchmark.measure do
         files.each do |file|
           checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym, workspace: workspace)
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+          puts problems.map { |prob|
+            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
+          }.join("\n")
           filecount += 1
           probcount += problems.length
         end
         # "
-      }
+      end
       puts "Typecheck finished in #{time.real} seconds."
-      puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      puts "#{probcount} problem#{'s' if probcount != 1} found#{" in #{filecount} of #{files.length} files" if files.length != 1}."
       # "
       exit 1 if probcount > 0
     end
@@ -217,21 +219,21 @@ module Solargraph
       directory = File.realpath(options[:directory])
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
-      time = Benchmark.measure {
+      time = Benchmark.measure do
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
         api_map.pins.each do |pin|
-          begin
-            puts pin_description(pin) if options[:verbose]
-            pin.typify api_map
-            pin.probe api_map
-          rescue StandardError => e
-            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
-            STDERR.puts "[#{e.class}]: #{e.message}"
-            STDERR.puts e.backtrace.join("\n")
-            exit 1
-          end
+          puts pin_description(pin) if options[:verbose]
+          pin.typify api_map
+          pin.probe api_map
+        rescue StandardError => e
+          warn "Error testing #{pin_description(pin)} #{if pin.location
+                                                          "at #{pin.location.filename}:#{pin.location.range.start.line + 1}"
+                                                        end}"
+          warn "[#{e.class}]: #{e.message}"
+          warn e.backtrace.join("\n")
+          exit 1
         end
-      }
+      end
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
@@ -247,10 +249,13 @@ module Solargraph
 
     desc 'pin [PATH]', 'Describe a pin', hide: true
     option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
-    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
+    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations',
+                    default: false
     option :references, type: :boolean, desc: 'Show references', default: false
-    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
-    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
+    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference',
+                   default: false
+    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses',
+                   default: false
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
@@ -275,7 +280,7 @@ module Solargraph
       pin = pins.first
       case pin
       when nil
-        $stderr.puts "Pin not found for path '#{path}'"
+        warn "Pin not found for path '#{path}'"
         exit 1
       when Pin::Namespace
         if options[:references]
@@ -308,14 +313,14 @@ module Solargraph
     # @return [String]
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
-        if pin.closure
-          "#{pin.closure.path} | #{pin.name}"
-        else
-          "#{pin.context.namespace} | #{pin.name}"
-        end
-      else
-        pin.path
-      end
+               if pin.closure
+                 "#{pin.closure.path} | #{pin.name}"
+               else
+                 "#{pin.context.namespace} | #{pin.name}"
+               end
+             else
+               pin.path
+             end
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
@@ -331,7 +336,7 @@ module Solargraph
 
     # @param type [ComplexType]
     # @return [void]
-    def print_type(type)
+    def print_type type
       if options[:rbs]
         puts type.to_rbs
       else
@@ -341,7 +346,7 @@ module Solargraph
 
     # @param pin [Solargraph::Pin::Base]
     # @return [void]
-    def print_pin(pin)
+    def print_pin pin
       if options[:rbs]
         puts pin.to_rbs
       else

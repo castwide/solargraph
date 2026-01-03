@@ -14,6 +14,7 @@ module Solargraph
       # @param return_type [ComplexType, nil]
       # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
       # @param assignment [Parser::AST::Node, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, return_type: nil, mass_assignment: nil, **splat
         super(**splat)
         @assignment = assignment
@@ -22,12 +23,12 @@ module Solargraph
         @return_type = return_type
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = attrs.merge({
-          assignment: assert_same(other, :assignment),
-          mass_assignment: assert_same(other, :mass_assignment),
-          return_type: combine_return_type(other),
-        })
+                                  assignment: assert_same(other, :assignment),
+                                  mass_assignment: assert_same(other, :mass_assignment),
+                                  return_type: combine_return_type(other)
+                                })
         super(other, new_attrs)
       end
 
@@ -57,7 +58,7 @@ module Solargraph
       # @param parent_node [Parser::AST::Node]
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
-      def return_types_from_node(parent_node, api_map)
+      def return_types_from_node parent_node, api_map
         types = []
         value_position_nodes_only(parent_node).each do |node|
           # Nil nodes may not have a location

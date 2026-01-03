@@ -8,7 +8,7 @@ module Solargraph
 
         VISIBILITY_OVERRIDE = {
           # YARD pays attention to 'private' statements prior to class methods but shouldn't
-          ["Rails::Engine", :class, "find_root_with_flag"] => :public
+          ['Rails::Engine', :class, 'find_root_with_flag'] => :public
         }
 
         # @param code_object [YARD::CodeObjects::MethodObject]
@@ -28,7 +28,9 @@ module Solargraph
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
+          if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
+            final_visibility ||= :private
+          end
           final_visibility ||= visibility
           final_visibility ||= :private if code_object.module_function? && final_scope == :instance
           final_visibility ||= :public if code_object.module_function? && final_scope == :class
@@ -46,7 +48,7 @@ module Solargraph
               explicit: code_object.is_explicit?,
               return_type: return_type,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
           else
             pin = Pin::Method.new(
@@ -61,7 +63,7 @@ module Solargraph
               return_type: return_type,
               attribute: code_object.is_attribute?,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
             pin.parameters.concat get_parameters(code_object, location, comments, pin)
             pin.parameters.freeze
@@ -95,7 +97,7 @@ module Solargraph
                 presence: nil,
                 decl: arg_type(a),
                 asgn_code: a[1],
-                source: :yardoc,
+                source: :yardoc
               )
             end
           end
