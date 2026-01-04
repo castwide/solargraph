@@ -20,12 +20,10 @@ module Solargraph
 
     # @param filename [String, nil]
     # @param api_map [ApiMap, nil]
-    # @param rules [Rules] Type checker rules object
     # @param level [Symbol] Don't complain about anything above this level
     # @param workspace [Workspace, nil] Workspace to use for loading
     #   type checker rules modified by user config
-    # @param type_checker_rules [Hash{Symbol => Symbol}] Overrides for
-    #   type checker rules - e.g., :report_undefined => :strong
+    # @param rules [Rules] Type checker rules object
     def initialize filename,
                    api_map: nil,
                    level: :normal,
