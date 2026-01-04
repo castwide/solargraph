@@ -43,6 +43,8 @@ jobs:
           # work around:
           #
           # https://github.com/castwide/solargraph/actions/runs/20627923548/job/59241444380?pr=1102
+          - ruby-version: '4.0'
+            rbs-version: '4.0.0.dev.4'
           - ruby-version: 'head'
             rbs-version: '3.6.1'
           - ruby-version: 'head'
