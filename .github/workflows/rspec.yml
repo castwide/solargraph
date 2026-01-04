@@ -35,6 +35,8 @@ jobs:
           - ruby-version: '3.3'
           # only include the 3.4 variants we include later
           - ruby-version: '3.4'
+          # only include the 4.0 variants we include later
+          - ruby-version: '4.0'
           # Don't exclude 'head' - let's test all RBS versions we
           # can there.
           #
@@ -43,8 +45,6 @@ jobs:
           # work around:
           #
           # https://github.com/castwide/solargraph/actions/runs/20627923548/job/59241444380?pr=1102
-          - ruby-version: '4.0'
-            rbs-version: '4.0.0.dev.4'
           - ruby-version: 'head'
             rbs-version: '3.6.1'
           - ruby-version: 'head'
@@ -63,6 +63,8 @@ jobs:
           - ruby-version: '3.3'
             rbs-version: '3.10.0'
           - ruby-version: '3.4'
+            rbs-version: '4.0.0.dev.4'
+          - ruby-version: '4.0'
             rbs-version: '3.10.0'
     steps:
     - uses: actions/checkout@v3
