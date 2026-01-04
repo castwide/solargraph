@@ -10,20 +10,17 @@ module Solargraph
         @presence_certain
       end
 
-      # @param assignment [AST::Node, nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
       # @param splat [Hash]
-      def initialize assignment: nil, presence: nil, presence_certain: false, **splat
+      def initialize presence: nil, presence_certain: false, **splat
         super(**splat)
-        @assignment = assignment
         @presence = presence
         @presence_certain = presence_certain
       end
 
       def combine_with(other, attrs={})
         new_attrs = {
-          assignment: assert_same(other, :assignment),
           presence_certain: assert_same(other, :presence_certain?),
         }.merge(attrs)
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
