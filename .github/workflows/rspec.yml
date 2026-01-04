@@ -35,8 +35,6 @@ jobs:
           - ruby-version: '3.3'
           # only include the 3.4 variants we include later
           - ruby-version: '3.4'
-          # only include the 4.0 variants we include later
-          - ruby-version: '4.0'
           # Don't exclude 'head' - let's test all RBS versions we
           # can there.
           #
@@ -64,8 +62,6 @@ jobs:
             rbs-version: '3.10.0'
           - ruby-version: '3.4'
             rbs-version: '3.10.0'
-          - ruby-version: '3.4'
-            rbs-version: '4.0.0.dev.4'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
