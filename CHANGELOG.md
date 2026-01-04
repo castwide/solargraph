@@ -1,3 +1,6 @@
+## 0.58.1 - January 2, 2026
+-  Normalize line endings to LF (#1142)
+
 ## 0.58.0 - January 1, 2026
 - Faster constant resolution (#1083)
 - [regression] Handle RBS static method aliases (#1094)
