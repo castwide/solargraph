@@ -149,7 +149,7 @@ describe Solargraph::Convention::ActiveSupportConcern do
         RBS
       end
 
-      it { should_not be_empty }
+      it { is_expected.not_to be_empty }
 
       it "has one item" do
         expect(method_pins.size).to eq(1)
