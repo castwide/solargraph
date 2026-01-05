@@ -70,10 +70,10 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
-        if directory == "*" || config.calculated.include?(source.filename)
-          source_hash[source.filename] = source
-          includes_any = true
-        end
+        next unless directory == "*" || config.calculated.include?(source.filename)
+
+        source_hash[source.filename] = source
+        includes_any = true
       end
 
       includes_any
