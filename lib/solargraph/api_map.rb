@@ -23,9 +23,6 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :missing_docs
 
-    # @return [Solargraph::Workspace::Gemspecs]
-    attr_reader :gemspecs
-
     # @param pins [Array<Solargraph::Pin::Base>]
     def initialize pins: []
       @source_map_hash = {}
