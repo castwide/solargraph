@@ -102,7 +102,7 @@ module Solargraph
                      @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
                      @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
@@ -119,12 +119,12 @@ module Solargraph
 
     # @return [DocMap]
     def doc_map
-      @doc_map ||= DocMap.new([], [])
+      @doc_map ||= DocMap.new([], Workspace.new('.'))
     end
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map&.uncached_gemspecs || []
+      doc_map.uncached_gemspecs || []
     end
 
     # @return [::Array<Gem::Specification>]
@@ -195,7 +195,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_all!(out)
-      @doc_map.cache_all!(out)
+      doc_map.cache_all!(out)
     end
 
     # @param gemspec [Gem::Specification]
@@ -203,7 +203,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_gem(gemspec, rebuild: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+      doc_map.cache(gemspec, rebuild: rebuild, out: out)
     end
 
     class << self
@@ -676,6 +676,11 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
+    # @return [Workspace]
+    def workspace
+      doc_map.workspace
+    end
+
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
     # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
@@ -927,7 +932,7 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def should_erase_generics_when_done?(namespace_pin, rooted_type)
+    def should_erase_generics_when_done? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
@@ -938,7 +943,7 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def can_resolve_generics?(namespace_pin, rooted_type)
+    def can_resolve_generics? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !rooted_type.all_params.empty?
     end
   end

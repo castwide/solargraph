@@ -80,7 +80,6 @@ Layout/ElseAlignment:
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, DefLikeMacros, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/pin/delegated_method.rb'
 
@@ -1144,7 +1143,7 @@ Style/SafeNavigation:
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
+    - 'lib/solargraph/workspace/gemspecs.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
