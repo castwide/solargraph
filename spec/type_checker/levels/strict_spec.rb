@@ -539,7 +539,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    xit 'requires strict return tags' do
+    it 'requires strict return tags' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -554,7 +556,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
-    xit 'requires strict return tags' do
+    it 'requires strict return tags' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -768,7 +772,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
     end
 
-    xit 'uses nil? to refine type' do
+    it 'uses nil? to refine type' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         # @sg-ignore
         # @type [String, nil]
@@ -889,7 +895,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    xit "Uses flow scope to specialize understanding of cvar types" do
+    it "Uses flow scope to specialize understanding of cvar types" do
+      pending 'better cvar support'
+
       checker = type_checker(%(
         class Bar
           # @return [String]
