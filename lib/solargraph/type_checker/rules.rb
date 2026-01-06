@@ -68,8 +68,8 @@ module Solargraph
         report?(:require_all_unique_types_match_declared, :alpha)
       end
 
-      def require_all_unique_types_match_expected_on_lhs?
-        report?(:require_all_unique_types_match_expected_on_lhs, :alpha)
+      def require_all_unique_types_support_call?
+        report?(:require_all_unique_types_support_call, :alpha)
       end
 
       def require_no_undefined_args?
