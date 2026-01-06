@@ -106,7 +106,6 @@ Layout/EndOfLine:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -484,7 +483,6 @@ Metrics/ParameterLists:
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/type_checker.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
-    - 'lib/solargraph/yard_map/to_method.rb'
 
 # Configuration parameters: AllowedMethods, AllowedPatterns, Max.
 Metrics/PerceivedComplexity:
