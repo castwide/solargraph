@@ -23,8 +23,6 @@ module Solargraph
     # @param level [Symbol] Don't complain about anything above this level
     # @param workspace [Workspace, nil] Workspace to use for loading
     #   type checker rules modified by user config
-    # @param type_checker_rules [Hash{Symbol => Symbol}] Overrides for
-    #   type checker rules - e.g., :report_undefined => :strong
     # @param rules [Rules] Type checker rules object
     def initialize filename,
                    api_map: nil,
@@ -33,7 +31,8 @@ module Solargraph
                    rules: workspace ? workspace.rules(level) : Rules.new(level, {})
       @filename = filename
       # @todo Smarter directory resolution
-      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename))
+      @api_map = api_map || Solargraph::ApiMap.load(File.dirname(filename),
+                                                    loose_unions: !rules.require_all_unique_types_support_call?)
       @rules = rules
       # @type [Array<Range>]
       @marked_ranges = []
@@ -100,20 +99,25 @@ module Solargraph
       # @return [self]
       def load filename, level = :normal
         source = Solargraph::Source.load(filename)
-        api_map = Solargraph::ApiMap.new
+        rules = Rules.new(level, {})
+        api_map = Solargraph::ApiMap.new(loose_unions:
+                                           !rules.require_all_unique_types_support_call?)
         api_map.map(source)
-        new(filename, api_map: api_map, level: level)
+        new(filename, api_map: api_map, level: level, rules: rules)
       end
 
       # @param code [String]
       # @param filename [String, nil]
       # @param level [Symbol]
-      # @param api_map [Solargraph::ApiMap]
+      # @param api_map [Solargraph::ApiMap, nil]
       # @return [self]
-      def load_string code, filename = nil, level = :normal, api_map: Solargraph::ApiMap.new
+      def load_string code, filename = nil, level = :normal, api_map: nil
         source = Solargraph::Source.load_string(code, filename)
+        rules = Rules.new(level, {})
+        api_map ||= Solargraph::ApiMap.new(loose_unions:
+                                             !rules.require_all_unique_types_support_call?)
         api_map.map(source)
-        new(filename, api_map: api_map, level: level)
+        new(filename, api_map: api_map, level: level, rules: rules)
       end
     end
 
