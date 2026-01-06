@@ -38,6 +38,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match')
     end
 
+    it 'reports mismatched key and subtypes' do
+      checker = type_checker(%(
+        # @return [Hash{String => String}]
+        def foo
+          # @type h [Hash{Integer => String}]
+          h = {}
+          h
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match')
+    end
+
     it 'reports mismatched inherited return tags' do
       checker = type_checker(%(
         class Sup
@@ -187,6 +200,31 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'validates default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar = 123); end
+        ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Declared type String does not match inferred type 123 for variable bar'])
+    end
+
+    it 'validates string default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar = 'foo'); end
+        ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'validates symbol default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [Symbol]
+        def foo(bar = :baz); end
+        ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'validates subclass arguments of param types' do
