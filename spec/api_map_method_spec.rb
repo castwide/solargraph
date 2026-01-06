@@ -133,6 +133,37 @@ describe 'Solargraph::ApiMap methods' do
     end
   end
 
+  describe '#cache_all!' do
+    it 'can cache gems without a bench' do
+      api_map = Solargraph::ApiMap.new
+      doc_map = instance_double(Solargraph::DocMap, cache_all!: true)
+      allow(Solargraph::DocMap).to receive(:new).and_return(doc_map)
+      api_map.cache_all!($stderr)
+      expect(doc_map).to have_received(:cache_all!).with($stderr)
+    end
+  end
+
+  describe '#cache_gem' do
+    it 'can cache gem without a bench' do
+      api_map = Solargraph::ApiMap.new
+      expect { api_map.cache_gem('rake', out: StringIO.new) }.not_to raise_error
+    end
+  end
+
+  describe '#workspace' do
+    it 'can get a default workspace without a bench' do
+      api_map = Solargraph::ApiMap.new
+      expect(api_map.workspace).not_to be_nil
+    end
+  end
+
+  describe '#uncached_gemspecs' do
+    it 'can get uncached gemspecs workspace without a bench' do
+      api_map = Solargraph::ApiMap.new
+      expect(api_map.uncached_gemspecs).not_to be_nil
+    end
+  end
+
   describe '#get_methods' do
     it 'recognizes mixin references from context' do
       source = Solargraph::Source.load_string(%(
