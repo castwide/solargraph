@@ -355,7 +355,6 @@ Lint/NonAtomicFileOperation:
 # This cop supports safe autocorrection (--autocorrect).
 Lint/ParenthesesAsGroupedExpression:
   Exclude:
-    - 'lib/solargraph.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/source_map/clip_spec.rb'
