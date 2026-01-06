@@ -852,7 +852,11 @@ module Solargraph
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
         next if ancestor_fqns.nil?
-        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+        ancestor_method_path = if alias_pin.original == 'new' && alias_pin.scope == :class
+                                 "#{ancestor_fqns}#initialize"
+                               else
+                                 "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+                               end
 
         # Search for the original method in the ancestor
         original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
@@ -864,14 +868,20 @@ module Solargraph
             break resolved if resolved
           end
 
-          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+          candidate_pin.is_a?(Pin::Method)
         end
 
         break if original
       end
+      if original.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}" }
+        return nil
+        # :nocov:
+      end
 
       # @sg-ignore ignore `received nil` for original
-      create_resolved_alias_pin(alias_pin, original) if original
+      create_resolved_alias_pin(alias_pin, original)
     end
 
     # Fast path for creating resolved alias pins without individual method stack lookups

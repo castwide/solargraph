@@ -107,7 +107,6 @@ Layout/EndOfLine:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -362,7 +361,6 @@ Lint/NonAtomicFileOperation:
 # This cop supports safe autocorrection (--autocorrect).
 Lint/ParenthesesAsGroupedExpression:
   Exclude:
-    - 'lib/solargraph.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/source_map/clip_spec.rb'
@@ -1175,7 +1173,6 @@ Style/StringLiterals:
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
   Exclude:
-    - 'lib/solargraph/pin/base_variable.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/signature.rb'
