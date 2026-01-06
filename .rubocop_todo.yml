@@ -1196,7 +1196,12 @@ Style/TrailingCommaInArrayLiteral:
 # Configuration parameters: EnforcedStyleForMultiline.
 # SupportedStylesForMultiline: comma, consistent_comma, diff_comma, no_comma
 Style/TrailingCommaInHashLiteral:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/pin/base_variable.rb'
+    - 'lib/solargraph/pin/callable.rb'
+    - 'lib/solargraph/pin/closure.rb'
+    - 'lib/solargraph/pin/parameter.rb'
+    - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: ExactNameMatch, AllowPredicates, AllowDSLWriters, IgnoreClassMethods, AllowedMethods.

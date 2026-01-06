@@ -6,23 +6,32 @@ module Solargraph
       # @return [Range]
       attr_reader :presence
 
-      def presence_certain?
-        @presence_certain
-      end
-
       # @param presence [Range, nil]
-      # @param presence_certain [Boolean]
       # @param splat [Hash]
-      def initialize presence: nil, presence_certain: false, **splat
+      def initialize presence: nil,
+                     **splat
         super(**splat)
         @presence = presence
-        @presence_certain = presence_certain
+      end
+
+      # @param api_map [ApiMap]
+      # @return [ComplexType]
+      def probe api_map
+        if presence_certain? && return_type&.defined?
+          # flow sensitive typing has already figured out this type
+          # has been downcast - use the type it figured out
+          return adjust_type api_map, return_type.qualify(api_map, *gates)
+        end
+
+        super
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}"
       end
 
       def combine_with(other, attrs={})
-        new_attrs = {
-          presence_certain: assert_same(other, :presence_certain?),
-        }.merge(attrs)
+        new_attrs = {}.merge(attrs)
         new_attrs[:presence] = assert_same(other, :presence) unless attrs.key?(:presence)
 
         super(other, new_attrs)
@@ -30,10 +39,20 @@ module Solargraph
 
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
+      # @todo Need to add nil check here
       def visible_at?(other_closure, other_loc)
+        # @todo Need to add nil check here
         location.filename == other_loc.filename &&
-          presence.include?(other_loc.range.start) &&
+          presence&.include?(other_loc.range.start) &&
+          # @todo Need to add nil check here
           match_named_closure(other_closure, closure)
+      end
+
+      # @param other_loc [Location]
+      def starts_at?(other_loc)
+        location&.filename == other_loc.filename &&
+          presence &&
+          presence.start == other_loc.range.start
       end
 
       def to_rbs

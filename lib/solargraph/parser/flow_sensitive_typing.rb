@@ -120,11 +120,12 @@ module Solargraph
       private
 
       # @param pin [Pin::LocalVariable]
-      # @param downcast_type_name [String]
       # @param presence [Range]
+      # @param downcast_type [ComplexType, nil]
+      # @param downcast_not_type [ComplexType, nil]
       #
       # @return [void]
-      def add_downcast_local(pin, downcast_type_name, presence)
+      def add_downcast_local(pin, presence:, downcast_type:, downcast_not_type:)
         # @todo Create pin#update method
         new_pin = Solargraph::Pin::LocalVariable.new(
           location: pin.location,
@@ -133,14 +134,15 @@ module Solargraph
           assignment: pin.assignment,
           comments: pin.comments,
           presence: presence,
-          return_type: ComplexType.try_parse(downcast_type_name),
-          presence_certain: true,
+          intersection_return_type: downcast_type,
+          exclude_return_type: downcast_not_type,
+          return_type: pin.return_type,
           source: :flow_sensitive_typing
         )
         locals.push(new_pin)
       end
 
-      # @param facts_by_pin [Hash{Pin::LocalVariable => Array<Hash{Symbol => String}>}]
+      # @param facts_by_pin [Hash{Pin::LocalVariable => Array<Hash{:type, :not_type => ComplexType}>}]
       # @param presences [Array<Range>]
       #
       # @return [void]
@@ -150,9 +152,13 @@ module Solargraph
         #
         facts_by_pin.each_pair do |pin, facts|
           facts.each do |fact|
-            downcast_type_name = fact.fetch(:type)
+            downcast_type = fact.fetch(:type, nil)
+            downcast_not_type = fact.fetch(:not_type, nil)
             presences.each do |presence|
-              add_downcast_local(pin, downcast_type_name, presence)
+              add_downcast_local(pin,
+                                 presence: presence,
+                                 downcast_type: downcast_type,
+                                 downcast_not_type: downcast_not_type)
             end
           end
         end
@@ -218,9 +224,10 @@ module Solargraph
         pin = find_local(variable_name, isa_position)
         return unless pin
 
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
         if_true = {}
         if_true[pin] ||= []
-        if_true[pin] << { type: isa_type_name }
+        if_true[pin] << { type: ComplexType.parse(isa_type_name) }
         process_facts(if_true, true_presences)
       end
 

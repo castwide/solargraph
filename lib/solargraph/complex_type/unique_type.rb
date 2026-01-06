@@ -112,6 +112,40 @@ module Solargraph
         literal? && name != 'nil'
       end
 
+      # @param exclude_types [ComplexType, nil]
+      # @param api_map [ApiMap]
+      # @return [ComplexType, self]
+      def exclude exclude_types, api_map
+        return self if exclude_types.nil?
+
+        types = items - exclude_types.items
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
+      # @see https://en.wikipedia.org/wiki/Intersection_type
+      #
+      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @param api_map [ApiMap]
+      # @return [self, ComplexType]
+      def intersect_with intersection_type, api_map
+        return self if intersection_type.nil?
+        return intersection_type if undefined?
+        types = []
+        # try to find common types via conformance
+        items.each do |ut|
+          intersection_type.each do |int_type|
+            if ut.conforms_to?(api_map, int_type, :assignment)
+              types << int_type
+            elsif int_type.conforms_to?(api_map, ut, :assignment)
+              types << ut
+            end
+          end
+        end
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
       def literal?
         non_literal_name != name
       end
@@ -321,6 +355,11 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+      # @yieldreturn [Boolean]
+      def all? &block
+        block.yield self
+      end
+
       # @return [UniqueType]
       def downcast_to_literal_if_possible
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
@@ -417,6 +456,13 @@ module Solargraph
       # @return [Array<self>]
       def map &block
         [block.yield(self)]
+      end
+
+      # @yieldparam t [self]
+      # @yieldreturn [self]
+      # @return [Enumerable<self>]
+      def each &block
+        [self].each &block
       end
 
       # @return [Array<UniqueType>]

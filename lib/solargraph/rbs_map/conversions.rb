@@ -739,7 +739,7 @@ module Solargraph
         build_type(type_name, type_args).tags
       end
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [Object]
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
@@ -796,6 +796,9 @@ module Solargraph
           # e.g., singleton(String)
           type_tag(type.name)
         else
+          # RBS doesn't provide a common base class for its type AST nodes'
+          #
+          # @sg-ignore Unresolved call to location on Object
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
