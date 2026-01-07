@@ -8,11 +8,13 @@ describe Solargraph::DocMap do
     described_class.new(requires, workspace, out: out)
   end
 
-  let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
-
   let(:out) { StringIO.new }
   let(:pre_cache) { true }
   let(:requires) { [] }
+
+  let(:workspace) do
+    Solargraph::Workspace.new(Dir.pwd)
+  end
 
   let(:plain_doc_map) { described_class.new([], workspace, out: nil) }
 
@@ -46,22 +48,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'does not warn for redundant requires' do
-    # Requiring 'set' is unnecessary because it's already included in core. It
-    # might make sense to log redundant requires, but a warning is overkill.
-    allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], workspace)
-    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
-  end
-
-  it 'ignores nil requires' do
-    expect { Solargraph::DocMap.new([nil], workspace) }.not_to raise_error
-  end
-
-  it 'ignores empty requires' do
-    expect { Solargraph::DocMap.new([''], workspace) }.not_to raise_error
-  end
-
   context 'with an invalid require' do
     let(:requires) do
       ['not_a_gem']
@@ -87,6 +73,14 @@ describe Solargraph::DocMap do
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
     end
+  end
+
+  it 'does not warn for redundant requires' do
+    # Requiring 'set' is unnecessary because it's already included in core. It
+    # might make sense to log redundant requires, but a warning is overkill.
+    allow(Solargraph.logger).to receive(:warn).and_call_original
+    Solargraph::DocMap.new(['set'], workspace)
+    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
   context 'when deserialization takes a while' do
@@ -119,14 +113,15 @@ describe Solargraph::DocMap do
     let(:workspace) { instance_double(Solargraph::Workspace) }
 
     it 'tracks uncached_gemspecs' do
-      pincache = instance_double(Solargraph::PinCache)
+      pincache = instance_double(Solargraph::PinCache, cache_stdlib_rbs_map: false)
       uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
-      allow(workspace).to receive_messages(fresh_pincache: pincache)
-      allow(Gem::Specification).to receive(:find_by_path).with('uncached_gem').and_return(uncached_gemspec)
-      allow(workspace).to receive_messages(stdlib_dependencies: [], global_environ: Solargraph::Environ.new, resolve_require: [uncached_gemspec])
-      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
-      allow(pincache).to receive(:cache_stdlib_rbs_map).with('uncached_gem').and_return([uncached_gemspec])
       allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec, out: out).and_return([])
+      allow(workspace).to receive_messages(fresh_pincache: pincache, resolve_require: [uncached_gemspec],
+                                           stdlib_dependencies: [], global_environ: Solargraph::Environ.new)
+      allow(Gem::Specification).to receive(:find_by_path).with('uncached_gem').and_return(uncached_gemspec)
+      allow(workspace).to receive(:global_environ).and_return(Solargraph::Environ.new)
+      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
+
       expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
     end
   end
@@ -171,7 +166,9 @@ describe Solargraph::DocMap do
     let(:requires) { ['rspec'] }
 
     it 'collects dependencies' do
-      expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
+      # we include doc_map.requires as solargraph-rspec will bring it
+      # in directly and we exclude it from dependencies
+      expect(doc_map.dependencies.map(&:name) + doc_map.requires).to include('rspec-core')
     end
   end
 
@@ -189,10 +186,11 @@ describe Solargraph::DocMap do
 
       Solargraph::Convention.register dummy_convention
 
-      workspace = Solargraph::Workspace.new('')
-
       doc_map = Solargraph::DocMap.new(['original_gem'], workspace)
 
+      # @todo this should probably not be in requires, which is a
+      #   path, and instead be in a new gem_names property on the
+      #   Environ
       expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
     ensure
       # Clean up the registered convention

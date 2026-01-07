@@ -17,7 +17,16 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
 
       it 'finds a known dependency' do
-        pending('https://github.com/castwide/solargraph/pull/1006')
+        expect(deps.map(&:name)).to include('backport')
+      end
+    end
+
+    context 'with a Gem::Specification' do
+      let(:gemspec) do
+        Gem::Specification.find_by_name('solargraph')
+      end
+
+      it 'finds a known dependency' do
         expect(deps.map(&:name)).to include('backport')
       end
     end
@@ -33,8 +42,6 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       let(:gem_name) { 'my_fake_gem' }
 
       it 'gives a useful message' do
-        pending('https://github.com/castwide/solargraph/pull/1006')
-
         output = capture_both { deps.map(&:name) }
         expect(output).to include('Please install the gem activerecord')
       end
@@ -45,7 +52,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
     let(:gemspec) do
-      Gem::Specification.find_by_name(gem_name)
+      Bundler::LazySpecification.new(gem_name, nil, nil)
     end
 
     before do
@@ -76,16 +83,9 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     context 'with gem does not exist in our bundle' do
-      let(:gemspec) do
-        Gem::Specification.new(fake_gem_name)
-      end
-
-      let(:gem_name) { 'undercover' }
-
-      let(:fake_gem_name) { 'faaaaaake912' }
+      let(:gem_name) { 'activerecord' }
 
       it 'gives a useful message' do
-        pending('https://github.com/castwide/solargraph/pull/1006')
         dep_names = nil
         output = capture_both { dep_names = deps.map(&:name) }
         expect(output).to include('Please install the gem activerecord')

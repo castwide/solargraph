@@ -11,7 +11,7 @@ on:
     branches: [ master ]
   push:
     branches:
-      - 'main'
+      - 'master'
     tags:
       - 'v*'
 
