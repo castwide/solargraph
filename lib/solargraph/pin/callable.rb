@@ -21,6 +21,11 @@ module Solargraph
         @parameters = parameters
       end
 
+      def reset_generated!
+        parameters.each(&:reset_generated!)
+        super
+      end
+
       # @return [String]
       def method_namespace
         closure.namespace
