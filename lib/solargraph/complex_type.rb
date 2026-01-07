@@ -368,9 +368,9 @@ module Solargraph
       items.each do |ut|
         intersection_type.each do |int_type|
           if ut.conforms_to?(api_map, int_type, :assignment)
-            types << int_type
-          elsif int_type.conforms_to?(api_map, ut, :assignment)
             types << ut
+          elsif int_type.conforms_to?(api_map, ut, :assignment)
+            types << int_type
           end
         end
       end
