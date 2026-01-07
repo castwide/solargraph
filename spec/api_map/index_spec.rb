@@ -56,8 +56,6 @@ describe Solargraph::ApiMap::Index do
     end
 
     it 'overrides #initialize method in signature' do
-      pending 'initialize fix'
-
       method_pin = output_pins.find { |pin| pin.path == 'Foo#initialize' }
       first_parameter = method_pin.parameters.first
       expect(first_parameter.return_type.tag).to eq('String')

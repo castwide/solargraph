@@ -89,11 +89,8 @@ jobs:
       run: |
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
-        bundle list
-        bundle exec solargraph pin 'Bundler::Dsl#source'
     - name: Update types
-      run: |
-        bundle exec rbs collection update
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
@@ -108,9 +105,15 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.4'
+        # see https://github.com/castwide/solargraph/actions/runs/19391419903/job/55485410493?pr=1119
+        #
+        # match version in Gemfile.lock and use same version below
+        bundler: 2.5.23
         bundler-cache: false
     - name: Install gems
       run: bundle install
+    - name: Update types
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
     - name: Check PR coverage
