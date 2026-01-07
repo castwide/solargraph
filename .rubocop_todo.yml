@@ -460,6 +460,7 @@ Metrics/ClassLength:
   Exclude:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host.rb'
+    - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
     - 'lib/solargraph/type_checker.rb'
 

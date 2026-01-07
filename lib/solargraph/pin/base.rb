@@ -209,7 +209,9 @@ module Solargraph
 
       def dodgy_return_type_source?
         # uses a lot of 'Object' instead of 'self'
-        location&.filename&.include?('core_ext/object/')
+        location&.filename&.include?('core_ext/object/') ||
+          # ditto
+          location&.filename&.include?('stdlib/date/0/date.rbs')
       end
 
       # when choices are arbitrary, make sure the choice is consistent
