@@ -350,25 +350,5 @@ module Solargraph
         puts pin.inspect
       end
     end
-
-    # @param type [ComplexType]
-    # @return [void]
-    def print_type(type)
-      if options[:rbs]
-        puts type.to_rbs
-      else
-        puts type.rooted_tag
-      end
-    end
-
-    # @param pin [Solargraph::Pin::Base]
-    # @return [void]
-    def print_pin(pin)
-      if options[:rbs]
-        puts pin.to_rbs
-      else
-        puts pin.inspect
-      end
-    end
   end
 end
