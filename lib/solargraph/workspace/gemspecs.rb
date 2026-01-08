@@ -245,7 +245,7 @@ module Solargraph
           gemspec.respond_to?(:source) &&
             gemspec.source.instance_of?(Bundler::Source::Gemspec) &&
             gemspec.source.respond_to?(:path) &&
-            gemspec.source.path == '.'
+            gemspec.source.path == Pathname.new('.')
         end
       end
 
