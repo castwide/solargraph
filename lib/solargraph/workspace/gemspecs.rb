@@ -232,7 +232,7 @@ module Solargraph
         if specish_objects.first.respond_to?(:materialize_for_installation)
           specish_objects = specish_objects.map(&:materialize_for_installation)
         end
-        specish_objects.map do |specish|
+        all_gemspecs = specish_objects.map do |specish|
           if specish.respond_to?(:name) && specish.respond_to?(:version) && specish.respond_to?(:gem_dir)
             # duck type is good enough for outside uses!
             specish
@@ -240,6 +240,13 @@ module Solargraph
             to_gem_specification(specish)
           end
         end.compact
+        # @param gemspec [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+        all_gemspecs.reject do |gemspec|
+          gemspec.respond_to?(:source) &&
+            gemspec.source.instance_of?(Bundler::Source::Gemspec) &&
+            gemspec.source.respond_to?(:path) &&
+            gemspec.source.path == '.'
+        end
       end
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
