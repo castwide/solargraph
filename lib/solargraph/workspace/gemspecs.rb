@@ -68,7 +68,7 @@ module Solargraph
           end
 
           # look ourselves just in case this is hanging out somewhere
-          # that find_by_path doesn't index'
+          # that find_by_path doesn't index
           gemspec = all_gemspecs.find do |spec|
             spec = to_gem_specification(spec) unless spec.respond_to?(:files)
 
@@ -240,13 +240,6 @@ module Solargraph
             to_gem_specification(specish)
           end
         end.compact
-        # @param gemspec [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
-        all_gemspecs.reject do |gemspec|
-          gemspec.respond_to?(:source) &&
-            gemspec.source.instance_of?(Bundler::Source::Gemspec) &&
-            gemspec.source.respond_to?(:path) &&
-            gemspec.source.path == Pathname.new('.')
-        end
       end
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]

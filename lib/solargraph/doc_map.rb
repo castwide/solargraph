@@ -138,6 +138,18 @@ module Solargraph
       # @type [Array<Gem::Specification>]
       gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies(out: out).to_a
 
+      # if we are type checking a gem project, we should not include
+      # pins from rbs or yard from that gem here - we use our own
+      # parser for those pins
+
+      # @param gemspec [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+      gemspecs.reject! do |gemspec|
+        gemspec.respond_to?(:source) &&
+          gemspec.source.instance_of?(Bundler::Source::Gemspec) &&
+          gemspec.source.respond_to?(:path) &&
+          gemspec.source.path == Pathname.new('.')
+      end
+
       missing_paths.each do |path|
         # this will load from disk if needed; no need to manage
         # uncached_gemspecs to trigger that later

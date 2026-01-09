@@ -126,7 +126,6 @@ module Solargraph
               end
             end
           elsif n.type == :hash
-            # @sg-ignore Too many arguments to Hash.new
             result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
