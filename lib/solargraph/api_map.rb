@@ -24,9 +24,21 @@ module Solargraph
     attr_reader :missing_docs
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    def initialize pins: []
+    # @param loose_unions [Boolean] if true, a potential type can be
+    #   inferred if ANY of the UniqueTypes in the base chain's
+    #   ComplexType match it. If false, every single UniqueTypes in
+    #   the base must be ALL able to independently provide this
+    #   type.  The former is useful during completion, but the
+    #   latter is best for typechecking at higher levels.
+    #
+    #   Currently applies only to selecting potential methods to
+    #   select in a Call link, but is likely to expand in the
+    #   future to similar situations.
+    #
+    def initialize pins: [], loose_unions: true
       @source_map_hash = {}
       @cache = Cache.new
+      @loose_unions = loose_unions
       index pins
     end
 
@@ -51,6 +63,8 @@ module Solargraph
     def hash
       equality_fields.hash
     end
+
+    attr_reader :loose_unions
 
     def to_s
       self.class.to_s
@@ -102,7 +116,7 @@ module Solargraph
                      @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
                      @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, bench.workspace) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
       @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
@@ -114,17 +128,17 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     protected def equality_fields
-      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
+      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires, @missing_docs, @loose_unions]
     end
 
     # @return [DocMap]
     def doc_map
-      @doc_map ||= DocMap.new([], [])
+      @doc_map ||= DocMap.new([], Workspace.new('.'))
     end
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map&.uncached_gemspecs || []
+      doc_map.uncached_gemspecs || []
     end
 
     # @return [::Array<Gem::Specification>]
@@ -180,10 +194,11 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load directory
-      api_map = new
+    def self.load directory, loose_unions: true
+      api_map = new(loose_unions: loose_unions)
       workspace = Solargraph::Workspace.new(directory)
       # api_map.catalog Bench.new(workspace: workspace)
       library = Library.new(workspace)
@@ -195,7 +210,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_all!(out)
-      @doc_map.cache_all!(out)
+      doc_map.cache_all!(out)
     end
 
     # @param gemspec [Gem::Specification]
@@ -203,7 +218,7 @@ module Solargraph
     # @param out [IO, nil]
     # @return [void]
     def cache_gem(gemspec, rebuild: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+      doc_map.cache(gemspec, rebuild: rebuild, out: out)
     end
 
     class << self
@@ -215,18 +230,19 @@ module Solargraph
     #
     #
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, nil] The output stream for messages
+    # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load_with_cache directory, out
-      api_map = load(directory)
+    def self.load_with_cache directory, out = $stdout, loose_unions: true
+      api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
         return api_map
       end
 
       api_map.cache_all!(out)
-      load(directory)
+      load(directory, loose_unions: loose_unions)
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -512,7 +528,8 @@ module Solargraph
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first
       methods = if namespace_pin.is_a?(Pin::Constant)
-                  type = namespace_pin.infer(self)
+                  type = namespace_pin.typify(self)
+                  type = namespace_pin.probe(self) unless type.defined?
                   if type.defined?
                     namespace_pin = store.get_path_pins(type.namespace).first
                     get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
@@ -674,6 +691,11 @@ module Solargraph
       end.compact
       logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
+    end
+
+    # @return [Workspace]
+    def workspace
+      doc_map.workspace
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
@@ -852,7 +874,11 @@ module Solargraph
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
         next if ancestor_fqns.nil?
-        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+        ancestor_method_path = if alias_pin.original == 'new' && alias_pin.scope == :class
+                                 "#{ancestor_fqns}#initialize"
+                               else
+                                 "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+                               end
 
         # Search for the original method in the ancestor
         original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
@@ -864,14 +890,20 @@ module Solargraph
             break resolved if resolved
           end
 
-          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+          candidate_pin.is_a?(Pin::Method)
         end
 
         break if original
       end
+      if original.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:alias_target_missing) { "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}" }
+        return nil
+        # :nocov:
+      end
 
       # @sg-ignore ignore `received nil` for original
-      create_resolved_alias_pin(alias_pin, original) if original
+      create_resolved_alias_pin(alias_pin, original)
     end
 
     # Fast path for creating resolved alias pins without individual method stack lookups
@@ -927,7 +959,7 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def should_erase_generics_when_done?(namespace_pin, rooted_type)
+    def should_erase_generics_when_done? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
@@ -938,7 +970,7 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def can_resolve_generics?(namespace_pin, rooted_type)
+    def can_resolve_generics? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !rooted_type.all_params.empty?
     end
   end

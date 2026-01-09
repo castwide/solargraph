@@ -141,7 +141,9 @@ describe 'NodeChainer' do
     expect(chain.links.first).to be_with_block
   end
 
-  xit 'tracks complex multiple assignment' do
+  it 'tracks complex multiple assignment' do
+    pending('complex multiple assignment support')
+
     source = Solargraph::Source.load_string(%(
       foo.baz, bar = [1, 2]
     ))

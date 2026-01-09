@@ -5,6 +5,18 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
+    it 'understands Class<File> is not the same as String' do
+      checker = type_checker(%(
+          # @param str [String]
+          # @return [void]
+          def foo str; end
+
+          foo File
+        ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
@@ -61,7 +73,7 @@ describe Solargraph::TypeChecker do
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
+      api_map = Solargraph::ApiMap.load '.'
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
@@ -539,7 +551,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    xit 'requires strict return tags' do
+    it 'requires strict return tags' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -554,7 +568,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
-    xit 'requires strict return tags' do
+    it 'requires strict return tags' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -701,6 +717,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+
+    it 'validates parameters in function calls' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar); end
+
+        def baz
+          foo(123)
+        end
+        ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received 123'])
+    end
+
     it 'validates inferred return types with complex tags' do
       checker = type_checker(%(
         # @param foo [Numeric, nil] a foo
@@ -755,7 +784,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
     end
 
-    xit 'uses nil? to refine type' do
+    it 'uses nil? to refine type' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         # @sg-ignore
         # @type [String, nil]
@@ -876,7 +907,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    xit "Uses flow scope to specialize understanding of cvar types" do
+    it "Uses flow scope to specialize understanding of cvar types" do
+      pending 'better cvar support'
+
       checker = type_checker(%(
         class Bar
           # @return [String]

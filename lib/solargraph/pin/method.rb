@@ -92,7 +92,6 @@ module Solargraph
         end
         new_attrs = {
           visibility: combine_visibility(other),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           explicit: explicit? || other.explicit?,
           block: combine_blocks(other),
           node: choose_node(other, :node),
@@ -396,7 +395,7 @@ module Solargraph
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
       end
 
-      # @return [::Array<Pin::Method>]
+      # @return [::Array<Pin::Signature>]
       def overloads
         # Ignore overload tags with nil parameters. If it's not an array, the
         # tag's source is likely malformed.
@@ -539,7 +538,7 @@ module Solargraph
         docstring.ref_tags.each do |ref|
           # @sg-ignore ref should actually be an intersection type
           next unless ref.tag_name == 'return' && ref.owner
-          # @sg-ignore ref should actually be an intersection type
+          # @todo ref should actually be an intersection type
           result = resolve_reference(ref.owner.to_s, api_map)
           return result unless result.nil?
         end
