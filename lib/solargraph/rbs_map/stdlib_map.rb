@@ -25,7 +25,7 @@ module Solargraph
           @resolved = true
           @loaded = true
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
-        else
+        elsif self.class.source.has? library, nil
           super
           unless resolved?
             @pins = []

@@ -204,10 +204,10 @@ module Solargraph
                     loader.add library: library, version: version, resolve_dependencies: resolve_dependencies?
                     logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
                     true
-      else
-        logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
-        false
-      end
+                  else
+                    logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
+                    false
+                  end
     end
 
     # @return [String]
