@@ -114,8 +114,6 @@ describe Solargraph::Shell do
       end
 
       it 'caches core without erroring out' do
-        pending('https://github.com/castwide/solargraph/pull/1061')
-
         capture_both do
           shell.uncache('core')
         end
@@ -133,36 +131,31 @@ describe Solargraph::Shell do
     end
 
     context 'with mocked Workspace' do
-      let(:api_map) { instance_double(Solargraph::ApiMap) }
       let(:workspace) { instance_double(Solargraph::Workspace) }
       let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
 
       before do
         allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
-        allow(Solargraph::ApiMap).to receive(:load).with('.').and_return(api_map)
-        allow(api_map).to receive(:cache_gem)
-        allow(api_map).to receive(:workspace).and_return(workspace)
       end
 
       it 'caches all without erroring out' do
-        pending 'delegation to api_map'
-
-        allow(api_map).to receive(:cache_all!)
+        allow(workspace).to receive(:cache_all_for_workspace!)
 
         _output = capture_both { shell.gems }
 
-        expect(api_map).to have_received(:cache_all!)
+        expect(workspace).to have_received(:cache_all_for_workspace!)
       end
 
       it 'caches single gem without erroring out' do
         allow(workspace).to receive(:find_gem).with('backport').and_return(gemspec)
+        allow(workspace).to receive(:cache_gem)
 
         capture_both do
           shell.options = { rebuild: false }
           shell.gems('backport')
         end
 
-        expect(api_map).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
+        expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
       end
     end
   end
@@ -176,8 +169,6 @@ describe Solargraph::Shell do
       subject(:call) { shell.cache('nonexistentgem8675309') }
 
       it 'gives a good error message' do
-        pending('https://github.com/castwide/solargraph/pull/1061')
-
         # capture stderr output
         expect { call }.to output(/not found/).to_stderr
       end

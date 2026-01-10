@@ -23,7 +23,8 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String] TODO: Remove '' and '*' special cases
+    # @todo Remove '' and '*' special cases
+    # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
@@ -91,7 +92,7 @@ module Solargraph
     def global_environ
       # empty docmap, since the result needs to work in any possible
       # context here
-      @global_environ ||= Convention.for_global(DocMap.new([], self))
+      @global_environ ||= Convention.for_global(DocMap.new([], self, out: nil))
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
@@ -244,6 +245,36 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def all_gemspecs_from_bundle
       gemspecs.all_gemspecs_from_bundle
+    end
+
+    # @todo make this actually work against bundle instead of pulling
+    #   all installed gemspecs -
+    #   https://github.com/apiology/solargraph/pull/10
+    # @return [Array<Gem::Specification>]
+    def all_gemspecs_from_bundle
+      Gem::Specification.to_a
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_all_for_workspace! out, rebuild: false
+      PinCache.cache_core(out: out) unless PinCache.core?
+
+      gem_specs = all_gemspecs_from_bundle
+      # try any possible standard libraries, but be quiet about it
+      stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
+      specs = (gem_specs + stdlib_specs)
+      specs.each do |spec|
+        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+      end
+      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      # do this after so that we prefer stdlib requires from gems,
+      # which are likely to be newer and have more pins
+      pin_cache.cache_all_stdlibs(out: out)
+
+      out&.puts "Documentation cached for core, standard library and gems."
     end
 
     # Synchronize the workspace from the provided updater.
