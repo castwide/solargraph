@@ -54,6 +54,13 @@ module Solargraph
         end
       end
 
+      def resolve_dependencies?
+        # there are 'virtual' dependencies for stdlib gems in RBS that
+        # aren't represented in the actual gemspecs that we'd
+        # otherwise use
+        true
+      end
+
       # @param library [String]
       # @return [StdlibMap]
       def self.load library
