@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'open3', '~> 0.2.1'
   s.add_runtime_dependency 'parser', '~> 3.0'
   s.add_runtime_dependency 'prism', '~> 1.4'
-  s.add_runtime_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.4']
+  s.add_runtime_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.5']
   s.add_runtime_dependency 'reverse_markdown', '~> 3.0'
   s.add_runtime_dependency 'rubocop', '~> 1.76'
   s.add_runtime_dependency 'thor', '~> 1.0'
