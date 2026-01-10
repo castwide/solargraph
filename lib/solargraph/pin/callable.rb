@@ -205,6 +205,7 @@ module Solargraph
         argcount = arguments.length
         parcount = mandatory_positional_param_count
         parcount -= 1 if !parameters.empty? && parameters.last.block?
+        return false if block? && !with_block
         # @todo this and its caller should be changed so that this can
         #   look at the kwargs provided and check names against what
         #   we acccept
