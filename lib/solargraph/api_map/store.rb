@@ -71,7 +71,6 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         all_pins = namespace_children(fqns).select do |pin|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
         GemPins.combine_method_pins_by_path(all_pins)

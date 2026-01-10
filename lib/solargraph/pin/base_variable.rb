@@ -47,6 +47,23 @@ module Solargraph
         @exclude_return_type = exclude_return_type
       end
 
+      # @param presence [Range]
+      # @param exclude_return_type [ComplexType, nil]
+      # @param intersection_return_type [ComplexType, nil]
+      # @param source [::Symbol]
+      #
+      # @return [self]
+      def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
+                   source: self.source
+        result = dup
+        result.exclude_return_type = exclude_return_type
+        result.intersection_return_type = intersection_return_type
+        result.source = source
+        result.presence = presence
+        result.reset_generated!
+        result
+      end
+
       def combine_with(other, attrs={})
         new_attrs = attrs.merge({
           # default values don't exist in RBS parameters; it just
@@ -175,9 +192,14 @@ module Solargraph
         exclude_return_type || intersection_return_type
       end
 
-      private
+      protected
 
-      attr_reader :exclude_return_type, :intersection_return_type
+      attr_accessor :exclude_return_type, :intersection_return_type
+
+      # @return [Range]
+      attr_writer :presence
+
+      private
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]

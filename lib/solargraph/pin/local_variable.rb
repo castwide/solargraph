@@ -61,6 +61,8 @@ module Solargraph
 
       private
 
+      attr_reader :exclude_return_type
+
       # @param tag1 [String]
       # @param tag2 [String]
       # @return [Boolean]

@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class Until < Base
+    class Until < CompoundStatement
       include Breakable
 
       # @param receiver [Parser::AST::Node, nil]

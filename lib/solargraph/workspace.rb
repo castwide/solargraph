@@ -286,6 +286,7 @@ module Solargraph
     end
 
     # @return [String]
+    # @sg-ignore Need to validate config
     def command_path
       server['commandPath'] || 'solargraph'
     end
