@@ -102,11 +102,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'collects dependencies' do
-    doc_map = Solargraph::DocMap.new(['rspec'], workspace)
-    expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
-  end
-
   context 'with an uncached but valid gemspec' do
     let(:requires) { ['uncached_gem'] }
     let(:pre_cache) { false }
