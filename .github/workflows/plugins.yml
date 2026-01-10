@@ -116,12 +116,9 @@ jobs:
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
-       # git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone https://github.com/lekemula/solargraph-rspec.git
 
-       # pending https://github.com/lekemula/solargraph-rspec/pull/30
-       git clone https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
-       git checkout reset_closures
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -153,10 +150,12 @@ jobs:
       run: |
         cd ../solargraph-rspec
         cp .solargraph.yml.example .solargraph.yml
-    - name: Solargraph generate RSpec gems YARD and RBS pins
+    - name: Solargraph generate RSpec gems YARD pins
       run: |
         cd ../solargraph-rspec
-        bundle exec appraisal rbs collection update
+        # solargraph-rspec's specs don't pass a workspace, so it
+        # doesn't know where to look for the RBS collection - let's
+        # not load one so that the solargraph gems command below works
         rspec_gems=$(bundle exec appraisal ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
         bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs
