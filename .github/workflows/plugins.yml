@@ -56,8 +56,6 @@ jobs:
       with:
         ruby-version: 3.4
         bundler-cache: false
-        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
-        rubygems: latest
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -176,6 +174,8 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: false
         bundler: latest
+        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        rubygems: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
