@@ -136,8 +136,8 @@ describe Solargraph::PinCache do
       end
     end
 
-    context 'with gem packaged with its own RBS gem' do
-      let(:gem_name) { 'base64' }
+    context 'with gem packaged with its own RBS' do
+      let(:gem_name) { 'rubocop-yard' }
 
       before do
         Solargraph::Shell.new.uncache(gem_name)
@@ -150,7 +150,7 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
 
         # match arguments with regexp using rspec-matchers syntax
-        expect(File).to have_received(:write).with(%r{combined/.*/base64-.*-export.ser$}, any_args, mode: 'wb').once
+        expect(File).to have_received(:write).with(%r{combined/.*/rubocop-yard-.*-export.ser$}, any_args, mode: 'wb').once
       end
     end
   end

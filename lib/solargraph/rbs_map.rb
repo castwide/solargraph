@@ -109,19 +109,19 @@ module Solargraph
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @return [RbsMap]
     def self.from_gemspec gemspec, rbs_collection_path, rbs_collection_config_path
+      # prefers stdlib RBS if available
+      rbs_map = RbsMap::StdlibMap.new(gemspec.name)
+      return rbs_map if rbs_map.resolved?
+
       rbs_map = RbsMap.new(gemspec.name, gemspec.version,
                            rbs_collection_paths: [rbs_collection_path].compact,
                            rbs_collection_config_path: rbs_collection_config_path)
       return rbs_map if rbs_map.resolved?
 
       # try any version of the gem in the collection
-      rbs_map = RbsMap.new(gemspec.name, nil,
-                           rbs_collection_paths: [rbs_collection_path].compact,
-                           rbs_collection_config_path: rbs_collection_config_path)
-
-      return rbs_map if rbs_map.resolved?
-
-      StdlibMap.new(gemspec.name)
+      RbsMap.new(gemspec.name, nil,
+                 rbs_collection_paths: [rbs_collection_path].compact,
+                 rbs_collection_config_path: rbs_collection_config_path)
     end
 
     # @param out [IO, nil] where to log messages
@@ -187,6 +187,13 @@ module Solargraph
     # @return [void]
     def log_caching lib, out:; end
 
+    def resolve_dependencies?
+      # we need to resolve dependencies via gemfile.lock manually for
+      # YARD regardless, so use same mechanism here so we don't
+      # duplicate work generating pins from dependencies
+      false
+    end
+
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]
     # @param version [String, nil] the version of the library to load, or nil for any
@@ -194,14 +201,13 @@ module Solargraph
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version, out: $stderr
       @resolved = if loader.has_library?(library: library, version: version)
-                    # we find our own dependencies from gemfile.lock
-                    loader.add library: library, version: version, resolve_dependencies: false
+                    loader.add library: library, version: version, resolve_dependencies: resolve_dependencies?
                     logger.debug { "#{short_name} successfully loaded library #{library}:#{version}" }
                     true
-      else
-        logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
-        false
-      end
+                  else
+                    logger.info { "#{short_name} did not find data for library #{library}:#{version}" }
+                    false
+                  end
     end
 
     # @return [String]

@@ -25,7 +25,7 @@ module Solargraph
           @resolved = true
           @loaded = true
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
-        else
+        elsif self.class.source.has? library, nil
           super
           unless resolved?
             @pins = []
@@ -52,6 +52,13 @@ module Solargraph
         else
           []
         end
+      end
+
+      def resolve_dependencies?
+        # there are 'virtual' dependencies for stdlib gems in RBS that
+        # aren't represented in the actual gemspecs that we'd
+        # otherwise use
+        true
       end
 
       # @param library [String]
