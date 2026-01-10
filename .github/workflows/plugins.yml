@@ -34,7 +34,7 @@ jobs:
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -64,7 +64,7 @@ jobs:
       run: |
         echo 'gem "solargraph-rails"' > .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -93,7 +93,7 @@ jobs:
       run: |
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -190,7 +190,7 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
-       bundle update rbs
+       bundle update --pre rbs
        RAILS_DIR="$(pwd)/spec/rails7"
        export RAILS_DIR
        cd ${RAILS_DIR}
