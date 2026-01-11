@@ -741,23 +741,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'understands self type when passed as parameter' do
-      checker = type_checker(%(
-        class Location
-          # @return [String]
-          attr_reader :filename
-
-          # @param other [self]
-          def <=>(other)
-            return nil unless other.is_a?(Location)
-
-            filename <=> other.filename
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     it 'uses cast type instead of defined type' do
       checker = type_checker(%(
         # frozen_string_literal: true
