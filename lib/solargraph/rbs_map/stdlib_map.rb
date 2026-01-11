@@ -12,10 +12,6 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
-      def log_caching lib, out: $stderr
-        out&.puts("Caching RBS pins for standard library #{lib}")
-      end
-
       # @param library [String]
       # @param out [IO, nil] where to log messages
       def initialize library, out: $stderr
