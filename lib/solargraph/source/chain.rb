@@ -271,7 +271,7 @@ module Solargraph
                else
                  ComplexType.new(types)
                end
-        if context.nil? || context.return_type.undefined?
+        if context.nil? || context.context.undefined?
           # up to downstream to resolve self type
           return type
         end
