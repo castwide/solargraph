@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class Closure < Base
+    class Closure < CompoundStatement
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 

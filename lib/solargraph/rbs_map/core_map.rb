@@ -15,31 +15,38 @@ module Solargraph
 
       def initialize; end
 
+      # @param out [IO, nil] output stream for logging
       # @return [Enumerable<Pin::Base>]
-      def pins
+      def pins out: $stderr
         return @pins if @pins
+        @pins = cache_core(out: out)
+      end
 
-        @pins = []
+      # @param out [StringIO, IO, nil] output stream for logging
+      # @return [Array<Pin::Base>]
+      def cache_core out: $stderr
+        new_pins = []
         cache = PinCache.deserialize_core
-        if cache
-          @pins.replace cache
-        else
-          @pins.concat conversions.pins
+        return cache if cache
+        new_pins.concat conversions.pins
 
-          # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
-          fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
-          fill_loader.add(path: Pathname(FILLS_DIRECTORY))
-          fill_conversions = Conversions.new(loader: fill_loader)
-          @pins.concat fill_conversions.pins
+        # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+        fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+        fill_loader.add(path: Pathname(FILLS_DIRECTORY))
+        out&.puts 'Caching RBS pins for Ruby core'
+        fill_conversions = Conversions.new(loader: fill_loader)
+        new_pins.concat fill_conversions.pins
 
-          @pins.concat RbsMap::CoreFills::ALL
+        # add some overrides
+        new_pins.concat RbsMap::CoreFills::ALL
 
-          processed = ApiMap::Store.new(pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-          @pins.replace processed
+        # process overrides, then remove any which couldn't be resolved
+        processed = ApiMap::Store.new(new_pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
+        new_pins.replace processed
 
-          PinCache.serialize_core @pins
-        end
-        @pins
+        PinCache.serialize_core new_pins
+
+        new_pins
       end
 
       private

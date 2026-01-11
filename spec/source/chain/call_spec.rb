@@ -224,7 +224,8 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Set<String>')
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 17))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    block_pin = api_map.source_map('test.rb').pins.find { |p| p.is_a?(Solargraph::Pin::Block) }
+    type = chain.infer(api_map, block_pin, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Class<String>')
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
@@ -250,7 +251,9 @@ describe Solargraph::Source::Chain::Call do
     expect(type.simple_tags).to eq('Integer')
   end
 
-  xit 'infers method return types based on method generic' do
+  it 'infers method return types based on method generic' do
+    pending('deeper inference support')
+
     source = Solargraph::Source.load_string(%(
       class Foo
         # @Generic A
@@ -315,7 +318,9 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  xit 'infers generic return types from block from yield being a return node' do
+  it 'infers generic return types from block from yield being a return node' do
+    pending('deeper inference support')
+
     source = Solargraph::Source.load_string(%(
       def yielder(&blk)
         yield
@@ -371,6 +376,21 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
   end
 
+  it 'allows calls off of nilable objects by default' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, nil]
+      f = foo
+      a = f.upcase
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('String')
+  end
+
   it 'calculates class return type based on class generic' do
     source = Solargraph::Source.load_string(%(
       # @generic A
@@ -392,6 +412,21 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'denies calls off of nilable objects when loose union mode is off' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, nil]
+      f = foo
+      a = f.upcase
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new(loose_unions: false)
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 6))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('undefined')
+  end
+
   it 'preserves unions in value position in Hash' do
     source = Solargraph::Source.load_string(%(
       # @param params [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
@@ -406,8 +441,9 @@ describe Solargraph::Source::Chain::Call do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
+    foo_pin = api_map.source_map('test.rb').pins.find { |p| p.name == 'foo' }
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 8))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, foo_pin, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::Array, ::Hash{::String => undefined}, ::String, ::Integer')
   end
 
@@ -443,8 +479,9 @@ describe Solargraph::Source::Chain::Call do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
+    foo_pin = api_map.source_map('test.rb').pins.find { |p| p.name == 'foo' }
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 8))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, foo_pin, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::Array<::String>')
   end
 
@@ -464,8 +501,12 @@ describe Solargraph::Source::Chain::Call do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
+    closure_pin = api_map.source_map('test.rb').pins.find do |p|
+      p.is_a?(Solargraph::Pin::Block) && p.location.range.start.line == 4
+    end
+
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, closure_pin, api_map.source_map('test.rb').locals)
     expect(type.tags).to eq('A::B')
   end
 
@@ -485,8 +526,12 @@ describe Solargraph::Source::Chain::Call do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
+    closure_pin = api_map.source_map('test.rb').pins.find do |p|
+      p.is_a?(Solargraph::Pin::Block) && p.location.range.start.line == 4
+    end
+
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, closure_pin, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::A::B')
   end
 
@@ -512,11 +557,17 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    closure_pin = api_map.source_map('test.rb').pins.find do |p|
+      p.is_a?(Solargraph::Pin::Block) && p.location.range.start.line == 5
+    end
+    type = chain.infer(api_map, closure_pin, api_map.source_map('test.rb').locals)
     expect(type.rooted_tags).to eq('::A::B').or eq('::A::B, ::A::C').or eq('::A::C, ::A::B')
 
+    closure_pin = api_map.source_map('test.rb').pins.find do |p|
+      p.is_a?(Solargraph::Pin::Block) && p.location.range.start.line == 10
+    end
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, closure_pin, api_map.source_map('test.rb').locals)
     # valid options here:
     #   * emit type checker warning when adding [B.new] and type whole thing as '::A::B'
     #   * type whole thing as '::A::B, A::C'
@@ -595,7 +646,7 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
   end
 
-  xit 'correctly looks up civars' do
+  it 'correctly looks up civars' do
     source = Solargraph::Source.load_string(%(
       class Foo
         BAZ = /aaa/
