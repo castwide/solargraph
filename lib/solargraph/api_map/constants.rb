@@ -108,7 +108,7 @@ module Solargraph
 
       # @param name [String]
       # @param gates [Array<String>]
-      # @sg-ignore Should handle redefinition of types in simple contexts
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = :in_process

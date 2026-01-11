@@ -320,7 +320,7 @@ module Solargraph
           ctxt.concat p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore Should handle redefinition of types in simple contexts
+          # @sg-ignore flow sensitive typing should be able to handle redefinition
           skip = here if skip.nil? || here < skip
           ctxt.concat p[skip..-1]
         end

@@ -133,10 +133,10 @@ module Solargraph
         # try to find common types via conformance
         items.each do |ut|
           intersection_type.each do |int_type|
-            if ut.can_assign?(api_map, int_type)
-              types << int_type
-            elsif int_type.can_assign?(api_map, ut)
+            if ut.conforms_to?(api_map, int_type, :assignment)
               types << ut
+            elsif int_type.conforms_to?(api_map, ut, :assignment)
+              types << int_type
             end
           end
         end
@@ -185,17 +185,17 @@ module Solargraph
 
       def eql?(other)
         self.class == other.class &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @name == other.name &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @key_types == other.key_types &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @subtypes == other.subtypes &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @rooted == other.rooted? &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @all_params == other.all_params &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @parameters_type == other.parameters_type
       end
 
@@ -368,18 +368,6 @@ module Solargraph
 
       def nullable?
         nil_type?
-      end
-
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param atype [ComplexType, self] type which may be assigned to this type
-      def can_assign?(api_map, atype)
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
-        downcasted_atype = atype.downcast_to_literal_if_possible
-        out = downcasted_atype.all? do |autype|
-          autype.name == name || api_map.super_and_sub?(name, autype.name)
-        end
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
-        out
       end
 
       # @yieldreturn [Boolean]

@@ -228,6 +228,7 @@ module Solargraph
                     node: ref.node,
                     source: :parser)
                   pins.push mm, cm
+                  # @param ivar [Pin::InstanceVariable]
                   pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
                     pins.delete ivar
                     pins.push Solargraph::Pin::InstanceVariable.new(

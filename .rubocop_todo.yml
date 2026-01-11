@@ -80,7 +80,6 @@ Layout/ElseAlignment:
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, DefLikeMacros, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/pin/delegated_method.rb'
 
@@ -107,7 +106,6 @@ Layout/EndOfLine:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -200,7 +198,6 @@ Layout/MultilineMethodCallIndentation:
 # SupportedStyles: aligned, indented
 Layout/MultilineOperationIndentation:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/language_server/host/dispatch.rb'
     - 'lib/solargraph/source.rb'
 
@@ -357,7 +354,6 @@ Lint/NonAtomicFileOperation:
 # This cop supports safe autocorrection (--autocorrect).
 Lint/ParenthesesAsGroupedExpression:
   Exclude:
-    - 'lib/solargraph.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'spec/language_server/host_spec.rb'
     - 'spec/source_map/clip_spec.rb'
@@ -425,12 +421,6 @@ Lint/UnusedBlockArgument:
 # NotImplementedExceptions: NotImplementedError
 Lint/UnusedMethodArgument:
   Enabled: false
-
-# This cop supports safe autocorrection (--autocorrect).
-# Configuration parameters: ContextCreatingMethods, MethodCreatingMethods.
-Lint/UselessAccessModifier:
-  Exclude:
-    - 'lib/solargraph/api_map.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 Lint/UselessAssignment:
@@ -553,7 +543,6 @@ Naming/VariableName:
 RSpec/Be:
   Exclude:
     - 'spec/rbs_map/stdlib_map_spec.rb'
-    - 'spec/rbs_map_spec.rb'
     - 'spec/source/source_chainer_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
@@ -576,7 +565,6 @@ RSpec/BeforeAfterAll:
     - '**/spec/rails_helper.rb'
     - '**/spec/support/**/*.rb'
     - 'spec/api_map_spec.rb'
-    - 'spec/doc_map_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
 
@@ -676,7 +664,12 @@ RSpec/NotToNot:
     - 'spec/rbs_map/core_map_spec.rb'
 
 RSpec/PendingWithoutReason:
-  Enabled: false
+  Exclude:
+    - 'spec/api_map_spec.rb'
+    - 'spec/doc_map_spec.rb'
+    - 'spec/pin/base_variable_spec.rb'
+    - 'spec/pin/local_variable_spec.rb'
+    - 'spec/type_checker/levels/strict_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: Strict, EnforcedStyle, AllowedExplicitMatchers.
@@ -825,7 +818,6 @@ Style/EmptyLambdaParameter:
 Style/EmptyMethod:
   Exclude:
     - 'lib/solargraph/language_server/message/client/register_capability.rb'
-    - 'lib/solargraph/pin/base.rb'
     - 'spec/fixtures/formattable.rb'
     - 'spec/fixtures/rdoc-lib/lib/example.rb'
     - 'spec/fixtures/workspace-with-gemfile/lib/thing.rb'
@@ -1097,7 +1089,6 @@ Style/RedundantRegexpEscape:
 Style/RedundantReturn:
   Exclude:
     - 'lib/solargraph/complex_type/type_methods.rb'
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/parser/parser_gem/node_methods.rb'
     - 'lib/solargraph/source/chain/z_super.rb'
 
@@ -1129,7 +1120,7 @@ Style/SafeNavigation:
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
+    - 'lib/solargraph/workspace/gemspecs.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
@@ -1209,8 +1200,6 @@ Style/TrailingCommaInHashLiteral:
   Exclude:
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/closure.rb'
-    - 'lib/solargraph/pin/parameter.rb'
-    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports safe autocorrection (--autocorrect).

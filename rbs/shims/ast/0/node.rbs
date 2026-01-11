@@ -1,0 +1,5 @@
+module ::AST
+  class Node
+     def children: () -> Array[self | Integer | String | Symbol | nil]
+  end
+end

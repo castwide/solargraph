@@ -217,7 +217,7 @@ module Solargraph
           end
         when 'domain'
           namespace = closure_at(source_position) || Pin::ROOT_PIN
-          # @sg-ignore Should handle redefinition of types in simple contexts
+          # @sg-ignore flow sensitive typing should be able to handle redefinition
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
           # @sg-ignore Need to add nil check here

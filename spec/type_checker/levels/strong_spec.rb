@@ -22,7 +22,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'does not misunderstand types during flow-sensitive typing' do
+    it 'does not misunderstand types during flow sensitive typing' do
       checker = type_checker(%(
         class A
           # @param b [Hash{String => String}]
@@ -303,6 +303,21 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
+    end
+
+    it 'calls out missing args after a defaulted param' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @param b [String]
+        # @return [void]
+        def foo(a = 'foo', b); end
+
+        # @return [void]
+        def bar
+         foo(123)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Not enough arguments to #foo')
     end
 
     it 'reports missing param tags' do
@@ -726,29 +741,21 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'knows that ivar references with intermediate calls are not safe' do
+    it 'understands self type when passed as parameter' do
       checker = type_checker(%(
-        class Foo
-          def initialize
-            # @type [Integer, nil]
-            @foo = nil
-          end
+        class Location
+          # @return [String]
+          attr_reader :filename
 
-          # @return [void]
-          def twiddle
-            @foo = nil if rand if rand > 0.5
-          end
+          # @param other [self]
+          def <=>(other)
+            return nil unless other.is_a?(Location)
 
-          # @return [Integer]
-          def bar
-            @foo = 123
-            twiddle
-            @foo.round
+            filename <=> other.filename
           end
         end
       ))
-
-      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'uses cast type instead of defined type' do
