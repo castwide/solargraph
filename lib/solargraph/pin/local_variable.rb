@@ -22,14 +22,6 @@ module Solargraph
         super
       end
 
-      # @param other_closure [Pin::Closure]
-      # @param other_loc [Location]
-      def visible_at?(other_closure, other_loc)
-        location.filename == other_loc.filename &&
-          (!presence || presence.include?(other_loc.range.start)) &&
-          visible_in_closure?(other_closure)
-      end
-
       def to_rbs
         (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
       end
