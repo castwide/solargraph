@@ -22,30 +22,6 @@ module Solargraph
         super
       end
 
-      # @param other [self]
-      # @return [Pin::Closure, nil]
-      def combine_closure(other)
-        return closure if self.closure == other.closure
-
-        # choose first defined, as that establishes the scope of the variable
-        if closure.nil? || other.closure.nil?
-          Solargraph.assert_or_log(:varible_closure_missing) do
-            "One of the local variables being combined is missing a closure: " \
-              "#{self.inspect} vs #{other.inspect}"
-          end
-          return closure || other.closure
-        end
-
-        if closure.location.nil? || other.closure.location.nil?
-          return closure.location.nil? ? other.closure : closure
-        end
-
-        # if filenames are different, this will just pick one
-        return closure if closure.location <= other.closure.location
-
-        other.closure
-      end
-
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at?(other_closure, other_loc)
