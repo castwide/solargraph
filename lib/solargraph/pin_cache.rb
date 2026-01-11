@@ -277,7 +277,6 @@ module Solargraph
     # @param rbs_version_cache_key [String, nil]
     # @return [Array<Pin::Base>, nil]
     def deserialize_rbs_collection_cache gemspec, rbs_version_cache_key
-
       cached = load_rbs_collection_pins(gemspec, rbs_version_cache_key)
       Solargraph.assert_or_log(:pin_cache_rbs_collection, 'Asked for non-existent rbs collection') if cached.nil?
       logger.info do

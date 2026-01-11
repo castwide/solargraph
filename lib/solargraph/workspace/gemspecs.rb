@@ -99,8 +99,6 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        Bundler::StubSpecification
-        Bundler::RemoteSpecification
         gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
         return gemspec if gemspec
 
