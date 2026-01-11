@@ -236,10 +236,11 @@ module Solargraph
 
     # @param name [String]
     # @param version [String, nil]
+    # @param out [IO, nil]
     #
     # @return [Gem::Specification, nil]
-    def find_gem name, version = nil
-      gemspecs.find_gem(name, version)
+    def find_gem name, version = nil, out: nil
+      gemspecs.find_gem(name, version, out: out)
     end
 
     # @return [Array<Gem::Specification>]
