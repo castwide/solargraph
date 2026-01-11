@@ -574,6 +574,7 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        result.reset_generated!
         result
       end
 
