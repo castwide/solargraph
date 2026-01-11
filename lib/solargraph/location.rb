@@ -6,6 +6,7 @@ module Solargraph
   #
   class Location
     include Equality
+    include Comparable
 
     # @return [String]
     attr_reader :filename
@@ -13,9 +14,11 @@ module Solargraph
     # @return [Solargraph::Range]
     attr_reader :range
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param range [Solargraph::Range]
     def initialize filename, range
+      raise "Use nil to represent no-file" if filename&.empty?
+
       @filename = filename
       @range = range
     end
@@ -63,8 +66,10 @@ module Solargraph
     # @return [Location, nil]
     def self.from_node(node)
       return nil if node.nil? || node.loc.nil?
+      filename = node.loc.expression.source_buffer.name
+      filename = nil if filename.empty?
       range = Range.from_node(node)
-      self.new(node.loc.expression.source_buffer.name, range)
+      self.new(filename, range)
     end
 
     # @param other [BasicObject]

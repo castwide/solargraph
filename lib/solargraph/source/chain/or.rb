@@ -17,6 +17,7 @@ module Solargraph
           types = @links.map { |link| link.infer(api_map, name_pin, locals) }
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
+            # @sg-ignore Flow-sensitive typing should be able to handle reassignment
             combined_type = combined_type.without_nil
           end
 

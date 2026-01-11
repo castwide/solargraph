@@ -184,6 +184,12 @@ module Solargraph
           else
             workspace.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
           end
+        rescue Gem::MissingSpecError
+          warn "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          warn "Gem '#{name}' failed while loading"
+          warn e.message
+          warn e.backtrace.join("\n")
         end
         $stderr.puts "Documentation cached for #{names.count} gems."
       end

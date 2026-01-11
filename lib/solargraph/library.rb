@@ -266,11 +266,13 @@ module Solargraph
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
+          # @todo Flow-sensitive typing should allow shadowing of Kernel#caller
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
               other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
+              # @todo Flow-sensitive typing should allow shadowing of Kernel#caller
               caller == other
             end
           else

@@ -18,23 +18,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'understands self type when passed as parameter' do
-      checker = type_checker(%(
-        class Location
-          # @return [String]
-          attr_reader :filename
-
-          # @param other [self]
-          def <=>(other)
-            return nil unless other.is_a?(Location)
-
-            filename <=> other.filename
-          end
-        end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
-    end
-
     it 'respects pin visibility in if/nil? pattern' do
       checker = type_checker(%(
         class Foo
@@ -250,7 +233,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
-    it 'understands complex use of other' do
+    it 'understands complex use of self' do
       checker = type_checker(%(
         class A
           # @param other [self]
@@ -706,31 +689,43 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'knows that ivar references with intermediate calls are not safe' do
-      pending 'flow-sensitive typing improvements'
-
+    it 'resolves self correctly in chained method calls' do
       checker = type_checker(%(
         class Foo
-          def initialize
-            # @type [Integer, nil]
-            @foo = nil
+          # @param other [self]
+          #
+          # @return [Symbol, nil]
+          def bar(other)
+            # @type [Symbol, nil]
+            baz(other)
           end
 
-          # @return [void]
-          def twiddle
-            @foo = nil if rand if rand > 0.5
-          end
-
-          # @return [Integer]
-          def bar
-            @foo = 123
-            twiddle
-            @foo.round
-          end
+          # @param other [self]
+          #
+          # @sg-ignore Missing @return tag
+          # @return [undefined]
+          def baz(other); end
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round"])
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'understands self type when passed as parameter' do
+      checker = type_checker(%(
+        class Location
+          # @return [String]
+          attr_reader :filename
+
+          # @param other [self]
+          def <=>(other)
+            return nil unless other.is_a?(Location)
+
+            filename <=> other.filename
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
   end
 end

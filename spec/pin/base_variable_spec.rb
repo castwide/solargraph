@@ -45,7 +45,7 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
   end
 
-  it "understands parameters aren't affected by @type" do
+  it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
       def foo

@@ -735,7 +735,6 @@ Style/AndOr:
 # RedundantBlockArgumentNames: blk, block, proc
 Style/ArgumentsForwarding:
   Exclude:
-    - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/complex_type.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -1198,6 +1197,7 @@ Style/TrailingCommaInHashLiteral:
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/closure.rb'
     - 'lib/solargraph/pin/parameter.rb'
+    - 'lib/solargraph/pin/local_variable.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports safe autocorrection (--autocorrect).

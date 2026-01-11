@@ -794,18 +794,23 @@ module Solargraph
       with_opts = false
       with_block = false
       pin.parameters.each do |pin|
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         if [:kwarg, :kwoptarg, :kwrestarg].include?(pin.decl)
           with_opts = true
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         elsif pin.decl == :block
           with_block = true
+        # @sg-ignore Flow-sensitive typing should be able to handle redefinition
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)])
         end
       end
-      args.push Solargraph::Parser.chain_string('{}') if with_opts
-      args.push Solargraph::Parser.chain_string('&') if with_block
+      pin_location = pin.location
+      starting_line = pin_location ? pin_location.range.start.line : 0
+      args.push Solargraph::Parser.chain_string('{}', filename, starting_line) if with_opts
+      args.push Solargraph::Parser.chain_string('&', filename, starting_line) if with_block
       args
     end
 

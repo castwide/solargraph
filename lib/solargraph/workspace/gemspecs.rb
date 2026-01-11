@@ -55,11 +55,13 @@ module Solargraph
           require.split('/').first
         ].compact.uniq
         gem_names_to_try.each do |gem_name|
+          # @sg-ignore Unresolved call to == on Boolean
           gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
           return [gemspec_or_preference(gemspec)] if gemspec
 
           begin
             gemspec = Gem::Specification.find_by_name(gem_name)
+            # @sg-ignore Flow-sensitive typing should be able to handle reassignment
             return [gemspec_or_preference(gemspec)] if gemspec
           rescue Gem::MissingSpecError
             logger.debug do
@@ -74,6 +76,7 @@ module Solargraph
 
             spec&.files&.any? { |gemspec_file| file == gemspec_file }
           end
+          # @sg-ignore Flow-sensitive typing should be able to handle reassignment
           return [gemspec_or_preference(gemspec)] if gemspec
         end
 
@@ -97,6 +100,7 @@ module Solargraph
         gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
         return gemspec if gemspec
 
+        # @sg-ignore Flow-sensitive typing should be able to handle reassignment
         gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name }
         return gemspec if gemspec
 
@@ -180,9 +184,8 @@ module Solargraph
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification into a Gem::Specification
-                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
+                                                          # @todo Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                           specish = specish.stub
-                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                           if specish.respond_to?(:spec)
                                                             # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                             specish.spec
@@ -193,7 +196,6 @@ module Solargraph
                                                         else
                                                           @@warned_on_gem_type ||= false
                                                           unless @@warned_on_gem_type
-                                                            # @sg-ignore Unresolved call to class on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                             logger.warn "Unexpected type while resolving gem: #{specish.class}"
                                                             @@warned_on_gem_type = true
                                                           end

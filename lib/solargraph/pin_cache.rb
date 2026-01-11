@@ -436,14 +436,29 @@ module Solargraph
       end
 
       # @param path_segments [Array<String>]
+      # @param out [IO, nil]
       # @return [void]
       def uncache *path_segments, out: nil
         path = File.join(*path_segments)
         if File.exist?(path)
           FileUtils.rm_rf path, secure: true
-          out&.puts "Clearing pin cache in #{path}"
+          out.puts "Clearing pin cache in #{path}" unless out.nil?
         else
           out&.puts "Pin cache file #{path} does not exist"
+        end
+      end
+
+      # @return [void]
+      # @param out [IO, nil]
+      # @param path_segments [Array<String>]
+      def uncache_by_prefix *path_segments, out: nil
+        path = File.join(*path_segments)
+        glob = "#{path}*"
+        out.puts "Clearing pin cache in #{glob}" unless out.nil?
+        Dir.glob(glob).each do |file|
+          next unless File.file?(file)
+          FileUtils.rm_rf file, secure: true
+          out.puts "Clearing pin cache in #{file}" unless out.nil?
         end
       end
 
