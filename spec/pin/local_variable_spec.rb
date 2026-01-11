@@ -21,8 +21,10 @@ describe Solargraph::Pin::LocalVariable do
     expect(pin2.presence.start.to_hash).to eq({ line: 3, character: 8 })
     expect(pin2.presence.ending.to_hash).to eq({ line: 5, character: 9 })
 
-    combined = pin1.combine_with(pin2)
-    expect(combined).to be_a(Solargraph::Pin::LocalVariable)
+    with_env_var('SOLARGRAPH_ASSERTS', 'on') do
+      expect(Solargraph.asserts_on?).to be true
+      expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :closure name/)
+    end
 
 
     expect(combined.source).to eq(:combined)
@@ -34,7 +36,7 @@ describe Solargraph::Pin::LocalVariable do
     it 'detects scoped methods in rebound blocks' do
       source = Solargraph::Source.load_string(%(
         object = MyClass.new
-
+        object
       ), 'test.rb')
       api_map = Solargraph::ApiMap.new
       api_map.map source

@@ -16,8 +16,10 @@ module Solargraph
 
       # @param return_type [ComplexType, nil]
       # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
-      # @param assignment [Parser::AST::Node, nil]
-      # @param assignments [::Array<Parser::AST::Node>]
+      # @param assignment [Parser::AST::Node, nil] First assignment
+      #   that was made to this variable
+      # @param assignments [Array<Parser::AST::Node>] Possible
+      #   assignments that may have been made to this variable
       # @param exclude_return_type [ComplexType, nil] Ensure any
       #   return type returned will never include any of these unique
       #   types in the unique types of its complex type.
@@ -38,12 +40,11 @@ module Solargraph
       #   with Numeric and nil is compatible with nil.
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
-      # @param mass_assignment [Array(Parser::AST::Node, Integer), nil]
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
-      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
+      def initialize assignment: nil, assignments: [], mass_assignment: nil,
+                     presence: nil, presence_certain: false, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     presence: nil, presence_certain: false,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -81,6 +82,11 @@ module Solargraph
       def combine_with(other, attrs={})
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
+          # default values don't exist in RBS parameters; it just
+          # tells you if the arg is optional or not.  Prefer a
+          # provided value if we have one here since we can't rely on
+          # it from RBS so we can infer from it and typecheck on it.
+          assignment: choose(other, :assignment),
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
@@ -90,10 +96,6 @@ module Solargraph
           presence_certain: combine_presence_certain(other),
         })
         super(other, new_attrs)
-      end
-
-      def inner_desc
-        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}, presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       # @param other [self]
@@ -125,6 +127,12 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, assignments=#{assignments}, " \
+                "intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, " \
+                "exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
       end
 
       def completion_item_kind
@@ -323,49 +331,6 @@ module Solargraph
         return closure if closure.location <= other.closure.location
 
         other.closure
-      end
-
-      # See if this variable is visible within 'other_closure'
-      #
-      # @param other_closure [Pin::Closure]
-      # @return [Boolean]
-      def visible_in_closure? other_closure
-        needle = closure
-        return false if closure.nil?
-        haystack = other_closure
-
-        cursor = haystack
-
-        until cursor.nil?
-          if cursor.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
-            # methods can't see local variables declared in their
-            # parent closure
-            return false
-          end
-
-          if cursor.binder.namespace == needle.binder.namespace
-            return true
-          end
-
-          if cursor.return_type == needle.context
-            return true
-          end
-
-          if scope == :instance && cursor.is_a?(Pin::Namespace)
-            # classes and modules can't see local variables declared
-            # in their parent closure, so stop here
-            return false
-          end
-
-          cursor = cursor.closure
-        end
-        false
-      end
-
-      # @param other [self]
-      # @return [ComplexType, nil]
-      def combine_return_type(other)
-        combine_types(other, :return_type)
       end
 
       # See if this variable is visible within 'viewing_closure'

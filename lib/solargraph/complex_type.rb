@@ -373,10 +373,10 @@ module Solargraph
       # try to find common types via conformance
       items.each do |ut|
         intersection_type.each do |int_type|
-          if ut.can_assign?(api_map, int_type)
-            types << int_type
-          elsif int_type.can_assign?(api_map, ut)
+          if ut.conforms_to?(api_map, int_type, :assignment)
             types << ut
+          elsif int_type.conforms_to?(api_map, ut, :assignment)
+            types << int_type
           end
         end
       end

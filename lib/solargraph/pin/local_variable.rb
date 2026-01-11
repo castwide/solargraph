@@ -22,13 +22,6 @@ module Solargraph
         super
       end
 
-      # @param other_loc [Location]
-      def starts_at?(other_loc)
-        location&.filename == other_loc.filename &&
-          presence &&
-          presence.start == other_loc.range.start
-      end
-
       # @param other [self]
       # @return [Pin::Closure, nil]
       def combine_closure(other)
@@ -63,22 +56,6 @@ module Solargraph
 
       def to_rbs
         (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
-      end
-
-      private
-
-      # @param other [self]
-      # @return [ComplexType, nil]
-      def combine_return_type(other)
-        if presence_certain? && return_type&.defined?
-          # flow sensitive typing has already figured out this type
-          # has been downcast - use the type it figured out
-          return return_type
-        end
-        if other.presence_certain? && other.return_type&.defined?
-          return other.return_type
-        end
-        combine_types(other, :return_type)
       end
     end
   end

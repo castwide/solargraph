@@ -65,7 +65,7 @@ module Solargraph
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow-sensitive typing should support case/when
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl

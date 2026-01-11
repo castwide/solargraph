@@ -89,6 +89,11 @@ module Solargraph
         end
       end
 
+      # @return [String]
+      def type_arity_decl
+        arity_decl + return_type.items.count.to_s
+      end
+
       def arg?
         decl == :arg
       end
@@ -148,6 +153,11 @@ module Solargraph
         end
       end
 
+      def reset_generated!
+        super
+        @return_type = nil if @return_type&.undefined?
+      end
+
       # @return [String]
       def full
         full_name + case decl
@@ -158,6 +168,11 @@ module Solargraph
                     else
                       ''
                     end
+      end
+
+      def reset_generated!
+        @return_type = nil if param_tag
+        super
       end
 
       # @return [ComplexType]
@@ -242,7 +257,7 @@ module Solargraph
       # @return [ComplexType]
       def typify_block_param api_map
         block_pin = closure
-        if block_pin.is_a?(Pin::Block) && block_pin.receiver
+        if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
           return block_pin.typify_parameters(api_map)[index]
         end
         ComplexType::UNDEFINED

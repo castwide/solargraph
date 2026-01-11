@@ -143,7 +143,7 @@ module Solargraph
       def combine_directives(other)
         return self.directives if other.directives.empty?
         return other.directives if directives.empty?
-        [directives + other.directives].uniq
+        (directives + other.directives).uniq
       end
 
       # @param other [self]
@@ -217,7 +217,9 @@ module Solargraph
 
       def dodgy_return_type_source?
         # uses a lot of 'Object' instead of 'self'
-        location&.filename&.include?('core_ext/object/')
+        location&.filename&.include?('core_ext/object/') ||
+          # ditto
+          location&.filename&.include?('stdlib/date/0/date.rbs')
       end
 
       # when choices are arbitrary, make sure the choice is consistent
@@ -230,6 +232,7 @@ module Solargraph
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
         return true if results.any? { |r| r == true || r == false }
+        return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
       rescue
         STDERR.puts("Problem handling #{attr} for \n#{self.inspect}\n and \n#{other.inspect}\n\n#{self.send(attr).inspect} vs #{other.send(attr).inspect}")
@@ -553,7 +556,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
-        Solargraph::Logging.logger.warn "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        Solargraph.assert_or_log(:pin_infer, 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.')
         type = typify(api_map)
         return type unless type.undefined?
         probe api_map

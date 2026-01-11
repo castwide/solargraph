@@ -221,6 +221,7 @@ module Solargraph
                     node: ref.node,
                     source: :parser)
                   pins.push mm, cm
+                  # @param ivar [Pin::InstanceVariable]
                   pins.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
                     pins.delete ivar
                     pins.push Solargraph::Pin::InstanceVariable.new(
@@ -228,7 +229,6 @@ module Solargraph
                       closure: cm,
                       name: ivar.name,
                       comments: ivar.comments,
-                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )
@@ -237,7 +237,6 @@ module Solargraph
                       closure: mm,
                       name: ivar.name,
                       comments: ivar.comments,
-                      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
                       assignment: ivar.assignment,
                       source: :parser
                     )
