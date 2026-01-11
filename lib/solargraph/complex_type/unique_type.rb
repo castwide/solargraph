@@ -108,10 +108,6 @@ module Solargraph
         end
       end
 
-      def simplifyable_literal?
-        literal? && name != 'nil'
-      end
-
       # @param exclude_types [ComplexType, nil]
       # @param api_map [ApiMap]
       # @return [ComplexType, self]
@@ -144,6 +140,10 @@ module Solargraph
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
         ComplexType.new(types)
+      end
+
+      def simplifyable_literal?
+        literal? && name != 'nil'
       end
 
       def literal?
@@ -581,6 +581,11 @@ module Solargraph
           type.all_params
         end
         ComplexType.new(new_items)
+      end
+
+      # @yieldreturn [Boolean]
+      def any? &block
+        block.yield self
       end
 
       def all_rooted?

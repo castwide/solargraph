@@ -72,6 +72,26 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'can infer types based on || and &&' do
+      checker = type_checker(%(
+        class Baz
+          # @param bar [String, nil]
+          # @return [Boolean, String]
+          def foo bar
+            !bar || bar.upcase
+          end
+
+          # @param bar [String, nil]
+          # @return [String, nil]
+          def bing bar
+            bar && bar.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'resolves self correctly in arguments' do
       checker = type_checker(%(
         class Foo

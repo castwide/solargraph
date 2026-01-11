@@ -141,7 +141,6 @@ jobs:
         #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
         #   `bundle exec` to your command may solve
         #   this. (Gem::LoadError)
-        bundle exec appraisal install
         bundle exec appraisal update date
         # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
         # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
@@ -182,7 +181,7 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: false
         bundler: latest
-        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        # https://github.com/castwide/solargraph/actions/runs/19410641794/job/55531497679?pr=1123
         rubygems: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"

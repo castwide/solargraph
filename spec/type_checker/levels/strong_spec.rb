@@ -289,6 +289,21 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include('Call to #foo is missing keyword argument b')
     end
 
+    it 'calls out missing args after a defaulted param' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @param b [String]
+        # @return [void]
+        def foo(a = 'foo', b); end
+
+        # @return [void]
+        def bar
+         foo(123)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Not enough arguments to #foo')
+    end
+
     it 'reports missing param tags' do
       checker = type_checker(%(
         class Foo
@@ -726,6 +741,34 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'uses cast type instead of defined type' do
+      checker = type_checker(%(
+        # frozen_string_literal: true
+
+        class Base; end
+
+        class Subclass < Base
+          # @return [String]
+          attr_reader :bar
+        end
+
+        class Foo
+          # @param bases [::Array<Base>]
+          # @return [void]
+          def baz(bases)
+            # @param sub [Subclass]
+            bases.each do |sub|
+              puts sub.bar
+            end
+          end
+        end
+      ))
+
+      # expect 'sub' to be treated as 'Subclass' inside the block, and
+      # an error when trying to declare sub as Subclass
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
   end
 end

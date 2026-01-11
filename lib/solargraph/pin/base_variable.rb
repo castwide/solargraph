@@ -292,6 +292,7 @@ module Solargraph
 
       attr_accessor :exclude_return_type, :intersection_return_type
 
+      # @return [Range]
       attr_writer :presence
 
       private

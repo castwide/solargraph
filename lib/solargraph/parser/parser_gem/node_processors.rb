@@ -30,6 +30,7 @@ module Solargraph
         autoload :WhenNode,      'solargraph/parser/parser_gem/node_processors/when_node'
         autoload :WhileNode,     'solargraph/parser/parser_gem/node_processors/while_node'
         autoload :AndNode,       'solargraph/parser/parser_gem/node_processors/and_node'
+        autoload :OrNode,        'solargraph/parser/parser_gem/node_processors/or_node'
       end
     end
 
@@ -64,9 +65,10 @@ module Solargraph
       register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
       register :until,        ParserGem::NodeProcessors::UntilNode
+      register :when,         ParserGem::NodeProcessors::WhenNode
       register :while,        ParserGem::NodeProcessors::WhileNode
       register :and,          ParserGem::NodeProcessors::AndNode
-      register :when,         ParserGem::NodeProcessors::WhenNode
+      register :or,           ParserGem::NodeProcessors::OrNode
     end
   end
 end
