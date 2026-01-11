@@ -128,7 +128,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def pins out: $stderr
       @pins ||= if resolved?
-                  loader.libs.each { |lib| log_caching(lib, out: out) }
+                  log_caching(library, out: out)
                   conversions.pins
                 else
                   []
@@ -182,7 +182,7 @@ module Solargraph
       @conversions ||= Conversions.new(loader: loader)
     end
 
-    # @param lib [RBS::EnvironmentLoader::Library]
+    # @param lib [String]
     # @param out [IO, nil] where to log messages
     # @return [void]
     def log_caching lib, out:; end

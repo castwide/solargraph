@@ -13,7 +13,7 @@ module Solargraph
       @stdlib_maps_hash = {}
 
       def log_caching lib, out: $stderr
-        out&.puts("Caching RBS pins for standard library #{lib.name}")
+        out&.puts("Caching RBS pins for standard library #{lib}")
       end
 
       # @param library [String]
