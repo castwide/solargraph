@@ -1,6 +1,10 @@
 describe Solargraph::Parser::NodeProcessor do
+  def parse source
+    Solargraph::Parser.parse(source, 'file.rb', 0)
+  end
+
   it 'ignores bare private_constant calls' do
-    node = Solargraph::Parser.parse(%(
+    node = parse(%(
       class Foo
         private_constant
       end
@@ -11,7 +15,7 @@ describe Solargraph::Parser::NodeProcessor do
   end
 
   it 'orders optional args correctly' do
-    node = Solargraph::Parser.parse(%(
+    node = parse(%(
       def foo(bar = nil, baz = nil); end
     ))
     pins, = Solargraph::Parser::NodeProcessor.process(node)
@@ -21,7 +25,7 @@ describe Solargraph::Parser::NodeProcessor do
   end
 
   it 'understands +=' do
-    node = Solargraph::Parser.parse(%(
+    node = parse(%(
       detail = ''
       detail += "foo"
       detail.strip!
@@ -53,7 +57,7 @@ describe Solargraph::Parser::NodeProcessor do
 
     Solargraph::Parser::NodeProcessor.register(:def, dummy_processor1)
     Solargraph::Parser::NodeProcessor.register(:def, dummy_processor2)
-    node = Solargraph::Parser.parse(%(
+    node = parse(%(
       def some_method; end
     ))
     pins, = Solargraph::Parser::NodeProcessor.process(node)

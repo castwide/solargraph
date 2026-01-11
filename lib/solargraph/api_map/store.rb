@@ -71,7 +71,6 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
         all_pins = namespace_children(fqns).select do |pin|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
         GemPins.combine_method_pins_by_path(all_pins)
@@ -81,7 +80,7 @@ module Solargraph
       OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
 
       # @param fqns [String]
-      # @return [Pin::Reference::Superclass]
+      # @return [Pin::Reference::Superclass, nil]
       def get_superclass fqns
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
@@ -244,8 +243,11 @@ module Solargraph
             next if refs.nil?
             # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
+              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
               next if ref.nil? || ref.empty? || visited.include?(ref)
+              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
               ancestors << ref
+              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
               queue << ref
             end
           end
@@ -308,7 +310,7 @@ module Solargraph
         index.pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         index.superclass_references
       end

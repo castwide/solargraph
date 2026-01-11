@@ -40,6 +40,28 @@ module Solargraph
 
         private
 
+        # @return [Solargraph::Location]
+        def location
+          get_node_location(node)
+        end
+
+        # @return [Solargraph::Position]
+        def position
+          Position.new(node.loc.line, node.loc.column)
+        end
+
+        # @sg-ignore downcast output of Enumerable#select
+        # @return [Solargraph::Pin::Breakable, nil]
+        def enclosing_breakable_pin
+          pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position)}.last
+        end
+
+        # @todo downcast output of Enumerable#select
+        # @return [Solargraph::Pin::CompoundStatement, nil]
+        def enclosing_compound_statement_pin
+          pins.select{|pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position)}.last
+        end
+
         # @param subregion [Region]
         # @return [void]
         def process_children subregion = region

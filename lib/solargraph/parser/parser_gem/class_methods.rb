@@ -8,19 +8,22 @@ module Solargraph
       module ClassMethods
         # @param code [String]
         # @param filename [String, nil]
+        # @param starting_line [Integer] must be provided so that we
+        #   can find relevant local variables later even if this is just
+        #   a subset of the file in question
         # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet})]
-        def parse_with_comments code, filename = nil
-          node = parse(code, filename)
+        def parse_with_comments code, filename = nil, starting_line = 0
+          node = parse(code, filename, starting_line)
           comments = CommentRipper.new(code, filename, 0).parse
           [node, comments]
         end
 
         # @param code [String]
         # @param filename [String, nil]
-        # @param line [Integer]
+        # @param starting_line [Integer]
         # @return [Parser::AST::Node]
-        def parse code, filename = nil, line = 0
-          buffer = ::Parser::Source::Buffer.new(filename, line)
+        def parse code, filename = nil, starting_line = 0
+          buffer = ::Parser::Source::Buffer.new(filename, starting_line)
           buffer.source = code
           parser.parse(buffer)
         rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
@@ -30,7 +33,9 @@ module Solargraph
         # @return [::Parser::Base]
         def parser
           @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.all_errors_are_fatal = true
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.ignore_warnings      = true
           end
         end

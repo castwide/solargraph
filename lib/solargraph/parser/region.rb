@@ -22,7 +22,6 @@ module Solargraph
       attr_reader :lvars
 
       # @param source [Source]
-      # @param namespace [String]
       # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
@@ -30,7 +29,6 @@ module Solargraph
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public, lvars: []
         @source = source
-        # @closure = closure
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @scope = scope
         @visibility = visibility

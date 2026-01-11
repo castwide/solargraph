@@ -81,7 +81,6 @@ module Solargraph
       #
       # @return [self]
       def combine_with(other, attrs={})
-        raise "tried to combine #{other.class} with #{self.class}" unless other.class == self.class
         priority_choice = choose_priority(other)
         return priority_choice unless priority_choice.nil?
 
@@ -92,7 +91,7 @@ module Solargraph
           location: location,
           type_location: type_location,
           name: combined_name,
-          closure: choose_pin_attr_with_same_name(other, :closure),
+          closure: combine_closure(other),
           comments: choose_longer(other, :comments),
           source: :combined,
           docstring: choose(other, :docstring),
@@ -144,7 +143,13 @@ module Solargraph
       def combine_directives(other)
         return self.directives if other.directives.empty?
         return other.directives if directives.empty?
-        [directives + other.directives].uniq
+        (directives + other.directives).uniq
+      end
+
+      # @param other [self]
+      # @return [Pin::Closure, nil]
+      def combine_closure(other)
+        choose_pin_attr_with_same_name(other, :closure)
       end
 
       # @param other [self]
@@ -170,6 +175,9 @@ module Solargraph
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
         @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
         reset_conversions
       end
 
@@ -189,6 +197,10 @@ module Solargraph
           other.return_type
         elsif other.return_type.undefined?
           return_type
+        elsif return_type.erased_version_of?(other.return_type)
+          other.return_type
+        elsif other.return_type.erased_version_of?(return_type)
+          return_type
         elsif dodgy_return_type_source? && !other.dodgy_return_type_source?
           other.return_type
         elsif other.dodgy_return_type_source? && !dodgy_return_type_source?
@@ -205,7 +217,9 @@ module Solargraph
 
       def dodgy_return_type_source?
         # uses a lot of 'Object' instead of 'self'
-        location&.filename&.include?('core_ext/object/')
+        location&.filename&.include?('core_ext/object/') ||
+          # ditto
+          location&.filename&.include?('stdlib/date/0/date.rbs')
       end
 
       # when choices are arbitrary, make sure the choice is consistent
@@ -218,6 +232,7 @@ module Solargraph
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
         return true if results.any? { |r| r == true || r == false }
+        return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
       rescue
         STDERR.puts("Problem handling #{attr} for \n#{self.inspect}\n and \n#{other.inspect}\n\n#{self.send(attr).inspect} vs #{other.send(attr).inspect}")
@@ -309,7 +324,11 @@ module Solargraph
       # @sg-ignore
       # @return [undefined]
       def assert_same(other, attr)
-        return false if other.nil?
+        if other.nil?
+          Solargraph.assert_or_log("combine_with_#{attr}_nil".to_sym,
+                                   "Other was passed in nil in assert_same on #{self}")
+          return send(attr)
+        end
         val1 = send(attr)
         val2 = other.send(attr)
         return val1 if val1 == val2
@@ -537,7 +556,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def infer api_map
-        Solargraph::Logging.logger.warn "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        Solargraph.assert_or_log(:pin_infer, 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.')
         type = typify(api_map)
         return type unless type.undefined?
         probe api_map
@@ -574,6 +593,7 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        result.reset_generated!
         result
       end
 
@@ -618,7 +638,7 @@ module Solargraph
 
       # @return [String]
       def inner_desc
-        closure_info = closure&.desc
+        closure_info = closure&.name.inspect
         binder_info = binder&.desc
         "name=#{name.inspect} return_type=#{type_desc}, context=#{context.rooted_tags}, closure=#{closure_info}, binder=#{binder_info}"
       end
@@ -644,10 +664,6 @@ module Solargraph
         else
           " at (#{location.inspect} and #{type_location.inspect})"
         end
-      end
-
-      # @return [void]
-      def reset_generated!
       end
 
       protected

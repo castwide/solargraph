@@ -76,7 +76,7 @@ describe Solargraph::SourceMap do
     expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
-  it 'scopes local variables correctly from root def blocks' do
+  it 'scopes local variables correctly from root def methods' do
     map = Solargraph::SourceMap.load_string(%(
       x = 'string'
       def foo
@@ -84,6 +84,20 @@ describe Solargraph::SourceMap do
       end
     ), 'test.rb')
     loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
+    locals = map.locals_at(loc)
+    expect(locals).to be_empty
+  end
+
+  it 'scopes local variables correctly from class methods' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        x = 'string'
+        def foo
+          x
+        end
+      end
+    ), 'test.rb')
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 11, 3, 11))
     locals = map.locals_at(loc)
     expect(locals).to be_empty
   end
