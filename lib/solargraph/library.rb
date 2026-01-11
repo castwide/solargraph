@@ -590,7 +590,6 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-      # @type [Gem::Specification]
       spec = cacheable_specs.first
       return end_cache_progress unless spec
 
