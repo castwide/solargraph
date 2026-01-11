@@ -57,7 +57,37 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'pin' do
+  describe 'pin on a class' do
+    let(:api_map) { instance_double(Solargraph::ApiMap) }
+    let(:string_pin) { instance_double(Solargraph::Pin::Namespace, name: 'String') }
+
+    before do
+      allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
+      allow(Solargraph::Pin::Namespace).to receive(:===).with(string_pin).and_return(true)
+      allow(string_pin).to receive(:return_type).and_return(Solargraph::ComplexType.parse('String'))
+      allow(api_map).to receive(:get_path_pins).with('String').and_return([string_pin])
+    end
+
+    context 'with --references option' do
+      let(:object_pin) { instance_double(Solargraph::Pin::Namespace, name: 'Object') }
+
+      before do
+        allow(Solargraph::Pin::Namespace).to receive(:===).with(object_pin).and_return(true)
+        allow(api_map).to receive(:qualify_superclass).with('String').and_return('Object')
+        allow(api_map).to receive(:get_path_pins).with('Object').and_return([object_pin])
+      end
+
+      it 'prints a pin with info' do
+        out = capture_both do
+          shell.options = { references: true }
+          shell.pin('String')
+        end
+        expect(out).to include('# Superclass:')
+      end
+    end
+  end
+
+  describe 'pin on a method' do
     let(:api_map) { instance_double(Solargraph::ApiMap) }
     let(:to_s_pin) { instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String')) }
 
