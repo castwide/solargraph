@@ -116,39 +116,35 @@ jobs:
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
-       # git clone https://github.com/lekemula/solargraph-rspec.git
-
-       # pending https://github.com/lekemula/solargraph-rspec/pull/30
-       git clone https://github.com/apiology/solargraph-rspec.git
+       git clone https://github.com/lekemula/solargraph-rspec.git
        cd solargraph-rspec
-       git checkout reset_closures
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.1'
+        ruby-version: 3.4
         rubygems: latest
         bundler-cache: false
     - name: Install gems
       run: |
-       set -x
+        set -x
 
-       cd ../solargraph-rspec
-       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-       bundle config path ${{ env.BUNDLE_PATH }}
-       bundle install --jobs 4 --retry 3
-       bundle exec appraisal install
-       # @todo some kind of appraisal/bundle conflict?
-       #   https://github.com/castwide/solargraph/actions/runs/19038710934/job/54369767122?pr=1116
-       #   /home/runner/work/solargraph/solargraph-rspec/vendor/bundle/ruby/3.1.0/gems/bundler-2.6.9/lib/bundler/runtime.rb:317:in
-       #   `check_for_activated_spec!': You have already activated date
-       #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
-       #   `bundle exec` to your command may solve
-       #   this. (Gem::LoadError)
-       bundle exec appraisal update date
-       # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
-       # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
-       # We update manually to the latest
-       bundle exec appraisal update rspec-rails
+        cd ../solargraph-rspec
+        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+        bundle config path ${{ env.BUNDLE_PATH }}
+        bundle install --jobs 4 --retry 3
+        bundle exec appraisal install
+        # @todo some kind of appraisal/bundle conflict?
+        #   https://github.com/castwide/solargraph/actions/runs/19038710934/job/54369767122?pr=1116
+        #   /home/runner/work/solargraph/solargraph-rspec/vendor/bundle/ruby/3.1.0/gems/bundler-2.6.9/lib/bundler/runtime.rb:317:in
+        #   `check_for_activated_spec!': You have already activated date
+        #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
+        #   `bundle exec` to your command may solve
+        #   this. (Gem::LoadError)
+        bundle exec appraisal update date
+        # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
+        # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
+        # We update manually to the latest
+        bundle exec appraisal update rspec-rails
     - name: Configure .solargraph.yml
       run: |
         cd ../solargraph-rspec
@@ -181,6 +177,8 @@ jobs:
         ruby-version: '3.0'
         bundler-cache: false
         bundler: latest
+        # https://github.com/castwide/solargraph/actions/runs/19410641794/job/55531497679?pr=1123
+        rubygems: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems

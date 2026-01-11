@@ -61,6 +61,7 @@ module Solargraph
           off = Position.to_offset(text, range.start)
           match = result[0, off].match(/[.:]+\z/)
           if match
+            # @sg-ignore Reassignment as a function of itself issue
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
           end
           result

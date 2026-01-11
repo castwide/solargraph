@@ -150,6 +150,10 @@ module Solargraph
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          warn "Gem '#{name}' failed while loading"
+          warn e.message
+          warn e.backtrace.join("\n")
         end
         STDERR.puts "Documentation cached for #{names.count} gems."
       end
@@ -176,7 +180,10 @@ module Solargraph
       workspace = Solargraph::Workspace.new(directory)
       level = options[:level].to_sym
       rules = workspace.rules(level)
-      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+      api_map =
+        Solargraph::ApiMap.load_with_cache(directory, $stdout,
+                                           loose_unions:
+                                             !rules.require_all_unique_types_support_call?)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
@@ -184,10 +191,9 @@ module Solargraph
         files.map! { |file| File.realpath(file) }
       end
       filecount = 0
-
       time = Benchmark.measure {
         files.each do |file|
-          checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym, workspace: workspace)
+          checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym, workspace: workspace)
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }

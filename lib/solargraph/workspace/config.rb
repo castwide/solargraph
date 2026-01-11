@@ -79,6 +79,7 @@ module Solargraph
       # An array of load paths for required paths.
       #
       # @return [Array<String>]
+      # @sg-ignore Need to validate config
       def require_paths
         raw_data['require_paths'] || []
       end
