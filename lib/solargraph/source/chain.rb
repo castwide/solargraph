@@ -276,7 +276,7 @@ module Solargraph
           return type
         end
 
-        type.self_to_type(context.return_type)
+        type.self_to_type(context.context)
       end
 
       # @param type [ComplexType]

@@ -73,5 +73,25 @@ describe Solargraph::TypeChecker do
 
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it 'resolves self correctly in arguments' do
+      checker = type_checker(%(
+        class Foo
+          # @param other [self]
+          #
+          # @return [String]
+          def bar other
+            other.bing
+          end
+
+          # @return [String]
+          def bing
+            'bing'
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
