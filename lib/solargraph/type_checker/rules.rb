@@ -56,10 +56,6 @@ module Solargraph
         report?(:must_tag_or_infer, :strict)
       end
 
-      def require_all_unique_types_match_expected_on_lhs?
-        rank >= LEVELS[:alpha]
-      end
-
       def validate_tags?
         report?(:validate_tags, :typed)
       end
@@ -70,6 +66,10 @@ module Solargraph
 
       def require_all_unique_types_match_declared?
         report?(:require_all_unique_types_match_declared, :alpha)
+      end
+
+      def require_all_unique_types_support_call?
+        report?(:require_all_unique_types_support_call, :alpha)
       end
 
       def require_no_undefined_args?
