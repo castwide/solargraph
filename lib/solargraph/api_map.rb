@@ -753,6 +753,12 @@ module Solargraph
       methods
     end
 
+    # @param fq_sub_tag [String]
+    # @return [String, nil]
+    def qualify_superclass fq_sub_tag
+      store.qualify_superclass fq_sub_tag
+    end
+
     private
 
     # A hash of source maps with filename keys.
@@ -846,12 +852,6 @@ module Solargraph
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
-    end
-
-    # @param fq_sub_tag [String]
-    # @return [String, nil]
-    def qualify_superclass fq_sub_tag
-      store.qualify_superclass fq_sub_tag
     end
 
     # Get the namespace's type (Class or Module).
