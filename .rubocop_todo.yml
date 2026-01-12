@@ -80,7 +80,6 @@ Layout/ElseAlignment:
 # Configuration parameters: EmptyLineBetweenMethodDefs, EmptyLineBetweenClassDefs, EmptyLineBetweenModuleDefs, DefLikeMacros, AllowAdjacentOneLineDefs, NumberOfEmptyLines.
 Layout/EmptyLineBetweenDefs:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
     - 'lib/solargraph/language_server/message/initialize.rb'
     - 'lib/solargraph/pin/delegated_method.rb'
 
@@ -107,7 +106,6 @@ Layout/EndOfLine:
   Exclude:
     - 'Gemfile'
     - 'Rakefile'
-    - 'lib/solargraph/source/encoding_fixes.rb'
     - 'solargraph.gemspec'
 
 # This cop supports safe autocorrection (--autocorrect).
@@ -576,7 +574,6 @@ RSpec/BeforeAfterAll:
     - '**/spec/rails_helper.rb'
     - '**/spec/support/**/*.rb'
     - 'spec/api_map_spec.rb'
-    - 'spec/doc_map_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
 
@@ -1144,7 +1141,7 @@ Style/SafeNavigation:
 # Configuration parameters: Max.
 Style/SafeNavigationChainLength:
   Exclude:
-    - 'lib/solargraph/doc_map.rb'
+    - 'lib/solargraph/workspace/gemspecs.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
@@ -1175,7 +1172,6 @@ Style/StringLiterals:
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
   Exclude:
-    - 'lib/solargraph/pin/base_variable.rb'
     - 'lib/solargraph/pin/callable.rb'
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/pin/signature.rb'

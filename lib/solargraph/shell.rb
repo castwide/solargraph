@@ -119,6 +119,7 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
+      workspace = Solargraph::Workspace.new(Dir.pwd)
       gems.each do |gem|
         if gem == 'core'
           PinCache.uncache_core
@@ -130,7 +131,9 @@ module Solargraph
           next
         end
 
-        spec = Gem::Specification.find_by_name(gem)
+        spec = workspace.find_gem(gem)
+        raise Thor::InvocationError, "Gem '#{gem}' not found" if spec.nil?
+
         PinCache.uncache_gem(spec, out: $stdout)
       end
     end
@@ -141,12 +144,13 @@ module Solargraph
     # @return [void]
     def gems *names
       api_map = ApiMap.load('.')
+      workspace = api_map.workspace
       if names.empty?
         Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
         STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         names.each do |name|
-          spec = Gem::Specification.find_by_name(*name.split('='))
+          spec = workspace.find_gem(*name.split('='))
           do_cache spec, api_map
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
@@ -326,7 +330,7 @@ module Solargraph
     def do_cache gemspec, api_map
       # @todo if the rebuild: option is passed as a positional arg,
       #   typecheck doesn't complain on the below line
-      api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
+      api_map.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
     end
 
     # @param type [ComplexType]
