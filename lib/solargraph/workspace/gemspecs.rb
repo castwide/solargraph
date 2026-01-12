@@ -178,6 +178,7 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
+                                                        # @sg-ignore Unresolved constant Gem::StubSpecification
                                                         when Gem::StubSpecification
                                                           specish.to_spec
                                                         else
