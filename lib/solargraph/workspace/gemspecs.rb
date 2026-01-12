@@ -116,6 +116,7 @@ module Solargraph
         # @param runtime_dep [Gem::Dependency]
         # @param deps [Hash{String => Gem::Specification}]
         gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
+          # @sg-ignore Unresolved call to requirement on Gem::Dependency
           dep = find_gem(runtime_dep.name, runtime_dep.requirement)
           next unless dep
 
@@ -155,25 +156,12 @@ module Solargraph
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       #
-      # @return [Gem::Specification, nil]
+      # @return [Gem::Specification]
       def to_gem_specification specish
         # print time including milliseconds
         self.class.gem_specification_cache[specish] ||= case specish
                                                         when Gem::Specification
-                                                          @@warned_on_rubygems ||= false
-                                                          if specish.respond_to?(:identifier)
-                                                            # @type [Gem::Specification]
-                                                            specish
-                                                          else
-                                                            # see https://github.com/castwide/solargraph/actions/runs/17588131738/job/49961580698?pr=1006 - happened on Ruby 3.0
-                                                            unless @@warned_on_rubygems
-                                                              logger.warn "Incomplete Gem::Specification encountered - recommend upgrading rubygems"
-                                                              @@warned_on_rubygems = true
-                                                            end
-                                                            nil
-                                                          end
-                                                        # yay!
-
+                                                          specish
                                                         when Bundler::LazySpecification
                                                           # materializing didn't work.  Let's look in the local
                                                           # rubygems without bundler's help
@@ -194,13 +182,9 @@ module Solargraph
                                                             to_gem_specification(specish)
                                                           end
                                                         else
-                                                          @@warned_on_gem_type ||= false
-                                                          unless @@warned_on_gem_type
-                                                            # @sg-ignore Unresolved call to class on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
-                                                            logger.warn "Unexpected type while resolving gem: #{specish.class}"
-                                                            @@warned_on_gem_type = true
-                                                          end
-                                                          nil
+                                                          # @sg-ignore Unresolved call to class on Gem::Specification, Bundler::LazySpecification,
+                                                          #   Bundler::StubSpecification
+                                                          raise "Unexpected type while resolving gem: #{specish.class}"
                                                         end
       end
 
