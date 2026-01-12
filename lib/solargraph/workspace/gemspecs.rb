@@ -97,12 +97,13 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
-        return gemspec if gemspec
+        specish = all_gemspecs_from_bundle.find { |specish| specish.name == name && specish.version == version }
+        return to_gem_specification specish if specish
 
         # @sg-ignore Flow-sensitive typing should be able to handle reassignment
-        gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name }
-        return gemspec if gemspec
+        specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
+        # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
+        return to_gem_specification specish if specish
 
         resolve_gem_ignoring_local_bundle name, version, out: out
       end
@@ -158,6 +159,7 @@ module Solargraph
       private
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+      #
       # @return [Gem::Specification, nil]
       def to_gem_specification specish
         # print time including milliseconds
@@ -165,6 +167,7 @@ module Solargraph
                                                         when Gem::Specification
                                                           @@warned_on_rubygems ||= false
                                                           if specish.respond_to?(:identifier)
+                                                            # @type [Gem::Specification]
                                                             specish
                                                           else
                                                             # see https://github.com/castwide/solargraph/actions/runs/17588131738/job/49961580698?pr=1006 - happened on Ruby 3.0
@@ -184,10 +187,10 @@ module Solargraph
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification into a Gem::Specification
-                                                          # @todo Flow-sensitive typing ought to be able to handle 'when ClassName'
                                                           specish = specish.stub
                                                           if specish.respond_to?(:spec)
-                                                            # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
+                                                            # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+                                                            # @type [Gem::Specification]
                                                             specish.spec
                                                           else
                                                             # turn the crank again
@@ -329,6 +332,7 @@ module Solargraph
                       'specish_objects = specish_objects.map(&:materialize_for_installation);' \
                       'end;' \
                       'specish_objects.map { |specish| [specish.name, specish.version] }'
+            # @type [Array<Gem::Specification>]
             query_external_bundle(command).map do |name, version|
               resolve_gem_ignoring_local_bundle(name, version)
             end.compact
