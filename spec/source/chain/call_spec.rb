@@ -251,7 +251,9 @@ describe Solargraph::Source::Chain::Call do
     expect(type.simple_tags).to eq('Integer')
   end
 
-  xit 'infers method return types based on method generic' do
+  it 'infers method return types based on method generic' do
+    pending('deeper inference support')
+
     source = Solargraph::Source.load_string(%(
       class Foo
         # @Generic A
@@ -316,7 +318,9 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  xit 'infers generic return types from block from yield being a return node' do
+  it 'infers generic return types from block from yield being a return node' do
+    pending('deeper inference support')
+
     source = Solargraph::Source.load_string(%(
       def yielder(&blk)
         yield
@@ -642,7 +646,7 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::Array<::A::D::E>')
   end
 
-  xit 'correctly looks up civars' do
+  it 'correctly looks up civars' do
     source = Solargraph::Source.load_string(%(
       class Foo
         BAZ = /aaa/

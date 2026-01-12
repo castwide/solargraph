@@ -238,6 +238,7 @@ module Solargraph
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
         return true if results.any? { |r| r == true || r == false }
+        return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
       rescue
         STDERR.puts("Problem handling #{attr} for \n#{self.inspect}\n and \n#{other.inspect}\n\n#{self.send(attr).inspect} vs #{other.send(attr).inspect}")
@@ -572,7 +573,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def infer api_map
-        Solargraph::Logging.logger.warn "WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead."
+        Solargraph.assert_or_log(:pin_infer, 'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.')
         type = typify(api_map)
         return type unless type.undefined?
         probe api_map

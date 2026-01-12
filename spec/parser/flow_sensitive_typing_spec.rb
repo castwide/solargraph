@@ -611,7 +611,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.rooted_tags).to eq('10, nil')
+    expect(clip.infer.rooted_tags).to eq('nil, 10')
 
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.rooted_tags).to eq('10')

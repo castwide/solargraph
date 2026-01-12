@@ -106,12 +106,6 @@ module Solargraph
       end
     end
 
-    # @param atype [ComplexType] type which may be assigned to this type
-    # @param api_map [ApiMap] The ApiMap that performs qualification
-    def can_assign?(api_map, atype)
-      any? { |ut| ut.can_assign?(api_map, atype) }
-    end
-
     # @param new_name [String, nil]
     # @param make_rooted [Boolean, nil]
     # @param new_key_types [Array<ComplexType>, nil]

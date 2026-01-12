@@ -20,8 +20,10 @@ module Solargraph
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
       # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
-      # @param assignment [Parser::AST::Node, nil]
-      # @param assignments [::Array<Parser::AST::Node>]
+      # @param assignment [Parser::AST::Node, nil] First assignment
+      #   that was made to this variable
+      # @param assignments [Array<Parser::AST::Node>] Possible
+      #   assignments that may have been made to this variable
       # @param exclude_return_type [ComplexType, nil] Ensure any
       #   return type returned will never include any of these unique
       #   types in the unique types of its complex type.
@@ -44,9 +46,9 @@ module Solargraph
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
       # @param presence_certain [Boolean]
-      def initialize assignment: nil, assignments: [], mass_assignment: nil, return_type: nil,
+      def initialize assignment: nil, assignments: [], mass_assignment: nil,
+                     presence: nil, presence_certain: false, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     presence: nil, presence_certain: false,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -84,6 +86,11 @@ module Solargraph
       def combine_with(other, attrs={})
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
+          # default values don't exist in RBS parameters; it just
+          # tells you if the arg is optional or not.  Prefer a
+          # provided value if we have one here since we can't rely on
+          # it from RBS so we can infer from it and typecheck on it.
+          assignment: choose(other, :assignment),
           assignments: new_assignments,
           mass_assignment: combine_mass_assignment(other),
           return_type: combine_return_type(other),
@@ -93,10 +100,6 @@ module Solargraph
           presence_certain: combine_presence_certain(other)
         })
         super(other, new_attrs)
-      end
-
-      def inner_desc
-        super + ", intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}, presence=#{presence.inspect}, assignments=#{assignments}"
       end
 
       # @param other [self]
@@ -128,6 +131,12 @@ module Solargraph
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments(other)
         (other.assignments + assignments).uniq
+      end
+
+      def inner_desc
+        super + ", presence=#{presence.inspect}, assignments=#{assignments}, " \
+                "intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, " \
+                "exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
       end
 
       def completion_item_kind

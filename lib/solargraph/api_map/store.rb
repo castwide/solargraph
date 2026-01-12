@@ -61,7 +61,7 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select { |pin|
-          # @sg-ignore flow-sensitive typing not smart enough to handle this case
+          # @sg-ignore flow sensitive typing not smart enough to handle this case
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         }
       end
@@ -244,11 +244,11 @@ module Solargraph
             next if refs.nil?
             # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
-              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next if ref.nil? || ref.empty? || visited.include?(ref)
-              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               ancestors << ref
-              # @sg-ignore Flow-sensitive typing should be able to handle redefinition
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               queue << ref
             end
           end

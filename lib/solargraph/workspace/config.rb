@@ -14,7 +14,7 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @todo Need typed hashes
+      # @todo Need to validate config
       # @return [Hash{String => undefined, nil}]
       attr_reader :raw_data
 

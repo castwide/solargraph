@@ -127,7 +127,7 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore flow-sensitive typing needs to remove literal with
+      # @sg-ignore flow sensitive typing needs to remove literal with
       #   this unless block
       # @return [Pin::Signature, nil]
       def block
