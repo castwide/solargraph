@@ -382,7 +382,7 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
-              # @todo Tuples need to support first method
+              # @sg-ignore Tuples need to support first method
               name, decl = parse_overload_param(src.first)
               Pin::Parameter.new(
                 location: location,
@@ -392,7 +392,7 @@ module Solargraph
                 decl: decl,
                 # @sg-ignore flow sensitive typing needs to handle attrs
                 presence: location ? location.range : nil,
-                # @todo Tuple#first support
+                # @sg-ignore Tuple#first support
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
               )

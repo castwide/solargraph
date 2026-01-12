@@ -44,7 +44,7 @@ module Solargraph
       # @return [Array<Hash{String => String}>, nil]
       def self.stdlib_dependencies name, version = nil
         if source.has?(name, version)
-          # @todo we are relying on undocumented behavior where
+          # @sg-ignore we are relying on undocumented behavior where
           #   passing version=nil gives the latest version it has
           source.dependencies_of(name, version)
         else

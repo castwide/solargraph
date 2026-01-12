@@ -135,6 +135,7 @@ module Solargraph
         spec = workspace.find_gem(gem)
         raise Thor::InvocationError, "Gem '#{gem}' not found" if spec.nil?
 
+        # @sg-ignore flow sensitive typing needs to handle 'raise if'
         workspace.uncache_gem(spec, out: $stdout)
       end
     end
