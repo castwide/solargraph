@@ -27,7 +27,7 @@ module Solargraph
       combined_gem?(gemspec, rbs_version_cache_key)
     end
 
-    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the cache regardless of whether it already exists
     # @param out [StringIO, IO, nil] output stream for logging
     # @return [void]
@@ -167,7 +167,7 @@ module Solargraph
       [build_yard, build_rbs_collection, build_combined]
     end
 
-    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param gemspec [Gem::Specification]
     # @param rbs_version_cache_key [String, nil]
     # @param build_yard [Boolean]
     # @param build_rbs_collection [Boolean]
