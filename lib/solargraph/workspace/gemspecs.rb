@@ -169,21 +169,12 @@ module Solargraph
                                                                                             specish.version
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
-                                                          # Gem::StubSpecification into a Gem::Specification
+                                                          # Gem::StubSpecification
+                                                          to_gem_specification specish.stub
+                                                        when Gem::StubSpecification
                                                           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                          specish = specish.stub
-                                                          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                          if specish.respond_to?(:spec)
-                                                            # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                            # @type [Gem::Specification]
-                                                            specish.spec
-                                                          else
-                                                            # turn the crank again
-                                                            to_gem_specification(specish)
-                                                          end
+                                                          specish.spec
                                                         else
-                                                          # @sg-ignore Unresolved call to class on Gem::Specification, Bundler::LazySpecification,
-                                                          #   Bundler::StubSpecification
                                                           raise "Unexpected type while resolving gem: #{specish.class}"
                                                         end
       end
