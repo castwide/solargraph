@@ -172,8 +172,7 @@ module Solargraph
                                                           # Gem::StubSpecification
                                                           to_gem_specification specish.stub
                                                         when Gem::StubSpecification
-                                                          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                          specish.spec
+                                                          specish.to_spec
                                                         else
                                                           raise "Unexpected type while resolving gem: #{specish.class}"
                                                         end
