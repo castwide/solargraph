@@ -178,6 +178,7 @@ module Solargraph
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
+          # @sg-ignore flow sensitive typing should be able to handle redefinition
           if @return_type.undefined?
             if decl == :restarg
               @return_type = ComplexType.try_parse('::Array')
