@@ -236,7 +236,7 @@ module Solargraph
         return api_map
       end
 
-      api_map.cache_all_for_doc_map!(out)
+      api_map.cache_all_for_doc_map!(out: out)
       load(directory, loose_unions: loose_unions)
     end
 
