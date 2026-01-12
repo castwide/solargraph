@@ -156,7 +156,7 @@ module Solargraph
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       #
-      # @return [Gem::Specification]
+      # @return [Gem::Specification, nil]
       def to_gem_specification specish
         # print time including milliseconds
         self.class.gem_specification_cache[specish] ||= case specish
@@ -169,8 +169,15 @@ module Solargraph
                                                                                             specish.version
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
-                                                          # Gem::StubSpecification
-                                                          to_gem_specification specish.stub
+                                                          # Gem::StubSpecification if we can
+                                                          if specish.respond_to?(:stub)
+                                                            to_gem_specification specish.stub
+                                                          else
+                                                            # A Bundler::StubSpecification is a Bundler::
+                                                            # RemoteSpecification which ought to proxy a Gem::
+                                                            # Specification
+                                                            specish
+                                                          end
                                                         when Gem::StubSpecification
                                                           specish.to_spec
                                                         else

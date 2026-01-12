@@ -92,6 +92,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:stub).and_return(false)
       allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: stub_value)
     end
 
