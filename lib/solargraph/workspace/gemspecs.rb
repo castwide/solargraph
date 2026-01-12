@@ -70,7 +70,7 @@ module Solargraph
           end
 
           # look ourselves just in case this is hanging out somewhere
-          # that find_by_path doesn't index
+          # that find_by_path doesn't index'
           gemspec = all_gemspecs.find do |spec|
             spec = to_gem_specification(spec) unless spec.respond_to?(:files)
 
@@ -165,20 +165,7 @@ module Solargraph
         # print time including milliseconds
         self.class.gem_specification_cache[specish] ||= case specish
                                                         when Gem::Specification
-                                                          @@warned_on_rubygems ||= false
-                                                          if specish.respond_to?(:identifier)
-                                                            # @type [Gem::Specification]
-                                                            specish
-                                                          else
-                                                            # see https://github.com/castwide/solargraph/actions/runs/17588131738/job/49961580698?pr=1006 - happened on Ruby 3.0
-                                                            unless @@warned_on_rubygems
-                                                              logger.warn "Incomplete Gem::Specification encountered - recommend upgrading rubygems"
-                                                              @@warned_on_rubygems = true
-                                                            end
-                                                            nil
-                                                          end
-                                                        # yay!
-
+                                                          specish
                                                         when Bundler::LazySpecification
                                                           # materializing didn't work.  Let's look in the local
                                                           # rubygems without bundler's help
@@ -186,23 +173,19 @@ module Solargraph
                                                                                             specish.version
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
-                                                          # Gem::StubSpecification into a Gem::Specification
-                                                          specish = specish.stub
-                                                          if specish.respond_to?(:spec)
-                                                            # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                            # @type [Gem::Specification]
-                                                            specish.spec
+                                                          # Gem::StubSpecification if we can
+                                                          if specish.respond_to?(:stub)
+                                                            to_gem_specification specish.stub
                                                           else
-                                                            # turn the crank again
-                                                            to_gem_specification(specish)
+                                                            # A Bundler::StubSpecification is a Bundler::
+                                                            # RemoteSpecification which ought to proxy a Gem::
+                                                            # Specification
+                                                            specish
                                                           end
+                                                        when Gem::StubSpecification
+                                                          specish.to_spec
                                                         else
-                                                          @@warned_on_gem_type ||= false
-                                                          unless @@warned_on_gem_type
-                                                            logger.warn "Unexpected type while resolving gem: #{specish.class}"
-                                                            @@warned_on_gem_type = true
-                                                          end
-                                                          nil
+                                                          raise "Unexpected type while resolving gem: #{specish.class}"
                                                         end
       end
 
@@ -237,7 +220,7 @@ module Solargraph
         if specish_objects.first.respond_to?(:materialize_for_installation)
           specish_objects = specish_objects.map(&:materialize_for_installation)
         end
-        all_gemspecs = specish_objects.map do |specish|
+        specish_objects.map do |specish|
           if specish.respond_to?(:name) && specish.respond_to?(:version) && specish.respond_to?(:gem_dir)
             # duck type is good enough for outside uses!
             specish
