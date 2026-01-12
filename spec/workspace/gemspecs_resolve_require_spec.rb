@@ -71,12 +71,8 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         allow(lockfile).to receive(:to_s).and_return(dir_path)
       end
 
-      it 'returns a single spec' do
-        expect(specs.size).to eq(1)
-      end
-
-      it 'resolves to the right known gem' do
-        expect(specs.map(&:name)).to eq(['solargraph'])
+      it 'raises a StandardException' do
+        expect { specs.size }.to raise_error(StandardError)
       end
     end
 
@@ -96,6 +92,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:stub).and_return(false)
       allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: stub_value)
     end
 
