@@ -772,7 +772,6 @@ module Solargraph
         diffs = Diff::LCS.diff(source.code, change['text'])
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
         # @type [Diff::LCS::Change]
-        # @sg-ignore push this upstream
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
         position = Solargraph::Position.from_offset(source.code, diff.position)
