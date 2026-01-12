@@ -133,7 +133,8 @@ module Solargraph
         end
 
         spec = workspace.find_gem(gem)
-        # @sg-ignore Need to add nil check here
+        raise Thor::InvocationError, "Gem '#{gem}' not found" if spec.nil?
+
         workspace.uncache_gem(spec, out: $stdout)
       end
     end

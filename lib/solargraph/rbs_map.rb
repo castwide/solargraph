@@ -130,7 +130,6 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def pins out: $stderr
       @pins ||= if resolved?
-                  loader.libs.each { |lib| log_caching(lib, out: out) }
                   conversions.pins
                 else
                   []
@@ -186,11 +185,6 @@ module Solargraph
     def conversions
       @conversions ||= Conversions.new(loader: loader)
     end
-
-    # @param lib [RBS::EnvironmentLoader::Library]
-    # @param out [IO, nil] where to log messages
-    # @return [void]
-    def log_caching lib, out:; end
 
     def resolve_dependencies?
       # we need to resolve dependencies via gemfile.lock manually for

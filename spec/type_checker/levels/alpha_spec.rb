@@ -178,7 +178,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'resolves self correctly in arguments' do
+    it 'resolves self correctly in arguments (second case)' do
       checker = type_checker(%(
         class Blah
           # @return [String]
