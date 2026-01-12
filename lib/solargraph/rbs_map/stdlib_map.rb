@@ -16,17 +16,19 @@ module Solargraph
         out&.puts("Caching RBS pins for standard library #{lib.name}")
       end
 
+      # @param rebuild [Boolean] build pins regardless of whether we
+      #   have cached them already
       # @param library [String]
       # @param out [IO, nil] where to log messages
-      def initialize library, out: $stderr
+      def initialize library, rebuild: false, out: $stderr
         cached_pins = PinCache.deserialize_stdlib_require library
-        if cached_pins
+        if cached_pins && !rebuild
           @pins = cached_pins
           @resolved = true
           @loaded = true
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
         else
-          super
+          super(library, out: out)
           unless resolved?
             @pins = []
             logger.debug { "StdlibMap could not resolve #{library.inspect}" }

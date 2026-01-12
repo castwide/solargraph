@@ -66,19 +66,19 @@ module Solargraph
     # @return [void]
     def cache_all!(out, rebuild: false)
       load_serialized_gem_pins
-      PinCache.cache_core(out: out) unless PinCache.core?
+      PinCache.cache_core(out: out) unless PinCache.core? || rebuild
       gem_specs = uncached_gemspecs
       # try any possible standard libraries, but be quiet about it
       stdlib_specs = PinCache.possible_stdlibs.map { |stdlib| workspace.find_gem(stdlib, out: nil) }.compact
       specs = (gem_specs + stdlib_specs)
       specs.each do |gemspec|
-        cache(gemspec, out: out)
+        cache(gemspec, rebuild: rebuild, out: out)
       end
       out&.puts "Documentation cached for all #{specs.length} gems."
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
-      PinCache.cache_all_stdlibs(out: out)
+      PinCache.cache_all_stdlibs(rebuild: rebuild, out: out)
 
       out&.puts "Documentation cached for core, standard library and gems."
 

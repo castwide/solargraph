@@ -201,12 +201,15 @@ module Solargraph
         RbsMap::CoreMap.new.cache_core(out: out)
       end
 
-      # @param out [IO, nil] output stream for logging
+      # @param rebuild [Boolean] build pins regardless of whether we
+      #   have cached them already
+      # @param out [IO, nil] output stream
+      # for logging
       #
       # @return [void]
-      def cache_all_stdlibs out: $stderr
+      def cache_all_stdlibs rebuild: false, out: $stderr
         possible_stdlibs.each do |stdlib|
-          RbsMap::StdlibMap.new(stdlib, out: out)
+          RbsMap::StdlibMap.new(stdlib, rebuild: rebuild, out: out)
         end
       end
 
