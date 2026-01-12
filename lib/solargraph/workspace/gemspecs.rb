@@ -94,11 +94,11 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name && gemspec.version == version }
-        return gemspec if gemspec
+        specish = all_gemspecs_from_bundle.find { |specish| specish.name == name && specish.version == version }
+        return to_gem_specification specish if specish
 
-        gemspec = all_gemspecs_from_bundle.find { |gemspec| gemspec.name == name }
-        return gemspec if gemspec
+        specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
+        return to_gem_specification specish if specish
 
         resolve_gem_ignoring_local_bundle name, version, out: out
       end
@@ -116,7 +116,6 @@ module Solargraph
         # @param runtime_dep [Gem::Dependency]
         # @param deps [Hash{String => Gem::Specification}]
         gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
-          # @sg-ignore Unresolved call to requirement on Gem::Dependency
           dep = find_gem(runtime_dep.name, runtime_dep.requirement)
           next unless dep
 
@@ -155,6 +154,7 @@ module Solargraph
       private
 
       # @param specish [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
+      #
       # @return [Gem::Specification, nil]
       def to_gem_specification specish
         # print time including milliseconds
@@ -162,6 +162,7 @@ module Solargraph
                                                         when Gem::Specification
                                                           @@warned_on_rubygems ||= false
                                                           if specish.respond_to?(:identifier)
+                                                            # @type [Gem::Specification]
                                                             specish
                                                           else
                                                             # see https://github.com/castwide/solargraph/actions/runs/17588131738/job/49961580698?pr=1006 - happened on Ruby 3.0
@@ -181,11 +182,12 @@ module Solargraph
                                                         when Bundler::StubSpecification
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification into a Gem::Specification
-                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
+                                                          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
                                                           specish = specish.stub
-                                                          # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
+                                                          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
                                                           if specish.respond_to?(:spec)
-                                                            # @sg-ignore Flow-sensitive typing ought to be able to handle 'when ClassName'
+                                                            # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+                                                            # @type [Gem::Specification]
                                                             specish.spec
                                                           else
                                                             # turn the crank again
@@ -328,6 +330,7 @@ module Solargraph
                       'specish_objects = specish_objects.map(&:materialize_for_installation);' \
                       'end;' \
                       'specish_objects.map { |specish| [specish.name, specish.version] }'
+            # @type [Array<Gem::Specification>]
             query_external_bundle(command).map do |name, version|
               resolve_gem_ignoring_local_bundle(name, version)
             end.compact
