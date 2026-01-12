@@ -19,7 +19,6 @@ module Solargraph
       @ending = ending
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [start, ending]
     end
@@ -27,12 +26,9 @@ module Solargraph
     # @param other [BasicObject]
     def <=>(other)
       return nil unless other.is_a?(Range)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       if start == other.start
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         ending <=> other.ending
       else
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
         start <=> other.start
       end
     end
@@ -82,7 +78,7 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [Parser::AST::Node]
+    # @param node [::Parser::AST::Node]
     # @return [Range, nil]
     def self.from_node node
       if node&.loc && node.loc.expression
@@ -101,7 +97,6 @@ module Solargraph
 
     def == other
       return false unless other.is_a?(Range)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       start == other.start && ending == other.ending
     end
 
