@@ -263,7 +263,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
-      PinCache.cache_core(out: out) unless PinCache.core?
+      PinCache.cache_core(out: out) unless PinCache.core? && !rebuild
 
       gem_specs = all_gemspecs_from_bundle
       # try any possible standard libraries, but be quiet about it
@@ -276,7 +276,7 @@ module Solargraph
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
-      pin_cache.cache_all_stdlibs(out: out)
+      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
 
       out&.puts "Documentation cached for core, standard library and gems."
     end

@@ -66,8 +66,9 @@ module Solargraph
 
     # Cache all pins needed for the sources in this doc_map
     # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
-    def cache_doc_map_gems! out
+    def cache_doc_map_gems! out, rebuild: false
       unless uncached_gemspecs.empty?
         logger.info do
           gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
@@ -76,7 +77,7 @@ module Solargraph
       end
       time = Benchmark.measure do
         uncached_gemspecs.each do |gemspec|
-          cache(gemspec, out: out)
+          cache(gemspec, rebuild: rebuild, out: out)
         end
       end
       milliseconds = (time.real * 1000).round

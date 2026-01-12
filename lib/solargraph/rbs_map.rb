@@ -26,7 +26,7 @@ module Solargraph
     # @param version [String, nil]
     # @param rbs_collection_config_path [String, Pathname, nil]
     # @param rbs_collection_paths [Array<Pathname, String>]
-    # @param out [IO, nil] where to log messages
+    # @param out [StringIO, IO, nil] where to log messages
     def initialize library, version = nil, rbs_collection_config_path: nil, rbs_collection_paths: [], out: $stderr
       if rbs_collection_config_path.nil? && !rbs_collection_paths.empty?
         raise 'Please provide rbs_collection_config_path if you provide rbs_collection_paths'
@@ -196,7 +196,7 @@ module Solargraph
     # @param loader [RBS::EnvironmentLoader]
     # @param library [String]
     # @param version [String, nil] the version of the library to load, or nil for any
-    # @param out [IO, nil] where to log messages
+    # @param out [StringIO, IO, nil] where to log messages
     # @return [Boolean] true if adding the library succeeded
     def add_library loader, library, version, out: $stderr
       @resolved = if loader.has_library?(library: library, version: version)

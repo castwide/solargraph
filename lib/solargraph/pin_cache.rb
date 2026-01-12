@@ -60,11 +60,13 @@ module Solargraph
     end
 
     # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] build pins regardless of whether we
+    #   have cached them already
     #
     # @return [void]
-    def cache_all_stdlibs out: $stderr
+    def cache_all_stdlibs rebuild: false, out: $stderr
       possible_stdlibs.each do |stdlib|
-        RbsMap::StdlibMap.new(stdlib, out: out)
+        RbsMap::StdlibMap.new(stdlib, rebuild: rebuild, out: out)
       end
     end
 
