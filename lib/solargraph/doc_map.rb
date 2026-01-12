@@ -145,6 +145,7 @@ module Solargraph
         # try to resolve the stdlib name
         deps = workspace.stdlib_dependencies(stdlib_name_guess) || []
         [stdlib_name_guess, *deps].compact.each do |potential_stdlib_name|
+          # @todo Need to support splatting in literal array
           rbs_pins = pin_cache.cache_stdlib_rbs_map potential_stdlib_name
           serialized_pins.concat rbs_pins if rbs_pins
         end
