@@ -95,7 +95,7 @@ module Solargraph
       @global_environ ||= Convention.for_global(DocMap.new([], self, out: nil))
     end
 
-    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param gemspec [Gem::Specification]
     # @param out [StringIO, IO, nil] output stream for logging
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     #
