@@ -31,6 +31,10 @@ Style/MethodDefParentheses:
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
 
+Lint/EmptyClass:
+  Exclude:
+    - spec/fixtures/**/*.rb
+
 Lint/UnusedMethodArgument:
   AllowUnusedKeywordArguments: true
 

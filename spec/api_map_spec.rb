@@ -536,15 +536,11 @@ describe Solargraph::ApiMap do
   end
 
   # @todo Qualify methods might not accept parametrized types anymore
-  xit 'handles multiple type parameters without losing cache coherence' do
+  it 'handles multiple type parameters without losing cache coherence' do
     tag = @api_map.qualify('Array<String>')
     expect(tag).to eq('Array<String>')
     tag = @api_map.qualify('Array<Integer>')
     expect(tag).to eq('Array<Integer>')
-  end
-
-  # @todo Qualify methods might not accept parametrized types anymore
-  xit 'handles multiple type parameters without losing cache coherence' do
     tag = @api_map.qualify('Hash{Integer => String}')
     expect(tag).to eq('Hash{Integer => String}')
   end

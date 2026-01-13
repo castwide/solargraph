@@ -33,7 +33,7 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'understands rspec + rspec-mocks require pattern' do
+  context 'when understanding rspec + rspec-mocks require pattern' do
     let(:requires) do
       ['rspec-mocks']
     end

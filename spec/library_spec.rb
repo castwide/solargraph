@@ -623,7 +623,7 @@ describe Solargraph::Library do
     end
   end
 
-  context 'unsynchronized' do
+  context 'when unsynchronized' do
     let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
     let(:bad_file) { File.join(library.workspace.directory, 'lib', 'not_a_thing.rb') }

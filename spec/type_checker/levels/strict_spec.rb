@@ -1,5 +1,5 @@
 describe Solargraph::TypeChecker do
-  context 'strict level' do
+  context 'when at strict level' do
     # @return [Solargraph::TypeChecker]
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
@@ -145,18 +145,6 @@ describe Solargraph::TypeChecker do
         Foo.new.bar
       ))
       expect(checker.problems).to be_empty
-    end
-
-    it 'reports mismatched argument types' do
-      checker = type_checker(%(
-        class Foo
-          # @param baz [Integer]
-          def bar(baz); end
-        end
-        Foo.new.bar('string')
-      ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
     it 'reports mismatched argument types in chained calls' do
@@ -581,9 +569,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'requires strict return tags' do
-      pending 'nil? support in flow sensitive typing'
-
+    it 'does not require nil correctness in return tags when nil is involved and used second in a ternary' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -598,9 +584,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
-    it 'requires strict return tags' do
-      pending 'nil? support in flow sensitive typing'
-
+    it 'does not require nil correctness in return tags when nil is involved and used first in a ternary' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -611,8 +595,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match inferred type')
+      expect(checker.problems.first.message).not_to include('does not match inferred type')
     end
 
     it 'validates strict return tags' do

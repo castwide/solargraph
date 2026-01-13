@@ -263,7 +263,6 @@ Layout/SpaceInsideParens:
 Layout/TrailingWhitespace:
   Exclude:
     - 'lib/solargraph/language_server/message/client/register_capability.rb'
-    - 'spec/api_map/config_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowedMethods, AllowedPatterns.
@@ -316,13 +315,6 @@ Lint/DuplicateBranch:
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/rbs_map/conversions.rb'
-
-Lint/DuplicateMethods:
-  Enabled: false
-
-# Configuration parameters: AllowComments.
-Lint/EmptyClass:
-  Enabled: false
 
 # Configuration parameters: AllowComments.
 Lint/EmptyFile:
@@ -569,11 +561,6 @@ RSpec/BeforeAfterAll:
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
 
-# Configuration parameters: Prefixes, AllowedPatterns.
-# Prefixes: when, with, without
-RSpec/ContextWording:
-  Enabled: false
-
 # Configuration parameters: IgnoredMetadata.
 RSpec/DescribeClass:
   Exclude:
@@ -651,11 +638,6 @@ RSpec/MultipleExpectations:
 RSpec/NestedGroups:
   Max: 4
 
-# Configuration parameters: AllowedPatterns.
-# AllowedPatterns: ^expect_, ^assert_
-RSpec/NoExpectationExample:
-  Enabled: false
-
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
 # SupportedStyles: not_to, to_not
@@ -689,13 +671,9 @@ RSpec/RemoveConst:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
 
-RSpec/RepeatedDescription:
-  Enabled: false
-
 RSpec/RepeatedExample:
   Exclude:
     - 'spec/api_map_spec.rb'
-    - 'spec/parser/node_methods_spec.rb'
     - 'spec/source/cursor_spec.rb'
     - 'spec/source_map/clip_spec.rb'
     - 'spec/type_checker/levels/strict_spec.rb'
@@ -704,10 +682,6 @@ RSpec/RepeatedExample:
 RSpec/ScatteredLet:
   Exclude:
     - 'spec/complex_type_spec.rb'
-
-# Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
-RSpec/VerifiedDoubles:
-  Enabled: false
 
 Security/MarshalLoad:
   Exclude:

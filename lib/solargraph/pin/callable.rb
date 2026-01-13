@@ -246,11 +246,6 @@ module Solargraph
         true
       end
 
-      def reset_generated!
-        super
-        @parameters.each(&:reset_generated!)
-      end
-
       # @return [Integer]
       def mandatory_positional_param_count
         parameters.count(&:arg?)

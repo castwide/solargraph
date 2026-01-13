@@ -264,12 +264,6 @@ describe Solargraph::Pin::Method do
     expect(type.tag).to eq('Boolean')
   end
 
-  it 'strips prefixes from parameter names' do
-    # @todo Method pin parameters are pins now
-    # pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
-    # expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
-  end
-
   it 'does not include yielded blocks in return nodes' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -512,7 +506,7 @@ describe Solargraph::Pin::Method do
     expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
   end
 
-  context 'as attribute' do
+  context 'when attr_reader is used' do
     it 'is a kind of attribute/property' do
       source = Solargraph::Source.load_string(%(
         class Foo

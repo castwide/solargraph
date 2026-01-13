@@ -351,10 +351,6 @@ module Solargraph
 
     attr_reader :items
 
-    def rooted?
-      @items.all?(&:rooted?)
-    end
-
     # @param exclude_types [ComplexType, nil]
     # @param api_map [ApiMap]
     # @return [ComplexType, self]

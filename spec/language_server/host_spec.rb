@@ -83,7 +83,7 @@ describe Solargraph::LanguageServer::Host do
 
   it "handles DiagnosticsErrors" do
     host = Solargraph::LanguageServer::Host.new
-    library = double(:Library)
+    library = instance_double(Solargraph::Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
     allow(library).to receive(:contain?).and_return(true)
     allow(library).to receive(:synchronized?).and_return(true)

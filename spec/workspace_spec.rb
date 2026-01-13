@@ -50,7 +50,7 @@ describe Solargraph::Workspace do
   end
 
   it "raises an exception for workspace size limits" do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
+    config = instance_double(Solargraph::Config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
 
     expect {
       Solargraph::Workspace.new('.', config)
@@ -62,7 +62,7 @@ describe Solargraph::Workspace do
     File.write(gemspec_file, '')
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
-    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('.', config)
     }.not_to raise_error
@@ -135,7 +135,7 @@ describe Solargraph::Workspace do
   end
 
   it 'rescues errors loading files into sources' do
-    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('./path', config)
     }.not_to raise_error

@@ -49,7 +49,7 @@ describe Solargraph::Workspace::Config do
   it "overrides global config with workspace config" do
     File.write(File.join(workspace_path, 'foo.rb'), 'test')
     File.write(File.join(workspace_path, 'bar.rb'), 'test')
-    
+
     File.open(File.join(workspace_path, '.solargraph.yml'), 'w') do |file|
         file.puts "include:"
         file.puts "  - foo.rb"

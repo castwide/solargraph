@@ -80,14 +80,6 @@ module Solargraph
       @pin_cache ||= fresh_pincache
     end
 
-    # @param stdlib_name [String]
-    #
-    # @return [Array<String>]
-    def stdlib_dependencies stdlib_name
-      deps = RbsMap::StdlibMap.stdlib_dependencies(stdlib_name, nil) || []
-      deps.map { |dep| dep['name'] }.compact
-    end
-
     # @return [Environ]
     def global_environ
       # empty docmap, since the result needs to work in any possible
@@ -249,14 +241,6 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def all_gemspecs_from_bundle
       gemspecs.all_gemspecs_from_bundle
-    end
-
-    # @todo make this actually work against bundle instead of pulling
-    #   all installed gemspecs -
-    #   https://github.com/apiology/solargraph/pull/10
-    # @return [Array<Gem::Specification>]
-    def all_gemspecs_from_bundle
-      Gem::Specification.to_a
     end
 
     # @param out [StringIO, IO, nil] output stream for logging
