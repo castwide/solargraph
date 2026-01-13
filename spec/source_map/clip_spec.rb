@@ -302,6 +302,23 @@ describe Solargraph::SourceMap::Clip do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers method types from return nodes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [self]
+        def foo
+          bar
+        end
+      end
+      Foo.new.foo
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(7, 10))
+    type = clip.infer
+    expect(type.tag).to eq('Foo')
+  end
+
   it 'infers multiple method types from return nodes' do
     source = Solargraph::Source.load_string(%(
       def foo
@@ -320,7 +337,9 @@ describe Solargraph::SourceMap::Clip do
     expect(type.simple_tags).to eq('String, Integer')
   end
 
-  xit 'uses flow-sensitive typing to infer non-nil method return type' do
+  it 'uses flow-sensitive typing to infer non-nil method return type' do
+    pending('if x.nil? support in flow sensitive typing')
+
     source = Solargraph::Source.load_string(%(
     # @return [Gem::Specification,nil]
     def find_by_name; end
@@ -2627,7 +2646,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
-  xit 'replaces nil with reassignments' do
+  it 'replaces nil with reassignments' do
+    pending 'sequential assignment support'
+
     source = Solargraph::Source.load_string(%(
       bar = nil
       bar
@@ -2642,7 +2663,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
-  xit 'replaces type with reassignments' do
+  it 'replaces type with reassignments' do
+    pending 'sequential assignment support'
+
     source = Solargraph::Source.load_string(%(
       bar = 'a'
       bar
@@ -2670,7 +2693,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String, nil')
   end
 
-  xit 'replaces nil with alternate reassignments' do
+  it 'replaces nil with alternate reassignments' do
+    pending 'conditional assignment support'
+
     source = Solargraph::Source.load_string(%(
       bar = nil
       if baz
@@ -2685,7 +2710,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Symbol, Integer')
   end
 
-  xit 'replaces type with alternate reassignments' do
+  it 'replaces type with alternate reassignments' do
+    pending 'conditional assignment support'
+
     source = Solargraph::Source.load_string(%(
       bar = 'a'
       if baz
@@ -2950,7 +2977,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
   end
 
-  xit 'infers that type of argument has been overridden' do
+  it 'infers that type of argument has been overridden' do
+    pending 'sequential assignment support'
+
     source = Solargraph::Source.load_string(%(
       def foo a
         a = 'foo'
@@ -2963,7 +2992,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String')
   end
 
-  xit 'preserves hash value when it is a union with brackets' do
+  it 'preserves hash value when it is a union with brackets' do
+    pending 'union in bracket support'
+
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => [Array, Hash, Integer, nil]}]
       raw_data = {}
@@ -2989,7 +3020,9 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array<String>')
   end
 
-  xit 'preserves hash value when it is a union with brackets' do
+  it 'preserves hash value when it is a union with brackets' do
+    pending 'union in bracket support'
+
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => [Array, Hash, Integer, nil]}]
       raw_data = {}
