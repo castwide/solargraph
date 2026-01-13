@@ -11,7 +11,6 @@ module Solargraph
 
       attr_reader :all_params, :subtypes, :key_types
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
       protected def equality_fields
         [@name, @all_params, @subtypes, @key_types]
       end
@@ -46,6 +45,7 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
+          # @sg-ignore Need to add nil check here
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             raise ComplexTypeError, "Bad hash type: name=#{name}, substring=#{substring}" unless !subs.is_a?(ComplexType) and subs.length == 2 and !subs[0].is_a?(UniqueType) and !subs[1].is_a?(UniqueType)
@@ -62,6 +62,7 @@ module Solargraph
             subtypes.concat subs
           end
         end
+        # @sg-ignore Need to add nil check here
         new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
@@ -109,6 +110,44 @@ module Solargraph
         end
       end
 
+      # @param exclude_types [ComplexType, nil]
+      # @param api_map [ApiMap]
+      # @return [ComplexType, self]
+      def exclude exclude_types, api_map
+        return self if exclude_types.nil?
+
+        types = items - exclude_types.items
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
+      # @see https://en.wikipedia.org/wiki/Intersection_type
+      #
+      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @param api_map [ApiMap]
+      # @return [self, ComplexType]
+      def intersect_with intersection_type, api_map
+        return self if intersection_type.nil?
+        return intersection_type if undefined?
+        types = []
+        # try to find common types via conformance
+        items.each do |ut|
+          intersection_type.each do |int_type|
+            if ut.conforms_to?(api_map, int_type, :assignment)
+              types << ut
+            elsif int_type.conforms_to?(api_map, ut, :assignment)
+              types << int_type
+            end
+          end
+        end
+        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        ComplexType.new(types)
+      end
+
+      def simplifyable_literal?
+        literal? && name != 'nil'
+      end
+
       def literal?
         non_literal_name != name
       end
@@ -116,6 +155,13 @@ module Solargraph
       # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
+      end
+
+      # @return [self]
+      def without_nil
+        return UniqueType::UNDEFINED if nil_type?
+
+        self
       end
 
       # @return [String]
@@ -131,6 +177,7 @@ module Solargraph
         return 'NilClass' if name == 'nil'
         return 'Boolean' if ['true', 'false'].include?(name)
         return 'Symbol' if name[0] == ':'
+        # @sg-ignore Need to add nil check here
         return 'String' if ['"', "'"].include?(name[0])
         return 'Integer' if name.match?(/^-?\d+$/)
         name
@@ -138,17 +185,17 @@ module Solargraph
 
       def eql?(other)
         self.class == other.class &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @name == other.name &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @key_types == other.key_types &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @subtypes == other.subtypes &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @rooted == other.rooted? &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @all_params == other.all_params &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support .class == .class
           @parameters_type == other.parameters_type
       end
 
@@ -156,8 +203,84 @@ module Solargraph
         eql?(other)
       end
 
+      # https://www.playfulpython.com/type-hinting-covariance-contra-variance/
+
+      # "[Expected] type variables that are COVARIANT can be substituted with
+      #  a more specific [inferred] type without causing errors"
+      #
+      # "[Expected] type variables that are CONTRAVARIANT can be substituted
+      #   with a more general [inferred] type without causing errors"
+      #
+      # "[Expected] types where neither is possible are INVARIANT"
+      #
+      # @param _situation [:method_call, :return_type]
+      # @param default [Symbol] The default variance to return if the type is not one of the special cases
+      #
+      # @return [:invariant, :covariant, :contravariant]
+      def parameter_variance _situation, default = :covariant
+        # @todo RBS can specify variance - maybe we can use that info
+        #   and also let folks specify?
+        #
+        # Array/Set: ideally invariant, since we don't know if user is
+        #   going to add new stuff into it or read it.  But we don't
+        #   have a way to specify, so we use covariant
+        # Enumerable: covariant:  can't be changed, so we can pass
+        #   in more specific subtypes
+        # Hash: read-only would be covariant, read-write would be
+        #   invariant if we could distinguish that - should default to
+        #   covariant
+        # contravariant?: Proc - can be changed, so we can pass
+        #   in less specific super types
+        if ['Hash', 'Tuple', 'Array', 'Set', 'Enumerable'].include?(name) && fixed_parameters?
+          :covariant
+        else
+          default
+        end
+      end
+
+      # Whether this is an RBS interface like _ToAry or _Each.
+      def interface?
+        name.start_with?('_')
+      end
+
+      # @param other [UniqueType]
+      def erased_version_of?(other)
+        name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
+      end
+
+      # @param api_map [ApiMap]
+      # @param expected [ComplexType::UniqueType, ComplexType]
+      # @param situation [:method_call, :assignment, :return_type]
+      # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
+      # @param variance [:invariant, :covariant, :contravariant]
+      def conforms_to?(api_map, expected, situation, rules = [],
+                       variance: erased_variance(situation))
+        return true if undefined? && rules.include?(:allow_undefined)
+
+        # @todo teach this to validate duck types as inferred type
+        return true if duck_type?
+
+        # complex types as expectations are unions - we only need to
+        # match one of their unique types
+        expected.any? do |expected_unique_type|
+          # :nocov:
+          unless expected_unique_type.instance_of?(UniqueType)
+            raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
+          end
+          # :nocov:
+          conformance = Conformance.new(api_map, self, expected_unique_type, situation,
+                                        rules, variance: variance)
+          conformance.conforms_to_unique_type?
+        end
+      end
+
       def hash
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
+      end
+
+      # @return [self]
+      def erase_parameters
+        UniqueType.new(name, rooted: rooted?, parameters_type: parameters_type)
       end
 
       # @return [Array<UniqueType>]
@@ -181,6 +304,7 @@ module Solargraph
         rooted_tags
       end
 
+      # @sg-ignore Need better if/elseanalysis
       # @return [String]
       def to_rbs
         if duck_type?
@@ -190,7 +314,7 @@ module Solargraph
         elsif name.downcase == 'nil'
           'nil'
         elsif name == GENERIC_TAG_NAME
-          all_params.first.name
+          all_params.first&.name
         elsif ['Class', 'Module'].include?(name)
           rbs_name
         elsif ['Tuple', 'Array'].include?(name) && fixed_parameters?
@@ -242,16 +366,13 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param atype [ComplexType] type which may be assigned to this type
-      def can_assign?(api_map, atype)
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect})" }
-        downcasted_atype = atype.downcast_to_literal_if_possible
-        out = downcasted_atype.all? do |autype|
-          autype.name == name || api_map.super_and_sub?(name, autype.name)
-        end
-        logger.debug { "UniqueType#can_assign?(self=#{rooted_tags.inspect}, atype=#{atype.rooted_tags.inspect}) => #{out}" }
-        out
+      def nullable?
+        nil_type?
+      end
+
+      # @yieldreturn [Boolean]
+      def all? &block
+        block.yield self
       end
 
       # @return [UniqueType]
@@ -260,15 +381,18 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, nil]
+      # @param context_type [ComplexType, UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
+          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return self unless generics_to_resolve.include? type_param
+          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
+            # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
             resolved_generic_values[type_param] = context_type
           end
           if new_binding
@@ -276,6 +400,7 @@ module Solargraph
               complex_type.resolve_generics_from_context(generics_to_resolve, nil, resolved_generic_values: resolved_generic_values)
             end
           end
+          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return resolved_generic_values[type_param] || self
         end
 
@@ -286,7 +411,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, nil]
+      # @param context_type [UniqueType, ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -337,6 +462,7 @@ module Solargraph
                 ComplexType::UNDEFINED
               end
             else
+              # @sg-ignore Need to add nil check here
               context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
@@ -350,6 +476,13 @@ module Solargraph
       # @return [Array<self>]
       def map &block
         [block.yield(self)]
+      end
+
+      # @yieldparam t [self]
+      # @yieldreturn [self]
+      # @return [Enumerable<self>]
+      def each &block
+        [self].each &block
       end
 
       # @return [Array<UniqueType>]
@@ -370,6 +503,7 @@ module Solargraph
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
         make_rooted = @rooted if make_rooted.nil?
+        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
         UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
       end
 
@@ -441,6 +575,22 @@ module Solargraph
           next t if t.name != 'self'
           object_type_dst
         end
+      end
+
+      # @yieldreturn [Boolean]
+      def any? &block
+        block.yield self
+      end
+
+      # @return [ComplexType]
+      def reduce_class_type
+        new_items = items.flat_map do |type|
+          next type unless ['Module', 'Class'].include?(type.name)
+          next type if type.all_params.empty?
+
+          type.all_params
+        end
+        ComplexType.new(new_items)
       end
 
       def all_rooted?

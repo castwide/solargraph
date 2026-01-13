@@ -51,6 +51,7 @@ module Solargraph
 
       # @param str1 [String]
       # @param str2 [String]
+      #
       # @return [Float]
       def fuzzy_string_match str1, str2
         return 1.0 + (str2.length.to_f / str1.length.to_f) if str1.downcase.include?(str2.downcase)

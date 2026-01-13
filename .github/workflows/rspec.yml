@@ -11,7 +11,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-    branches: [ master ]
+    branches: ['*']
 
 permissions:
   contents: read
@@ -21,20 +21,49 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', '4.0']
-        rbs-version: ['3.6.1', '3.9.5', '4.0.0.dev.4']
+        ruby-version: ['3.0', '3.1', '3.2', '3.3', '3.4', '4.0', 'head']
+        rbs-version: ['3.6.1', '3.8.1', '3.9.5', '3.10.0', '4.0.0.dev.5']
         # Ruby 3.0 doesn't work with RBS 3.9.4 or 4.0.0.dev.4
         exclude:
+          # only include the 3.0 variants we include later
           - ruby-version: '3.0'
-            rbs-version: '3.9.5'
-          - ruby-version: '3.0'
-            rbs-version: '4.0.0.dev.4'
-          # Missing require in 'rbs collection update' - hopefully
-          # fixed in next RBS release
+          # only include the 3.1 variants we include later
+          - ruby-version: '3.1'
+          # only include the 3.2 variants we include later
+          - ruby-version: '3.2'
+          # only include the 3.3 variants we include later
+          - ruby-version: '3.3'
+          # only include the 3.4 variants we include later
+          - ruby-version: '3.4'
+          # only include the 4.0 variants we include later
           - ruby-version: '4.0'
+          # Don't exclude 'head' - let's test all RBS versions we
+          # can there.
+          #
+          #
+          # Just exclude some odd-ball compatibility issues we can't
+          # work around:
+          #
+          # https://github.com/castwide/solargraph/actions/runs/20627923548/job/59241444380?pr=1102
+          - ruby-version: 'head'
             rbs-version: '3.6.1'
+          - ruby-version: 'head'
+            rbs-version: '3.8.1'
+        include:
+          - ruby-version: '3.0'
+            rbs-version: '3.6.1'
+          - ruby-version: '3.1'
+            rbs-version: '3.6.1'
+          - ruby-version: '3.2'
+            rbs-version: '3.8.1'
+          - ruby-version: '3.3'
+            rbs-version: '3.9.5'
+          - ruby-version: '3.3'
+            rbs-version: '3.10.0'
+          - ruby-version: '3.4'
+            rbs-version: '4.0.0.dev.5'
           - ruby-version: '4.0'
-            rbs-version: '4.0.0.dev.4'
+            rbs-version: '4.0.0.dev.5'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -58,11 +87,8 @@ jobs:
       run: |
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
-        bundle list
-        bundle exec solargraph pin 'Bundler::Dsl#source'
     - name: Update types
-      run: |
-        bundle exec rbs collection update
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
   undercover:
@@ -77,9 +103,15 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.4'
+        # see https://github.com/castwide/solargraph/actions/runs/19391419903/job/55485410493?pr=1119
+        #
+        # match version in Gemfile.lock and use same version below
+        bundler: 2.5.23
         bundler-cache: false
     - name: Install gems
       run: bundle install
+    - name: Update types
+      run: bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
     - name: Check PR coverage
