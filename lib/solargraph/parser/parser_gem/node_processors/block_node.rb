@@ -9,23 +9,22 @@ module Solargraph
 
           def process
             location = get_node_location(node)
-            parent = if other_class_eval?
-              Solargraph::Pin::Namespace.new(
-                location: location,
-                type: :class,
-                name: unpack_name(node.children[0].children[0]),
-                source: :parser,
-              )
-            else
-              region.closure
+            scope = region.scope || region.closure.context.scope
+            if other_class_eval?
+              clazz_name = unpack_name(node.children[0].children[0])
+              # instance variables should come from the Class<T> type
+              # - i.e., treated as class instance variables
+              context = ComplexType.try_parse("Class<#{clazz_name}>")
+              scope = :class
             end
             block_pin = Solargraph::Pin::Block.new(
               location: location,
-              closure: parent,
+              closure: region.closure,
               node: node,
+              context: context,
               receiver: node.children[0],
               comments: comments_for(node),
-              scope: region.scope || region.closure.context.scope,
+              scope: scope,
               source: :parser
             )
             pins.push block_pin

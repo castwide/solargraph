@@ -187,7 +187,7 @@ module Solargraph
       frag.strip.gsub(/,$/, '')
     end
 
-    # @param node [Parser::AST::Node]
+    # @param node [AST::Node]
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
@@ -396,7 +396,7 @@ module Solargraph
       end
       @finalized = true
       begin
-        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename)
+        @node, @comments = Solargraph::Parser.parse_with_comments(@code, filename, 0)
         @parsed = true
         @repaired = @code
       rescue Parser::SyntaxError, EncodingError => e
@@ -412,7 +412,7 @@ module Solargraph
         end
         error_ranges.concat(changes.map(&:range))
         begin
-          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename)
+          @node, @comments = Solargraph::Parser.parse_with_comments(@repaired, filename, 0)
           @parsed = true
         rescue Parser::SyntaxError, EncodingError => e
           @node = nil

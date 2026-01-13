@@ -9,12 +9,14 @@ module Solargraph
       end
 
       # @return [Array<Solargraph::Pin::Base>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def pins
         generate
         @pins || []
       end
 
       # @return [Array<Solargraph::LocalVariable>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def locals
         generate
         @locals || []

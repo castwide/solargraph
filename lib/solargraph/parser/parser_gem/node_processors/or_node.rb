@@ -4,7 +4,7 @@ module Solargraph
   module Parser
     module ParserGem
       module NodeProcessors
-        class AndNode < Parser::NodeProcessor::Base
+        class OrNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
           def process
@@ -12,7 +12,7 @@ module Solargraph
 
             FlowSensitiveTyping.new(locals,
                                     enclosing_breakable_pin,
-                                    enclosing_compound_statement_pin).process_and(node)
+                                    enclosing_compound_statement_pin).process_or(node)
           end
         end
       end
