@@ -504,7 +504,7 @@ module Solargraph
         # @param old_signatures [Array<Pin::Signature>]
         # @param new_signature [Pin::Signature]
         same_type_arity_signatures.reduce([]) do |old_signatures, new_signature|
-          next [new_signature] if old_signatures.empty?
+          next old_signatures + [new_signature] if old_signatures.empty?
 
           found_merge = false
           old_signatures.flat_map do |old_signature|

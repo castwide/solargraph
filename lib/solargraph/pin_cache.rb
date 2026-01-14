@@ -551,12 +551,6 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
-      # @return [Boolean]
-      def has_yard?(gemspec)
-        exist?(yard_gem_path(gemspec))
-      end
-
-      # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [String]
       def rbs_collection_path(gemspec, hash)

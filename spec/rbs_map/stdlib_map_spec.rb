@@ -2,7 +2,7 @@ describe Solargraph::RbsMap::StdlibMap do
   it "finds stdlib require paths" do
     rbs_map = Solargraph::RbsMap::StdlibMap.load('fileutils')
     pin = rbs_map.path_pin('FileUtils#chdir')
-    expect(pin).to be
+    expect(pin).not_to be_nil
   end
 
   it 'maps YAML' do

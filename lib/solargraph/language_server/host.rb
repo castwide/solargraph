@@ -547,7 +547,7 @@ module Solargraph
       end
 
       # @return [Bool] if has pending completion request
-      def has_pending_completions?
+      def pending_completions?
         message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
 

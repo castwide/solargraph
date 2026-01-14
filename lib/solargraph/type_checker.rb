@@ -407,7 +407,7 @@ module Solargraph
         return [] if !rules.validate_calls? || base.links.first.is_a?(Solargraph::Source::Chain::ZSuper)
 
         all_errors = []
-        pin.signatures.sort { |sig| sig.parameters.length }.each do |sig|
+        pin.signatures.sort_by { |sig| sig.parameters.length }.each do |sig|
           params = param_details_from_stack(sig, pins)
 
           signature_errors = signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
