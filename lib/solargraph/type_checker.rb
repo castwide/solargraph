@@ -561,7 +561,6 @@ module Solargraph
         # @sg-ignore
         # @type [ComplexType]
         ptype = params[pname.to_s][:qualified]
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         ptype = ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, closure_pin, locals)
         argtype = argtype.self_to_type(closure_pin.context)
