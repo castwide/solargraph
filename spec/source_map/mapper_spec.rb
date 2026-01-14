@@ -1007,7 +1007,7 @@ describe Solargraph::SourceMap::Mapper do
     }.not_to raise_error
   end
 
-  it "handles invalid byte sequences" do
+  it "handles invalid utf8 sequences" do
     expect {
       Solargraph::SourceMap.load(File.join('spec', 'fixtures', 'invalid_utf8.rb'))
     }.not_to raise_error

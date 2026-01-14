@@ -6,6 +6,20 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
 
+    it 'reports use of superclass when subclass is required' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sub]
+          def foo
+            Sup.new
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
     it 'allows a compatible function call from two distinct types in a union' do
       checker = type_checker(%(
         class Foo

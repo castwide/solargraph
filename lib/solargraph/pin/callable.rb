@@ -129,7 +129,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]
@@ -181,7 +180,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]
@@ -244,11 +242,6 @@ module Solargraph
         #   we acccept
         return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
         true
-      end
-
-      def reset_generated!
-        super
-        @parameters.each(&:reset_generated!)
       end
 
       # @return [Integer]

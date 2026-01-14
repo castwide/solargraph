@@ -5,10 +5,7 @@ module Solargraph
     class While < CompoundStatement
       include Breakable
 
-      # @param receiver [Parser::AST::Node, nil]
       # @param node [Parser::AST::Node, nil]
-      # @param context [ComplexType, nil]
-      # @param args [::Array<Parameter>]
       def initialize node: nil, **splat
         super(**splat)
         @node = node

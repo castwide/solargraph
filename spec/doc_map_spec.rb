@@ -33,16 +33,12 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'understands rspec + rspec-mocks require pattern' do
+  context 'when understanding rspec + rspec-mocks require pattern' do
     let(:requires) do
       ['rspec-mocks']
     end
 
-    # This is a gem name vs require name issue - works under
-    # solargraph-rspec, but not without
-    xit 'generates pins from gems' do
-      pending('handling dependencies from conventions as gem names, not requires')
-
+    it 'generates pins from gems' do
       ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
       expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
     end
@@ -53,17 +49,13 @@ describe Solargraph::DocMap do
       ['not_a_gem']
     end
 
-    # expected: ["not_a_gem"]
-    # got: ["not_a_gem", "rspec-mocks"]
-    #
-    # This is a gem name vs require name issue coming from conventions
-    # - will pass once the above context passes
-    xit 'tracks unresolved requires' do
+    it 'tracks unresolved requires' do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
       unprovided_solargraph_rspec_requires = [
         'rspec-rails',
         'actionmailer',
+        'actionpack',
         'activerecord',
         'shoulda-matchers',
         'rspec-sidekiq',

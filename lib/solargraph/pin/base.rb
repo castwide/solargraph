@@ -406,7 +406,6 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param return_type_context [ComplexType, ComplexType::UniqueType, nil]
-      # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
       def resolve_generics_from_context(generics_to_resolve, return_type_context = nil, resolved_generic_values: {})
@@ -717,13 +716,13 @@ module Solargraph
       # True if two docstrings have the same tags, regardless of any other
       # differences.
       #
-      # @param d1 [YARD::Docstring]
-      # @param d2 [YARD::Docstring]
+      # @param docstring1 [YARD::Docstring]
+      # @param docstring2 [YARD::Docstring]
       # @return [Boolean]
-      def compare_docstring_tags d1, d2
-        return false if d1.tags.length != d2.tags.length
-        d1.tags.each_index do |i|
-          return false unless compare_tags(d1.tags[i], d2.tags[i])
+      def compare_docstring_tags docstring1, docstring2
+        return false if docstring1.tags.length != docstring2.tags.length
+        docstring1.tags.each_index do |i|
+          return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
       end

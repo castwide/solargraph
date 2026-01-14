@@ -28,7 +28,8 @@ module Solargraph
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
         def initialize word, location = nil, arguments = [], block = nil
-          @word = word
+          super(word)
+
           @location = location
           @arguments = arguments
           @block = block
@@ -353,7 +354,6 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]
         def block_call_type(api_map, name_pin, locals)

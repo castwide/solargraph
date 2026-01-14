@@ -1,7 +1,37 @@
 describe Solargraph::TypeChecker do
-  context 'strong level' do
+  context 'with level set to strong' do
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
+    end
+
+    it 'requires strict return tags when nil is involved and used second in a ternary' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            false ? 'bar' : nil
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'requires strict return tags when nil is involved and used first in a ternary' do
+      checker = type_checker(%(
+        class Foo
+          # The tag is [String] but the inference is [String, nil]
+          #
+          # @return [String]
+          def bar
+            true ? nil : 'bar'
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
     end
 
     it 'understands self type when passed as parameter' do

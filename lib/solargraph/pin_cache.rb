@@ -408,6 +408,7 @@ module Solargraph
 
     # @return [void]
     # @param path_segments [Array<String>]
+    # @param out [StringIO, IO, nil]
     def uncache_by_prefix *path_segments, out: nil
       path = File.join(*path_segments)
       glob = "#{path}*"
@@ -547,12 +548,6 @@ module Solargraph
       # @return [void]
       def serialize_yard_gem(gemspec, pins)
         save(yard_gem_path(gemspec), pins)
-      end
-
-      # @param gemspec [Gem::Specification]
-      # @return [Boolean]
-      def has_yard?(gemspec)
-        exist?(yard_gem_path(gemspec))
       end
 
       # @param gemspec [Gem::Specification]

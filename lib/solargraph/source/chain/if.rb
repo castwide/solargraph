@@ -4,12 +4,10 @@ module Solargraph
   class Source
     class Chain
       class If < Link
-        def word
-          '<if>'
-        end
-
         # @param links [::Array<Chain>]
         def initialize links
+          super('<if>')
+
           @links = links
         end
 

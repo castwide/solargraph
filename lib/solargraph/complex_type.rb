@@ -34,7 +34,8 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param context [String]
+    # @param gates [Array<String>]
+    #
     # @return [ComplexType]
     def qualify api_map, *gates
       red = reduce_object
@@ -109,7 +110,7 @@ module Solargraph
     # @param new_name [String, nil]
     # @param make_rooted [Boolean, nil]
     # @param new_key_types [Array<ComplexType>, nil]
-    # @param rooted [Boolean, nil]
+    # @param make_rooted [Boolean, nil]
     # @param new_subtypes [Array<ComplexType>, nil]
     # @return [self]
     def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
@@ -154,6 +155,7 @@ module Solargraph
     end
 
     # @param name [Symbol]
+    #
     # @return [Object, nil]
     def method_missing name, *args, &block
       return if @items.first.nil?
@@ -198,18 +200,23 @@ module Solargraph
     # @param api_map [ApiMap]
     # @param expected [ComplexType, ComplexType::UniqueType]
     # @param situation [:method_call, :return_type, :assignment]
-    # @param allow_subtype_skew [Boolean] if false, check if any
-    #   subtypes of the expected type match the inferred type
-    # @param allow_reverse_match [Boolean] if true, check if any subtypes
-    #   of the expected type match the inferred type
-    # @param allow_empty_params [Boolean] if true, allow a general
-    #   inferred type without parameters to conform to a more specific
-    #   expected type
-    # @param allow_any_match [Boolean] if true, any unique type
-    #   matched in the inferred qualifies as a match
-    # @param allow_undefined [Boolean] if true, treat undefined as a
-    #   wildcard that matches anything
     # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    #
+    #   allow_subtype_skew: if not provided, check if any subtypes of
+    #     the expected type match the inferred type
+    #
+    #   allow_reverse_match: check if any subtypes
+    #     of the expected type match the inferred type
+    #
+    #   allow_empty_params: allow a general inferred type without
+    #     parameters to conform to a more specific expected type
+    #
+    #   allow_any_match: any unique type matched in the inferred
+    #     qualifies as a match
+    #
+    #   allow_undefined: treat undefined as a wildcard that matches
+    #     anything
+    #
     # @param variance [:invariant, :covariant, :contravariant]
     # @return [Boolean]
     def conforms_to?(api_map, expected,
@@ -351,10 +358,6 @@ module Solargraph
 
     attr_reader :items
 
-    def rooted?
-      @items.all?(&:rooted?)
-    end
-
     # @param exclude_types [ComplexType, nil]
     # @param api_map [ApiMap]
     # @return [ComplexType, self]
@@ -410,13 +413,11 @@ module Solargraph
       # @example
       #   ComplexType.parse 'String', 'Foo', 'nil' #=> [String, Foo, nil]
       #
-      # @note
-      #   The `partial` parameter is used to indicate that the method is
-      #   receiving a string that will be used inside another ComplexType.
-      #   It returns arrays of ComplexTypes instead of a single cohesive one.
-      #   Consumers should not need to use this parameter; it should only be
-      #   used internally.
-      #
+      # @param partial [Boolean] if true, method is receiving a string
+      #   that will be used inside another ComplexType.  It returns
+      #   arrays of ComplexTypes instead of a single cohesive one.
+      #   Consumers should not need to use this parameter; it should
+      #   only be used internally.
       # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
       # # @overload parse(*strings, partial: false)

@@ -367,7 +367,7 @@ describe Solargraph::Pin::Parameter do
     expect(type.tag).to eq('String')
   end
 
-  context 'for instance methods' do
+  context 'when used in an instance methods' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example
@@ -397,7 +397,7 @@ describe Solargraph::Pin::Parameter do
     end
   end
 
-  context 'for class methods' do
+  context 'when used in an class method' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example
@@ -441,7 +441,7 @@ describe Solargraph::Pin::Parameter do
     end
   end
 
-  context 'for singleton methods' do
+  context 'when used in a singleton method' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example

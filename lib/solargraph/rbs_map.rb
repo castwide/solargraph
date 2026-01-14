@@ -176,11 +176,6 @@ module Solargraph
 
     private
 
-    # @return [RBS::EnvironmentLoader]
-    def loader
-      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
-    end
-
     # @return [Conversions]
     def conversions
       @conversions ||= Conversions.new(loader: loader)

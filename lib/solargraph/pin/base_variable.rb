@@ -45,9 +45,8 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
-      # @param presence_certain [Boolean]
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
-                     presence: nil, presence_certain: false, return_type: nil,
+                     presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
                      **splat
         super(**splat)
@@ -58,7 +57,6 @@ module Solargraph
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
         @presence = presence
-        @presence_certain = presence_certain
       end
 
       # @param presence [Range]
@@ -96,8 +94,7 @@ module Solargraph
           return_type: combine_return_type(other),
           intersection_return_type: combine_types(other, :intersection_return_type),
           exclude_return_type: combine_types(other, :exclude_return_type),
-          presence: combine_presence(other),
-          presence_certain: combine_presence_certain(other)
+          presence: combine_presence(other)
         })
         super(other, new_attrs)
       end
@@ -109,16 +106,6 @@ module Solargraph
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
         mass_assignment || other.mass_assignment
-      end
-
-      # If a certain pin is being combined with an uncertain pin, we
-      # end up with a certain result
-      #
-      # @param other [self]
-      #
-      # @return [Boolean]
-      def combine_presence_certain(other)
-        presence_certain? || other.presence_certain?
       end
 
       # @return [Parser::AST::Node, nil]
@@ -298,10 +285,6 @@ module Solargraph
           visible_in_closure?(other_closure)
       end
 
-      def presence_certain?
-        @presence_certain
-      end
-
       protected
 
       attr_accessor :exclude_return_type, :intersection_return_type
@@ -320,33 +303,6 @@ module Solargraph
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
         qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions.intersect_with qualified_intersection, api_map
-      end
-
-      # @param other [self]
-      # @return [Pin::Closure, nil]
-      def combine_closure(other)
-        return closure if self.closure == other.closure
-
-        # choose first defined, as that establishes the scope of the variable
-        if closure.nil? || other.closure.nil?
-          Solargraph.assert_or_log(:varible_closure_missing) do
-            "One of the local variables being combined is missing a closure: " \
-              "#{self.inspect} vs #{other.inspect}"
-          end
-          return closure || other.closure
-        end
-
-        # @sg-ignore Need to add nil check here
-        if closure.location.nil? || other.closure.location.nil?
-          # @sg-ignore Need to add nil check here
-          return closure.location.nil? ? other.closure : closure
-        end
-
-        # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle attrs
-        return closure if closure.location <= other.closure.location
-
-        other.closure
       end
 
       # See if this variable is visible within 'viewing_closure'

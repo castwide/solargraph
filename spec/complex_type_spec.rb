@@ -1,5 +1,5 @@
 describe 'YARD type specifier list parsing' do
-  context 'in compliance with https://www.rubydoc.info/gems/yard/file/docs/Tags.md#type-list-conventions' do
+  context 'with https://www.rubydoc.info/gems/yard/file/docs/Tags.md#type-list-conventions compliance' do
     # Types Specifier List
     #
     # In some cases, a tag will allow for a "types specifier list"; this
@@ -121,7 +121,7 @@ describe 'YARD type specifier list parsing' do
     # types. This type does not exist in Ruby, however.
 
     it 'typifies Booleans' do
-      api_map = double(Solargraph::ApiMap, qualify: nil)
+      api_map = instance_double(Solargraph::ApiMap, qualify: nil)
       type = Solargraph::ComplexType.parse('::Boolean')
       qualified = type.qualify(api_map)
       expect(qualified.tag).to eq('Boolean')
@@ -340,7 +340,7 @@ describe 'YARD type specifier list parsing' do
     xit 'understands reference tags'
   end
 
-  context 'offers machine users error messages given non-sensical types' do
+  context 'when given non-sensical types by machine users' do
     it 'raises ComplexTypeError for unmatched brackets' do
       expect do
         Solargraph::ComplexType.parse('Array<String')
@@ -372,8 +372,8 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context 'offers type queries orthogonal to YARD spec' do
-    context 'defines namespace concept which strips Class<> and Module<> from type' do
+  context 'when offering type queries orthogonal to YARD spec' do
+    context 'when defining namespace concept which strips Class<> and Module<> from type' do
       #
       # Solargraph extensions and library features
       #
@@ -409,7 +409,7 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
-    context 'simplifies type representation on output' do
+    context 'when simplifying type representation on output' do
       it 'throws away other types when in union with an undefined' do
         type = Solargraph::ComplexType.parse('Symbol, String, Array(Integer, Integer), undefined')
         expect(type.to_s).to eq('undefined')
@@ -447,7 +447,7 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
-    context 'defines rooted and unrooted concept' do
+    context 'when defining rooted and unrooted concept' do
       it 'identify rooted types' do
         types = Solargraph::ComplexType.parse '::Array'
         expect(types.map(&:rooted?)).to eq([true])
@@ -467,7 +467,7 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
-    context 'allows users to define their own generic types' do
+    context 'when allowing users to define their own generic types' do
       it 'recognizes param types' do
         type = Solargraph::ComplexType.parse('generic<Variable>')
         expect(type).to be_generic
@@ -539,7 +539,7 @@ describe 'YARD type specifier list parsing' do
       ]
 
       UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|
-        context "resolves #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
+        context "when resolveing #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
           let(:complex_type) { Solargraph::ComplexType.parse(tag) }
           let(:unique_type) { complex_type.first }
 
@@ -562,7 +562,7 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context 'identifies type of parameter syntax used' do
+  context 'when identifying type of parameter syntax used' do
     it 'raises NoMethodError for missing methods' do
       type = Solargraph::ComplexType.parse('String')
       expect { type.undefined_method }.to raise_error(NoMethodError)
@@ -589,9 +589,9 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context "'qualifies' types by resolving relative references to types to absolute references (fully qualified types)" do
+  context "when 'qualifying' types by resolving relative references to types to absolute references (fully qualified types)" do
     it 'returns undefined for unqualified types' do
-      api_map = double(Solargraph::ApiMap, qualify: nil)
+      api_map = instance_double(Solargraph::ApiMap, qualify: nil)
       type = Solargraph::ComplexType.parse('UndefinedClass')
       qualified = type.qualify(api_map)
       expect(qualified).to be_undefined
@@ -599,7 +599,7 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context 'allows list-of-types to be destructively cast down to a single type' do
+  context 'when allowing list-of-types to be destructively cast down to a single type' do
     it 'returns the first type when multiple were parsed with #tag' do
       type = Solargraph::ComplexType.parse('String, Array<String>')
       expect(type.tag).to eq('String')
@@ -607,7 +607,7 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
-  context "supports arbitrary combinations of the above syntax and features" do
+  context "when supporting arbitrary combinations of the above syntax and features" do
     it 'returns string representations of the entire type array' do
       type = Solargraph::ComplexType.parse('String', 'Array<String>')
       expect(type.to_s).to eq('String, Array<String>')

@@ -201,7 +201,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports unresolved return tags' do
+    it 'reports unresolved type tags' do
       checker = type_checker(%(
         # @type [UnknownClass]
         x = unknown_method

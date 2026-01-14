@@ -1,5 +1,5 @@
 describe Solargraph::TypeChecker do
-  context 'typed level' do
+  context 'when level set to typed' do
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :typed)
     end
@@ -189,21 +189,17 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports superclasses of return types' do
-      # @todo This test might be invalid. There are use cases where inheritance
-      #   between inferred and expected classes should be acceptable in either
-      #   direction.
-      # checker = type_checker(%(
-      #   class Sup; end
-      #   class Sub < Sup
-      #     # @return [Sub]
-      #     def foo
-      #       Sup.new
-      #     end
-      #   end
-      # ))
-      # expect(checker.problems).to be_one
-      # expect(checker.problems.first.message).to include('does not match inferred type')
+    it 'allows superclass of return types' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sub]
+          def foo
+            Sup.new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'validates generic subclasses of return types' do

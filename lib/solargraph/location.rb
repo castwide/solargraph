@@ -46,10 +46,6 @@ module Solargraph
       range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
     end
 
-    def inspect
-      "<#{self.class.name}: filename=#{filename}, range=#{range.inspect}>"
-    end
-
     def to_s
       inspect
     end

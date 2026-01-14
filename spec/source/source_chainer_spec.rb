@@ -151,7 +151,7 @@ describe Solargraph::Source::SourceChainer do
   end
 
   it "chains instance variables from unsynchronized sources" do
-    source = double(Solargraph::Source,
+    source = instance_double(Solargraph::Source,
       :synchronized? => false,
       :code => '@foo.',
       :filename => 'test.rb',
@@ -169,7 +169,7 @@ describe Solargraph::Source::SourceChainer do
   end
 
   it "chains class variables from unsynchronized sources" do
-    source = double(Solargraph::Source,
+    source = instance_double(Solargraph::Source,
       :synchronized? => false,
       :code => '@@foo.',
       :filename => 'test.rb',
@@ -236,7 +236,7 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.last).to be_undefined
   end
 
-  it 'detects whole constant with cursor at double colon' do
+  it 'detects whole constant with cursor at double colon - double level' do
     source = Solargraph::Source.load_string(%(
       class Outer
         class Inner
@@ -248,7 +248,7 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.last.word).to eq('Outer::Inner')
   end
 
-  it 'detects whole constant with cursor at double colon' do
+  it 'detects whole constant with cursor at double colon - triple level' do
     source = Solargraph::Source.load_string(%(
       class Outer
         class Inner1
@@ -295,7 +295,7 @@ describe Solargraph::Source::SourceChainer do
     expect(type.tag).to eq('Array(String, Integer)')
   end
 
-  it 'infers tuple type when types in literal differ' do
+  it 'allows Array methods when tuple type in literal inferred' do
     source = Solargraph::Source.load_string(%(
       b = ['a', 'b', 123]
       c = b.include?('a')
@@ -348,7 +348,8 @@ describe Solargraph::Source::SourceChainer do
       end
     ))
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 9))
-    expect(chain.links.map(&:class)).to be
+    expect(chain.links.map(&:class))
+      .to eq([Solargraph::Source::Chain::Call, Solargraph::Source::Chain::Call])
   end
 
   it 'infers specific array type from block sent to Array#map' do
