@@ -3,7 +3,7 @@ describe Solargraph::Parser do
     Solargraph::Parser.parse(source, 'file.rb', 0)
   end
 
-  it "parses nodes" do
+  it 'parses nodes' do
     node = parse('class Foo; end')
     expect(Solargraph::Parser.is_ast_node?(node)).to be(true)
   end

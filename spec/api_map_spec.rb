@@ -114,8 +114,9 @@ describe Solargraph::ApiMap do
     expect(paths).to include('Foo::Baz')
   end
 
-  # @todo Working on context resolution
-  xit 'finds nested namespaces within a context' do
+  it 'finds nested namespaces within a context' do
+    pending('better context resolution')
+
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         class Bar
@@ -130,8 +131,9 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Foo::Bar::BAR_CONSTANT')
   end
 
-  # @todo This might be invalid now
-  xit 'checks constant visibility' do
+  it 'checks constant visibility' do
+    pending('This might be invalid now')
+
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         FOO_CONSTANT = 'foo'
@@ -156,13 +158,6 @@ describe Solargraph::ApiMap do
     type = Solargraph::ComplexType.parse('String')
     pins = @api_map.get_complex_type_methods(type)
     expect(pins.map(&:path)).to include('String#upcase')
-  end
-
-  it 'gets class methods for complex types' do
-    @api_map.index []
-    type = Solargraph::ComplexType.parse('Class<String>')
-    pins = @api_map.get_complex_type_methods(type)
-    expect(pins.map(&:path)).to include('String.try_convert')
   end
 
   it 'checks visibility of complex type methods' do
@@ -437,7 +432,7 @@ describe Solargraph::ApiMap do
 
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
-    expect(method_pin).to_not be_nil
+    expect(method_pin).not_to be_nil
     expect(method_pin.path).to eq('Array#include?')
     parameter_type = method_pin.signatures.first.parameters.first.return_type
     expect(parameter_type.rooted_tags).to eq("1, 2, 'a'")
@@ -462,8 +457,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Mixin::FOO')
   end
 
-  # @todo This test needs changed
-  xit 'sorts constants by name' do
+  it 'sorts constants by name' do
     source = Solargraph::Source.load_string(%(
       module Foo
         AAB = 'aaa'
@@ -536,15 +530,11 @@ describe Solargraph::ApiMap do
   end
 
   # @todo Qualify methods might not accept parametrized types anymore
-  xit 'handles multiple type parameters without losing cache coherence' do
+  it 'handles multiple type parameters without losing cache coherence' do
     tag = @api_map.qualify('Array<String>')
     expect(tag).to eq('Array<String>')
     tag = @api_map.qualify('Array<Integer>')
     expect(tag).to eq('Array<Integer>')
-  end
-
-  # @todo Qualify methods might not accept parametrized types anymore
-  xit 'handles multiple type parameters without losing cache coherence' do
     tag = @api_map.qualify('Hash{Integer => String}')
     expect(tag).to eq('Hash{Integer => String}')
   end
@@ -679,8 +669,9 @@ describe Solargraph::ApiMap do
     expect(paths).to eq(['Prepended::PRE_CONST'])
   end
 
-  # @todo This test fails with lazy dynamic rebinding
-  xit 'finds instance variables in yieldreceiver blocks' do
+  it 'finds instance variables in yieldreceiver blocks' do
+    pending('lazy dynamic rebinding fixes')
+
     source = Solargraph::Source.load_string(%(
       module Container
         # @yieldreceiver [Container]

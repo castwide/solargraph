@@ -13,6 +13,7 @@ module Solargraph
       attr_reader :generic_values
 
       # @param generic_values [Array<String>]
+      # @param [Hash{Symbol => Object}] splat
       def initialize generic_values: [], **splat
         super(**splat)
         @generic_values = generic_values

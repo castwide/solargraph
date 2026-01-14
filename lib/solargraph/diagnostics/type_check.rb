@@ -10,19 +10,19 @@ module Solargraph
       def diagnose source, api_map
         # return [] unless args.include?('always') || api_map.workspaced?(source.filename)
         severity = Diagnostics::Severities::ERROR
-        level = (args.reverse.find { |a| ['normal', 'typed', 'strict', 'strong'].include?(a) }) || :normal
+        level = args.reverse.find { |a| %w[normal typed strict strong].include?(a) } || :normal
         # @sg-ignore sensitive typing needs to handle || on nil types
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map, level: level.to_sym)
         checker.problems
-          .sort { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-          .map do |problem|
-            {
-              range: extract_first_line(problem.location, source),
-              severity: severity,
-              source: 'Typecheck',
-              message: problem.message
-            }
-          end
+               .sort { |a, b| a.location.range.start.line <=> b.location.range.start.line }
+               .map do |problem|
+          {
+            range: extract_first_line(problem.location, source),
+            severity: severity,
+            source: 'Typecheck',
+            message: problem.message
+          }
+        end
       end
 
       private

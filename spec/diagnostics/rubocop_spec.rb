@@ -15,17 +15,17 @@ describe Solargraph::Diagnostics::Rubocop do
     expect(result).to be_a(Array)
   end
 
-  context "with validation error" do
+  context 'with validation error' do
     let(:fixture_path) do
-      File.absolute_path('spec/fixtures/rubocop-validation-error').gsub(/\\/, '/')
+      File.absolute_path('spec/fixtures/rubocop-validation-error').gsub('\\', '/')
     end
 
     around do |example|
       config_file = File.join(fixture_path, '.rubocop.yml')
       File.write(config_file, <<~YAML)
-          inherit_from:
-            - file_not_found.yml
-        YAML
+        inherit_from:
+          - file_not_found.yml
+      YAML
       example.run
     ensure
       File.delete(config_file) if File.exist?(config_file)
@@ -35,9 +35,9 @@ describe Solargraph::Diagnostics::Rubocop do
       file = File.realpath(File.join(fixture_path, 'app.rb'))
       source = Solargraph::Source.load(file)
       rubocop = Solargraph::Diagnostics::Rubocop.new
-      expect {
+      expect do
         rubocop.diagnose(source, nil)
-      }.to raise_error(Solargraph::DiagnosticsError)
+      end.to raise_error(Solargraph::DiagnosticsError)
     end
   end
 

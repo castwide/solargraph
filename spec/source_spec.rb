@@ -1,5 +1,5 @@
 describe Solargraph::Source do
-  it "parses code" do
+  it 'parses code' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     expect(source.code).to eq(code)
@@ -7,7 +7,7 @@ describe Solargraph::Source do
     expect(source).to be_parsed
   end
 
-  it "fixes invalid code" do
+  it 'fixes invalid code' do
     code = 'class Foo; def bar; x.'
     source = described_class.new(code)
     expect(source.code).to eq(code)
@@ -17,7 +17,7 @@ describe Solargraph::Source do
     expect(source).not_to be_parsed
   end
 
-  it "finds ranges" do
+  it 'finds ranges' do
     code = %(
       class Foo
         def bar
@@ -29,7 +29,7 @@ describe Solargraph::Source do
     expect(source.at(range)).to eq('def bar')
   end
 
-  it "finds nodes" do
+  it 'finds nodes' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     node = source.node_at(0, 0)
@@ -38,7 +38,7 @@ describe Solargraph::Source do
     expect(node.type).to eq(:def)
   end
 
-  it "synchronizes from incremental updates" do
+  it 'synchronizes from incremental updates' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     updater = Solargraph::Source::Updater.new(
@@ -55,19 +55,19 @@ describe Solargraph::Source do
     expect(changed.node.children[0].children[1]).to eq(:Food)
   end
 
-  it "synchronizes from full updates" do
+  it 'synchronizes from full updates' do
     code1 = 'class Foo;end'
     code2 = 'class Bar;end'
     source = described_class.new(code1)
     updater = Solargraph::Source::Updater.new(nil, 0, [
-      Solargraph::Source::Change.new(nil, code2)
-    ])
+                                                Solargraph::Source::Change.new(nil, code2)
+                                              ])
     changed = source.synchronize(updater)
     expect(changed.code).to eq(code2)
     expect(changed.node.children[0].children[1]).to eq(:Bar)
   end
 
-  it "repairs broken incremental updates" do
+  it 'repairs broken incremental updates' do
     code = %(
       class Foo
         def bar
@@ -89,18 +89,18 @@ describe Solargraph::Source do
     expect(changed).to be_repaired
   end
 
-  it "flags irreparable updates" do
+  it 'flags irreparable updates' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     updater = Solargraph::Source::Updater.new(nil, 0, [
-      Solargraph::Source::Change.new(nil, 'end;end')
-    ])
+                                                Solargraph::Source::Change.new(nil, 'end;end')
+                                              ])
     changed = source.synchronize(updater)
     expect(changed).to be_parsed
     expect(changed).to be_repaired
   end
 
-  it "finds references" do
+  it 'finds references' do
     source = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -113,17 +113,17 @@ describe Solargraph::Source do
       𐐀.bar = 1
     ))
     foos = source.references('Foo')
-    foobacks = foos.map{|f| source.at(f.range)}
-    expect(foobacks).to eq(['Foo', 'Foo'])
+    foobacks = foos.map { |f| source.at(f.range) }
+    expect(foobacks).to eq(%w[Foo Foo])
     bars = source.references('bar')
-    barbacks = bars.map{|b| source.at(b.range)}
-    expect(barbacks).to eq(['bar', 'bar'])
+    barbacks = bars.map { |b| source.at(b.range) }
+    expect(barbacks).to eq(%w[bar bar])
     assign_bars = source.references('bar=')
-    assign_barbacks = assign_bars.map{|b| source.at(b.range)}
+    assign_barbacks = assign_bars.map { |b| source.at(b.range) }
     expect(assign_barbacks).to eq(['bar=', 'bar ='])
   end
 
-  it "allows escape sequences incompatible with UTF-8" do
+  it 'allows escape sequences incompatible with UTF-8' do
     source = Solargraph::Source.new('
       x = " Un bUen café \x92"
       puts x
@@ -131,19 +131,19 @@ describe Solargraph::Source do
     expect(source.parsed?).to be(true)
   end
 
-  it "fixes invalid byte sequences in UTF-8 encoding" do
-    expect {
+  it 'fixes invalid byte sequences in UTF-8 encoding' do
+    expect do
       Solargraph::Source.load('spec/fixtures/invalid_byte.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "loads files with Unicode characters" do
-    expect {
+  it 'loads files with Unicode characters' do
+    expect do
       Solargraph::Source.load('spec/fixtures/unicode.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "updates itself when code does not change" do
+  it 'updates itself when code does not change' do
     original = Solargraph::Source.load_string('x = y', 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [])
     updated = original.synchronize(updater)
@@ -151,7 +151,7 @@ describe Solargraph::Source do
     expect(updated.version).to eq(1)
   end
 
-  it "handles unparseable code" do
+  it 'handles unparseable code' do
     source = Solargraph::Source.load_string(%(
       100.times do |num|
     ))
@@ -161,7 +161,7 @@ describe Solargraph::Source do
     expect(source.parsed?).to be(false)
   end
 
-  it "finds foldable ranges" do
+  it 'finds foldable ranges' do
     # Of the 7 possible ranges, 2 are too short to be foldable
     source = Solargraph::Source.load_string(%(
 =begin
@@ -236,7 +236,7 @@ e = d # inline
     expect(source.folding_ranges.first.start.line).to eq(4)
   end
 
-  it "finishes synchronizations for unbalanced lines" do
+  it 'finishes synchronizations for unbalanced lines' do
     source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
     source2 = source1.synchronize Solargraph::Source::Updater.new(
       'test.rb',
@@ -252,7 +252,7 @@ e = d # inline
     expect(source2).to be_synchronized
   end
 
-  it "handles comment arrays that overlap lines" do
+  it 'handles comment arrays that overlap lines' do
     # Fixes negative argument error (castwide/solargraph#141)
     source = Solargraph::Source.load_string(%(
 =begin
@@ -260,12 +260,12 @@ e = d # inline
 y = 1 #foo
     ))
     node = source.node_at(3, 0)
-    expect {
+    expect do
       source.comments_for(node)
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "formats comments with multiple hash prefixes" do
+  it 'formats comments with multiple hash prefixes' do
     source = Solargraph::Source.load_string(%(
       ##
       # one
@@ -274,7 +274,7 @@ y = 1 #foo
     ))
     node = source.node_at(4, 7)
     comments = source.comments_for(node)
-    expect(comments.lines.map(&:chomp)).to eq(['one', 'two'])
+    expect(comments.lines.map(&:chomp)).to eq(%w[one two])
   end
 
   it 'does not include inner comments' do

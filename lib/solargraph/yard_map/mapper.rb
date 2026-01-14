@@ -46,12 +46,12 @@ module Solargraph
             # yardoc and converted to a fully qualified namespace.
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             superclass = if code_object.superclass.is_a?(YARD::CodeObjects::Proxy)
-              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-              "::#{code_object.superclass}"
-            else
-              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-              code_object.superclass.to_s
-            end
+                           # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+                           "::#{code_object.superclass}"
+                         else
+                           # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+                           code_object.superclass.to_s
+                         end
             result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin, source: :yard_map)
           end
           code_object.class_mixins.each do |m|

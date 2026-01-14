@@ -1,10 +1,10 @@
 require 'tempfile'
 
 describe Solargraph::Logging do
-  it "logs messages with levels" do
+  it 'logs messages with levels' do
     file = Tempfile.new('log')
     Solargraph::Logging.logger.reopen file
-    Solargraph::Logging.logger.warn "Test"
+    Solargraph::Logging.logger.warn 'Test'
     file.rewind
     msg = file.read
     file.close

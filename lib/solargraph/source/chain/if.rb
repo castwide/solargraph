@@ -4,12 +4,10 @@ module Solargraph
   class Source
     class Chain
       class If < Link
-        def word
-          '<if>'
-        end
-
         # @param links [::Array<Chain>]
         def initialize links
+          super('<if>')
+
           @links = links
         end
 
@@ -21,7 +19,8 @@ module Solargraph
 
         def resolve api_map, name_pin, locals
           types = @links.map { |link| link.infer(api_map, name_pin, locals) }
-          [Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.try_parse(types.map(&:tag).uniq.join(', ')), source: :chain)]
+          [Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.try_parse(types.map(&:tag).uniq.join(', ')),
+                                                source: :chain)]
         end
       end
     end

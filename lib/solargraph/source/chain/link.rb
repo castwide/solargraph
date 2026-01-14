@@ -44,18 +44,12 @@ module Solargraph
           []
         end
 
-        # debugging description of contents; not for machine use
-        # @return [String]
-        def desc
-          word
-        end
-
         def to_s
           desc
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         def head?
@@ -85,10 +79,6 @@ module Solargraph
         # @return [String]
         def desc
           word
-        end
-
-        def inspect
-          "#<#{self.class} - `#{self.desc}`>"
         end
 
         include Logging

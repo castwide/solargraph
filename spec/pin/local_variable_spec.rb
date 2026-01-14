@@ -1,5 +1,7 @@
 describe Solargraph::Pin::LocalVariable do
-  xit "merges presence changes so that [not currently used]" do
+  it 'merges presence changes so that [not currently used]' do
+    pending 'but not sure why'
+
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
@@ -26,7 +28,6 @@ describe Solargraph::Pin::LocalVariable do
       expect { pin1.combine_with(pin2) }.to raise_error(RuntimeError, /Inconsistent :closure name/)
     end
 
-
     expect(combined.source).to eq(:combined)
     # no choice behavior defined yet - if/when this is to be used, we
     # should indicate which one should override in the range situation
@@ -40,7 +41,7 @@ describe Solargraph::Pin::LocalVariable do
       ), 'test.rb')
       api_map = Solargraph::ApiMap.new
       api_map.map source
-      clip = api_map.clip_at('test.rb', [2, 0])
+      api_map.clip_at('test.rb', [2, 0])
       object_pin = api_map.source_map('test.rb').locals.find { |p| p.name == 'object' }
       expect(object_pin).not_to be_nil
       location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(2, 0, 2, 0))
@@ -85,14 +86,14 @@ describe Solargraph::Pin::LocalVariable do
       expect(x_pin.visible_at?(block_pin, location)).to be true
     end
 
-    it "understands local lookup in root scope" do
+    it 'understands local lookup in root scope' do
       api_map = Solargraph::ApiMap.new
       source = Solargraph::Source.load_string(%(
         # @type [Array<String>]
         arr = []
 
 
-      ), "test.rb")
+      ), 'test.rb')
       api_map.map source
       arr_pin = api_map.source_map('test.rb').locals.find { |p| p.name == 'arr' }
       expect(arr_pin).not_to be_nil
@@ -142,7 +143,7 @@ describe Solargraph::Pin::LocalVariable do
     end
 
     it 'is visible within each block scope inside function' do
-        source = Solargraph::Source.load_string(%(
+      source = Solargraph::Source.load_string(%(
             class Foo
                 def bar
                     x = 1
@@ -152,17 +153,17 @@ describe Solargraph::Pin::LocalVariable do
                 end
             end
           ), 'test.rb')
-        api_map = Solargraph::ApiMap.new
-        api_map.map source
-        x = api_map.source_map('test.rb').locals.find { |p| p.name == 'x' }
-        bar_method = api_map.get_path_pins('Foo#bar').first
-        each_block_pin = api_map.get_block_pins.find do |b|
-          b.location.range.start.line == 4
-        end
-        expect(each_block_pin).not_to be_nil
-        range = Solargraph::Range.from_to(5, 24, 5, 25)
-        location = Solargraph::Location.new('test.rb', range)
-        expect(x.visible_at?(each_block_pin, location)).to be true
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      x = api_map.source_map('test.rb').locals.find { |p| p.name == 'x' }
+      api_map.get_path_pins('Foo#bar').first
+      each_block_pin = api_map.get_block_pins.find do |b|
+        b.location.range.start.line == 4
+      end
+      expect(each_block_pin).not_to be_nil
+      range = Solargraph::Range.from_to(5, 24, 5, 25)
+      location = Solargraph::Location.new('test.rb', range)
+      expect(x.visible_at?(each_block_pin, location)).to be true
     end
 
     it 'sees block parameter inside block' do

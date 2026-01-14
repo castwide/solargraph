@@ -3,31 +3,31 @@ describe 'NodeChainer' do
     Solargraph::Parser.chain_string(str, 'file.rb', 0)
   end
 
-  it "recognizes self keywords" do
+  it 'recognizes self keywords' do
     chain = chain_string('self.foo')
     expect(chain.links.first.word).to eq('self')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
   end
 
-  it "recognizes super keywords" do
+  it 'recognizes super keywords' do
     chain = chain_string('super.foo')
     expect(chain.links.first.word).to eq('super')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ZSuper)
   end
 
-  it "recognizes constants" do
+  it 'recognizes constants' do
     chain = chain_string('Foo::Bar')
     expect(chain.links.length).to eq(1)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
     expect(chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
-  it "splits method calls with arguments and blocks" do
+  it 'splits method calls with arguments and blocks' do
     chain = chain_string('var.meth1(1, 2).meth2 do; end')
-    expect(chain.links.map(&:word)).to eq(['var', 'meth1', 'meth2'])
+    expect(chain.links.map(&:word)).to eq(%w[var meth1 meth2])
   end
 
-  it "recognizes literals" do
+  it 'recognizes literals' do
     chain = chain_string('"string"')
     expect(chain).to be_literal
     chain = chain_string('100')
@@ -38,22 +38,22 @@ describe 'NodeChainer' do
     expect(chain).to be_literal
   end
 
-  it "recognizes instance variables" do
+  it 'recognizes instance variables' do
     chain = chain_string('@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::InstanceVariable)
   end
 
-  it "recognizes class variables" do
+  it 'recognizes class variables' do
     chain = chain_string('@@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ClassVariable)
   end
 
-  it "recognizes global variables" do
+  it 'recognizes global variables' do
     chain = chain_string('$foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::GlobalVariable)
   end
 
-  it "operates on nodes" do
+  it 'operates on nodes' do
     source = Solargraph::Source.load_string(%(
       class Foo
         Bar.meth1(1, 2).meth2{}
@@ -61,7 +61,7 @@ describe 'NodeChainer' do
     ))
     node = source.node_at(2, 26)
     chain = Solargraph::Parser.chain(node)
-    expect(chain.links.map(&:word)).to eq(['Bar', 'meth1', 'meth2'])
+    expect(chain.links.map(&:word)).to eq(%w[Bar meth1 meth2])
   end
 
   it 'chains and/or nodes' do

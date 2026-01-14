@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::Call do
-  it "recognizes core methods that return subtypes" do
+  it 'recognizes core methods that return subtypes' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
@@ -12,7 +12,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  it "recognizes core methods that return self" do
+  it 'recognizes core methods that return self' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       arr = []
@@ -24,7 +24,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Array')
   end
 
-  it "handles super calls to same method" do
+  it 'handles super calls to same method' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -44,7 +44,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it "infers return types based on yield call and @yieldreturn" do
+  it 'infers return types based on yield call and @yieldreturn' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -61,7 +61,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it "infers return types based only on yield call and @yieldreturn" do
+  it 'infers return types based only on yield call and @yieldreturn' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -78,10 +78,11 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Integer')
   end
 
-  it "adds virtual constructors for <Class>.new calls with conflicting return types" do
+  it 'adds virtual constructors for <Class>.new calls with conflicting return types' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
+        # @return [String]
         def self.new; end
       end
       Foo.new
@@ -89,12 +90,10 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
-    # @todo This test looks invalid now. If `Foo.new` is an empty method,
-    #   shouldn't it return `nil` or `undefined`?
-    # expect(type.tag).to eq('Foo')
+    expect(type.tag).to eq('String')
   end
 
-  it "infers types from macros" do
+  it 'infers types from macros' do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @!macro
@@ -110,7 +109,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
-  it 'infers generic types' do
+  it 'infers generic types from Array#reverse' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
       list = array_of_strings
@@ -292,7 +291,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.simple_tags).to eq('Integer')
   end
 
-  it 'infers generic types' do
+  it 'infers generic types from @generic tag' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
       class Foo
@@ -576,7 +575,7 @@ describe Solargraph::Source::Chain::Call do
     expect(type.rooted_tags).not_to eq('::A::C')
   end
 
-  it 'qualifies types in a second Array#+ ' do
+  it 'qualifies types in a second Array#+' do
     source = Solargraph::Source.load_string(%(
       module A1
         class B1

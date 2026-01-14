@@ -1,6 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'when checking at normal level' do
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :normal)
     end
 
@@ -201,7 +201,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports unresolved return tags' do
+    it 'reports unresolved type tags' do
       checker = type_checker(%(
         # @type [UnknownClass]
         x = unknown_method

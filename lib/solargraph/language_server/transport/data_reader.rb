@@ -33,8 +33,8 @@ module Solargraph
             @buffer.concat char
             if @in_header
               prepare_to_parse_message if @buffer.end_with?("\r\n\r\n")
-            else
-              parse_message_from_buffer if @buffer.bytesize == @content_length
+            elsif @buffer.bytesize == @content_length
+              parse_message_from_buffer
             end
           end
         end
@@ -56,17 +56,15 @@ module Solargraph
 
         # @return [void]
         def parse_message_from_buffer
-          begin
-            msg = JSON.parse(@buffer)
-            @message_handler.call msg unless @message_handler.nil?
-          rescue JSON::ParserError => e
-            Solargraph::Logging.logger.warn "Failed to parse request: #{e.message}"
-            Solargraph::Logging.logger.debug "Buffer: #{@buffer}"
-          ensure
-            @buffer.clear
-            @in_header = true
-            @content_length = 0
-          end
+          msg = JSON.parse(@buffer)
+          @message_handler.call msg unless @message_handler.nil?
+        rescue JSON::ParserError => e
+          Solargraph::Logging.logger.warn "Failed to parse request: #{e.message}"
+          Solargraph::Logging.logger.debug "Buffer: #{@buffer}"
+        ensure
+          @buffer.clear
+          @in_header = true
+          @content_length = 0
         end
       end
     end
