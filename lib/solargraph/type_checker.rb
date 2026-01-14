@@ -558,6 +558,7 @@ module Solargraph
       result = []
       kwargs.each_pair do |pname, argchain|
         next unless params.key?(pname.to_s)
+        # @sg-ignore
         # @type [ComplexType]
         ptype = params[pname.to_s][:qualified]
         ptype = ptype.self_to_type(pin.context)
