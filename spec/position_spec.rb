@@ -18,6 +18,7 @@ describe Solargraph::Position do
     expect(Solargraph::Position.to_offset(text, Solargraph::Position.new(0, 4))).to eq(4)
     expect(Solargraph::Position.to_offset(text, Solargraph::Position.new(2, 12))).to eq(29)
     expect(Solargraph::Position.to_offset(text, Solargraph::Position.new(2, 27))).to eq(44)
+    expect(Solargraph::Position.to_offset(text, Solargraph::Position.new(3, 8))).to eq(58)
   end
 
   it 'constructs position from offset' do
@@ -32,5 +33,11 @@ describe Solargraph::Position do
     expect {
       Solargraph::Position.normalize('0, 1')
     }.to raise_error(ArgumentError)
+  end
+
+  it 'avoids fencepost errors' do
+    text = "      class Foo\n        def bar baz, boo = 'boo'\n        end\n      end\n    "
+    offset = Solargraph::Position.to_offset(text, Solargraph::Position.new(3, 6))
+    expect(offset).to eq(67)
   end
 end
