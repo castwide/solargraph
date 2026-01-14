@@ -191,12 +191,13 @@ module Solargraph
       # @param globs [Array<String>]
       # @return [Array<String>]
       def process_globs globs
-        result = globs.flat_map do |glob|
+        return [] if directory.empty?
+
+        globs.flat_map do |glob|
           Dir[File.absolute_path(glob, directory)]
             .map{ |f| f.gsub(/\\/, '/') }
             .select { |f| File.file?(f) }
         end
-        result
       end
 
       # Modify the included files based on excluded directories and get an
@@ -205,6 +206,8 @@ module Solargraph
       # @param globs [Array<String>]
       # @return [Array<String>]
       def process_exclusions globs
+        return [] if directory.empty? || directory == '*'
+
         remainder = globs.select do |glob|
           if glob_is_directory?(glob)
             exdir = File.absolute_path(glob_to_directory(glob), directory)
