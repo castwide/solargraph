@@ -58,22 +58,21 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      newline_index = -1
-      cursor = 0
-      line = -1
 
+      newline_index = -1
+      line = -1
       last_line_index = 0
+
       while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
         line += 1
         break if line == position.line
+
         line_length = newline_index - last_line_index
-
-        cursor += line_length.zero? ? 1 : line_length
-
         last_line_index = newline_index
       end
 
-      cursor + position.character
+      last_line_index += 1 if position.line > 0
+      last_line_index + position.character
     end
 
     # Get a numeric offset for the specified text and a position identified
@@ -89,10 +88,14 @@ module Solargraph
 
     # Get a position for the specified text and offset.
     #
+    # @raise [InvalidOffsetError] if the offset is outside the text range
+    #
     # @param text [String]
     # @param offset [Integer]
     # @return [Position]
     def self.from_offset text, offset
+      raise InvalidOffsetError if offset > text.length
+
       cursor = 0
       line = 0
       character = offset
