@@ -256,9 +256,9 @@ module Solargraph
 
       # @return [String]
       def parameters_to_rbs
-        # @sg-ignore Need to add nil check here
         rbs_generics + '(' + parameters.map { |param|
           param.to_rbs
+          # @sg-ignore Need to add nil check here
         }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ')
       end
 

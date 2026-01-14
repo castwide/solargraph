@@ -109,6 +109,7 @@ module Solargraph
           return convert_hash(node.children[0]) if node.type == :kwsplat
           # @sg-ignore Translate to something flow sensitive typing understands
           if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+            # @sg-ignore Translate to something flow sensitive typing understands
             return convert_hash(node.children[0])
           end
           # @sg-ignore Translate to something flow sensitive typing understands

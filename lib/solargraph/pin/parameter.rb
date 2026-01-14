@@ -281,9 +281,9 @@ module Solargraph
           if found.nil? and !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
-          # @sg-ignore Need to add nil check here
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
+                                                               # @sg-ignore Need to add nil check here
                                                                *meth.closure.gates)
           end
         end

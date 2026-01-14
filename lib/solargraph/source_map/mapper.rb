@@ -115,7 +115,7 @@ module Solargraph
         when 'method'
           namespace = closure_at(source_position) || @pins.first
           # @todo Missed nil violation
-          # @todo Need to add nil check here
+          # @sg-ignore Need to add nil check here
           namespace = closure_at(comment_position) if namespace.location.range.start.line < comment_position.line
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
@@ -181,7 +181,7 @@ module Solargraph
           name = directive.tag.name
           closure = closure_at(source_position) || @pins.first
           # @todo Missed nil violation
-          # @todo Need to add nil check here
+          # @sg-ignore Need to add nil check here
           closure = closure_at(comment_position) if closure.location.range.start.line < comment_position.line
           if closure.is_a?(Pin::Method) && no_empty_lines?(comment_position.line, source_position.line)
             # @todo Smelly instance variable access

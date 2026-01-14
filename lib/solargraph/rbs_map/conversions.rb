@@ -490,8 +490,8 @@ module Solargraph
         type.type.required_positionals.each do |param|
           # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
-          # @sg-ignore RBS generic type understanding issue
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
                                                          return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted, source: :rbs, type_location: type_location)
         end
         type.type.optional_positionals.each do |param|

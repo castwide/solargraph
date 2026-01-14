@@ -36,9 +36,9 @@ module Solargraph
           return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])),
                             Chain::UNDEFINED_CALL])
         end
-        # @sg-ignore Need to add nil check here
         if phrase.start_with?(':') && !phrase.start_with?('::')
           return Chain.new([Chain::Literal.new('Symbol',
+                                               # @sg-ignore Need to add nil check here
                                                phrase[1..].to_sym)])
         end
         if end_of_phrase.strip == '::' && source.code[Position.to_offset(
