@@ -92,7 +92,6 @@ module Solargraph
         end
         new_attrs = {
           visibility: combine_visibility(other),
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           explicit: explicit? || other.explicit?,
           block: combine_blocks(other),
           node: choose_node(other, :node),
