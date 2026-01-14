@@ -49,17 +49,13 @@ describe Solargraph::DocMap do
       ['not_a_gem']
     end
 
-    # expected: ["not_a_gem"]
-    # got: ["not_a_gem", "rspec-mocks"]
-    #
-    # This is a gem name vs require name issue coming from conventions
-    # - will pass once the above context passes
     it 'tracks unresolved requires' do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
       unprovided_solargraph_rspec_requires = [
         'rspec-rails',
         'actionmailer',
+        'actionpack',
         'activerecord',
         'shoulda-matchers',
         'rspec-sidekiq',
