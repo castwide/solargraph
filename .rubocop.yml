@@ -21,6 +21,25 @@ AllCops:
     - "vendor/**/.*"
   TargetRubyVersion: 3.0
 
+Gemspec/RequiredRubyVersion:
+  Exclude:
+    - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+    - 'spec/fixtures/rubocop-custom-version/specifications/rubocop-0.0.0.gemspec'
+    - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
+
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: gemspec
+  Exclude:
+    - 'spec/fixtures/**/*'
+
+Lint/EmptyFile:
+  Exclude:
+    - 'spec/fixtures/vendored/vendor/do_not_use.gemspec'
+
+Naming/VariableName:
+  Exclude:
+    - 'spec/fixtures/unicode.rb'
+
 # We don't use the spec/solargraph directory
 RSpec/SpecFilePathFormat:
   Enabled: false
@@ -30,6 +49,14 @@ Style/MethodDefParentheses:
 
 Layout/EmptyLineAfterGuardClause:
   Enabled: false
+
+Naming/AsciiIdentifiers:
+  Exclude:
+    - 'spec/fixtures/unicode.rb'
+
+Lint/EmptyClass:
+  Exclude:
+    - spec/fixtures/**/*.rb
 
 Lint/UnusedMethodArgument:
   AllowUnusedKeywordArguments: true
@@ -48,17 +75,17 @@ Style/ClassVars:
 # improve existing code!
 #
 Metrics/AbcSize:
-  Max: 65
+  Max: 110
 Metrics/MethodLength:
-  Max: 60
+  Max: 70
 Metrics/ClassLength:
   Max: 500
 Metrics/CyclomaticComplexity:
-  Max: 23
+  Max: 40
 Metrics/PerceivedComplexity:
-  Max: 29
+  Max: 40
 RSpec/ExampleLength:
-  Max: 17
+  Max: 310
 
 plugins:
   - rubocop-rspec

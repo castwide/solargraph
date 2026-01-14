@@ -11,6 +11,7 @@ module Solargraph
             contents = []
             suggestions = host.definitions_at(params['textDocument']['uri'], line, col)
             last_link = nil
+            # @sg-ignore Need to add nil check here
             suggestions.each do |pin|
               parts = []
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
@@ -31,6 +32,7 @@ module Solargraph
             )
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
+            # @sg-ignore Need to add nil check here
             Logging.logger.warn e.backtrace.join("\n")
             set_result nil
           end

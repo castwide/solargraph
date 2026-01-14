@@ -1,5 +1,5 @@
 describe Solargraph::Pin::Symbol do
-  context "as an unquoted literal" do
+  context "when an unquoted literal" do
     it "is a kind of keyword to the LSP" do
       pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
@@ -16,7 +16,7 @@ describe Solargraph::Pin::Symbol do
     end
   end
 
-  context "as a double quoted literal" do
+  context "when a double quoted literal" do
     it "is a kind of keyword" do
       pin = Solargraph::Pin::Symbol.new(nil, ':"symbol"')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
@@ -28,7 +28,7 @@ describe Solargraph::Pin::Symbol do
     end
   end
 
-  context "as a double quoted interpolatd literal" do
+  context "when a double quoted interpolated literal" do
     it "is a kind of keyword" do
       pin = Solargraph::Pin::Symbol.new(nil, ':"symbol #{variable}"')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
@@ -41,7 +41,7 @@ describe Solargraph::Pin::Symbol do
   end
 
 
-  context "as a single quoted literal" do
+  context "when a single quoted literal" do
     it "is a kind of keyword" do
       pin = Solargraph::Pin::Symbol.new(nil, ":'symbol'")
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)

@@ -50,7 +50,7 @@ describe Solargraph::Workspace do
   end
 
   it "raises an exception for workspace size limits" do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
+    config = instance_double(Solargraph::Workspace::Config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
 
     expect {
       Solargraph::Workspace.new('.', config)
@@ -62,10 +62,17 @@ describe Solargraph::Workspace do
     File.write(gemspec_file, '')
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
-    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Workspace::Config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('.', config)
     }.not_to raise_error
+  end
+
+  it "detects gemspecs in workspaces" do
+    gemspec_file = File.join(dir_path, 'test.gemspec')
+    File.write(gemspec_file, '')
+    expect(workspace.gemspec?).to be(true)
+    expect(workspace.gemspec_files).to eq([gemspec_file])
   end
 
   it "generates default require path" do
@@ -128,9 +135,31 @@ describe Solargraph::Workspace do
   end
 
   it 'rescues errors loading files into sources' do
-    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Workspace::Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
     expect {
       Solargraph::Workspace.new('./path', config)
     }.not_to raise_error
+  end
+
+  describe '#cache_all_for_workspace!' do
+    let(:pin_cache) { instance_double(Solargraph::PinCache) }
+
+    before do
+      allow(Solargraph::PinCache).to receive(:cache_core)
+      allow(Solargraph::PinCache).to receive(:possible_stdlibs)
+      allow(Solargraph::PinCache).to receive(:new).and_return(pin_cache)
+      allow(pin_cache).to receive_messages(cache_gem: nil, possible_stdlibs: [])
+      allow(Solargraph::PinCache).to receive(:cache_all_stdlibs)
+    end
+
+    it 'caches core pins' do
+      allow(Solargraph::PinCache).to receive_messages(core?: false)
+      allow(pin_cache).to receive_messages(cached?: true,
+                                           cache_all_stdlibs: nil)
+
+      workspace.cache_all_for_workspace!(nil, rebuild: false)
+
+      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
+    end
   end
 end

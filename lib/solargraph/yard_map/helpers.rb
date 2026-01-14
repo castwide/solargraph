@@ -5,7 +5,7 @@ module Solargraph
 
       # @param code_object [YARD::CodeObjects::Base]
       # @param spec [Gem::Specification, nil]
-      # @return [Solargraph::Location, nil]
+      # @return [Solargraph::Location]
       def object_location code_object, spec
         if spec.nil? || code_object.nil? || code_object.file.nil? || code_object.line.nil?
           if code_object.namespace.is_a?(YARD::CodeObjects::NamespaceObject)
@@ -14,6 +14,7 @@ module Solargraph
           end
           return Solargraph::Location.new(__FILE__, Solargraph::Range.from_to(__LINE__ - 1, 0, __LINE__ - 1, 0))
         end
+        # @sg-ignore flow sensitive typing should be able to identify more blocks that always return
         file = File.join(spec.full_gem_path, code_object.file)
         Solargraph::Location.new(file, Solargraph::Range.from_to(code_object.line - 1, 0, code_object.line - 1, 0))
       end

@@ -44,21 +44,21 @@ describe Solargraph::Source::Cursor do
   end
 
   it "detects class variables" do
-    source = double(:Source, :code => '@@foo')
+    source = instance_double(Solargraph::Source, :code => '@@foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 2))
     expect(cur.word).to eq('@@foo')
   end
 
   it "detects instance variables" do
-    source = double(:Source, :code => '@foo')
+    source = instance_double(Solargraph::Source, :code => '@foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 1))
     expect(cur.word).to eq('@foo')
   end
 
   it "detects global variables" do
-    source = double(:Source, :code => '@foo')
+    source = instance_double(Solargraph::Source, :code => '$foo')
     cur = described_class.new(source, Solargraph::Position.new(0, 1))
-    expect(cur.word).to eq('@foo')
+    expect(cur.word).to eq('$foo')
   end
 
   it "generates word ranges" do
@@ -77,7 +77,7 @@ describe Solargraph::Source::Cursor do
   end
 
   it "detects constant words" do
-    source = double(:Source, :code => 'Foo::Bar')
+    source = instance_double(Solargraph::Source, :code => 'Foo::Bar')
     cur = described_class.new(source, Solargraph::Position.new(0, 5))
     expect(cur.word).to eq('Bar')
   end

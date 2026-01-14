@@ -81,7 +81,7 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
   end
 
   it 'sets errors for invalid change types' do
-    host = double(Solargraph::LanguageServer::Host, catalog: nil)
+    host = instance_double(Solargraph::LanguageServer::Host, catalog: nil)
     allow(host).to receive(:create)
     allow(host).to receive(:delete)
     changed = Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles.new(host, {

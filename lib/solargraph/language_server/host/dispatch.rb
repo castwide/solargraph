@@ -33,6 +33,7 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
+          # @sg-ignore Need to add nil check here
           using = libraries.select { |lib| lib.contain?(src.filename) }
           using.push library_for(uri) if using.empty?
           using.each { |lib| lib.merge src }
@@ -118,8 +119,8 @@ module Solargraph
                                                   .tap { |lib| lib.add_observer self }
         end
 
-        # @param library [Solargraph::Library]
         # @param progress [Solargraph::LanguageServer::Progress, nil]
+        #
         # @return [void]
         def update progress
           progress&.send(self)

@@ -21,7 +21,6 @@ module Solargraph
       @character = character
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
     protected def equality_fields
       [line, character]
     end
@@ -58,22 +57,7 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      newline_index = -1
-      cursor = 0
-      line = -1
-
-      last_line_index = 0
-      while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
-        line += 1
-        break if line == position.line
-        line_length = newline_index - last_line_index
-
-        cursor += line_length.zero? ? 1 : line_length
-
-        last_line_index = newline_index
-      end
-
-      cursor + position.character
+      text.lines[0...position.line].sum(&:length) + position.character
     end
 
     # Get a numeric offset for the specified text and a position identified
@@ -95,15 +79,21 @@ module Solargraph
     def self.from_offset text, offset
       cursor = 0
       line = 0
-      character = offset
-      newline_index = -1
-
-      while (newline_index = text.index("\n", newline_index + 1)) && newline_index < offset
+      # @type [Integer, nil]
+      character = nil
+      text.lines.each do |l|
+        line_length = l.length
+        char_length = l.chomp.length
+        if cursor + char_length >= offset
+          character = offset - cursor
+          break
+        end
+        cursor += line_length
         line += 1
-        character = offset - newline_index - 1
       end
       character = 0 if character.nil? and (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
+      # @sg-ignore flow sensitive typing needs to handle 'raise if'
       Position.new(line, character)
     end
 
@@ -122,7 +112,6 @@ module Solargraph
 
     def == other
       return false unless other.is_a?(Position)
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1114
       line == other.line and character == other.character
     end
   end

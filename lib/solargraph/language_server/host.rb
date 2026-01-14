@@ -53,7 +53,7 @@ module Solargraph
         logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
-      # @return [Hash{String => [Boolean, String]}]
+      # @return [Hash{String => Boolean, String}]
       def options
         @options ||= default_configuration
       end
@@ -105,6 +105,7 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            # @sg-ignore Need to add nil check here
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
@@ -300,8 +301,11 @@ module Solargraph
         end
       end
 
+      # @sg-ignore Need to validate config
       # @return [String]
+      # @sg-ignore Need to validate config
       def command_path
+        # @type [String]
         options['commandPath'] || 'solargraph'
       end
 
@@ -543,7 +547,7 @@ module Solargraph
       end
 
       # @return [Bool] if has pending completion request
-      def has_pending_completions?
+      def pending_completions?
         message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
 
@@ -644,7 +648,7 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param block The block that processes the response
+      # @param block [Proc] The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
       def show_message_request text, type, actions, &block
@@ -663,7 +667,7 @@ module Solargraph
         requests.keys
       end
 
-      # @return [Hash{String => [Boolean,String]}]
+      # @return [Hash{String => Boolean,String}]
       def default_configuration
         {
           'completion' => true,
@@ -729,9 +733,11 @@ module Solargraph
       end
 
       # @param path [String]
+      # @sg-ignore Need to be able to choose signature on String#gsub
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
+        # @sg-ignore flow sensitive typing needs to handle constants
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
@@ -765,7 +771,6 @@ module Solargraph
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
-        # @sg-ignore push this upstream
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
@@ -858,7 +863,7 @@ module Solargraph
       end
 
       # @param library [Library]
-      # @param uuid [String, nil]
+      #
       # @return [void]
       def sync_library_map library
         total = library.workspace.sources.length

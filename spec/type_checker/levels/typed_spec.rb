@@ -1,7 +1,24 @@
 describe Solargraph::TypeChecker do
-  context 'typed level' do
+  context 'when level set to typed' do
     def type_checker(code)
       Solargraph::TypeChecker.load_string(code, 'test.rb', :typed)
+    end
+
+    it 'respects pin visibility' do
+      checker = type_checker(%(
+        class Foo
+          # Get the namespace's type (Class or Module).
+          #
+          # @param bar [Array<Symbol>]
+          # @return [Symbol, Integer]
+          def foo bar
+            baz = bar.first
+            return 123 if baz.nil?
+            baz
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'reports mismatched types for empty methods' do
@@ -32,6 +49,19 @@ describe Solargraph::TypeChecker do
           def bar
             'string'
           end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match')
+    end
+
+    it 'reports mismatched key and subtypes' do
+      checker = type_checker(%(
+        # @return [Hash{String => String}]
+        def foo
+          # @type h [Hash{Integer => String}]
+          h = {}
+          h
         end
       ))
       expect(checker.problems).to be_one
@@ -159,21 +189,17 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports superclasses of return types' do
-      # @todo This test might be invalid. There are use cases where inheritance
-      #   between inferred and expected classes should be acceptable in either
-      #   direction.
-      # checker = type_checker(%(
-      #   class Sup; end
-      #   class Sub < Sup
-      #     # @return [Sub]
-      #     def foo
-      #       Sup.new
-      #     end
-      #   end
-      # ))
-      # expect(checker.problems).to be_one
-      # expect(checker.problems.first.message).to include('does not match inferred type')
+    it 'allows superclass of return types' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sub]
+          def foo
+            Sup.new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'validates generic subclasses of return types' do
@@ -187,6 +213,31 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'validates default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar = 123); end
+        ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Declared type String does not match inferred type 123 for variable bar'])
+    end
+
+    it 'validates string default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar = 'foo'); end
+        ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'validates symbol default values of parameters' do
+      checker = type_checker(%(
+        # @param bar [Symbol]
+        def foo(bar = :baz); end
+        ))
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'validates subclass arguments of param types' do

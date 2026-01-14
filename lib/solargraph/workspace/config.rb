@@ -14,7 +14,7 @@ module Solargraph
       # @return [String]
       attr_reader :directory
 
-      # @todo To make JSON strongly typed we'll need a record syntax
+      # @todo Need to validate config
       # @return [Hash{String => undefined, nil}]
       attr_reader :raw_data
 
@@ -78,7 +78,9 @@ module Solargraph
 
       # An array of load paths for required paths.
       #
+      # @sg-ignore Need to validate config
       # @return [Array<String>]
+      # @sg-ignore Need to validate config
       def require_paths
         raw_data['require_paths'] || []
       end

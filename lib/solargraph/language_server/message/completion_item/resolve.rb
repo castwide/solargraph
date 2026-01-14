@@ -43,7 +43,7 @@ module Solargraph
           def join_docs pins
             result = []
             last_link = nil
-            pins.each_with_index do |pin|
+            pins.each do |pin|
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               if this_link && this_link != last_link && this_link != 'undefined'
                 result.push this_link

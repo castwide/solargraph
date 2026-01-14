@@ -6,7 +6,7 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            return set_error(ErrorCodes::REQUEST_CANCELLED, "cancelled by so many request") if host.has_pending_completions?
+            return set_error(ErrorCodes::REQUEST_CANCELLED, "cancelled by so many request") if host.pending_completions?
 
             line = params['position']['line']
             col = params['position']['character']
@@ -15,6 +15,7 @@ module Solargraph
               items = []
               last_context = nil
               idx = -1
+              # @sg-ignore Need to add nil check here
               completion.pins.each do |pin|
                 idx += 1 if last_context != pin.context
                 items.push pin.completion_item.merge({
@@ -37,6 +38,7 @@ module Solargraph
             end
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
+            # @sg-ignore Need to add nil check here
             Logging.logger.warn e.backtrace.join("\n")
             set_result empty_result
           end
