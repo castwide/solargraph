@@ -45,7 +45,7 @@ module Solargraph
                                                     'gem update solargraph'
                                                   end
                                             _, s = Open3.capture2(cmd)
-                                            if s == 0
+                                            if s.zero?
                                               host.show_message 'Successfully updated the Solargraph gem.', LanguageServer::MessageTypes::INFO
                                               host.send_notification '$/solargraph/restart', {}
                                             else

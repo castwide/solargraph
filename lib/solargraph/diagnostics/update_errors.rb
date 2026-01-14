@@ -4,16 +4,12 @@ module Solargraph
   module Diagnostics
     class UpdateErrors < Base
       def diagnose source, api_map
-        result = []
-        combine_ranges(source.code, source.error_ranges).each do |range|
-          result.push(
-            range: range.to_hash,
+        combine_ranges(source.code, source.error_ranges).map do |range|
+          { range: range.to_hash,
             severity: Diagnostics::Severities::ERROR,
             source: 'Solargraph',
-            message: 'Syntax error'
-          )
+            message: 'Syntax error' }
         end
-        result
       end
 
       private

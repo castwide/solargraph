@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AdapterTester
   include Solargraph::LanguageServer::Transport::Adapter
 

@@ -48,11 +48,6 @@ module Solargraph
 
       attr_reader :node
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
-      protected def equality_fields
-        [links, node]
-      end
-
       # @param node [Parser::AST::Node, nil]
       # @param links [::Array<Chain::Link>]
       # @param splat [Boolean]
@@ -294,6 +289,13 @@ module Solargraph
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?
         ComplexType.new(type.items + [ComplexType::NIL])
+      end
+
+      protected
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      def equality_fields
+        [links, node]
       end
     end
   end

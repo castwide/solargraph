@@ -94,7 +94,7 @@ module Solargraph
         # Avoid overruning the index
         return start unless start < comment.lines.length
         # @sg-ignore Need to add nil check here
-        num = comment.lines[start..-1].find_index do |line|
+        num = comment.lines[start..].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning
           line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
@@ -139,7 +139,7 @@ module Solargraph
         when 'attribute'
           return if directive.tag.name.nil?
           namespace = closure_at(source_position)
-          t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.flatten.join('')
+          t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.join
           if t.nil? || t.include?('r')
             pins.push Solargraph::Pin::Method.new(
               location: location,
@@ -214,7 +214,7 @@ module Solargraph
             Parser.process_node(src.node, region, @pins, locals, ivars)
             @pins.concat ivars
             # @sg-ignore Need to add nil check here
-            @pins[index..-1].each do |p|
+            @pins[index..].each do |p|
               # @todo Smelly instance variable access
               p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
               p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
@@ -260,7 +260,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             num = cur if cur < num
           end
-          ctxt += "#{p[num..-1]}" if started
+          ctxt += p[num..].to_s if started
         end
         ctxt
       end

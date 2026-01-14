@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
   context 'with level set to strong' do
     def type_checker code

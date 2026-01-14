@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Constant do
   it 'resolves constant paths' do
     source = Solargraph::Source.new(%(

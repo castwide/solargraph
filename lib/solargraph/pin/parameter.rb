@@ -178,14 +178,15 @@ module Solargraph
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
-          @return_type = ComplexType.try_parse(*found.types) unless found.nil? or found.types.nil?
+          @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           if @return_type.undefined?
-            if decl == :restarg
+            case decl
+            when :restarg
               @return_type = ComplexType.try_parse('::Array')
-            elsif decl == :kwrestarg
+            when :kwrestarg
               @return_type = ComplexType.try_parse('::Hash')
-            elsif decl == :blockarg
+            when :blockarg
               @return_type = ComplexType.try_parse('::Proc')
             end
           end
@@ -278,7 +279,7 @@ module Solargraph
             found = p
             break
           end
-          if found.nil? and !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
+          if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
           unless found.nil? || found.types.nil?
@@ -328,8 +329,6 @@ module Solargraph
         pins.each do |pin|
           params = pin.docstring.tags(:param)
           return params unless params.empty?
-        end
-        pins.each do |pin|
           params = see_reference(pin.docstring, api_map, skip)
           return params unless params.empty?
         end

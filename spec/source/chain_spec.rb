@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain do
   it 'gets empty definitions for undefined links' do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
@@ -300,7 +302,7 @@ describe Solargraph::Source::Chain do
   end
 
   it 'infers String from interpolated strings' do
-    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%("#{Object}"), 'test.rb')
     node = source.node
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -330,7 +332,7 @@ describe Solargraph::Source::Chain do
   end
 
   it 'infers Symbol from interpolated symbols' do
-    source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%(:"#{Object}"), 'test.rb')
     node = source.node
     api_map = Solargraph::ApiMap.new
     api_map.map source

@@ -17,7 +17,7 @@ module Solargraph
         'warning' => Severities::WARNING,
         'error' => Severities::ERROR,
         'fatal' => Severities::ERROR
-      }
+      }.freeze
 
       # @param source [Solargraph::Source]
       # @param _api_map [Solargraph::ApiMap]

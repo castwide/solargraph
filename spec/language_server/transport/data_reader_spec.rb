@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Transport::DataReader do
   it 'rescues exceptions for invalid JSON' do
-    reader = Solargraph::LanguageServer::Transport::DataReader.new
+    reader = described_class.new
     handled = 0
     reader.set_message_handler do |_msg|
       handled += 1

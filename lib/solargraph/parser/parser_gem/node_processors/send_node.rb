@@ -59,7 +59,7 @@ module Solargraph
           def process_visibility
             if node.children.length > 2
               # @sg-ignore Need to add nil check here
-              node.children[2..-1].each do |child|
+              node.children[2..].each do |child|
                 # @sg-ignore Variable type could not be inferred for method_name
                 # @type [Symbol]
                 visibility = node.children[1]
@@ -90,7 +90,7 @@ module Solargraph
           # @return [void]
           def process_attribute
             # @sg-ignore Need to add nil check here
-            node.children[2..-1].each do |a|
+            node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
@@ -132,7 +132,7 @@ module Solargraph
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
             # @sg-ignore Need to add nil check here
-            node.children[2..-1].each do |i|
+            node.children[2..].each do |i|
               type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
               pins.push type.new(
                 location: get_node_location(i),
@@ -148,7 +148,7 @@ module Solargraph
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
             # @sg-ignore Need to add nil check here
-            node.children[2..-1].each do |i|
+            node.children[2..].each do |i|
               pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
                 closure: cp,
@@ -161,7 +161,7 @@ module Solargraph
           # @return [void]
           def process_extend
             # @sg-ignore Need to add nil check here
-            node.children[2..-1].each do |i|
+            node.children[2..].each do |i|
               loc = get_node_location(node)
               if i.type == :self
                 pins.push Pin::Reference::Extend.new(
@@ -202,7 +202,7 @@ module Solargraph
               region.instance_variable_set(:@visibility, :module_function)
             elsif %i[sym str].include?(node.children[2].type)
               # @sg-ignore Need to add nil check here
-              node.children[2..-1].each do |x|
+              node.children[2..].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
@@ -265,7 +265,7 @@ module Solargraph
                Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn
             end.first
             # HACK: Smelly instance variable access
-            ref.instance_variable_set(:@visibility, :private) unless ref.nil?
+            ref&.instance_variable_set(:@visibility, :private)
           end
 
           # @return [void]
@@ -288,7 +288,7 @@ module Solargraph
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
               end.first
               # HACK: Smelly instance variable access
-              ref.instance_variable_set(:@visibility, :private) unless ref.nil?
+              ref&.instance_variable_set(:@visibility, :private)
               false
             else
               process_children region.update(scope: :class, visibility: :private)

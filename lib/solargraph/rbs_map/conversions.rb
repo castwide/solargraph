@@ -359,7 +359,7 @@ module Solargraph
         ['RuboCop::Cop::RangeHelp', :instance, 'source_range'] => :private,
         ['AST::Node', :instance, 'original_dup'] => :private,
         ['Rainbow::Presenter', :instance, 'wrap_with_sgr'] => :private
-      }
+      }.freeze
       private_constant :VISIBILITY_OVERRIDE
 
       # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
@@ -727,7 +727,7 @@ module Solargraph
         'int' => 'Integer',
         'untyped' => '',
         'NilClass' => 'nil'
-      }
+      }.freeze
       private_constant :RBS_TO_YARD_TYPE
 
       # @param type [RBS::MethodType, RBS::Types::Block]
@@ -767,57 +767,58 @@ module Solargraph
       #   but not all.
       # @return [String]
       def other_type_to_tag type
-        if type.is_a?(RBS::Types::Optional)
+        case type
+        when RBS::Types::Optional
           "#{other_type_to_tag(type.type)}, nil"
-        elsif type.is_a?(RBS::Types::Bases::Any)
+        when RBS::Types::Bases::Any
           'undefined'
-        elsif type.is_a?(RBS::Types::Bases::Bool)
+        when RBS::Types::Bases::Bool
           'Boolean'
-        elsif type.is_a?(RBS::Types::Tuple)
+        when RBS::Types::Tuple
           "Array(#{type.types.map { |t| other_type_to_tag(t) }.join(', ')})"
-        elsif type.is_a?(RBS::Types::Literal)
+        when RBS::Types::Literal
           type.literal.inspect
-        elsif type.is_a?(RBS::Types::Union)
+        when RBS::Types::Union
           type.types.map { |t| other_type_to_tag(t) }.join(', ')
-        elsif type.is_a?(RBS::Types::Record)
+        when RBS::Types::Record
           # @todo Better record support
           'Hash'
-        elsif type.is_a?(RBS::Types::Bases::Nil)
+        when RBS::Types::Bases::Nil
           'nil'
-        elsif type.is_a?(RBS::Types::Bases::Self)
+        when RBS::Types::Bases::Self
           'self'
-        elsif type.is_a?(RBS::Types::Bases::Void)
+        when RBS::Types::Bases::Void
           'void'
-        elsif type.is_a?(RBS::Types::Variable)
+        when RBS::Types::Variable
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
-        elsif type.is_a?(RBS::Types::ClassInstance) # && !type.args.empty?
+        when RBS::Types::ClassInstance # && !type.args.empty?
           type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::Bases::Instance)
+        when RBS::Types::Bases::Instance
           'self'
-        elsif type.is_a?(RBS::Types::Bases::Top)
+        when RBS::Types::Bases::Top
           # top is the most super superclass
           'BasicObject'
-        elsif type.is_a?(RBS::Types::Bases::Bottom)
+        when RBS::Types::Bases::Bottom
           # bottom is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'
           #
           # @todo define a specific bottom type and use it to
           #   determine dead code
           'undefined'
-        elsif type.is_a?(RBS::Types::Intersection)
+        when RBS::Types::Intersection
           type.types.map { |member| other_type_to_tag(member) }.join(', ')
-        elsif type.is_a?(RBS::Types::Proc)
+        when RBS::Types::Proc
           'Proc'
-        elsif type.is_a?(RBS::Types::Alias)
+        when RBS::Types::Alias
           # type-level alias use - e.g., 'bool' in "type bool = true | false"
           # @todo ensure these get resolved after processing all aliases
           # @todo handle recursive aliases
           type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::Interface)
+        when RBS::Types::Interface
           # represents a mix-in module which can be considered a
           # subtype of a consumer of it
           type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::ClassSingleton)
+        when RBS::Types::ClassSingleton
           # e.g., singleton(String)
           type_tag(type.name)
         else

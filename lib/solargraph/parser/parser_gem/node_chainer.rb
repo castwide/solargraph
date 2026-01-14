@@ -63,10 +63,9 @@ module Solargraph
               result.concat generate_links(n.children[0])
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
-              args = []
               # @sg-ignore Need to add nil check here
-              n.children[2..-1].each do |c|
-                args.push NodeChainer.chain(c, @filename, n)
+              n.children[2..].map do |c|
+                NodeChainer.chain(c, @filename, n)
               end
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             else
@@ -142,7 +141,7 @@ module Solargraph
               # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
               result.push Chain::BlockVariable.new(nil)
             elsif block_variable_name_node.type == :sym
-              result.push Chain::BlockSymbol.new("#{block_variable_name_node.children[0]}")
+              result.push Chain::BlockSymbol.new(block_variable_name_node.children[0].to_s)
             else
               result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0]}")
             end
@@ -182,7 +181,7 @@ module Solargraph
         # @return [Array<Source::Chain>]
         def node_args node
           # @sg-ignore Need to add nil check here
-          node.children[2..-1].map do |child|
+          node.children[2..].map do |child|
             NodeChainer.chain(child, @filename, node)
           end
         end

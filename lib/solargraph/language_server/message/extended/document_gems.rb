@@ -14,7 +14,7 @@ module Solargraph
             cmd = [host.command_path, 'gems']
             cmd.push '--rebuild' if params['rebuild']
             _, s = Open3.capture2(*cmd)
-            if s == 0
+            if s.zero?
               set_result({
                            status: 'ok'
                          })

@@ -161,7 +161,7 @@ module Solargraph
       def tag_complete
         result = []
         # @sg-ignore Need to add nil check here
-        match = source_map.code[0..cursor.offset - 1].match(/[\[<, ]([a-z0-9_:]*)\z/i)
+        match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           # @sg-ignore Need to add nil check here
           full = match[1]

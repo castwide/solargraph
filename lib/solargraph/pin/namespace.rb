@@ -27,7 +27,7 @@ module Solargraph
         @type = type
         @visibility = visibility
         if name.start_with?('::')
-          name = name[2..-1] || ''
+          name = name[2..] || ''
           @closure = Solargraph::Pin::ROOT_PIN
         end
         @open_gates = gates
@@ -40,7 +40,7 @@ module Solargraph
                            ''
                          else
                            # @sg-ignore Need to add nil check here
-                           closure.full_context.namespace + '::'
+                           "#{closure.full_context.namespace}::"
                          end
           closure_name += parts.join('::')
           @closure = Pin::Namespace.new(name: closure_name, gates: [parts.join('::')], source: :namespace)

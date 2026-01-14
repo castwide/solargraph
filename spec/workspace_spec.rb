@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fileutils'
 require 'tmpdir'
 
@@ -54,7 +56,7 @@ describe Solargraph::Workspace do
                              calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
 
     expect do
-      Solargraph::Workspace.new('.', config)
+      described_class.new('.', config)
     end.to raise_error(Solargraph::WorkspaceTooLargeError)
   end
 
@@ -66,7 +68,7 @@ describe Solargraph::Workspace do
     config = instance_double(Solargraph::Workspace::Config, calculated: calculated, max_files: 0, allow?: true,
                                                             require_paths: [], plugins: [])
     expect do
-      Solargraph::Workspace.new('.', config)
+      described_class.new('.', config)
     end.not_to raise_error
   end
 
@@ -125,14 +127,14 @@ describe Solargraph::Workspace do
   end
 
   it 'uses configured require paths' do
-    workspace = Solargraph::Workspace.new('spec/fixtures/workspace')
+    workspace = described_class.new('spec/fixtures/workspace')
     expect(workspace.require_paths).to eq([File.absolute_path('spec/fixtures/workspace/lib'),
                                            File.absolute_path('spec/fixtures/workspace/ext')])
   end
 
   it 'ignores gemspecs in excluded directories' do
     # vendor/**/* is excluded by default
-    workspace = Solargraph::Workspace.new('spec/fixtures/vendored')
+    workspace = described_class.new('spec/fixtures/vendored')
     expect(workspace.require_paths).to eq([File.absolute_path('spec/fixtures/vendored/lib')])
   end
 
@@ -140,7 +142,7 @@ describe Solargraph::Workspace do
     config = instance_double(Solargraph::Workspace::Config, directory: './path',
                                                             calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
     expect do
-      Solargraph::Workspace.new('./path', config)
+      described_class.new('./path', config)
     end.not_to raise_error
   end
 

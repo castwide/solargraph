@@ -103,7 +103,7 @@ module Solargraph
       # @sg-ignore Need to add nil check here
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data..offset - 1]
+        @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
       # @sg-ignore Need to add nil check here
@@ -165,36 +165,37 @@ module Solargraph
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
-          break if index > 0 and @source.comment_at?(pos)
-          break if brackets > 0 or parens > 0 or squares > 0
+          break if index.positive? && @source.comment_at?(pos)
+          break if brackets.positive? || parens.positive? || squares.positive?
           char = @source.code[index, 1]
           break if char.nil? # @todo Is this the right way to handle this?
-          if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
+          if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
             # @sg-ignore Need to add nil check here
-            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace && !(char == '.' or @source.code[index + 1..-1].strip.start_with?('.'))
-              @source.code[index + 1..-1]
+            if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
+              @source.code[(index + 1)..]
               # @sg-ignore Need to add nil check here
-              @source.code[index + 1..-1].lstrip
+              @source.code[(index + 1)..].lstrip
               # @sg-ignore Need to add nil check here
-              index += (@source.code[index + 1..-1].length - @source.code[index + 1..-1].lstrip.length)
+              index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
               break
             end
-            if char == ')'
+            case char
+            when ')'
               parens -= 1
-            elsif char == ']'
+            when ']'
               squares -= 1
-            elsif char == '}'
+            when '}'
               brackets -= 1
-            elsif char == '('
+            when '('
               parens += 1
-            elsif char == '{'
+            when '{'
               brackets += 1
-            elsif char == '['
+            when '['
               squares += 1
             end
-            if brackets.zero? and parens.zero? and squares.zero?
+            if brackets.zero? && parens.zero? && squares.zero?
               break if ['"', "'", ',', ';', '%'].include?(char)
               break if ['!', '?'].include?(char) && index < offset - 1
               break if char == '$'

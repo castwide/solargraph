@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe 'YARD type specifier list parsing' do
   context 'with https://www.rubydoc.info/gems/yard/file/docs/Tags.md#type-list-conventions compliance' do
     # Types Specifier List
@@ -215,7 +217,7 @@ describe 'YARD type specifier list parsing' do
       types = Solargraph::ComplexType.parse('Hash{String, Symbol => Integer, BigDecimal}')
       expect(types.length).to eq(1)
       type = types.first
-      expect(type.hash_parameters?).to eq(true)
+      expect(type.hash_parameters?).to be(true)
       expect(type.key_types.map(&:name)).to eq(%w[String Symbol])
       expect(type.value_types.map(&:name)).to eq(%w[Integer BigDecimal])
       expect(type.to_rbs).to eq('Hash[(String | Symbol), (Integer | BigDecimal)]')
@@ -535,7 +537,7 @@ describe 'YARD type specifier list parsing' do
         ['generic<A>', 'Array<generic<B>>', { 'B' => 'Integer' }, 'Array<Integer>',
          { 'B' => 'Integer', 'A' => 'Array<Integer>' }],
         ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', { 'A' => 'String' }]
-      ]
+      ].freeze
 
       UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|
         context "when resolveing #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
@@ -545,7 +547,7 @@ describe 'YARD type specifier list parsing' do
           let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
           let(:generic_value) { unfrozen_input_map.transform_values! { |tag| Solargraph::ComplexType.parse(tag) } }
 
-          it '#{tag} is a unique type' do
+          it "#{tag} is a unique type" do
             expect(complex_type.length).to eq(1)
           end
 

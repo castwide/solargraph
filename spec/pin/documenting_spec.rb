@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Documenting do
   let(:object) do
     Class.new do

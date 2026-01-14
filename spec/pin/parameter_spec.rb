@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Parameter do
   it 'detects block parameter return types from @yieldparam tags' do
     api_map = Solargraph::ApiMap.new
@@ -195,8 +197,8 @@ describe Solargraph::Pin::Parameter do
   it 'uses longer comment while combining compatible parameters' do
     loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
     block = Solargraph::Pin::Block.new(location: loc, name: 'Foo')
-    pin1 = Solargraph::Pin::Parameter.new(closure: block, name: 'bar')
-    pin2 = Solargraph::Pin::Parameter.new(closure: block, name: 'bar', comments: 'a comment')
+    pin1 = described_class.new(closure: block, name: 'bar')
+    pin2 = described_class.new(closure: block, name: 'bar', comments: 'a comment')
     expect(pin1.combine_with(pin2).comments).to eq('a comment')
   end
 
@@ -207,7 +209,7 @@ describe Solargraph::Pin::Parameter do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    pin = api_map.source_map('test.rb').locals.select { |p| p.is_a?(Solargraph::Pin::Parameter) }.first
+    pin = api_map.source_map('test.rb').locals.select { |p| p.is_a?(described_class) }.first
     # expect(pin.infer(api_map)).to be_undefined
     expect(pin.typify(api_map)).to be_undefined
     expect(pin.probe(api_map)).to be_undefined

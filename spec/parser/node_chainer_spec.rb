@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe 'NodeChainer' do
   def chain_string str
     Solargraph::Parser.chain_string(str, 'file.rb', 0)

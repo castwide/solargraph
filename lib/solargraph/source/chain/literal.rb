@@ -15,10 +15,10 @@ module Solargraph
 
           if node.is_a?(::Parser::AST::Node)
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-            if node.type == :true
+            if node.type == true
               @value = true
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-            elsif node.type == :false
+            elsif node.type == false
               @value = false
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             elsif %i[int sym].include?(node.type)
@@ -31,12 +31,6 @@ module Solargraph
           @complex_type = ComplexType.try_parse(type)
         end
 
-        # @sg-ignore Fix "Not enough arguments to Module#protected"
-        protected def equality_fields
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-          super + [@value, @type, @literal_type, @complex_type]
-        end
-
         def resolve api_map, name_pin, locals
           if api_map.super_and_sub?(@complex_type.name, @literal_type.name)
             [Pin::ProxyType.anonymous(@literal_type, source: :chain)]
@@ -44,6 +38,14 @@ module Solargraph
             # we don't support this value as a literal type
             [Pin::ProxyType.anonymous(@complex_type, source: :chain)]
           end
+        end
+
+        protected
+
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        def equality_fields
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+          super + [@value, @type, @literal_type, @complex_type]
         end
       end
     end

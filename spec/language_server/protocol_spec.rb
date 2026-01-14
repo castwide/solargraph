@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Protocol
   attr_reader :response
 
@@ -34,7 +36,7 @@ end
 
 describe Protocol do
   before :all do
-    @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
+    @protocol = described_class.new(Solargraph::LanguageServer::Host.new)
   end
 
   after :all do
@@ -163,7 +165,7 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
-    expect(response['result']['items'].length > 0).to be(true)
+    expect(!response['result']['items'].empty?).to be(true)
   end
 
   it 'handles completionItem/resolve' do

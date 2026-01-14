@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # Mix-in for pins which enclose code which the 'break' statement

@@ -21,10 +21,6 @@ module Solargraph
       @character = character
     end
 
-    protected def equality_fields
-      [line, character]
-    end
-
     # @param other [Position]
     def <=> other
       return nil unless other.is_a?(Position)
@@ -91,7 +87,7 @@ module Solargraph
         cursor += line_length
         line += 1
       end
-      character = 0 if character.nil? and (cursor - offset).between?(0, 1)
+      character = 0 if character.nil? && (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
       # @sg-ignore flow sensitive typing needs to handle 'raise if'
       Position.new(line, character)
@@ -113,6 +109,12 @@ module Solargraph
     def == other
       return false unless other.is_a?(Position)
       line == other.line and character == other.character
+    end
+
+    protected
+
+    def equality_fields
+      [line, character]
     end
   end
 end

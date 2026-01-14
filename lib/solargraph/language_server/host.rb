@@ -773,7 +773,7 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
-        return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
+        return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

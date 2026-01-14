@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Convention::StructDefinition do
   describe 'parsing docs' do
     it 'supports keyword args' do

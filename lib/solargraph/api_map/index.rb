@@ -168,7 +168,7 @@ module Solargraph
               #   YARD::Docstring#delete_tags: name expected String,
               #   received String, Symbol - delete_tags is ok with a
               #   _ToS, but we should fix anyway
-              new_pin.docstring.delete_tags tag if new_pin
+              new_pin&.docstring&.delete_tags tag
             end
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)

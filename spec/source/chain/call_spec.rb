@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Call do
   it 'recognizes core methods that return subtypes' do
     api_map = Solargraph::ApiMap.new

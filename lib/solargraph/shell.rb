@@ -84,7 +84,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      STDOUT.puts 'Configuration file initialized.'
+      $stdout.puts 'Configuration file initialized.'
     end
 
     desc 'clear', 'Delete all cached documentation'
@@ -246,9 +246,13 @@ module Solargraph
         end
       end
       puts "Typecheck finished in #{time.real} seconds."
-      puts "#{probcount} problem#{'s' if probcount != 1} found#{" in #{filecount} of #{files.length} files" if files.length != 1}."
+      puts "#{probcount} problem#{if probcount != 1
+                                    's'
+                                  end} found#{if files.length != 1
+                                                                  " in #{filecount} of #{files.length} files"
+                                                                end}."
       # "
-      exit 1 if probcount > 0
+      exit 1 if probcount.positive?
     end
 
     desc 'scan', 'Test the workspace for problems'

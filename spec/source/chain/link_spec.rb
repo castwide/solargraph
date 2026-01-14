@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Link do
   it 'is undefined by default' do
     link = described_class.new

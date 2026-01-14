@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::BaseVariable do
   it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')

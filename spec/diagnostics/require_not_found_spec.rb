@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Diagnostics::RequireNotFound do
   before do
     @source = Solargraph::Source.new(%(
@@ -12,7 +14,7 @@ describe Solargraph::Diagnostics::RequireNotFound do
   end
 
   it 'reports unresolved requires' do
-    reporter = Solargraph::Diagnostics::RequireNotFound.new
+    reporter = described_class.new
     result = reporter.diagnose(@source, @api_map)
     expect(result.length).to eq(1)
   end

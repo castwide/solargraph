@@ -85,7 +85,7 @@ module Solargraph
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
           # @sg-ignore Need to add nil check here
-          data_node.children[2..-1]
+          data_node.children[2..]
         end
       end
     end

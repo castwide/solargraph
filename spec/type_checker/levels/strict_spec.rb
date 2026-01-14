@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
   context 'when at strict level' do
     # @return [Solargraph::TypeChecker]
@@ -105,7 +107,7 @@ describe Solargraph::TypeChecker do
       ), 'test.rb')
       api_map = Solargraph::ApiMap.load '.'
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
-      checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
+      checker = described_class.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
     end
 

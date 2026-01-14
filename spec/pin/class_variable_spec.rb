@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # describe Solargraph::Pin::ClassVariable do
 #   it "always has class scope" do
 #     source = Solargraph::Source.load_string(%(

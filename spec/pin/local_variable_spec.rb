@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::LocalVariable do
   it 'merges presence changes so that [not currently used]' do
     pending 'but not sure why'

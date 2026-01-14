@@ -33,7 +33,7 @@ module Solargraph
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)
-        return @output if @input == text and can_nullify == @did_nullify
+        return @output if (@input == text) && (can_nullify == @did_nullify)
         @input = text
         @output = text
         @did_nullify = can_nullify

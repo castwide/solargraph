@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Cursor do
   it 'detects cursors in strings' do
     source = Solargraph::Source.load_string('str = "string"')
@@ -83,13 +85,13 @@ describe Solargraph::Source::Cursor do
   end
 
   it 'detects cursors in dynamic strings' do
-    source = Solargraph::Source.load_string('"#{100}"')
+    source = Solargraph::Source.load_string(%("100"))
     cursor = source.cursor_at(Solargraph::Position.new(0, 7))
     expect(cursor).to be_string
   end
 
   it 'detects cursors in embedded strings' do
-    source = Solargraph::Source.load_string('"#{100}..."')
+    source = Solargraph::Source.load_string(%("100..."))
     cursor = source.cursor_at(Solargraph::Position.new(0, 10))
     expect(cursor).to be_string
   end

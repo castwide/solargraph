@@ -1,53 +1,55 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Symbol do
   context 'when an unquoted literal' do
     it 'is a kind of keyword to the LSP' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
+      pin = described_class.new(nil, ':symbol')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
     end
 
     it 'has global closure' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
+      pin = described_class.new(nil, ':symbol')
       expect(pin.closure).to eq(Solargraph::Pin::ROOT_PIN)
     end
 
     it 'has a Symbol return type' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':symbol')
+      pin = described_class.new(nil, ':symbol')
       expect(pin.return_type.tag).to eq('Symbol')
     end
   end
 
   context 'when a double quoted literal' do
     it 'is a kind of keyword' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':"symbol"')
+      pin = described_class.new(nil, ':"symbol"')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
     end
 
     it 'has a Symbol return type' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':"symbol"')
+      pin = described_class.new(nil, ':"symbol"')
       expect(pin.return_type.tag).to eq('Symbol')
     end
   end
 
   context 'when a double quoted interpolated literal' do
     it 'is a kind of keyword' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':"symbol #{variable}"')
+      pin = described_class.new(nil, ':"symbol #{variable}"')
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
     end
 
     it 'has a Symbol return type' do
-      pin = Solargraph::Pin::Symbol.new(nil, ':"symbol #{variable}"')
+      pin = described_class.new(nil, ':"symbol #{variable}"')
       expect(pin.return_type.tag).to eq('Symbol')
     end
   end
 
   context 'when a single quoted literal' do
     it 'is a kind of keyword' do
-      pin = Solargraph::Pin::Symbol.new(nil, ":'symbol'")
+      pin = described_class.new(nil, ":'symbol'")
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::KEYWORD)
     end
 
     it 'has a Symbol return type' do
-      pin = Solargraph::Pin::Symbol.new(nil, ":'symbol'")
+      pin = described_class.new(nil, ":'symbol'")
       expect(pin.return_type.tag).to eq('Symbol')
     end
   end

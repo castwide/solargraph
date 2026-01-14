@@ -29,10 +29,6 @@ module Solargraph
       @items = items
     end
 
-    protected def equality_fields
-      [self.class, items]
-    end
-
     # @param api_map [ApiMap]
     # @param gates [Array<String>]
     #
@@ -400,6 +396,10 @@ module Solargraph
 
     protected
 
+    def equality_fields
+      [self.class, items]
+    end
+
     # @return [ComplexType]
     def reduce_object
       new_items = items.flat_map do |ut|
@@ -457,7 +457,7 @@ module Solargraph
             elsif char == '<'
               point_stack += 1
             elsif char == '>'
-              if subtype_string.end_with?('=') && curly_stack > 0
+              if subtype_string.end_with?('=') && curly_stack.positive?
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
@@ -473,7 +473,7 @@ module Solargraph
                 subtype_string.clear
                 next
               else
-                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack == 0
+                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack.zero?
                 point_stack -= 1
                 subtype_string += char
               end
@@ -483,23 +483,23 @@ module Solargraph
             elsif char == '}'
               curly_stack -= 1
               subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack.negative?
               next
             elsif char == '('
               paren_stack += 1
             elsif char == ')'
               paren_stack -= 1
               subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack.negative?
               next
-            elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
+            elsif char == ',' && point_stack.zero? && curly_stack.zero? && paren_stack.zero?
               # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
               types.push UniqueType.parse(base.strip, subtype_string.strip)
               base.clear
               subtype_string.clear
               next
             end
-            if point_stack == 0 && curly_stack == 0 && paren_stack == 0
+            if point_stack.zero? && curly_stack.zero? && paren_stack.zero?
               base.concat char
             else
               subtype_string.concat char

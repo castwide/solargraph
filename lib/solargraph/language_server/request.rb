@@ -15,7 +15,7 @@ module Solargraph
       # @yieldreturn [generic<T>]
       # @return [generic<T>, nil]
       def process result
-        @block.call(result) unless @block.nil?
+        @block&.call(result)
       end
 
       # @return [void]
