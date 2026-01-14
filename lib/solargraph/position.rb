@@ -93,7 +93,7 @@ module Solargraph
     # @param offset [Integer]
     # @return [Position]
     def self.from_offset text, offset
-     raise InvalidOffsetError if offset > text.length
+      raise InvalidOffsetError if offset > text.length
 
       cursor = 0
       line = 0
