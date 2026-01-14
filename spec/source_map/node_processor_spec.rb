@@ -1,4 +1,4 @@
-describe Solargraph::SourceMap::NodeProcessor do
+describe Solargraph::Parser::NodeProcessor do
   it 'maps arg parameters' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
