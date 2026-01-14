@@ -53,7 +53,6 @@ module Solargraph
 
     # Get a numeric offset for the specified text and position.
     #
-    #
     # @param text [String]
     # @param position [Position]
     # @return [Integer]
@@ -88,6 +87,8 @@ module Solargraph
     end
 
     # Get a position for the specified text and offset.
+    #
+    # @raise [InvalidOffsetError] if the offset is outside the text range
     #
     # @param text [String]
     # @param offset [Integer]
