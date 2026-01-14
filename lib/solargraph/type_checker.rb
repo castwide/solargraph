@@ -560,8 +560,8 @@ module Solargraph
         next unless params.key?(pname.to_s)
         # @sg-ignore
         # @type [ComplexType]
-        ptype = params[pname.to_s][:qualified]
-        ptype = ptype.self_to_type(pin.context)
+        raw_ptype = params[pname.to_s][:qualified]
+        ptype = raw_ptype.self_to_type(pin.context)
         argtype = argchain.infer(api_map, closure_pin, locals)
         argtype = argtype.self_to_type(closure_pin.context)
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
