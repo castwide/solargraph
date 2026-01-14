@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::Head do
-  it "returns self pins" do
+  it 'returns self pins' do
     head = Solargraph::Source::Chain::Head.new('self')
     npin = Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Foo'))
     ipin = head.resolve(nil, npin, []).first

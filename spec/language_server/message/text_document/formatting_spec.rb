@@ -3,7 +3,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Formatting do
     host = instance_double(Solargraph::LanguageServer::Host, read_text: '', formatter_config: {})
     request = {
       'params' => {
-          'textDocument' => {
+        'textDocument' => {
           'uri' => 'test.rb'
         }
       }

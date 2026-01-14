@@ -4,7 +4,7 @@ module Solargraph
   # A container for type data based on YARD type tags.
   #
   class ComplexType
-    GENERIC_TAG_NAME = 'generic'.freeze
+    GENERIC_TAG_NAME = 'generic'
     # @!parse
     #   include TypeMethods
     include Equality
@@ -19,7 +19,7 @@ module Solargraph
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
-        items.delete_if { |i| i.name == 'false' || i.name == 'true' }
+        items.delete_if { |i| %w[false true].include?(i.name) }
         items.unshift(UniqueType::BOOLEAN)
       end
       # @type [Array<UniqueType>]
@@ -40,7 +40,7 @@ module Solargraph
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
-        next t if ['nil', 'void', 'undefined'].include?(t.name)
+        next t if %w[nil void undefined].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
         t.qualify api_map, *gates
       end
@@ -54,7 +54,10 @@ module Solargraph
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
 
-      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: resolved_generic_values) })
+      ComplexType.new(@items.map do |i|
+        i.resolve_generics_from_context(generics_to_resolve, context_type,
+                                        resolved_generic_values: resolved_generic_values)
+      end)
     end
 
     # @return [UniqueType]
@@ -85,14 +88,14 @@ module Solargraph
     # @sg-ignore Declared return type
     #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
     #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
-    def map(&block)
+    def map &block
       @items.map(&block)
     end
 
     # @yieldparam [UniqueType]
     # @return [Enumerable<UniqueType>]
     def each &block
-      @items.each &block
+      @items.each(&block)
     end
 
     # @yieldparam [UniqueType]
@@ -103,7 +106,7 @@ module Solargraph
       return enum_for(__method__) unless block_given?
 
       @items.each do |item|
-        item.each_unique_type &block
+        item.each_unique_type(&block)
       end
     end
 
@@ -113,7 +116,7 @@ module Solargraph
     # @param make_rooted [Boolean, nil]
     # @param new_subtypes [Array<ComplexType>, nil]
     # @return [self]
-    def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
+    def recreate new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil
       ComplexType.new(map do |ut|
                         ut.recreate(new_name: new_name,
                                     make_rooted: make_rooted,
@@ -134,13 +137,13 @@ module Solargraph
 
     # @param index [Integer]
     # @return [UniqueType]
-    def [](index)
+    def [] index
       @items[index]
     end
 
     # @return [Array<UniqueType>]
     def select &block
-      @items.select &block
+      @items.select(&block)
     end
 
     # @return [String]
@@ -157,6 +160,7 @@ module Solargraph
     # @param name [Symbol]
     #
     # @return [Object, nil]
+    # @param [Array<Object>] args
     def method_missing name, *args, &block
       return if @items.first.nil?
       return @items.first.send(name, *args, &block) if respond_to_missing?(name)
@@ -165,7 +169,7 @@ module Solargraph
 
     # @param name [Symbol]
     # @param include_private [Boolean]
-    def respond_to_missing?(name, include_private = false)
+    def respond_to_missing? name, include_private = false
       TypeMethods.public_instance_methods.include?(name) || super
     end
 
@@ -219,10 +223,10 @@ module Solargraph
     #
     # @param variance [:invariant, :covariant, :contravariant]
     # @return [Boolean]
-    def conforms_to?(api_map, expected,
+    def conforms_to? api_map, expected,
                      situation,
                      rules = [],
-                     variance: erased_variance(situation))
+                     variance: erased_variance(situation)
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 
@@ -263,14 +267,14 @@ module Solargraph
 
     # @yieldparam [UniqueType]
     def all? &block
-      @items.all? &block
+      @items.all?(&block)
     end
 
     # @yieldparam [UniqueType]
     # @yieldreturn [Boolean]
     # @return [Boolean]
     def any? &block
-      @items.compact.any? &block
+      @items.compact.any?(&block)
     end
 
     def selfy?
@@ -290,8 +294,10 @@ module Solargraph
     # @yieldparam t [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [ComplexType]
-    def transform(new_name = nil, &transform_type)
-      raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
+    def transform new_name = nil, &transform_type
+      if new_name&.start_with?('::')
+        raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}"
+      end
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
@@ -329,7 +335,7 @@ module Solargraph
     # @return [ComplexType]
     def reduce_class_type
       new_items = items.flat_map do |type|
-        next type unless ['Module', 'Class'].include?(type.name)
+        next type unless %w[Module Class].include?(type.name)
         next type if type.all_params.empty?
 
         type.all_params
@@ -344,7 +350,7 @@ module Solargraph
     end
 
     # @param other [ComplexType, UniqueType]
-    def erased_version_of?(other)
+    def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
       @items.first.erased_version_of?(other.items.first)
@@ -447,14 +453,14 @@ module Solargraph
           # @param char [String]
           type_string&.each_char do |char|
             if char == '='
-              #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
+              # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'
               point_stack += 1
             elsif char == '>'
               if subtype_string.end_with?('=') && curly_stack > 0
                 subtype_string += char
               elsif base.end_with?('=')
-                raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
+                raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
                 # @sg-ignore Need to add nil check here
                 types.push UniqueType.parse(base[0..-2].strip, subtype_string)
@@ -499,12 +505,15 @@ module Solargraph
               subtype_string.concat char
             end
           end
-          raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
+          if point_stack != 0 || curly_stack != 0 || paren_stack != 0
+            raise ComplexTypeError,
+                  "Unclosed subtype in #{type_string}"
+          end
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
           types.push UniqueType.parse(base.strip, subtype_string.strip)
         end
         unless key_types.nil?
-          raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
+          raise ComplexTypeError, 'Invalid use of key/value parameters' unless partial
           return key_types if types.empty?
           return [key_types, types]
         end
@@ -516,7 +525,7 @@ module Solargraph
       # @param strings [Array<String>]
       # @return [ComplexType]
       def try_parse *strings
-        parse *strings
+        parse(*strings)
       rescue ComplexTypeError => e
         Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
@@ -541,9 +550,7 @@ module Solargraph
     # @param dst [String]
     # @return [String]
     def reduce_class dst
-      while dst =~ /^(Class|Module)\<(.*?)\>$/
-        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
-      end
+      dst = dst.sub(/^(Class|Module)</, '').sub(/>$/, '') while dst =~ /^(Class|Module)<(.*?)>$/
       dst
     end
   end

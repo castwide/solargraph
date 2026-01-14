@@ -47,16 +47,15 @@ module Solargraph
         method_stack = closure.rest_of_stack api_map
         logger.debug { "Signature#typify(self=#{self}) - method_stack: #{method_stack}" }
         method_stack.each do |pin|
-          sig = pin.signatures.find { |s| s.arity == self.arity }
+          sig = pin.signatures.find { |s| s.arity == arity }
           next unless sig
           # @sg-ignore Need to add nil check here
-          unless sig.return_type.undefined?
-            # @sg-ignore Need to add nil check here
-            qualified = sig.return_type.qualify(api_map, closure.namespace)
-            # @sg-ignore Need to add nil check here
-            logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
-            return qualified
-          end
+          next if sig.return_type.undefined?
+          # @sg-ignore Need to add nil check here
+          qualified = sig.return_type.qualify(api_map, closure.namespace)
+          # @sg-ignore Need to add nil check here
+          logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
+          return qualified
         end
         out = super
         logger.debug { "Signature#typify(self=#{self}) => #{out}" }

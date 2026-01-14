@@ -21,7 +21,7 @@ module Solargraph
             elsif node.type == :false
               @value = false
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-            elsif [:int, :sym].include?(node.type)
+            elsif %i[int sym].include?(node.type)
               # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               @value = node.children.first
             end

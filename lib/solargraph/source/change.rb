@@ -82,7 +82,7 @@ module Solargraph
         start_offset = Position.to_offset(text, range.start)
         # @sg-ignore Need to add nil check here
         end_offset = Position.to_offset(text, range.ending)
-        (start_offset == 0 ? '' : text[0..start_offset-1].to_s) + normalize(insert) + text[end_offset..-1].to_s
+        (start_offset == 0 ? '' : text[0..start_offset - 1].to_s) + normalize(insert) + text[end_offset..-1].to_s
       end
     end
   end

@@ -26,7 +26,7 @@ module Solargraph
       def combine_ranges code, ranges
         result = []
         lines = []
-        ranges.sort{|a, b| a.start.line <=> b.start.line}.each do |rng|
+        ranges.sort { |a, b| a.start.line <=> b.start.line }.each do |rng|
           next if rng.nil? || lines.include?(rng.start.line)
           lines.push rng.start.line
           next if rng.start.line >= code.lines.length

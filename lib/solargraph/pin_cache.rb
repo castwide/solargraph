@@ -539,34 +539,34 @@ module Solargraph
 
       # @param gemspec [Gem::Specification]
       # @return [Array<Pin::Base>, nil]
-      def deserialize_yard_gem(gemspec)
+      def deserialize_yard_gem gemspec
         load(yard_gem_path(gemspec))
       end
 
       # @param gemspec [Gem::Specification]
       # @param pins [Array<Pin::Base>]
       # @return [void]
-      def serialize_yard_gem(gemspec, pins)
+      def serialize_yard_gem gemspec, pins
         save(yard_gem_path(gemspec), pins)
       end
 
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [String]
-      def rbs_collection_path(gemspec, hash)
+      def rbs_collection_path gemspec, hash
         File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
       end
 
       # @param gemspec [Gem::Specification]
       # @return [String]
-      def rbs_collection_path_prefix(gemspec)
+      def rbs_collection_path_prefix gemspec
         File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-")
       end
 
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [Array<Pin::Base>, nil]
-      def deserialize_rbs_collection_gem(gemspec, hash)
+      def deserialize_rbs_collection_gem gemspec, hash
         load(rbs_collection_path(gemspec, hash))
       end
 
@@ -574,20 +574,20 @@ module Solargraph
       # @param hash [String, nil]
       # @param pins [Array<Pin::Base>]n
       # @return [void]
-      def serialize_rbs_collection_gem(gemspec, hash, pins)
+      def serialize_rbs_collection_gem gemspec, hash, pins
         save(rbs_collection_path(gemspec, hash), pins)
       end
 
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [String]
-      def combined_path(gemspec, hash)
+      def combined_path gemspec, hash
         File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
       end
 
       # @param gemspec [Gem::Specification]
       # @return [String]
-      def combined_path_prefix(gemspec)
+      def combined_path_prefix gemspec
         File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-")
       end
 
@@ -595,7 +595,7 @@ module Solargraph
       # @param hash [String, nil]
       # @param pins [Array<Pin::Base>]
       # @return [void]
-      def serialize_combined_gem(gemspec, hash, pins)
+      def serialize_combined_gem gemspec, hash, pins
         save(combined_path(gemspec, hash), pins)
       end
 
@@ -609,7 +609,7 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [Boolean]
-      def has_rbs_collection?(gemspec, hash)
+      def has_rbs_collection? gemspec, hash
         exist?(rbs_collection_path(gemspec, hash))
       end
 

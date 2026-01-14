@@ -16,11 +16,7 @@ module Solargraph
     # @type [Hash{String => RbsMap}]
     @@rbs_maps_hash = {}
 
-    attr_reader :library
-
-    attr_reader :rbs_collection_paths
-
-    attr_reader :rbs_collection_config_path
+    attr_reader :library, :rbs_collection_paths, :rbs_collection_config_path
 
     # @param library [String]
     # @param version [String, nil]

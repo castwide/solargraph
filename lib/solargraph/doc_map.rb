@@ -98,12 +98,12 @@ module Solargraph
       @dependencies ||=
         begin
           gem_deps = gemspecs
-                       .flat_map { |spec| workspace.fetch_dependencies(spec, out: out) }
-                       .uniq(&:name)
+                     .flat_map { |spec| workspace.fetch_dependencies(spec, out: out) }
+                     .uniq(&:name)
           stdlib_deps = gemspecs
-                          .flat_map { |spec| workspace.stdlib_dependencies(spec.name) }
-                          .flat_map { |dep_name| workspace.resolve_require(dep_name) }
-                          .compact
+                        .flat_map { |spec| workspace.stdlib_dependencies(spec.name) }
+                        .flat_map { |dep_name| workspace.resolve_require(dep_name) }
+                        .compact
           existing_gems = gemspecs.map(&:name)
           (gem_deps + stdlib_deps).reject { |gemspec| existing_gems.include? gemspec.name }
         end
@@ -167,7 +167,7 @@ module Solargraph
         end
       end
 
-      existing_pin_count = serialized_pins.length
+      serialized_pins.length
       time = Benchmark.measure do
         gemspecs.each do |gemspec|
           # only deserializes already-cached gems
@@ -179,7 +179,7 @@ module Solargraph
           end
         end
       end
-      pins_processed = serialized_pins.length - existing_pin_count
+      serialized_pins.length
       milliseconds = (time.real * 1000).round
       if (milliseconds > 500) && out && gemspecs.any?
         out.puts "Deserialized #{serialized_pins.length} gem pins from #{PinCache.base_dir} in #{milliseconds} ms"

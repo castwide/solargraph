@@ -1,12 +1,12 @@
 describe Solargraph::Position do
-  it "normalizes arrays into positions" do
+  it 'normalizes arrays into positions' do
     pos = Solargraph::Position.normalize([0, 1])
     expect(pos).to be_a(Solargraph::Position)
     expect(pos.line).to eq(0)
     expect(pos.column).to eq(1)
   end
 
-  it "returns original positions when normalizing" do
+  it 'returns original positions when normalizing' do
     orig = Solargraph::Position.new(0, 1)
     norm = Solargraph::Position.normalize(orig)
     expect(orig).to be(norm)
@@ -28,9 +28,9 @@ describe Solargraph::Position do
     expect(Solargraph::Position.from_offset(text, 44)).to eq(Solargraph::Position.new(2, 27))
   end
 
-  it "raises an error for objects that cannot be normalized" do
-    expect {
+  it 'raises an error for objects that cannot be normalized' do
+    expect do
       Solargraph::Position.normalize('0, 1')
-    }.to raise_error(ArgumentError)
+    end.to raise_error(ArgumentError)
   end
 end

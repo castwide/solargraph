@@ -45,6 +45,7 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
@@ -81,28 +82,28 @@ module Solargraph
         super
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
-          # default values don't exist in RBS parameters; it just
-          # tells you if the arg is optional or not.  Prefer a
-          # provided value if we have one here since we can't rely on
-          # it from RBS so we can infer from it and typecheck on it.
-          assignment: choose(other, :assignment),
-          assignments: new_assignments,
-          mass_assignment: combine_mass_assignment(other),
-          return_type: combine_return_type(other),
-          intersection_return_type: combine_types(other, :intersection_return_type),
-          exclude_return_type: combine_types(other, :exclude_return_type),
-          presence: combine_presence(other)
-        })
+                                  # default values don't exist in RBS parameters; it just
+                                  # tells you if the arg is optional or not.  Prefer a
+                                  # provided value if we have one here since we can't rely on
+                                  # it from RBS so we can infer from it and typecheck on it.
+                                  assignment: choose(other, :assignment),
+                                  assignments: new_assignments,
+                                  mass_assignment: combine_mass_assignment(other),
+                                  return_type: combine_return_type(other),
+                                  intersection_return_type: combine_types(other, :intersection_return_type),
+                                  exclude_return_type: combine_types(other, :exclude_return_type),
+                                  presence: combine_presence(other)
+                                })
         super(other, new_attrs)
       end
 
       # @param other [self]
       #
       # @return [Array(AST::Node, Integer), nil]
-      def combine_mass_assignment(other)
+      def combine_mass_assignment other
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
         mass_assignment || other.mass_assignment
@@ -116,7 +117,7 @@ module Solargraph
       # @param other [self]
       #
       # @return [::Array<Parser::AST::Node>]
-      def combine_assignments(other)
+      def combine_assignments other
         (other.assignments + assignments).uniq
       end
 
@@ -148,7 +149,7 @@ module Solargraph
       # @param parent_node [Parser::AST::Node]
       # @param api_map [ApiMap]
       # @return [::Array<ComplexType>]
-      def return_types_from_node(parent_node, api_map)
+      def return_types_from_node parent_node, api_map
         types = []
         value_position_nodes_only(parent_node).each do |node|
           # Nil nodes may not have a location
@@ -229,7 +230,7 @@ module Solargraph
 
       # @param other_loc [Location]
       # @sg-ignore flow sensitive typing needs to handle attrs
-      def starts_at?(other_loc)
+      def starts_at? other_loc
         location&.filename == other_loc.filename &&
           presence &&
           # @sg-ignore flow sensitive typing needs to handle attrs
@@ -241,7 +242,7 @@ module Solargraph
       # @param other [self]
       #
       # @return [Range, nil]
-      def combine_presence(other)
+      def combine_presence other
         return presence || other.presence if presence.nil? || other.presence.nil?
 
         # @sg-ignore flow sensitive typing needs to handle attrs
@@ -250,14 +251,14 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
-      def combine_closure(other)
-        return closure if self.closure == other.closure
+      def combine_closure other
+        return closure if closure == other.closure
 
         # choose first defined, as that establishes the scope of the variable
         if closure.nil? || other.closure.nil?
           Solargraph.assert_or_log(:varible_closure_missing) do
-            "One of the local variables being combined is missing a closure: " \
-              "#{self.inspect} vs #{other.inspect}"
+            'One of the local variables being combined is missing a closure: ' \
+              "#{inspect} vs #{other.inspect}"
           end
           return closure || other.closure
         end
@@ -277,7 +278,7 @@ module Solargraph
 
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
-      def visible_at?(other_closure, other_loc)
+      def visible_at? other_closure, other_loc
         # @sg-ignore flow sensitive typing needs to handle attrs
         location.filename == other_loc.filename &&
           # @sg-ignore flow sensitive typing needs to handle attrs
@@ -298,7 +299,7 @@ module Solargraph
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
       #
       # @return [ComplexType, ComplexType::UniqueType]
-      def adjust_type(api_map, raw_return_type)
+      def adjust_type api_map, raw_return_type
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
         qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
@@ -337,7 +338,7 @@ module Solargraph
 
       # @param other [self]
       # @return [ComplexType, nil]
-      def combine_return_type(other)
+      def combine_return_type other
         combine_types(other, :return_type)
       end
 
@@ -345,7 +346,7 @@ module Solargraph
       # @param attr [::Symbol]
       #
       # @return [ComplexType, nil]
-      def combine_types(other, attr)
+      def combine_types other, attr
         # @type [ComplexType, nil]
         type1 = send(attr)
         # @type [ComplexType, nil]

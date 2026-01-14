@@ -103,7 +103,7 @@ describe Solargraph::Convention::StructDefinition do
 
       expect(params.map(&:name)).to eql(%w[bar baz])
       expect(params.map(&:return_type).map(&:tag)).to eql(%w[Integer String])
-      expect(params[1].documentation).to eql("Some text")
+      expect(params[1].documentation).to eql('Some text')
     end
 
     [true, false].each do |kw_args|
@@ -116,21 +116,21 @@ describe Solargraph::Convention::StructDefinition do
           Foo = Struct.new(:bar, :baz, keyword_init: #{kw_args})
         ), 'test.rb')
 
-        params_bar = source.pins.find { |p| p.path == "Foo#bar=" }.parameters
+        params_bar = source.pins.find { |p| p.path == 'Foo#bar=' }.parameters
         expect(params_bar.length).to be(1)
-        expect(params_bar.first.return_type.tag).to eql("String")
+        expect(params_bar.first.return_type.tag).to eql('String')
         expect(params_bar.first.arg?).to be(true)
 
-        params_baz = source.pins.find { |p| p.path == "Foo#baz=" }.parameters
+        params_baz = source.pins.find { |p| p.path == 'Foo#baz=' }.parameters
         expect(params_baz.length).to be(1)
-        expect(params_baz.first.return_type.tag).to eql("Integer")
+        expect(params_baz.first.return_type.tag).to eql('Integer')
         expect(params_baz.first.arg?).to be(true)
 
-        iv_bar = source.pins.find { |p| p.name == "@bar" }
-        expect(iv_bar.return_type.tag).to eql("String")
+        iv_bar = source.pins.find { |p| p.name == '@bar' }
+        expect(iv_bar.return_type.tag).to eql('String')
 
-        iv_baz = source.pins.find { |p| p.name == "@baz" }
-        expect(iv_baz.return_type.tag).to eql("Integer")
+        iv_baz = source.pins.find { |p| p.name == '@baz' }
+        expect(iv_baz.return_type.tag).to eql('Integer')
       end
     end
   end
