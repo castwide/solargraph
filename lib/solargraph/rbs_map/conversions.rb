@@ -361,6 +361,7 @@ module Solargraph
         ["AST::Node", :instance, "original_dup"] => :private,
         ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
       }
+      private_constant :VISIBILITY_OVERRIDE
 
       # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Closure]
@@ -722,6 +723,7 @@ module Solargraph
         'untyped' => '',
         'NilClass' => 'nil'
       }
+      private_constant :RBS_TO_YARD_TYPE
 
       # @param type [RBS::MethodType, RBS::Types::Block]
       # @return [String]

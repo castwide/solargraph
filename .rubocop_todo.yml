@@ -418,10 +418,6 @@ Lint/UnusedMethodArgument:
 Lint/UselessAssignment:
   Enabled: false
 
-Lint/UselessConstantScoping:
-  Exclude:
-    - 'lib/solargraph/rbs_map/conversions.rb'
-
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/UselessMethodDefinition:
   Exclude:
@@ -479,11 +475,6 @@ Naming/AccessorMethodName:
     - 'lib/solargraph/api_map.rb'
     - 'lib/solargraph/api_map/store.rb'
     - 'lib/solargraph/language_server/message/base.rb'
-
-# Configuration parameters: AsciiConstants.
-Naming/AsciiIdentifiers:
-  Exclude:
-    - 'spec/fixtures/unicode.rb'
 
 # Configuration parameters: ForbiddenDelimiters.
 # ForbiddenDelimiters: (?i-mx:(^|\s)(EO[A-Z]{1}|END)(\s|$))
@@ -627,10 +618,6 @@ RSpec/LetBeforeExamples:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-RSpec/MissingExampleGroupArgument:
-  Exclude:
-    - 'spec/diagnostics/rubocop_helpers_spec.rb'
-
 RSpec/MultipleExpectations:
   Max: 14
 
@@ -645,14 +632,6 @@ RSpec/NotToNot:
   Exclude:
     - 'spec/api_map_spec.rb'
     - 'spec/rbs_map/core_map_spec.rb'
-
-RSpec/PendingWithoutReason:
-  Exclude:
-    - 'spec/api_map_spec.rb'
-    - 'spec/doc_map_spec.rb'
-    - 'spec/pin/base_variable_spec.rb'
-    - 'spec/pin/local_variable_spec.rb'
-    - 'spec/type_checker/levels/strict_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: Strict, EnforcedStyle, AllowedExplicitMatchers.
@@ -670,13 +649,6 @@ RSpec/ReceiveMessages:
 RSpec/RemoveConst:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
-
-RSpec/RepeatedExample:
-  Exclude:
-    - 'spec/api_map_spec.rb'
-    - 'spec/source/cursor_spec.rb'
-    - 'spec/source_map/clip_spec.rb'
-    - 'spec/type_checker/levels/strict_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/ScatteredLet:

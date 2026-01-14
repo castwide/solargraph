@@ -129,7 +129,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]
@@ -181,7 +180,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]

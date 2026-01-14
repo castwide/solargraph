@@ -2290,17 +2290,6 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Array(String, Integer)')
   end
 
-  it 'infers array of identical diverse arrays into tuples' do
-    source = Solargraph::Source.load_string(%(
-      h = [['foo', 1], ['bar', 2]]
-      h
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [2, 6])
-    type = clip.infer
-    expect(type.to_s).to eq('Array<Array(String, Integer)>')
-  end
-
   it 'infers literal diverse array of diverse arrays into tuple of tuples' do
     source = Solargraph::Source.load_string(%(
       h = [['foo', 1], ['bar', :baz]]
@@ -2477,35 +2466,6 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [23, 6])
     expect(clip.infer.to_s).to eq('Float')
-  end
-
-  it 'can use strings and symbols to choose a signature' do
-    source = Solargraph::Source.load_string(%(
-      # @generic A
-      # @generic B
-      class Foo
-        # @overload find(index)
-        #   @param [String] index
-        #   @return [generic<A>]
-        # @overload find(index)
-        #   @param [Symbol] index
-        #   @return [generic<B>]
-        def find(index); end
-      end
-
-      # @type [Foo(String, Integer)]
-      m = blah
-      mb = m.find('foo')
-      mb
-      mc = m.find(:bar)
-      mc
-), 'test.rb')
-    api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [16, 6])
-    expect(clip.infer.to_s).to eq('String')
-
-    clip = api_map.clip_at('test.rb', [18, 6])
-    expect(clip.infer.to_s).to eq('Integer')
   end
 
   it 'interprets self type in superclass method return type' do

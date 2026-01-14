@@ -44,7 +44,7 @@ describe Protocol do
   end
 
   before :each do
-    version = insance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
+    version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
       instance_double(Gem::SpecFetcher, search_for_dependency: [version])
   end

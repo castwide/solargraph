@@ -119,8 +119,8 @@ module Solargraph
                                                   .tap { |lib| lib.add_observer self }
         end
 
-        # @param library [Solargraph::Library]
         # @param progress [Solargraph::LanguageServer::Progress, nil]
+        #
         # @return [void]
         def update progress
           progress&.send(self)

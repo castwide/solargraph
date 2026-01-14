@@ -321,9 +321,6 @@ module Solargraph
             CASE_STATEMENT = [:case]
 
             # @param node [AST::Node] a method body compound statement
-            # @param include_explicit_returns [Boolean] If true,
-            #    include the value nodes of the parameter of the
-            #    'return' statements in the type returned.
             # @return [Array<AST::Node>] low-level value nodes from
             #   both nodes in value position as well as explicit
             #   return statements in the method's closure.

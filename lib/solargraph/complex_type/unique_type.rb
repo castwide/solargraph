@@ -493,7 +493,7 @@ module Solargraph
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
       # @param new_key_types [Array<ComplexType>, nil]
-      # @param rooted [Boolean, nil]
+      # @param make_rooted [Boolean, nil]
       # @param new_subtypes [Array<ComplexType>, nil]
       # @return [self]
       def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
@@ -547,7 +547,7 @@ module Solargraph
       # Generate a ComplexType that fully qualifies this type's namespaces.
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param context [String] The namespace from which to resolve names
+      # @param gates [Array<String>] The namespaces from which to resolve names
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, *gates
         transform do |t|

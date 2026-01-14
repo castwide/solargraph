@@ -408,6 +408,7 @@ module Solargraph
 
     # @return [void]
     # @param path_segments [Array<String>]
+    # @param out [StringIO, IO, nil]
     def uncache_by_prefix *path_segments, out: nil
       path = File.join(*path_segments)
       glob = "#{path}*"

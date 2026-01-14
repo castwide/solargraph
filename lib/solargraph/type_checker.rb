@@ -431,7 +431,6 @@ module Solargraph
     # @param arguments [Array<Source::Chain>]
     # @param sig [Pin::Signature]
     # @param pin [Pin::Method]
-    # @param pins [Array<Pin::Method>]
     #
     # @return [Array<Problem>]
     def signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin
@@ -552,7 +551,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => [nil, Hash]}]
+    # @param params [Hash{String => nil, Hash}]
     # @param kwargs [Hash{Symbol => Source::Chain}]
     # @return [Array<Problem>]
     def kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
@@ -804,7 +803,7 @@ module Solargraph
     end
 
     # @param parameters [Enumerable<Pin::Parameter>]
-    # @param pin [Pin::Method]
+    #
     # @return [Integer]
     def optional_param_count(parameters)
       parameters.select { |p| p.decl == :optarg }.length

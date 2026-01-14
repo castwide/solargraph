@@ -53,7 +53,7 @@ module Solargraph
         logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
-      # @return [Hash{String => [Boolean, String]}]
+      # @return [Hash{String => Boolean, String}]
       def options
         @options ||= default_configuration
       end
@@ -648,7 +648,7 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param block The block that processes the response
+      # @param block [Proc] The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
       def show_message_request text, type, actions, &block
@@ -667,7 +667,7 @@ module Solargraph
         requests.keys
       end
 
-      # @return [Hash{String => [Boolean,String]}]
+      # @return [Hash{String => Boolean,String}]
       def default_configuration
         {
           'completion' => true,
@@ -863,7 +863,7 @@ module Solargraph
       end
 
       # @param library [Library]
-      # @param uuid [String, nil]
+      #
       # @return [void]
       def sync_library_map library
         total = library.workspace.sources.length

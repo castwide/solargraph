@@ -406,7 +406,6 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param return_type_context [ComplexType, ComplexType::UniqueType, nil]
-      # @param context [ComplexType]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
       def resolve_generics_from_context(generics_to_resolve, return_type_context = nil, resolved_generic_values: {})

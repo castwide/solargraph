@@ -184,7 +184,9 @@ describe Solargraph::TypeChecker do
 
     xit 'complains about calling a non-existent method'
 
-    xit 'complains about inserting the wrong type into a tuple slot' do
+    it 'complains about inserting the wrong type into a tuple slot' do
+      pending 'Better error message from tuple support'
+
       checker = type_checker(%(
         # @param a [::Solargraph::Fills::Tuple(String, Integer)]
         def foo(a)
@@ -477,20 +479,6 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Not enough arguments')
-    end
-
-    it 'does not attempt to account for splats' do
-      checker = type_checker(%(
-        class Foo
-          def bar(baz, bing)
-          end
-
-          def blah(args)
-             bar *args
-          end
-        end
-      ))
-      expect(checker.problems).to be_empty
     end
 
     it 'does not attempt to account for splats in arg counts' do
