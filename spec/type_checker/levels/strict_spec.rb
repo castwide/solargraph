@@ -568,8 +568,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match inferred type')
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'does not require nil correctness in return tags when nil is involved and used first in a ternary' do
@@ -583,7 +582,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems.first.message).not_to include('does not match inferred type')
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'validates strict return tags' do

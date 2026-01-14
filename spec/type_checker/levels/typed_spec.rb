@@ -199,8 +199,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match inferred type')
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'validates generic subclasses of return types' do

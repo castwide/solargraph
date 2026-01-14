@@ -591,7 +591,7 @@ describe 'YARD type specifier list parsing' do
 
   context "when 'qualifying' types by resolving relative references to types to absolute references (fully qualified types)" do
     it 'returns undefined for unqualified types' do
-      api_map = intance_double(Solargraph::ApiMap, qualify: nil)
+      api_map = instance_double(Solargraph::ApiMap, qualify: nil)
       type = Solargraph::ComplexType.parse('UndefinedClass')
       qualified = type.qualify(api_map)
       expect(qualified).to be_undefined

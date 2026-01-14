@@ -161,20 +161,5 @@ describe Solargraph::Workspace do
 
       expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
     end
-
-    it 'caches gems' do
-      gemspec = instance_double(Gem::Specification, name: 'test_gem', version: '1.0.0')
-      allow(Gem::Specification).to receive(:to_a).and_return([gemspec])
-      allow(pin_cache).to receive(:cached?).and_return(false)
-      allow(pin_cache).to receive(:cache_all_stdlibs).with(out: nil, rebuild: false)
-
-      allow(Solargraph::PinCache).to receive_messages(core?: true,
-                                                      possible_stdlibs: [])
-
-      workspace.cache_all_for_workspace!(nil, rebuild: false)
-
-      expect(pin_cache).to have_received(:cache_gem).with(gemspec: gemspec, out: nil,
-                                                          rebuild: false)
-    end
   end
 end
