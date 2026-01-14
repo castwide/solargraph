@@ -11,7 +11,7 @@ module Solargraph
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
-          super("<#{@type}>")
+          super("<#{type}>")
 
           if node.is_a?(::Parser::AST::Node)
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
