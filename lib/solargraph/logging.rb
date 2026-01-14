@@ -10,7 +10,7 @@ module Solargraph
       'warn' => Logger::WARN,
       'info' => Logger::INFO,
       'debug' => Logger::DEBUG
-    }
+    }.freeze
     configured_level = ENV.fetch('SOLARGRAPH_LOG', nil)
     level = if LOG_LEVELS.keys.include?(configured_level)
               LOG_LEVELS.fetch(configured_level)
@@ -21,9 +21,9 @@ module Solargraph
               end
               DEFAULT_LOG_LEVEL
             end
-    @@logger = Logger.new(STDERR, level: level)
+    @@logger = Logger.new($stderr, level: level)
     # @sg-ignore Fix cvar issue
-    @@logger.formatter = proc do |severity, datetime, progname, msg|
+    @@logger.formatter = proc do |severity, _datetime, _progname, msg|
       "[#{severity}] #{msg}\n"
     end
 
@@ -45,7 +45,7 @@ module Solargraph
         @@logger
       else
         new_log_level = LOG_LEVELS[log_level.to_s]
-        logger = Logger.new(STDERR, level: new_log_level)
+        logger = Logger.new($stderr, level: new_log_level)
 
         # @sg-ignore Wrong argument type for Logger#formatter=: arg_0
         #   expected nil, received Logger::_Formatter, nil

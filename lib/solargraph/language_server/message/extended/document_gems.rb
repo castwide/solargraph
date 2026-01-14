@@ -13,16 +13,16 @@ module Solargraph
           def process
             cmd = [host.command_path, 'gems']
             cmd.push '--rebuild' if params['rebuild']
-            o, s = Open3.capture2(*cmd)
-            if s != 0
-              host.show_message "An error occurred while building gem documentation.", LanguageServer::MessageTypes::ERROR
+            _, s = Open3.capture2(*cmd)
+            if s.zero?
               set_result({
-                status: 'err'
-              })
+                           status: 'ok'
+                         })
             else
+              host.show_message 'An error occurred while building gem documentation.', LanguageServer::MessageTypes::ERROR
               set_result({
-                status: 'ok'
-              })
+                           status: 'err'
+                         })
             end
           end
         end

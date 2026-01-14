@@ -6,7 +6,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
-        if presence_certain? && return_type && return_type&.defined?
+        if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type
           # has been downcast - use the type it figured out
           # @sg-ignore flow sensitive typing should support ivars
@@ -16,15 +16,15 @@ module Solargraph
         super
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         # keep this as a parameter
-        return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
+        return other.combine_with(self, attrs) if other.is_a?(Parameter) && !is_a?(Parameter)
 
         super
       end
 
       def to_rbs
-        (name || '(anon)') + ' ' + (return_type&.to_rbs || 'untyped')
+        "#{name || '(anon)'} #{return_type&.to_rbs || 'untyped'}"
       end
     end
   end

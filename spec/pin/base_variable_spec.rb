@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::BaseVariable do
-  it "checks assignments for equality" do
+  it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin1 = smap.locals.first
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
@@ -45,9 +47,7 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
   end
 
-  xit "understands proc kwarg parameters aren't affected by @type" do
-    pending "understanding restarg in block param in Block#typify_parameters"
-
+  it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
       def foo

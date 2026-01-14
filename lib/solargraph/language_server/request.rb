@@ -4,7 +4,7 @@ module Solargraph
   module LanguageServer
     class Request
       # @param id [Integer]
-      # @param &block The block that processes the client's response
+      # @param block [Proc] The block that processes the client's response
       def initialize id, &block
         @id = id
         @block = block
@@ -15,7 +15,7 @@ module Solargraph
       # @yieldreturn [generic<T>]
       # @return [generic<T>, nil]
       def process result
-        @block.call(result) unless @block.nil?
+        @block&.call(result)
       end
 
       # @return [void]

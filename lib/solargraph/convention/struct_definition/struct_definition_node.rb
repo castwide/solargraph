@@ -27,7 +27,7 @@ module Solargraph
           #       s(:send, nil, :bar)))
           #
           # @param node [Parser::AST::Node]
-          def match?(node)
+          def match? node
             return false unless node&.type == :class
 
             struct_definition_node?(node.children[1])
@@ -37,7 +37,7 @@ module Solargraph
 
           # @param struct_node [Parser::AST::Node]
           # @return [Boolean]
-          def struct_definition_node?(struct_node)
+          def struct_definition_node? struct_node
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
             return false unless struct_node.children[0]&.type == :const
@@ -49,7 +49,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        def initialize(node)
+        def initialize node
           @node = node
         end
 
@@ -74,7 +74,7 @@ module Solargraph
 
           return false if keyword_init_param.nil?
 
-          keyword_init_param.children[0].children[1].type == :true
+          keyword_init_param.children[0].children[1].type == true
         end
 
         # @return [Parser::AST::Node]
@@ -95,7 +95,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
-          struct_node.children[2..-1]
+          struct_node.children[2..]
         end
       end
     end

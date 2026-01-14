@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Host::Dispatch do
   before :all do
     # @dispatch = Solargraph::LanguageServer::Host::Dispatch
     @dispatch = Object.new
-    @dispatch.extend Solargraph::LanguageServer::Host::Dispatch
+    @dispatch.extend described_class
   end
 
-  after :each do
+  after do
     @dispatch.libraries.clear
     @dispatch.sources.clear
   end
 
-  it "finds an explicit library" do
+  it 'finds an explicit library' do
     @dispatch.libraries.push Solargraph::Library.load('*')
     src = @dispatch.sources.open('file:///file.rb', 'a=b', 0)
     @dispatch.libraries.first.merge src
@@ -18,7 +20,7 @@ describe Solargraph::LanguageServer::Host::Dispatch do
     expect(lib).to be(@dispatch.libraries.first)
   end
 
-  it "finds an implicit library" do
+  it 'finds an implicit library' do
     dir = File.realpath(File.join('spec', 'fixtures', 'workspace'))
     file = File.join(dir, 'new.rb')
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
@@ -28,7 +30,7 @@ describe Solargraph::LanguageServer::Host::Dispatch do
     expect(lib).to be(@dispatch.libraries.first)
   end
 
-  it "finds a generic library" do
+  it 'finds a generic library' do
     dir = File.realpath(File.join('spec', 'fixtures', 'workspace'))
     file = '/external.rb'
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)

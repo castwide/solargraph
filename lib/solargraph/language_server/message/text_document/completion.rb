@@ -6,7 +6,7 @@ module Solargraph
       module TextDocument
         class Completion < Base
           def process
-            return set_error(ErrorCodes::REQUEST_CANCELLED, "cancelled by so many request") if host.has_pending_completions?
+            return set_error(ErrorCodes::REQUEST_CANCELLED, 'cancelled by so many request') if host.pending_completions?
 
             line = params['position']['line']
             col = params['position']['character']
@@ -19,12 +19,12 @@ module Solargraph
               completion.pins.each do |pin|
                 idx += 1 if last_context != pin.context
                 items.push pin.completion_item.merge({
-                  textEdit: {
-                    range: completion.range.to_hash,
-                    newText: pin.name.sub(/=$/, ' = ').sub(/:$/, ': ')
-                  },
-                  sortText: "#{idx.to_s.rjust(4, '0')}#{pin.name}"
-                })
+                                                       textEdit: {
+                                                         range: completion.range.to_hash,
+                                                         newText: pin.name.sub(/=$/, ' = ').sub(/:$/, ': ')
+                                                       },
+                                                       sortText: "#{idx.to_s.rjust(4, '0')}#{pin.name}"
+                                                     })
                 items.last[:data][:uri] = params['textDocument']['uri']
                 last_context = pin.context
               end
@@ -32,7 +32,7 @@ module Solargraph
                 isIncomplete: false,
                 items: items
               )
-            rescue InvalidOffsetError => e
+            rescue InvalidOffsetError
               Logging.logger.info "Completion ignored invalid offset: #{params['textDocument']['uri']}, line #{line}, character #{col}"
               set_result empty_result
             end

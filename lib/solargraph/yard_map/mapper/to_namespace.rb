@@ -23,7 +23,7 @@ module Solargraph
             closure: closure,
             # @sg-ignore need to add a nil check here
             gates: closure.gates,
-            source: :yardoc,
+            source: :yardoc
           )
         end
       end

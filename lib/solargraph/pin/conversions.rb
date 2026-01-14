@@ -44,7 +44,7 @@ module Solargraph
             path: path,
             return_type: return_type.tag,
             # @sg-ignore flow sensitive typing needs to handle attrs
-            location: (location ? location.to_hash : nil),
+            location: location&.to_hash,
             deprecated: deprecated?
           }
         }
@@ -73,7 +73,13 @@ module Solargraph
         # This property is not cached in an instance variable because it can
         # change when pins get proxied.
         detail = String.new
-        detail += "=#{probed? ? '~' : (proxied? ? '^' : '>')} #{return_type.to_s}" unless return_type.undefined?
+        unless return_type.undefined?
+          detail += "=#{if probed?
+                          '~'
+                        else
+                          (proxied? ? '^' : '>')
+                        end} #{return_type}"
+        end
         detail.strip!
         return nil if detail.empty?
         detail
@@ -117,7 +123,7 @@ module Solargraph
       # @return [String]
       def escape_brackets text
         # text.gsub(/(\<|\>)/, "\\#{$1}")
-        text.gsub("<", '\<').gsub(">", '\>')
+        text.gsub('<', '\<').gsub('>', '\>')
       end
     end
   end

@@ -16,11 +16,7 @@ module Solargraph
     # @type [Hash{String => RbsMap}]
     @@rbs_maps_hash = {}
 
-    attr_reader :library
-
-    attr_reader :rbs_collection_paths
-
-    attr_reader :rbs_collection_config_path
+    attr_reader :library, :rbs_collection_paths, :rbs_collection_config_path
 
     # @param library [String]
     # @param version [String, nil]
@@ -72,7 +68,7 @@ module Solargraph
     def cache_key
       return CACHE_KEY_UNRESOLVED unless resolved?
 
-      @hextdigest ||= begin
+      @cache_key ||= begin
         # @type [String, nil]
         data = nil
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
@@ -145,7 +141,7 @@ module Solargraph
     # @return [generic<T>, nil]
     def path_pin path, klass = Pin::Base
       pin = pins.find { |p| p.path == path }
-      pin if pin&.is_a?(klass)
+      pin if pin.is_a?(klass)
     end
 
     # @param path [String]
@@ -175,11 +171,6 @@ module Solargraph
     end
 
     private
-
-    # @return [RBS::EnvironmentLoader]
-    def loader
-      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
-    end
 
     # @return [Conversions]
     def conversions

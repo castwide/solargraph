@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::RbsMap::CoreMap do
   it 'maps core Errno classes' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     Errno.constants.each do |const|
       pin = store.get_path_pins("Errno::#{const}").first
@@ -12,20 +14,20 @@ describe Solargraph::RbsMap::CoreMap do
   end
 
   it 'understands RBS class aliases' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     # The core RBS contains:
     #   class Mutex = Thread::Mutex
-    thread_mutex_pin = store.get_path_pins("Thread::Mutex").first
+    thread_mutex_pin = store.get_path_pins('Thread::Mutex').first
     expect(thread_mutex_pin).to be_a(Solargraph::Pin::Namespace)
 
-    mutex_pin = store.get_path_pins("Mutex").first
+    mutex_pin = store.get_path_pins('Mutex').first
     expect(mutex_pin).to be_a(Solargraph::Pin::Constant)
-    expect(mutex_pin.return_type.to_s).to eq("Class<Thread::Mutex>")
+    expect(mutex_pin.return_type.to_s).to eq('Class<Thread::Mutex>')
   end
 
   it 'understands RBS global variables' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     global_variable_pins = store.pins_by_class(Solargraph::Pin::GlobalVariable)
     stderr_pins = global_variable_pins.select do |pin|
@@ -39,10 +41,10 @@ describe Solargraph::RbsMap::CoreMap do
   it 'understands implied Enumerator#each method' do
     api_map = Solargraph::ApiMap.new
     methods = api_map.get_methods('Enumerable<String>')
-    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    each_pins = methods.select { |pin| pin.path.end_with?('#each') }
     # expect this to come from the _Each implied interface ("self
     # type") defined in the RBS
-    expect(each_pins.map(&:path)).to eq(["_Each#each"])
+    expect(each_pins.map(&:path)).to eq(['_Each#each'])
     expect(each_pins.map(&:class)).to eq([Solargraph::Pin::Method])
     each_pin = each_pins.first
     expect(each_pin.signatures.length).to eq(1)
@@ -53,7 +55,7 @@ describe Solargraph::RbsMap::CoreMap do
   it 'populates types in block parameters from generics' do
     api_map = Solargraph::ApiMap.new
     methods = api_map.get_methods('Enumerable<String>')
-    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    each_pins = methods.select { |pin| pin.path.end_with?('#each') }
     each_pin = each_pins.first
     signature = each_pin.signatures.first
     expect(signature.block.parameters.map(&:return_type).map(&:to_s)).to eq(['String'])
@@ -69,7 +71,7 @@ describe Solargraph::RbsMap::CoreMap do
     #
     api_map = Solargraph::ApiMap.new
     methods = api_map.get_methods('Enumerable<String>')
-    each_pins = methods.select{|pin| pin.path.end_with?('#each')}
+    each_pins = methods.select { |pin| pin.path.end_with?('#each') }
     each_pin = each_pins.first
     signature = each_pin.signatures.first
     expect(signature.return_type.to_s).to eq('Enumerable<String>')
@@ -79,7 +81,7 @@ describe Solargraph::RbsMap::CoreMap do
     # @todo This is a simple smoke test to ensure that mixins are applied
     #   correctly. It would be better to test RbsMap or RbsMap::Conversions
     #   with an RBS fixture.
-    core_map = Solargraph::RbsMap::CoreMap.new
+    core_map = described_class.new
     pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
     expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
@@ -97,12 +99,12 @@ describe Solargraph::RbsMap::CoreMap do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
-  it "generates rooted pins from RBS for core" do
-    map = Solargraph::RbsMap::CoreMap.new
+  it 'generates rooted pins from RBS for core' do
+    map = described_class.new
     map.pins.each do |pin|
       expect(pin).to be_all_rooted
       unless pin.is_a?(Solargraph::Pin::Keyword)
-        expect(pin.closure).to_not be_nil, ->(){ "Pin #{pin.inspect} (#{pin.path}) has no closure" }
+        expect(pin.closure).not_to be_nil, -> { "Pin #{pin.inspect} (#{pin.path}) has no closure" }
       end
     end
   end

@@ -71,7 +71,7 @@ module Solargraph
   # @param msg [String, nil] An optional message to log
   # @param block [Proc] A block that returns a message to log
   # @return [void]
-  def self.assert_or_log(type, msg = nil, &block)
+  def self.assert_or_log type, msg = nil, &block
     if asserts_on?
       # @type [String, nil]
       msg ||= block.call
@@ -113,10 +113,10 @@ module Solargraph
   # @return [generic<T>]
   def self.with_clean_env &block
     meth = if Bundler.respond_to?(:with_original_env)
-      :with_original_env
-    else
-      :with_clean_env
-    end
+             :with_original_env
+           else
+             :with_clean_env
+           end
     Bundler.send meth, &block
   end
 end

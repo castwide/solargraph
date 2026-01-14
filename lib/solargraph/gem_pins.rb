@@ -13,8 +13,8 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
-    def self.combine_method_pins_by_path(pins)
-      method_pins, alias_pins = pins.partition { |pin| pin.class == Pin::Method }
+    def self.combine_method_pins_by_path pins
+      method_pins, alias_pins = pins.partition { |pin| pin.instance_of?(Pin::Method) }
       by_path = method_pins.group_by(&:path)
       by_path.transform_values! do |pins|
         GemPins.combine_method_pins(*pins)
@@ -47,7 +47,7 @@ module Solargraph
     # @param rbs_pins [Array<Pin::Base>]
     #
     # @return [Array<Pin::Base>]
-    def self.combine(yard_pins, rbs_pins)
+    def self.combine yard_pins, rbs_pins
       in_yard = Set.new
       rbs_store = Solargraph::ApiMap::Store.new(rbs_pins)
       combined = yard_pins.map do |yard_pin|
@@ -57,7 +57,9 @@ module Solargraph
         next yard_pin unless rbs_pin && yard_pin.is_a?(Pin::Method)
 
         unless rbs_pin
-          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
+          logger.debug do
+            "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})"
+          end
           next yard_pin
         end
 
@@ -90,7 +92,7 @@ module Solargraph
       # @param choices [Array<ComplexType>]
       # @return [ComplexType]
       def best_return_type *choices
-        choices.find { |pin| pin.defined? } || choices.first || ComplexType::UNDEFINED
+        choices.find(&:defined?) || choices.first || ComplexType::UNDEFINED
       end
     end
   end

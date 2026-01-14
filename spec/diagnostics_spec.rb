@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 describe Solargraph::Diagnostics do
-  it "registers reporters" do
-    Solargraph::Diagnostics.register 'base', Solargraph::Diagnostics::Base
-    expect(Solargraph::Diagnostics.reporters).to include('base')
-    expect(Solargraph::Diagnostics.reporter('base')).to be(Solargraph::Diagnostics::Base)
+  it 'registers reporters' do
+    described_class.register 'base', Solargraph::Diagnostics::Base
+    expect(described_class.reporters).to include('base')
+    expect(described_class.reporter('base')).to be(Solargraph::Diagnostics::Base)
   end
 end

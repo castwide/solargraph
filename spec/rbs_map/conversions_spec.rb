@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 describe Solargraph::RbsMap::Conversions do
   context 'with RBS to digest' do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end
@@ -12,7 +14,7 @@ describe Solargraph::RbsMap::Conversions do
     let(:conversions) do
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
       loader.add(path: Pathname(temp_dir))
-      Solargraph::RbsMap::Conversions.new(loader: loader)
+      described_class.new(loader: loader)
     end
 
     let(:api_map) { Solargraph::ApiMap.new }

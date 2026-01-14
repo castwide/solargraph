@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Message::TextDocument::Definition do
   it 'prepares empty directory' do
     Dir.mktmpdir do |dir|
@@ -11,7 +13,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
       host.catalog
       file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(test_rb_path)
       other_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(thing_rb_path)
-      message = Solargraph::LanguageServer::Message::TextDocument::Definition
+      message = described_class
                 .new(host, {
                        'params' => {
                          'textDocument' => {
@@ -35,17 +37,17 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     host.catalog
     file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/other.rb'))
     other_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/thing.rb'))
-    message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
-      'params' => {
-        'textDocument' => {
-          'uri' => file_uri
-        },
-        'position' => {
-          'line' => 4,
-          'character' => 10
-        }
-      }
-    })
+    message = described_class.new(host, {
+                                    'params' => {
+                                      'textDocument' => {
+                                        'uri' => file_uri
+                                      },
+                                      'position' => {
+                                        'line' => 4,
+                                        'character' => 10
+                                      }
+                                    }
+                                  })
     message.process
     expect(message.result.first[:uri]).to eq(other_uri)
   end
@@ -56,18 +58,21 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     host.prepare(path)
     sleep 0.1 until host.libraries.all?(&:mapped?)
     host.catalog
-    message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(host, {
-      'params' => {
-        'textDocument' => {
-          'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib', 'other.rb'))
-        },
-        'position' => {
-          'line' => 0,
-          'character' => 10
-        }
-      }
-    })
+    message = described_class.new(host, {
+                                    'params' => {
+                                      'textDocument' => {
+                                        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(
+                                                                                                      path, 'lib', 'other.rb'
+                                                                                                    ))
+                                      },
+                                      'position' => {
+                                        'line' => 0,
+                                        'character' => 10
+                                      }
+                                    }
+                                  })
     message.process
-    expect(message.result.first[:uri]).to eq(Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib', 'thing.rb')))
+    expect(message.result.first[:uri]).to eq(Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib',
+                                                                                                          'thing.rb')))
   end
 end

@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Transport::DataReader do
-  it "rescues exceptions for invalid JSON" do
-    reader = Solargraph::LanguageServer::Transport::DataReader.new
+  it 'rescues exceptions for invalid JSON' do
+    reader = described_class.new
     handled = 0
-    reader.set_message_handler do |msg|
+    reader.set_message_handler do |_msg|
       handled += 1
     end
     msg = {
@@ -10,9 +12,9 @@ describe Solargraph::LanguageServer::Transport::DataReader do
       method: 'test'
     }.to_json
     msg += '}'
-    expect {
+    expect do
       reader.receive "Content-Length:#{msg.bytesize}\r\n\r\n#{msg}"
-    }.not_to raise_error
+    end.not_to raise_error
     expect(handled).to eq(0)
   end
 end

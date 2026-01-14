@@ -1,25 +1,27 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain do
-  it "gets empty definitions for undefined links" do
+  it 'gets empty definitions for undefined links' do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
     expect(chain.define(nil, nil, nil)).to be_empty
   end
 
-  it "infers undefined types for undefined links" do
+  it 'infers undefined types for undefined links' do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
     expect(chain.infer(nil, nil, nil)).to be_undefined
   end
 
-  it "calls itself undefined if any of its links are undefined" do
+  it 'calls itself undefined if any of its links are undefined' do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
     expect(chain).to be_undefined
   end
 
-  it "returns undefined bases for single links" do
+  it 'returns undefined bases for single links' do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
     expect(chain.base).to be_undefined
   end
 
-  it "defines constants from core classes" do
+  it 'defines constants from core classes' do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
     pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
@@ -27,7 +29,7 @@ describe Solargraph::Source::Chain do
     expect(pins.first.path).to eq('String')
   end
 
-  it "infers types from core classes" do
+  it 'infers types from core classes' do
     api_map = Solargraph::ApiMap.new
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
@@ -35,25 +37,26 @@ describe Solargraph::Source::Chain do
     expect(type.scope).to eq(:class)
   end
 
-  it "infers types from core methods" do
+  it 'infers types from core methods' do
     api_map = Solargraph::ApiMap.new
-    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Call.new('new', nil)])
+    chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'),
+                                 Solargraph::Source::Chain::Call.new('new', nil)])
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.namespace).to eq('String')
     expect(type.scope).to eq(:instance)
   end
 
-  it "recognizes literals" do
+  it 'recognizes literals' do
     chain = described_class.new([Solargraph::Source::Chain::Literal.new('String', nil)])
     expect(chain.literal?).to be(true)
   end
 
-  it "recognizes constants" do
+  it 'recognizes constants' do
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String')])
     expect(chain.constant?).to be(true)
   end
 
-  it "recognizes unfinished constants" do
+  it 'recognizes unfinished constants' do
     chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'), Solargraph::Source::Chain::Constant.new('<undefined>')])
     expect(chain.constant?).to be(true)
     expect(chain.base.constant?).to be(true)
@@ -61,7 +64,7 @@ describe Solargraph::Source::Chain do
     expect(chain.base.undefined?).to be(false)
   end
 
-  it "infers types from new subclass calls without a subclass initialize method" do
+  it 'infers types from new subclass calls without a subclass initialize method' do
     code = %(
       class Sup
         def initialize; end
@@ -80,7 +83,7 @@ describe Solargraph::Source::Chain do
     expect(type.name).to eq('Sub')
   end
 
-  it "follows constant chains" do
+  it 'follows constant chains' do
     source = Solargraph::Source.load_string(%(
       module Mixin; end
       module Container
@@ -95,7 +98,7 @@ describe Solargraph::Source::Chain do
     expect(pins).to be_empty
   end
 
-  it "rebases inner constants chains" do
+  it 'rebases inner constants chains' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar; end
@@ -105,11 +108,12 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 16))
-    pins = chain.define(api_map, Solargraph::Pin::ProxyType.new(closure: Solargraph::Pin::Namespace.new(name: 'Foo'), return_type: Solargraph::ComplexType.parse('Class<Foo>')), [])
+    pins = chain.define(api_map,
+                        Solargraph::Pin::ProxyType.new(closure: Solargraph::Pin::Namespace.new(name: 'Foo'), return_type: Solargraph::ComplexType.parse('Class<Foo>')), [])
     expect(pins.first.path).to eq('Foo::Bar')
   end
 
-  it "resolves relative constant paths" do
+  it 'resolves relative constant paths' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar
@@ -123,11 +127,12 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 16))
-    pins = chain.define(api_map, Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Class<Foo::Other>')), [])
+    pins = chain.define(api_map,
+                        Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Class<Foo::Other>')), [])
     expect(pins.first.path).to eq('Foo::Bar::Baz')
   end
 
-  it "avoids recursive variable assignments" do
+  it 'avoids recursive variable assignments' do
     source = Solargraph::Source.load_string(%(
       @foo = @bar
       @bar = @foo.quz
@@ -135,12 +140,12 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 18))
-    expect {
+    expect do
       chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "pulls types from multiple lines of code" do
+  it 'pulls types from multiple lines of code' do
     source = Solargraph::Source.load_string(%(
       123
       'abc'
@@ -152,7 +157,7 @@ describe Solargraph::Source::Chain do
     expect(type.simple_tags).to eq('String')
   end
 
-  it "uses last line of a begin expression as return type" do
+  it 'uses last line of a begin expression as return type' do
     source = Solargraph::Source.load_string(%(
       begin
         123
@@ -166,7 +171,7 @@ describe Solargraph::Source::Chain do
     expect(type.simple_tags).to eq('String')
   end
 
-  it "matches constants on complete symbols" do
+  it 'matches constants on complete symbols' do
     source = Solargraph::Source.load_string(%(
       class Correct; end
       class NotCorrect; end
@@ -297,7 +302,7 @@ describe Solargraph::Source::Chain do
   end
 
   it 'infers String from interpolated strings' do
-    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%("#{Object}"), 'test.rb')
     node = source.node
     api_map = Solargraph::ApiMap.new
     api_map.map source
@@ -327,7 +332,7 @@ describe Solargraph::Source::Chain do
   end
 
   it 'infers Symbol from interpolated symbols' do
-    source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%(:"#{Object}"), 'test.rb')
     node = source.node
     api_map = Solargraph::ApiMap.new
     api_map.map source

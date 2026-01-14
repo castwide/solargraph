@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 describe Solargraph::Diagnostics::RequireNotFound do
-  before :each do
+  before do
     @source = Solargraph::Source.new(%(
       require 'rexml/document'
       require 'not_valid'
@@ -11,8 +13,8 @@ describe Solargraph::Diagnostics::RequireNotFound do
     @api_map.catalog Solargraph::Bench.new(source_maps: [@source_map], external_requires: ['not_valid'])
   end
 
-  it "reports unresolved requires" do
-    reporter = Solargraph::Diagnostics::RequireNotFound.new
+  it 'reports unresolved requires' do
+    reporter = described_class.new
     result = reporter.diagnose(@source, @api_map)
     expect(result.length).to eq(1)
   end

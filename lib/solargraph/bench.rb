@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 module Solargraph
   # A container of source maps and workspace data to be cataloged in an ApiMap.
   #
@@ -33,8 +32,7 @@ module Solargraph
     # @return [Hash{String => SourceMap}]
     def source_map_hash
       # @todo Work around #to_h bug in current Ruby head (3.5) with #map#to_h
-      @source_map_hash ||= source_maps.map { |s| [s.filename, s] }
-                                      .to_h
+      @source_map_hash ||= source_maps.to_h { |s| [s.filename, s] }
     end
 
     # @return [Set<SourceMap>]

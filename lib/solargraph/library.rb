@@ -127,8 +127,8 @@ module Solargraph
     # @return [Boolean] True if at least one file was added to the workspace.
     def create_from_disk *filenames
       sources = filenames
-        .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
-        .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
+                .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
+                .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
       result = workspace.merge(*sources)
       sources.each { |source| maybe_map source }
       result
@@ -195,10 +195,10 @@ module Solargraph
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
         # @sg-ignore Need to add nil check here
         # @type [MatchData, nil]
-        lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        lft = source.code[0..(offset - 1)].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
         # @sg-ignore Need to add nil check here
         # @type [MatchData, nil]
-        rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
+        rgt = source.code[offset..].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
           # @sg-ignore Need to add nil check here
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
@@ -264,10 +264,10 @@ module Solargraph
       return [] unless pin
       result = []
       files = if only
-        [api_map.source_map(filename)]
-      else
-        (workspace.sources + (@current ? [@current] : []))
-      end
+                [api_map.source_map(filename)]
+              else
+                (workspace.sources + (@current ? [@current] : []))
+              end
       files.uniq(&:filename).each do |source|
         found = source.references(pin.name)
         found.select! do |loc|
@@ -291,7 +291,7 @@ module Solargraph
           end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
-        if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
+        if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
           found.map! do |loc|
             Solargraph::Location.new(loc.filename,
                                      # @sg-ignore flow sensitive typing needs to handle if foo = bar
@@ -329,8 +329,8 @@ module Solargraph
       end
       workspace.require_paths.each do |path|
         full = File.join path, pin.name
-        return_if_match.(full)
-        return_if_match.(full << ".rb")
+        return_if_match.call(full)
+        return_if_match.call(full << '.rb')
       end
       nil
     rescue FileNotFoundError
@@ -543,15 +543,15 @@ module Solargraph
     # @return [void]
     def find_external_requires source_map
       # @type [Set<String>]
-      new_set = source_map.requires.map(&:name).to_set
+      new_set = source_map.requires.to_set(&:name)
       # return if new_set == source_map_external_require_hash[source_map.filename]
       _filenames = nil
-      filenames = ->{ _filenames ||= workspace.filenames.to_set }
+      filenames = -> { _filenames ||= workspace.filenames.to_set }
       # @sg-ignore Need to add nil check here
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
-          filenames[].include?(full) or filenames[].include?(full << ".rb")
+          filenames[].include?(full) or filenames[].include?(full << '.rb')
         end
       end
       @external_requires = nil
@@ -585,12 +585,9 @@ module Solargraph
     # @param error [FileNotFoundError]
     # @return [nil]
     def handle_file_not_found filename, error
-      if workspace.source(filename)
-        Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
-        nil
-      else
-        raise error
-      end
+      raise error unless workspace.source(filename)
+      Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+      nil
     end
 
     # @param source [Source, nil]
@@ -679,16 +676,14 @@ module Solargraph
       finished = @total - pending
       # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       pct = if @total.zero?
-        0
-      else
-        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
-        ((finished.to_f / @total.to_f) * 100).to_i
-      end
-      message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
+              0
+            else
+              # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+              ((finished.to_f / @total) * 100).to_i
+            end
+      message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
       # "
-      if @cache_progress
-        @cache_progress.report(message, pct)
-      else
+      unless @cache_progress
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
@@ -697,8 +692,8 @@ module Solargraph
         changed
         notify_observers @cache_progress
         # @sg-ignore flow sensitive typing should be able to handle redefinition
-        @cache_progress.report(message, pct)
       end
+      @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress
     end
@@ -713,11 +708,11 @@ module Solargraph
 
     # @return [void]
     def sync_catalog
-      return if @sync_count == 0
+      return if @sync_count.zero?
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
-        source_map_hash.values.each { |map| find_external_requires(map) }
+        source_map_hash.each_value { |map| find_external_requires(map) }
         api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
         logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"

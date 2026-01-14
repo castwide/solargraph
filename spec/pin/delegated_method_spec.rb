@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'pry'
 
 describe Solargraph::Pin::DelegatedMethod do
   it 'can be constructed from a Method pin' do
     method_pin = Solargraph::Pin::Method.new(comments: '@return [Hash{String => String}]')
 
-    delegation_pin = Solargraph::Pin::DelegatedMethod.new(method: method_pin, scope: :instance)
+    delegation_pin = described_class.new(method: method_pin, scope: :instance)
     expect(delegation_pin.return_type.to_s).to eq('Hash{String => String}')
   end
 
@@ -26,7 +28,7 @@ describe Solargraph::Pin::DelegatedMethod do
     class2 = api_map.get_path_pins('Class2').first
 
     chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('collaborator', nil)])
-    pin = Solargraph::Pin::DelegatedMethod.new(
+    pin = described_class.new(
       closure: class2,
       scope: :instance,
       name: 'name',
