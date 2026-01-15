@@ -20,6 +20,14 @@ module Solargraph
 
       # @param directory [String]
       def initialize directory = ''
+        if directory.empty?
+          Solargraph.assert_or_log(:empty_directory_received, 'Workspace directory is empty')
+        end
+
+        if directory == '*'
+          Solargraph.assert_or_log(:star_directory_received, 'Workspace directory is set to *')
+        end
+
         @directory = File.absolute_path(directory)
         @raw_data = config_data
         included
