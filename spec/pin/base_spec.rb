@@ -50,8 +50,10 @@ describe Solargraph::Pin::Base do
   end
 
   it 'deals well with known closure combination issue' do
-    Solargraph::Shell.new.uncache('yard')
-    api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+    # if this fails you might not have an rbs collection installed
+    api_map = Solargraph::ApiMap.load ''
+    bench = Solargraph::Bench.new(external_requires: ['yard'])
+    api_map.catalog bench
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     expect(pins.length).to eq(1)
     parser_method_pin = pins.first
