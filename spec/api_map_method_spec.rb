@@ -118,6 +118,9 @@ describe 'Solargraph::ApiMap methods' do
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
+        spec = Gem::Specification.find_by_name('yaml')
+        api_map.cache_gem(spec)
+
         expect(method_stack).not_to be_empty
       end
     end
@@ -127,6 +130,9 @@ describe 'Solargraph::ApiMap methods' do
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
 
       it 'handles finding Thor.desc' do
+        spec = Gem::Specification.find_by_name('thor')
+        api_map.cache_gem(spec)
+
         # if this fails you may not have an rbs collection installed
         expect(method_stack).not_to be_empty
       end
