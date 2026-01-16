@@ -13,7 +13,8 @@ describe 'YARD type specifier list parsing' do
       expect(types.length).to eq(0)
     end
 
-    xit 'parses zero types as a string' do
+    it 'parses zero types as a string' do
+      pending('special case being added')
       types = Solargraph::ComplexType.parse ''
       expect(types.length).to eq(0)
     end
@@ -265,14 +266,18 @@ describe 'YARD type specifier list parsing' do
     # See literal details at
     # https://github.com/ruby/rbs/blob/master/docs/syntax.md and
     # https://yardoc.org/types.html
-    xit 'understands literal strings with double quotes' do
+    it 'understands literal strings with double quotes' do
+      pending('string escaping support being added')
+
       type = Solargraph::ComplexType.parse('"foo"')
       expect(type.tag).to eq('"foo"')
       expect(type.to_rbs).to eq('"foo"')
       expect(type.to_s).to eq('String')
     end
 
-    xit 'understands literal strings with single quotes' do
+    it 'understands literal strings with single quotes' do
+      pending('string escaping support being added')
+
       type = Solargraph::ComplexType.parse("'foo'")
       expect(type.tag).to eq("'foo'")
       expect(type.to_rbs).to eq("'foo'")
@@ -725,13 +730,43 @@ describe 'YARD type specifier list parsing' do
       expect(result.to_rbs).to eq('::Array[::String]')
     end
 
-    xit 'stops parsing when the first character indicates a string literal' do
+    it 'stops parsing when the first character indicates a string literal' do
+      pending('string escaping support being added')
+
       api_map = Solargraph::ApiMap.new
       type = Solargraph::ComplexType.parse('"Array(Symbol, String, Array(Integer, Integer)"')
       type = type.qualify(api_map)
       expect(type.tag).to eq('Array(Symbol, String, Array(Integer, Integer))')
       expect(type.to_rbs).to eq('[Symbol, String, [Integer, Integer]]')
       expect(type.to_s).to eq('Array(Symbol, String, Array(Integer, Integer))')
+    end
+
+    it 'recognizes String conforms with itself' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('String')
+      atype = Solargraph::ComplexType.parse('String')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
+    end
+
+    it 'recognizes an erased container type conforms with itself' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('Hash')
+      atype = Solargraph::ComplexType.parse('Hash')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
+    end
+
+    it 'recognizes an unerased container type conforms with itself' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('Array<Integer>')
+      atype = Solargraph::ComplexType.parse('Array<Integer>')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
+    end
+
+    it 'recognizes a literal conforms with its type' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('Symbol')
+      atype = Solargraph::ComplexType.parse(':foo')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
   end
 end

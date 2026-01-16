@@ -3,13 +3,17 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
-      # @return [ComplexType]
+      # @sg-ignore Need to add nil check here
+      # @return [ComplexType, ComplexType::UniqueType]
       def binder
+        # @sg-ignore Need to add nil check here
         closure.binder
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [::Symbol]
       def scope
+        # @sg-ignore Need to add nil check here
         closure.binder.scope
       end
 

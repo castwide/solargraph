@@ -8,7 +8,7 @@ module Solargraph
         @methods = {}
         # @type [Hash{String, Array<String> => Array<Pin::Base>}]
         @constants = {}
-        # @type [Hash{String => String}]
+        # @type [Hash{String => String, nil}]
         @qualified_namespaces = {}
         # @type [Hash{String => Pin::Method}]
         @receiver_definitions = {}
@@ -61,14 +61,14 @@ module Solargraph
 
       # @param name [String]
       # @param context [String]
-      # @return [String]
+      # @return [String, nil]
       def get_qualified_namespace name, context
         @qualified_namespaces["#{name}|#{context}"]
       end
 
       # @param name [String]
       # @param context [String]
-      # @param value [String]
+      # @param value [String, nil]
       # @return [void]
       def set_qualified_namespace name, context, value
         @qualified_namespaces["#{name}|#{context}"] = value
