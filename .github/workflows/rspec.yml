@@ -82,7 +82,7 @@ jobs:
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     - name: Install gems
       run: |
-        bundle _2.5.23__ install
+        bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: |
