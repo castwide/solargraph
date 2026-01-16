@@ -78,8 +78,6 @@ jobs:
         # match version in Gemfile.lock and use same version below
         bundler: 2.5.23
         bundler-cache: false
-    - name: Set rbs version
-      run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     - name: Install gems
       run: |
         bundle _2.5.23_ install
