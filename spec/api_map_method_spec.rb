@@ -127,6 +127,7 @@ describe 'Solargraph::ApiMap methods' do
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
 
       it 'handles finding Thor.desc' do
+        # if this fails you may not have an rbs collection installed
         expect(method_stack).not_to be_empty
       end
     end

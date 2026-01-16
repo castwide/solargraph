@@ -58,8 +58,6 @@ jobs:
       run: |
         bundle _2.5.23_ install
         bundle update rbs # use latest available for this Ruby version
-        bundle list
-        bundle exec solargraph pin 'Bundler::Dsl#source'
     - name: Update types
       run: |
         bundle exec rbs collection update
@@ -77,9 +75,18 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.4'
+        # match version in Gemfile.lock and use same version below
+        bundler: 2.5.23
         bundler-cache: false
+    - name: Set rbs version
+      run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     - name: Install gems
-      run: bundle install
+      run: |
+        bundle _2.5.23__ install
+        bundle update rbs # use latest available for this Ruby version
+    - name: Update types
+      run: |
+        bundle exec rbs collection update
     - name: Run tests
       run: bundle exec rake spec
     - name: Check PR coverage
