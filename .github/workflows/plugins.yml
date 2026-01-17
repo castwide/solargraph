@@ -9,7 +9,7 @@ on:
   push:
     branches: [master]
   pull_request:
-    branches: [master]
+    branches: ['*']
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4
+        ruby-version: 3.4 # keep same as typecheck.yml
         bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -34,7 +34,7 @@ jobs:
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -43,7 +43,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
   rails:
@@ -54,7 +54,9 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4
+        ruby-version: 3.4 # keep same as typecheck.yml
+        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        rubygems: latest
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -64,7 +66,7 @@ jobs:
       run: |
         echo 'gem "solargraph-rails"' > .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -72,7 +74,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
   rspec:
@@ -83,7 +85,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4
+        ruby-version: 3.4 # keep same as typecheck.yml
         bundler-cache: false
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -93,7 +95,7 @@ jobs:
       run: |
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
-        bundle update rbs
+        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -101,7 +103,7 @@ jobs:
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
-      run: bundle exec solargraph typecheck --level typed
+      run: bundle exec solargraph typecheck --level strong
     - name: Ensure specs still run
       run: bundle exec rake spec
 
@@ -116,47 +118,47 @@ jobs:
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
-       # git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone https://github.com/lekemula/solargraph-rspec.git
 
-       # pending https://github.com/lekemula/solargraph-rspec/pull/30
-       git clone https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
-       git checkout reset_closures
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.1'
+        ruby-version: 3.4
         rubygems: latest
         bundler-cache: false
     - name: Install gems
       run: |
-       set -x
+        set -x
 
-       cd ../solargraph-rspec
-       echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-       bundle config path ${{ env.BUNDLE_PATH }}
-       bundle install --jobs 4 --retry 3
-       bundle exec appraisal install
-       # @todo some kind of appraisal/bundle conflict?
-       #   https://github.com/castwide/solargraph/actions/runs/19038710934/job/54369767122?pr=1116
-       #   /home/runner/work/solargraph/solargraph-rspec/vendor/bundle/ruby/3.1.0/gems/bundler-2.6.9/lib/bundler/runtime.rb:317:in
-       #   `check_for_activated_spec!': You have already activated date
-       #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
-       #   `bundle exec` to your command may solve
-       #   this. (Gem::LoadError)
-       bundle exec appraisal update date
-       # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
-       # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
-       # We update manually to the latest
-       bundle exec appraisal update rspec-rails
+        cd ../solargraph-rspec
+        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
+        bundle config path ${{ env.BUNDLE_PATH }}
+        bundle install --jobs 4 --retry 3
+        bundle exec appraisal install
+        # @todo some kind of appraisal/bundle conflict?
+        #   https://github.com/castwide/solargraph/actions/runs/19038710934/job/54369767122?pr=1116
+        #   /home/runner/work/solargraph/solargraph-rspec/vendor/bundle/ruby/3.1.0/gems/bundler-2.6.9/lib/bundler/runtime.rb:317:in
+        #   `check_for_activated_spec!': You have already activated date
+        #   3.5.0, but your Gemfile requires date 3.4.1. Prepending
+        #   `bundle exec` to your command may solve
+        #   this. (Gem::LoadError)
+        bundle exec appraisal update date
+        # For some reason on ruby 3.1 it defaults to an old version: 1.3.2
+        # https://github.com/lekemula/solargraph-rspec/actions/runs/17814581205/job/50645370316?pr=22
+        # We update manually to the latest
+        bundle exec appraisal update rspec-rails
     - name: Configure .solargraph.yml
       run: |
         cd ../solargraph-rspec
         cp .solargraph.yml.example .solargraph.yml
-    - name: Solargraph generate RSpec gems YARD and RBS pins
+    - name: Solargraph generate RSpec gems YARD pins
       run: |
         cd ../solargraph-rspec
-        bundle exec appraisal rbs collection update
+        # solargraph-rspec's specs don't pass a workspace, so it
+        # doesn't know where to look for the RBS collection - let's
+        # not load one so that the solargraph gems command below works
+
         rspec_gems=$(bundle exec appraisal ruby -r './lib/solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
         bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs
@@ -180,6 +182,8 @@ jobs:
         # solargraph-rails supports Ruby 3.0+
         ruby-version: '3.0'
         bundler-cache: false
+        # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
+        rubygems: latest
         bundler: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
@@ -191,7 +195,7 @@ jobs:
        cd ../solargraph-rails
        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
        bundle install
-       bundle update rbs
+       bundle update --pre rbs
        RAILS_DIR="$(pwd)/spec/rails7"
        export RAILS_DIR
        cd ${RAILS_DIR}

@@ -432,9 +432,13 @@ describe Protocol do
   end
 
   it "handles $/solargraph/documentGems" do
+    status = instance_double(Process::Status)
+    allow(status).to receive(:==).with(0).and_return(true)
+    allow(Open3).to receive(:capture2).with('solargraph', 'gems').and_return(['', status])
     @protocol.request '$/solargraph/documentGems', {}
     response = @protocol.response
     expect(response['error']).to be_nil
+    expect(Open3).to have_received(:capture2).with('solargraph', 'gems')
   end
 
   it "handles textDocument/formatting" do

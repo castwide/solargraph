@@ -104,6 +104,7 @@ module Solargraph
         left = text.lines.map do |line|
           match = line.match(/^ +/)
           next 0 unless match
+          # @sg-ignore Need to add nil check here
           match[0].length
         end.min
         return text if left.nil? || left.zero?

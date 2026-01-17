@@ -1,5 +1,5 @@
 module ::AST
   class Node
-     def children: () -> [self, Integer, String, Symbol, nil]
+     def children: () -> Array[self | Integer | String | Symbol | nil]
   end
 end
