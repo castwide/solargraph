@@ -760,6 +760,13 @@ module Solargraph
       store.qualify_superclass fq_sub_tag
     end
 
+    # @param require_path [String]
+    #
+    # @return [Array<Gem::Specification>, nil]
+    def resolve_require require_path
+      workspace.resolve_require require_path
+    end
+
     private
 
     # A hash of source maps with filename keys.
