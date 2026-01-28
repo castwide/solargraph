@@ -20,11 +20,6 @@ PreCommit:
   RuboCop:
     enabled: true
 
-  Solargraph:
-    enabled: true
-    exclude:
-      - 'spec/**/*'
-
   FixMe:
     enabled: true
     exclude:

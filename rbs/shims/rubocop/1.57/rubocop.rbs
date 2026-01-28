@@ -1,0 +1,132 @@
+module RuboCop
+  class ConfigLoader
+    def self.debug?: () -> boolish
+    def self.merge_with_default: (Config, String) -> Config
+  end
+
+  class Config
+    def initialize: (Hash[untyped, untyped], String) -> void
+    def for_cop: (String cop) -> Hash[String, untyped]
+    def for_enabled_cop: (String cop) -> Hash[String, untyped]
+  end
+
+  module Cop
+    class Base
+      extend AST::NodePattern::Macros
+      include Util
+      include IgnoredNode
+      include AutocorrectLogic
+
+      def self.exclude_from_registry: () -> void
+      def self.department: () -> Symbol
+      def self.cop_name: () -> String
+      def self.documentation_url: (?Config?) -> String
+      def self.requires_gem: (String gem_name, *String version_requirements) -> void
+
+      attr_reader config: Config
+
+      def add_offense: (untyped node, ?message: String, ?severity: Symbol) -> void
+                     | (untyped node, ?message: String, ?severity: Symbol) { (Corrector) -> void } -> void
+      def cop_config: () -> Hash[String, untyped]
+      def target_ruby_version: () -> Float
+      def processed_source: () -> AST::ProcessedSource
+      def target_gem_version: (String gem_name) -> Gem::Version
+      def on_new_investigation: () -> void
+      def on_investigation_end: () -> void
+      def on_other_file: () -> void
+    end
+
+    module AutocorrectLogic
+      def autocorrect?: () -> bool
+      def autocorrect_with_disable_uncorrectable?: () -> bool
+      def autocorrect_requested?: () -> bool
+      def correctable?: () -> bool
+      def disable_uncorrectable?: () -> bool
+      def safe_autocorrect?: () -> bool
+      def autocorrect_enabled?: () -> bool
+    end
+
+    class Corrector < Parser::Source::TreeRewriter
+      def replace: ((Parser::Source::Range | RuboCop::AST::Node) range, String content) -> self
+      def wrap: ((Parser::Source::Range | RuboCop::AST::Node) range, String? insert_before, String? insert_after) -> self
+      def remove: ((Parser::Source::Range | RuboCop::AST::Node) range) -> self
+      def insert_before: ((Parser::Source::Range | RuboCop::AST::Node) range, String content) -> self
+      def insert_after: ((Parser::Source::Range | RuboCop::AST::Node) range, String content) -> self
+      def remove_preceding: ((Parser::Source::Range | RuboCop::AST::Node) node_or_range, Integer size) -> self
+      def remove_leading: ((Parser::Source::Range | RuboCop::AST::Node) node_or_range, Integer size) -> self
+      def remove_trailing: ((Parser::Source::Range | RuboCop::AST::Node) node_or_range, Integer size) -> self
+      def swap: ((Parser::Source::Range | RuboCop::AST::Node) node_or_range1, (Parser::Source::Range | RuboCop::AST::Node) node_or_range2) -> self
+    end
+
+    module Alignment
+      def configured_indentation_width: () -> Integer
+      def indentation: (RuboCop::AST::Node node) -> String
+      def offset: (RuboCop::AST::Node node) -> String
+    end
+
+    module ConfigurableEnforcedStyle
+      def style: () -> Symbol
+    end
+
+    module CommentsHelp
+      def source_range_with_comment: (RuboCop::AST::Node node) -> Parser::Source::Range
+      def contains_comments?: (RuboCop::AST::Node node) -> bool
+      def comments_in_range: (RuboCop::AST::Node node) -> Array[Parser::Source::Comment]
+      def comments_contain_disables?: (RuboCop::AST::Node node, String cop_name) -> bool
+    end
+
+    module RangeHelp
+      def source_range: (Parser::Source::Buffer source_buffer, Integer line_number, Integer column, ?Integer length) -> Parser::Source::Range
+      def range_between: (Integer start_pos, Integer end_pos) -> Parser::Source::Range
+      def range_with_surrounding_space: (?Parser::Source::Range range_positional,
+                                         ?range: Parser::Source::Range, ?side: Symbol, ?newlines: bool,
+                                         ?whitespace: bool, ?continuations: bool,
+                                         ?buffer: Parser::Source::Buffer) -> Parser::Source::Range
+      def range_by_whole_lines: (Parser::Source::Range range,
+                                 ?include_final_newline: bool,
+                                 ?buffer: Parser::Source::Buffer) -> Parser::Source::Range
+    end
+
+    module IgnoredNode
+      def ignore_node: (RuboCop::AST::Node node) -> void
+      def part_of_ignored_node?: (RuboCop::AST::Node node) -> bool
+      def ignored_node?: (RuboCop::AST::Node node) -> bool
+    end
+
+    module TargetRubyVersion
+      def minimum_target_ruby_version: (Float) -> void
+      def maximum_target_ruby_version: (Float) -> void
+    end
+
+    module Util
+      include PathUtil
+      def line_range: (RuboCop::AST::Node node) -> ::Range[Integer]
+      def parentheses?: (RuboCop::AST::Node node) -> bool
+      def add_parentheses: (RuboCop::AST::Node node, Corrector corrector) -> void
+      def any_descendant?: (RuboCop::AST::Node node, *Symbol types) -> bool
+      def args_begin: (RuboCop::AST::Node node) -> Parser::Source::Range
+      def args_end: (RuboCop::AST::Node node) -> Parser::Source::Range
+      def begins_its_line?: (Parser::Source::Range range) -> bool
+      def first_part_of_call_chain: (RuboCop::AST::Node node) -> RuboCop::AST::Node
+      def double_quotes_required?: (String string) -> bool
+      def needs_escaping?: (String string) -> bool
+      def escape_string: (String string) -> String
+      def to_string_literal: (String string) -> String
+      def trim_string_interpolation_escape_character: (String str) -> String
+      def interpret_string_escapes: (String string) -> String
+      def line: ((RuboCop::AST::Node | Parser::Source::Range) node_or_range) -> Integer
+      def same_line?: ((RuboCop::AST::Node | Parser::Source::Range) node1, (RuboCop::AST::Node | Parser::Source::Range) node2) -> bool
+      def indent: (RuboCop::AST::Node node, ?offset: Integer) -> String
+    end
+  end
+
+  class ProcessedSource = AST::ProcessedSource
+
+  module AutoCorrector
+    def support_autocorrect?: () -> true
+  end
+
+  module PathUtil
+    def smart_path: (String path) -> String
+  end
+end

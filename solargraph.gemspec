@@ -21,6 +21,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://solargraph.org'
   s.license     = 'MIT'
   s.executables = ['solargraph']
+  s.metadata["default_lint_roller_plugin"] = "Solargraph::LintRoller::Plugin"
   s.metadata["funding_uri"]     = "https://www.patreon.com/castwide"
   s.metadata["bug_tracker_uri"] = "https://github.com/castwide/solargraph/issues"
   s.metadata["changelog_uri"]   = "https://github.com/castwide/solargraph/blob/master/CHANGELOG.md"
@@ -37,6 +38,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'jaro_winkler', '~> 1.6', '>= 1.6.1'
   s.add_runtime_dependency 'kramdown', '~> 2.3'
   s.add_runtime_dependency 'kramdown-parser-gfm', '~> 1.1'
+  s.add_runtime_dependency 'lint_roller'
   s.add_runtime_dependency 'logger', '~> 1.6'
   s.add_runtime_dependency 'observer', '~> 0.1'
   s.add_runtime_dependency 'ostruct', '~> 0.6'
@@ -46,6 +48,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.5']
   s.add_runtime_dependency 'reverse_markdown', '~> 3.0'
   s.add_runtime_dependency 'rubocop', '~> 1.76'
+  s.add_runtime_dependency 'rubocop-ast'
   s.add_runtime_dependency 'thor', '~> 1.0'
   s.add_runtime_dependency 'tilt', '~> 2.0'
   s.add_runtime_dependency 'yard', '~> 0.9', '>= 0.9.24'

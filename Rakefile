@@ -136,3 +136,21 @@ task :overcommit do
   # OVERCOMMIT_DEBUG=1 will show more detail
   sh 'SOLARGRAPH_ASSERTS=on bundle exec overcommit --run --diff origin/master'
 end
+
+desc 'Generate a new cop with a template'
+task :new_cop, [:cop] do |_task, args|
+  require 'rubocop'
+
+  cop_name = args.fetch(:cop) do
+    warn 'usage: bundle exec rake new_cop[Department/Name]'
+    exit!
+  end
+
+  generator = RuboCop::Cop::Generator.new(cop_name)
+
+  generator.write_source
+  generator.inject_require(root_file_path: 'lib/rubocop/cop/solargraph_cops.rb')
+  generator.inject_config(config_file_path: 'config/default.yml')
+
+  puts generator.todo
+end

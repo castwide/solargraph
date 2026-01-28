@@ -1,0 +1,47 @@
+---
+Solargraph/Blah:
+  Description: 'Write a description of the cop.'
+  Enabled: true
+  VersionAdded: '<<next>>'
+
+Solargraph/NewMeaninglessTag:
+  Description: 'Check meaningless tag'
+  Enabled: true
+  VersionAdded: '0.4.0'
+
+Solargraph/NewTagTypeSyntax:
+  Description: 'Check syntax for yard tag type'
+  Enabled: true
+  VersionAdded: '0.5.0'
+
+Solargraph/NewCollectionStyle:
+  Description: 'Check collection type style'
+  Enabled: true
+  VersionAdded: '0.5.0'
+  EnforcedStyle: long
+  SupportedStyles:
+    - long
+    - short
+
+Solargraph/NewCollectionType:
+  Description: 'Check collection type syntax'
+  Enabled: true
+  VersionAdded: '0.5.0'
+  EnforcedStyle: long
+  SupportedStyles:
+    - long
+    - short
+
+Solargraph/NewMismatchName:
+  Description: 'Check @param and @option name and method parameters'
+  Enabled: true
+  VersionAdded: '0.3.0'
+  EnforcedStylePrototypeName: after
+  SupportedStylesPrototypeName:
+    - before
+    - after
+
+Solargraph/NewTagTypePosition:
+  Description: 'Notice tag type position'
+  Enabled: true
+  VersionAdded: '0.9.0'
