@@ -26,9 +26,26 @@ RSpec.configure do |c|
   c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
 require 'solargraph'
+
 # Suppress logger output in specs (if possible)
-if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
-  Solargraph::Logging.logger.reopen(File::NULL)
+def set_logging
+  # execute any logging blocks to make sure they don't blow up
+  Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
+  # ...but still suppress logger output in specs (if possible)
+  if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+    Solargraph::Logging.logger.reopen(File::NULL)
+    warn "Logging set to null"
+  end
+end
+
+set_logging
+require 'parallel_rspec'
+
+ParallelRSpec.configure do |config|
+  config.after_fork do |worker_number|
+    warn "ParallelRSpec worker #{worker_number} starting in pid #{Process.pid}"
+    set_logging
+  end
 end
 
 # @param name [String]

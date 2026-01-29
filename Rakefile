@@ -36,10 +36,15 @@ task spec: %i[spec_failed undercover_no_fail full_spec] do
   undercover
 end
 
+desc "Run RSpec tests in parallel, starting with the ones that failed last time"
+task parallel_spec: %i[spec_failed undercover_no_fail full_spec] do
+  undercover
+end
+
 desc "Run all RSpec tests"
 task :full_spec do
   warn 'starting spec'
-  sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec rspec' #  --profile'
+  sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec prspec spec/' #  --profile'
   warn 'ending spec'
   # move coverage/full-new to coverage/full on success so that we
   # always have the last successful run's 'coverage info
