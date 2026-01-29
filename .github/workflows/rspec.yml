@@ -89,7 +89,10 @@ jobs:
     - name: Update types
       run: bundle exec rbs collection update
     - name: Run tests
-      run: bundle exec rake spec
+      run: |
+        PARALLEL=$(nproc --all)
+        export PARALLEL
+        bundle exec rake spec
   undercover:
     runs-on: ubuntu-latest
     steps:
@@ -112,5 +115,8 @@ jobs:
     - name: Run tests
       run: bundle exec rake spec
     - name: Check PR coverage
-      run: bundle exec rake undercover
+      run: |
+        PARALLEL=$(nproc --all)
+        export PARALLEL
+        bundle exec rake undercover
       continue-on-error: true
