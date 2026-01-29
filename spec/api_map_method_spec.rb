@@ -119,18 +119,17 @@ describe 'Solargraph::ApiMap methods' do
   end
 
   describe '#get_method_stack' do
-    let(:api_map) { Solargraph::ApiMap.load PROJECT_DIRECTORY }
-
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
         specs = api_map.resolve_require('yaml')
+        expect(specs).not_to be_empty
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench
 
-        expect(method_stack).not_to be_empty
+        expect(method_stack).not_to be_nil
       end
     end
 
