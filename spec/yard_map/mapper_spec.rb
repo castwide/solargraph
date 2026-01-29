@@ -91,6 +91,7 @@ describe Solargraph::YardMap::Mapper do
     gemspec = Gem::Specification.find_by_name('yard')
     Solargraph::Yardoc.cache([], gemspec)
     pins = Solargraph::YardMap::Mapper.new(Solargraph::Yardoc.load!(gemspec)).map
+    STDERR.puts("Total pins in yard: #{pins.length}")
     ext = pins.find do |pin|
       pin.is_a?(Solargraph::Pin::Reference::Extend) && pin.name == 'Enumerable' && pin.closure.path == 'YARD::Registry'
     end
