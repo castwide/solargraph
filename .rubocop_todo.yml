@@ -568,6 +568,7 @@ RSpec/BeforeAfterAll:
     - 'spec/api_map_spec.rb'
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
+    - 'spec/rbs_map/conversions_spec.rb'
 
 # Configuration parameters: Prefixes, AllowedPatterns.
 # Prefixes: when, with, without
@@ -591,6 +592,11 @@ RSpec/DescribeClass:
 # SupportedStyles: described_class, explicit
 RSpec/DescribedClass:
   Enabled: false
+
+# This cop supports safe autocorrection (--autocorrect).
+RSpec/EmptyHook:
+  Exclude:
+    - 'spec/rbs_map/conversions_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/EmptyLineAfterFinalLet:

@@ -94,7 +94,7 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with standard loads for solargraph project' do
-    before :context do # rubocop:disable RSpec/BeforeAfterAll
+    before :context do
       @api_map = Solargraph::ApiMap.load('.')
       gems = ['parser', 'ast', 'open3']
       bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
@@ -106,6 +106,11 @@ describe Solargraph::RbsMap::Conversions do
     let(:api_map) { @api_map }
 
     context 'with superclass pin for Parser::AST::Node' do
+      before :context do
+        # include this to flag to parallel rspec that it should not try
+        # to parallelize this context
+      end
+
       let(:superclass_pin) do
         api_map.pins.find do |pin|
           pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
@@ -120,6 +125,12 @@ describe Solargraph::RbsMap::Conversions do
 
     # https://github.com/castwide/solargraph/issues/1042
     context 'with Hash superclass with untyped value and alias' do
+      before :context do
+        # include this to flag to parallel rspec that it should not
+        # try to parallelize this context - it does not seem smart
+        # enough to use the above
+      end
+
       let(:rbs) do
         <<~RBS
           class Sub < Hash[Symbol, untyped]
