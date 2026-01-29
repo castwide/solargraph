@@ -21,6 +21,8 @@ unless ENV['SIMPLECOV_DISABLED']
     enable_coverage(:branch) if ENV['SOLARGRAPH_BRANCH_COVERAGE']
   end
 end
+PROJECT_DIRECTORY = File.expand_path('..', __dir__)
+
 RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
