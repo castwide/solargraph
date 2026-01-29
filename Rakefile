@@ -36,11 +36,6 @@ task spec: %i[spec_failed undercover_no_fail full_spec] do
   undercover
 end
 
-desc "Run RSpec tests in parallel, starting with the ones that failed last time"
-task parallel_spec: %i[spec_failed undercover_no_fail full_spec] do
-  undercover
-end
-
 desc "Run all RSpec tests"
 task :full_spec do
   warn 'starting spec'
@@ -92,7 +87,7 @@ desc "Re-run failed specs.  Add --fail-fast in your .rspec-local file if desired
 task :spec_failed do
   # allow user to check out any persistent failures while looking for
   # more in the whole test suite
-  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --only-failures || true'
+  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec prspec --only-failures || true'
 end
 
 desc "Run undercover and show output without failing the task if it fails"
