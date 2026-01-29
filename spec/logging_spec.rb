@@ -9,7 +9,7 @@ describe Solargraph::Logging do
     msg = file.read
     file.close
     file.unlink
-    Solargraph::Logging.logger.reopen STDERR
+    Solargraph::Logging.logger.reopen File::NULL
     expect(msg).to include('WARN')
   end
 end
