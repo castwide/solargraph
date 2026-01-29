@@ -569,6 +569,7 @@ RSpec/BeforeAfterAll:
     - 'spec/language_server/host/dispatch_spec.rb'
     - 'spec/language_server/protocol_spec.rb'
     - 'spec/rbs_map/conversions_spec.rb'
+    - 'spec/yard_map/mapper_spec.rb'
 
 # Configuration parameters: Prefixes, AllowedPatterns.
 # Prefixes: when, with, without

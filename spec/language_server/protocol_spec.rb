@@ -35,7 +35,7 @@ class Protocol
 end
 
 describe Protocol do
-  before :all do
+  before :context do
     @protocol = Protocol.new(Solargraph::LanguageServer::Host.new)
   end
 

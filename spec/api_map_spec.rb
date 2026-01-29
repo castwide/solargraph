@@ -1,7 +1,10 @@
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
-  before :all do
+  # before :context here disables parallel tests in prspec, which
+  # would be needed regardless as we are changing the working
+  # directory
+  before :context do
     @api_map = Solargraph::ApiMap.new
   end
 

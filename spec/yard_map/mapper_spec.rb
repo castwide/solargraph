@@ -1,5 +1,8 @@
 describe Solargraph::YardMap::Mapper do
-  before :all do # rubocop:disable RSpec/BeforeAfterAll
+  # before :context here disables parallel tests in prspec, which
+  # would be needed regardless as we are changing the working
+  # directory
+  before :context do
     @api_map = Solargraph::ApiMap.load('.')
   end
 
