@@ -172,7 +172,7 @@ module Solargraph
             "locals=#{locals.map(&:desc)}, " \
             "name_pin=#{name_pin}, " \
             "name_pin.closure=#{name_pin&.closure.inspect}, " \
-            "name_pin.binder=#{name_pin.binder}) => #{out.rooted_tags.inspect}"
+            "name_pin.binder=#{name_pin&.binder}) => #{out.rooted_tags.inspect}"
         end
         out
       end
