@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module Solargraph
-  VERSION = '0.58.2'
+  VERSION = ENV.fetch('SOLARGRAPH_FORCE_VERSION', '0.59.0.dev.1')
 end

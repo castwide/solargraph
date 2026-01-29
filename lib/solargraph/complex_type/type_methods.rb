@@ -73,6 +73,18 @@ module Solargraph
         name == 'undefined'
       end
 
+      # Variance of the type ignoring any type parameters
+      # @return [Symbol]
+      # @param situation [Symbol] The situation in which the variance is being considered.
+      def erased_variance situation = :method_call
+        # :nocov:
+        unless %i[method_call return_type assignment].include?(situation)
+          raise "Unknown situation: #{situation.inspect}"
+        end
+        # :nocov:
+        :covariant
+      end
+
       # @param generics_to_erase [Enumerable<String>]
       # @return [self]
       def erase_generics(generics_to_erase)
@@ -194,7 +206,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless self.class == other.class
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+        # @sg-ignore flow sensitive typing should support .class == .class
         tag == other.tag
       end
 
@@ -218,7 +230,9 @@ module Solargraph
       end
 
       # @yieldparam [UniqueType]
-      # @return [Enumerator<UniqueType>]
+      # @return [void]
+      # @overload each_unique_type()
+      #   @return [Enumerator<UniqueType>]
       def each_unique_type &block
         return enum_for(__method__) unless block_given?
         yield self

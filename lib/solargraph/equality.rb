@@ -12,7 +12,7 @@ module Solargraph
     # @return [Boolean]
     def eql?(other)
       self.class.eql?(other.class) &&
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+        # @sg-ignore flow sensitive typing should support .class == .class
         equality_fields.eql?(other.equality_fields)
     end
 

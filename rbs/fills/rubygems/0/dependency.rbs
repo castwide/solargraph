@@ -1,0 +1,193 @@
+# <!-- rdoc-file=lib/rubygems/dependency.rb -->
+# The Dependency class holds a Gem name and a Gem::Requirement.
+#
+class Gem::Dependency
+  @name: untyped
+
+  @requirement: untyped
+
+  @type: untyped
+
+  @prerelease: untyped
+
+  @version_requirements: untyped
+
+  @version_requirement: untyped
+
+  # <!-- rdoc-file=lib/rubygems/dependency.rb -->
+  # Valid dependency types.
+  #
+  TYPES: ::Array[:development | :runtime]
+
+  # <!-- rdoc-file=lib/rubygems/dependency.rb -->
+  # Dependency name or regular expression.
+  #
+  attr_accessor name: untyped
+
+  # <!-- rdoc-file=lib/rubygems/dependency.rb -->
+  # Allows you to force this dependency to be a prerelease.
+  #
+  attr_writer prerelease: untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - new(name, *requirements)
+  # -->
+  # Constructs a dependency with `name` and `requirements`. The last argument can
+  # optionally be the dependency type, which defaults to `:runtime`.
+  #
+  def initialize: (untyped name, *untyped requirements) -> void
+
+  def hash: () -> untyped
+
+  def inspect: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - prerelease?()
+  # -->
+  # Does this dependency require a prerelease?
+  #
+  def prerelease?: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - latest_version?()
+  # -->
+  # Is this dependency simply asking for the latest version of a gem?
+  #
+  def latest_version?: () -> untyped
+
+  def pretty_print: (untyped q) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - requirement()
+  # -->
+  # What does this dependency require?
+  #
+  def requirement: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - requirements_list()
+  # -->
+  #
+  def requirements_list: () -> untyped
+
+  def to_s: () -> ::String
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - type()
+  # -->
+  # Dependency type.
+  #
+  def type: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - runtime?()
+  # -->
+  #
+  def runtime?: () -> untyped
+
+  def ==: (untyped other) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - <=>(other)
+  # -->
+  # Dependencies are ordered by name.
+  #
+  def <=>: (untyped other) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - =~(other)
+  # -->
+  # Uses this dependency as a pattern to compare to `other`. This dependency will
+  # match if the name matches the other's name, and other has only an equal
+  # version requirement that satisfies this dependency.
+  #
+  def =~: (untyped other) -> (nil | false | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - ===(other)
+  # -->
+  #
+  alias === =~
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - dep.match? name          => true or false
+  #   - dep.match? name, version => true or false
+  #   - dep.match? spec          => true or false
+  # -->
+  # Does this dependency match the specification described by `name` and `version`
+  # or match `spec`?
+  #
+  # NOTE:  Unlike #matches_spec? this method does not return true when the version
+  # is a prerelease version unless this is a prerelease dependency.
+  #
+  def match?: (untyped obj, ?untyped? version, ?bool allow_prerelease) -> (false | true | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - matches_spec?(spec)
+  # -->
+  # Does this dependency match `spec`?
+  #
+  # NOTE:  This is not a convenience method.  Unlike #match? this method returns
+  # true when `spec` is a prerelease version even if this dependency is not a
+  # prerelease dependency.
+  #
+  def matches_spec?: (untyped spec) -> (false | true | untyped)
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - merge(other)
+  # -->
+  # Merges the requirements of `other` into this dependency
+  #
+  def merge: (untyped other) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - matching_specs(platform_only = false)
+  # -->
+  #
+  def matching_specs: (?bool platform_only) -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - specific?()
+  # -->
+  # True if the dependency will not always match the latest version.
+  #
+  def specific?: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - to_specs()
+  # -->
+  #
+  def to_specs: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - to_spec()
+  # -->
+  #
+  def to_spec: () -> untyped
+
+  # <!--
+  #   rdoc-file=lib/rubygems/dependency.rb
+  #   - identity()
+  # -->
+  #
+  def identity: () -> (:complete | :abs_latest | :latest | :released)
+
+  def encode_with: (untyped coder) -> untyped
+end

@@ -105,6 +105,7 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            # @sg-ignore Need to add nil check here
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
@@ -300,8 +301,11 @@ module Solargraph
         end
       end
 
+      # @sg-ignore Need to validate config
       # @return [String]
+      # @sg-ignore Need to validate config
       def command_path
+        # @type [String]
         options['commandPath'] || 'solargraph'
       end
 
@@ -729,9 +733,11 @@ module Solargraph
       end
 
       # @param path [String]
+      # @sg-ignore Need to be able to choose signature on String#gsub
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
+        # @sg-ignore flow sensitive typing needs to handle constants
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
@@ -765,7 +771,6 @@ module Solargraph
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
         return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
-        # @sg-ignore push this upstream
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

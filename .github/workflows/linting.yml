@@ -8,10 +8,10 @@ name: Linting
 on:
   workflow_dispatch: {}
   pull_request:
-    branches: [ master ]
+    branches: ['*']
   push:
     branches:
-      - 'main'
+      - 'master'
     tags:
       - 'v*'
 
@@ -31,13 +31,12 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.4
-          bundler: latest
           bundler-cache: true
-          cache-version: 2025-06-06
+          cache-version: 2026-01-11
 
       - name: Update to best available RBS
         run: |
-          bundle update rbs # use latest available for this Ruby version
+          bundle update --pre rbs # use latest available for this Ruby version
 
       - name: Restore cache of gem annotations
         id: dot-cache-restore

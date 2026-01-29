@@ -57,7 +57,7 @@ module Solargraph
                                     [callee,
                                      asgn_method,
                                      node.updated(:send, [call, operator, argument])])
-            NodeProcessor.process(new_send, region, pins, locals)
+            NodeProcessor.process(new_send, region, pins, locals, ivars)
           end
 
           # @param asgn [Parser::AST::Node] the target of the assignment
@@ -89,7 +89,7 @@ module Solargraph
             ]
             send_node = node.updated(:send, send_children)
             new_asgn = node.updated(asgn.type, [variable_name,  send_node])
-            NodeProcessor.process(new_asgn, region, pins, locals)
+            NodeProcessor.process(new_asgn, region, pins, locals, ivars)
           end
         end
       end

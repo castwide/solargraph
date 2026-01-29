@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    class While < Base
+    class While < CompoundStatement
       include Breakable
 
       # @param receiver [Parser::AST::Node, nil]

@@ -33,6 +33,10 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
   end
 
   it "responds to update actions" do
+    status = instance_double(Process::Status)
+    allow(status).to receive(:==).with(0).and_return(true)
+    allow(Open3).to receive(:capture2).with('gem update solargraph').and_return(['', status])
+
     host = Solargraph::LanguageServer::Host.new
     message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
     message.process
@@ -42,13 +46,12 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
       response = data
     end
     reader.receive host.flush
-    expect {
-      action = {
-        "id" => response['id'],
-        "result" => response['params']['actions'].first
-      }
-      host.receive action
-    }.not_to raise_error
+    action = {
+      "id" => response['id'],
+      "result" => response['params']['actions'].first
+    }
+    host.receive action
+    expect(Open3).to have_received(:capture2).with('gem update solargraph')
   end
 
   it 'uses bundler' do

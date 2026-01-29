@@ -8,19 +8,23 @@ module Solargraph
       module ClassMethods
         # @param code [String]
         # @param filename [String, nil]
+        # @param starting_line [Integer] must be provided so that we
+        #   can find relevant local variables later even if this is just
+        #   a subset of the file in question
         # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet})]
-        def parse_with_comments code, filename = nil
-          node = parse(code, filename)
+        def parse_with_comments code, filename = nil, starting_line = 0
+          node = parse(code, filename, starting_line)
           comments = CommentRipper.new(code, filename, 0).parse
           [node, comments]
         end
 
         # @param code [String]
         # @param filename [String, nil]
-        # @param line [Integer]
+        # @param starting_line [Integer]
+        # @sg-ignore need to understand that raise does not return
         # @return [Parser::AST::Node]
-        def parse code, filename = nil, line = 0
-          buffer = ::Parser::Source::Buffer.new(filename, line)
+        def parse code, filename = nil, starting_line = 0
+          buffer = ::Parser::Source::Buffer.new(filename, starting_line)
           buffer.source = code
           parser.parse(buffer)
         rescue ::Parser::SyntaxError, ::Parser::UnknownEncodingInMagicComment => e
@@ -30,15 +34,20 @@ module Solargraph
         # @return [::Parser::Base]
         def parser
           @parser ||= Prism::Translation::Parser.new(FlawedBuilder.new).tap do |parser|
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.all_errors_are_fatal = true
+            # @sg-ignore Unresolved call to diagnostics on Prism::Translation::Parser
             parser.diagnostics.ignore_warnings      = true
           end
         end
 
         # @param source [Source]
-        # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
+        # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
-          NodeProcessor.process(source.node, Region.new(source: source))
+          # @sg-ignore Need to add nil check here
+          pins, locals, ivars = NodeProcessor.process(source.node, Region.new(source: source))
+          pins.concat(ivars)
+          [pins, locals]
         end
 
         # @param source [Source]
@@ -50,15 +59,18 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
+            # @sg-ignore Need to add nil check here
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
+            # @sg-ignore Need to add nil check here
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|
             rng = Range.from_node(n)
+            # @sg-ignore Need to add nil check here
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
             Location.new(
@@ -99,7 +111,7 @@ module Solargraph
           Solargraph::Parser::NodeProcessor.process *args
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
           NodeMethods.infer_literal_node_type node
@@ -110,7 +122,7 @@ module Solargraph
           parser.version
         end
 
-        # @param node [BasicObject]
+        # @param node [BasicObject, nil]
         # @return [Boolean]
         def is_ast_node? node
           node.is_a?(::Parser::AST::Node)
@@ -124,19 +136,25 @@ module Solargraph
           Range.new(st, en)
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Array<Range>]
         def string_ranges node
           return [] unless is_ast_node?(node)
           result = []
+          # @sg-ignore Translate to something flow sensitive typing understands
           result.push Range.from_node(node) if node.type == :str
+          # @sg-ignore Translate to something flow sensitive typing understands
           node.children.each do |child|
             result.concat string_ranges(child)
           end
+          # @sg-ignore Translate to something flow sensitive typing understands
           if node.type == :dstr && node.children.last.nil?
+            # @sg-ignore Translate to something flow sensitive typing understands
             last = node.children[-2]
+            # @sg-ignore Need to add nil check here
             unless last.nil?
               rng = Range.from_node(last)
+              # @sg-ignore Need to add nil check here
               pos = Position.new(rng.ending.line, rng.ending.column - 1)
               result.push Range.new(pos, pos)
             end

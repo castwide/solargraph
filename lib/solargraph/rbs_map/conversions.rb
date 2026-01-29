@@ -65,7 +65,7 @@ module Solargraph
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+          # @sg-ignore flow sensitive typing should support case/when
           type_aliases[decl.name.to_s] = decl
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
@@ -96,7 +96,7 @@ module Solargraph
         type = build_type(decl.name, decl.args)
         generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
-          name: decl.name.relative!.to_s,
+          name: type.rooted_name,
           type_location: location_decl_to_pin_location(decl.location),
           generic_values: generic_values,
           closure: closure,
@@ -120,32 +120,44 @@ module Solargraph
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
+          # @sg-ignore flow based typing needs to understand case when class pattern
           method_def_to_pin(member, closure, context)
         when RBS::AST::Members::AttrReader
+          # @sg-ignore flow based typing needs to understand case when class pattern
           attr_reader_to_pin(member, closure, context)
         when RBS::AST::Members::AttrWriter
+          # @sg-ignore flow based typing needs to understand case when class pattern
           attr_writer_to_pin(member, closure, context)
         when RBS::AST::Members::AttrAccessor
+          # @sg-ignore flow based typing needs to understand case when class pattern
           attr_accessor_to_pin(member, closure, context)
         when RBS::AST::Members::Include
+          # @sg-ignore flow based typing needs to understand case when class pattern
           include_to_pin(member, closure)
         when RBS::AST::Members::Prepend
+          # @sg-ignore flow based typing needs to understand case when class pattern
           prepend_to_pin(member, closure)
         when RBS::AST::Members::Extend
+          # @sg-ignore flow based typing needs to understand case when class pattern
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
+          # @sg-ignore flow based typing needs to understand case when class pattern
           alias_to_pin(member, closure)
         when RBS::AST::Members::ClassInstanceVariable
+          # @sg-ignore flow based typing needs to understand case when class pattern
           civar_to_pin(member, closure)
         when RBS::AST::Members::ClassVariable
+          # @sg-ignore flow based typing needs to understand case when class pattern
           cvar_to_pin(member, closure)
         when RBS::AST::Members::InstanceVariable
+          # @sg-ignore flow based typing needs to understand case when class pattern
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
           return Context.new(:public)
         when RBS::AST::Members::Private
           return Context.new(:private)
         when RBS::AST::Declarations::Base
+          # @sg-ignore flow based typing needs to understand case when class pattern
           convert_decl_to_pin(member, closure)
         else
           Solargraph.logger.warn "Skipping member type #{member.class}"
@@ -232,12 +244,14 @@ module Solargraph
         convert_self_types_to_pins decl, module_pin
         convert_members_to_pins decl, module_pin
 
+        raise "Invalid type for module declaration: #{module_pin.class}" unless module_pin.is_a?(Pin::Namespace)
+
         add_mixins decl, module_pin.closure
       end
 
       # @param name [String]
       # @param tag [String]
-      # @param comments [String]
+      # @param comments [String, nil]
       # @param decl [RBS::AST::Declarations::ClassAlias, RBS::AST::Declarations::Constant, RBS::AST::Declarations::ModuleAlias]
       # @param base [String, nil] Optional conversion of tag to base<tag>
       #
@@ -246,6 +260,7 @@ module Solargraph
         parts = name.split('::')
         if parts.length > 1
           name = parts.last
+          # @sg-ignore Need to add nil check here
           closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
         else
           name = parts.first
@@ -347,12 +362,11 @@ module Solargraph
         ["Rainbow::Presenter", :instance, "wrap_with_sgr"] => :private,
       }
 
-      # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrAccessor]
+      # @param decl [RBS::AST::Members::MethodDefinition, RBS::AST::Members::AttrReader, RBS::AST::Members::AttrWriter, RBS::AST::Members::AttrAccessor]
       # @param closure [Pin::Closure]
       # @param context [Context]
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
-      # @sg-ignore
       # @return [Symbol]
       def calculate_method_visibility(decl, context, closure, scope, name)
         override_key = [closure.path, scope, name]
@@ -432,8 +446,9 @@ module Solargraph
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
-          block = if overload.method_type.block
-                    block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin)
+          rbs_block = overload.method_type.block
+          block = if rbs_block
+                    block_parameters, block_return_type = parts_of_function(rbs_block, pin)
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
@@ -447,9 +462,12 @@ module Solargraph
       def location_decl_to_pin_location(location)
         return nil if location&.name.nil?
 
+        # @sg-ignore flow sensitive typing should handle return nil if location&.name.nil?
         start_pos = Position.new(location.start_line - 1, location.start_column)
+        # @sg-ignore flow sensitive typing should handle return nil if location&.name.nil?
         end_pos = Position.new(location.end_line - 1, location.end_column)
         range = Range.new(start_pos, end_pos)
+        # @sg-ignore flow sensitve typing should handle return nil if location&.name.nil?
         Location.new(location.name.to_s, range)
       end
 
@@ -705,7 +723,7 @@ module Solargraph
         'NilClass' => 'nil'
       }
 
-      # @param type [RBS::MethodType]
+      # @param type [RBS::MethodType, RBS::Types::Block]
       # @return [String]
       def method_type_to_tag type
         if type_aliases.key?(type.type.return_type.to_s)
@@ -737,7 +755,9 @@ module Solargraph
         build_type(type_name, type_args).tags
       end
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [RBS::Types::Bases::Base,Object] RBS type object.
+      #   Note: Generally these extend from RBS::Types::Bases::Base,
+      #   but not all.
       # @return [String]
       def other_type_to_tag type
         if type.is_a?(RBS::Types::Optional)
@@ -794,13 +814,16 @@ module Solargraph
           # e.g., singleton(String)
           type_tag(type.name)
         else
+          # RBS doesn't provide a common base class for its type AST nodes
+          #
+          # @sg-ignore all types should include location
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
-      # @param namespace [Pin::Namespace]
+      # @param namespace [Pin::Namespace, nil]
       # @return [void]
       def add_mixins decl, namespace
         # @param mixin [RBS::AST::Members::Include, RBS::AST::Members::Members::Extend, RBS::AST::Members::Members::Prepend]
