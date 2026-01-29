@@ -118,7 +118,7 @@ describe 'Solargraph::ApiMap methods' do
   end
 
   describe '#get_method_stack' do
-    let(:api_map) { Solargraph::ApiMap.load('') }
+    let(:api_map) { Solargraph::ApiMap.new }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
