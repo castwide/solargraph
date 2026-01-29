@@ -46,6 +46,7 @@ describe Solargraph::YardMap::Mapper do
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
     rspec = Gem::Specification.find_by_name('rspec-expectations')
+    Solargraph::Yardoc.cache([], rspec)
     Solargraph::Yardoc.load!(rspec)
     pins = Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
     pin = pins.find { |pin| pin.path == 'RSpec::Matchers#expect' }
