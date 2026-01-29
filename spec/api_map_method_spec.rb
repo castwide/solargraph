@@ -3,7 +3,8 @@
 describe 'Solargraph::ApiMap methods' do
   let(:api_map) { Solargraph::ApiMap.new }
   let(:bench) do
-    Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new('.'))
+    directory = File.expand_path('..', __dir__)
+    Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new(directory))
   end
   let(:external_requires) { [] }
 
@@ -118,7 +119,7 @@ describe 'Solargraph::ApiMap methods' do
   end
 
   describe '#get_method_stack' do
-    let(:api_map) { Solargraph::ApiMap.new }
+    let(:api_map) { Solargraph::ApiMap.load '.' }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
