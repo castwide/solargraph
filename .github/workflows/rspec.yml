@@ -92,6 +92,7 @@ jobs:
       run: |
         PARALLEL=$(nproc --all)
         export PARALLEL
+        echo "Running tests with PARALLEL=$PARALLEL"
         bundle exec rake spec
   undercover:
     runs-on: ubuntu-latest
