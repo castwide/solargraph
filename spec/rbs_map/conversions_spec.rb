@@ -94,7 +94,7 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with standard loads for solargraph project' do
-    before :all do # rubocop:disable RSpec/BeforeAfterAll
+    before :context do # rubocop:disable RSpec/BeforeAfterAll
       @api_map = Solargraph::ApiMap.load('.')
       gems = ['parser', 'ast', 'open3']
       bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
