@@ -189,7 +189,7 @@ module Solargraph
           'bool'
         elsif name.downcase == 'nil'
           'nil'
-        elsif name == GENERIC_TAG_NAME
+        elsif name == GENERIC_TAG_NAME && !all_params.empty?
           all_params.first.name
         elsif ['Class', 'Module'].include?(name)
           rbs_name
