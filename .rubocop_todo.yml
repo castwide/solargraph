@@ -871,7 +871,6 @@ Style/GlobalStdStream:
     - 'lib/solargraph/logging.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/shell.rb'
-    - 'spec/logging_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: MinBodyLength, AllowConsecutiveConditionals.
