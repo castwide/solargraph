@@ -14,7 +14,7 @@ describe Solargraph::GemPins do
     let(:requires) { ['rbs'] }
 
     it 'can merge YARD and RBS' do
-      expect(pin.source).to eq(:combined)
+      expect(pin.source).to eq(:combined), "Expected to merge YARD and RBS for #{path} in #{workspace.directory}"
     end
 
     it 'finds types from RBS' do
