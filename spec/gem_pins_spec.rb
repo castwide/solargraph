@@ -5,6 +5,11 @@ describe Solargraph::GemPins do
   let(:doc_map) { Solargraph::DocMap.new(requires, workspace, out: nil) }
   let(:pin) { doc_map.pins.find { |pin| pin.path == path } }
 
+  before :context do
+    # avoid race conditions building the rbs gem by letting parallel
+    # rspec know to run these serially in the same worker
+  end
+
   before do
     doc_map.cache_doc_map_gems!(STDERR) # rubocop:disable Style/GlobalStdStream
   end
@@ -22,8 +27,8 @@ describe Solargraph::GemPins do
     end
 
     it 'finds locations from YARD' do
-      expect(pin).not_to be_nil, "Expected to find pin for #{path} in #{Dir.pwd}"
-      expect(pin.location.filename).to end_with('environment_loader.rb')
+      expect(pin).not_to be_nil, "Expected to find pin for #{path} in #{workspace.directory}"
+      expect(Pin.location.filename).to end_with('environment_loader.rb')
     end
   end
 
