@@ -8,6 +8,12 @@ describe Solargraph::Shell do
 
   let(:temp_dir) { Dir.mktmpdir }
 
+
+  before :context do
+    # avoid race conditions re-installing solargraph by letting parallel
+    # rspec know to run these serially in the same worker
+  end
+
   before do
     File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
         file.puts "source 'https://rubygems.org'"

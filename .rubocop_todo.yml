@@ -591,6 +591,7 @@ RSpec/EmptyHook:
   Exclude:
     - 'spec/gem_pins_spec.rb'
     - 'spec/rbs_map/conversions_spec.rb'
+    - 'spec/shell_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/EmptyLineAfterFinalLet:
@@ -864,6 +865,7 @@ Style/GlobalStdStream:
     - 'lib/solargraph/logging.rb'
     - 'lib/solargraph/pin/base.rb'
     - 'lib/solargraph/shell.rb'
+    - 'spec/api_map_method_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: MinBodyLength, AllowConsecutiveConditionals.
