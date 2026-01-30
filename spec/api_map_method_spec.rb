@@ -125,7 +125,7 @@ describe 'Solargraph::ApiMap methods' do
 
       it 'handles the YAML gem aliased to Psych' do
         STDERR.puts "bench.workspace.rbs_collection_path: #{bench.workspace.rbs_collection_path.inspect}"
-        specs = api_map.resolve_require('yaml') || []
+        specs = (api_map.resolve_require('yaml') || []) + (api_map.resolve_require('psych') || [])
         expect(specs).not_to be_empty
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench
