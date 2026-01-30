@@ -1,5 +1,6 @@
 require 'bundler/setup'
 require 'webmock/rspec'
+require 'rspec_time_guard'
 WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   # set up lcov reporting for undercover
@@ -26,6 +27,11 @@ PROJECT_DIRECTORY = File.expand_path('..', __dir__)
 RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
+end
+RspecTimeGuard.setup
+RspecTimeGuard.configure do |config|
+  config.global_time_limit_seconds = 120
+  config.continue_on_timeout = false
 end
 require 'solargraph'
 
