@@ -28,7 +28,7 @@ describe Solargraph::GemPins do
 
     it 'finds locations from YARD' do
       expect(pin).not_to be_nil, "Expected to find pin for #{path} in #{workspace.directory}"
-      expect(Pin.location.filename).to end_with('environment_loader.rb')
+      expect(pin.location.filename).to end_with('environment_loader.rb')
     end
   end
 
