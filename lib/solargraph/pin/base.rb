@@ -501,7 +501,7 @@ module Solargraph
           (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
-            # @sg-ignore Translate to something flow sensitive typing understands
+           # @sg-ignore Translate to something flow sensitive typing understands
            (((maybe_directives? == false && other.maybe_directives? == false) ||
              compare_directives(directives,
                                 # @sg-ignore Translate to something flow sensitive typing understands
