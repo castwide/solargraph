@@ -276,8 +276,8 @@ module Solargraph
       end
 
       def typify api_map
-        # @sg-ignore Need to add nil check here
         logger.debug do
+          # @sg-ignore Need to add nil check here
           "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
         end
         decl = super

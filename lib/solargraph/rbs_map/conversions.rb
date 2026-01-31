@@ -77,8 +77,8 @@ module Solargraph
         when RBS::AST::Declarations::TypeAlias
           # @sg-ignore flow sensitive typing should support case/when
           unless closure.name == '' || decl.name.absolute?
-            # @sg-ignore flow sensitive typing should support case/when
             Solargraph.assert_or_log(:rbs_closure,
+                                     # @sg-ignore flow sensitive typing should support case/when
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           # @sg-ignore flow sensitive typing should support case/when
@@ -86,8 +86,8 @@ module Solargraph
         when RBS::AST::Declarations::Module
           # @sg-ignore flow sensitive typing should support case/when
           unless closure.name == '' || decl.name.absolute?
-            # @sg-ignore flow sensitive typing should support case/when
             Solargraph.assert_or_log(:rbs_closure,
+                                     # @sg-ignore flow sensitive typing should support case/when
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           module_decl_to_pin decl
@@ -149,10 +149,9 @@ module Solargraph
       # fqns names are implicitly fully qualified - they are relative
       # to the root namespace and are not prefixed with ::
       #
-      # @param [RBS::TypeName]
+      # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @param [Object] type_name
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")

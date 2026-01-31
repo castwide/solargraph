@@ -294,7 +294,6 @@ module Solargraph
         range = Range.from_node(top)
         # @sg-ignore Need to add nil check here
         if (result.empty? || range.start.line > result.last.start.line) && !(range.ending.line - range.start.line < 2)
-          # @sg-ignore Need to add nil check here
           result.push range
         end
       end

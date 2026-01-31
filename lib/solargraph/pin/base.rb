@@ -245,6 +245,9 @@ module Solargraph
       def choose other, attr
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
+
+        # @sg-ignore Wrong argument type for Array#include?: object
+        #   expected Boolean, received Proc
         return true if results.any? { |r| [true, false].include?(r) }
         return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
@@ -499,8 +502,10 @@ module Solargraph
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
             # @sg-ignore Translate to something flow sensitive typing understands
-            (((maybe_directives? == false && other.maybe_directives? == false) || compare_directives(directives,
-                                                                                                     other.directives)) &&
+           (((maybe_directives? == false && other.maybe_directives? == false) ||
+             compare_directives(directives,
+                                # @sg-ignore Translate to something flow sensitive typing understands
+                                other.directives)) &&
              # @sg-ignore Translate to something flow sensitive typing understands
              compare_docstring_tags(docstring, other.docstring))
           )

@@ -67,7 +67,6 @@ module Solargraph
         line += 1
         break if line == position.line
 
-        # @sg-ignore oflow sensitive typing should be able to handle redefinition
         last_line_index = newline_index
       end
 
