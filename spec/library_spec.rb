@@ -4,6 +4,11 @@ require 'tmpdir'
 require 'yard'
 
 describe Solargraph::Library do
+  before :context do
+    # run these in order so we don't uncache backport right when we
+    # need it before
+  end
+
   it 'does not open created files in the workspace' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
