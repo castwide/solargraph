@@ -70,10 +70,6 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
-        # Don't hard-code this, as older bundler seems to cause problems in places:
-        #
-        # https://github.com/castwide/solargraph/actions/runs/21480813832/job/61876436934?pr=1167
-        # bundler: 2.5.23
         bundler-cache: true
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
