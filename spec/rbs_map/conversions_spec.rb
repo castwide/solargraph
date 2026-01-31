@@ -123,6 +123,8 @@ describe Solargraph::RbsMap::Conversions do
 
     # https://github.com/castwide/solargraph/issues/1042
     context 'with Hash superclass with untyped value and alias' do
+      let(:api_map) { Solargraph::ApiMap.new }
+
       let(:rbs) do
         <<~RBS
           class Sub < Hash[Symbol, untyped]
