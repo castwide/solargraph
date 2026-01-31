@@ -26,12 +26,13 @@ module Solargraph::LanguageServer::Message::Workspace
           to_delete << change['uri']
           need_catalog = true
         else
-          set_error Solargraph::LanguageServer::ErrorCodes::INVALID_PARAMS, "Unknown change type ##{change['type']} for #{uri_to_file(change['uri'])}"
+          set_error Solargraph::LanguageServer::ErrorCodes::INVALID_PARAMS,
+                    "Unknown change type ##{change['type']} for #{uri_to_file(change['uri'])}"
         end
       end
 
-      host.create *to_create
-      host.delete *to_delete
+      host.create(*to_create)
+      host.delete(*to_delete)
 
       # Force host to catalog libraries after file changes (see castwide/solargraph#139)
       host.catalog if need_catalog

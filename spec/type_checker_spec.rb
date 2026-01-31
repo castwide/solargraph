@@ -2,12 +2,12 @@ require 'timeout'
 
 describe Solargraph::TypeChecker do
   it 'does not raise errors checking unparsed sources' do
-    expect {
+    expect do
       checker = Solargraph::TypeChecker.load_string(%(
         foo{
       ))
       checker.problems
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'ignores tagged problems' do
@@ -38,7 +38,7 @@ describe Solargraph::TypeChecker do
       end
     ), nil, :strict)
     timed_out = true
-    Timeout::timeout(5) do # seconds
+    Timeout.timeout(5) do # seconds
       checker.problems
       timed_out = false
     end

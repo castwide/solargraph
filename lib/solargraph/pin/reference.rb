@@ -29,6 +29,7 @@ module Solargraph
       #
       # @param name [String] rooted name of the referenced type
       # @param generic_values [Array<String>]
+      # @param [Hash{Symbol => Object}] splat
       def initialize generic_values: [], **splat
         super(**splat)
         @generic_values = generic_values

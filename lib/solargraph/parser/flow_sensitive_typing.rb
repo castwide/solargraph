@@ -7,7 +7,7 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin)
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
@@ -19,7 +19,7 @@ module Solargraph
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_and(and_node, true_ranges = [], false_ranges = [])
+      def process_and and_node, true_ranges = [], false_ranges = []
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
@@ -45,7 +45,7 @@ module Solargraph
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_or(or_node, true_ranges = [], false_ranges = [])
+      def process_or or_node, true_ranges = [], false_ranges = []
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
@@ -74,7 +74,7 @@ module Solargraph
       # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_calls(node, true_presences, false_presences)
+      def process_calls node, true_presences, false_presences
         return unless node.type == :send
 
         process_isa(node, true_presences, false_presences)
@@ -87,7 +87,7 @@ module Solargraph
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_if(if_node, true_ranges = [], false_ranges = [])
+      def process_if if_node, true_ranges = [], false_ranges = []
         return if if_node.type != :if
 
         #
@@ -111,13 +111,9 @@ module Solargraph
           rest_of_breakable_body = Range.new(get_node_end_position(if_node),
                                              get_node_end_position(enclosing_breakable_pin.node))
 
-          if always_breaks?(then_clause)
-            false_ranges << rest_of_breakable_body
-          end
+          false_ranges << rest_of_breakable_body if always_breaks?(then_clause)
 
-          if always_breaks?(else_clause)
-            true_ranges << rest_of_breakable_body
-          end
+          true_ranges << rest_of_breakable_body if always_breaks?(else_clause)
         end
 
         unless enclosing_compound_statement_pin.node.nil?
@@ -129,13 +125,9 @@ module Solargraph
           # statement, we can assume things about the rest of the
           # compound statement
           #
-          if always_leaves_compound_statement?(then_clause)
-            false_ranges << rest_of_returnable_body
-          end
+          false_ranges << rest_of_returnable_body if always_leaves_compound_statement?(then_clause)
 
-          if always_leaves_compound_statement?(else_clause)
-            true_ranges << rest_of_returnable_body
-          end
+          true_ranges << rest_of_returnable_body if always_leaves_compound_statement?(else_clause)
         end
 
         unless then_clause.nil?
@@ -166,7 +158,7 @@ module Solargraph
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_while(while_node, true_ranges = [], false_ranges = [])
+      def process_while while_node, true_ranges = [], false_ranges = []
         return if while_node.type != :while
 
         #
@@ -210,7 +202,7 @@ module Solargraph
       # @param downcast_not_type [ComplexType, nil]
       #
       # @return [void]
-      def add_downcast_var(pin, presence:, downcast_type:, downcast_not_type:)
+      def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
@@ -228,7 +220,7 @@ module Solargraph
       # @param presences [Array<Range>]
       #
       # @return [void]
-      def process_facts(facts_by_pin, presences)
+      def process_facts facts_by_pin, presences
         #
         # Add specialized vars for the rest of the block
         #
@@ -251,7 +243,7 @@ module Solargraph
       # @param false_ranges [Array<Range>]
       #
       # @return [void]
-      def process_expression(expression_node, true_ranges, false_ranges)
+      def process_expression expression_node, true_ranges, false_ranges
         process_calls(expression_node, true_ranges, false_ranges)
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
@@ -263,7 +255,7 @@ module Solargraph
       # @return [Array(String, String), nil] Tuple of rgument to
       #   function, then receiver of function if it's a variable,
       #   otherwise nil if no simple variable receiver
-      def parse_call(call_node, method_name)
+      def parse_call call_node, method_name
         return unless call_node&.type == :send && call_node.children[1] == method_name
         # Check if conditional node follows this pattern:
         #   s(:send,
@@ -282,7 +274,7 @@ module Solargraph
         # or like this:
         # (lvar :repr)
         # @sg-ignore Need to look at Tuple#include? handling
-        variable_name = call_receiver.children[0].to_s if [:lvar, :ivar].include?(call_receiver&.type)
+        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
         [call_arg, variable_name]
@@ -290,7 +282,7 @@ module Solargraph
 
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
-      def parse_isa(isa_node)
+      def parse_isa isa_node
         call_type_name, variable_name = parse_call(isa_node, :is_a?)
 
         return unless call_type_name
@@ -304,7 +296,7 @@ module Solargraph
       # @sg-ignore Solargraph::Parser::FlowSensitiveTyping#find_var
       #   return type could not be inferred
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
-      def find_var(variable_name, position)
+      def find_var variable_name, position
         if variable_name.start_with?('@')
           # @sg-ignore flow sensitive typing needs to handle attrs
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
@@ -319,7 +311,7 @@ module Solargraph
       # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_isa(isa_node, true_presences, false_presences)
+      def process_isa isa_node, true_presences, false_presences
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
         # @sg-ignore Need to add nil check here
@@ -343,7 +335,7 @@ module Solargraph
 
       # @param nilp_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
-      def parse_nilp(nilp_node)
+      def parse_nilp nilp_node
         parse_call(nilp_node, :nil?)
       end
 
@@ -352,7 +344,7 @@ module Solargraph
       # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_nilp(nilp_node, true_presences, false_presences)
+      def process_nilp nilp_node, true_presences, false_presences
         nilp_arg, variable_name = parse_nilp(nilp_node)
         return if variable_name.nil? || variable_name.empty?
         # if .nil? got an argument, move on, this isn't the situation
@@ -380,7 +372,7 @@ module Solargraph
 
       # @param bang_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
-      def parse_bang(bang_node)
+      def parse_bang bang_node
         parse_call(bang_node, :!)
       end
 
@@ -389,7 +381,7 @@ module Solargraph
       # @param false_presences [Array<Range>]
       #
       # @return [void]
-      def process_bang(bang_node, true_presences, false_presences)
+      def process_bang bang_node, true_presences, false_presences
         # pry(main)> require 'parser/current'; Parser::CurrentRuby.parse("!2")
         # => s(:send,
         #   s(:int, 2), :!)
@@ -405,7 +397,7 @@ module Solargraph
       # @param var_node [Parser::AST::Node]
       #
       # @return [String, nil] Variable name referenced
-      def parse_variable(var_node)
+      def parse_variable var_node
         return if var_node.children.length != 1
 
         var_node.children[0]&.to_s
@@ -415,8 +407,8 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       # @param false_presences [Array<Range>]
-      def process_variable(node, true_presences, false_presences)
-        return unless [:lvar, :ivar, :cvar, :gvar].include?(node.type)
+      def process_variable node, true_presences, false_presences
+        return unless %i[lvar ivar cvar gvar].include?(node.type)
 
         variable_name = parse_variable(node)
         return if variable_name.nil?
@@ -443,7 +435,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
-      def type_name(node)
+      def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
@@ -462,22 +454,18 @@ module Solargraph
 
       # @param clause_node [Parser::AST::Node, nil]
       # @sg-ignore need boolish support for ? methods
-      def always_breaks?(clause_node)
+      def always_breaks? clause_node
         clause_node&.type == :break
       end
 
       # @param clause_node [Parser::AST::Node, nil]
-      def always_leaves_compound_statement?(clause_node)
+      def always_leaves_compound_statement? clause_node
         # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
         # @sg-ignore Need to look at Tuple#include? handling
-        [:return, :raise, :next, :redo, :retry].include?(clause_node&.type)
+        %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals
-
-      attr_reader :ivars
-
-      attr_reader :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end
   end
 end

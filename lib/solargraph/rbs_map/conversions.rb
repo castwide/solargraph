@@ -78,7 +78,8 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support case/when
           unless closure.name == '' || decl.name.absolute?
             # @sg-ignore flow sensitive typing should support case/when
-            Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on alias type name #{decl.name.to_s}")
+            Solargraph.assert_or_log(:rbs_closure,
+                                     "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           # @sg-ignore flow sensitive typing should support case/when
           type_aliases[decl.name.to_s] = decl
@@ -86,7 +87,8 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support case/when
           unless closure.name == '' || decl.name.absolute?
             # @sg-ignore flow sensitive typing should support case/when
-            Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on alias type name #{decl.name.to_s}")
+            Solargraph.assert_or_log(:rbs_closure,
+                                     "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
@@ -103,7 +105,8 @@ module Solargraph
           class_alias_decl_to_pin decl
         when RBS::AST::Declarations::ModuleAlias
           unless closure.name == ''
-            Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on module alias #{decl.inspect}")
+            Solargraph.assert_or_log(:rbs_closure,
+                                     "Ignoring closure #{closure.inspect} on module alias #{decl.inspect}")
           end
           module_alias_decl_to_pin decl
         when RBS::AST::Declarations::Global
@@ -127,7 +130,7 @@ module Solargraph
       RBS_TO_CLASS = {
         'bool' => 'Boolean',
         'string' => 'String',
-        'int' => 'Integer',
+        'int' => 'Integer'
       }.freeze
       private_constant :RBS_TO_CLASS
 
@@ -138,7 +141,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      def rooted_name(type_name)
+      def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
       end
@@ -149,7 +152,8 @@ module Solargraph
       # @param [RBS::TypeName]
       #
       # @return [String]
-      def fqns(type_name)
+      # @param [Object] type_name
+      def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
         end
@@ -169,9 +173,11 @@ module Solargraph
         params = type_args.map { |a| other_type_to_type(a) }
         # tuples have their own class and are handled in other_type_to_type
         if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?, parameters_type: :hash)
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?,
+                                                                           parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: type_name.absolute?, parameters_type: :list)
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: type_name.absolute?,
+                                                                             parameters_type: :list)
         end
       end
 
@@ -374,9 +380,7 @@ module Solargraph
           source: :rbs
         )
         rooted_tag = type.rooted_tags
-        if base
-          rooted_tag = "#{base}<#{rooted_tag}>"
-        end
+        rooted_tag = "#{base}<#{rooted_tag}>" if base
         constant_pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         constant_pin
       end

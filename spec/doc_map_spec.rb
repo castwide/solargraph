@@ -52,15 +52,15 @@ describe Solargraph::DocMap do
     it 'tracks unresolved requires' do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
-      unprovided_solargraph_rspec_requires = [
-        'rspec-rails',
-        'actionmailer',
-        'actionpack',
-        'activerecord',
-        'shoulda-matchers',
-        'rspec-sidekiq',
-        'airborne',
-        'activesupport'
+      unprovided_solargraph_rspec_requires = %w[
+        rspec-rails
+        actionmailer
+        actionpack
+        activerecord
+        shoulda-matchers
+        rspec-sidekiq
+        airborne
+        activesupport
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
@@ -164,9 +164,9 @@ describe Solargraph::DocMap do
 
     it 'includes convention requires from environ' do
       dummy_convention = Class.new(Solargraph::Convention::Base) do
-        def global(doc_map)
+        def global doc_map
           Solargraph::Environ.new(
-            requires: ['convention_gem1', 'convention_gem2']
+            requires: %w[convention_gem1 convention_gem2]
           )
         end
       end

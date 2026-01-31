@@ -6,6 +6,7 @@ module Solargraph
       include Breakable
 
       # @param node [Parser::AST::Node, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize node: nil, **splat
         super(**splat)
         @node = node

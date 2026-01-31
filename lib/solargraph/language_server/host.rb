@@ -119,7 +119,7 @@ module Solargraph
             nil
           end
         else
-          logger.warn "Invalid message received."
+          logger.warn 'Invalid message received.'
           logger.debug request
           nil
         end
@@ -154,7 +154,7 @@ module Solargraph
           lib.delete(*filenames)
         end
         uris.each do |uri|
-          send_notification "textDocument/publishDiagnostics", {
+          send_notification 'textDocument/publishDiagnostics', {
             uri: uri,
             diagnostics: []
           }
@@ -209,7 +209,7 @@ module Solargraph
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
-              send_notification "textDocument/publishDiagnostics", {
+              send_notification 'textDocument/publishDiagnostics', {
                 uri: uri,
                 diagnostics: results
               }
@@ -354,7 +354,7 @@ module Solargraph
       # @return [void]
       def send_notification method, params
         response = {
-          jsonrpc: "2.0",
+          jsonrpc: '2.0',
           method: method,
           params: params
         }
@@ -377,7 +377,7 @@ module Solargraph
       def send_request method, params, &block
         @request_mutex.synchronize do
           message = {
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             method: method,
             params: params,
             id: @next_request_id
@@ -419,13 +419,13 @@ module Solargraph
       # @return [void]
       def unregister_capabilities methods
         logger.debug "Unregistering capabilities: #{methods}"
-        unregisterations = methods.select{|m| registered?(m)}.map{ |m|
+        unregisterations = methods.select { |m| registered?(m) }.map do |m|
           @registered_capabilities.delete m
           {
             id: m,
             method: m
           }
-        }
+        end
         return if unregisterations.empty?
         send_request 'client/unregisterCapability', { unregisterations: unregisterations }
       end
@@ -493,7 +493,7 @@ module Solargraph
               params['data']['location']['range']['end']['character']
             )
           )
-          result.concat library.locate_pins(location).select{ |pin| pin.name == params['label'] }
+          result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
@@ -748,9 +748,12 @@ module Solargraph
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
           changes.push Solargraph::Source::Change.new(
-            (chng['range'].nil? ?
-              nil :
-              Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
+            (if chng['range'].nil?
+               nil
+             else
+               Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'],
+                                         chng['range']['end']['line'], chng['range']['end']['character'])
+             end
             ),
             chng['text']
           )
@@ -813,10 +816,10 @@ module Solargraph
           # documentSymbolProvider: true,
           # workspaceSymbolProvider: true,
           # workspace: {
-            # workspaceFolders: {
-              # supported: true,
-              # changeNotifications: true
-            # }
+          # workspaceFolders: {
+          # supported: true,
+          # changeNotifications: true
+          # }
           # }
           'textDocument/definition' => {
             definitionProvider: true

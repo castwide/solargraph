@@ -1,5 +1,5 @@
 describe Solargraph::Source::Chain::Constant do
-  it "resolves constants in the current context" do
+  it 'resolves constants in the current context' do
     foo_pin = Solargraph::Pin::Constant.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN)
     api_map = Solargraph::ApiMap.new
     api_map.index [foo_pin]

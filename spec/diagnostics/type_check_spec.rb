@@ -1,7 +1,7 @@
 describe Solargraph::Diagnostics::TypeCheck do
   let(:api_map) { Solargraph::ApiMap.new }
 
-  it "detects defined return types" do
+  it 'detects defined return types' do
     source = Solargraph::Source.load_string(%(
       # @return [String]
       def foo
@@ -12,7 +12,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result).to be_empty
   end
 
-  it "detects missing return types" do
+  it 'detects missing return types' do
     source = Solargraph::Source.load_string(%(
       def foo
       end
@@ -23,7 +23,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result[0][:message]).to include('foo')
   end
 
-  it "detects defined parameter types" do
+  it 'detects defined parameter types' do
     source = Solargraph::Source.load_string(%(
       # @param bar [String]
       # @return [String]
@@ -35,7 +35,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result).to be_empty
   end
 
-  it "detects missing parameter types" do
+  it 'detects missing parameter types' do
     source = Solargraph::Source.load_string(%(
       # @return [String]
       def foo(bar)
@@ -48,7 +48,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result[0][:message]).to include('bar')
   end
 
-  it "detects return types from superclasses" do
+  it 'detects return types from superclasses' do
     source = Solargraph::Source.load_string(%(
       class First
         # @return [String]
@@ -65,7 +65,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result).to be_empty
   end
 
-  it "detects parameter types from superclasses" do
+  it 'detects parameter types from superclasses' do
     source = Solargraph::Source.load_string(%(
       class First
         # @param bar [String]
@@ -83,7 +83,7 @@ describe Solargraph::Diagnostics::TypeCheck do
     expect(result).to be_empty
   end
 
-  it "works with optional and keyword arguments" do
+  it 'works with optional and keyword arguments' do
     source = Solargraph::Source.load_string(%(
       # @param bar [String]
       # @param baz [String]

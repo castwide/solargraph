@@ -3,7 +3,7 @@ describe Solargraph::RbsMap::Conversions do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end

@@ -1,5 +1,5 @@
 describe Solargraph::Pin::BaseVariable do
-  it "checks assignments for equality" do
+  it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin1 = smap.locals.first
     smap = Solargraph::SourceMap.load_string('foo = "foo"')

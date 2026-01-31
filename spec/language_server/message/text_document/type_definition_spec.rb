@@ -7,16 +7,16 @@ describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
     file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/other.rb'))
     something_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path('spec/fixtures/workspace/lib/something.rb'))
     message = Solargraph::LanguageServer::Message::TextDocument::TypeDefinition.new(host, {
-      'params' => {
-        'textDocument' => {
-          'uri' => file_uri
-        },
-        'position' => {
-          'line' => 4,
-          'character' => 10
-        }
-      }
-    })
+                                                                                      'params' => {
+                                                                                        'textDocument' => {
+                                                                                          'uri' => file_uri
+                                                                                        },
+                                                                                        'position' => {
+                                                                                          'line' => 4,
+                                                                                          'character' => 10
+                                                                                        }
+                                                                                      }
+                                                                                    })
     message.process
     expect(message.result.first[:uri]).to eq(something_uri)
   end

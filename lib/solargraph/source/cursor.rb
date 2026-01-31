@@ -39,11 +39,13 @@ module Solargraph
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
-          match = source.code[0..offset-1].to_s.match(start_word_pattern)
+          match = source.code[0..offset - 1].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
           # @sg-ignore Need to add nil check here
-          result = ":#{result}" if source.code[0..offset-result.length-1].end_with?(':') and !source.code[0..offset-result.length-1].end_with?('::')
+          if source.code[0..offset - result.length - 1].end_with?(':') and !source.code[0..offset - result.length - 1].end_with?('::')
+            result = ":#{result}"
+          end
           result
         end
       end
@@ -62,7 +64,7 @@ module Solargraph
 
       # @return [Boolean]
       def start_of_constant?
-        source.code[offset-2, 2] == '::'
+        source.code[offset - 2, 2] == '::'
       end
 
       # The range of the word at the current position.
@@ -126,20 +128,18 @@ module Solargraph
 
       # @return [Position]
       def node_position
-        @node_position ||= begin
-          if start_of_word.empty?
-            # @sg-ignore Need to add nil check here
-            match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
-            if match
-              # @sg-ignore Need to add nil check here
-              Position.from_offset(source.code, offset - match[0].length)
-            else
-              position
-            end
-          else
-            position
-          end
-        end
+        @node_position ||= if start_of_word.empty?
+                             # @sg-ignore Need to add nil check here
+                             match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
+                             if match
+                               # @sg-ignore Need to add nil check here
+                               Position.from_offset(source.code, offset - match[0].length)
+                             else
+                               position
+                             end
+                           else
+                             position
+                           end
       end
 
       # @return [Parser::AST::Node, nil]

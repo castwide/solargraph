@@ -18,7 +18,7 @@ module Solargraph::LanguageServer::Message::Workspace
     # @return [void]
     def remove_folders
       return unless params['event'] && params['event']['removed']
-      params['event']['removed'].each do |folder|
+      params['event']['removed'].each do |_folder|
         host.remove_folders params['event']['removed']
       end
     end

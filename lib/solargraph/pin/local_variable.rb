@@ -16,9 +16,9 @@ module Solargraph
         super
       end
 
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         # keep this as a parameter
-        return other.combine_with(self, attrs) if other.is_a?(Parameter) && !self.is_a?(Parameter)
+        return other.combine_with(self, attrs) if other.is_a?(Parameter) && !is_a?(Parameter)
 
         super
       end

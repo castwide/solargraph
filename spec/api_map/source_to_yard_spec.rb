@@ -1,5 +1,5 @@
 describe Solargraph::ApiMap::SourceToYard do
-  it "rakes sources" do
+  it 'rakes sources' do
     source = Solargraph::SourceMap.load_string(%(
       module Foo
         class Bar
@@ -17,7 +17,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(object.code_object_paths).to include('Foo::Bar#baz')
   end
 
-  it "generates docstrings" do
+  it 'generates docstrings' do
     source = Solargraph::SourceMap.load_string(%(
       # My foo class 描述
       class Foo
@@ -40,7 +40,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(class_method_object.tag(:return).types).to eq(['Foo'])
   end
 
-  it "generates instance mixins" do
+  it 'generates instance mixins' do
     source = Solargraph::SourceMap.load_string(%(
       module Foo
         def bar
@@ -58,7 +58,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(class_object.instance_mixins).to include(module_object)
   end
 
-  it "generates class mixins" do
+  it 'generates class mixins' do
     source = Solargraph::SourceMap.load_string(%(
       module Foo
         def bar; end
@@ -75,7 +75,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(class_object.class_mixins).to include(module_object)
   end
 
-  it "generates methods for attributes" do
+  it 'generates methods for attributes' do
     source = Solargraph::SourceMap.load_string(%(
       class Foo
         attr_reader :bar
@@ -86,15 +86,15 @@ describe Solargraph::ApiMap::SourceToYard do
     object = Object.new
     object.extend Solargraph::ApiMap::SourceToYard
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
-    expect(object.code_object_at('Foo#bar')).not_to be(nil)
-    expect(object.code_object_at('Foo#bar=')).to be(nil)
-    expect(object.code_object_at('Foo#baz')).to be(nil)
-    expect(object.code_object_at('Foo#baz=')).not_to be(nil)
-    expect(object.code_object_at('Foo#boo')).not_to be(nil)
-    expect(object.code_object_at('Foo#boo=')).not_to be(nil)
+    expect(object.code_object_at('Foo#bar')).not_to be_nil
+    expect(object.code_object_at('Foo#bar=')).to be_nil
+    expect(object.code_object_at('Foo#baz')).to be_nil
+    expect(object.code_object_at('Foo#baz=')).not_to be_nil
+    expect(object.code_object_at('Foo#boo')).not_to be_nil
+    expect(object.code_object_at('Foo#boo=')).not_to be_nil
   end
 
-  it "generates method parameters" do
+  it 'generates method parameters' do
     source = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar baz, boo = 'boo'
@@ -110,7 +110,7 @@ describe Solargraph::ApiMap::SourceToYard do
     expect(method_object.parameters[1]).to eq(['boo', "'boo'"])
   end
 
-  it "generates method keyword parameters" do
+  it 'generates method keyword parameters' do
     source = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar baz, boo: 'boo'

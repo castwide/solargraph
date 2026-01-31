@@ -43,6 +43,7 @@ module Solargraph
       attr_reader :node
 
       # @param node [Parser::AST::Node, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize node: nil, **splat
         super(**splat)
         @node = node

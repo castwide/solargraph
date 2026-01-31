@@ -26,7 +26,7 @@ module Solargraph
     end
 
     # @param other [Position]
-    def <=>(other)
+    def <=> other
       return nil unless other.is_a?(Position)
       if line == other.line
         character <=> other.character
@@ -68,7 +68,6 @@ module Solargraph
         break if line == position.line
 
         # @sg-ignore oflow sensitive typing should be able to handle redefinition
-        line_length = newline_index - last_line_index
         last_line_index = newline_index
       end
 
