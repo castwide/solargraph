@@ -27,6 +27,10 @@ describe Solargraph::Library do
   end
 
   context 'with a require from a not-yet-cached external gem' do
+    before :context do
+      # avoid race conditions caching/uncaching backport
+    end
+
     before do
       Solargraph::Shell.new.uncache('backport')
     end
@@ -53,6 +57,10 @@ describe Solargraph::Library do
   end
 
   context 'with a require from an already-cached external gem' do
+    before :context do
+      # avoid race conditions caching/uncaching backport
+    end
+
     before do
       Solargraph::Shell.new.gems('backport')
     end

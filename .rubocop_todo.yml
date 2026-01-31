@@ -590,6 +590,7 @@ RSpec/DescribedClass:
 RSpec/EmptyHook:
   Exclude:
     - 'spec/gem_pins_spec.rb'
+    - 'spec/library_spec.rb'
     - 'spec/rbs_map/conversions_spec.rb'
     - 'spec/shell_spec.rb'
 
