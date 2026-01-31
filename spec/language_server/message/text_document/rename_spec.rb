@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
+  let(:temp_file_url) do
+    "file:///#{Dir.mktmpdir}/file.rb"
+  end
+
   it "renames a symbol" do
     host = Solargraph::LanguageServer::Host.new
     host.start
-    host.open('file:///file.rb', %(
+    host.open(temp_file_url, %(
       class Foo
       end
       foo = Foo.new
@@ -15,7 +19,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       'method' => 'textDocument/rename',
       'params' => {
         'textDocument' => {
-          'uri' => 'file:///file.rb'
+          'uri' => temp_file_url
         },
         'position' => {
           'line' => 1,
@@ -25,13 +29,13 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       }
     })
     rename.process
-    expect(rename.result[:changes]['file:///file.rb'].length).to eq(2)
+    expect(rename.result[:changes][temp_file_url].length).to eq(2)
   end
 
   it "renames an argument symbol from method signature" do
     host = Solargraph::LanguageServer::Host.new
     host.start
-    host.open('file:///file.rb', %(
+    host.open(temp_file_url, %(
       class Example
       def foo(bar)
       bar += 1
@@ -45,7 +49,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       'method' => 'textDocument/rename',
       'params' => {
         'textDocument' => {
-          'uri' => 'file:///file.rb'
+          'uri' => temp_file_url
         },
         'position' => {
           'line' => 2,
@@ -55,13 +59,13 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       }
     })
     rename.process
-    expect(rename.result[:changes]['file:///file.rb'].length).to eq(3)
+    expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
 
   it "renames an argument symbol from method body" do
     host = Solargraph::LanguageServer::Host.new
     host.start
-    host.open('file:///file.rb', %(
+    host.open(temp_file_url, %(
       class Example
       def foo(bar)
       bar += 1
@@ -74,7 +78,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       'method' => 'textDocument/rename',
       'params' => {
         'textDocument' => {
-          'uri' => 'file:///file.rb'
+          'uri' => temp_file_url
         },
         'position' => {
           'line' => 3,
@@ -84,13 +88,13 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       }
     })
     rename.process
-    expect(rename.result[:changes]['file:///file.rb'].length).to eq(3)
+    expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
 
   it "renames namespace symbol with proper range" do
     host = Solargraph::LanguageServer::Host.new
     host.start
-    host.open('file:///file.rb', %(
+    host.open(temp_file_url, %(
       module Namespace; end
       class Namespace::ExampleClass
       end
@@ -101,7 +105,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       'method' => 'textDocument/rename',
       'params' => {
         'textDocument' => {
-          'uri' => 'file:///file.rb'
+          'uri' => temp_file_url
         },
         'position' => {
           'line' => 2,
@@ -111,7 +115,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       }
     })
     rename.process
-    changes = rename.result[:changes]['file:///file.rb']
+    changes = rename.result[:changes][temp_file_url]
     expect(changes.length).to eq(3)
     expect(changes.first[:range][:start][:character]).to eq(13)
     expect(changes.first[:range][:end][:character]).to eq(22)
