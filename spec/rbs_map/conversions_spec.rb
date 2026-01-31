@@ -94,6 +94,7 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with standard loads for solargraph project' do
+    # Use :context here instead of :all so that parallel_rspec runs these on the same worker and we only have to cache these gems on one worker
     before :context do
       @api_map = Solargraph::ApiMap.load('.')
       gems = ['parser', 'ast', 'open3']
