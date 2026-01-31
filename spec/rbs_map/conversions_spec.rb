@@ -3,7 +3,7 @@ describe Solargraph::RbsMap::Conversions do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end
@@ -97,7 +97,7 @@ describe Solargraph::RbsMap::Conversions do
     # Use :context here instead of :all so that parallel_rspec runs these on the same worker and we only have to cache these gems on one worker
     before :context do
       @api_map = Solargraph::ApiMap.load('.')
-      gems = ['parser', 'ast', 'open3']
+      gems = %w[parser ast open3]
       bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
       @api_map.catalog(bench)
       @api_map.cache_all_for_doc_map!
@@ -107,11 +107,6 @@ describe Solargraph::RbsMap::Conversions do
     let(:api_map) { @api_map }
 
     context 'with superclass pin for Parser::AST::Node' do
-      before :context do
-        # include this to flag to parallel rspec that it should not try
-        # to parallelize this context
-      end
-
       let(:superclass_pin) do
         api_map.pins.find do |pin|
           pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
@@ -126,12 +121,6 @@ describe Solargraph::RbsMap::Conversions do
 
     # https://github.com/castwide/solargraph/issues/1042
     context 'with Hash superclass with untyped value and alias' do
-      before :context do
-        # include this to flag to parallel rspec that it should not
-        # try to parallelize this context - it does not seem smart
-        # enough to use the above
-      end
-
       let(:rbs) do
         <<~RBS
           class Sub < Hash[Symbol, untyped]

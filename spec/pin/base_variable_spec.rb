@@ -1,5 +1,5 @@
 describe Solargraph::Pin::BaseVariable do
-  it "checks assignments for equality" do
+  it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin1 = smap.locals.first
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
@@ -46,7 +46,7 @@ describe Solargraph::Pin::BaseVariable do
   end
 
   xit "understands proc kwarg parameters aren't affected by @type" do
-    pending "understanding restarg in block param in Block#typify_parameters"
+    pending 'understanding restarg in block param in Block#typify_parameters'
 
     code = %(
       # @return [Proc]

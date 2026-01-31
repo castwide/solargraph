@@ -1,5 +1,5 @@
 describe Solargraph::SourceMap::Mapper do
-  it "ignores include calls that are not attached to the current namespace" do
+  it 'ignores include calls that are not attached to the current namespace' do
     source = Solargraph::Source.new(%(
       class Foo
         include Direct
@@ -8,14 +8,14 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo'}
+    pins = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.namespace == 'Foo' }
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
     expect(names).to include('Interior')
   end
 
-  it "ignores prepend calls that are not attached to the current namespace" do
+  it 'ignores prepend calls that are not attached to the current namespace' do
     source = Solargraph::Source.new(%(
       class Foo
         prepend Direct
@@ -24,14 +24,14 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Prepend) && pin.namespace == 'Foo'}
+    pins = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Prepend) && pin.namespace == 'Foo' }
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
     expect(names).to include('Interior')
   end
 
-  it "ignores extend calls that are not attached to the current namespace" do
+  it 'ignores extend calls that are not attached to the current namespace' do
     source = Solargraph::Source.new(%(
       class Foo
         extend Direct
@@ -40,17 +40,17 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    foo_pin = map.pins.select{|pin| pin.path == 'Foo'}.first
+    map.pins.select { |pin| pin.path == 'Foo' }.first
     # expect(foo_pin.extend_references.map(&:name)).to include('Direct')
     # expect(foo_pin.extend_references.map(&:name)).not_to include('Indirect')
-    pins = map.pins.select{|pin| pin.is_a?(Solargraph::Pin::Reference::Extend) && pin.namespace == 'Foo'}
+    pins = map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Extend) && pin.namespace == 'Foo' }
     names = pins.map(&:name)
     expect(names).to include('Direct')
     expect(names).not_to include('Indirect')
     expect(names).to include('Interior')
   end
 
-  it "sets scopes for attributes" do
+  it 'sets scopes for attributes' do
     source = Solargraph::Source.new(%(
       module Foo
         attr_reader :bar1
@@ -60,13 +60,13 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     map = Solargraph::SourceMap.map(source)
-    bar1 = map.pins.select{|pin| pin.name == 'bar1'}.first
+    bar1 = map.pins.select { |pin| pin.name == 'bar1' }.first
     expect(bar1.scope).to eq(:instance)
-    bar2 = map.pins.select{|pin| pin.name == 'bar2'}.first
+    bar2 = map.pins.select { |pin| pin.name == 'bar2' }.first
     expect(bar2.scope).to eq(:class)
   end
 
-  it "sets attribute visibility" do
+  it 'sets attribute visibility' do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         attr_reader :default_public_method
@@ -84,7 +84,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#explicit_public_method').visibility).to eq(:public)
   end
 
-  it "processes method directives" do
+  it 'processes method directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!method bar(baz)
@@ -119,7 +119,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.scope).to eq(:class)
   end
 
-  it "processes attribute reader directives" do
+  it 'processes attribute reader directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute [r] bar
@@ -131,7 +131,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes attribute writer directives" do
+  it 'processes attribute writer directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute [w] bar
@@ -143,7 +143,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes attribute accessor directives" do
+  it 'processes attribute accessor directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute [r,w] bar
@@ -157,7 +157,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes default attribute directives" do
+  it 'processes default attribute directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute bar
@@ -171,7 +171,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes attribute directives attached to methods" do
+  it 'processes attribute directives attached to methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute [r] bar
@@ -184,7 +184,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "processes private visibility directives attached to methods" do
+  it 'processes private visibility directives attached to methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility private
@@ -195,7 +195,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#bar').visibility).to be(:private)
   end
 
-  it "processes protected visibility directives attached to methods" do
+  it 'processes protected visibility directives attached to methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility protected
@@ -206,7 +206,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#bar').visibility).to be(:protected)
   end
 
-  it "processes public visibility directives attached to methods" do
+  it 'processes public visibility directives attached to methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!visibility public
@@ -217,7 +217,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.first_pin('Foo#bar').visibility).to be(:public)
   end
 
-  it "does not process attached visibility directives on other methods" do
+  it 'does not process attached visibility directives on other methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Example
         # @!visibility private
@@ -232,7 +232,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(method2.visibility).to be(:public)
   end
 
-  it "processes class-wide private visibility directives" do
+  it 'processes class-wide private visibility directives' do
     map = Solargraph::SourceMap.load_string(%(
       class Example
         # @!visibility private
@@ -253,7 +253,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(method3.visibility).to be(:public)
   end
 
-  it "processes attribute directives at class endings" do
+  it 'processes attribute directives at class endings' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!attribute [r] bar
@@ -264,43 +264,43 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.return_type.tag).to eq('String')
   end
 
-  it "finds assignment nodes for local variables using nil guards" do
+  it 'finds assignment nodes for local variables using nil guards' do
     map = Solargraph::SourceMap.load_string(%(
       x ||= []
     ))
     pin = map.locals.first
     # @todo Dirty test
-    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
+    expect(%i[ZLIST ZARRAY array]).to include(pin.assignment.type)
   end
 
-  it "finds assignment nodes for instance variables using nil guards" do
+  it 'finds assignment nodes for instance variables using nil guards' do
     map = Solargraph::SourceMap.load_string(%(
       @x ||= []
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
+    expect(%i[ZLIST ZARRAY array]).to include(pin.assignment.type)
   end
 
-  it "finds assignment nodes for class variables using nil guards" do
+  it 'finds assignment nodes for class variables using nil guards' do
     map = Solargraph::SourceMap.load_string(%(
       @@x ||= []
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
+    expect(%i[ZLIST ZARRAY array]).to include(pin.assignment.type)
   end
 
-  it "finds assignment nodes for global variables using nil guards" do
+  it 'finds assignment nodes for global variables using nil guards' do
     map = Solargraph::SourceMap.load_string(%(
       $x ||= []
     ))
     pin = map.pins.last
     # @todo Dirty test
-    expect([:ZLIST, :ZARRAY, :array]).to include(pin.assignment.type)
+    expect(%i[ZLIST ZARRAY array]).to include(pin.assignment.type)
   end
 
-  it "requalifies namespace definitions with leading colons" do
+  it 'requalifies namespace definitions with leading colons' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         class ::Bar; end
@@ -311,7 +311,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.pins.map(&:path)).not_to include('Foo::Bar')
   end
 
-  it "maps method parameters" do
+  it 'maps method parameters' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar baz, boo = 'boo', key: 'value'
@@ -319,16 +319,16 @@ describe Solargraph::SourceMap::Mapper do
       end
     ))
     pin = map.first_pin('Foo#bar')
-    expect(pin.parameter_names).to eq(['baz', 'boo', 'key'])
-    pin = map.locals.select{|p| p.name == 'baz'}.first
+    expect(pin.parameter_names).to eq(%w[baz boo key])
+    pin = map.locals.select { |p| p.name == 'baz' }.first
     expect(pin).to be_a(Solargraph::Pin::Parameter)
-    pin = map.locals.select{|p| p.name == 'boo'}.first
+    pin = map.locals.select { |p| p.name == 'boo' }.first
     expect(pin).to be_a(Solargraph::Pin::Parameter)
-    pin = map.locals.select{|p| p.name == 'key'}.first
+    pin = map.locals.select { |p| p.name == 'key' }.first
     expect(pin).to be_a(Solargraph::Pin::Parameter)
   end
 
-  it "maps method splat parameters" do
+  it 'maps method splat parameters' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar *baz
@@ -340,7 +340,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.parameters.first.name).to eq('baz')
   end
 
-  it "maps method block parameters" do
+  it 'maps method block parameters' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar &block
@@ -352,18 +352,18 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.parameters.first.name).to eq('block')
   end
 
-  it "adds superclasses to class pins" do
+  it 'adds superclasses to class pins' do
     map = Solargraph::SourceMap.load_string(%(
       class Sub < Sup; end
     ))
     # pin = map.first_pin('Sub')
     # expect(pin.superclass_reference.name).to eq('Sup')
-    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Superclass)}.first
+    pin = map.pins.select { |p| p.is_a?(Solargraph::Pin::Reference::Superclass) }.first
     expect(pin.namespace).to eq('Sub')
     expect(pin.name).to eq('Sup')
   end
 
-  it "modifies scope and visibility for module functions" do
+  it 'modifies scope and visibility for module functions' do
     map = Solargraph::SourceMap.load_string(%(
       module Functions
         module_function
@@ -376,7 +376,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to eq(:private)
   end
 
-  it "recognizes single module functions" do
+  it 'recognizes single module functions' do
     map = Solargraph::SourceMap.load_string(%(
       module Functions
         module_function def foo; end
@@ -391,7 +391,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to eq(:public)
   end
 
-  it "remaps methods for module_function symbol arguments" do
+  it 'remaps methods for module_function symbol arguments' do
     map = Solargraph::SourceMap.load_string(%(
       module Functions
         def foo
@@ -409,13 +409,13 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to eq(:private)
     pin = map.first_pin('Functions#bar')
     expect(pin.visibility).to eq(:public)
-    pin = map.pins.select{|p| p.name == '@foo' and p.context.scope == :class}.first
+    pin = map.pins.select { |p| p.name == '@foo' and p.context.scope == :class }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
-    pin = map.pins.select{|p| p.name == '@foo' and p.context.scope == :instance}.first
+    pin = map.pins.select { |p| p.name == '@foo' and p.context.scope == :instance }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
   end
 
-  it "modifies instance variables in module functions" do
+  it 'modifies instance variables in module functions' do
     map = Solargraph::SourceMap.load_string(%(
       module Functions
         module_function
@@ -425,46 +425,46 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = map.pins.select{|p| p.name == '@foo' and p.context.scope == :class}.first
+    pin = map.pins.select { |p| p.name == '@foo' and p.context.scope == :class }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
-    pin = map.pins.select{|p| p.name == '@foo' and p.context.scope == :instance}.first
+    pin = map.pins.select { |p| p.name == '@foo' and p.context.scope == :instance }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
-    pin = map.pins.select{|p| p.name == '@bar' and p.context.scope == :class}.first
+    pin = map.pins.select { |p| p.name == '@bar' and p.context.scope == :class }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
-    pin = map.pins.select{|p| p.name == '@bar' and p.context.scope == :instance}.first
+    pin = map.pins.select { |p| p.name == '@bar' and p.context.scope == :instance }.first
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
   end
 
-  it "maps class variables" do
+  it 'maps class variables' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         @@bar = 'bar'
         @@baz ||= 'baz'
       end
     ))
-    pin = map.pins.select{|p| p.name == '@@bar'}.first
+    pin = map.pins.select { |p| p.name == '@@bar' }.first
     expect(pin).to be_a(Solargraph::Pin::ClassVariable)
-    pin = map.pins.select{|p| p.name == '@@baz'}.first
+    pin = map.pins.select { |p| p.name == '@@baz' }.first
     expect(pin).to be_a(Solargraph::Pin::ClassVariable)
   end
 
-  it "maps local variables" do
+  it 'maps local variables' do
     map = Solargraph::SourceMap.load_string(%(
       x = y
     ))
-    pin = map.locals.select{|p| p.name == 'x'}.first
+    pin = map.locals.select { |p| p.name == 'x' }.first
     expect(pin).to be_a(Solargraph::Pin::LocalVariable)
   end
 
-  it "maps global variables" do
+  it 'maps global variables' do
     map = Solargraph::SourceMap.load_string(%(
       $x = y
     ))
-    pin = map.pins.select{|p| p.name == '$x'}.first
+    pin = map.pins.select { |p| p.name == '$x' }.first
     expect(pin).to be_a(Solargraph::Pin::GlobalVariable)
   end
 
-  it "maps constants" do
+  it 'maps constants' do
     map = Solargraph::SourceMap.load_string(%(
       module Foo
         BAR = 'bar'
@@ -474,7 +474,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin).to be_a(Solargraph::Pin::Constant)
   end
 
-  it "maps singleton methods" do
+  it 'maps singleton methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def self.bar; end
@@ -485,7 +485,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.context.scope).to be(:class)
   end
 
-  it "maps requalified singleton methods" do
+  it 'maps requalified singleton methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo; end
       class Bar
@@ -505,7 +505,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.context.scope).to be(:instance)
   end
 
-  it "maps private class methods" do
+  it 'maps private class methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         def self.bar; end
@@ -517,7 +517,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to be(:private)
   end
 
-  it "maps singly defined private class methods" do
+  it 'maps singly defined private class methods' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         private_class_method def bar; end
@@ -528,7 +528,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to be(:private)
   end
 
-  it "maps private constants" do
+  it 'maps private constants' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         BAR = 'bar'
@@ -540,7 +540,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to be(:private)
   end
 
-  it "maps private namespaces" do
+  it 'maps private namespaces' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         class Bar; end
@@ -552,7 +552,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to be(:private)
   end
 
-  it "maps attribute writers" do
+  it 'maps attribute writers' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         attr_writer :bar
@@ -562,7 +562,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.pins.map(&:path)).not_to include('Foo#bar')
   end
 
-  it "maps attribute accessors" do
+  it 'maps attribute accessors' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         attr_accessor :bar
@@ -572,29 +572,29 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.pins.map(&:path)).to include('Foo#bar')
   end
 
-  it "maps extend self" do
+  it 'maps extend self' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
         extend self
         def bar; end
       end
     ))
-    pin = map.first_pin('Foo')
+    map.first_pin('Foo')
     # expect(pin.extend_references.map(&:name)).to include('Foo')
-    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Extend)}.first
+    pin = map.pins.select { |p| p.is_a?(Solargraph::Pin::Reference::Extend) }.first
     expect(pin.namespace).to eq('Foo')
     expect(pin.name).to eq('Foo')
   end
 
-  it "maps require calls" do
+  it 'maps require calls' do
     map = Solargraph::SourceMap.load_string(%(
       require 'set'
     ))
-    pin = map.pins.select{|p| p.is_a?(Solargraph::Pin::Reference::Require)}.first
+    pin = map.pins.select { |p| p.is_a?(Solargraph::Pin::Reference::Require) }.first
     expect(pin.name).to eq('set')
   end
 
-  it "ignores dynamic require calls" do
+  it 'ignores dynamic require calls' do
     map = Solargraph::SourceMap.load_string(%(
       path = 'solargraph'
       require path
@@ -602,16 +602,16 @@ describe Solargraph::SourceMap::Mapper do
     expect(map.requires.length).to eq(0)
   end
 
-  it "maps block parameters" do
+  it 'maps block parameters' do
     map = Solargraph::SourceMap.load_string(%(
       x.each do |y|
       end
     ))
-    pin = map.locals.select{|p| p.name == 'y'}.first
+    pin = map.locals.select { |p| p.name == 'y' }.first
     expect(pin).to be_a(Solargraph::Pin::Parameter)
   end
 
-  it "forces initialize methods to be private" do
+  it 'forces initialize methods to be private' do
     map = Solargraph::SourceMap.load_string('
       class Foo
         def initialize name
@@ -622,7 +622,7 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin.visibility).to be(:private)
   end
 
-  it "maps top-level methods" do
+  it 'maps top-level methods' do
     map = Solargraph::SourceMap.load_string(%(
       def foo(bar, baz)
       end
@@ -632,18 +632,18 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin).to be_a(Solargraph::Pin::Method)
   end
 
-  it "maps root blocks to class scope" do
+  it 'maps root blocks to class scope' do
     smap = Solargraph::SourceMap.load_string(%(
       @a = some_array
       @a.each do |b|
         b
       end
     ), 'test.rb')
-    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    pin = smap.pins.select { |p| p.is_a?(Solargraph::Pin::Block) }.first
     expect(pin.context.scope).to eq(:class)
   end
 
-  it "maps class method blocks to class scope" do
+  it 'maps class method blocks to class scope' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def self.bar
@@ -654,11 +654,11 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    pin = smap.pins.select { |p| p.is_a?(Solargraph::Pin::Block) }.first
     expect(pin.context.scope).to eq(:class)
   end
 
-  it "maps instance method blocks to instance scope" do
+  it 'maps instance method blocks to instance scope' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar
@@ -669,11 +669,11 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::Block)}.first
+    pin = smap.pins.select { |p| p.is_a?(Solargraph::Pin::Block) }.first
     expect(pin.context.scope).to eq(:instance)
   end
 
-  it "maps rebased namespaces without leading colons" do
+  it 'maps rebased namespaces without leading colons' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         class ::Bar
@@ -686,79 +686,79 @@ describe Solargraph::SourceMap::Mapper do
     expect(smap.first_pin('Bar#baz')).to be_a(Solargraph::Pin::Method)
   end
 
-  it "maps contexts of constants" do
+  it 'maps contexts of constants' do
     var = 'BAR'
     smap = Solargraph::SourceMap.load_string("#{var} = nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
     smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps contexts of instance variables" do
+  it 'maps contexts of instance variables' do
     var = '@bar'
     smap = Solargraph::SourceMap.load_string("#{var} = nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
     smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps contexts of class variables" do
+  it 'maps contexts of class variables' do
     var = '@@bar'
     smap = Solargraph::SourceMap.load_string("#{var} = nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
     smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps contexts of global variables" do
+  it 'maps contexts of global variables' do
     var = '$bar'
     smap = Solargraph::SourceMap.load_string("#{var} = nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
     smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
-    pin = smap.pins.select{|p| p.name == var}.first
+    pin = smap.pins.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps contexts of local variables" do
+  it 'maps contexts of local variables' do
     var = 'bar'
     smap = Solargraph::SourceMap.load_string("#{var} = nil")
-    pin = smap.locals.select{|p| p.name == var}.first
+    pin = smap.locals.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
     smap = Solargraph::SourceMap.load_string("#{var} ||= nil")
-    pin = smap.locals.select{|p| p.name == var}.first
+    pin = smap.locals.select { |p| p.name == var }.first
     expect(pin.context).to be_a(Solargraph::ComplexType)
   end
 
-  it "maps method aliases" do
+  it 'maps method aliases' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar; end
         alias baz bar
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Foo#baz'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo#baz' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
-  it "maps attribute aliases" do
+  it 'maps attribute aliases' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         attr_accessor :bar
         alias baz bar
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Foo#baz'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo#baz' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
-  it "maps class method aliases" do
+  it 'maps class method aliases' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         class << self
@@ -767,12 +767,12 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo.baz' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
     expect(pin.location.range.start.line).to eq(4)
   end
 
-  it "maps method macros" do
+  it 'maps method macros' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!macro
@@ -780,23 +780,23 @@ describe Solargraph::SourceMap::Mapper do
         def make klass; end
       end
     ), 'test.rb')
-    pin = smap.pins.select{|p| p.path == 'Foo#make'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo#make' }.first
     expect(pin.macros).not_to be_empty
   end
 
-  it "maps method directives" do
+  it 'maps method directives' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!method bar(baz)
         #   @return [String]
       end
     ), 'test.rb')
-    pin = smap.pins.select{|p| p.path == 'Foo#bar'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo#bar' }.first
     expect(pin.return_type.tag).to eq('String')
     expect(pin.location.filename).to eq('test.rb')
   end
 
-  it "maps aliases from alias_method" do
+  it 'maps aliases from alias_method' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         class << self
@@ -805,22 +805,22 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Foo.baz'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo.baz' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
     expect(pin.location.range.start.line).to eq(4)
   end
 
-  it "maps aliases with unknown bases" do
+  it 'maps aliases with unknown bases' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         alias bar baz
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Foo#bar'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo#bar' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
-  it "maps aliases to superclass methods" do
+  it 'maps aliases to superclass methods' do
     smap = Solargraph::SourceMap.load_string(%(
       class Sup
         # My foo method
@@ -830,33 +830,33 @@ describe Solargraph::SourceMap::Mapper do
         alias bar foo
       end
     ))
-    pin = smap.pins.select{|p| p.path == 'Sub#bar'}.first
+    pin = smap.pins.select { |p| p.path == 'Sub#bar' }.first
     expect(pin).to be_a(Solargraph::Pin::MethodAlias)
   end
 
-  it "uses nodes for method parameter assignments" do
+  it 'uses nodes for method parameter assignments' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def bar(baz = quz)
         end
       end
     ))
-    pin = smap.locals.select{|p| p.name == 'baz'}.first
+    pin = smap.locals.select { |p| p.name == 'baz' }.first
     # expect(pin.assignment).to be_a(Parser::AST::Node)
     expect(Solargraph::Parser.is_ast_node?(pin.assignment)).to be(true)
   end
 
-  it "defers resolution of distant alias_method aliases" do
+  it 'defers resolution of distant alias_method aliases' do
     smap = Solargraph::SourceMap.load_string(%(
       class MyClass
         alias_method :foo, :bar
       end
     ))
-    pin = smap.pins.select{|p| p.is_a?(Solargraph::Pin::MethodAlias)}.first
+    pin = smap.pins.select { |p| p.is_a?(Solargraph::Pin::MethodAlias) }.first
     expect(pin).not_to be_nil
   end
 
-  it "maps explicit begin nodes" do
+  it 'maps explicit begin nodes' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo
         begin
@@ -864,11 +864,11 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    pin = smap.pins.select{|p| p.name == '@x'}.first
+    pin = smap.pins.select { |p| p.name == '@x' }.first
     expect(pin).not_to be_nil
   end
 
-  it "maps rescue nodes" do
+  it 'maps rescue nodes' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo
         @x = make_x
@@ -876,13 +876,13 @@ describe Solargraph::SourceMap::Mapper do
         @y = y
       end
     ))
-    err_pin = smap.locals{|p| p.name == 'err'}.first
+    err_pin = smap.locals { |p| p.name == 'err' }.first
     expect(err_pin).not_to be_nil
-    var_pin = smap.pins.select{|p| p.name == '@y'}.first
+    var_pin = smap.pins.select { |p| p.name == '@y' }.first
     expect(var_pin).not_to be_nil
   end
 
-  it "maps begin/rescue nodes" do
+  it 'maps begin/rescue nodes' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo
         begin
@@ -892,70 +892,70 @@ describe Solargraph::SourceMap::Mapper do
         end
       end
     ))
-    err_pin = smap.locals{|p| p.name == 'err'}.first
+    err_pin = smap.locals { |p| p.name == 'err' }.first
     expect(err_pin).not_to be_nil
-    var_pin = smap.pins.select{|p| p.name == '@y'}.first
+    var_pin = smap.pins.select { |p| p.name == '@y' }.first
     expect(var_pin).not_to be_nil
   end
 
-  it "maps classes with long namespaces" do
+  it 'maps classes with long namespaces' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo::Bar
       end
     ), 'test.rb')
-    pin = smap.pins.select{|p| p.path == 'Foo::Bar'}.first
+    pin = smap.pins.select { |p| p.path == 'Foo::Bar' }.first
     expect(pin).not_to be_nil
     expect(pin.namespace).to eq('Foo')
     expect(pin.name).to eq('Bar')
     expect(pin.path).to eq('Foo::Bar')
   end
 
-  it "ignores aliases that do not map to methods or attributes" do
-    expect {
-      smap = Solargraph::SourceMap.load_string(%(
+  it 'ignores aliases that do not map to methods or attributes' do
+    expect do
+      Solargraph::SourceMap.load_string(%(
         class Foo
           xyz = String
           alias foo xyz
           alias_method :foo, :xyz
         end
       ), 'test.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "ignores private_class_methods that do not map to methods or attributes" do
-    expect {
-      smap = Solargraph::SourceMap.load_string(%(
+  it 'ignores private_class_methods that do not map to methods or attributes' do
+    expect do
+      Solargraph::SourceMap.load_string(%(
         class Foo
           var = some_method
           private_class_method :var
         end
       ), 'test.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "ignores private_constants that do not map to namespaces or constants" do
-    expect {
-      smap = Solargraph::SourceMap.load_string(%(
+  it 'ignores private_constants that do not map to namespaces or constants' do
+    expect do
+      Solargraph::SourceMap.load_string(%(
         class Foo
           var = some_method
           private_constant :var
         end
       ), 'test.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "ignores module_functions that do not map to methods or attributes" do
-    expect {
-      smap = Solargraph::SourceMap.load_string(%(
+  it 'ignores module_functions that do not map to methods or attributes' do
+    expect do
+      Solargraph::SourceMap.load_string(%(
         class Foo
           var = some_method
           module_function :var
         end
       ), 'test.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "handles parse directives" do
+  it 'handles parse directives' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         # @!parse
@@ -965,18 +965,18 @@ describe Solargraph::SourceMap::Mapper do
     expect(smap.pins.map(&:path)).to include('Foo::Bar')
   end
 
-  it "ignores syntax errors in parse directives" do
-    expect {
+  it 'ignores syntax errors in parse directives' do
+    expect do
       Solargraph::SourceMap.load_string(%(
         class Foo
           # @!parse
           #   def
         end
       ))
-      }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "sets visibility for symbol parameters" do
+  it 'sets visibility for symbol parameters' do
     smap = Solargraph::SourceMap.load_string(%(
       class Foo
         def pub; end
@@ -987,33 +987,33 @@ describe Solargraph::SourceMap::Mapper do
         protected 'pro'
       end
     ))
-    pub = smap.pins.select{|pin| pin.path == 'Foo#pub'}.first
+    pub = smap.pins.select { |pin| pin.path == 'Foo#pub' }.first
     expect(pub.visibility).to eq(:public)
-    bar = smap.pins.select{|pin| pin.path == 'Foo#bar'}.first
+    bar = smap.pins.select { |pin| pin.path == 'Foo#bar' }.first
     expect(bar.visibility).to eq(:private)
-    baz = smap.pins.select{|pin| pin.path == 'Foo#baz'}.first
+    baz = smap.pins.select { |pin| pin.path == 'Foo#baz' }.first
     expect(baz.visibility).to eq(:public)
-    pro = smap.pins.select{|pin| pin.path == 'Foo#pro'}.first
+    pro = smap.pins.select { |pin| pin.path == 'Foo#pro' }.first
     expect(pro.visibility).to eq(:protected)
   end
 
-  it "ignores errors in method directives" do
-    expect {
+  it 'ignores errors in method directives' do
+    expect do
       Solargraph::SourceMap.load_string(%[
         class Foo
           # @!method bar(
         end
       ])
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "handles invalid byte sequences" do
-    expect {
+  it 'handles invalid byte sequences' do
+    expect do
       Solargraph::SourceMap.load(File.join('spec', 'fixtures', 'invalid_utf8.rb'))
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "applies private_class_method to attributes" do
+  it 'applies private_class_method to attributes' do
     smap = Solargraph::SourceMap.load_string(%(
       module Foo
         class << self
@@ -1022,7 +1022,7 @@ describe Solargraph::SourceMap::Mapper do
         private_class_method :bar
       end
     ))
-    pin = smap.pins.select{|pin| pin.path == 'Foo.bar'}.first
+    pin = smap.pins.select { |pin| pin.path == 'Foo.bar' }.first
     expect(pin.visibility).to eq(:private)
   end
 
@@ -1352,9 +1352,9 @@ describe Solargraph::SourceMap::Mapper do
         private_class_method
       end
     )
-    expect {
+    expect do
       Solargraph::SourceMap.load_string(code, 'test.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'positions method directive pins' do
@@ -1431,7 +1431,7 @@ describe Solargraph::SourceMap::Mapper do
   end
 
   it 'gracefully handles misunderstood macros' do
-    expect {
+    expect do
       Solargraph::SourceMap.load_string(%(
         module Foo
           # @!macro macro1
@@ -1442,7 +1442,7 @@ describe Solargraph::SourceMap::Mapper do
           class Bar; end
         end
       ))
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'maps autoload paths' do
@@ -1570,15 +1570,15 @@ describe Solargraph::SourceMap::Mapper do
   end
 
   it 'handles invalid byte sequences' do
-    expect {
+    expect do
       Solargraph::SourceMap.load('spec/fixtures/invalid_byte.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'handles invalid byte sequences in stringified node comments' do
-    expect {
+    expect do
       Solargraph::SourceMap.load('spec/fixtures/invalid_node_comment.rb')
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
   it 'parses method directives that start with multiple hashes' do

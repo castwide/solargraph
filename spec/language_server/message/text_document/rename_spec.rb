@@ -5,7 +5,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     "file:///#{Dir.mktmpdir}/file.rb"
   end
 
-  it "renames a symbol" do
+  it 'renames a symbol' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open(temp_file_url, %(
@@ -15,24 +15,24 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     ), 1)
     sleep 0.01 until host.libraries.all?(&:mapped?)
     rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => temp_file_url
-        },
-        'position' => {
-          'line' => 1,
-          'character' => 12
-        },
-        'newName' => 'Bar'
-      }
-    })
+                                                                             'id' => 1,
+                                                                             'method' => 'textDocument/rename',
+                                                                             'params' => {
+                                                                               'textDocument' => {
+                                                                                 'uri' => temp_file_url
+                                                                               },
+                                                                               'position' => {
+                                                                                 'line' => 1,
+                                                                                 'character' => 12
+                                                                               },
+                                                                               'newName' => 'Bar'
+                                                                             }
+                                                                           })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(2)
   end
 
-  it "renames an argument symbol from method signature" do
+  it 'renames an argument symbol from method signature' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open(temp_file_url, %(
@@ -45,24 +45,24 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
 
     ), 1)
     rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => temp_file_url
-        },
-        'position' => {
-          'line' => 2,
-          'character' => 14
-        },
-        'newName' => 'baz'
-      }
-    })
+                                                                             'id' => 1,
+                                                                             'method' => 'textDocument/rename',
+                                                                             'params' => {
+                                                                               'textDocument' => {
+                                                                                 'uri' => temp_file_url
+                                                                               },
+                                                                               'position' => {
+                                                                                 'line' => 2,
+                                                                                 'character' => 14
+                                                                               },
+                                                                               'newName' => 'baz'
+                                                                             }
+                                                                           })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
 
-  it "renames an argument symbol from method body" do
+  it 'renames an argument symbol from method body' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open(temp_file_url, %(
@@ -74,24 +74,24 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     	end
     ), 1)
     rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => temp_file_url
-        },
-        'position' => {
-          'line' => 3,
-          'character' => 6
-        },
-        'newName' => 'baz'
-      }
-    })
+                                                                             'id' => 1,
+                                                                             'method' => 'textDocument/rename',
+                                                                             'params' => {
+                                                                               'textDocument' => {
+                                                                                 'uri' => temp_file_url
+                                                                               },
+                                                                               'position' => {
+                                                                                 'line' => 3,
+                                                                                 'character' => 6
+                                                                               },
+                                                                               'newName' => 'baz'
+                                                                             }
+                                                                           })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
 
-  it "renames namespace symbol with proper range" do
+  it 'renames namespace symbol with proper range' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open(temp_file_url, %(
@@ -101,19 +101,19 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       obj = Namespace::ExampleClass.new
     ), 1)
     rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => temp_file_url
-        },
-        'position' => {
-          'line' => 2,
-          'character' => 12
-        },
-        'newName' => 'Nameplace'
-      }
-    })
+                                                                             'id' => 1,
+                                                                             'method' => 'textDocument/rename',
+                                                                             'params' => {
+                                                                               'textDocument' => {
+                                                                                 'uri' => temp_file_url
+                                                                               },
+                                                                               'position' => {
+                                                                                 'line' => 2,
+                                                                                 'character' => 12
+                                                                               },
+                                                                               'newName' => 'Nameplace'
+                                                                             }
+                                                                           })
     rename.process
     changes = rename.result[:changes][temp_file_url]
     expect(changes.length).to eq(3)

@@ -4,21 +4,16 @@ require 'tmpdir'
 require 'open3'
 
 describe Solargraph::Shell do
-  before :context do
-    # avoid race conditions re-installing solargraph by letting parallel
-    # rspec know to run these serially in the same worker
-  end
-
   let(:shell) { described_class.new }
 
   let(:temp_dir) { Dir.mktmpdir }
 
   before do
     File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
-        file.puts "source 'https://rubygems.org'"
-        file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
+      file.puts "source 'https://rubygems.org'"
+      file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
     end
-    output, status = Open3.capture2e("bundle install", chdir: temp_dir)
+    output, status = Open3.capture2e('bundle install', chdir: temp_dir)
     raise "Failure installing bundle: #{output}" unless status.success?
   end
 
@@ -37,11 +32,6 @@ describe Solargraph::Shell do
   end
 
   describe '--version' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     let(:output) { bundle_exec('solargraph', '--version') }
 
     it 'returns output' do
@@ -54,11 +44,6 @@ describe Solargraph::Shell do
   end
 
   describe 'uncache' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     it 'uncaches without erroring out' do
       output = capture_stdout do
         shell.uncache('backport')
@@ -77,17 +62,7 @@ describe Solargraph::Shell do
   end
 
   describe 'scan' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     context 'with mocked dependencies' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       let(:api_map) { instance_double(Solargraph::ApiMap) }
 
       before do
@@ -107,17 +82,7 @@ describe Solargraph::Shell do
   end
 
   describe 'typecheck' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     context 'with mocked dependencies' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       let(:type_checker) { instance_double(Solargraph::TypeChecker) }
       let(:api_map) { instance_double(Solargraph::ApiMap) }
 
@@ -139,17 +104,7 @@ describe Solargraph::Shell do
   end
 
   describe 'gems' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     context 'without mocked ApiMap' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'complains when gem does not exist' do
         output = capture_both do
           shell.gems('nonexistentgem')
@@ -176,11 +131,6 @@ describe Solargraph::Shell do
     end
 
     context 'with mocked Workspace' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       let(:workspace) { instance_double(Solargraph::Workspace) }
       let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
 
@@ -211,22 +161,12 @@ describe Solargraph::Shell do
   end
 
   describe 'cache' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     it 'caches a stdlib gem without erroring out' do
       expect { shell.cache('stringio') }.not_to raise_error
     end
 
     context 'when gem does not exist' do
       subject(:call) { shell.cache('nonexistentgem8675309') }
-
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
 
       it 'gives a good error message' do
         # capture stderr output
@@ -247,11 +187,6 @@ describe Solargraph::Shell do
   end
 
   describe 'pin on a class' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     let(:api_map) { instance_double(Solargraph::ApiMap) }
     let(:string_pin) { instance_double(Solargraph::Pin::Namespace, name: 'String') }
 
@@ -263,11 +198,6 @@ describe Solargraph::Shell do
     end
 
     context 'with --references option' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       let(:object_pin) { instance_double(Solargraph::Pin::Namespace, name: 'Object') }
 
       before do
@@ -287,11 +217,6 @@ describe Solargraph::Shell do
   end
 
   describe 'pin on a method' do
-    before :context do
-      # avoid race conditions re-installing solargraph by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     let(:api_map) { instance_double(Solargraph::ApiMap) }
     let(:to_s_pin) { instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String')) }
 
@@ -302,11 +227,6 @@ describe Solargraph::Shell do
     end
 
     context 'with no options' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints a pin' do
         allow(to_s_pin).to receive(:inspect).and_return('pin inspect result')
 
@@ -317,11 +237,6 @@ describe Solargraph::Shell do
     end
 
     context 'with --rbs option' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints a pin with RBS type' do
         allow(to_s_pin).to receive(:to_rbs).and_return('pin RBS result')
 
@@ -334,11 +249,6 @@ describe Solargraph::Shell do
     end
 
     context 'with --stack option' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints a pin using stack results' do
         allow(to_s_pin).to receive(:to_rbs).and_return('pin RBS result')
 
@@ -366,11 +276,6 @@ describe Solargraph::Shell do
     end
 
     context 'with --typify option' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints a pin with typify type' do
         allow(to_s_pin).to receive(:typify).and_return(Solargraph::ComplexType.parse('::String'))
 
@@ -383,11 +288,6 @@ describe Solargraph::Shell do
     end
 
     context 'with --typify --rbs options' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints a pin with typify type' do
         allow(to_s_pin).to receive(:typify).and_return(Solargraph::ComplexType.parse('::String'))
 
@@ -400,11 +300,6 @@ describe Solargraph::Shell do
     end
 
     context 'with no pin' do
-      before :context do
-        # avoid race conditions re-installing solargraph by letting parallel
-        # rspec know to run these serially in the same worker
-      end
-
       it 'prints error' do
         allow(api_map).to receive(:get_path_pins).with('Not#found').and_return([])
         allow(Solargraph::Pin::Method).to receive(:===).with(nil).and_return(false)

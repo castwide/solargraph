@@ -40,10 +40,9 @@ def set_logging
   # execute any logging blocks to make sure they don't blow up
   Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
   # ...but still suppress logger output in specs (if possible)
-  if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
-    Solargraph::Logging.logger.reopen(File::NULL)
-    warn "Logging set to null"
-  end
+  return unless Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+  Solargraph::Logging.logger.reopen(File::NULL)
+  warn 'Logging set to null'
 end
 
 set_logging
@@ -58,14 +57,14 @@ end
 
 # @param name [String]
 # @param value [String]
-def with_env_var(name, value)
-  old_value = ENV[name]  # Store the old value
-  ENV[name] = value      # Set to new value
+def with_env_var name, value
+  old_value = ENV.fetch(name, nil) # Store the old value
+  ENV[name] = value # Set to new value
 
   begin
-    yield               # Execute the block
+    yield # Execute the block
   ensure
-    ENV[name] = old_value  # Restore the old value
+    ENV[name] = old_value # Restore the old value
   end
 end
 

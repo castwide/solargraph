@@ -14,16 +14,17 @@ module Solargraph
             method_name = node.children[1]
             # :nocov:
             unless method_name.instance_of?(Symbol)
-              Solargraph.assert_or_log(:parser_method_name, "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
+              Solargraph.assert_or_log(:parser_method_name,
+                                       "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
               return process_children
             end
             # :nocov:
             if node.children[0].nil?
-              if [:private, :public, :protected].include?(method_name)
+              if %i[private public protected].include?(method_name)
                 process_visibility
               elsif method_name == :module_function
                 process_module_function
-              elsif [:attr_reader, :attr_writer, :attr_accessor].include?(method_name)
+              elsif %i[attr_reader attr_writer attr_accessor].include?(method_name)
                 process_attribute
               elsif method_name == :include
                 process_include
@@ -44,7 +45,10 @@ module Solargraph
                 return if process_private_class_method
               end
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
-              pins.push Pin::Reference::Require.new(Solargraph::Location.new(region.filename, Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser)
+              pins.push Pin::Reference::Require.new(
+                Solargraph::Location.new(region.filename,
+                                         Solargraph::Range.from_to(0, 0, 0, 0)), 'bundler/require', source: :parser
+              )
             end
             process_children
           end
@@ -53,7 +57,7 @@ module Solargraph
 
           # @return [void]
           def process_visibility
-            if (node.children.length > 2)
+            if node.children.length > 2
               # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |child|
                 # @sg-ignore Variable type could not be inferred for method_name
@@ -61,13 +65,14 @@ module Solargraph
                 visibility = node.children[1]
                 # :nocov:
                 unless visibility.instance_of?(Symbol)
-                  Solargraph.assert_or_log(:parser_visibility, "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
+                  Solargraph.assert_or_log(:parser_visibility,
+                                           "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
                   return process_children
                 end
                 # :nocov:
-                if child.is_a?(::Parser::AST::Node) && (child.type == :sym || child.type == :str)
+                if child.is_a?(::Parser::AST::Node) && %i[sym str].include?(child.type)
                   name = child.children[0].to_s
-                  matches = pins.select{ |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance)}
+                  matches = pins.select { |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance) }
                   matches.each do |pin|
                     # @todo Smelly instance variable access
                     pin.instance_variable_set(:@visibility, visibility)
@@ -89,7 +94,7 @@ module Solargraph
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
-              if node.children[1] == :attr_reader || node.children[1] == :attr_accessor
+              if %i[attr_reader attr_accessor].include?(node.children[1])
                 pins.push Solargraph::Pin::Method.new(
                   location: loc,
                   closure: clos,
@@ -101,56 +106,55 @@ module Solargraph
                   source: :parser
                 )
               end
-              if node.children[1] == :attr_writer || node.children[1] == :attr_accessor
-                method_pin = Solargraph::Pin::Method.new(
-                  location: loc,
-                  closure: clos,
-                  name: "#{a.children[0]}=",
-                  comments: cmnt,
-                  scope: region.scope || :instance,
-                  visibility: region.visibility,
-                  attribute: true,
-                  source: :parser
-                )
-                pins.push method_pin
-                method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last, source: :parser)
-                if method_pin.return_type.defined?
-                  pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.items.map(&:rooted_tags), 'value')
-                end
+              next unless %i[attr_writer attr_accessor].include?(node.children[1])
+              method_pin = Solargraph::Pin::Method.new(
+                location: loc,
+                closure: clos,
+                name: "#{a.children[0]}=",
+                comments: cmnt,
+                scope: region.scope || :instance,
+                visibility: region.visibility,
+                attribute: true,
+                source: :parser
+              )
+              pins.push method_pin
+              method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last,
+                                                            source: :parser)
+              if method_pin.return_type.defined?
+                pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '',
+                                                                pins.last.return_type.items.map(&:rooted_tags), 'value')
               end
             end
           end
 
           # @return [void]
           def process_include
-            if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
-              cp = region.closure
-              # @sg-ignore Need to add nil check here
-              node.children[2..-1].each do |i|
-                type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
-                pins.push type.new(
-                  location: get_node_location(i),
-                  closure: cp,
-                  name: unpack_name(i),
-                  source: :parser
-                )
-              end
+            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            cp = region.closure
+            # @sg-ignore Need to add nil check here
+            node.children[2..-1].each do |i|
+              type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
+              pins.push type.new(
+                location: get_node_location(i),
+                closure: cp,
+                name: unpack_name(i),
+                source: :parser
+              )
             end
           end
 
           # @return [void]
           def process_prepend
-            if node.children[2].is_a?(AST::Node) && node.children[2].type == :const
-              cp = region.closure
-              # @sg-ignore Need to add nil check here
-              node.children[2..-1].each do |i|
-                pins.push Pin::Reference::Prepend.new(
-                  location: get_node_location(i),
-                  closure: cp,
-                  name: unpack_name(i),
-                  source: :parser
-                )
-              end
+            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            cp = region.closure
+            # @sg-ignore Need to add nil check here
+            node.children[2..-1].each do |i|
+              pins.push Pin::Reference::Prepend.new(
+                location: get_node_location(i),
+                closure: cp,
+                name: unpack_name(i),
+                source: :parser
+              )
             end
           end
 
@@ -179,18 +183,16 @@ module Solargraph
 
           # @return [void]
           def process_require
-            if node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-              path = node.children[2].children[0].to_s
-              pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
-            end
+            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :str
+            path = node.children[2].children[0].to_s
+            pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_autoload
-            if node.children[3].is_a?(AST::Node) && node.children[3].type == :str
-              path = node.children[3].children[0].to_s
-              pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
-            end
+            return unless node.children[3].is_a?(AST::Node) && node.children[3].type == :str
+            path = node.children[3].children[0].to_s
+            pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
@@ -198,55 +200,55 @@ module Solargraph
             if node.children[2].nil?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            elsif node.children[2].type == :sym || node.children[2].type == :str
+            elsif %i[sym str].include?(node.children[2].type)
               # @sg-ignore Need to add nil check here
               node.children[2..-1].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
-                unless ref.nil?
-                  pins.delete ref
-                  mm = Solargraph::Pin::Method.new(
-                    location: ref.location,
-                    closure: ref.closure,
-                    name: ref.name,
-                    parameters: ref.parameters,
-                    comments: ref.comments,
-                    scope: :class,
-                    visibility: :public,
-                    node: ref.node,
+                next if ref.nil?
+                pins.delete ref
+                mm = Solargraph::Pin::Method.new(
+                  location: ref.location,
+                  closure: ref.closure,
+                  name: ref.name,
+                  parameters: ref.parameters,
+                  comments: ref.comments,
+                  scope: :class,
+                  visibility: :public,
+                  node: ref.node,
+                  source: :parser
+                )
+                cm = Solargraph::Pin::Method.new(
+                  location: ref.location,
+                  closure: ref.closure,
+                  name: ref.name,
+                  parameters: ref.parameters,
+                  comments: ref.comments,
+                  scope: :instance,
+                  visibility: :private,
+                  node: ref.node,
+                  source: :parser
+                )
+                pins.push mm, cm
+                ivars.select { |pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path }.each do |ivar|
+                  ivars.delete ivar
+                  ivars.push Solargraph::Pin::InstanceVariable.new(
+                    location: ivar.location,
+                    closure: cm,
+                    name: ivar.name,
+                    comments: ivar.comments,
+                    assignment: ivar.assignment,
                     source: :parser
                   )
-                  cm = Solargraph::Pin::Method.new(
-                    location: ref.location,
-                    closure: ref.closure,
-                    name: ref.name,
-                    parameters: ref.parameters,
-                    comments: ref.comments,
-                    scope: :instance,
-                    visibility: :private,
-                    node: ref.node,
-                    source: :parser)
-                  pins.push mm, cm
-                  ivars.select{|pin| pin.is_a?(Pin::InstanceVariable) && pin.closure.path == ref.path}.each do |ivar|
-                    ivars.delete ivar
-                    ivars.push Solargraph::Pin::InstanceVariable.new(
-                      location: ivar.location,
-                      closure: cm,
-                      name: ivar.name,
-                      comments: ivar.comments,
-                      assignment: ivar.assignment,
-                      source: :parser
-                    )
-                    ivars.push Solargraph::Pin::InstanceVariable.new(
-                      location: ivar.location,
-                      closure: mm,
-                      name: ivar.name,
-                      comments: ivar.comments,
-                      assignment: ivar.assignment,
-                      source: :parser
-                    )
-                  end
+                  ivars.push Solargraph::Pin::InstanceVariable.new(
+                    location: ivar.location,
+                    closure: mm,
+                    name: ivar.name,
+                    comments: ivar.comments,
+                    assignment: ivar.assignment,
+                    source: :parser
+                  )
                 end
               end
             elsif node.children[2].type == :def
@@ -256,17 +258,19 @@ module Solargraph
 
           # @return [void]
           def process_private_constant
-            if node.children[2] && (node.children[2].type == :sym || node.children[2].type == :str)
-              cn = node.children[2].children[0].to_s
-              ref = pins.select{|p| [Solargraph::Pin::Namespace, Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn}.first
-              # HACK: Smelly instance variable access
-              ref.instance_variable_set(:@visibility, :private) unless ref.nil?
-            end
+            return unless node.children[2] && %i[sym str].include?(node.children[2].type)
+            cn = node.children[2].children[0].to_s
+            ref = pins.select do |p|
+              [Solargraph::Pin::Namespace,
+               Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn
+            end.first
+            # HACK: Smelly instance variable access
+            ref.instance_variable_set(:@visibility, :private) unless ref.nil?
           end
 
           # @return [void]
           def process_alias_method
-            loc = get_node_location(node)
+            get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
@@ -279,8 +283,10 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            if node.children[2].type == :sym || node.children[2].type == :str
-              ref = pins.select { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s }.first
+            if %i[sym str].include?(node.children[2].type)
+              ref = pins.select do |p|
+                p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
+              end.first
               # HACK: Smelly instance variable access
               ref.instance_variable_set(:@visibility, :private) unless ref.nil?
               false

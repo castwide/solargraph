@@ -1,6 +1,6 @@
 describe Solargraph::TypeChecker do
   context 'strong level' do
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
@@ -763,7 +763,8 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round on Integer, nil"])
+      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
+                                                     'Unresolved call to round on Integer, nil'])
     end
 
     it 'performs simple flow-sensitive typing on lvars' do

@@ -10,11 +10,6 @@ describe Solargraph::GemPins do
   end
 
   context 'with a combined method pin' do
-    before :context do
-      # avoid race conditions building the rbs gem by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     let(:path) { 'RBS::EnvironmentLoader#core_root' }
     let(:requires) { ['rbs'] }
 
@@ -33,11 +28,6 @@ describe Solargraph::GemPins do
   end
 
   context 'with a YARD-only pin' do
-    before :context do
-      # avoid race conditions building the rbs gem by letting parallel
-      # rspec know to run these serially in the same worker
-    end
-
     let(:requires) { ['rake'] }
     let(:path) { 'Rake::Task#prerequisites' }
 

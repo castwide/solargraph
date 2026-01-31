@@ -23,7 +23,7 @@ module Solargraph
           #       s(:args),
           #       s(:send, nil, :bar))))
           # @param node [::Parser::AST::Node]
-          def match?(node)
+          def match? node
             return false unless node&.type == :casgn
             return false if node.children[2].nil?
 

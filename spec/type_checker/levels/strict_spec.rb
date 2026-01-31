@@ -1,7 +1,7 @@
 describe Solargraph::TypeChecker do
   context 'strict level' do
     # @return [Solargraph::TypeChecker]
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
     end
 
@@ -787,7 +787,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-
     it 'validates parameters in function calls' do
       checker = type_checker(%(
         # @param bar [String]
@@ -937,7 +936,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands enough of define_method not to think the block is in class scope" do
+    it 'understands enough of define_method not to think the block is in class scope' do
       checker = type_checker(%(
         class Foo
           def initialize
@@ -964,7 +963,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it "Uses flow scope to specialize understanding of cvar types" do
+    it 'Uses flow scope to specialize understanding of cvar types' do
       pending 'better cvar support'
 
       checker = type_checker(%(
@@ -992,10 +991,10 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems.map(&:message)).to eq(["Unresolved call to upcase!"])
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase!'])
     end
 
-    it "does not lose track of place and false alarm when using kwargs after a splat" do
+    it 'does not lose track of place and false alarm when using kwargs after a splat' do
       checker = type_checker(%(
         def foo(a, b, c); end
         def bar(*args, **kwargs, &blk)
@@ -1005,7 +1004,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands Array#+ overloads" do
+    it 'understands Array#+ overloads' do
       checker = type_checker(%(
         c = ['a'] + ['a']
         c
@@ -1013,7 +1012,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands String#+ overloads" do
+    it 'understands String#+ overloads' do
       checker = type_checker(%(
         detail = ''
         detail += "foo"
@@ -1022,7 +1021,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands Enumerable#each via _Each self type" do
+    it 'understands Enumerable#each via _Each self type' do
       checker = type_checker(%(
         class Blah
           # @param e [Enumerable<String>]
