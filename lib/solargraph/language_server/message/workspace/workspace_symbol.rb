@@ -6,6 +6,7 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
   def process
     pins = host.query_symbols(params['query'])
     info = pins.map do |pin|
+      # @sg-ignore Need to add nil check here
       uri = file_to_uri(pin.best_location.filename)
       {
         name: pin.path,
@@ -13,6 +14,7 @@ class Solargraph::LanguageServer::Message::Workspace::WorkspaceSymbol < Solargra
         kind: pin.symbol_kind,
         location: {
           uri: uri,
+          # @sg-ignore Need to add nil check here
           range: pin.best_location.range.to_hash
         },
         deprecated: pin.deprecated?

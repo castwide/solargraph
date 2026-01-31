@@ -6,6 +6,9 @@ module Solargraph
 
       # Get the YARD CodeObject at the specified path.
       #
+      # @sg-ignore Declared return type generic<T>, nil does not match
+      #   inferred type ::YARD::CodeObjects::Base, nil for
+      #   Solargraph::ApiMap::SourceToYard#code_object_at
       # @generic T
       # @param path [String]
       # @param klass [Class<generic<T>>]
@@ -34,13 +37,17 @@ module Solargraph
           if pin.type == :class
             # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
+              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
+              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             }
           else
             # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
+              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
+              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             }
           end
@@ -57,7 +64,6 @@ module Solargraph
             code_object = code_object_map[ref.type.to_s]
             next unless code_object
             extend_object.class_mixins.push code_object
-            # @todo add spec showing why this next line is necessary
             extend_object.instance_mixins.push code_object
           end
         end
@@ -67,14 +73,20 @@ module Solargraph
             next
           end
 
+          # @sg-ignore Need to add nil check here
           # @param obj [YARD::CodeObjects::RootObject]
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
+            # @sg-ignore flow sensitive typing needs to handle attrs
             next if pin.location.nil? || pin.location.filename.nil?
+            # @sg-ignore flow sensitive typing needs to handle attrs
             obj.add_file pin.location.filename, pin.location.range.start.line
           }
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
+          # @sg-ignore Need to add nil check here
           method_object.docstring = pin.docstring
+          # @sg-ignore Need to add nil check here
           method_object.visibility = pin.visibility || :public
+          # @sg-ignore Need to add nil check here
           method_object.parameters = pin.parameters.map do |p|
             [p.full_name, p.asgn_code]
           end

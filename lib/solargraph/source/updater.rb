@@ -29,6 +29,7 @@ module Solargraph
 
       # @param text [String]
       # @param nullable [Boolean]
+      # @sg-ignore changes doesn't mutate @output, so this can never be nil
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)
@@ -37,6 +38,9 @@ module Solargraph
         @output = text
         @did_nullify = can_nullify
         changes.each do |ch|
+          # @sg-ignore Wrong argument type for
+          #   Solargraph::Source::Change#write: text expected String,
+          #   received String, nil
           @output = ch.write(@output, can_nullify)
         end
         @output

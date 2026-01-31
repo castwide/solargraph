@@ -26,7 +26,6 @@ module Solargraph
         @type = type
         @visibility = visibility
         if name.start_with?('::')
-          # @type [String]
           name = name[2..-1] || ''
           @closure = Solargraph::Pin::ROOT_PIN
         end
@@ -39,6 +38,7 @@ module Solargraph
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
             ''
           else
+            # @sg-ignore Need to add nil check here
             closure.full_context.namespace + '::'
           end
           closure_name += parts.join('::')
@@ -46,6 +46,12 @@ module Solargraph
           @context = nil
         end
         @name = name
+      end
+
+      def reset_generated!
+        @return_type = nil
+        @full_context = nil
+        @path = nil
       end
 
       def to_rbs

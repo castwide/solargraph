@@ -1,11 +1,15 @@
 describe Solargraph::Parser do
+  def parse source
+    Solargraph::Parser.parse(source, 'file.rb', 0)
+  end
+
   it "parses nodes" do
-    node = Solargraph::Parser.parse('class Foo; end', 'test.rb')
+    node = parse('class Foo; end')
     expect(Solargraph::Parser.is_ast_node?(node)).to be(true)
   end
 
   it 'raises repairable SyntaxError for unknown encoding errors' do
     code = "# encoding: utf-\nx = 'y'"
-    expect { Solargraph::Parser.parse(code) }.to raise_error(Solargraph::Parser::SyntaxError)
+    expect { parse(code) }.to raise_error(Solargraph::Parser::SyntaxError)
   end
 end

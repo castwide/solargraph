@@ -40,13 +40,13 @@ module Solargraph
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
       def pins_by_class klass
-        # @type [Set<Solargraph::Pin::Base>]
+        # @type [Set<generic<T>>]
         s = Set.new
         # @sg-ignore need to support destructured args in blocks
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
         # @param h [String]
         # @param k [Array<String>]
@@ -60,21 +60,21 @@ module Solargraph
         @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         # @param h [String]
         # @param k [Array<String>]
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
         # @param h [String]
         # @param k [Array<String>]
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         # @param h [String]
         # @param k [Array<String>]
@@ -138,7 +138,7 @@ module Solargraph
 
       # @generic T
       # @param klass [Class<generic<T>>]
-      # @param hash [Hash{String => generic<T>}]
+      # @param hash [Hash{String => Array<generic<T>>}]
       #
       # @return [void]
       def map_references klass, hash
@@ -150,6 +150,7 @@ module Solargraph
 
       # @return [void]
       def map_overrides
+        # @todo should complain when type for 'ovr' is not provided
         # @param ovr [Pin::Reference::Override]
         pins_by_class(Pin::Reference::Override).each do |ovr|
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
@@ -160,16 +161,27 @@ module Solargraph
                         path_pin_hash[pin.path.sub(/#initialize/, '.new')].first
                       end
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
+              # @sg-ignore Wrong argument type for
+              #   YARD::Docstring#delete_tags: name expected String,
+              #   received String, Symbol - delete_tags is ok with a
+              #   _ToS, but we should fix anyway
               pin.docstring.delete_tags tag
+              # @sg-ignore Wrong argument type for
+              #   YARD::Docstring#delete_tags: name expected String,
+              #   received String, Symbol - delete_tags is ok with a
+              #   _ToS, but we should fix anyway
               new_pin.docstring.delete_tags tag if new_pin
             end
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
               redefine_return_type pin, tag
-              if new_pin
-                new_pin.docstring.add_tag(tag)
-                redefine_return_type new_pin, tag
-              end
+              pin.reset_generated!
+
+              next unless new_pin
+
+              new_pin.docstring.add_tag(tag)
+              redefine_return_type new_pin, tag
+              new_pin.reset_generated!
             end
           end
         end
@@ -186,7 +198,6 @@ module Solargraph
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
-        pin.reset_generated!
       end
     end
   end

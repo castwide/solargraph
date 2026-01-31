@@ -8,13 +8,43 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
-            process_children
+            FlowSensitiveTyping.new(locals,
+                                    ivars,
+                                    enclosing_breakable_pin,
+                                    enclosing_compound_statement_pin).process_if(node)
+            condition_node = node.children[0]
+            if condition_node
+              pins.push Solargraph::Pin::CompoundStatement.new(
+                location: get_node_location(condition_node),
+                closure: region.closure,
+                node: condition_node,
+                source: :parser,
+              )
+              NodeProcessor.process(condition_node, region, pins, locals, ivars)
+            end
+            then_node = node.children[1]
+            if then_node
+              pins.push Solargraph::Pin::CompoundStatement.new(
+                location: get_node_location(then_node),
+                closure: region.closure,
+                node: then_node,
+                source: :parser,
+              )
+              NodeProcessor.process(then_node, region, pins, locals, ivars)
+            end
 
-            position = get_node_start_position(node)
-            # @sg-ignore
-            # @type [Solargraph::Pin::Breakable, nil]
-            enclosing_breakable_pin = pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location.range.contain?(position)}.last
-            FlowSensitiveTyping.new(locals, enclosing_breakable_pin).process_if(node)
+            else_node = node.children[2]
+            if else_node
+              pins.push Solargraph::Pin::CompoundStatement.new(
+                location: get_node_location(else_node),
+                closure: region.closure,
+                node: else_node,
+                source: :parser,
+              )
+              NodeProcessor.process(else_node, region, pins, locals, ivars)
+            end
+
+            true
           end
         end
       end

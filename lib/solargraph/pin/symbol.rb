@@ -3,7 +3,7 @@
 module Solargraph
   module Pin
     class Symbol < Base
-      # @param location [Solargraph::Location]
+      # @param location [Solargraph::Location, nil]
       # @param name [String]
       def initialize(location, name, **kwargs)
         # @sg-ignore "Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize"

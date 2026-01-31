@@ -92,6 +92,7 @@ module Solargraph
           node.children[1]
         end
 
+        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
           struct_node.children[2..-1]

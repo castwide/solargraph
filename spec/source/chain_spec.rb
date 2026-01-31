@@ -362,7 +362,9 @@ describe Solargraph::Source::Chain do
     expect(chain.links[1]).to be_with_block
   end
 
-  xit 'infers instance variables from multiple assignments' do
+  it 'infers instance variables from sequential assignments' do
+    pending('sequential assignment support')
+
     source = Solargraph::Source.load_string(%(
       def foo
         @foo = nil
@@ -428,8 +430,9 @@ describe Solargraph::Source::Chain do
       str = obj.stringify
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
+    obj_fn_pin = api_map.get_path_pins('Example.obj').first
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(12, 6))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
 end

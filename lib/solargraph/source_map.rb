@@ -34,6 +34,8 @@ module Solargraph
     # @param source [Source]
     def initialize source
       @source = source
+      # @type [Array<Pin::Base>, nil]
+      @convention_pins = nil
 
       conventions_environ.merge Convention.for_local(self) unless filename.nil?
       # FIXME: unmemoizing the document_symbols in case it was called and memoized from any of conventions above
@@ -63,7 +65,7 @@ module Solargraph
       @api_hash ||= (pins_by_class(Pin::Constant) + pins_by_class(Pin::Namespace).select { |pin| pin.namespace.to_s > '' } + pins_by_class(Pin::Reference) + pins_by_class(Pin::Method).map(&:node) + locals).hash
     end
 
-    # @return [String]
+    # @return [String, nil]
     def filename
       source.filename
     end
@@ -84,6 +86,7 @@ module Solargraph
     end
 
     # all pins except Solargraph::Pin::Reference::Reference
+    #
     # @return [Array<Pin::Base>]
     def document_symbols
       @document_symbols ||= (pins + convention_pins).select do |pin|
@@ -97,7 +100,7 @@ module Solargraph
       Pin::Search.new(document_symbols, query).results
     end
 
-    # @param position [Position]
+    # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at position
       Source::Cursor.new(source, position)
@@ -125,7 +128,7 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @return [Pin::Namespace,Pin::Method,Pin::Block]
+    # @return [Pin::Closure]
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end
@@ -143,7 +146,7 @@ module Solargraph
     # @return [Array<Pin::LocalVariable>]
     def locals_at(location)
       return [] if location.filename != filename
-      closure = locate_named_path_pin(location.range.start.line, location.range.start.character)
+      closure = locate_closure_pin(location.range.start.line, location.range.start.character)
       locals.select { |pin| pin.visible_at?(closure, location) }
     end
 
@@ -178,6 +181,7 @@ module Solargraph
 
     # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
+      # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
     end
 
@@ -191,10 +195,12 @@ module Solargraph
       @convention_pins || []
     end
 
+    # @generic T
     # @param line [Integer]
     # @param character [Integer]
-    # @param klasses [Array<Class>]
-    # @return [Pin::Base, nil]
+    # @param klasses [Array<Class<generic<T>>>]
+    # @return [generic<T>, nil]
+    # @sg-ignore Need better generic inference here
     def _locate_pin line, character, *klasses
       position = Position.new(line, character)
       found = nil
@@ -202,7 +208,9 @@ module Solargraph
         # @todo Attribute pins should not be treated like closures, but
         #   there's probably a better way to handle it
         next if pin.is_a?(Pin::Method) && pin.attribute?
+        # @sg-ignore Need to add nil check here
         found = pin if (klasses.empty? || klasses.any? { |kls| pin.is_a?(kls) } ) && pin.location.range.contain?(position)
+        # @sg-ignore Need to add nil check here
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid
