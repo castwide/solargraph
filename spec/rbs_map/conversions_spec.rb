@@ -106,11 +106,9 @@ describe Solargraph::RbsMap::Conversions do
       @api_map.catalog(bench)
     end
 
-    let(:api_map) { @api_map }
-
     context 'with superclass pin for Parser::AST::Node' do
       let(:superclass_pin) do
-        api_map.pins.find do |pin|
+        @api_map.pins.find do |pin|
           pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
         end
       end
