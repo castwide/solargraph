@@ -188,6 +188,7 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
+                                                        # @sg-ignore Unresolved constant Gem::StubSpecification
                                                         when Gem::StubSpecification
                                                           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
                                                           specish.to_spec
