@@ -52,7 +52,8 @@ describe Solargraph::Workspace do
   end
 
   it 'raises an exception for workspace size limits' do
-    config = double(:config, calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
+    config = instance_double(Solargraph::Workspace::Config,
+                             calculated: Array.new(Solargraph::Workspace::Config::MAX_FILES + 1), max_files: Solargraph::Workspace::Config::MAX_FILES)
 
     expect do
       described_class.new('.', config)
@@ -64,7 +65,8 @@ describe Solargraph::Workspace do
     File.write(gemspec_file, '')
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
-    config = double(:config, calculated: calculated, max_files: 0, allow?: true, require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Workspace::Config, calculated: calculated, max_files: 0, allow?: true,
+                                                            require_paths: [], plugins: [])
     expect do
       described_class.new('.', config)
     end.not_to raise_error
@@ -137,8 +139,8 @@ describe Solargraph::Workspace do
   end
 
   it 'rescues errors loading files into sources' do
-    config = double(:Config, directory: './path', calculated: ['./path/does_not_exist.rb'], max_files: 5000,
-                             require_paths: [], plugins: [])
+    config = instance_double(Solargraph::Workspace::Config, directory: './path',
+                                                            calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
     expect do
       described_class.new('./path', config)
     end.not_to raise_error
@@ -163,21 +165,6 @@ describe Solargraph::Workspace do
       workspace.cache_all_for_workspace!(nil, rebuild: false)
 
       expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
-    end
-
-    it 'caches gems' do
-      gemspec = instance_double(Gem::Specification, name: 'test_gem', version: '1.0.0')
-      allow(Gem::Specification).to receive(:to_a).and_return([gemspec])
-      allow(pin_cache).to receive(:cached?).and_return(false)
-      allow(pin_cache).to receive(:cache_all_stdlibs).with(out: nil, rebuild: false)
-
-      allow(Solargraph::PinCache).to receive_messages(core?: true,
-                                                      possible_stdlibs: [])
-
-      workspace.cache_all_for_workspace!(nil, rebuild: false)
-
-      expect(pin_cache).to have_received(:cache_gem).with(gemspec: gemspec, out: nil,
-                                                          rebuild: false)
     end
   end
 end

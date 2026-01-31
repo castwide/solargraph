@@ -11,8 +11,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       visibility: :public,
       parameters: []
     )
-    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil,
-                                                    options: { 'enablePages' => true })
+    host = instance_double(Solargraph::LanguageServer::Host, locate_pins: [pin], options: { 'enablePages' => true })
     resolve = described_class.new(host, {
                                     'params' => pin.completion_item
                                   })
@@ -28,7 +27,7 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       name: '@bar',
       comments: ''
     )
-    host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil)
+    host = instance_double(Solargraph::LanguageServer::Host, locate_pins: [pin])
     resolve = described_class.new(host, {
                                     'params' => pin.completion_item
                                   })

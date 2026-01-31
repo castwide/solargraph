@@ -2,9 +2,9 @@
 
 describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
   before do
-    version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
-    described_class.fetcher = double(:fetcher,
-                                     search_for_dependency: [version])
+    version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
+    described_class.fetcher =
+      instance_double(Gem::SpecFetcher, search_for_dependency: [version])
   end
 
   after do

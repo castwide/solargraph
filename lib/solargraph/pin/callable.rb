@@ -132,7 +132,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]
@@ -186,7 +185,6 @@ module Solargraph
       # @param return_type_context [ComplexType, nil]
       # @param yield_arg_types [Array<ComplexType>, nil]
       # @param yield_return_type_context [ComplexType, nil]
-      # @param context [ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       #
       # @return [self]
@@ -251,11 +249,6 @@ module Solargraph
         true
       end
 
-      def reset_generated!
-        super
-        @parameters.each(&:reset_generated!)
-      end
-
       # @return [Integer]
       def mandatory_positional_param_count
         parameters.count(&:arg?)
@@ -263,7 +256,6 @@ module Solargraph
 
       # @return [String]
       def parameters_to_rbs
-        # @sg-ignore Need to add nil check here
         "#{rbs_generics}(#{parameters.map(&:to_rbs).join(', ')}) #{"{ #{block.to_rbs} } " unless block.nil?}"
       end
 

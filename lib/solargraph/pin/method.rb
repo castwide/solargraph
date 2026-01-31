@@ -171,7 +171,6 @@ module Solargraph
               comments: p.text,
               name: name,
               decl: decl,
-              # @sg-ignore flow sensitive typing needs to handle attrs
               presence: location&.range,
               return_type: ComplexType.try_parse(*p.types),
               source: source
@@ -276,8 +275,8 @@ module Solargraph
       end
 
       def typify api_map
-        # @sg-ignore Need to add nil check here
         logger.debug do
+          # @sg-ignore Need to add nil check here
           "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
         end
         decl = super
@@ -402,7 +401,6 @@ module Solargraph
                 comments: tag.docstring.all.to_s,
                 name: name,
                 decl: decl,
-                # @sg-ignore flow sensitive typing needs to handle attrs
                 presence: location&.range,
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
@@ -513,7 +511,7 @@ module Solargraph
         # @param old_signatures [Array<Pin::Signature>]
         # @param new_signature [Pin::Signature]
         same_type_arity_signatures.reduce([]) do |old_signatures, new_signature|
-          next [new_signature] if old_signatures.empty?
+          next old_signatures + [new_signature] if old_signatures.empty?
           old_signatures.flat_map do |old_signature|
             potential_new_signature = old_signature.combine_with(new_signature)
 

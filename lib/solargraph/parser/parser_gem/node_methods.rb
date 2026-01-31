@@ -109,6 +109,7 @@ module Solargraph
           return convert_hash(node.children[0]) if node.type == :kwsplat
           # @sg-ignore Translate to something flow sensitive typing understands
           if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+            # @sg-ignore Translate to something flow sensitive typing understands
             return convert_hash(node.children[0])
           end
           # @sg-ignore Translate to something flow sensitive typing understands
@@ -319,9 +320,6 @@ module Solargraph
             CASE_STATEMENT = [:case].freeze
 
             # @param node [AST::Node] a method body compound statement
-            # @param include_explicit_returns [Boolean] If true,
-            #    include the value nodes of the parameter of the
-            #    'return' statements in the type returned.
             # @return [Array<AST::Node>] low-level value nodes from
             #   both nodes in value position as well as explicit
             #   return statements in the method's closure.

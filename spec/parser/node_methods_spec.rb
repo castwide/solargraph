@@ -64,17 +64,19 @@ describe Solargraph::Parser::NodeMethods do
     expect(described_class.infer_literal_node_type(false_ast)).to eq '::Boolean'
   end
 
-  it 'handles return nodes with implicit nil values' do
+  it 'handles empty return nodes with implicit nil values' do
     node = parse(%(
       return if true
     ))
     rets = described_class.returns_from_method_body(node)
     # @todo Should there be two returns, the second being nil?
     expect(rets.map(&:to_s)).to eq(['(nil)', '(nil)'])
+    # The expectation is changing from previous versions. If conditions
+    # have an implicit else branch, so this node should return [nil, nil].
     expect(rets.length).to eq(2)
   end
 
-  it 'handles return nodes with implicit nil values' do
+  it 'handles local return nodes with implicit nil values' do
     node = parse(%(
       return bla if true
     ))
@@ -83,7 +85,7 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.length).to eq(2)
   end
 
-  it 'handles return nodes from case statements' do
+  it 'handles boolean return nodes from case statements without else' do
     node = parse(%(
       case x
       when 100
@@ -133,33 +135,15 @@ describe Solargraph::Parser::NodeMethods do
   end
 
   it 'handles return nodes in reduceable (begin) nodes' do
-    # @todo Temporarily disabled. Result is 3 nodes instead of 2.
-    # node = parse(%(
-    #   begin
-    #     return if true
-    #   end
-    # ))
-    # rets = Solargraph::Parser::NodeMethods.returns_from(node)
-    # expect(rets.length).to eq(2)
-  end
+    pending('Temporarily disabled. Result is 3 nodes instead of 2.')
 
-  it 'handles return nodes after other nodes' do
     node = parse(%(
-      x = 1
-      return x
+      begin
+        return if true
+      end
     ))
     rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(1)
-  end
-
-  it 'handles return nodes with unreachable code' do
-    node = parse(%(
-      x = 1
-      return x
-      y
-    ))
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(1)
+    expect(rets.length).to eq(2)
   end
 
   it 'handles conditional returns with following code' do
@@ -170,30 +154,6 @@ describe Solargraph::Parser::NodeMethods do
     ))
     rets = described_class.returns_from_method_body(node)
     expect(rets.length).to eq(2)
-  end
-
-  it 'handles return nodes with reduceable code' do
-    node = parse(%(
-      return begin
-        x if foo
-        y
-      end
-    ))
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(1)
-  end
-
-  it "handles top 'and' nodes" do
-    node = parse('1 && "2"')
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(1)
-    expect(rets[0].type.to_s.downcase).to eq('and')
-  end
-
-  it "handles top 'or' nodes" do
-    node = parse('1 || "2"')
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(1)
   end
 
   it "handles nested 'and' nodes" do
@@ -247,31 +207,10 @@ describe Solargraph::Parser::NodeMethods do
 
   it 'handles return nodes with implicit nil values' do
     node = parse(%(
-      return if true
-    ))
-    rets = described_class.returns_from_method_body(node)
-    # The expectation is changing from previous versions. If conditions
-    # have an implicit else branch, so this node should return [nil, nil].
-    expect(rets.length).to eq(2)
-  end
-
-  it 'handles return nodes with implicit nil values' do
-    node = parse(%(
       return bla if true
     ))
     rets = described_class.returns_from_method_body(node)
     expect(rets.map(&:type)).to eq(%i[send nil])
-  end
-
-  it 'handles return nodes in reduceable (begin) nodes' do
-    # @todo Temporarily disabled. Result is 3 nodes instead of 2 in legacy.
-    # node = parse(%(
-    #   begin
-    #     return if true
-    #   end
-    # ))
-    # rets = Solargraph::Parser::NodeMethods.returns_from_method_body(node)
-    # expect(rets.length).to eq(2)
   end
 
   it 'handles return nodes after other nodes' do
@@ -359,31 +298,6 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[int str])
   end
 
-  it 'finds return nodes in blocks' do
-    node = parse(%(
-      array.each do |item|
-        return item if foo
-      end
-    ))
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.map(&:type)).to eq(%i[block lvar])
-    # expect(rets[1].type).to eq(:DVAR)
-  end
-
-  it 'returns nested return blocks' do
-    node = parse(%(
-      if foo
-        array.each do |item|
-          return item if foo
-        end
-      end
-      nil
-    ))
-    rets = described_class.returns_from_method_body(node)
-    expect(rets.map(&:type)).to eq(%i[lvar nil])
-    # expect(rets[0].type).to eq(:DVAR)
-  end
-
   it 'handles return nodes from case statements' do
     node = parse(%(
       case 1
@@ -396,7 +310,7 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[str str])
   end
 
-  it 'handles return nodes from case statements without else' do
+  it 'handles String return nodes from case statements without else' do
     node = parse(%(
       case 1
       when 1

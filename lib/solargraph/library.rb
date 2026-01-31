@@ -691,8 +691,8 @@ module Solargraph
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
       end
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress

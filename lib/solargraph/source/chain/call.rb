@@ -28,7 +28,8 @@ module Solargraph
         # @param arguments [::Array<Chain>]
         # @param block [Chain, nil]
         def initialize word, location = nil, arguments = [], block = nil
-          @word = word
+          super(word)
+
           @location = location
           @arguments = arguments
           @block = block
@@ -62,7 +63,6 @@ module Solargraph
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact
           end
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
           return [] if pins.empty?
@@ -351,7 +351,6 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]
         def block_call_type api_map, name_pin, locals

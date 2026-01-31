@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::Diagnostics::RubocopHelpers do
-  context do
+  context 'with custom version' do
     around do |example|
       old_gem_path = Gem.paths.path
       custom_gem_path = File.absolute_path('spec/fixtures/rubocop-custom-version').gsub('\\', '/')
@@ -28,7 +28,7 @@ describe Solargraph::Diagnostics::RubocopHelpers do
     end
   end
 
-  context do
+  context 'with real version' do
     let(:default_version) { Gem::Specification.find_by_name('rubocop').full_gem_path[/[^-]+$/] }
 
     it 'requires the default version of rubocop' do

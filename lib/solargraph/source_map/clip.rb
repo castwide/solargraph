@@ -23,9 +23,9 @@ module Solargraph
         return [] if cursor.comment? || cursor.chain.literal?
         result = cursor.chain.define(api_map, closure, locals)
         result.concat file_global_methods
-        # @sg-ignore Need to add nil check here
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
+            # @sg-ignore Need to add nil check here
             p.name == cursor.word && p.location.range.contain?(cursor.position)
           end)
         end

@@ -59,7 +59,7 @@ describe Solargraph::Library do
     end
 
     it 'returns a Completion' do
-      library = described_class.new(Solargraph::Workspace.new('',
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
@@ -624,7 +624,7 @@ describe Solargraph::Library do
     end
   end
 
-  context 'unsynchronized' do
+  context 'when unsynchronized' do
     let(:library) { described_class.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
     let(:bad_file) { File.join(library.workspace.directory, 'lib', 'not_a_thing.rb') }

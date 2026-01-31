@@ -4,12 +4,14 @@ module Solargraph
   module LanguageServer
     class Request
       # @param id [Integer]
-      # @param &block The block that processes the client's response
+      # @param block [Proc] The block that processes the client's response
       def initialize id, &block
         @id = id
         @block = block
       end
 
+      # @sg-ignore Solargraph::LanguageServer::Request#process return
+      #   type could not be inferred
       # @param result [Object]
       # @generic T
       # @yieldreturn [generic<T>]

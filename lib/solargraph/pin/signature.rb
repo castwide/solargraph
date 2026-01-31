@@ -16,8 +16,6 @@ module Solargraph
         @identity ||= "signature#{object_id}"
       end
 
-      attr_writer :closure
-
       # @ sg-ignore need boolish support for ? methods
       def dodgy_return_type_source?
         super || closure&.dodgy_return_type_source?

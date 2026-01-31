@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 describe Solargraph::Pin::LocalVariable do
-  xit 'merges presence changes so that [not currently used]' do
+  it 'merges presence changes so that [not currently used]' do
+    pending 'but not sure why'
+
     map1 = Solargraph::SourceMap.load_string(%(
       class Foo
         foo = 'foo'
