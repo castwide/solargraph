@@ -95,7 +95,7 @@ describe Solargraph::RbsMap::Conversions do
     end
   end
 
-  context 'with standard loads for solargraph project' do
+  context 'with superclass pin for Parser::AST::Node' do
     # Use :context here instead of :all so that parallel_rspec runs these on the same worker and we only have to cache these gems on one worker
     before :context do
       @api_map = Solargraph::ApiMap.load('.')
@@ -106,51 +106,49 @@ describe Solargraph::RbsMap::Conversions do
       @api_map.catalog(bench)
     end
 
-    context 'with superclass pin for Parser::AST::Node' do
-      let(:superclass_pin) do
-        @api_map.pins.find do |pin|
-          pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
-        end
-      end
-
-      it 'generates a rooted pin' do
-        # rooted!
-        expect(superclass_pin&.name).to eq('::AST::Node')
+    let(:superclass_pin) do
+      @api_map.pins.find do |pin|
+        pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
       end
     end
 
-    # https://github.com/castwide/solargraph/issues/1042
-    context 'with Hash superclass with untyped value and alias' do
-      let(:api_map) { Solargraph::ApiMap.new }
+    it 'generates a rooted pin' do
+      # rooted!
+      expect(superclass_pin&.name).to eq('::AST::Node')
+    end
+  end
 
-      let(:rbs) do
-        <<~RBS
-          class Sub < Hash[Symbol, untyped]
-            alias meth_alias []
-          end
-        RBS
-      end
+  # https://github.com/castwide/solargraph/issues/1042
+  context 'with Hash superclass with untyped value and alias' do
+    let(:api_map) { Solargraph::ApiMap.new }
 
-      let(:sup_method_stack) { api_map.get_method_stack('Hash{Symbol => undefined}', '[]', scope: :instance) }
+    let(:rbs) do
+      <<~RBS
+        class Sub < Hash[Symbol, untyped]
+          alias meth_alias []
+        end
+      RBS
+    end
 
-      let(:sub_alias_stack) { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }
+    let(:sup_method_stack) { api_map.get_method_stack('Hash{Symbol => undefined}', '[]', scope: :instance) }
 
-      it 'does not crash looking at superclass method' do
-        expect { sup_method_stack }.not_to raise_error
-      end
+    let(:sub_alias_stack) { api_map.get_method_stack('Sub', 'meth_alias', scope: :instance) }
 
-      it 'does not crash looking at alias' do
-        expect { sub_alias_stack }.not_to raise_error
-      end
+    it 'does not crash looking at superclass method' do
+      expect { sup_method_stack }.not_to raise_error
+    end
 
-      it 'finds superclass method pin return type' do
-        expect(sup_method_stack.map(&:return_type).map(&:rooted_tags).uniq).to eq(['undefined'])
-      end
+    it 'does not crash looking at alias' do
+      expect { sub_alias_stack }.not_to raise_error
+    end
 
-      it 'finds superclass method pin parameter type' do
-        expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-                 .uniq).to eq(['Symbol'])
-      end
+    it 'finds superclass method pin return type' do
+      expect(sup_method_stack.map(&:return_type).map(&:rooted_tags).uniq).to eq(['undefined'])
+    end
+
+    it 'finds superclass method pin parameter type' do
+      expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
+               .uniq).to eq(['Symbol'])
     end
   end
 
