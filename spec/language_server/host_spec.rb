@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 
 describe Solargraph::LanguageServer::Host do
   it 'prepares a workspace' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     Dir.mktmpdir do |dir|
       host.prepare(dir)
       expect(host.libraries.first).not_to be_nil
@@ -10,7 +12,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'processes responses to message requests' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     done_somethings = 0
     host.send_request 'window/showMessageRequest', {
       'message' => 'Message',
@@ -28,7 +30,7 @@ describe Solargraph::LanguageServer::Host do
 
   it 'creates files from disk' do
     Dir.mktmpdir do |dir|
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.prepare dir
       file = File.join(dir, 'test.rb')
       File.write(file, "foo = 'foo'")
@@ -41,7 +43,7 @@ describe Solargraph::LanguageServer::Host do
   it 'deletes files' do
     Dir.mktmpdir do |dir|
       expect do
-        host = Solargraph::LanguageServer::Host.new
+        host = described_class.new
         file = File.join(dir, 'test.rb')
         File.write(file, "foo = 'foo'")
         host.prepare dir
@@ -52,14 +54,14 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'cancels requests' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     host.cancel 1
     expect(host.cancel?(1)).to be(true)
   end
 
   it 'runs diagnostics on opened files' do
     Dir.mktmpdir do |dir|
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.configure({ 'diagnostics' => true })
       file = File.join(dir, 'test.rb')
       File.write(file, "foo = 'foo'")
@@ -82,12 +84,10 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'handles DiagnosticsErrors' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     library = double(:Library)
     allow(library).to receive(:diagnose).and_raise(Solargraph::DiagnosticsError)
-    allow(library).to receive(:contain?).and_return(true)
-    allow(library).to receive(:synchronized?).and_return(true)
-    allow(library).to receive(:mapped?).and_return(true)
+    allow(library).to receive_messages(contain?: true, synchronized?: true, mapped?: true)
     allow(library).to receive(:attach)
     allow(library).to receive(:merge)
     allow(library).to receive(:catalog)
@@ -102,7 +102,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'opens multiple folders' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     app1_folder = File.absolute_path('spec/fixtures/workspace_folders/folder1').gsub('\\', '/')
     app2_folder = File.absolute_path('spec/fixtures/workspace_folders/folder2').gsub('\\', '/')
     host.prepare(app1_folder)
@@ -120,7 +120,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'stops' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     host.stop
     expect(host.stopped?).to be(true)
   end
@@ -129,7 +129,7 @@ describe Solargraph::LanguageServer::Host do
     dir = File.absolute_path('spec/fixtures/workspace')
     file = File.join(dir, 'lib', 'thing.rb')
     file_uri = Solargraph::LanguageServer::UriHelpers.uri_to_file(file)
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     host.prepare(dir)
     host.open(file_uri, File.read(file), 1)
     host.remove(dir)
@@ -139,7 +139,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'responds with empty diagnostics for unopened files' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     host.diagnose 'file:///file.rb'
     response = host.flush
     json = JSON.parse(response.lines.last)
@@ -148,7 +148,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'rescues runtime errors from messages' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     message_class = Class.new(Solargraph::LanguageServer::Message::Base) do
       def process
         raise 'Always raise an error from this message'
@@ -165,7 +165,7 @@ describe Solargraph::LanguageServer::Host do
   end
 
   it 'ignores invalid messages' do
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     expect do
       host.receive({ 'bad' => 'message' })
     end.not_to raise_error
@@ -174,7 +174,7 @@ describe Solargraph::LanguageServer::Host do
   it 'repairs simple breaking changes without incremental sync' do
     file = '/test.rb'
     uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
-    host = Solargraph::LanguageServer::Host.new
+    host = described_class.new
     host.prepare ''
     host.open uri, 'Foo::Bar', 1
     sleep 0.1 until host.libraries.all?(&:mapped?)
@@ -206,7 +206,7 @@ describe Solargraph::LanguageServer::Host do
 
       file = '/test.rb'
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.prepare ''
       host.open uri, code, 1
       sleep 0.1 until host.libraries.all?(&:mapped?)
@@ -234,26 +234,26 @@ describe Solargraph::LanguageServer::Host do
 
   describe '#references_from' do
     it 'rescues FileNotFound errors' do
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       expect { host.references_from('file:///not_a_file.rb', 1, 1) }.not_to raise_error
     end
 
     it 'logs FileNotFound errors' do
       allow(Solargraph.logger).to receive(:warn)
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.references_from('file:///not_a_file.rb', 1, 1)
       expect(Solargraph.logger).to have_received(:warn).with(/FileNotFoundError/)
     end
 
     it 'rescues InvalidOffset errors' do
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.open('file:///file.rb', 'class Foo; end', 1)
       expect { host.references_from('file:///file.rb', 0, 100) }.not_to raise_error
     end
 
     it 'logs InvalidOffset errors' do
       allow(Solargraph.logger).to receive(:warn)
-      host = Solargraph::LanguageServer::Host.new
+      host = described_class.new
       host.open('file:///file.rb', 'class Foo; end', 1)
       host.references_from('file:///file.rb', 0, 100)
       expect(Solargraph.logger).to have_received(:warn).with(/InvalidOffsetError/)
@@ -262,7 +262,7 @@ describe Solargraph::LanguageServer::Host do
 
   describe 'Workspace variations' do
     before do
-      @host = Solargraph::LanguageServer::Host.new
+      @host = described_class.new
     end
 
     after do

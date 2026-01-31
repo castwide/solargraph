@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Block do
   it 'strips prefixes from parameter names' do
     # @todo Method parameters are pins now

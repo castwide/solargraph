@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Literal do
   it 'resolves an instance of a literal' do
     literal = described_class.new('String', nil)

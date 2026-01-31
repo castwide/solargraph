@@ -38,7 +38,7 @@ module Solargraph
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
         def select path
-          if method_map.has_key?(path)
+          if method_map.key?(path)
             method_map[path]
           elsif path.start_with?('$/')
             MethodNotImplemented

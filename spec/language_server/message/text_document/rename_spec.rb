@@ -14,20 +14,20 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       foo = Foo.new
     ), 1)
     sleep 0.01 until host.libraries.all?(&:mapped?)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-                                                                             'id' => 1,
-                                                                             'method' => 'textDocument/rename',
-                                                                             'params' => {
-                                                                               'textDocument' => {
-                                                                                 'uri' => temp_file_url
-                                                                               },
-                                                                               'position' => {
-                                                                                 'line' => 1,
-                                                                                 'character' => 12
-                                                                               },
-                                                                               'newName' => 'Bar'
-                                                                             }
-                                                                           })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => temp_file_url
+                                     },
+                                     'position' => {
+                                       'line' => 1,
+                                       'character' => 12
+                                     },
+                                     'newName' => 'Bar'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(2)
   end
@@ -44,20 +44,20 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     	end
 
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-                                                                             'id' => 1,
-                                                                             'method' => 'textDocument/rename',
-                                                                             'params' => {
-                                                                               'textDocument' => {
-                                                                                 'uri' => temp_file_url
-                                                                               },
-                                                                               'position' => {
-                                                                                 'line' => 2,
-                                                                                 'character' => 14
-                                                                               },
-                                                                               'newName' => 'baz'
-                                                                             }
-                                                                           })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => temp_file_url
+                                     },
+                                     'position' => {
+                                       'line' => 2,
+                                       'character' => 14
+                                     },
+                                     'newName' => 'baz'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
@@ -73,20 +73,20 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
     	end
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-                                                                             'id' => 1,
-                                                                             'method' => 'textDocument/rename',
-                                                                             'params' => {
-                                                                               'textDocument' => {
-                                                                                 'uri' => temp_file_url
-                                                                               },
-                                                                               'position' => {
-                                                                                 'line' => 3,
-                                                                                 'character' => 6
-                                                                               },
-                                                                               'newName' => 'baz'
-                                                                             }
-                                                                           })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => temp_file_url
+                                     },
+                                     'position' => {
+                                       'line' => 3,
+                                       'character' => 6
+                                     },
+                                     'newName' => 'baz'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
@@ -100,20 +100,20 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
       obj = Namespace::ExampleClass.new
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-                                                                             'id' => 1,
-                                                                             'method' => 'textDocument/rename',
-                                                                             'params' => {
-                                                                               'textDocument' => {
-                                                                                 'uri' => temp_file_url
-                                                                               },
-                                                                               'position' => {
-                                                                                 'line' => 2,
-                                                                                 'character' => 12
-                                                                               },
-                                                                               'newName' => 'Nameplace'
-                                                                             }
-                                                                           })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => temp_file_url
+                                     },
+                                     'position' => {
+                                       'line' => 2,
+                                       'character' => 12
+                                     },
+                                     'newName' => 'Nameplace'
+                                   }
+                                 })
     rename.process
     changes = rename.result[:changes][temp_file_url]
     expect(changes.length).to eq(3)

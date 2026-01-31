@@ -33,8 +33,8 @@ module Solargraph
 
       # @return [ComplexType]
       def generate_complex_type
-        tags = docstring.tags(:return).map(&:types).flatten.reject(&:nil?)
-        tags = docstring.tags(:type).map(&:types).flatten.reject(&:nil?) if tags.empty?
+        tags = docstring.tags(:return).map(&:types).flatten.compact
+        tags = docstring.tags(:type).map(&:types).flatten.compact if tags.empty?
         return ComplexType::UNDEFINED if tags.empty?
         ComplexType.try_parse(*tags)
       end

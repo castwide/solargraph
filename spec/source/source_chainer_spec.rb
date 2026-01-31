@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::SourceChainer do
   it 'handles trailing colons that are not namespace separators' do
     source = Solargraph::Source.load_string('Foo:')
@@ -111,14 +113,14 @@ describe Solargraph::Source::SourceChainer do
       ]
     )
     source = orig.synchronize(updater)
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+    chain = described_class.chain(source, Solargraph::Position.new(0, 3))
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
     expect(chain.links.length).to eq(2)
   end
 
   it 'chains incomplete constants' do
     source = Solargraph::Source.load_string('Foo::')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
+    chain = described_class.chain(source, Solargraph::Position.new(0, 5))
     expect(chain.links.length).to eq(2)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
     expect(chain.links.last).to be_a(Solargraph::Source::Chain::Constant)
@@ -132,7 +134,7 @@ describe Solargraph::Source::SourceChainer do
                                               ])
     source = orig.synchronize(updater)
     expect do
-      Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 4))
+      described_class.chain(source, Solargraph::Position.new(1, 4))
     end.not_to raise_error
   end
 
@@ -142,11 +144,11 @@ describe Solargraph::Source::SourceChainer do
       [bb2, 2, 3]
       {cc3, 2, 3}
     ))
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 10))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 10))
     expect(chain.links.first.word).to eq('aa1')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 10))
+    chain = described_class.chain(source, Solargraph::Position.new(2, 10))
     expect(chain.links.first.word).to eq('bb2')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 10))
+    chain = described_class.chain(source, Solargraph::Position.new(3, 10))
     expect(chain.links.first.word).to eq('cc3')
   end
 
@@ -162,7 +164,7 @@ describe Solargraph::Source::SourceChainer do
                     error_ranges: [],
                     node_at: nil,
                     tree_at: [])
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 5))
+    chain = described_class.chain(source, Solargraph::Position.new(0, 5))
     expect(chain.links.first.word).to eq('@foo')
     expect(chain.links.last.word).to eq('<undefined>')
   end
@@ -179,7 +181,7 @@ describe Solargraph::Source::SourceChainer do
                     error_ranges: [],
                     node_at: nil,
                     tree_at: [])
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 6))
+    chain = described_class.chain(source, Solargraph::Position.new(0, 6))
     expect(chain.links.first.word).to eq('@@foo')
     expect(chain.links.last.word).to eq('<undefined>')
   end
@@ -198,7 +200,7 @@ describe Solargraph::Source::SourceChainer do
                                       )
                                     ]
                                   ))
-    chain = Solargraph::Source::SourceChainer.chain(source2, Solargraph::Position.new(1, 9))
+    chain = described_class.chain(source2, Solargraph::Position.new(1, 9))
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
     expect(chain.links.first.word).to eq('<::String>')
     expect(chain.links.last.word).to eq('<undefined>')
@@ -208,7 +210,7 @@ describe Solargraph::Source::SourceChainer do
     source = Solargraph::Source.load_string(%(
       if !t
     ), 'test.rb')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 11))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 11))
     expect(chain.links.length).to eq(1)
     expect(chain.links.first.word).to eq('t')
   end
@@ -228,7 +230,7 @@ describe Solargraph::Source::SourceChainer do
 
   it 'handles integers with dots at end of file' do
     source = Solargraph::Source.load_string('100.')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 4))
+    chain = described_class.chain(source, Solargraph::Position.new(0, 4))
     expect(chain.links.length).to eq(2)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Literal)
     expect(chain.links.last).to be_undefined
@@ -242,7 +244,7 @@ describe Solargraph::Source::SourceChainer do
       end
       Outer::Inner.new
     ), 'test.rb')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    chain = described_class.chain(source, Solargraph::Position.new(5, 13))
     expect(chain.links.last.word).to eq('Outer::Inner')
   end
 
@@ -256,7 +258,7 @@ describe Solargraph::Source::SourceChainer do
       end
       Outer::Inner1::Inner2.new
     ), 'test.rb')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(7, 21))
+    chain = described_class.chain(source, Solargraph::Position.new(7, 21))
     expect(chain.links.last.word).to eq('Outer::Inner1::Inner2')
   end
 
@@ -264,7 +266,7 @@ describe Solargraph::Source::SourceChainer do
     source = Solargraph::Source.load_string(%(
       foo(*optargs, **kwargs)
     ), 'test.rb')
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 7))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 7))
     expect(chain.links.last.arguments.length).to eq(2)
   end
 
@@ -276,7 +278,7 @@ describe Solargraph::Source::SourceChainer do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(2, 9))
+    chain = described_class.chain(source, Solargraph::Position.new(2, 9))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
   end
@@ -288,7 +290,7 @@ describe Solargraph::Source::SourceChainer do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 16))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 16))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array(String, Integer)')
   end
@@ -302,7 +304,7 @@ describe Solargraph::Source::SourceChainer do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 6))
+    chain = described_class.chain(source, Solargraph::Position.new(3, 6))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.rooted_tag).to eq('::Boolean')
   end
@@ -314,7 +316,7 @@ describe Solargraph::Source::SourceChainer do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 16))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 16))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
   end
@@ -334,7 +336,7 @@ describe Solargraph::Source::SourceChainer do
     updated = source.synchronize(updater)
     api_map = Solargraph::ApiMap.new
     api_map.map updated
-    chain = Solargraph::Source::SourceChainer.chain(updated, Solargraph::Position.new(5, 14))
+    chain = described_class.chain(updated, Solargraph::Position.new(5, 14))
     expect(chain.node.type).to be(:send)
     expect(chain.node.children[1]).to be(:s)
   end
@@ -345,7 +347,7 @@ describe Solargraph::Source::SourceChainer do
         z
       end
     ))
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 9))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 9))
     expect(chain.links.map(&:class)).to be
   end
 
@@ -356,7 +358,7 @@ describe Solargraph::Source::SourceChainer do
     api_map = Solargraph::ApiMap.new
     api_map.map source
 
-    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 20))
+    chain = described_class.chain(source, Solargraph::Position.new(1, 20))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.tag).to eq('Array<String>')
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::LocalVariable do
   xit 'merges presence changes so that [not currently used]' do
     map1 = Solargraph::SourceMap.load_string(%(

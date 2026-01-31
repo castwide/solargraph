@@ -10,7 +10,7 @@ module Solargraph
         VISIBILITY_OVERRIDE = {
           # YARD pays attention to 'private' statements prior to class methods but shouldn't
           ['Rails::Engine', :class, 'find_root_with_flag'] => :public
-        }
+        }.freeze
 
         # @param code_object [YARD::CodeObjects::MethodObject]
         # @param name [String, nil]

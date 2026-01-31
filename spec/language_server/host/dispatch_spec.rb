@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Host::Dispatch do
   before :context do
     # @dispatch = Solargraph::LanguageServer::Host::Dispatch
     @dispatch = Object.new
-    @dispatch.extend Solargraph::LanguageServer::Host::Dispatch
+    @dispatch.extend described_class
   end
 
   after do

@@ -62,7 +62,7 @@ module Solargraph
       def rbs_generics
         return '' if generics.empty?
 
-        '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
+        "[#{generics.map(&:to_s).join(', ')}] "
       end
     end
   end

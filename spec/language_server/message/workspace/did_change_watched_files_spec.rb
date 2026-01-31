@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 
 describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles do
@@ -8,17 +10,17 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
       file = File.join(dir, 'foo.rb')
       File.write file, 'class Foo; end'
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
-      changed = Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles.new(host, {
-                                                                                            'method' => 'workspace/didChangeWatchedFiles',
-                                                                                            'params' => {
-                                                                                              'changes' => [
-                                                                                                {
-                                                                                                  'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CREATED,
-                                                                                                  'uri' => uri
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          })
+      changed = described_class.new(host, {
+                                      'method' => 'workspace/didChangeWatchedFiles',
+                                      'params' => {
+                                        'changes' => [
+                                          {
+                                            'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CREATED,
+                                            'uri' => uri
+                                          }
+                                        ]
+                                      }
+                                    })
       changed.process
       expect(host.synchronizing?).to be(false)
       expect(host.library_for(uri)).to be_a(Solargraph::Library)
@@ -33,17 +35,17 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
       uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
       host = Solargraph::LanguageServer::Host.new
       host.prepare dir
-      changed = Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles.new(host, {
-                                                                                            'method' => 'workspace/didChangeWatchedFiles',
-                                                                                            'params' => {
-                                                                                              'changes' => [
-                                                                                                {
-                                                                                                  'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::DELETED,
-                                                                                                  'uri' => uri
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          })
+      changed = described_class.new(host, {
+                                      'method' => 'workspace/didChangeWatchedFiles',
+                                      'params' => {
+                                        'changes' => [
+                                          {
+                                            'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::DELETED,
+                                            'uri' => uri
+                                          }
+                                        ]
+                                      }
+                                    })
       changed.process
       expect(host.synchronizing?).to be(false)
       expect do
@@ -60,17 +62,17 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
       host = Solargraph::LanguageServer::Host.new
       host.prepare dir
       File.write file, 'class FooBar; end'
-      changed = Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles.new(host, {
-                                                                                            'method' => 'workspace/didChangeWatchedFiles',
-                                                                                            'params' => {
-                                                                                              'changes' => [
-                                                                                                {
-                                                                                                  'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CHANGED,
-                                                                                                  'uri' => uri
-                                                                                                }
-                                                                                              ]
-                                                                                            }
-                                                                                          })
+      changed = described_class.new(host, {
+                                      'method' => 'workspace/didChangeWatchedFiles',
+                                      'params' => {
+                                        'changes' => [
+                                          {
+                                            'type' => Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles::CHANGED,
+                                            'uri' => uri
+                                          }
+                                        ]
+                                      }
+                                    })
       changed.process
       expect(host.synchronizing?).to be(false)
       library = host.library_for(uri)
@@ -84,17 +86,17 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
     host = double(Solargraph::LanguageServer::Host, catalog: nil)
     allow(host).to receive(:create)
     allow(host).to receive(:delete)
-    changed = Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles.new(host, {
-                                                                                          'method' => 'workspace/didChangeWatchedFiles',
-                                                                                          'params' => {
-                                                                                            'changes' => [
-                                                                                              {
-                                                                                                'type' => -1,
-                                                                                                'uri' => 'file:///foo.rb'
-                                                                                              }
-                                                                                            ]
-                                                                                          }
-                                                                                        })
+    changed = described_class.new(host, {
+                                    'method' => 'workspace/didChangeWatchedFiles',
+                                    'params' => {
+                                      'changes' => [
+                                        {
+                                          'type' => -1,
+                                          'uri' => 'file:///foo.rb'
+                                        }
+                                      ]
+                                    }
+                                  })
     changed.process
     expect(changed.error).not_to be_nil
   end

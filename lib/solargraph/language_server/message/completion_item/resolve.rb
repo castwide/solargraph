@@ -46,7 +46,7 @@ module Solargraph
             pins.each do |pin|
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               result.push this_link if this_link && this_link != last_link && this_link != 'undefined'
-              result.push pin.documentation unless result.last && result.last.end_with?(pin.documentation)
+              result.push pin.documentation unless result.last&.end_with?(pin.documentation)
               last_link = this_link
             end
             result.join("\n\n")

@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 # @sg-ignore Should better support meaning of '&' in RBS
-$LOAD_PATH.unshift File.dirname(__FILE__) + '/lib'
+$LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
 require 'solargraph/version'
 require 'date'
 

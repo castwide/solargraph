@@ -136,9 +136,9 @@ module Solargraph
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
       # @sg-ignore Need better typing for Hash[]
       # @type [Array<String>]
-      missing_paths = Hash[without_gemspecs].keys
+      missing_paths = without_gemspecs.to_h.keys
       # @type [Array<Gem::Specification>]
-      gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies(out: out).to_a
+      gemspecs = with_gemspecs.to_h.values.flatten.compact + dependencies(out: out).to_a
 
       # if we are type checking a gem project, we should not include
       # pins from rbs or yard from that gem here - we use our own

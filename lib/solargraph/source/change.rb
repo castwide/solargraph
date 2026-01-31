@@ -28,7 +28,7 @@ module Solargraph
       #   syntax errors will be repaired.
       # @return [String] The updated text.
       def write text, nullable = false
-        if nullable and !range.nil? and new_text.match(/[.\[{(@$:]$/)
+        if nullable && !range.nil? && new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
             # @sg-ignore flow sensitive typing needs to handle attrs
@@ -66,7 +66,7 @@ module Solargraph
           match = result[0, off].match(/[.:]+\z/)
           if match
             # @sg-ignore flow sensitive typing should be able to handle redefinition
-            result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..-1]
+            result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
           end
           result
         end
@@ -82,7 +82,7 @@ module Solargraph
         start_offset = Position.to_offset(text, range.start)
         # @sg-ignore Need to add nil check here
         end_offset = Position.to_offset(text, range.ending)
-        (start_offset == 0 ? '' : text[0..start_offset - 1].to_s) + normalize(insert) + text[end_offset..-1].to_s
+        (start_offset.zero? ? '' : text[0..(start_offset - 1)].to_s) + normalize(insert) + text[end_offset..].to_s
       end
     end
   end

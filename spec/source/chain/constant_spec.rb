@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Constant do
   it 'resolves constants in the current context' do
     foo_pin = Solargraph::Pin::Constant.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN)

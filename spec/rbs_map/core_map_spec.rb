@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::RbsMap::CoreMap do
   it 'maps core Errno classes' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     Errno.constants.each do |const|
       pin = store.get_path_pins("Errno::#{const}").first
@@ -12,7 +14,7 @@ describe Solargraph::RbsMap::CoreMap do
   end
 
   it 'understands RBS class aliases' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     # The core RBS contains:
     #   class Mutex = Thread::Mutex
@@ -25,7 +27,7 @@ describe Solargraph::RbsMap::CoreMap do
   end
 
   it 'understands RBS global variables' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)
     global_variable_pins = store.pins_by_class(Solargraph::Pin::GlobalVariable)
     stderr_pins = global_variable_pins.select do |pin|
@@ -79,7 +81,7 @@ describe Solargraph::RbsMap::CoreMap do
     # @todo This is a simple smoke test to ensure that mixins are applied
     #   correctly. It would be better to test RbsMap or RbsMap::Conversions
     #   with an RBS fixture.
-    core_map = Solargraph::RbsMap::CoreMap.new
+    core_map = described_class.new
     pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
     expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
@@ -98,7 +100,7 @@ describe Solargraph::RbsMap::CoreMap do
   end
 
   it 'generates rooted pins from RBS for core' do
-    map = Solargraph::RbsMap::CoreMap.new
+    map = described_class.new
     map.pins.each do |pin|
       expect(pin).to be_all_rooted
       unless pin.is_a?(Solargraph::Pin::Keyword)

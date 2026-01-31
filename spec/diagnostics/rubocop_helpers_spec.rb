@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Diagnostics::RubocopHelpers do
   context do
     around do |example|
@@ -20,7 +22,7 @@ describe Solargraph::Diagnostics::RubocopHelpers do
 
     it 'requires the specified version of rubocop' do
       input = custom_version
-      Solargraph::Diagnostics::RubocopHelpers.require_rubocop(input)
+      described_class.require_rubocop(input)
       output = RuboCop::Version::STRING
       expect(output).to eq(custom_version)
     end
@@ -31,7 +33,7 @@ describe Solargraph::Diagnostics::RubocopHelpers do
 
     it 'requires the default version of rubocop' do
       input = nil
-      Solargraph::Diagnostics::RubocopHelpers.require_rubocop(input)
+      described_class.require_rubocop(input)
       output = RuboCop::Version::STRING
       expect(output).to eq(default_version)
     end
@@ -39,13 +41,13 @@ describe Solargraph::Diagnostics::RubocopHelpers do
 
   it 'converts lower-case drive letters to upper-case' do
     input = 'c:/one/two'
-    output = Solargraph::Diagnostics::RubocopHelpers.fix_drive_letter(input)
+    output = described_class.fix_drive_letter(input)
     expect(output).to eq('C:/one/two')
   end
 
   it 'ignores paths without drive letters' do
     input = 'one/two'
-    output = Solargraph::Diagnostics::RubocopHelpers.fix_drive_letter(input)
+    output = described_class.fix_drive_letter(input)
     expect(output).to eq('one/two')
   end
 end

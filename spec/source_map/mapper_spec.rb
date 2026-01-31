@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::SourceMap::Mapper do
   it 'ignores include calls that are not attached to the current namespace' do
     source = Solargraph::Source.new(%(
@@ -1230,7 +1232,7 @@ describe Solargraph::SourceMap::Mapper do
       # @!override Foo#bar
       #   return [String]
     ), 'test.rb')
-    pins, _locals = Solargraph::SourceMap::Mapper.map(source)
+    pins, _locals = described_class.map(source)
     over = pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Override) }.first
     expect(over.name).to eq('Foo#bar')
   end
@@ -1241,7 +1243,7 @@ describe Solargraph::SourceMap::Mapper do
         def bar(**baz); end
       end
     ))
-    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    _pins, locals = described_class.map(source)
     param = locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.first
     expect(param).to be_kwrestarg
   end
@@ -1252,7 +1254,7 @@ describe Solargraph::SourceMap::Mapper do
         def bar(baz = {}); end
       end
     ))
-    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    _pins, locals = described_class.map(source)
     param = locals.select { |pin| pin.is_a?(Solargraph::Pin::Parameter) }.first
     expect(param).to be_kwrestarg
   end
@@ -1263,7 +1265,7 @@ describe Solargraph::SourceMap::Mapper do
         var = 'var'
       end
     ))
-    _pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    _pins, locals = described_class.map(source)
     expect(locals).to be_one
   end
 
@@ -1283,7 +1285,7 @@ describe Solargraph::SourceMap::Mapper do
         alias_method
       end
     ))
-    pins, locals = Solargraph::SourceMap::Mapper.map(source)
+    pins, locals = described_class.map(source)
     expect(pins).to be_one
     expect(locals).to be_empty
   end

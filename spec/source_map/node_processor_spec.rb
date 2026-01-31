@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe 'Node processor (generic)' do
   it 'maps arg parameters' do
     map = Solargraph::SourceMap.load_string(%(

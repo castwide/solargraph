@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # A series of statements where if a given statement executes, /all

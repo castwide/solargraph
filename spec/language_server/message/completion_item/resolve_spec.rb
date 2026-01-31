@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
   it 'returns MarkupContent for documentation' do
     pin = Solargraph::Pin::Method.new(
@@ -11,9 +13,9 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil,
                                                     options: { 'enablePages' => true })
-    resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
-                                                                                 'params' => pin.completion_item
-                                                                               })
+    resolve = described_class.new(host, {
+                                    'params' => pin.completion_item
+                                  })
     resolve.process
     expect(resolve.result[:documentation][:kind]).to eq('markdown')
     expect(resolve.result[:documentation][:value]).to include('A method')
@@ -27,9 +29,9 @@ describe Solargraph::LanguageServer::Message::CompletionItem::Resolve do
       comments: ''
     )
     host = double(Solargraph::LanguageServer::Host, locate_pins: [pin], probe: pin, detail: nil)
-    resolve = Solargraph::LanguageServer::Message::CompletionItem::Resolve.new(host, {
-                                                                                 'params' => pin.completion_item
-                                                                               })
+    resolve = described_class.new(host, {
+                                    'params' => pin.completion_item
+                                  })
     resolve.process
     expect(resolve.result[:documentation]).to be_nil
   end

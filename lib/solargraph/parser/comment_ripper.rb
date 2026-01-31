@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'ripper'
 
 module Solargraph
@@ -26,8 +28,8 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
           chomped = result[1].chomp
-          if result[2][0] == 0 && chomped.encode('UTF-8', 'binary', invalid: :replace, undef: :replace,
-                                                                    replace: '').match(/^#\s*frozen_string_literal:/)
+          if result[2][0].zero? && chomped.encode('UTF-8', 'binary', invalid: :replace, undef: :replace,
+                                                                     replace: '').match(/^#\s*frozen_string_literal:/)
             chomped = '#'
           end
           @comments[result[2][0]] =

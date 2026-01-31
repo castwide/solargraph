@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 
 describe Solargraph::ApiMap do
@@ -5,7 +7,7 @@ describe Solargraph::ApiMap do
   # would be needed regardless as we are changing the working
   # directory
   before :context do
-    @api_map = Solargraph::ApiMap.new
+    @api_map = described_class.new
   end
 
   it 'returns core methods' do
@@ -198,7 +200,7 @@ describe Solargraph::ApiMap do
   end
 
   it 'adds Object instance methods to duck types' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     type = Solargraph::ComplexType.parse('#foo')
     pins = api_map.get_complex_type_methods(type)
     expect(pins.any? { |p| p.namespace == 'BasicObject' }).to be(true)
@@ -447,7 +449,7 @@ describe Solargraph::ApiMap do
   end
 
   it 'loads workspaces from directories' do
-    api_map = Solargraph::ApiMap.load('spec/fixtures/workspace')
+    api_map = described_class.load('spec/fixtures/workspace')
     expect(api_map.source_map(File.absolute_path('spec/fixtures/workspace/app.rb'))).to be_a(Solargraph::SourceMap)
   end
 
@@ -764,17 +766,17 @@ describe Solargraph::ApiMap do
   end
 
   it 'can qualify "Boolean"' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     expect(api_map.qualify('Boolean')).to eq('Boolean')
   end
 
   it 'knows that true is a "subtype" of Boolean' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     expect(api_map.super_and_sub?('Boolean', 'true')).to be(true)
   end
 
   it 'knows that false is a "subtype" of Boolean' do
-    api_map = Solargraph::ApiMap.new
+    api_map = described_class.new
     expect(api_map.super_and_sub?('Boolean', 'false')).to be(true)
   end
 
@@ -802,7 +804,7 @@ describe Solargraph::ApiMap do
     mixin = Solargraph::Pin::Reference::Include.new(
       name: 'defined?(DidYouMean::SpellChecker) && defined?(DidYouMean::Correctable)', closure: closure
     )
-    api_map = Solargraph::ApiMap.new(pins: [closure, mixin])
+    api_map = described_class.new(pins: [closure, mixin])
     expect(api_map.get_method_stack('Foo', 'foo')).to be_empty
   end
 
@@ -823,7 +825,7 @@ describe Solargraph::ApiMap do
       end
     ), 'test.rb')
 
-    api_map = Solargraph::ApiMap.new.map(source)
+    api_map = described_class.new.map(source)
 
     clip = api_map.clip_at('test.rb', [11, 10])
     expect(clip.infer.to_s).to eq('Symbol')

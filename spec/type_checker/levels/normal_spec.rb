@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
   context 'when checking at normal level' do
     def type_checker code
@@ -609,7 +611,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies block passes in arguments' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         class Foo
           def map(&block)
             block.call(100)
@@ -624,7 +626,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies args and block passes' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         class Foo
           def map(x, &block)
             block.call(x)
@@ -639,14 +641,14 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies extra block passes in chained calls' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         ''.to_s(&:nil?)
       ), 'test.rb')
       expect(checker.problems).to be_empty
     end
 
     it 'verifies extra block variables in calls with args' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         def foo(bar); end
         foo(1, &block)
       ), 'test.rb')
@@ -654,7 +656,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies splats passed to arguments' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         def foo(bar, baz); end
         foo(*splat)
       ), 'test.rb')
