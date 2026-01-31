@@ -44,9 +44,9 @@ describe Protocol do
   end
 
   before do
-    version = double(:GemVersion, version: Gem::Version.new('1.0.0'))
-    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = double(:fetcher,
-                                                                                    search_for_dependency: [version])
+    version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
+    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
+      instance_double(Gem::SpecFetcher, search_for_dependency: [version])
   end
 
   after do
@@ -149,8 +149,8 @@ describe Protocol do
         }
       ]
     }
-    @protocol.response
-    # @todo What to expect?
+    response = @protocol.response
+    expect(response).not_to be_nil
   end
 
   it 'handles textDocument/completion' do
@@ -206,14 +206,6 @@ describe Protocol do
     @protocol.request 'completionItem/resolve', item
     response = @protocol.response
     expect(response['result']['documentation']).not_to be_empty
-  end
-
-  it 'handles workspace/symbol' do
-    @protocol.request 'workspace/symbol', {
-      'query' => 'test'
-    }
-    response = @protocol.response
-    expect(response['error']).to be_nil
   end
 
   it 'handles textDocument/definition' do

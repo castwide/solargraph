@@ -218,24 +218,9 @@ RSpec/MultipleExpectations:
 RSpec/NestedGroups:
   Max: 4
 
-# Configuration parameters: AllowedPatterns.
-# AllowedPatterns: ^expect_, ^assert_
-RSpec/NoExpectationExample:
-  Exclude:
-    - 'spec/language_server/protocol_spec.rb'
-
 RSpec/RemoveConst:
   Exclude:
     - 'spec/diagnostics/rubocop_helpers_spec.rb'
-
-RSpec/RepeatedDescription:
-  Exclude:
-    - 'spec/language_server/protocol_spec.rb'
-
-# Configuration parameters: IgnoreNameless, IgnoreSymbolicNames.
-RSpec/VerifiedDoubles:
-  Exclude:
-    - 'spec/language_server/protocol_spec.rb'
 
 Security/MarshalLoad:
   Exclude:
