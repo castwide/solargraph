@@ -42,7 +42,7 @@ module Solargraph
           def contents_or_nil contents
             stripped = contents
                        .map(&:strip)
-                       .reject { |c| c.empty? }
+                       .reject(&:empty?)
             return nil if stripped.empty?
             {
               contents: {

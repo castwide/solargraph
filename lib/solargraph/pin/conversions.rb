@@ -44,7 +44,7 @@ module Solargraph
             path: path,
             return_type: return_type.tag,
             # @sg-ignore flow sensitive typing needs to handle attrs
-            location: (location ? location.to_hash : nil),
+            location: location&.to_hash,
             deprecated: deprecated?
           }
         }

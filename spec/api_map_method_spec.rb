@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::ApiMap do
-  let(:api_map) { Solargraph::ApiMap.new }
+  let(:api_map) { described_class.new }
   let(:bench) do
     Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new('.'))
   end
@@ -37,7 +37,7 @@ describe Solargraph::ApiMap do
         Bar::Baz
       ), 'test.rb')
 
-      api_map = Solargraph::ApiMap.new.map(source)
+      api_map = described_class.new.map(source)
 
       clip = api_map.clip_at('test.rb', [11, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -60,7 +60,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = Solargraph::ApiMap.new.map(source)
+      api_map = described_class.new.map(source)
 
       clip = api_map.clip_at('test.rb', [13, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -85,7 +85,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = Solargraph::ApiMap.new.map(source)
+      api_map = described_class.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -110,7 +110,7 @@ describe Solargraph::ApiMap do
         a
       ), 'test.rb')
 
-      api_map = Solargraph::ApiMap.new.map(source)
+      api_map = described_class.new.map(source)
 
       clip = api_map.clip_at('test.rb', [15, 8])
       expect(clip.infer.to_s).to eq('Symbol')
@@ -119,7 +119,7 @@ describe Solargraph::ApiMap do
 
   describe '#get_method_stack' do
     let(:out) { StringIO.new }
-    let(:api_map) { Solargraph::ApiMap.load_with_cache(Dir.pwd, out) }
+    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
 
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
@@ -142,7 +142,7 @@ describe Solargraph::ApiMap do
 
   describe '#cache_all_for_doc_map!' do
     it 'can cache gems without a bench' do
-      api_map = Solargraph::ApiMap.new
+      api_map = described_class.new
       doc_map = instance_double(Solargraph::DocMap, cache_doc_map_gems!: true)
       allow(Solargraph::DocMap).to receive(:new).and_return(doc_map)
       api_map.cache_all_for_doc_map!(out: $stderr)
@@ -152,14 +152,14 @@ describe Solargraph::ApiMap do
 
   describe '#workspace' do
     it 'can get a default workspace without a bench' do
-      api_map = Solargraph::ApiMap.new
+      api_map = described_class.new
       expect(api_map.workspace).not_to be_nil
     end
   end
 
   describe '#uncached_gemspecs' do
     it 'can get uncached gemspecs workspace without a bench' do
-      api_map = Solargraph::ApiMap.new
+      api_map = described_class.new
       expect(api_map.uncached_gemspecs).not_to be_nil
     end
   end
@@ -178,7 +178,7 @@ describe Solargraph::ApiMap do
         end
       ), 'test.rb')
 
-      api_map = Solargraph::ApiMap.new
+      api_map = described_class.new
       api_map.map source
       pins = api_map.get_methods('Foo::Includer')
       expect(pins.map(&:path)).to include('Foo::Bar#baz')

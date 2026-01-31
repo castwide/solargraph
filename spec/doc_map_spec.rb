@@ -71,7 +71,7 @@ describe Solargraph::DocMap do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
     allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], workspace)
+    described_class.new(['set'], workspace)
     expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
@@ -173,7 +173,7 @@ describe Solargraph::DocMap do
 
       Solargraph::Convention.register dummy_convention
 
-      doc_map = Solargraph::DocMap.new(['original_gem'], workspace)
+      doc_map = described_class.new(['original_gem'], workspace)
 
       # @todo this should probably not be in requires, which is a
       #   path, and instead be in a new gem_names property on the

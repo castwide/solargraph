@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
   before do
     version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
-    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
+    described_class.fetcher =
       instance_double(Gem::SpecFetcher, search_for_dependency: [version])
   end
 
   after do
-    Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher = nil
+    described_class.fetcher = nil
   end
 
   it 'checks the gem source' do
@@ -35,7 +37,7 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
 
   it 'responds to update actions' do
     host = Solargraph::LanguageServer::Host.new
-    message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
+    message = described_class.new(host, {}, current: Gem::Version.new('0.0.1'))
     message.process
     response = nil
     reader = Solargraph::LanguageServer::Transport::DataReader.new
@@ -55,7 +57,7 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
   it 'uses bundler' do
     host = Solargraph::LanguageServer::Host.new
     host.configure({ 'useBundler' => true })
-    message = Solargraph::LanguageServer::Message::Extended::CheckGemVersion.new(host, {}, current: Gem::Version.new('0.0.1'))
+    message = described_class.new(host, {}, current: Gem::Version.new('0.0.1'))
     message.process
     response = nil
     reader = Solargraph::LanguageServer::Transport::DataReader.new

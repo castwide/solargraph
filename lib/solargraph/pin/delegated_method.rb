@@ -115,7 +115,7 @@ module Solargraph
       def print_chain chain
         out = +''
         chain.links.each_with_index do |link, index|
-          if index > 0
+          if index.positive?
             if Source::Chain::Constant
               out << '::' unless link.word.start_with?('::')
             else

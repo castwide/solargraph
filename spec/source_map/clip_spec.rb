@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::SourceMap::Clip do
   let(:api_map) { Solargraph::ApiMap.new }
 
@@ -356,7 +358,7 @@ describe Solargraph::SourceMap::Clip do
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(10, 10))
     type = clip.infer
-    expect(type.to_s.split(',').map(&:strip).to_set).to eq(Set.new(['Gem::Specification']))
+    expect(type.to_s.split(',').to_set(&:strip)).to eq(Set.new(['Gem::Specification']))
   end
 
   it 'infers return types from method calls' do

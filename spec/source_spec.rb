@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source do
   it 'parses code' do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     expect(source.code).to eq(code)
-    expect(Solargraph::Parser.is_ast_node?(source.node)).to be_truthy
+    expect(Solargraph::Parser).to be_is_ast_node(source.node)
     expect(source).to be_parsed
   end
 
@@ -101,7 +103,7 @@ describe Solargraph::Source do
   end
 
   it 'finds references' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       class Foo
         def bar
         end
@@ -124,7 +126,7 @@ describe Solargraph::Source do
   end
 
   it 'allows escape sequences incompatible with UTF-8' do
-    source = Solargraph::Source.new('
+    source = described_class.new('
       x = " Un bUen café \x92"
       puts x
     ')
@@ -133,18 +135,18 @@ describe Solargraph::Source do
 
   it 'fixes invalid byte sequences in UTF-8 encoding' do
     expect do
-      Solargraph::Source.load('spec/fixtures/invalid_byte.rb')
+      described_class.load('spec/fixtures/invalid_byte.rb')
     end.not_to raise_error
   end
 
   it 'loads files with Unicode characters' do
     expect do
-      Solargraph::Source.load('spec/fixtures/unicode.rb')
+      described_class.load('spec/fixtures/unicode.rb')
     end.not_to raise_error
   end
 
   it 'updates itself when code does not change' do
-    original = Solargraph::Source.load_string('x = y', 'test.rb')
+    original = described_class.load_string('x = y', 'test.rb')
     updater = Solargraph::Source::Updater.new('test.rb', 1, [])
     updated = original.synchronize(updater)
     expect(original).to be(updated)
@@ -152,7 +154,7 @@ describe Solargraph::Source do
   end
 
   it 'handles unparseable code' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       100.times do |num|
     ))
     # @todo Unparseable code results in a nil node for now, but that could
@@ -163,7 +165,7 @@ describe Solargraph::Source do
 
   it 'finds foldable ranges' do
     # Of the 7 possible ranges, 2 are too short to be foldable
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
 =begin
 Range 1
 =end
@@ -192,7 +194,7 @@ e = d # inline
   end
 
   it 'folds multiline strings' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       a = 1
       b = 2
       c = 3
@@ -207,7 +209,7 @@ e = d # inline
   end
 
   it 'folds multiline arrays' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       a = 1
       b = 2
       c = 3
@@ -222,7 +224,7 @@ e = d # inline
   end
 
   it 'folds multiline hashes' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       a = 1
       b = 2
       c = 3
@@ -237,7 +239,7 @@ e = d # inline
   end
 
   it 'finishes synchronizations for unbalanced lines' do
-    source1 = Solargraph::Source.load_string('x = 1', 'test.rb')
+    source1 = described_class.load_string('x = 1', 'test.rb')
     source2 = source1.synchronize Solargraph::Source::Updater.new(
       'test.rb',
       2,
@@ -254,7 +256,7 @@ e = d # inline
 
   it 'handles comment arrays that overlap lines' do
     # Fixes negative argument error (castwide/solargraph#141)
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
 =begin
 =end
 y = 1 #foo
@@ -266,7 +268,7 @@ y = 1 #foo
   end
 
   it 'formats comments with multiple hash prefixes' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       ##
       # one
       # two
@@ -278,7 +280,7 @@ y = 1 #foo
   end
 
   it 'does not include inner comments' do
-    source = Solargraph::Source.load_string(%(
+    source = described_class.load_string(%(
       # included
       class Foo
         # ignored
@@ -291,12 +293,12 @@ y = 1 #foo
   end
 
   it 'handles long squiggly heredocs' do
-    source = Solargraph::Source.load('spec/fixtures/long_squiggly_heredoc.rb')
+    source = described_class.load('spec/fixtures/long_squiggly_heredoc.rb')
     expect(source.string_ranges).not_to be_empty
   end
 
   it 'handles string array substitutions' do
-    source = Solargraph::Source.load_string(
+    source = described_class.load_string(
       '%W[array of words #{\'with a substitution\'}]'
     )
     expect(source.string_ranges.length).to eq(4)
@@ -305,6 +307,6 @@ y = 1 #foo
   it 'handles errors in docstrings' do
     # YARD has a known problem with empty @overload tags
     comments = "@overload\n@return [String]"
-    expect { Solargraph::Source.parse_docstring(comments) }.not_to raise_error
+    expect { described_class.parse_docstring(comments) }.not_to raise_error
   end
 end

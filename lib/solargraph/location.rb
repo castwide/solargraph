@@ -23,10 +23,6 @@ module Solargraph
       @range = range
     end
 
-    protected def equality_fields
-      [filename, range]
-    end
-
     # @param other [self]
     def <=> other
       return nil unless other.is_a?(Location)
@@ -78,6 +74,12 @@ module Solargraph
 
     def inspect
       "#<#{self.class} #{filename}, #{range.inspect}>"
+    end
+
+    protected
+
+    def equality_fields
+      [filename, range]
     end
   end
 end

@@ -36,12 +36,6 @@ module Solargraph
           fix_block_pass
         end
 
-        # @sg-ignore Fix "Not enough arguments to Module#protected"
-        protected def equality_fields
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-          super + [arguments, block]
-        end
-
         def with_block?
           !!@block
         end
@@ -70,7 +64,7 @@ module Solargraph
             [stack.first].compact
           end
           # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any? { |pins| pins.empty? }
+          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
@@ -369,6 +363,14 @@ module Solargraph
           # need to be able to see them
           # @sg-ignore Need to add nil check here
           block.infer(api_map, block_pin, locals)
+        end
+
+        protected
+
+        # @sg-ignore Fix "Not enough arguments to Module#protected"
+        def equality_fields
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+          super + [arguments, block]
         end
       end
     end

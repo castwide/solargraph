@@ -256,14 +256,11 @@ module Solargraph
 
       # @return [String]
       def parameters_to_rbs
-        rbs_generics + '(' + parameters.map { |param|
-          param.to_rbs
-          # @sg-ignore Need to add nil check here
-        }.join(', ') + ') ' + (block.nil? ? '' : '{ ' + block.to_rbs + ' } ')
+        "#{rbs_generics}(#{parameters.map(&:to_rbs).join(', ')}) #{"{ #{block.to_rbs} } " unless block.nil?}"
       end
 
       def to_rbs
-        parameters_to_rbs + '-> ' + (return_type&.to_rbs || 'untyped')
+        "#{parameters_to_rbs}-> #{return_type&.to_rbs || 'untyped'}"
       end
 
       def block?

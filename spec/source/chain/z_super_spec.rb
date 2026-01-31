@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::ZSuper do
   it 'resolves super' do
-    head = Solargraph::Source::Chain::ZSuper.new('super')
+    head = described_class.new('super')
     npin = Solargraph::Pin::Namespace.new(name: 'Substring')
     scpin = Solargraph::Pin::Reference::Superclass.new(closure: npin, name: 'String')
     mpin = Solargraph::Pin::Method.new(closure: npin, name: 'upcase', scope: :instance, visibility: :public)

@@ -21,10 +21,6 @@ module Solargraph
       @character = character
     end
 
-    protected def equality_fields
-      [line, character]
-    end
-
     # @param other [Position]
     def <=> other
       return nil unless other.is_a?(Position)
@@ -70,7 +66,7 @@ module Solargraph
         last_line_index = newline_index
       end
 
-      last_line_index += 1 if position.line > 0
+      last_line_index += 1 if position.line.positive?
       # @sg-ignore flow sensitive typing should be able to handle redefinition
       last_line_index + position.character
     end
@@ -107,7 +103,7 @@ module Solargraph
         # @sg-ignore flow sensitive typing should be able to handle redefinition
         character = offset - newline_index - 1
       end
-      character = 0 if character.nil? and (cursor - offset).between?(0, 1)
+      character = 0 if character.nil? && (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
       # @sg-ignore flow sensitive typing needs to handle 'raise if'
       Position.new(line, character)
@@ -129,6 +125,12 @@ module Solargraph
     def == other
       return false unless other.is_a?(Position)
       line == other.line and character == other.character
+    end
+
+    protected
+
+    def equality_fields
+      [line, character]
     end
   end
 end

@@ -66,7 +66,7 @@ module Solargraph
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(code, l1, c1)
       e = Solargraph::Position.line_char_to_offset(code, l2, c2)
-      code[b..e - 1]
+      code[b..(e - 1)]
     end
 
     # Get the nearest node that contains the specified index.
@@ -196,7 +196,7 @@ module Solargraph
       b = Position.line_char_to_offset(code, rng.start.line, rng.start.column)
       # @sg-ignore Need to add nil check here
       e = Position.line_char_to_offset(code, rng.ending.line, rng.ending.column)
-      frag = code[b..e - 1].to_s
+      frag = code[b..(e - 1)].to_s
       frag.strip.gsub(/,$/, '')
     end
 
@@ -293,7 +293,7 @@ module Solargraph
         # @sg-ignore Translate to something flow sensitive typing understands
         range = Range.from_node(top)
         # @sg-ignore Need to add nil check here
-        if (result.empty? || range.start.line > result.last.start.line) && !(range.ending.line - range.start.line < 2)
+        if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
           result.push range
         end
       end
@@ -321,7 +321,7 @@ module Solargraph
           here = p.index(/[^ \t]/)
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           skip = here if skip.nil? || here < skip
-          ctxt.concat p[skip..-1]
+          ctxt.concat p[skip..]
         end
         started = true
       end
@@ -353,7 +353,7 @@ module Solargraph
       return [] unless synchronized?
       result = []
       grouped = []
-      comments.keys.each do |l|
+      comments.each_key do |l|
         if grouped.empty? || l == grouped.last + 1
           grouped.push l
         else

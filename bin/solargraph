@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 # turn off warning diagnostics from Ruby
 $VERBOSE = nil

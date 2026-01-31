@@ -10,7 +10,7 @@ describe Solargraph::Diagnostics::Rubocop do
       foo = Foo.new
     ), 'file.rb')
 
-    rubocop = Solargraph::Diagnostics::Rubocop.new
+    rubocop = described_class.new
     result = rubocop.diagnose(source, nil)
     expect(result).to be_a(Array)
   end
@@ -28,13 +28,13 @@ describe Solargraph::Diagnostics::Rubocop do
       YAML
       example.run
     ensure
-      File.delete(config_file) if File.exist?(config_file)
+      FileUtils.rm_f(config_file)
     end
 
     it 'handles validation errors' do
       file = File.realpath(File.join(fixture_path, 'app.rb'))
       source = Solargraph::Source.load(file)
-      rubocop = Solargraph::Diagnostics::Rubocop.new
+      rubocop = described_class.new
       expect do
         rubocop.diagnose(source, nil)
       end.to raise_error(Solargraph::DiagnosticsError)
@@ -44,7 +44,7 @@ describe Solargraph::Diagnostics::Rubocop do
   it 'calculates ranges' do
     file = File.realpath(File.join('spec', 'fixtures', 'rubocop-unused-variable-error', 'app.rb'))
     source = Solargraph::Source.load(file)
-    rubocop = Solargraph::Diagnostics::Rubocop.new
+    rubocop = described_class.new
     results = rubocop.diagnose(source, nil)
 
     expect(results).to be_one

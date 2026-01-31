@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::ApiMap::SourceToYard do
   it 'rakes sources' do
     source = Solargraph::SourceMap.load_string(%(
@@ -9,7 +11,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     expect(object.code_object_paths.length).to eq(3)
     expect(object.code_object_paths).to include('Foo')
@@ -30,7 +32,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     class_object = object.code_object_at('Foo')
     expect(class_object.docstring).to eq('My foo class 描述')
@@ -51,7 +53,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     module_object = object.code_object_at('Foo')
     class_object = object.code_object_at('Baz')
@@ -68,7 +70,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     module_object = object.code_object_at('Foo')
     class_object = object.code_object_at('Baz')
@@ -84,7 +86,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     expect(object.code_object_at('Foo#bar')).not_to be_nil
     expect(object.code_object_at('Foo#bar=')).to be_nil
@@ -102,7 +104,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     method_object = object.code_object_at('Foo#bar')
     expect(method_object.parameters.length).to eq(2)
@@ -118,7 +120,7 @@ describe Solargraph::ApiMap::SourceToYard do
       end
     ))
     object = Object.new
-    object.extend Solargraph::ApiMap::SourceToYard
+    object.extend described_class
     object.rake_yard Solargraph::ApiMap::Store.new(source.pins)
     method_object = object.code_object_at('Foo#bar')
     expect(method_object.parameters.length).to eq(2)

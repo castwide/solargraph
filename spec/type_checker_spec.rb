@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'timeout'
 
 describe Solargraph::TypeChecker do
   it 'does not raise errors checking unparsed sources' do
     expect do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         foo{
       ))
       checker.problems
@@ -11,7 +13,7 @@ describe Solargraph::TypeChecker do
   end
 
   it 'ignores tagged problems' do
-    checker = Solargraph::TypeChecker.load_string(%(
+    checker = described_class.load_string(%(
       NotAClass
 
       # @sg-ignore
@@ -21,7 +23,7 @@ describe Solargraph::TypeChecker do
   end
 
   it 'uses caching in Solargraph::Chain to handle a degenerate case' do
-    checker = Solargraph::TypeChecker.load_string(%(
+    checker = described_class.load_string(%(
       def documentation
         @documentation = "a"
         @documentation += "b"
