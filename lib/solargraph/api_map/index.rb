@@ -164,10 +164,6 @@ module Solargraph
               #   received String, Symbol - delete_tags is ok with a
               #   _ToS, but we should fix anyway
               pin.docstring.delete_tags tag
-              # @sg-ignore Wrong argument type for
-              #   YARD::Docstring#delete_tags: name expected String,
-              #   received String, Symbol - delete_tags is ok with a
-              #   _ToS, but we should fix anyway
               new_pin&.docstring&.delete_tags tag
             end
             ovr.tags.each do |tag|

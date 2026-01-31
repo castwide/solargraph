@@ -83,11 +83,12 @@ module Solargraph
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
+      # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
-      # @todo 5: flow sensitive typing needs better handling of ||= on lvars
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
+      # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
@@ -98,7 +99,6 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 2: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

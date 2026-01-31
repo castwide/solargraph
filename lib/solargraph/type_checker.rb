@@ -807,10 +807,8 @@ module Solargraph
     end
 
     # @param pin [Pin::Method]
-    # @sg-ignore need boolish support for ? methods
     def abstract? pin
       pin.docstring.has_tag?('abstract') ||
-        # @sg-ignore of low sensitive typing needs to handle ivars
         pin.closure&.docstring&.has_tag?('abstract')
     end
 

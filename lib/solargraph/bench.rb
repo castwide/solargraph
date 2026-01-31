@@ -29,6 +29,7 @@ module Solargraph
                                             .to_set
     end
 
+    # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
     # @return [Hash{String => SourceMap}]
     def source_map_hash
       # @todo Work around #to_h bug in current Ruby head (3.5) with #map#to_h

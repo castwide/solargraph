@@ -63,7 +63,6 @@ module Solargraph
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
             [stack.first].compact
           end
-          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
           return [] if pins.empty?
