@@ -115,7 +115,7 @@ describe Solargraph::DocMap do
 
   context 'with require as bundle/require' do
     it 'imports all gems when bundler/require used' do
-      doc_map_with_bundler_require = described_class.new(['bundler/require'], workspace, out: nil)
+      doc_map_with_bundler_require = described_class.new(['bundler/require'], workspace, out: $stderr)
       if doc_map_with_bundler_require.pins.length <= plain_doc_map.pins.length
         doc_map_with_bundler_require.cache_doc_map_gems!(nil)
       end
