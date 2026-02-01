@@ -80,15 +80,15 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     context 'with gem that exists in our bundle' do
-      let(:gem_name) { 'undercover' }
+      let(:gem_name) { 'simplecov' }
 
       it 'finds dependencies' do
-        expect(deps.map(&:name)).to include('ast')
+        expect(deps.map(&:name)).to include('simplecov-html')
       end
     end
 
     context 'with gem does not exist in our bundle' do
-      let(:gem_name) { 'activemodel' }
+      let(:gem_name) { 'functional-ruby' }
 
       it 'gives a useful message' do
         dep_names = nil
