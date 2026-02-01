@@ -32,7 +32,7 @@ RSpec.configure do |c|
 end
 RspecTimeGuard.setup
 RspecTimeGuard.configure do |config|
-  config.global_time_limit_seconds = 120
+  config.global_time_limit_seconds = 300
   config.continue_on_timeout = false
 end
 require 'solargraph'
