@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'fileutils'
 require 'tmpdir'
 require 'rubygems/commands/install_command'
@@ -8,22 +9,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
   subject(:specs) { gemspecs.resolve_require(require) }
 
   let(:gemspecs) { described_class.new(dir_path) }
-
-  def find_or_install gem_name, version
-    Gem::Specification.find_by_name(gem_name, version)
-  rescue Gem::LoadError
-    install_gem(gem_name, version)
-  end
-
-  def install_gem gem_name, version
-    Bundler.with_unbundled_env do
-      cmd = Gem::Commands::InstallCommand.new
-      cmd.handle_options [gem_name, '-v', version]
-      cmd.execute
-    rescue Gem::SystemExitException => e
-      raise unless e.exit_code == 0
-    end
-  end
 
   context 'with local bundle' do
     let(:dir_path) { File.realpath(Dir.pwd) }
@@ -170,16 +155,20 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
     def add_bundle
-      # write out Gemfile
-      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-        source 'https://rubygems.org'
-        gem 'backport'
-      GEMFILE
-      # run bundle install
-      output, status = Solargraph.with_clean_env do
-        Open3.capture2e('bundle install --verbose', chdir: dir_path)
+      time = Benchmark.measure do
+        # write out Gemfile
+        File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+          source 'https://rubygems.org'
+          gem 'backport'
+        GEMFILE
+
+        # run bundle install
+        output, status = Solargraph.with_clean_env do
+          Open3.capture2e('bundle install --verbose', chdir: dir_path)
+        end
+        raise "Failure installing bundle: #{output}" unless status.success?
       end
-      raise "Failure installing bundle: #{output}" unless status.success?
+      STDERR.puts("Added bundle in #{dir_path} in #{time.real.round(2)} seconds")
       # ensure Gemfile.lock exists
       return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
       raise "Gemfile.lock not found after bundle install in #{dir_path}"
@@ -240,6 +229,22 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     context 'with a Gemfile and a gem preference' do
       # find_or_install helper doesn't seem to work on older versions
       if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+        def find_or_install gem_name, version
+          Gem::Specification.find_by_name(gem_name, version)
+        rescue Gem::LoadError
+          install_gem(gem_name, version)
+        end
+
+        def install_gem gem_name, version
+          Bundler.with_unbundled_env do
+            cmd = Gem::Commands::InstallCommand.new
+            cmd.handle_options [gem_name, '-v', version]
+            cmd.execute
+          rescue Gem::SystemExitException => e
+            raise unless e.exit_code == 0
+          end
+        end
+
         before do
           add_bundle
           find_or_install('backport', '1.0.0')
