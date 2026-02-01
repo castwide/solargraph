@@ -15,22 +15,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     install_gem(gem_name, version)
   end
 
-  def add_bundle
-    # write out Gemfile
-    File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-      source 'https://rubygems.org'
-      gem 'backport'
-    GEMFILE
-    # run bundle install
-    output, status = Solargraph.with_clean_env do
-      Open3.capture2e('bundle install --verbose', chdir: dir_path)
-    end
-    raise "Failure installing bundle: #{output}" unless status.success?
-    # ensure Gemfile.lock exists
-    return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
-    raise "Gemfile.lock not found after bundle install in #{dir_path}"
-  end
-
   def install_gem gem_name, version
     Bundler.with_unbundled_env do
       cmd = Gem::Commands::InstallCommand.new
@@ -184,6 +168,22 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
   context 'with external bundle' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
+
+    def add_bundle
+      # write out Gemfile
+      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+        source 'https://rubygems.org'
+        gem 'backport'
+      GEMFILE
+      # run bundle install
+      output, status = Solargraph.with_clean_env do
+        Open3.capture2e('bundle install --verbose', chdir: dir_path)
+      end
+      raise "Failure installing bundle: #{output}" unless status.success?
+      # ensure Gemfile.lock exists
+      return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
+      raise "Gemfile.lock not found after bundle install in #{dir_path}"
+    end
 
     context 'with no actual bundle' do
       let(:require) { 'bundler/require' }
