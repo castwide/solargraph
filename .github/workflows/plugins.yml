@@ -84,18 +84,18 @@ jobs:
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
-        # WORKERS=1 # 4m35s
-        # WORKERS=2 # 4m35s
-        # WORKERS=3 # 4m43s
-        # WORKERS=$(nproc --all) - (5m28s-47s)=4m41s, 4m45s, 4m46
-        # WORKERS=5 # 4m31s
-        # WORKERS=6 # 4m49s
-        # WORKERS=7 # 4m38s
+        # WORKERS=1
+        # WORKERS=2
+        # WORKERS=3
+        # WORKERS=$(nproc --all)
+        # WORKERS=5
+        # WORKERS=6
+        # WORKERS=7
         WORKERS=8
         export WORKERS
-        # SIMPLECOV_DISABLED=true # TODO Reenable - saves maybe 30 seconds
-        # export SIMPLECOV_DISABLED
-        bundle exec rake full_spec
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+        bundle exec prspec spec/
   rails_typechecking:
     runs-on: ubuntu-latest
 
