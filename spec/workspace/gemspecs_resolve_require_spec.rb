@@ -204,7 +204,13 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile and deep require into a possibly-core gem' do
-      before { add_bundle }
+      before :context do
+        # this tells parallel rspec to run this serially in the same
+        # worker, so we don't end up doing the bundle installs in
+        # parallel
+
+        add_bundle
+      end
 
       let(:require) { 'bundler/gem_tasks' }
 
@@ -214,7 +220,13 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile and deep require into a gem' do
-      before { add_bundle }
+      before :context do
+        # this tells parallel rspec to run this serially in the same
+        # worker, so we don't end up doing the bundle installs in
+        # parallel
+
+        add_bundle
+      end
 
       let(:require) { 'rspec/mocks' }
 
@@ -224,7 +236,13 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile but an unknown gem' do
-      before { add_bundle }
+      before :context do
+        # this tells parallel rspec to run this serially in the same
+        # worker, so we don't end up doing the bundle installs in
+        # parallel
+
+        add_bundle
+      end
 
       let(:require) { 'unknown_gemlaksdflkdf' }
 
