@@ -164,7 +164,7 @@ describe Solargraph::Workspace do
 
       workspace.cache_all_for_workspace!(nil, rebuild: false)
 
-      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: $stderr)
+      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
     end
   end
 end
