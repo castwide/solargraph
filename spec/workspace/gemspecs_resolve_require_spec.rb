@@ -168,7 +168,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         end
         raise "Failure installing bundle: #{output}" unless status.success?
       end
-      STDERR.puts("Added bundle in #{dir_path} in #{time.real.round(2)} seconds")
+      STDERR.puts("Added bundle in #{dir_path} in #{time.real.round(2)} seconds in pid #{Process.pid}")
       # ensure Gemfile.lock exists
       return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
       raise "Gemfile.lock not found after bundle install in #{dir_path}"
