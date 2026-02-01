@@ -313,38 +313,35 @@ jobs:
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
       run: |
-       set -x
-       BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
-       export BUNDLE_PATH
-       cd ../solargraph-rails
-       echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
-       bundle install
-       bundle update --pre rbs
-       RAILS_DIR="$(pwd)/spec/rails7"
-       export RAILS_DIR
-       cd ${RAILS_DIR}
-       bundle install
-       bundle exec --gemfile ../../Gemfile rbs --version
-       bundle exec --gemfile ../../Gemfile rbs collection install
-       cd ../../
-       # bundle exec rbs collection init
-       # bundle exec rbs collection install
+        set -x
+        # Share caches to speed up bundle install
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        cd ../solargraph-rails
+        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
+        bundle install
+        bundle update --pre rbs
+        RAILS_DIR="$(pwd)/spec/rails7"
+        export RAILS_DIR
+        cd ${RAILS_DIR}
+        bundle install
+        bundle exec --gemfile ../../Gemfile rbs --version
+        bundle exec --gemfile ../../Gemfile rbs collection install
+        cd ../../
+        # bundle exec rbs collection init
+        # bundle exec rbs collection install
       env:
         MATRIX_RAILS_VERSION: "7.0"
         MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Run specs
       run: |
-        BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
-        export BUNDLE_PATH
-        cd ../solargraph-rails
-        # Speed up some of the bundle installs we run inside the tests
-        # as well when we're testing different solargraph usage
-        # scenarios. This is already set in the local bundle config by
-        # the setup-ruby action.
+        # Share caches to speed up bundle install
         #
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
+        cd ../solargraph-rails
         bundle exec solargraph --version
         bundle info solargraph
         bundle info rbs
