@@ -181,6 +181,11 @@ module Solargraph
             next
           end
 
+          if name == 'stdlib'
+            workspace.cache_all_stdlibs(out: $stdout, rebuild: options[:rebuild])
+            next
+          end
+
           gemspec = workspace.find_gem(*name.split('='))
           if gemspec.nil?
             warn "Gem '#{name}' not found"

@@ -258,9 +258,13 @@ module Solargraph
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
-      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
+      cache_all_stdlibs(out: out, rebuild: rebuild)
 
       out&.puts 'Documentation cached for core, standard library and gems.'
+    end
+
+    def cache_all_stdlibs out: nil, rebuild: false
+      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
     end
 
     # Synchronize the workspace from the provided updater.
