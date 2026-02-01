@@ -188,7 +188,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         # this tells parallel rspec to run this serially in the same
         # worker, so we don't end up doing the bundle installs in
         # parallel
+      end
 
+      before do
         add_bundle
       end
 
@@ -208,7 +210,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         # this tells parallel rspec to run this serially in the same
         # worker, so we don't end up doing the bundle installs in
         # parallel
+      end
 
+      before do
         add_bundle
       end
 
@@ -224,7 +228,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         # this tells parallel rspec to run this serially in the same
         # worker, so we don't end up doing the bundle installs in
         # parallel
+      end
 
+      before do
         add_bundle
       end
 
@@ -240,7 +246,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
         # this tells parallel rspec to run this serially in the same
         # worker, so we don't end up doing the bundle installs in
         # parallel
+      end
 
+      before do
         add_bundle
       end
 
