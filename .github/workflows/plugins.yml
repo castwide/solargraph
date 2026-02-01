@@ -90,8 +90,11 @@ jobs:
         # WORKERS=$(nproc --all) - (5m28s-47s)=4m41s, 4m45s, 4m46
         # WORKERS=5 # 4m31s
         # WORKERS=6 # 4m49s
-        WORKERS=7
-        export WORKERS
+        WORKERS=7 # 3m39
+        # WORKERS=8
+        # export WORKERS
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
         bundle exec rake full_spec
   rails_typechecking:
     runs-on: ubuntu-latest
