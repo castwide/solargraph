@@ -97,6 +97,7 @@ jobs:
         PARALLEL=$(nproc --all)
         export PARALLEL
         echo "Running tests with PARALLEL=$PARALLEL"
+        cat Gemfile.lock
         bundle exec rake spec
   undercover:
     runs-on: ubuntu-latest
