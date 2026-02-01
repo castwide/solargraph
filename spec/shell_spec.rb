@@ -101,11 +101,12 @@ describe Solargraph::Shell do
       end
 
       it 'caches core without erroring out' do
-        capture_both do
-          shell.uncache('core')
-        end
+        allow(Solargraph::PinCache).to receive(:core?).and_return(false)
+        allow(Solargraph::PinCache).to receive(:cache_core)
 
         expect { shell.cache('core') }.not_to raise_error
+
+        expect(Solargraph::PinCache).to have_received(:cache_core)
       end
 
       it 'gives sensible error for gem that does not exist' do
