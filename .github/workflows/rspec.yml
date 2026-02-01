@@ -121,6 +121,14 @@ jobs:
       run: bundle exec rake spec
     - name: Check PR coverage
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
         bundle exec rake undercover

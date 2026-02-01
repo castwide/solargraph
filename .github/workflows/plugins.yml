@@ -73,6 +73,14 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure specs still run
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
         bundle exec rake spec
@@ -134,6 +142,14 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure specs still run
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
         bundle exec rake spec
@@ -191,6 +207,14 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure specs still run
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
         bundle exec rake spec
@@ -253,6 +277,14 @@ jobs:
         bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         cd ../solargraph-rspec
         PARALLEL=$(nproc --all)
         export PARALLEL
@@ -305,6 +337,14 @@ jobs:
         BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
         export BUNDLE_PATH
         cd ../solargraph-rails
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config path $PWD/vendor/bundle
         bundle exec solargraph --version
         bundle info solargraph
         bundle info rbs
