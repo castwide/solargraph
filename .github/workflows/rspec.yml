@@ -83,7 +83,10 @@ jobs:
       run: |
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
-      run: bundle exec rbs collection update
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Run tests
       run: |
         # Speed up some of the bundle installs we run inside the tests
@@ -97,9 +100,7 @@ jobs:
         PARALLEL=$(nproc --all)
         export PARALLEL
         echo "Running tests with PARALLEL=$PARALLEL"
-        # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
-        bundle exec rake spec
+        bundle exec rake full_spec
   undercover:
     runs-on: ubuntu-latest
     steps:
@@ -119,8 +120,14 @@ jobs:
     - name: Update types
       run: |
         bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Run tests
-      run: bundle exec rake spec
+      run: |
+        PARALLEL=$(nproc --all)
+        export PARALLEL
+        echo "Running tests with PARALLEL=$PARALLEL"
+        bundle exec rake full_spec
     - name: Check PR coverage
       run: |
         # Speed up some of the bundle installs we run inside the tests

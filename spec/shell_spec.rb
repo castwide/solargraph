@@ -40,7 +40,7 @@ describe Solargraph::Shell do
     it 'uncaches core without erroring out' do
       allow(Solargraph::PinCache).to receive(:uncache)
 
-      output = capture_stdout do
+      capture_stdout do
         shell.uncache('core')
       end
 

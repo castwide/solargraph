@@ -84,10 +84,11 @@ jobs:
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
+        PARALLEL=3
         # PARALLEL=$(nproc --all) - (5m28s-47s)=4m41s
-        PARALLEL=5
+        # PARALLEL=5 # 4m45s
         export PARALLEL
-        bundle exec rake spec
+        bundle exec rake full_spec
   rails_typechecking:
     runs-on: ubuntu-latest
 
@@ -143,7 +144,10 @@ jobs:
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
     - name: Install gem types
-      run: bundle exec rbs collection update
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Ensure specs still run
       run: |
         # Speed up some of the bundle installs we run inside the tests
@@ -156,9 +160,7 @@ jobs:
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
-        # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
-        bundle exec rake spec
+        bundle exec rake full_spec
   rspec_typechecking:
     runs-on: ubuntu-latest
 
@@ -210,7 +212,10 @@ jobs:
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Install gem types
-      run: bundle exec rbs collection update
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Ensure specs still run
       run: |
         # Speed up some of the bundle installs we run inside the tests
@@ -223,9 +228,7 @@ jobs:
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
-        # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
-        bundle exec rake spec
+        bundle exec rake full_spec
   run_solargraph_rspec_specs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
     runs-on: ubuntu-latest
