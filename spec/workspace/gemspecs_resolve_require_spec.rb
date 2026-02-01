@@ -155,6 +155,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
     def add_bundle
+      output = nil
       time = Benchmark.measure do
         # write out Gemfile
         File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
