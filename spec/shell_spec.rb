@@ -18,19 +18,33 @@ describe Solargraph::Shell do
 
   describe 'uncache' do
     it 'uncaches without erroring out' do
-      output = capture_stdout do
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      capture_stdout do
         shell.uncache('backport')
       end
 
-      expect(output).to include('Clearing pin cache in')
+      expect(Solargraph::PinCache).to have_received(:uncache).twice
     end
 
     it 'uncaches stdlib without erroring out' do
-      expect { shell.uncache('stdlib') }.not_to raise_error
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      capture_stdout do
+        shell.uncache('stdlib')
+      end
+
+      expect(Solargraph::PinCache).to have_received(:uncache)
     end
 
     it 'uncaches core without erroring out' do
-      expect { shell.uncache('core') }.not_to raise_error
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      output = capture_stdout do
+        shell.uncache('core')
+      end
+
+      expect(Solargraph::PinCache).to have_received(:uncache)
     end
   end
 
