@@ -70,7 +70,10 @@ jobs:
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Install gem types
-      run: bundle exec rbs collection update
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        time bundle exec solargraph gems core stdlib default
     - name: Ensure specs still run
       run: |
         # Speed up some of the bundle installs we run inside the tests
@@ -81,10 +84,9 @@ jobs:
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
-        PARALLEL=$(nproc --all)
+        # PARALLEL=$(nproc --all) - (5m28s-47s)=4m41s
+        PARALLEL=5
         export PARALLEL
-        # avoid trying to do this in parallel during the specs
-        time bundle exec solargraph gems core stdlib default
         bundle exec rake spec
   rails_typechecking:
     runs-on: ubuntu-latest
