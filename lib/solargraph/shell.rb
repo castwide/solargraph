@@ -158,6 +158,15 @@ module Solargraph
         The 'core' argument can be used to cache the type
         documentation for the core Ruby libraries.
 
+        The literal 'stdlib' argument will cache all standard
+        libraries available.
+
+        'bundler/require' as a gem name will cache all auto-required
+        gems.
+
+        'default' will cache all gems used by Solargraph absent
+        specific requires in the files being looked at.
+
         If the library is already cached, it will be rebuilt if the
         --rebuild option is set.
 
@@ -183,6 +192,20 @@ module Solargraph
 
           if name == 'stdlib'
             workspace.cache_all_stdlibs(out: $stdout, rebuild: options[:rebuild])
+            next
+          end
+
+          if name == 'default'
+            doc_map = Solargraph::DocMap.new([], workspace)
+            doc_map.cache_doc_map_gems! $stdout
+            next
+          end
+
+          if name == 'bundler/require'
+            gemspecs = workspace.resolve_require(name)
+            gemspecs&.each do |gs|
+              workspace.cache_gem(gs, rebuild: options[:rebuild], out: $stdout)
+            end
             next
           end
 
