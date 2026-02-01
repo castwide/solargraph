@@ -193,6 +193,7 @@ RSpec/EmptyHook:
   Exclude:
     - 'spec/gem_pins_spec.rb'
     - 'spec/library_spec.rb'
+    - 'spec/logging_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/ExpectActual:
