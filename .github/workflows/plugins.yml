@@ -88,7 +88,8 @@ jobs:
         # WORKERS=2 # 4m35s
         # WORKERS=3 # 4m43s
         # WORKERS=$(nproc --all) - (5m28s-47s)=4m41s, 4m45s, 4m46
-        WORKERS=5
+        # WORKERS=5 # 4m31s
+        WORKERS=6
         export WORKERS
         bundle exec rake full_spec
   rails_typechecking:
