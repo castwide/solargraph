@@ -165,7 +165,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
         # run bundle install
         output, status = Solargraph.with_clean_env do
-          Open3.capture2e('bundle install --verbose', chdir: dir_path)
+          Open3.capture2e('bundle install --verbose --local', chdir: dir_path)
         end
         raise "Failure installing bundle: #{output}" unless status.success?
       end
