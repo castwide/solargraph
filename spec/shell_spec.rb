@@ -6,33 +6,32 @@ require 'open3'
 describe Solargraph::Shell do
   let(:shell) { described_class.new }
 
-  let(:temp_dir) { Dir.mktmpdir }
-
-  before do
-    File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
-      file.puts "source 'https://rubygems.org'"
-      file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
-    end
-    output, status = Open3.capture2e('bundle install', chdir: temp_dir)
-    raise "Failure installing bundle: #{output}" unless status.success?
-  end
-
-  # @type cmd [Array<String>]
-  # @return [String]
-  def bundle_exec(*cmd)
-    # run the command in the temporary directory with bundle exec
-    output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
-    expect(status.success?).to be(true), "Command failed: #{output}"
-    output
-  end
-
-  after do
-    # remove the temporary directory after the tests
-    FileUtils.rm_rf(temp_dir)
-  end
-
   describe '--version' do
+    let(:temp_dir) { Dir.mktmpdir }
     let(:output) { bundle_exec('solargraph', '--version') }
+
+    before do
+      File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
+        file.puts "source 'https://rubygems.org'"
+        file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
+      end
+      output, status = Open3.capture2e('bundle install', chdir: temp_dir)
+      raise "Failure installing bundle: #{output}" unless status.success?
+    end
+
+    # @type cmd [Array<String>]
+    # @return [String]
+    def bundle_exec(*cmd)
+      # run the command in the temporary directory with bundle exec
+      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
+      expect(status.success?).to be(true), "Command failed: #{output}"
+      output
+    end
+
+    after do
+      # remove the temporary directory after the tests
+      FileUtils.rm_rf(temp_dir)
+    end
 
     it 'returns output' do
       expect(output).not_to be_empty
