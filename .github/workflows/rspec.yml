@@ -86,9 +86,13 @@ jobs:
       run: bundle exec rbs collection update
     - name: Run tests
       run: |
-        # use this for some of the bundle installs we run inside the
-        # tests as well when we're testing different solargraph usage
-        # scenarios
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
