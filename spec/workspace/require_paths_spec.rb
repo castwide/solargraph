@@ -28,7 +28,11 @@ describe Solargraph::Workspace::RequirePaths do
   context 'with config and no gemspec' do
     let(:dir_path) { File.realpath(Dir.pwd) }
 
-    let(:config) { instance_double(Solargraph::Workspace::Config, require_paths: [], allow?: true) }
+    let(:config) do
+      instance_double(Solargraph::Workspace::Config,
+                      require_paths: [],
+                      allow?: false)
+    end
 
     it 'includes the lib directory' do
       expect(paths).to include(File.join(dir_path, 'lib'))
