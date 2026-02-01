@@ -77,6 +77,7 @@ module Solargraph
                'return unless Gem::Specification === spec; ' \
                'puts({name: spec.name, paths: spec.require_paths}.to_json)']
         o, e, s = Open3.capture3(*cmd)
+        STDERR.puts("Evaluating gemspec in #{base}")
         if s.success?
           begin
             hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
