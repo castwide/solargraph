@@ -86,6 +86,10 @@ jobs:
       run: bundle exec rbs collection update
     - name: Run tests
       run: |
+        # use this for some of the bundle installs we run inside the
+        # tests as well when we're testing different solargraph usage
+        # scenarios
+        bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
         echo "Running tests with PARALLEL=$PARALLEL"
