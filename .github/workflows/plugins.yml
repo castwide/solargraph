@@ -83,6 +83,8 @@ jobs:
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         bundle exec rake spec
   rails_typechecking:
     runs-on: ubuntu-latest
@@ -152,6 +154,8 @@ jobs:
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         bundle exec rake spec
   rspec_typechecking:
     runs-on: ubuntu-latest
@@ -217,6 +221,8 @@ jobs:
         bundle config path $PWD/vendor/bundle
         PARALLEL=$(nproc --all)
         export PARALLEL
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         bundle exec rake spec
   run_solargraph_rspec_specs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
@@ -288,6 +294,8 @@ jobs:
         cd ../solargraph-rspec
         PARALLEL=$(nproc --all)
         export PARALLEL
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         bundle exec appraisal rspec --format progress
 
   run_solargraph_rails_specs:
@@ -348,6 +356,8 @@ jobs:
         bundle info yard
         PARALLEL=$(nproc --all)
         export PARALLEL
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
         MATRIX_RAILS_VERSION: "7.0"

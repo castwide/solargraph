@@ -263,6 +263,10 @@ module Solargraph
       out&.puts 'Documentation cached for core, standard library and gems.'
     end
 
+    # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
+    # @return [void]
     def cache_all_stdlibs out: nil, rebuild: false
       pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
     end
