@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
+  before :context do
+    @temp_file_url = "file:///#{Dir.mktmpdir}/file.rb"
+  end
+
   let(:temp_file_url) do
-    "file:///#{Dir.mktmpdir}/file.rb"
+    @temp_file_url
   end
 
   it 'renames a symbol' do
