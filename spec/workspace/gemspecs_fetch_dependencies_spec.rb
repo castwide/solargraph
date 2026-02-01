@@ -57,6 +57,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     before do
+      output = nil
       time = Benchmark.measure do
         # write out Gemfile
         File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
@@ -66,11 +67,11 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
 
         # run bundle install
         output, status = Solargraph.with_clean_env do
-          Open3.capture2e('bundle install --verbose', chdir: dir_path)
+          Open3.capture2e('bundle install --verbose --local || bundle install --verbose', chdir: dir_path)
         end
         raise "Failure installing bundle: #{output}" unless status.success?
       end
-      STDERR.puts("Added bundle in #{dir_path} in #{time.real.round(2)} seconds in pid #{Process.pid}")
+      STDERR.puts("Added bundle in #{dir_path} gin #{time.real.round(2)} seconds in pid #{Process.pid} - output: \n\n#{output}\n\n")
 
       # ensure Gemfile.lock exists
       unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
