@@ -184,7 +184,13 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile and Bundler.require' do
-      before { add_bundle }
+      before :context do
+        # this tells parallel rspec to run this serially in the same
+        # worker, so we don't end up doing the bundle installs in
+        # parallel
+
+        add_bundle
+      end
 
       let(:require) { 'bundler/require' }
 
