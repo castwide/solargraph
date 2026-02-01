@@ -71,7 +71,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
         end
         raise "Failure installing bundle: #{output}" unless status.success?
       end
-      STDERR.puts("Added bundle in #{dir_path} gin #{time.real.round(2)} seconds in pid #{Process.pid} - output: \n\n#{output}\n\n")
+      STDERR.puts("Added #{gem_name} bundle in #{dir_path} gin #{time.real.round(2)} seconds in pid #{Process.pid} - output: \n\n#{output}\n\n")
 
       # ensure Gemfile.lock exists
       unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
@@ -88,12 +88,12 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     context 'with gem does not exist in our bundle' do
-      let(:gem_name) { 'activerecord' }
+      let(:gem_name) { 'activemodel' }
 
       it 'gives a useful message' do
         dep_names = nil
         output = capture_both { dep_names = deps.map(&:name) }
-        expect(output).to include('Please install the gem activerecord')
+        expect(output).to include("Please install the gem #{gem_name}")
       end
     end
   end
