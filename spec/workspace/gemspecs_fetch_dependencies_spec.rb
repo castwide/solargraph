@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'fileutils'
 require 'tmpdir'
 require 'rubygems/commands/install_command'
@@ -56,17 +57,20 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     before do
-      # write out Gemfile
-      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-        source 'https://rubygems.org'
-        gem '#{gem_name}'
-      GEMFILE
+      time = Benchmark.measure do
+        # write out Gemfile
+        File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+          source 'https://rubygems.org'
+          gem '#{gem_name}'
+        GEMFILE
 
-      # run bundle install
-      output, status = Solargraph.with_clean_env do
-        Open3.capture2e('bundle install --verbose', chdir: dir_path)
+        # run bundle install
+        output, status = Solargraph.with_clean_env do
+          Open3.capture2e('bundle install --verbose', chdir: dir_path)
+        end
+        raise "Failure installing bundle: #{output}" unless status.success?
       end
-      raise "Failure installing bundle: #{output}" unless status.success?
+      STDERR.puts("Added bundle in #{dir_path} in #{time.real.round(2)} seconds in pid #{Process.pid}")
 
       # ensure Gemfile.lock exists
       unless File.exist?(File.join(dir_path, 'Gemfile.lock'))
