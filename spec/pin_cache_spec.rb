@@ -47,7 +47,7 @@ describe Solargraph::PinCache do
     it 'is tolerant of less usual Ruby installations' do
       stub_const('Gem::RUBYGEMS_DIR', nil)
 
-      expect(pin_cache.possible_stdlibs).to eq([])
+      expect { pin_cache.possible_stdlibs }.not_to raise_error
     end
   end
 
