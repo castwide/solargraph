@@ -194,6 +194,8 @@ RSpec/EmptyHook:
     - 'spec/gem_pins_spec.rb'
     - 'spec/library_spec.rb'
     - 'spec/logging_spec.rb'
+    - 'spec/pin/method_spec.rb'
+    - 'spec/workspace/gemspecs_resolve_require_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/ExpectActual:

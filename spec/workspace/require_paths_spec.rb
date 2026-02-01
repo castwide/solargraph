@@ -6,12 +6,7 @@ require 'benchmark'
 
 describe Solargraph::Workspace::RequirePaths do
   subject(:paths) do
-    out = nil
-    time = Benchmark.measure do
-      out = described_class.new(dir_path, config).generate
-    end
-    STDERR.puts("Generated require paths in #{dir_path} in #{time.real.round(2)} seconds in pid #{Process.pid}")
-    out
+    described_class.new(dir_path, config).generate
   end
 
   let(:config) { Solargraph::Workspace::Config.new(dir_path) }

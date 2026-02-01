@@ -19,12 +19,7 @@ describe Solargraph::DocMap do
   let(:plain_doc_map) { described_class.new([], workspace, out: nil) }
 
   before do
-    out = nil
-    time = Benchmark.measure do
-      out = doc_map.cache_doc_map_gems!(STDERR) if pre_cache
-    end
-    STDERR.puts("Cached doc map gems for #{requires} in #{time.real.round(2)} seconds in pid #{Process.pid}")
-    out
+    doc_map.cache_doc_map_gems!($stderr) if pre_cache
   end
 
   context 'with a require in solargraph test bundle' do

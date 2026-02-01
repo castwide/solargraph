@@ -155,21 +155,18 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
     def add_bundle
-      output = nil
-      time = Benchmark.measure do
-        # write out Gemfile
-        File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-          source 'https://rubygems.org'
-          gem 'backport'
-        GEMFILE
+      # write out Gemfile
+      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+        source 'https://rubygems.org'
+        gem 'backport'
+      GEMFILE
 
-        # run bundle install
-        output, status = Solargraph.with_clean_env do
-          Open3.capture2e('bundle install --verbose --local || bundle install --verbose', chdir: dir_path)
-        end
-        raise "Failure installing bundle: #{output}" unless status.success?
+      # run bundle install
+      output, status = Solargraph.with_clean_env do
+        Open3.capture2e('bundle install --verbose --local || bundle install --verbose', chdir: dir_path)
       end
-      STDERR.puts("Added backport bundle in #{dir_path} in #{time.real.round(2)} seconds in pid #{Process.pid} - output: \n\n#{output}\n\n")
+      raise "Failure installing bundle: #{output}" unless status.success?
+
       # ensure Gemfile.lock exists
       return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
       raise "Gemfile.lock not found after bundle install in #{dir_path}"
