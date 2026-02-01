@@ -191,6 +191,7 @@ RSpec/DescribeClass:
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/EmptyHook:
   Exclude:
+    - 'spec/gem_pins_spec.rb'
     - 'spec/library_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
