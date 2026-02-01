@@ -252,6 +252,12 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with a Gemfile and a gem preference' do
+      before :context do
+        # this tells parallel rspec to run this serially in the same
+        # worker, so we don't end up doing the bundle installs in
+        # parallel
+      end
+
       # find_or_install helper doesn't seem to work on older versions
       if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
         def find_or_install gem_name, version
