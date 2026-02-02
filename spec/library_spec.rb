@@ -9,6 +9,13 @@ describe Solargraph::Library do
     # need it before
   end
 
+  # Ensure we don't start syncing the entire bundle here in the background'
+  around do |testobj|
+    Bundler.with_unbundled_env do
+      testobj.run
+    end
+  end
+
   it 'does not open created files in the workspace' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
