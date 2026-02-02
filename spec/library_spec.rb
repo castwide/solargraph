@@ -7,6 +7,7 @@ describe Solargraph::Library do
   before :context do
     # run these in order so we don't uncache backport right when we
     # need it before
+    Solargraph::Shell.new.gems('backport')
   end
 
   # Ensure we don't start syncing the entire bundle here in the background'
@@ -80,7 +81,6 @@ describe Solargraph::Library do
     end
 
     before do
-      Solargraph::Shell.new.gems('backport')
     end
 
     it 'returns a Completion' do
