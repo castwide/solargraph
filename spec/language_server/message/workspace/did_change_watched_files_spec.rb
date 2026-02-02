@@ -73,9 +73,12 @@ describe Solargraph::LanguageServer::Message::Workspace::DidChangeWatchedFiles d
                                         ]
                                       }
                                     })
+      library = host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
       changed.process
       expect(host.synchronizing?).to be(false)
-      library = host.library_for(uri)
+
       expect(library.path_pins('Foo')).to be_empty
       expect(library.path_pins('FooBar')).not_to be_empty
       expect(changed.error).to be_nil

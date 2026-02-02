@@ -32,6 +32,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'newName' => 'Bar'
                                    }
                                  })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(temp_file_url)
+    allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(2)
   end
@@ -62,6 +65,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'newName' => 'baz'
                                    }
                                  })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(temp_file_url)
+    allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
@@ -91,6 +97,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'newName' => 'baz'
                                    }
                                  })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(temp_file_url)
+    allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
@@ -118,6 +127,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'newName' => 'Nameplace'
                                    }
                                  })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(temp_file_url)
+    allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     changes = rename.result[:changes][temp_file_url]
     expect(changes.length).to eq(3)

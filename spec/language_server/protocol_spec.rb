@@ -113,9 +113,10 @@ describe Protocol do
   end
 
   it 'handles textDocument/documentHighlight' do
+    file_uri = 'file:///file.rb'
     @protocol.request 'textDocument/documentHighlight', {
       'textDocument' => {
-        'uri' => 'file:///file.rb'
+        'uri' => file_uri
       },
       'position' => {
         'line' => 1,

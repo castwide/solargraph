@@ -19,6 +19,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
                                       }
                                     }
                                   })
+    library = host.library_for(file_uri)
+    # keep this from syncing a bunch of bundle gems in background
+    allow(library).to receive(:cacheable_specs).and_return([])
     message.process
     expect(message.result.first[:uri]).to eq(something_uri)
   end
