@@ -84,14 +84,14 @@ jobs:
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
         bundle config path $PWD/vendor/bundle
-        # WORKERS=1
+        WORKERS=1
         # WORKERS=2
         # WORKERS=3
         # WORKERS=$(nproc --all)
         # WORKERS=5
         # WORKERS=6
         # WORKERS=7
-        WORKERS=8
+        # WORKERS=8 # 4m 32s
         export WORKERS
         SIMPLECOV_DISABLED=true
         export SIMPLECOV_DISABLED
