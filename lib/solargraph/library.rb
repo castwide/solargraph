@@ -630,9 +630,9 @@ module Solargraph
         catalog
         sync_catalog
       else
+        STDERR.puts "Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
+        raise "Was caching #{spec.name}" if ['activesupport'].include?(spec.name)
         Thread.new do
-          STDERR.puts "Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
-          raise "Was caching #{spec.name}" if ['activesupport'].include?(spec.name)
           report_cache_progress spec.name, pending
           kwargs = {}
           kwargs[:chdir] = workspace.directory.to_s if workspace.directory && !workspace.directory.empty?
