@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+
 class Protocol
   attr_reader :response
 
@@ -37,6 +39,21 @@ end
 describe Protocol do
   before :context do
     @protocol = described_class.new(Solargraph::LanguageServer::Host.new)
+  end
+
+  # Ensure we don't start caching gems from current bundle in background
+  around do |testobj|
+    original_dir = Dir.pwd
+    temp_dir = Dir.mktmpdir
+    Dir.chdir temp_dir
+    begin
+      Bundler.with_unbundled_env do
+        testobj.run
+      end
+    ensure
+      Dir.chdir(original_dir)
+      FileUtils.remove_entry(temp_dir)
+    end
   end
 
   after :context do
@@ -438,16 +455,17 @@ describe Protocol do
   end
 
   it 'handles textDocument/formatting' do
+    filename = File.realpath('spec/fixtures/formattable.rb', PROJECT_DIRECTORY)
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb')),
-        'text' => File.read('spec/fixtures/formattable.rb'),
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename),
+        'text' => File.read(filename),
         'version' => 1
       }
     }
     @protocol.request 'textDocument/formatting', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb'))
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename)
       }
     }
     response = @protocol.response
@@ -456,16 +474,17 @@ describe Protocol do
   end
 
   it 'can format file without file extension' do
+    filename = File.realpath('spec/fixtures/formattable', PROJECT_DIRECTORY)
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable')),
-        'text' => File.read('spec/fixtures/formattable'),
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename),
+        'text' => File.read(filename),
         'version' => 1
       }
     }
     @protocol.request 'textDocument/formatting', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable'))
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename)
       }
     }
     response = @protocol.response

@@ -51,6 +51,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     	end
 
     ), 1)
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(temp_file_url)
+    allow(library).to receive(:cacheable_specs).and_return([])
     rename = described_class.new(host, {
                                    'id' => 1,
                                    'method' => 'textDocument/rename',
@@ -65,9 +68,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'newName' => 'baz'
                                    }
                                  })
-    # keep this from syncing a bunch of bundle gems in background
-    library = host.library_for(temp_file_url)
-    allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
