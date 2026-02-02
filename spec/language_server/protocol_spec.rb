@@ -47,7 +47,7 @@ describe Protocol do
     temp_dir = Dir.mktmpdir
     Dir.chdir temp_dir
     begin
-      Bundler.with_unbundled_env do
+      Solargraph.with_clean_env do
         testobj.run
       end
     ensure
