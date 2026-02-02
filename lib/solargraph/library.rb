@@ -618,7 +618,7 @@ module Solargraph
 
       spec = cacheable_specs.first
       return end_cache_progress unless spec
-      STDERR.puts "cache_next_gemspec: Caching gemspec #{spec.name} #{spec.version}"
+      raise "cache_next_gemspec: Caching gemspec #{spec.name} #{spec.version}"
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
 
@@ -630,8 +630,8 @@ module Solargraph
         catalog
         sync_catalog
       else
-        logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
+          STDERR.puts "Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
           report_cache_progress spec.name, pending
           kwargs = {}
           kwargs[:chdir] = workspace.directory.to_s if workspace.directory && !workspace.directory.empty?
@@ -712,7 +712,6 @@ module Solargraph
       return if @sync_count.zero?
 
       mutex.synchronize do
-        raise "Just tried to sync in background: #{api_map.uncached_gemspecs} "
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         source_map_hash.each_value { |map| find_external_requires(map) }
         api_map.catalog bench
