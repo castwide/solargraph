@@ -618,6 +618,7 @@ module Solargraph
 
       spec = cacheable_specs.first
       return end_cache_progress unless spec
+      STDERR.puts "cache_next_gemspec: Caching gemspec #{spec.name} #{spec.version}"
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
 
