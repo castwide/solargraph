@@ -7,14 +7,6 @@ describe Solargraph::Library do
   before :context do
     # run these in order so we don't uncache backport right when we
     # need it before
-    Solargraph::Shell.new.gems('backport')
-  end
-
-  # Ensure we don't start syncing the entire bundle here in the background'
-  around do |testobj|
-    Bundler.with_unbundled_env do
-      testobj.run
-    end
   end
 
   it 'does not open created files in the workspace' do
@@ -33,12 +25,12 @@ describe Solargraph::Library do
   it 'returns a Completion' do
     library = described_class.new
     filename = 'file.rb'
+    # keep this from syncing a bunch of bundle gems in background
+    allow(library).to receive(:cacheable_specs).and_return([])
     library.attach Solargraph::Source.load_string(%(
       x = 1
       x
     ), filename, 0)
-    # keep this from syncing a bunch of bundle gems in background
-    allow(library).to receive(:cacheable_specs).and_return([])
     completion = library.completions_at('file.rb', 2, 7)
     expect(completion).to be_a(Solargraph::SourceMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
@@ -229,6 +221,7 @@ describe Solargraph::Library do
     before :context do
       # run these in order so we don't uncache backport right when we
       # need it before
+      Solargraph::Shell.new.gems('backport')
     end
 
     it 'collects references to a new method on a constant from assignment of Class.new' do
