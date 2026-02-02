@@ -712,6 +712,7 @@ module Solargraph
       return if @sync_count.zero?
 
       mutex.synchronize do
+        raise "Just tried to sync in background: #{api_map.uncached_gemspecs} "
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
         source_map_hash.each_value { |map| find_external_requires(map) }
         api_map.catalog bench
