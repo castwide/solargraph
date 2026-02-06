@@ -72,9 +72,6 @@ describe Solargraph::Library do
       # need it before
     end
 
-    before do
-    end
-
     it 'returns a Completion' do
       library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))
