@@ -141,6 +141,7 @@ describe Protocol do
       }
     }
     response = @protocol.response
+    expect(response['result']).not_to be_nil, -> { "Expected result to be non-nil, got #{response.inspect}" }
     # Two references to Foo: the class definition and the Foo.new call
     expect(response['result'].length).to eq(2)
   end
