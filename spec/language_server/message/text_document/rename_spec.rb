@@ -111,6 +111,14 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     library = host.library_for(temp_file_url)
     allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
+    # try for 20 seconds to get the result, since this can be slow on CI
+    timeout = Time.now + 20
+    until rename.result[:changes] && rename.result[:changes][temp_file_url] && !rename.result[:changes][temp_file_url].empty?
+      sleep 0.1
+      if Time.now > timeout
+        raise "Timed out waiting for rename result: #{rename.result.inspect}"
+      end
+    end
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
   end
 
