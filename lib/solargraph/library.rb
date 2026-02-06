@@ -631,7 +631,16 @@ module Solargraph
         sync_catalog
       else
         STDERR.puts "Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
-        raise "Was caching #{spec.name} from #{api_map.uncached_gemspecs.map(&:name)} with config #{workspace.config.raw_data.inspect}" if ['activesupport'].include?(spec.name)
+        if ['activesupport'].include?(spec.name)
+          STDERR.puts "VMB: Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
+          STDERR.puts "VMB: workspace.config.raw_data.inspect: #{workspace.config.raw_data.inspect}"
+          STDERR.puts "VMB: api_map.uncached_gemspecs.map(&:name): #{api_map.uncached_gemspecs.map(&:name)}"
+          STDERR.puts "VMB: workspace.directory: #{workspace.directory}"
+          STDERR.puts "VMB: source_maps: #{source_map_hash.keys}"
+          STDERR.puts "VMB: workspace.require_paths: #{workspace.require_paths}"
+          STDERR.puts "VMB: global_environ: #{workspace.global_environ}"
+          raise "Was caching #{spec.name} from #{api_map.uncached_gemspecs.map(&:name)} with config #{workspace.config.raw_data.inspect}"
+        end
         Thread.new do
           report_cache_progress spec.name, pending
           kwargs = {}
