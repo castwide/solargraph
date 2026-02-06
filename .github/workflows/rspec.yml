@@ -86,7 +86,7 @@ jobs:
       run: |
         bundle exec rbs collection update
         # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
+        bundle exec solargraph gems default core stdlib
     - name: Run tests
       run: |
         # Speed up some of the bundle installs we run inside the tests
