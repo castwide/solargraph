@@ -34,7 +34,7 @@ task :typecheck_alpha do
 end
 
 desc 'Run RSpec tests, starting with the ones that failed last time'
-task spec: %i[spec_failed undercover_no_fail full_spec] do
+task spec: %i[spec_failed full_spec] do
   undercover
 end
 
@@ -90,7 +90,9 @@ desc 'Re-run failed specs.  Add --fail-fast in your .rspec-local file if desired
 task :spec_failed do
   # allow user to check out any persistent failures while looking for
   # more in the whole test suite
-  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec prspec --only-failures || true'
+  #
+  # Note: prspec doesn't support --only-failures, so we have to use rspec directly here.
+  sh 'TEST_COVERAGE_COMMAND_NAME=next-failure bundle exec rspec --only-failures || true'
 end
 
 desc 'Run undercover and show output without failing the task if it fails'
