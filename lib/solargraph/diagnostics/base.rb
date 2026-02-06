@@ -21,6 +21,9 @@ module Solargraph
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
       # @param workspace [Solargraph::Workspace, nil]
+      #   Explicit workspace to use, instead of the current working
+      #   directory's workspace.  Useful in specs for isolation.
+      #
       # @return [Array<Hash>]
       def diagnose source, api_map, workspace: nil
         []
