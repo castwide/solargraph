@@ -99,7 +99,7 @@ jobs:
         bundle config path $PWD/vendor/bundle
         WORKERS=$(nproc --all)
         export WORKERS
-        echo "Running tests with WORKERS=$WORKERS"
+
         bundle exec rake full_spec
   undercover:
     runs-on: ubuntu-latest
@@ -126,7 +126,7 @@ jobs:
       run: |
         WORKERS=$(nproc --all)
         export WORKERS
-        echo "Running tests with WORKERS=$WORKERS"
+
         bundle exec rake full_spec
     - name: Check PR coverage
       run: |
