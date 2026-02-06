@@ -631,7 +631,7 @@ module Solargraph
         sync_catalog
       else
         STDERR.puts "Caching #{spec.name} #{spec.version} in thread #{Thread.current.object_id}"
-        raise "Was caching #{spec.name} from #{api_map.uncached_gemspecs.map(&:name)} with config workspace.config.raw_data.inspect" if ['activesupport'].include?(spec.name)
+        raise "Was caching #{spec.name} from #{api_map.uncached_gemspecs.map(&:name)} with config #{workspace.config.raw_data.inspect}" if ['activesupport'].include?(spec.name)
         Thread.new do
           report_cache_progress spec.name, pending
           kwargs = {}
