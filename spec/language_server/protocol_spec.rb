@@ -143,7 +143,7 @@ describe Protocol do
     response = @protocol.response
     expect(response['result']).not_to be_nil, -> { "Expected result to be non-nil, got #{response.inspect}" }
     # Two references to Foo: the class definition and the Foo.new call
-    expect(response['result'].length).to eq(2)
+    expect(response['result'].length).to eq(2), -> { "Expected 2 highlights for Foo, got #{response['result'].length} in #{response.inspect}" }
   end
 
   it 'handles textDocument/didChange' do
