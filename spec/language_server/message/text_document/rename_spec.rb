@@ -132,6 +132,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     changes = rename.result[:changes][temp_file_url]
+    expect(changes).not_to be_nil, -> { "Expected to find changes for #{temp_file_url} in #{rename.result.inspect}" }
     expect(changes.length).to eq(3)
     expect(changes.first[:range][:start][:character]).to eq(13)
     expect(changes.first[:range][:end][:character]).to eq(22)
