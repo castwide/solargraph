@@ -32,8 +32,8 @@ module Solargraph
           end
           generated_pins = pins
           logger.debug { "Found #{generated_pins.length} pins for stdlib library #{library}" }
+          out&.puts "Caching RBS gem standard library pins for #{library}"
           PinCache.serialize_stdlib_require library, generated_pins
-          out&.puts "Cached stdlib RBS for #{library}"
         end
       end
 
