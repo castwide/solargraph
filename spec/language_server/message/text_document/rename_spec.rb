@@ -69,6 +69,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                    }
                                  })
     rename.process
+    expect(rename.result[:changes][temp_file_url]).not_to be_nil, -> { "Expected to find changes for #{temp_file_url} in #{rename.result.inspect}" }
     expect(rename.result[:changes][temp_file_url].length).to eq(3), -> { "Expected to find 3 changes for #{temp_file_url} in #{rename.result.inspect}" }
   end
 
