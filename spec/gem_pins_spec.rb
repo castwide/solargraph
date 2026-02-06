@@ -15,8 +15,8 @@ describe Solargraph::GemPins do
       # seems like we still have a race condition in pin caching
     end
 
-    let(:path) { 'RBS::EnvironmentLoader#core_root' }
-    let(:requires) { ['rbs'] }
+    let(:path) { 'Hashdiff.diff' }
+    let(:requires) { ['hashdiff'] }
 
     it 'can merge YARD and RBS' do
       expect(pin.source).to eq(:combined), "Expected to merge YARD and RBS for #{path} in #{workspace.directory}"
