@@ -131,6 +131,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
       obj = Namespace::ExampleClass.new
     ), 1)
+    # host.sync_library_map
+    raise "Not open yet" unless host.open? temp_file_url
     rename = described_class.new(host, {
                                    'id' => 1,
                                    'method' => 'textDocument/rename',
