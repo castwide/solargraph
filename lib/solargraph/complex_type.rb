@@ -33,7 +33,7 @@ module Solargraph
     # @param gates [Array<String>]
     #
     # @return [ComplexType]
-    # @param [Array<Object>] gates
+    # @param [Array<String>] gates
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
