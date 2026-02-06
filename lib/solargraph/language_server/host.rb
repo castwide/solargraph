@@ -215,7 +215,6 @@ module Solargraph
               }
             rescue DiagnosticsError => e
               logger.warn "Error in diagnostics: #{e.message}"
-              STDERR.puts "Error in diagnostics: #{e.message}"
               options['diagnostics'] = false
               send_notification 'window/showMessage', {
                 type: LanguageServer::MessageTypes::ERROR,
@@ -591,7 +590,6 @@ module Solargraph
       rescue FileNotFoundError, InvalidOffsetError => e
         Solargraph.logger.warn "[#{e.class}] #{e.message}"
         Solargraph.logger.debug e.backtrace
-        STDERR.puts "[#{e.class}] #{e.message}"
         []
       end
 

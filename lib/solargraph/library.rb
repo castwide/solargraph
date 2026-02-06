@@ -587,7 +587,6 @@ module Solargraph
     def handle_file_not_found filename, error
       raise error unless workspace.source(filename)
       Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
-      STDERR.puts "#{filename} is not cataloged in the ApiMap"
       nil
     end
 

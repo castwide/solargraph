@@ -16,7 +16,6 @@ module Solargraph
             Solargraph.logger.warn "Error processing document: [#{e.class}] #{e.message}"
             # @sg-ignore Need to add nil check here
             Solargraph.logger.debug e.backtrace.join("\n")
-            STDERR.puts "Error processing document: [#{e.class}] #{e.message}"
           end
         end
       end

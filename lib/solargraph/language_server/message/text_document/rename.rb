@@ -8,11 +8,8 @@ module Solargraph
           def process
             locs = host.references_from(params['textDocument']['uri'], params['position']['line'],
                                         params['position']['character'], strip: true)
-            STDERR.puts "Rename: #{locs.length} references in #{params['textDocument']['uri']} at line #{params['position']['line']} char #{params['position']['character']}.  "
             if locs.empty?
               library = host.library_for(params['textDocument']['uri'])
-              STDERR.puts("Total pins length: #{library.pins.length}")
-
             end
             changes = {}
             locs.each do |loc|
