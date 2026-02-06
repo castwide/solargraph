@@ -639,6 +639,7 @@ module Solargraph
           STDERR.puts "VMB: source_maps: #{source_map_hash.keys}"
           STDERR.puts "VMB: workspace.require_paths: #{workspace.require_paths}"
           STDERR.puts "VMB: global_environ: #{workspace.global_environ}"
+          STDERR.puts "VMB: global_environ.requires: #{workspace.global_environ.requires}"
           raise "Was caching #{spec.name} from #{api_map.uncached_gemspecs.map(&:name)} with config #{workspace.config.raw_data.inspect}"
         end
         Thread.new do
