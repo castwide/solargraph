@@ -16,7 +16,7 @@ module Solargraph
       # @param config [Config, nil]
       def initialize directory, config
         @directory = directory
-        @config = config || Config.new(directory)
+        @config = config
       end
 
       # Generate require paths from gemspecs if they exist or assume the default
