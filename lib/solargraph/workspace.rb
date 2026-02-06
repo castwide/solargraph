@@ -23,8 +23,9 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @todo Remove '' and '*' special cases
-    # @param directory [String]
+    # @todo Remove '*' special case
+    # @param directory [String] If empty, no config will be loaded,
+    #   and no RBS collection will be used.  Useful for specs.
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
