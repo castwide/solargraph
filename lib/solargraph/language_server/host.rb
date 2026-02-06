@@ -590,6 +590,7 @@ module Solargraph
       rescue FileNotFoundError, InvalidOffsetError => e
         Solargraph.logger.warn "[#{e.class}] #{e.message}"
         Solargraph.logger.debug e.backtrace
+        STDERR.puts "[#{e.class}] #{e.message}"
         []
       end
 
