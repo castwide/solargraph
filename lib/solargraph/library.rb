@@ -629,6 +629,7 @@ module Solargraph
         catalog
         sync_catalog
       else
+        logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
           report_cache_progress spec.name, pending
           kwargs = {}
