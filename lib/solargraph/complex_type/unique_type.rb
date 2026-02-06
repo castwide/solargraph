@@ -553,8 +553,8 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param gates [Array<String>] The namespaces from which to resolve names
+      #
       # @return [self, ComplexType, UniqueType] The generated ComplexType
-      # @param [Array<Object>] gates
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
