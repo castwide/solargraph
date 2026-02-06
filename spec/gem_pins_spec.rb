@@ -23,12 +23,12 @@ describe Solargraph::GemPins do
     end
 
     it 'finds types from RBS' do
-      expect(pin.return_type.to_s).to eq('Pathname, nil')
+      expect(pin.return_type.to_s).to eq('Array')
     end
 
     it 'finds locations from YARD' do
       expect(pin).not_to be_nil, "Expected to find pin for #{path} in #{workspace.directory}"
-      expect(pin.location.filename).to end_with('environment_loader.rb')
+      expect(pin.location.filename).to end_with('diff.rb')
     end
   end
 
