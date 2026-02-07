@@ -34,6 +34,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'backport', '~> 1.2'
   s.add_dependency 'benchmark', '~> 0.4'
   s.add_dependency 'bundler', '>= 2.0'
+  s.add_dependency 'concurrent-ruby', '~> 1.3', '>= 1.3.5'
   s.add_dependency 'diff-lcs', '~> 1.4'
   s.add_dependency 'jaro_winkler', '~> 1.6', '>= 1.6.1'
   s.add_dependency 'kramdown', '~> 2.3'

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'concurrent-ruby'
 require 'open3'
 require 'json'
 require 'yaml'
@@ -252,10 +253,22 @@ module Solargraph
       # try any possible standard libraries, but be quiet about it
       stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
       specs = (gem_specs + stdlib_specs)
-      specs.each do |spec|
-        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+
+      pool_size = Concurrent.processor_count # roughly your CPU count
+      pool = Concurrent::FixedThreadPool.new(pool_size)
+
+      # Using 'names' as queue, run!
+      futures = specs.map do |spec|
+        Concurrent::Promises.future_on(pool, spec) do
+          pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+        end
       end
-      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      Concurrent::Promises.zip(*futures).value!
+      pool.shutdown
+      pool.wait_for_termination
+
+      out&.puts "Documentation cached for all #{specs.length} gems using #{pool_size} threads."
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
