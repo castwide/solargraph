@@ -36,7 +36,7 @@ class Protocol
   end
 end
 
-describe Protocol do
+describe Protocol, order: :defined do
   before :context do
     @protocol = described_class.new(Solargraph::LanguageServer::Host.new)
   end
@@ -309,6 +309,7 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
+    expect(response['result']).not_to be_nil, -> { "Expected result to be non-nil, got #{response.inspect}" }
     expect(response['result']['signatures']).not_to be_empty
   end
 
