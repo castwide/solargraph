@@ -124,7 +124,7 @@ describe Solargraph::Shell do
       let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
 
       before do
-        allow(Solargraph::ApiMap).to receive(:load).and_return(api_map)
+        allow(Solargraph::ApiMap).to receive(:new).and_return(api_map)
         allow(api_map).to receive(:workspace).and_return(workspace)
       end
 
