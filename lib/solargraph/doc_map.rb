@@ -75,14 +75,23 @@ module Solargraph
           "Caching pins for gems: #{gem_desc}"
         end
       end
+      pool_size = Concurrent.processor_count # roughly your CPU count
+      pool = Concurrent::FixedThreadPool.new(pool_size)
       time = Benchmark.measure do
-        uncached_gemspecs.each do |gemspec|
-          cache(gemspec, rebuild: rebuild, out: out)
+        # Using 'names' as queue, run!
+        futures = uncached_gemspecs.map do |spec|
+          Concurrent::Promises.future_on(pool, spec) do
+            cache(spec, rebuild: rebuild, out: out)
+          end
         end
+
+        Concurrent::Promises.zip(*futures).value!
+        pool.shutdown
+        pool.wait_for_termination
       end
       milliseconds = (time.real * 1000).round
       if (milliseconds > 500) && uncached_gemspecs.any? && out && uncached_gemspecs.any?
-        out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms"
+        out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms in #{pool_size} threads"
       end
       reset_pins!
     end
