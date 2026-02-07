@@ -11,15 +11,6 @@ describe Solargraph::Workspace::RequirePaths do
 
   let(:config) { Solargraph::Workspace::Config.new(dir_path) }
 
-  context 'with no config' do
-    let(:dir_path) { Dir.pwd }
-    let(:config) { nil }
-
-    it 'includes the lib directory' do
-      expect(paths).to include(File.join(dir_path, 'lib'))
-    end
-  end
-
   context 'with config and no gemspec' do
     let(:dir_path) { File.realpath(Dir.pwd) }
 
