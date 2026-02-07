@@ -120,18 +120,20 @@ describe Solargraph::Shell do
 
     context 'with mocked Workspace' do
       let(:workspace) { instance_double(Solargraph::Workspace) }
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
       let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
 
       before do
-        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
+        allow(Solargraph::ApiMap).to receive(:load).and_return(api_map)
+        allow(api_map).to receive(:workspace).and_return(workspace)
       end
 
       it 'caches all without erroring out' do
-        allow(workspace).to receive(:cache_all_for_workspace!)
+        allow(api_map).to receive(:cache_all_for_doc_map!)
 
         _output = capture_both { shell.gems }
 
-        expect(workspace).to have_received(:cache_all_for_workspace!)
+        expect(api_map).to have_received(:cache_all_for_doc_map!)
       end
 
       it 'caches single gem without erroring out' do
