@@ -53,7 +53,7 @@ describe Solargraph::Pin::Base do
 
   it 'deals well with known closure combination issue' do
     # if this fails you might not have an rbs collection installed
-    api_map = Solargraph::ApiMap.new
+    api_map = Solargraph::ApiMap.load ''
 
     spec = Gem::Specification.find_by_name('yard')
     api_map.cache_gem(spec)
