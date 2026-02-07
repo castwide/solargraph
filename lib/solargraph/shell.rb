@@ -241,8 +241,7 @@ module Solargraph
       level = options[:level].to_sym
       rules = workspace.rules(level)
       api_map =
-        Solargraph::ApiMap.load_with_cache(directory,
-                                           out: $stdout,
+        Solargraph::ApiMap.load_with_cache(directory, $stdout,
                                            loose_unions:
                                              !rules.require_all_unique_types_support_call?)
       probcount = 0
@@ -291,7 +290,7 @@ module Solargraph
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
       time = Benchmark.measure do
-        api_map = Solargraph::ApiMap.load_with_cache(directory, out: $stdout)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
         # @sg-ignore flow sensitive typing should be able to handle redefinition
         api_map.pins.each do |pin|
           puts pin_description(pin) if options[:verbose]
@@ -336,7 +335,7 @@ module Solargraph
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
-      api_map = Solargraph::ApiMap.load_with_cache('.', out: $stderr)
+      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
       is_method = path.include?('#') || path.include?('.')
       if is_method && options[:stack]
         scope, ns, meth = if path.include? '#'
