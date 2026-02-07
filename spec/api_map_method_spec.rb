@@ -4,12 +4,13 @@ describe Solargraph::ApiMap do
   let(:api_map) { described_class.new }
   let(:bench) do
     Solargraph::Bench.new(external_requires: external_requires,
-                          workspace: Solargraph::Workspace.new(PROJECT_DIRECTORY))
+                          workspace: Solargraph::Workspace.new)
   end
   let(:external_requires) { [] }
+  let(:catalog) { false }
 
   before do
-    api_map.catalog bench
+    api_map.catalog bench if catalog
   end
 
   describe '#resolve_method_alias' do
@@ -124,10 +125,12 @@ describe Solargraph::ApiMap do
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
-        specs = (api_map.resolve_require('yaml') || []) + (api_map.resolve_require('psych') || [])
-        expect(specs).not_to be_empty
-        specs.each { |spec| api_map.cache_gem(spec) }
-        api_map.catalog bench
+        if method_stack.nil?
+          specs = (api_map.resolve_require('yaml') || []) + (api_map.resolve_require('psych') || [])
+          expect(specs).not_to be_empty
+          specs.each { |spec| api_map.cache_gem(spec) }
+          api_map.catalog bench
+        end
 
         expect(method_stack).not_to be_nil
       end
@@ -135,10 +138,12 @@ describe Solargraph::ApiMap do
 
     context 'with thor' do
       let(:external_requires) { ['thor'] }
+
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
 
       it 'handles finding Thor.desc' do
         specs = api_map.resolve_require('thor')
+
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench
 
@@ -168,6 +173,7 @@ describe Solargraph::ApiMap do
   describe '#uncached_gemspecs' do
     it 'can get uncached gemspecs workspace without a bench' do
       api_map = described_class.new
+
       expect(api_map.uncached_gemspecs).not_to be_nil
     end
   end
