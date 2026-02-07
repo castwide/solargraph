@@ -107,14 +107,11 @@ describe Solargraph::TypeChecker do
       ), 'test.rb')
 
       api_map = Solargraph::ApiMap.new
-      workspace = Solargraph::Workspace.new('.')
-      library = Solargraph::Library.new(workspace)
-      library.map!
-      api_map.catalog library.bench
+      specs = api_map.resolve_require('kramdown-parser-gfm')
+      specs.each { |spec| api_map.cache_gem(spec) }
       bench = Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
       api_map.catalog bench
-      api_map.cache_all_for_doc_map!(out: STDERR) # rubocop:disable Style/GlobalStdStream
-      api_map.catalog bench
+
       checker = described_class.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
     end
