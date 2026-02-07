@@ -180,7 +180,7 @@ module Solargraph
     # @return [void]
     def gems *names
       # print time with ms
-      api_map = Solargraph::ApiMap.load('.')
+      api_map = Solargraph::ApiMap.new
       workspace = api_map.workspace
 
       if names.empty?
