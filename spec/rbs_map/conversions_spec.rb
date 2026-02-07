@@ -98,7 +98,7 @@ describe Solargraph::RbsMap::Conversions do
   context 'with superclass pin for Parser::AST::Node' do
     # Use :context here instead of :all so that parallel_rspec runs these on the same worker and we only have to cache these gems on one worker
     before :context do
-      @api_map = Solargraph::ApiMap.load('.')
+      @api_map = Solargraph::ApiMap.new
       gems = %w[parser ast open3]
       bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
       @api_map.catalog(bench)
@@ -155,7 +155,7 @@ describe Solargraph::RbsMap::Conversions do
   if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('3.9.1')
     context 'with method pin for Open3.capture2e' do
       it 'accepts chdir kwarg' do
-        api_map = Solargraph::ApiMap.load('.')
+        api_map = Solargraph::ApiMap.new
         bench = Solargraph::Bench.new(external_requires: ['open3'])
         api_map.catalog(bench)
 

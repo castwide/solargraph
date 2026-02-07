@@ -5,7 +5,7 @@ describe Solargraph::YardMap::Mapper do
   # would be needed regardless as we are changing the working
   # directory
   before :context do
-    @api_map = Solargraph::ApiMap.load('.')
+    @api_map = Solargraph::ApiMap.new
   end
 
   def pins_with require

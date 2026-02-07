@@ -98,6 +98,8 @@ describe Solargraph::PinCache do
       end
 
       it 'uncaches when asked' do
+        allow(FileUtils).to receive(:rm_rf)
+
         gemspec = Gem::Specification.find_by_name('kramdown')
         expect do
           pin_cache.uncache_gem(gemspec, out: $stderr)
