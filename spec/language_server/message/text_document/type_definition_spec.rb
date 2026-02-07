@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 
 describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
+  around do |testobj|
+    # we need a consistent directory
+    Solargraph::CHDIR_MUTEX.synchronize do
+      testobj.run
+    end
+  end
+
   it 'finds definitions of methods' do
     host = Solargraph::LanguageServer::Host.new
     host.prepare('spec/fixtures/workspace')
