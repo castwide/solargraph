@@ -140,10 +140,10 @@ describe Solargraph::ApiMap do
       let(:external_requires) { ['thor'] }
 
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
+      let(:catalog) { true }
 
       it 'handles finding Thor.desc' do
         specs = api_map.resolve_require('thor')
-
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench
 
