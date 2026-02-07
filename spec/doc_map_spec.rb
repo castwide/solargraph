@@ -36,6 +36,8 @@ describe Solargraph::DocMap do
   end
 
   context 'when understanding rspec + rspec-mocks require pattern' do
+    let(:pre_cache) { true }
+
     let(:requires) do
       ['rspec-mocks']
     end
