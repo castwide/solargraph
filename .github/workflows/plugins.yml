@@ -218,7 +218,7 @@ jobs:
 
         rspec_gems=$(bundle exec ruby -r 'solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
         # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib $rspec_gems diff-lcs addressable ast rexml crack hashdiff
+        bundle exec solargraph gems core stdlib $rspec_gems diff-lcs addressable ast rexml crack hashdiff rspec-support bigdecimal public_suffix
     - name: Ensure specs still run
       run: |
         # Speed up some of the bundle installs we run inside the tests
