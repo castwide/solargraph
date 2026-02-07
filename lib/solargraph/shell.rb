@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'benchmark'
+require 'concurrent-ruby'
 require 'thor'
 require 'yard'
 require 'yaml'
@@ -183,46 +184,31 @@ module Solargraph
       if names.empty?
         workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
       else
-        warn("Caching these gems: #{names}")
-        names.each do |name|
-          if name == 'core'
-            PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
-            next
-          end
+        # run in parallel with a thread pool
 
-          if name == 'stdlib'
-            workspace.cache_all_stdlibs(out: $stdout, rebuild: options[:rebuild])
-            next
-          end
+        # create thread pool
+        pool_size = Concurrent.processor_count # roughly your CPU count
+        pool = Concurrent::FixedThreadPool.new(pool_size)
+        warn("Caching these gems with #{pool_size} workers: #{names}")
 
-          if name == 'default'
-            doc_map = Solargraph::DocMap.new([], workspace)
-            doc_map.cache_doc_map_gems! $stdout
-            next
-          end
-
-          if name == 'bundler/require'
-            gemspecs = workspace.resolve_require(name)
-            gemspecs&.each do |gs|
-              workspace.cache_gem(gs, rebuild: options[:rebuild], out: $stdout)
-            end
-            next
-          end
-
-          gemspec = workspace.find_gem(*name.split('='))
-          if gemspec.nil?
+        # Using 'names' as queue, run!
+        futures = names.map do |name|
+          Concurrent::Promises.future_on(pool, name) do |_x|
+            cache_library(workspace, name)
+          rescue Gem::MissingSpecError
             warn "Gem '#{name}' not found"
-          else
-            workspace.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
+          rescue Gem::Requirement::BadRequirementError => e
+            warn "Gem '#{name}' failed while loading"
+            warn e.message
+            # @sg-ignore Need to add nil check here
+            warn e.backtrace.join("\n")
           end
-        rescue Gem::MissingSpecError
-          warn "Gem '#{name}' not found"
-        rescue Gem::Requirement::BadRequirementError => e
-          warn "Gem '#{name}' failed while loading"
-          warn e.message
-          # @sg-ignore Need to add nil check here
-          warn e.backtrace.join("\n")
         end
+
+        Concurrent::Promises.zip(*futures).value! # raises if any failed
+        pool.shutdown
+        pool.wait_for_termination
+
         warn "Documentation cached for #{names.count} gems."
       end
     end
@@ -494,6 +480,43 @@ module Solargraph
     end
 
     private
+
+    # @param name [String]
+    # @param [Workspace] workspace
+    #
+    # @return [void]
+    def cache_library workspace, name
+      if name == 'core'
+        PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
+        return
+      end
+
+      if name == 'stdlib'
+        workspace.cache_all_stdlibs(out: $stdout, rebuild: options[:rebuild])
+        return
+      end
+
+      if name == 'default'
+        doc_map = Solargraph::DocMap.new([], workspace)
+        doc_map.cache_doc_map_gems! $stdout
+        return
+      end
+
+      if name == 'bundler/require'
+        gemspecs = workspace.resolve_require(name)
+        gemspecs&.each do |gs|
+          workspace.cache_gem(gs, rebuild: options[:rebuild], out: $stdout)
+        end
+        return
+      end
+
+      gemspec = workspace.find_gem(*name.split('='))
+      if gemspec.nil?
+        warn "Gem '#{name}' not found"
+      else
+        workspace.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
+      end
+    end
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
