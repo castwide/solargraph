@@ -212,6 +212,8 @@ jobs:
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
     - name: Install gem types
       run: |
+        set -x
+
         bundle exec rbs collection update
 
         rspec_gems=$(bundle exec ruby -r 'solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
