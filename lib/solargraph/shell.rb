@@ -174,15 +174,21 @@ module Solargraph
         Cached documentation is stored in #{PinCache.base_dir}, which
         can be stored between CI runs.
     )
+    option :workspace, type: :boolean, desc: 'Rebuild all accessible gems, not just those used', default: false
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
     def gems *names
       # print time with ms
-      workspace = Solargraph::Workspace.new('.')
+      api_map = Solargraph::ApiMap.load('.')
+      workspace = api_map.workspace
 
       if names.empty?
-        workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
+        if options[:workspace]
+          workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
+        else
+          api_map.cache_all_for_doc_map!(out: $stdout)
+        end
       else
         # run in parallel with a thread pool
 
@@ -235,7 +241,8 @@ module Solargraph
       level = options[:level].to_sym
       rules = workspace.rules(level)
       api_map =
-        Solargraph::ApiMap.load_with_cache(directory, $stdout,
+        Solargraph::ApiMap.load_with_cache(directory,
+                                           out: $stdout,
                                            loose_unions:
                                              !rules.require_all_unique_types_support_call?)
       probcount = 0
@@ -284,7 +291,7 @@ module Solargraph
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
       time = Benchmark.measure do
-        api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+        api_map = Solargraph::ApiMap.load_with_cache(directory, out: $stdout)
         # @sg-ignore flow sensitive typing should be able to handle redefinition
         api_map.pins.each do |pin|
           puts pin_description(pin) if options[:verbose]
@@ -329,7 +336,7 @@ module Solargraph
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
-      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+      api_map = Solargraph::ApiMap.load_with_cache('.', out: $stderr)
       is_method = path.include?('#') || path.include?('.')
       if is_method && options[:stack]
         scope, ns, meth = if path.include? '#'

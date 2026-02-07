@@ -219,10 +219,11 @@ module Solargraph
     #
     # @param directory [String]
     # @param out [IO, StringIO, nil] The output stream for messages
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load_with_cache directory, out = $stderr, loose_unions: true
+    def self.load_with_cache directory, out: $stderr, rebuild: false, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }

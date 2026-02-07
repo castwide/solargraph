@@ -3,6 +3,7 @@
 require 'pathname'
 require 'benchmark'
 require 'open3'
+require 'concurrent-ruby'
 
 module Solargraph
   # A collection of pins generated from specific 'require' statements
@@ -69,6 +70,8 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_doc_map_gems! out, rebuild: false
+      out&.puts 'Caching gems used by project'
+      PinCache.cache_core(out: out) unless PinCache.core? && !rebuild
       unless uncached_gemspecs.empty?
         logger.info do
           gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
