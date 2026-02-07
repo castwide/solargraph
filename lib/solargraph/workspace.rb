@@ -247,7 +247,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
-      out.puts 'Caching all gems available'
+      out&.puts 'Caching all gems available'
       PinCache.cache_core(out: out) unless PinCache.core? && !rebuild
 
       gem_specs = all_gemspecs_from_bundle
