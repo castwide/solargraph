@@ -54,7 +54,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'yard-activesupport-concern', '~> 0.0'
   s.add_dependency 'yard-solargraph', '~> 0.1'
 
-  s.add_development_dependency 'parallel_rspec', '~> 3.0'
+  s.add_development_dependency 'parallel_tests', '~> 3.8', '>= 3.8.1'
   s.add_development_dependency 'pry', '~> 0.15'
   s.add_development_dependency 'public_suffix', '~> 3.1'
   s.add_development_dependency 'rake', '~> 13.2'

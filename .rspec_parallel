@@ -1,0 +1,10 @@
+--require spec_helper
+--
+# --format progress
+# --verbose-process-command
+# --format ParallelTests::RSpec::SummaryLogger --out tmp/spec_summary.log
+--format ParallelTests::RSpec::RuntimeLogger --out tmp/parallel_runtime_rspec.log
+# --verbose
+# --color
+# --profile
+--

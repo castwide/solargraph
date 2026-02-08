@@ -3,12 +3,9 @@
 require 'tmpdir'
 require 'yard'
 
-describe Solargraph::Library do
-  before :context do
-    # run these in order so we don't uncache backport right when we
-    # need it before
-  end
-
+# run these in order so we don't uncache backport right when we
+# need it before
+describe Solargraph::Library, order: :defined do
   it 'does not open created files in the workspace' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
@@ -66,12 +63,7 @@ describe Solargraph::Library do
     end
   end
 
-  context 'with a require from an already-cached external gem' do
-    before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
-    end
-
+  context 'with a require from an already-cached external gem', order: :defined do
     it 'returns a Completion' do
       library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))

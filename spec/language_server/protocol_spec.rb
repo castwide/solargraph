@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'tmpdir'
+require 'rubocop'
 
 class Protocol
   attr_reader :response
@@ -45,15 +46,13 @@ describe Protocol, order: :defined do
   around do |testobj|
     original_dir = Dir.pwd
     temp_dir = Dir.mktmpdir
-    Dir.chdir temp_dir
-    begin
+    Dir.chdir temp_dir do
       Solargraph.with_clean_env do
         testobj.run
       end
-    ensure
-      Dir.chdir(original_dir)
-      FileUtils.remove_entry(temp_dir)
     end
+  ensure
+    FileUtils.remove_entry(temp_dir)
   end
 
   after :context do
@@ -64,6 +63,11 @@ describe Protocol, order: :defined do
     version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
       instance_double(Gem::SpecFetcher, search_for_dependency: [version])
+    example_name = RSpec.current_example.description
+    allow(Dir).to receive(:chdir) do
+      raise "where did this happen - came from #{example_name}"
+    end
+    allow(RuboCop::Runner).to receive(:new).and_return(instance_double(RuboCop::Runner, run: []))
   end
 
   after do

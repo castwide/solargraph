@@ -41,7 +41,7 @@ end
 desc 'Run all RSpec tests'
 task :full_spec do
   warn 'starting spec'
-  sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec prspec spec/' #  --profile'
+  sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec parallel_rspec spec/' #  --profile'
   warn 'ending spec'
   # move coverage/full-new to coverage/full on success so that we
   # always have the last successful run's 'coverage info

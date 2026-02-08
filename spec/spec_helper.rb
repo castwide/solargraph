@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'parallel_tests'
 require 'bundler/setup'
 require 'webmock/rspec'
 require 'rspec_time_guard'
@@ -29,6 +30,13 @@ PROJECT_DIRECTORY = File.expand_path('..', __dir__)
 RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
+  c.before(:suite) do
+    files = c.files_to_run
+    # normalized = files.map { Pathname.new(File.absolute_path(it)).relative_path_from(Rails.root) }
+    normalized = files
+    banner = "PID (#{Process.pid}) #{files.count} files to run:"
+    puts [banner, *normalized].join("\n\t")
+  end
 end
 RspecTimeGuard.setup
 RspecTimeGuard.configure do |config|
@@ -48,14 +56,6 @@ def set_logging
 end
 
 set_logging
-require 'parallel_rspec'
-
-ParallelRSpec.configure do |config|
-  config.after_fork do |worker_number|
-    warn "ParallelRSpec worker #{worker_number} starting in pid #{Process.pid}"
-    set_logging
-  end
-end
 
 # @param name [String]
 # @param value [String]

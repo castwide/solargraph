@@ -3,7 +3,7 @@
 require 'bundler'
 require 'benchmark'
 
-describe Solargraph::PinCache do
+describe Solargraph::PinCache, order: :defined do
   subject(:pin_cache) do
     described_class.new(rbs_collection_path: '.gem_rbs_collection',
                         rbs_collection_config_path: 'rbs_collection.yaml',
