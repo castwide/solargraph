@@ -1,3 +1,4 @@
+--seed 123
 --require spec_helper
 --
 # --format progress
