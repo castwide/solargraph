@@ -6,11 +6,13 @@ require 'yard'
 # run these in order so we don't uncache backport right when we
 # need it before
 describe Solargraph::Library, order: :defined do
+  let(:filename) { "file#{rand(1000)}.rb" }
+
   it 'does not open created files in the workspace' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
       workspace_path = File.realpath(temp_dir_path)
-      file_path = File.join(workspace_path, 'file.rb')
+      file_path = File.join(workspace_path, filename)
       File.write(file_path, 'a = b')
       library = described_class.load(workspace_path)
       result = library.create(file_path, File.read(file_path))
@@ -21,14 +23,13 @@ describe Solargraph::Library, order: :defined do
 
   it 'returns a Completion' do
     library = described_class.new
-    filename = 'file.rb'
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
     library.attach Solargraph::Source.load_string(%(
       x = 1
       x
     ), filename, 0)
-    completion = library.completions_at('file.rb', 2, 7)
+    completion = library.completions_at(filename, 2, 7)
     expect(completion).to be_a(Solargraph::SourceMap::Completion)
     expect(completion.pins.map(&:name)).to include('x')
   end
@@ -53,9 +54,9 @@ describe Solargraph::Library, order: :defined do
         def foo(adapter)
           adapter.remo
         end
-      ), 'file.rb', 0)
+      ), filename, 0)
       # give Solargraph time to cache the gem
-      while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+      while (completion = library.completions_at(filename, 5, 19)).pins.empty?
         sleep 0.25
       end
       expect(completion).to be_a(Solargraph::SourceMap::Completion)
@@ -74,8 +75,8 @@ describe Solargraph::Library, order: :defined do
         def foo(adapter)
           adapter.remo
         end
-      ), 'file.rb', 0)
-      completion = library.completions_at('file.rb', 5, 19)
+      ), 'file456.rb', 0)
+      completion = library.completions_at(filename, 5, 19)
       expect(completion).to be_a(Solargraph::SourceMap::Completion)
       expect(completion.pins.map(&:name)).to include('remote')
     end
@@ -88,11 +89,11 @@ describe Solargraph::Library, order: :defined do
         def bar
         end
       end
-    ), 'file.rb', 0
+    ), filename, 0
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
     library.attach src
-    paths = library.definitions_at('file.rb', 2, 13).map(&:path)
+    paths = library.definitions_at(filename, 2, 13).map(&:path)
     expect(paths).to include('Foo#bar')
   end
 
@@ -106,11 +107,11 @@ describe Solargraph::Library, order: :defined do
         end
       end
       Foo.bar
-    ), 'file.rb', 0
+    ), filename, 0
     library.attach src
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
-    paths = library.type_definitions_at('file.rb', 7, 13).map(&:path)
+    paths = library.type_definitions_at(filename, 7, 13).map(&:path)
     expect(paths).to include('Bar')
   end
 
@@ -122,11 +123,11 @@ describe Solargraph::Library, order: :defined do
         end
       end
       Foo.new.bar()
-    ), 'file.rb', 0
+    ), filename, 0
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
     library.attach src
-    pins = library.signatures_at('file.rb', 5, 18)
+    pins = library.signatures_at(filename, 5, 18)
     expect(pins.length).to eq(1)
     expect(pins.first.path).to eq('Foo#bar')
   end
@@ -164,11 +165,11 @@ describe Solargraph::Library, order: :defined do
     library = described_class.new
     src = Solargraph::Source.load_string(%(
       puts 'hello'
-    ), 'file.rb', 0)
+    ), filename, 0)
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
     library.attach src
-    result = library.diagnose 'file.rb'
+    result = library.diagnose filename
     expect(result).to be_a(Array)
     # @todo More tests
   end
@@ -183,9 +184,9 @@ describe Solargraph::Library, order: :defined do
     allow(library).to receive(:cacheable_specs).and_return([])
     src = Solargraph::Source.load_string(%(
       puts 'hello'
-    ), 'file.rb', 0)
+    ), filename, 0)
     library.attach src
-    result = library.diagnose 'file.rb'
+    result = library.diagnose filename
     expect(result.to_s).to include('rubocop')
   end
 
@@ -196,11 +197,11 @@ describe Solargraph::Library, order: :defined do
         def bar
         end
       end
-    ), 'file.rb', 0)
+    ), filename, 0)
     # keep this from syncing a bunch of bundle gems in background
     allow(library).to receive(:cacheable_specs).and_return([])
     library.attach src
-    pins = library.document_symbols 'file.rb'
+    pins = library.document_symbols filename
     expect(pins.length).to eq(2)
     expect(pins.map(&:path)).to include('Foo')
     expect(pins.map(&:path)).to include('Foo#bar')
