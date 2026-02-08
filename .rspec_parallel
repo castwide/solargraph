@@ -1,6 +1,7 @@
 --seed 123
 --require spec_helper
 --order defined
+--profile
 --
 # --format progress
 # --verbose-process-command
