@@ -1,5 +1,6 @@
 --seed 123
 --require spec_helper
+--order defined
 --
 # --format progress
 # --verbose-process-command
