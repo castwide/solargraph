@@ -70,6 +70,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
+        # See https://github.com/apiology/solargraph/actions/runs/21799883466/job/62893545490?pr=27
+        rubygems: latest
         bundler-cache: true
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
