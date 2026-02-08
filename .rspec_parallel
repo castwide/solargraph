@@ -1,6 +1,9 @@
 --seed 123
 --require spec_helper
 --order defined
+# to update test relative timings for better balancing in CI,
+# uncomment the next line, run the specs, and PR in the changes:
+--format ParallelTests::RSpec::RuntimeLogger --out spec/parallel_runtime_rspec.log
 --profile
 --
 # --format progress
