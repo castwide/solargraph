@@ -171,6 +171,8 @@ describe Solargraph::PinCache, order: :defined do
       let(:gemspec) { Gem::Specification.find_by_name('backport') }
 
       it 'deletes files' do
+        pin_cache.cache_gem(gemspec: gemspec, out: $stderr)
+
         call
 
         expect(FileUtils).to have_received(:rm_rf).at_least(:once)
