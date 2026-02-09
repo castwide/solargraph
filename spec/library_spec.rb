@@ -75,7 +75,7 @@ describe Solargraph::Library, order: :defined do
         def foo(adapter)
           adapter.remo
         end
-      ), 'file456.rb', 0)
+      ), filename, 0)
       completion = library.completions_at(filename, 5, 19)
       expect(completion).to be_a(Solargraph::SourceMap::Completion)
       expect(completion.pins.map(&:name)).to include('remote')
