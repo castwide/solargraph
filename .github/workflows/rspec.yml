@@ -98,9 +98,9 @@ jobs:
         #
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
-        bundle config path $PWD/vendor/bundle
-        WORKERS=$(nproc --all)
-        export WORKERS
+        bundle config set path $PWD/vendor/bundle
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
 
         bundle exec rake full_spec
   undercover:
@@ -121,17 +121,15 @@ jobs:
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: |
+        set -x
+
         bundle exec rbs collection update
         # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
+        bundle exec solargraph gems core stdlib ast parser
     - name: Run tests
       run: |
-        WORKERS=$(nproc --all)
-        export WORKERS
+        set -x
 
-        bundle exec rake full_spec
-    - name: Check PR coverage
-      run: |
         # Speed up some of the bundle installs we run inside the tests
         # as well when we're testing different solargraph usage
         # scenarios. This is already set in the local bundle config by
@@ -139,10 +137,10 @@ jobs:
         #
         # See
         # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
-        bundle config path $PWD/vendor/bundle
-        WORKERS=$(nproc --all)
-        export WORKERS
-        # avoid trying to do this in parallel during the specs
-        bundle exec solargraph gems core stdlib
+        bundle config set path $PWD/vendor/bundle
+
+        bundle exec rake full_spec
+    - name: Check PR coverage
+      run: |
         bundle exec rake undercover
       continue-on-error: true
