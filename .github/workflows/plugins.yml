@@ -349,6 +349,8 @@ jobs:
         MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Install gem types
       run: |
+        cd ../solargraph-rails
+
         RAILS_DIR="$(pwd)/spec/rails7"
         export RAILS_DIR
         cd ${RAILS_DIR}
