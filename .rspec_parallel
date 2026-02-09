@@ -6,6 +6,8 @@
 # uncomment the next line, run the specs, and PR in the changes:
 # --format ParallelTests::RSpec::RuntimeLogger --out spec/parallel_runtime_rspec.log
 --format ParallelTests::RSpec::SummaryLogger # --out tmp/spec_summary.log
+# useful for debugging concurrency issues:
+#  --format ParallelTests::RSpec::VerboseLogger
 --profile
 # --verbose
 # --color
