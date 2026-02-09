@@ -43,10 +43,13 @@ task :full_spec do
   warn 'starting spec'
   sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec parallel_rspec --runtime-log spec/parallel_runtime_rspec.log --verbose-command spec/' #  --profile'
   warn 'ending spec'
-  # move coverage/full-new to coverage/full on success so that we
-  # always have the last successful run's 'coverage info
+  # clear now-outdated coverage
   FileUtils.rm_rf('coverage/full')
-  FileUtils.mv('coverage/full-new', 'coverage/full')
+  # move coverage/full-new to coverage/full on success so that we
+  # always have the last successful run's coverage info
+  unless ENV['SIMPLECOV_DISABLED']
+    FileUtils.mv('coverage/full-new', 'coverage/full')
+  end
 end
 
 # @sg-ignore #undercover return type could not be inferred
