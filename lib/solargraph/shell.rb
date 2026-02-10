@@ -187,7 +187,7 @@ module Solargraph
         if options[:workspace]
           workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
         else
-          api_map.cache_all_for_doc_map!(out: $stdout)
+          api_map.cache_all_for_doc_map!(out: $stdout, rebuild: options[:rebuild])
         end
       else
         # run in parallel with a thread pool
