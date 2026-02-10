@@ -226,12 +226,12 @@ module Solargraph
     # @api Used by solargraph-rails at least
     def self.load_with_cache directory, out = $stderr, rebuild: false, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
-      if api_map.uncached_gemspecs.empty?
+      if api_map.uncached_gemspecs.empty? && !rebuild
         logger.info { "All gems cached for #{directory}" }
         return api_map
       end
 
-      api_map.cache_all_for_doc_map!(out: out)
+      api_map.cache_all_for_doc_map!(out: out, rebuild: rebuild)
       load(directory, loose_unions: loose_unions)
     end
 
