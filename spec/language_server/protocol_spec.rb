@@ -442,7 +442,6 @@ describe Protocol, order: :defined do
     }
     expect(@protocol.host.options['autoformat']).to be(false)
     expect(@protocol.host.registered?('textDocument/completion')).to be(false)
-    response = @protocol.response
     expect(@protocol.host.pending_requests.size).to eq(1)
     pending_id = @protocol.host.pending_requests.first
     @protocol.host.receive({ 'id' => pending_id })
