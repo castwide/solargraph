@@ -2,7 +2,8 @@
 
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
   let(:temp_file_url) do
-    "file://#{Dir.mktmpdir}/file.rb"
+    # "file://#{Dir.mktmpdir}/file.rb"
+    'file:///file.rb'
   end
 
   it 'renames a symbol' do
