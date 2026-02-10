@@ -6,9 +6,9 @@ require 'rubocop'
 class Protocol
   attr_reader :response
 
-  # @return [Solargraph::LanguageServer::Host]
   attr_reader :host
 
+  # @param host [Solargraph::LanguageServer::Host]
   def initialize host
     @host = host
     @host.start
@@ -44,6 +44,7 @@ describe Protocol, order: :defined do
 
   # Ensure we don't start caching gems from current bundle in background
   around do |testobj|
+    raise "Requests not finished #{testobj} - #{@protocol.host.pending_requests.inspect}" unless @protocol.host.pending_requests.empty?
     original_dir = Dir.pwd
     temp_dir = Dir.mktmpdir
     Dir.chdir temp_dir do
@@ -51,6 +52,7 @@ describe Protocol, order: :defined do
         testobj.run
       end
     end
+    raise "Requests not finished - #{@protocol.host.send(:requests).inspect}" unless @protocol.host.pending_requests.empty?
   ensure
     FileUtils.remove_entry(temp_dir)
   end
@@ -67,7 +69,7 @@ describe Protocol, order: :defined do
     allow(Dir).to receive(:chdir) do
       raise "where did this happen - came from #{example_name}"
     end
-    allow(RuboCop::Runner).to receive(:new).and_return(instance_double(RuboCop::Runner, run: []))
+    allow(RuboCop::Runner).to receive(:new).and_return(instance_double(RuboCop::Runner, run: [])).at_least(1)
   end
 
   after do
@@ -105,6 +107,9 @@ describe Protocol, order: :defined do
     @protocol.request 'initialized', nil
     response = @protocol.response
     expect(response['error']).to be_nil
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'configured default dynamic registration capabilities from initialized' do
@@ -438,6 +443,10 @@ describe Protocol, order: :defined do
     }
     expect(@protocol.host.options['autoformat']).to be(false)
     expect(@protocol.host.registered?('textDocument/completion')).to be(false)
+    response = @protocol.response
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'handles $/solargraph/checkGemVersion' do
@@ -446,6 +455,9 @@ describe Protocol, order: :defined do
     expect(response['error']).to be_nil
     expect(response['result']['installed']).to be_a(String)
     expect(response['result']['available']).to be_a(String)
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'handles $/solargraph/documentGems' do
