@@ -4,9 +4,7 @@ require 'tmpdir'
 require 'rubocop'
 
 class Protocol
-  attr_reader :response
-
-  attr_reader :host
+  attr_reader :response, :host
 
   # @param host [Solargraph::LanguageServer::Host]
   def initialize host
