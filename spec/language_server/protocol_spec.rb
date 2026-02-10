@@ -45,7 +45,6 @@ describe Protocol, order: :defined do
   # Ensure we don't start caching gems from current bundle in background
   around do |testobj|
     raise "Requests not finished #{testobj} - #{@protocol.host.pending_requests.inspect}" unless @protocol.host.pending_requests.empty?
-    original_dir = Dir.pwd
     temp_dir = Dir.mktmpdir
     Dir.chdir temp_dir do
       Solargraph.with_clean_env do
