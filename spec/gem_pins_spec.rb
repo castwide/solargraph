@@ -10,11 +10,6 @@ describe Solargraph::GemPins do
   end
 
   context 'with a combined method pin' do
-    before :context do
-      # run these on same runner so we don't cache rbs in parallel;
-      # seems like we still have a race condition in pin caching
-    end
-
     let(:path) { 'Hashdiff.diff' }
     let(:requires) { ['hashdiff'] }
 
