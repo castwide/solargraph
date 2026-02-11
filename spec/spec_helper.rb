@@ -40,10 +40,8 @@ RSpec.configure do |c|
   c.example_status_persistence_file_path = 'rspec-examples.txt'
   c.before(:suite) do
     files = c.files_to_run
-    # normalized = files.map { Pathname.new(File.absolute_path(it)).relative_path_from(Rails.root) }
-    normalized = files
     banner = "PID (#{Process.pid}) #{files.count} files to run:"
-    puts [banner, *normalized].join("\n\t")
+    puts [banner, *files].join("\n\t")
   end
 end
 RspecTimeGuard.setup
