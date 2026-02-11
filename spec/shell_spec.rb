@@ -21,7 +21,7 @@ describe Solargraph::Shell do
       allow(Solargraph::PinCache).to receive(:uncache)
 
       capture_stdout do
-        shell.uncache('backport')
+        shell.uncache('public_suffix')
       end
 
       expect(Solargraph::PinCache).to have_received(:uncache).twice
