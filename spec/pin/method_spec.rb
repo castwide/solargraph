@@ -546,11 +546,6 @@ describe Solargraph::Pin::Method do
     end
 
     context 'with loaded bigdecimal require' do
-      before :context do
-        # serialize this along with other things that might write to
-        # solargraph cache so we don't interfere with each other
-      end
-
       it 'combines signatures by type' do
         # Integer+ in RBS is a number of signatures that dispatch based
         # on type.  Let's make sure we combine those with anything else
