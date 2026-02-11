@@ -56,8 +56,12 @@ describe Protocol, order: :defined do
 
   after :context do
     @protocol.stop
-    # wait until fully stopped
-    sleep 0.1 until @protocol.host.fully_stopped?
+    # wait until fully stopped - sleep up to 10 seconds 0.1 seconds at a time
+    100.times do
+      break if @protocol.host.fully_stopped?
+      sleep 0.1
+    end
+    raise 'Host not fully stopped after 10 seconds' unless @protocol.host.fully_stopped?
   end
 
   before do
