@@ -56,17 +56,14 @@ describe Protocol, order: :defined do
 
   after :context do
     @protocol.stop
+    # wait until fully stopped
+    sleep 0.1 until @protocol.host.fully_stopped?
   end
 
   before do
     version = instance_double(Gem::Version, version: Gem::Version.new('1.0.0'))
     Solargraph::LanguageServer::Message::Extended::CheckGemVersion.fetcher =
       instance_double(Gem::SpecFetcher, search_for_dependency: [version])
-    example_name = RSpec.current_example.description
-    allow(Dir).to receive(:chdir) do
-      raise "where did this happen - came from #{example_name}"
-    end
-    allow(RuboCop::Runner).to receive(:new).and_return(instance_double(RuboCop::Runner, run: [])).at_least(1)
   end
 
   after do

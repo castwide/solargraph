@@ -472,6 +472,10 @@ module Solargraph
         @stopped
       end
 
+      def fully_stopped?
+        @stopped && diagnoser.fully_stopped?
+      end
+
       # Locate multiple pins that match a completion item. The first match is
       # based on the corresponding location in a library source if available.
       # Subsequent matches are based on path.

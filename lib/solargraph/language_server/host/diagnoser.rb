@@ -36,6 +36,10 @@ module Solargraph
           @stopped
         end
 
+        def fully_stopped?
+          @fully_stopped
+        end
+
         # Start the diagnosis thread.
         #
         # @return [self, nil]
@@ -47,6 +51,7 @@ module Solargraph
               tick
               sleep 0.1
             end
+            @fully_stopped = true
           end
           self
         end
