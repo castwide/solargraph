@@ -27,6 +27,14 @@ unless ENV['SIMPLECOV_DISABLED']
 end
 PROJECT_DIRECTORY = File.expand_path('..', __dir__)
 
+module ::RuboCop
+  class Runner
+    def run
+      raise 'this should always be mocked'
+    end
+  end
+end
+
 RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
