@@ -45,7 +45,7 @@ describe Solargraph::Library, order: :defined do
     end
 
     it 'returns a Completion', time_limit_seconds: 50 do
-      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+      library = described_class.new(Solargraph::Workspace.new(PROJECT_DIRECTORY,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
@@ -66,7 +66,7 @@ describe Solargraph::Library, order: :defined do
 
   context 'with a require from an already-cached external gem', order: :defined do
     it 'returns a Completion' do
-      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+      library = described_class.new(Solargraph::Workspace.new(PROJECT_DIRECTORY,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
