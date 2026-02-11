@@ -319,7 +319,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
             specs = gemspecs.resolve_require('public_suffix')
             public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-            expect(public_suffix.version.to_s).to eq('1.2.0')
+            expect(public_suffix.version.to_s).to eq('3.1.1')
           end
         end
 
