@@ -1,5 +1,7 @@
 --seed 123
+--color
 --require spec_helper
+--profile
 --order defined
 --format progress
 # to update test relative timings for better balancing in CI,
@@ -8,6 +10,4 @@
 --format ParallelTests::RSpec::SummaryLogger # --out tmp/spec_summary.log
 # useful for debugging concurrency issues:
 #  --format ParallelTests::RSpec::VerboseLogger
---profile
 # --verbose
-# --color
