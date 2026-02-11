@@ -3,11 +3,6 @@
 require 'tempfile'
 
 describe Solargraph::Logging do
-  before :context do
-    # We're messing with global state, so let's try to keep it to main
-    # runner
-  end
-
   it 'logs messages with levels' do
     file = Tempfile.new('log')
     described_class.logger.reopen file
