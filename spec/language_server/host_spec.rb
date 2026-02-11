@@ -82,7 +82,8 @@ describe Solargraph::LanguageServer::Host do
         buffer = host.flush
       end
       expect(buffer).to include('textDocument/publishDiagnostics')
-      host.stop
+    ensure
+      host.fully_stop
     end
   end
 
@@ -130,7 +131,7 @@ describe Solargraph::LanguageServer::Host do
 
   it 'stops' do
     host = described_class.new
-    host.stop
+    host.fully_stop
     expect(host.stopped?).to be(true)
   end
 
@@ -289,7 +290,7 @@ describe Solargraph::LanguageServer::Host do
     end
 
     after do
-      @host.stop
+      @host.fully_stop
     end
 
     it 'creates a library for a file without a workspace' do

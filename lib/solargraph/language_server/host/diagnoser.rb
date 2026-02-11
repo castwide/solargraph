@@ -47,11 +47,12 @@ module Solargraph
         def start
           return unless @stopped
           @fully_stopped = @stopped = false
+          old_thread_id = Thread.current.object_id
           Thread.new do
             until stopped?
-              STDERR.puts "Diagnoser: start tick"
+              STDERR.puts "Diagnoser: start tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               tick
-              STDERR.puts "Diagnoser: end tick"
+              STDERR.puts "Diagnoser: end tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               sleep 0.1
             end
             @fully_stopped = true

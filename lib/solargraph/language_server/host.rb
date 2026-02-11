@@ -468,6 +468,15 @@ module Solargraph
         notify_observers
       end
 
+      # @return [void]
+      def fully_stop
+        stop
+        until fully_stopped?
+          logger.info 'Waiting for host to fully stop...'
+          sleep 0.1
+        end
+      end
+
       def stopped?
         @stopped
       end

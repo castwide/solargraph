@@ -15,6 +15,7 @@ class Protocol
       @response = message
     end
     @message_id = 0
+    STDERR.puts "Started in thread #{Thread.current.object_id}"
   end
 
   def request method, params

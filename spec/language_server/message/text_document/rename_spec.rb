@@ -34,6 +34,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     allow(library).to receive(:cacheable_specs).and_return([])
     rename.process
     expect(rename.result[:changes][temp_file_url].length).to eq(2)
+  ensure
+    host.fully_stop
   end
 
   it 'renames an argument symbol from method signature' do
@@ -77,6 +79,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
 
     expect(rename.result[:changes][temp_file_url]).not_to be_nil, -> { "Expected to find changes for #{temp_file_url} in #{rename.result.inspect}" }
     expect(rename.result[:changes][temp_file_url].length).to eq(3), -> { "Expected to find 3 changes for #{temp_file_url} in #{rename.result.inspect}" }
+  ensure
+    host.fully_stop
   end
 
   it 'renames an argument symbol from method body' do
@@ -117,6 +121,8 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
     end
     expect(rename.result[:changes][temp_file_url].length).to eq(3)
+  ensure
+    host.fully_stop
   end
 
   it 'renames namespace symbol with proper range' do
@@ -159,5 +165,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     expect(changes.length).to eq(3)
     expect(changes.first[:range][:start][:character]).to eq(13)
     expect(changes.first[:range][:end][:character]).to eq(22)
+  ensure
+    host.fully_stop
   end
 end
