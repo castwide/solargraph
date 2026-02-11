@@ -35,11 +35,6 @@ describe Solargraph::Library, order: :defined do
   end
 
   context 'with a require from a not-yet-cached external gem' do
-    before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
-    end
-
     before do
       Solargraph::Shell.new.uncache('backport')
     end
@@ -209,8 +204,6 @@ describe Solargraph::Library, order: :defined do
 
   describe '#references_from' do
     before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
       Solargraph::Shell.new.gems('backport')
     end
 
@@ -657,11 +650,6 @@ describe Solargraph::Library, order: :defined do
   end
 
   describe '#locate_ref' do
-    before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
-    end
-
     it 'returns nil without a matching reference location' do
       workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
       library = described_class.load(workspace)
@@ -700,21 +688,11 @@ describe Solargraph::Library, order: :defined do
   end
 
   context 'when unsynchronized' do
-    before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
-    end
-
     let(:library) { described_class.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
     let(:bad_file) { File.join(library.workspace.directory, 'lib', 'not_a_thing.rb') }
 
     describe 'Library#completions_at' do
-      before :context do
-        # run these in order so we don't uncache backport right when we
-        # need it before
-      end
-
       it 'gracefully handles unmapped sources' do
         expect do
           library.completions_at(good_file, 0, 0)
@@ -729,11 +707,6 @@ describe Solargraph::Library, order: :defined do
     end
 
     describe 'Library#definitions_at' do
-      before :context do
-        # run these in order so we don't uncache backport right when we
-        # need it before
-      end
-
       it 'gracefully handles unmapped sources' do
         expect do
           library.definitions_at(good_file, 0, 0)
