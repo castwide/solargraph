@@ -471,7 +471,12 @@ module Solargraph
       # @return [void]
       def fully_stop
         stop
+        # try for two minutes, raise if not fully stopped by then
+        start_time = Time.now
         until fully_stopped?
+          if Time.now - start_time > 120
+            raise 'Host did not fully stop within 120 seconds.'
+          end
           logger.info 'Waiting for host to fully stop...'
           sleep 0.1
         end
