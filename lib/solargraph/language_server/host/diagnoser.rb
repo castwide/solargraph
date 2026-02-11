@@ -49,7 +49,9 @@ module Solargraph
           @fully_stopped = @stopped = false
           Thread.new do
             until stopped?
+              STDERR.puts "Diagnoser: start tick"
               tick
+              STDERR.puts "Diagnoser: end tick"
               sleep 0.1
             end
             @fully_stopped = true
