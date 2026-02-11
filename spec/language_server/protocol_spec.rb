@@ -44,13 +44,13 @@ describe Protocol, order: :defined do
   around do |testobj|
     raise "Requests not finished #{testobj} - #{@protocol.host.pending_requests.inspect}" unless @protocol.host.pending_requests.empty?
     temp_dir = Dir.mktmpdir
-    Dir.chdir temp_dir do
-      Solargraph.with_clean_env do
-        testobj.run
-      end
+    Dir.chdir temp_dir
+    Solargraph.with_clean_env do
+      testobj.run
     end
     raise "Requests not finished - #{@protocol.host.send(:requests).inspect}" unless @protocol.host.pending_requests.empty?
   ensure
+    Dir.chdir PROJECT_DIRECTORY
     FileUtils.remove_entry(temp_dir)
   end
 
