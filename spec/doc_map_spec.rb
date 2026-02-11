@@ -85,7 +85,7 @@ describe Solargraph::DocMap do
 
   context 'when deserialization takes a while' do
     let(:pre_cache) { false }
-    let(:requires) { ['backport'] }
+    let(:requires) { ['rubocop-rspec'] }
 
     before do
       # proxy this method to simulate a long-running deserialization

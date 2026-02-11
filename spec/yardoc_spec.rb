@@ -39,7 +39,7 @@ describe Solargraph::Yardoc do
 
   describe '#build_docs' do
     let(:workspace) { Solargraph::Workspace.new(Dir.pwd) }
-    let(:gemspec) { workspace.find_gem('backport') }
+    let(:gemspec) { workspace.find_gem('reverse_markdown') }
     let(:output) { '' }
 
     before do

@@ -12,11 +12,13 @@ describe Solargraph::PinCache, order: :defined do
   end
 
   describe '#cached?' do
-    it 'returns true for a gem that is cached' do
-      allow(File).to receive(:file?).with(%r{.*stdlib/backport.ser$}).and_return(false)
-      allow(File).to receive(:file?).with(%r{.*combined/.*/backport-.*.ser$}).and_return(true)
+    let(:gem_name) { 'not_a_gem_vmb' }
 
-      gemspec = Gem::Specification.find_by_name('backport')
+    it 'returns true for a gem that is cached' do
+      allow(File).to receive(:file?).with(%r{.*stdlib/#{gem_name}.ser$}).and_return(false)
+      allow(File).to receive(:file?).with(%r{.*combined/.*/#{gem_name}-.*.ser$}).and_return(true)
+
+      gemspec = instance_double(Gem::Specification, name: gem_name, version: '0.0.1')
       expect(pin_cache.cached?(gemspec)).to be true
     end
 
@@ -63,16 +65,16 @@ describe Solargraph::PinCache, order: :defined do
 
   describe '#cache_gem' do
     context 'with an already in-memory gem' do
-      let(:backport_gemspec) { Gem::Specification.find_by_name('backport') }
+      let(:jaro_winkler_gemspec) { Gem::Specification.find_by_name('jaro_winkler') }
 
       before do
-        pin_cache.cache_gem(gemspec: backport_gemspec, out: $stderr)
+        pin_cache.cache_gem(gemspec: jaro_winkler_gemspec, out: $stderr)
       end
 
       it 'does not load the gem again' do
         allow(Marshal).to receive(:load).and_call_original
 
-        pin_cache.cache_gem(gemspec: backport_gemspec, out: $stderr)
+        pin_cache.cache_gem(gemspec: jaro_winkler_gemspec, out: $stderr)
 
         expect(Marshal).not_to have_received(:load).with(anything)
       end
@@ -168,7 +170,7 @@ describe Solargraph::PinCache, order: :defined do
     end
 
     context 'with an already cached gem' do
-      let(:gemspec) { Gem::Specification.find_by_name('backport') }
+      let(:gemspec) { Gem::Specification.find_by_name('ast') }
 
       it 'deletes files' do
         pin_cache.cache_gem(gemspec: gemspec, out: $stderr)

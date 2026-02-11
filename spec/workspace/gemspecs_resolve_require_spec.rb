@@ -158,7 +158,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       # write out Gemfile
       File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
         source 'https://rubygems.org'
-        gem 'backport'
+        gem 'public_suffix'
       GEMFILE
 
       # run bundle install
@@ -198,7 +198,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
 
       it 'returns gems' do
-        expect(specs.map(&:name)).to include('backport')
+        expect(specs.map(&:name)).to include('public_suffix')
       end
     end
 
@@ -283,14 +283,14 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
         before do
           add_bundle
-          find_or_install('backport', '1.0.0')
-          Gem::Specification.find_by_name('backport', '= 1.0.0')
+          find_or_install('public_suffix', '1.0.0')
+          Gem::Specification.find_by_name('public_suffix', '= 1.0.0')
         end
 
         let(:preferences) do
           [
             Gem::Specification.new.tap do |spec|
-              spec.name = 'backport'
+              spec.name = 'public_suffix'
               spec.version = '1.0.0'
             end
           ]
@@ -298,17 +298,17 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
         it 'returns the preferred gemspec' do
           gemspecs = described_class.new(dir_path, preferences: preferences)
-          specs = gemspecs.resolve_require('backport')
-          backport = specs.find { |spec| spec.name == 'backport' }
+          specs = gemspecs.resolve_require('public_suffix')
+          public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-          expect(backport.version.to_s).to eq('1.0.0')
+          expect(public_suffix.version.to_s).to eq('1.0.0')
         end
 
         context 'with a gem preference that does not exist' do
           let(:preferences) do
             [
               Gem::Specification.new.tap do |spec|
-                spec.name = 'backport'
+                spec.name = 'public_suffix'
                 spec.version = '99.0.0'
               end
             ]
@@ -316,20 +316,20 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
           it 'returns the gemspec we do have' do
             gemspecs = described_class.new(dir_path, preferences: preferences)
-            specs = gemspecs.resolve_require('backport')
-            backport = specs.find { |spec| spec.name == 'backport' }
+            specs = gemspecs.resolve_require('public_suffix')
+            public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-            expect(backport.version.to_s).to eq('1.2.0')
+            expect(public_suffix.version.to_s).to eq('1.2.0')
           end
         end
 
         context 'with a gem preference already set to the version we use' do
-          let(:version) { Gem::Specification.find_by_name('backport').version.to_s }
+          let(:version) { Gem::Specification.find_by_name('public_suffix').version.to_s }
 
           let(:preferences) do
             [
               Gem::Specification.new.tap do |spec|
-                spec.name = 'backport'
+                spec.name = 'public_suffix'
                 spec.version = version
               end
             ]
@@ -337,10 +337,10 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
           it 'returns the gemspec we do have' do
             gemspecs = described_class.new(dir_path, preferences: preferences)
-            specs = gemspecs.resolve_require('backport')
-            backport = specs.find { |spec| spec.name == 'backport' }
+            specs = gemspecs.resolve_require('public_suffix')
+            public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-            expect(backport.version.to_s).to eq(version)
+            expect(public_suffix.version.to_s).to eq(version)
           end
         end
       end

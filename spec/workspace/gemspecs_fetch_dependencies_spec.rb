@@ -18,7 +18,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
 
       it 'finds a known dependency' do
-        expect(deps.map(&:name)).to include('backport')
+        expect(deps.map(&:name)).to include('ostruct')
       end
     end
 
@@ -28,7 +28,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
 
       it 'finds a known dependency' do
-        expect(deps.map(&:name)).to include('backport')
+        expect(deps.map(&:name)).to include('rbs')
       end
     end
 
