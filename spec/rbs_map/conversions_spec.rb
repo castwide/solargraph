@@ -114,7 +114,9 @@ describe Solargraph::RbsMap::Conversions do
 
     it 'generates a rooted pin' do
       # rooted!
-      expect(superclass_pin&.name).to eq('::AST::Node')
+      expect(superclass_pin&.name).to eq('::AST::Node'), lambda do
+        `find ~/.cache/solargraph -type f | xargs ls -l`
+      end
     end
   end
 
