@@ -132,7 +132,7 @@ describe Solargraph::LanguageServer::Host do
   it 'stops' do
     host = described_class.new
     host.fully_stop
-    expect(host.stopped?).to be(true)
+    expect(host.fully_stopped?).to be(true)
   end
 
   it 'retains orphaned sources' do
