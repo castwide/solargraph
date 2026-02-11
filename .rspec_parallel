@@ -9,5 +9,4 @@
 # --format ParallelTests::RSpec::RuntimeLogger --out spec/parallel_runtime_rspec.log
 --format ParallelTests::RSpec::SummaryLogger # --out tmp/spec_summary.log
 # useful for debugging concurrency issues:
-#  --format ParallelTests::RSpec::VerboseLogger
-# --verbose
+--format ParallelTests::RSpec::VerboseLogger
