@@ -96,25 +96,26 @@ describe Solargraph::RbsMap::Conversions do
   end
 
   context 'with superclass pin for Parser::AST::Node' do
-    # Use :context here instead of :all so that parallel_rspec runs these on the same worker and we only have to cache these gems on one worker
-    before :context do
-      @api_map = Solargraph::ApiMap.new
-      gems = %w[parser ast open3]
-      bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
-      @api_map.catalog(bench)
-      @api_map.cache_all_for_doc_map!
-      @api_map.catalog(bench)
-    end
+    let(:api_map) { Solargraph::ApiMap.new }
 
     let(:superclass_pin) do
-      @api_map.pins.find do |pin|
+      api_map.pins.find do |pin|
         pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
       end
+    end
+
+    before do
+      gems = %w[parser ast open3]
+      bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
+      api_map.catalog(bench)
+      api_map.cache_all_for_doc_map!
+      api_map.catalog(bench)
     end
 
     it 'generates a rooted pin' do
       # rooted!
       expect(superclass_pin&.name).to eq('::AST::Node'), -> do
+        "superclass pin: #{superclass_pin.inspect}" +
         `bundle exec solargraph pin --references Parser::AST::Node` +
           "\n" +
           `find ~/.cache/solargraph -type f | xargs ls -l`
