@@ -661,11 +661,6 @@ describe Solargraph::Library, order: :defined do
   end
 
   describe '#delete' do
-    before :context do
-      # run these in order so we don't uncache backport right when we
-      # need it before
-    end
-
     it 'removes files from Library#source_map_hash' do
       workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
       library = described_class.load(workspace)
