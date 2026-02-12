@@ -106,7 +106,7 @@ describe Solargraph::RbsMap::Conversions do
 
     before do
       gems = %w[parser ast open3]
-      bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
+      bench = Solargraph::Bench.new(workspace: api_map.workspace, external_requires: gems)
       api_map.catalog(bench)
       api_map.cache_all_for_doc_map!
       api_map.catalog(bench)
