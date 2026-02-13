@@ -6,10 +6,9 @@ module Solargraph
     # unique types.
     #
     class UniqueType < Type
-      include TypeMethods
       include Equality
 
-      attr_reader :all_params, :subtypes, :key_types
+      attr_reader :all_params, :subtypes, :key_types, :name
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -100,6 +99,11 @@ module Solargraph
 
       def to_s
         tag
+      end
+
+      # @return [Array<ComplexType>]
+      def value_types
+        @subtypes
       end
 
       # @return [self]
@@ -198,6 +202,9 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support .class == .class
           @parameters_type == other.parameters_type
       end
+
+      # @return [Symbol, nil]
+      attr_reader :parameters_type
 
       def == other
         eql?(other)

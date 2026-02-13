@@ -11,7 +11,6 @@ module Solargraph
     include Equality
 
     autoload :Conformance, 'solargraph/complex_type/conformance'
-    autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
     # @param types [Array<UniqueType, ComplexType>]
@@ -162,14 +161,8 @@ module Solargraph
     # @param [Array<Object>] args
     def method_missing name, *args, &block
       return if @items.first.nil?
-      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
+      return @items.first.send(name, *args, &block) if @items.first.respond_to?(name)
       super
-    end
-
-    # @param name [Symbol]
-    # @param include_private [Boolean]
-    def respond_to_missing? name, include_private = false
-      TypeMethods.public_instance_methods.include?(name) || super
     end
 
     def to_s
