@@ -46,7 +46,7 @@ module Solargraph
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
-    # @param context_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param context_type [Type, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
@@ -70,7 +70,7 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
-    # @param dst [ComplexType, ComplexType::UniqueType]
+    # @param dst [Type]
     # @return [ComplexType]
     def self_to_type dst
       object_type_dst = dst.reduce_class_type
@@ -165,6 +165,13 @@ module Solargraph
       super
     end
 
+    # @param name [Symbol]
+    # @param include_private [Boolean]
+    def respond_to_missing? name, include_private = false
+      return false if @items.first.nil?
+      @items.first.respond_to?(name) || super
+    end
+
     def to_s
       map(&:tag).join(', ')
     end
@@ -194,7 +201,7 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param expected [Type]
     # @param situation [:method_call, :return_type, :assignment]
     # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
     #
@@ -369,7 +376,7 @@ module Solargraph
 
     # @see https://en.wikipedia.org/wiki/Intersection_type
     #
-    # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param intersection_type [Type, nil]
     # @param api_map [ApiMap]
     # @return [self, ComplexType::UniqueType]
     def intersect_with intersection_type, api_map

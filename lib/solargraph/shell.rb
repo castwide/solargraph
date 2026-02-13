@@ -485,7 +485,7 @@ module Solargraph
       desc
     end
 
-    # @param type [ComplexType, ComplexType::UniqueType]
+    # @param type [Type]
     # @return [void]
     def print_type type
       if options[:rbs]

@@ -173,7 +173,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
         type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
@@ -296,9 +296,9 @@ module Solargraph
       private
 
       # @param api_map [ApiMap]
-      # @param raw_return_type [ComplexType, ComplexType::UniqueType]
+      # @param raw_return_type [Type]
       #
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def adjust_type api_map, raw_return_type
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map

@@ -18,15 +18,55 @@ module Solargraph
     # @!method can_root_name?(name_to_check = nil)
     #   @param name_to_check [String, nil]
     # @!method key_types
-    #  @return [Array<Type>]
+    #   @return [Array<Type>]
     # @!method name
-    #  @return [String]
+    #   @return [String]
     # @!method parameters_type
-    #  @return [Symbol, nil]
+    #   @return [Symbol, nil]
     # @!method subtypes
-    #  @return [Array<Type>]
+    #   @return [Array<Type>]
     # @!method value_types
-    #  @return [Array<Type>]
+    #   @return [Array<Type>]
+    # @!method rooted_tags
+    #   @return [String]
+    # @!method reduce_class_type
+    #   @return [ComplexType]
+    # @!method each &block
+    #   @yieldparam t [self]
+    #   @yieldreturn [self]
+    #   @return [Enumerable<self>]
+    # @!method resolve_generics_from_context  generics_to_resolve, context_type, resolved_generic_values: {}
+    #   @param generics_to_resolve [Enumerable<String>]
+    #   @param context_type [ComplexType, ComplexType::UniqueType, nil]
+    #   @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
+    #   @return [ComplexType::UniqueType, ComplexType]
+    # @!method downcast_to_literal_if_possible
+    #   @return [ComplexType::UniqueType]
+    # @!method generic?
+    # @!method conforms_to? api_map, expected, situation, rules = [], variance: erased_variance(situation)
+    #   @param api_map [ApiMap]
+    #   @param expected [ComplexType::UniqueType, ComplexType]
+    #   @param situation [:method_call, :assignment, :return_type]
+    #   @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
+    #   @param variance [:invariant, :covariant, :contravariant]
+    # @!method exclude exclude_types, api_map
+    #   @param exclude_types [ComplexType, nil]
+    #   @param api_map [ApiMap]
+    #   @return [ComplexType, self]
+    # @!method intersect_with intersection_type, api_map
+    #   @param intersection_type [Type, nil]
+    #   @param api_map [ApiMap]
+    #   @return [self, ComplexType]
+    # @!method self_to_type dst
+    #   @param dst [ComplexType]
+    #   @return [self]
+    # @!method to_rbs
+    #   @return [String]
+    # @!method tags
+    #   @return [String]
+    # @!method nullable?
+    # @!method items
+    #   @return [Array<Type>]
 
     # @return [String]
     def tag
@@ -193,7 +233,7 @@ module Solargraph
     #
     # @param api_map [ApiMap] The ApiMap that performs qualification
     # @param context [String] The namespace from which to resolve names
-    # @return [self, ComplexType, ComplexType::UniqueType] The generated ComplexType
+    # @return [self, Type] The generated ComplexType
     def qualify api_map, context = ''
       transform do |t|
         next t if t.name == ComplexType::GENERIC_TAG_NAME

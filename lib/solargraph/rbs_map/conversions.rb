@@ -271,7 +271,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Class]
       # @return [void]
       def class_decl_to_pin decl
-        # @type [Hash{String => ComplexType, ComplexType::UniqueType}]
+        # @type [Hash{String => Type}]
         generic_defaults = {}
         decl.type_params.each do |param|
           generic_defaults[param.name.to_s] = other_type_to_type param.default_type if param.default_type
@@ -352,7 +352,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param type [Type]
       # @param comments [String, nil]
       # @param decl [RBS::AST::Declarations::ClassAlias,
       #   RBS::AST::Declarations::Constant,
@@ -838,7 +838,7 @@ module Solargraph
       end
 
       # @param type [RBS::MethodType, RBS::Types::Block]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def method_type_to_type type
         if type_aliases.key?(type.type.return_type.to_s)
           other_type_to_type(type_aliases[type.type.return_type.to_s].type)
@@ -851,7 +851,7 @@ module Solargraph
       #   Note: Generally these extend from RBS::Types::Bases::Base,
       #   but not all.
       #
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def other_type_to_type type
         case type
         when RBS::Types::Optional

@@ -193,7 +193,7 @@ module Solargraph
 
         # @param pin [Pin::Base]
         # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
@@ -212,7 +212,7 @@ module Solargraph
 
         # @param pin [Pin::Method]
         # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [Pin::ProxyType]
         def process_directive pin, api_map, context, locals
@@ -228,7 +228,7 @@ module Solargraph
         # @param pin [Pin::Base]
         # @param macro [YARD::Tags::MacroDirective]
         # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
@@ -304,7 +304,7 @@ module Solargraph
         end
 
         # @param type [ComplexType]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @return [ComplexType]
         def with_params type, context
           return type unless type.to_s.include?('$')
@@ -318,7 +318,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]

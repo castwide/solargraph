@@ -58,7 +58,7 @@ module Solargraph
         @docstring = docstring
         @directives = directives
         @combine_priority = combine_priority
-        # @type [ComplexType, ComplexType::UniqueType, nil]
+        # @type [Type, nil]
         @binder = nil
 
         assert_source_provided
@@ -413,7 +413,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param return_type_context [ComplexType, ComplexType::UniqueType, nil]
+      # @param return_type_context [Type, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @return [self]
       def resolve_generics_from_context generics_to_resolve, return_type_context = nil, resolved_generic_values: {}
@@ -566,7 +566,7 @@ module Solargraph
       # provided ApiMap.
       #
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def typify api_map
         return_type.qualify(api_map, *(closure&.gates || ['']))
       end
@@ -574,14 +574,14 @@ module Solargraph
       # Infer the pin's return type via static code analysis.
       #
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def probe api_map
         typify api_map
       end
 
       # @deprecated Use #typify and/or #probe instead
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def infer api_map
         Solargraph.assert_or_log(:pin_infer,
                                  'WARNING: Pin #infer methods are deprecated. Use #typify or #probe instead.')
@@ -615,7 +615,7 @@ module Solargraph
       # the return type and the #proxied? setting, the proxy should be a clone
       # of the original.
       #
-      # @param return_type [ComplexType, ComplexType::UniqueType, nil]
+      # @param return_type [Type, nil]
       # @return [self]
       def proxy return_type
         result = dup
@@ -706,7 +706,7 @@ module Solargraph
       # @return [Boolean]
       attr_writer :proxied
 
-      # @return [ComplexType, ComplexType::UniqueType, nil]
+      # @return [Type, nil]
       attr_writer :return_type
 
       attr_writer :docstring, :directives

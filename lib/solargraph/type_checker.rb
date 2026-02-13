@@ -50,26 +50,26 @@ module Solargraph
       source_map.source
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def return_type_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :return_type)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def arg_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :method_call)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     def assignment_conforms_to? inferred, expected
       conforms_to?(inferred, expected, :assignment)
     end
 
-    # @param inferred [ComplexType, ComplexType::UniqueType]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param inferred [Type]
+    # @param expected [Type]
     # @param scenario [Symbol]
     def conforms_to? inferred, expected, scenario
       rules_arr = []
@@ -525,7 +525,7 @@ module Solargraph
         if data.nil?
           # @todo Some level (strong, I guess) should require the param here
         else
-          # @type [ComplexType, ComplexType::UniqueType]
+          # @type [Type]
           ptype = data[:qualified]
           ptype = ptype.self_to_type(pin.context)
           unless ptype.undefined?

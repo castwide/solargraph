@@ -22,7 +22,7 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      # @param context [ComplexType, ComplexType::UniqueType, nil]
+      # @param context [Type, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
                      context: nil, **splat
@@ -580,7 +580,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType, nil]
+      # @return [Type, nil]
       def see_reference api_map
         # This should actually be an intersection type
         # @param ref [YARD::Tags::Tag, YARD::Tags::RefTag]
@@ -616,7 +616,7 @@ module Solargraph
 
       # @param ref [String]
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType, nil]
+      # @return [Type, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
         if parts.first.empty? || parts.one?
