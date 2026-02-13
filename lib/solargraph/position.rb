@@ -21,12 +21,8 @@ module Solargraph
       @character = character
     end
 
-    protected def equality_fields
-      [line, character]
-    end
-
     # @param other [Position]
-    def <=>(other)
+    def <=> other
       return nil unless other.is_a?(Position)
       if line == other.line
         character <=> other.character
@@ -57,7 +53,22 @@ module Solargraph
     # @return [Integer]
     def self.to_offset text, position
       return 0 if text.empty?
-      text.lines[0...position.line].sum(&:length) + position.character
+
+      newline_index = -1
+      line = -1
+      last_line_index = 0
+
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
+        line += 1
+        break if line == position.line
+
+        last_line_index = newline_index
+      end
+
+      last_line_index += 1 if position.line.positive?
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      last_line_index + position.character
     end
 
     # Get a numeric offset for the specified text and a position identified
@@ -73,25 +84,26 @@ module Solargraph
 
     # Get a position for the specified text and offset.
     #
+    # @raise [InvalidOffsetError] if the offset is outside the text range
+    #
     # @param text [String]
     # @param offset [Integer]
     # @return [Position]
     def self.from_offset text, offset
+      raise InvalidOffsetError if offset > text.length
+
       cursor = 0
       line = 0
-      # @type [Integer, nil]
-      character = nil
-      text.lines.each do |l|
-        line_length = l.length
-        char_length = l.chomp.length
-        if cursor + char_length >= offset
-          character = offset - cursor
-          break
-        end
-        cursor += line_length
+      character = offset
+      newline_index = -1
+
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      while (newline_index = text.index("\n", newline_index + 1)) && newline_index < offset
         line += 1
+        # @sg-ignore flow sensitive typing should be able to handle redefinition
+        character = offset - newline_index - 1
       end
-      character = 0 if character.nil? and (cursor - offset).between?(0, 1)
+      character = 0 if character.nil? && (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
       # @sg-ignore flow sensitive typing needs to handle 'raise if'
       Position.new(line, character)
@@ -113,6 +125,12 @@ module Solargraph
     def == other
       return false unless other.is_a?(Position)
       line == other.line and character == other.character
+    end
+
+    protected
+
+    def equality_fields
+      [line, character]
     end
   end
 end

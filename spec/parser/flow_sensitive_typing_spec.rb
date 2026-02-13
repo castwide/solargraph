@@ -979,7 +979,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
-
   it 'supports !@x.nil && @x.y' do
     source = Solargraph::Source.load_string(%(
       class Bar

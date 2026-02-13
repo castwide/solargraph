@@ -12,7 +12,6 @@ module Solargraph
       # @type [Hash{String => RbsMap}]
       @stdlib_maps_hash = {}
 
-
       # @param rebuild [Boolean] build pins regardless of whether we
       #   have cached them already
       # @param library [String]
