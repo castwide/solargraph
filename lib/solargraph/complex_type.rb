@@ -171,6 +171,10 @@ module Solargraph
       super
     end
 
+    def undefined?
+      @items.all?(&:undefined?)
+    end
+
     # @param name [Symbol]
     # @param include_private [Boolean]
     def respond_to_missing? name, include_private = false
