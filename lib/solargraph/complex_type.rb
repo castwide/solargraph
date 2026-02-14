@@ -161,7 +161,13 @@ module Solargraph
     # @param [Array<Object>] args
     def method_missing name, *args, &block
       return if @items.first.nil?
-      return @items.first.send(name, *args, &block) if @items.first.respond_to?(name)
+      if @items.first.respond_to?(name)
+        if @items.count > 1
+          Solargraph.assert_or_log(:complex_type_method_missing,
+                                   "ComplexType being used as UniqueType: delegating #{name} to #{self.class} with items #{@items.map(&:to_s).join(', ')}")
+        end
+        return @items.first.send(name, *args, &block)
+      end
       super
     end
 
