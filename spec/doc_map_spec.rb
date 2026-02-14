@@ -33,16 +33,12 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'understands rspec + rspec-mocks require pattern' do
+  context 'when understanding rspec + rspec-mocks require pattern' do
     let(:requires) do
       ['rspec-mocks']
     end
 
-    # This is a gem name vs require name issue - works under
-    # solargraph-rspec, but not without
-    xit 'generates pins from gems' do
-      pending('handling dependencies from conventions as gem names, not requires')
-
+    it 'generates pins from gems' do
       ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
       expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
     end
@@ -53,22 +49,18 @@ describe Solargraph::DocMap do
       ['not_a_gem']
     end
 
-    # expected: ["not_a_gem"]
-    # got: ["not_a_gem", "rspec-mocks"]
-    #
-    # This is a gem name vs require name issue coming from conventions
-    # - will pass once the above context passes
-    xit 'tracks unresolved requires' do
+    it 'tracks unresolved requires' do
       # These are auto-required by solargraph-rspec in case the bundle
       # includes these gems.  In our case, it doesn't!
-      unprovided_solargraph_rspec_requires = [
-        'rspec-rails',
-        'actionmailer',
-        'activerecord',
-        'shoulda-matchers',
-        'rspec-sidekiq',
-        'airborne',
-        'activesupport'
+      unprovided_solargraph_rspec_requires = %w[
+        rspec-rails
+        actionmailer
+        actionpack
+        activerecord
+        shoulda-matchers
+        rspec-sidekiq
+        airborne
+        activesupport
       ]
       expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
         .to eq(['not_a_gem'])
@@ -79,7 +71,7 @@ describe Solargraph::DocMap do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
     allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], workspace)
+    described_class.new(['set'], workspace)
     expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
@@ -172,16 +164,16 @@ describe Solargraph::DocMap do
 
     it 'includes convention requires from environ' do
       dummy_convention = Class.new(Solargraph::Convention::Base) do
-        def global(doc_map)
+        def global doc_map
           Solargraph::Environ.new(
-            requires: ['convention_gem1', 'convention_gem2']
+            requires: %w[convention_gem1 convention_gem2]
           )
         end
       end
 
       Solargraph::Convention.register dummy_convention
 
-      doc_map = Solargraph::DocMap.new(['original_gem'], workspace)
+      doc_map = described_class.new(['original_gem'], workspace)
 
       # @todo this should probably not be in requires, which is a
       #   path, and instead be in a new gem_names property on the

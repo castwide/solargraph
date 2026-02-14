@@ -6,12 +6,14 @@ module Solargraph
       class Constant < Link
         def initialize word
           @word = word
+
+          super
         end
 
         def resolve api_map, name_pin, locals
           return [Pin::ROOT_PIN] if word.empty?
           if word.start_with?('::')
-            base = word[2..-1]
+            base = word[2..]
             gates = ['']
           else
             base = word

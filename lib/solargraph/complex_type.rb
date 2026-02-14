@@ -3,23 +3,25 @@
 module Solargraph
   # A container for type data based on YARD type tags.
   #
-  class ComplexType
-    GENERIC_TAG_NAME = 'generic'.freeze
+  class ComplexType < Type
+    GENERIC_TAG_NAME = 'generic'
+
     # @!parse
     #   include TypeMethods
     include Equality
 
     autoload :Conformance, 'solargraph/complex_type/conformance'
-    autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
     # @param types [Array<UniqueType, ComplexType>]
     def initialize types = [UniqueType::UNDEFINED]
+      super()
+
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
       if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
-        items.delete_if { |i| i.name == 'false' || i.name == 'true' }
+        items.delete_if { |i| %w[false true].include?(i.name) }
         items.unshift(UniqueType::BOOLEAN)
       end
       # @type [Array<UniqueType>]
@@ -29,17 +31,14 @@ module Solargraph
       @items = items
     end
 
-    protected def equality_fields
-      [self.class, items]
-    end
-
     # @param api_map [ApiMap]
-    # @param context [String]
+    # @param gates [Array<String>]
+    #
     # @return [ComplexType]
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
-        next t if ['nil', 'void', 'undefined'].include?(t.name)
+        next t if %w[nil void undefined].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
         t.qualify api_map, *gates
       end
@@ -47,13 +46,16 @@ module Solargraph
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
-    # @param context_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param context_type [Type, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
 
-      ComplexType.new(@items.map { |i| i.resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: resolved_generic_values) })
+      ComplexType.new(@items.map do |i|
+        i.resolve_generics_from_context(generics_to_resolve, context_type,
+                                        resolved_generic_values: resolved_generic_values)
+      end)
     end
 
     # @return [UniqueType]
@@ -68,7 +70,7 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
-    # @param dst [ComplexType, ComplexType::UniqueType]
+    # @param dst [Type]
     # @return [ComplexType]
     def self_to_type dst
       object_type_dst = dst.reduce_class_type
@@ -84,14 +86,14 @@ module Solargraph
     # @sg-ignore Declared return type
     #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
     #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
-    def map(&block)
+    def map &block
       @items.map(&block)
     end
 
     # @yieldparam [UniqueType]
     # @return [Enumerable<UniqueType>]
     def each &block
-      @items.each &block
+      @items.each(&block)
     end
 
     # @yieldparam [UniqueType]
@@ -102,17 +104,17 @@ module Solargraph
       return enum_for(__method__) unless block_given?
 
       @items.each do |item|
-        item.each_unique_type &block
+        item.each_unique_type(&block)
       end
     end
 
     # @param new_name [String, nil]
     # @param make_rooted [Boolean, nil]
     # @param new_key_types [Array<ComplexType>, nil]
-    # @param rooted [Boolean, nil]
+    # @param make_rooted [Boolean, nil]
     # @param new_subtypes [Array<ComplexType>, nil]
     # @return [self]
-    def recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
+    def recreate new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil
       ComplexType.new(map do |ut|
                         ut.recreate(new_name: new_name,
                                     make_rooted: make_rooted,
@@ -133,13 +135,13 @@ module Solargraph
 
     # @param index [Integer]
     # @return [UniqueType]
-    def [](index)
+    def [] index
       @items[index]
     end
 
     # @return [Array<UniqueType>]
     def select &block
-      @items.select &block
+      @items.select(&block)
     end
 
     # @return [String]
@@ -154,17 +156,30 @@ module Solargraph
     end
 
     # @param name [Symbol]
+    #
     # @return [Object, nil]
+    # @param [Array<Object>] args
     def method_missing name, *args, &block
       return if @items.first.nil?
-      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
+      if @items.first.respond_to?(name)
+        if @items.count > 1
+          Solargraph.assert_or_log(:complex_type_method_missing,
+                                   "ComplexType being used as UniqueType: delegating #{name} to #{self.class} with items #{@items.map(&:to_s).join(', ')}")
+        end
+        return @items.first.send(name, *args, &block)
+      end
       super
+    end
+
+    def undefined?
+      @items.all?(&:undefined?)
     end
 
     # @param name [Symbol]
     # @param include_private [Boolean]
-    def respond_to_missing?(name, include_private = false)
-      TypeMethods.public_instance_methods.include?(name) || super
+    def respond_to_missing? name, include_private = false
+      return false if @items.first.nil?
+      @items.first.respond_to?(name) || super
     end
 
     def to_s
@@ -196,26 +211,31 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param expected [ComplexType, ComplexType::UniqueType]
+    # @param expected [Type]
     # @param situation [:method_call, :return_type, :assignment]
-    # @param allow_subtype_skew [Boolean] if false, check if any
-    #   subtypes of the expected type match the inferred type
-    # @param allow_reverse_match [Boolean] if true, check if any subtypes
-    #   of the expected type match the inferred type
-    # @param allow_empty_params [Boolean] if true, allow a general
-    #   inferred type without parameters to conform to a more specific
-    #   expected type
-    # @param allow_any_match [Boolean] if true, any unique type
-    #   matched in the inferred qualifies as a match
-    # @param allow_undefined [Boolean] if true, treat undefined as a
-    #   wildcard that matches anything
     # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    #
+    #   allow_subtype_skew: if not provided, check if any subtypes of
+    #     the expected type match the inferred type
+    #
+    #   allow_reverse_match: check if any subtypes
+    #     of the expected type match the inferred type
+    #
+    #   allow_empty_params: allow a general inferred type without
+    #     parameters to conform to a more specific expected type
+    #
+    #   allow_any_match: any unique type matched in the inferred
+    #     qualifies as a match
+    #
+    #   allow_undefined: treat undefined as a wildcard that matches
+    #     anything
+    #
     # @param variance [:invariant, :covariant, :contravariant]
     # @return [Boolean]
-    def conforms_to?(api_map, expected,
+    def conforms_to? api_map, expected,
                      situation,
                      rules = [],
-                     variance: erased_variance(situation))
+                     variance: erased_variance(situation)
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 
@@ -256,14 +276,14 @@ module Solargraph
 
     # @yieldparam [UniqueType]
     def all? &block
-      @items.all? &block
+      @items.all?(&block)
     end
 
     # @yieldparam [UniqueType]
     # @yieldreturn [Boolean]
     # @return [Boolean]
     def any? &block
-      @items.compact.any? &block
+      @items.compact.any?(&block)
     end
 
     def selfy?
@@ -283,8 +303,10 @@ module Solargraph
     # @yieldparam t [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [ComplexType]
-    def transform(new_name = nil, &transform_type)
-      raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}" if new_name&.start_with?('::')
+    def transform new_name = nil, &transform_type
+      if new_name&.start_with?('::')
+        raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}"
+      end
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
@@ -322,7 +344,7 @@ module Solargraph
     # @return [ComplexType]
     def reduce_class_type
       new_items = items.flat_map do |type|
-        next type unless ['Module', 'Class'].include?(type.name)
+        next type unless %w[Module Class].include?(type.name)
         next type if type.all_params.empty?
 
         type.all_params
@@ -337,7 +359,7 @@ module Solargraph
     end
 
     # @param other [ComplexType, UniqueType]
-    def erased_version_of?(other)
+    def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
       @items.first.erased_version_of?(other.items.first)
@@ -350,10 +372,6 @@ module Solargraph
     end
 
     attr_reader :items
-
-    def rooted?
-      @items.all?(&:rooted?)
-    end
 
     # @param exclude_types [ComplexType, nil]
     # @param api_map [ApiMap]
@@ -368,7 +386,7 @@ module Solargraph
 
     # @see https://en.wikipedia.org/wiki/Intersection_type
     #
-    # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param intersection_type [Type, nil]
     # @param api_map [ApiMap]
     # @return [self, ComplexType::UniqueType]
     def intersect_with intersection_type, api_map
@@ -391,6 +409,10 @@ module Solargraph
 
     protected
 
+    def equality_fields
+      [self.class, items]
+    end
+
     # @return [ComplexType]
     def reduce_object
       new_items = items.flat_map do |ut|
@@ -410,13 +432,11 @@ module Solargraph
       # @example
       #   ComplexType.parse 'String', 'Foo', 'nil' #=> [String, Foo, nil]
       #
-      # @note
-      #   The `partial` parameter is used to indicate that the method is
-      #   receiving a string that will be used inside another ComplexType.
-      #   It returns arrays of ComplexTypes instead of a single cohesive one.
-      #   Consumers should not need to use this parameter; it should only be
-      #   used internally.
-      #
+      # @param partial [Boolean] if true, method is receiving a string
+      #   that will be used inside another ComplexType.  It returns
+      #   arrays of ComplexTypes instead of a single cohesive one.
+      #   Consumers should not need to use this parameter; it should
+      #   only be used internally.
       # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
       # # @overload parse(*strings, partial: false)
@@ -446,14 +466,14 @@ module Solargraph
           # @param char [String]
           type_string&.each_char do |char|
             if char == '='
-              #raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
+              # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'
               point_stack += 1
             elsif char == '>'
-              if subtype_string.end_with?('=') && curly_stack > 0
+              if subtype_string.end_with?('=') && curly_stack.positive?
                 subtype_string += char
               elsif base.end_with?('=')
-                raise ComplexTypeError, "Invalid hash thing" unless key_types.nil?
+                raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
                 # @sg-ignore Need to add nil check here
                 types.push UniqueType.parse(base[0..-2].strip, subtype_string)
@@ -466,7 +486,7 @@ module Solargraph
                 subtype_string.clear
                 next
               else
-                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack == 0
+                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack.zero?
                 point_stack -= 1
                 subtype_string += char
               end
@@ -476,34 +496,37 @@ module Solargraph
             elsif char == '}'
               curly_stack -= 1
               subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack.negative?
               next
             elsif char == '('
               paren_stack += 1
             elsif char == ')'
               paren_stack -= 1
               subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack < 0
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack.negative?
               next
-            elsif char == ',' && point_stack == 0 && curly_stack == 0 && paren_stack == 0
+            elsif char == ',' && point_stack.zero? && curly_stack.zero? && paren_stack.zero?
               # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
               types.push UniqueType.parse(base.strip, subtype_string.strip)
               base.clear
               subtype_string.clear
               next
             end
-            if point_stack == 0 && curly_stack == 0 && paren_stack == 0
+            if point_stack.zero? && curly_stack.zero? && paren_stack.zero?
               base.concat char
             else
               subtype_string.concat char
             end
           end
-          raise ComplexTypeError, "Unclosed subtype in #{type_string}" if point_stack != 0 || curly_stack != 0 || paren_stack != 0
+          if point_stack != 0 || curly_stack != 0 || paren_stack != 0
+            raise ComplexTypeError,
+                  "Unclosed subtype in #{type_string}"
+          end
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
           types.push UniqueType.parse(base.strip, subtype_string.strip)
         end
         unless key_types.nil?
-          raise ComplexTypeError, "Invalid use of key/value parameters" unless partial
+          raise ComplexTypeError, 'Invalid use of key/value parameters' unless partial
           return key_types if types.empty?
           return [key_types, types]
         end
@@ -515,7 +538,7 @@ module Solargraph
       # @param strings [Array<String>]
       # @return [ComplexType]
       def try_parse *strings
-        parse *strings
+        parse(*strings)
       rescue ComplexTypeError => e
         Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
@@ -540,9 +563,7 @@ module Solargraph
     # @param dst [String]
     # @return [String]
     def reduce_class dst
-      while dst =~ /^(Class|Module)\<(.*?)\>$/
-        dst = dst.sub(/^(Class|Module)\</, '').sub(/\>$/, '')
-      end
+      dst = dst.sub(/^(Class|Module)</, '').sub(/>$/, '') while dst =~ /^(Class|Module)<(.*?)>$/
       dst
     end
   end

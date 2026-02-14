@@ -10,7 +10,7 @@ module Solargraph
       #   @abstract
       #   @return [void]
       # @type @closure [Pin::Closure, nil]
-      # @type @binder [ComplexType, ComplexType::UniqueType, nil]
+      # @type @binder [Type, nil]
 
       # @todo Missed nil violation
       # @return [Location, nil]
@@ -18,7 +18,7 @@ module Solargraph
 
       # @param value [Pin::Closure]
       # @return [void]
-      def closure=(value)
+      def closure= value
         @closure = value
         # remove cached values generated from closure
         reset_generated!
@@ -26,7 +26,10 @@ module Solargraph
 
       # @return [Pin::Closure, nil]
       def closure
-        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        unless @closure
+          Solargraph.assert_or_log(:closure,
+                                   "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}")
+        end
         @closure
       end
 
@@ -41,7 +44,7 @@ module Solargraph
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def context
         # Get the static context from the nearest namespace
         @context ||= find_context
@@ -53,7 +56,7 @@ module Solargraph
         context.namespace.to_s
       end
 
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def binder
         @binder || context

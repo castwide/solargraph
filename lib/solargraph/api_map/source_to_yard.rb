@@ -3,7 +3,6 @@
 module Solargraph
   class ApiMap
     module SourceToYard
-
       # Get the YARD CodeObject at the specified path.
       #
       # @sg-ignore Declared return type generic<T>, nil does not match
@@ -15,7 +14,7 @@ module Solargraph
       # @return [generic<T>, nil]
       def code_object_at path, klass = YARD::CodeObjects::Base
         obj = code_object_map[path]
-        obj if obj&.is_a?(klass)
+        obj if obj.is_a?(klass)
       end
 
       # @return [Array<String>]
@@ -36,20 +35,20 @@ module Solargraph
           end
           if pin.type == :class
             # @param obj [YARD::CodeObjects::RootObject]
-            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) { |obj|
+            code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) do |obj|
               # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
               # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
-            }
+            end
           else
             # @param obj [YARD::CodeObjects::RootObject]
-            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) { |obj|
+            code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) do |obj|
               # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
               # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
-            }
+            end
           end
           code_object_map[pin.path].docstring = pin.docstring
           store.get_includes(pin.path).each do |ref|
@@ -75,12 +74,14 @@ module Solargraph
 
           # @sg-ignore Need to add nil check here
           # @param obj [YARD::CodeObjects::RootObject]
-          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope) { |obj|
+          code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
+            code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope
+          ) do |obj|
             # @sg-ignore flow sensitive typing needs to handle attrs
             next if pin.location.nil? || pin.location.filename.nil?
             # @sg-ignore flow sensitive typing needs to handle attrs
             obj.add_file pin.location.filename, pin.location.range.start.line
-          }
+          end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
           # @sg-ignore Need to add nil check here
           method_object.docstring = pin.docstring

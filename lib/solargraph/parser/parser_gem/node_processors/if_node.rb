@@ -18,7 +18,7 @@ module Solargraph
                 location: get_node_location(condition_node),
                 closure: region.closure,
                 node: condition_node,
-                source: :parser,
+                source: :parser
               )
               NodeProcessor.process(condition_node, region, pins, locals, ivars)
             end
@@ -28,7 +28,7 @@ module Solargraph
                 location: get_node_location(then_node),
                 closure: region.closure,
                 node: then_node,
-                source: :parser,
+                source: :parser
               )
               NodeProcessor.process(then_node, region, pins, locals, ivars)
             end
@@ -39,7 +39,7 @@ module Solargraph
                 location: get_node_location(else_node),
                 closure: region.closure,
                 node: else_node,
-                source: :parser,
+                source: :parser
               )
               NodeProcessor.process(else_node, region, pins, locals, ivars)
             end

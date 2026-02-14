@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Pin
     # A series of statements where if a given statement executes, /all
@@ -42,10 +44,8 @@ module Solargraph
     class CompoundStatement < Pin::Base
       attr_reader :node
 
-      # @param receiver [Parser::AST::Node, nil]
       # @param node [Parser::AST::Node, nil]
-      # @param context [ComplexType, nil]
-      # @param args [::Array<Parameter>]
+      # @param [Hash{Symbol => Object}] splat
       def initialize node: nil, **splat
         super(**splat)
         @node = node

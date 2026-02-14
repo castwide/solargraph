@@ -17,18 +17,14 @@ module Solargraph
     # @param filename [String, nil]
     # @param range [Solargraph::Range]
     def initialize filename, range
-      raise "Use nil to represent no-file" if filename&.empty?
+      raise 'Use nil to represent no-file' if filename&.empty?
 
       @filename = filename
       @range = range
     end
 
-    protected def equality_fields
-      [filename, range]
-    end
-
     # @param other [self]
-    def <=>(other)
+    def <=> other
       return nil unless other.is_a?(Location)
       if filename == other.filename
         range <=> other.range
@@ -46,10 +42,6 @@ module Solargraph
       range.contain?(location.range.start) && range.contain?(location.range.ending) && filename == location.filename
     end
 
-    def inspect
-      "<#{self.class.name}: filename=#{filename}, range=#{range.inspect}>"
-    end
-
     def to_s
       inspect
     end
@@ -64,14 +56,14 @@ module Solargraph
 
     # @param node [Parser::AST::Node, nil]
     # @return [Location, nil]
-    def self.from_node(node)
+    def self.from_node node
       return nil if node.nil? || node.loc.nil?
       filename = node.loc.expression.source_buffer.name
       # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
       filename = nil if filename.empty?
       range = Range.from_node(node)
       # @sg-ignore Need to add nil check here
-      self.new(filename, range)
+      new(filename, range)
     end
 
     # @param other [BasicObject]
@@ -82,6 +74,12 @@ module Solargraph
 
     def inspect
       "#<#{self.class} #{filename}, #{range.inspect}>"
+    end
+
+    protected
+
+    def equality_fields
+      [filename, range]
     end
   end
 end

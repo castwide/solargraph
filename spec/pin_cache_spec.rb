@@ -150,7 +150,8 @@ describe Solargraph::PinCache do
         pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
 
         # match arguments with regexp using rspec-matchers syntax
-        expect(File).to have_received(:write).with(%r{combined/.*/rubocop-yard-.*-export.ser$}, any_args, mode: 'wb').once
+        expect(File).to have_received(:write).with(%r{combined/.*/rubocop-yard-.*-export.ser$}, any_args,
+                                                   mode: 'wb').once
       end
     end
   end

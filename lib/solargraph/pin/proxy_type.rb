@@ -3,10 +3,11 @@
 module Solargraph
   module Pin
     class ProxyType < Base
-      # @param return_type [ComplexType, ComplexType::UniqueType]
+      # @param return_type [Type]
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
-      # @param binder [ComplexType, ComplexType::UniqueType, nil]
+      # @param binder [Type, nil]
       # @param gates [Array<String>, nil]
+      # @param [Hash{Symbol => Object}] splat
       def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
         super(**splat)
         @gates = gates
@@ -18,10 +19,11 @@ module Solargraph
         @return_type
       end
 
-      # @param context [ComplexType, ComplexType::UniqueType] Used as context for this pin
+      # @param context [Type] Used as context for this pin
       # @param closure [Pin::Namespace, nil] Used as the closure for this pin
-      # @param binder [ComplexType, ComplexType::UniqueType, nil]
+      # @param binder [Type, nil]
       # @return [ProxyType]
+      # @param [Hash{Symbol => Object}] kwargs
       def self.anonymous context, closure: nil, binder: nil, **kwargs
         unless closure
           parts = context.namespace.split('::')

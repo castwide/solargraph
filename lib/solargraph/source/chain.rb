@@ -48,11 +48,6 @@ module Solargraph
 
       attr_reader :node
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
-      protected def equality_fields
-        [links, node]
-      end
-
       # @param node [Parser::AST::Node, nil]
       # @param links [::Array<Chain::Link>]
       # @param splat [Boolean]
@@ -119,7 +114,9 @@ module Solargraph
           pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
           if type.undefined?
-            logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}" }
+            logger.debug do
+              "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
+            end
             return []
           end
           # We continue to use the context from the head pin, in case
@@ -128,7 +125,9 @@ module Solargraph
           # for the binder, as this is chaining off of it, and the
           # binder is now the lhs of the rhs we are evaluating.
           working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
-          logger.debug { "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}" }
+          logger.debug do
+            "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
+          end
         end
         links.last.last_context = working_pin
         links.last.resolve(api_map, working_pin, locals)
@@ -150,23 +149,29 @@ module Solargraph
           @@inference_cache = {}
         end
         out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
-        logger.debug { "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}" }
+        logger.debug do
+          "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}"
+        end
         @@inference_cache[cache_key] = out
       end
 
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
         if pins.empty?
-          logger.debug { "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}) => undefined - no pins" }
+          logger.debug do
+            "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}) => undefined - no pins"
+          end
           return ComplexType::UNDEFINED
         end
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type)
-        logger.debug { "Chain#infer_uncached(links=#{self.links.map(&:desc)}, locals=#{locals.map(&:desc)}, name_pin=#{name_pin}, name_pin.closure=#{name_pin.closure.inspect}, name_pin.binder=#{name_pin.binder}) => #{out.rooted_tags.inspect}" }
+        logger.debug do
+          "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, name_pin=#{name_pin}, name_pin.closure=#{name_pin.closure.inspect}, name_pin.binder=#{name_pin.binder}) => #{out.rooted_tags.inspect}"
+        end
         out
       end
 
@@ -215,9 +220,9 @@ module Solargraph
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def infer_from_definitions pins, name_pin, api_map, locals
-        # @type [::Array<ComplexType, ComplexType::UniqueType>]
+        # @type [::Array<Type>]
         types = []
         unresolved_pins = []
         # @todo this param tag shouldn't be needed to probe the type
@@ -245,17 +250,13 @@ module Solargraph
         end
 
         # Limit method inference recursion
-        if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
-          return ComplexType::UNDEFINED
-        end
+        return ComplexType::UNDEFINED if @@inference_depth >= 10 && pins.first.is_a?(Pin::Method)
 
         @@inference_depth += 1
         # @param pin [Pin::Base]
         unresolved_pins.each do |pin|
           # Avoid infinite recursion
-          if @@inference_stack.include?(pin.identity)
-            next
-          end
+          next if @@inference_stack.include?(pin.identity)
 
           @@inference_stack.push(pin.identity)
           type = pin.probe(api_map)
@@ -282,12 +283,19 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # @param type [ComplexType, ComplexType::UniqueType]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @param type [Type]
+      # @return [Type]
       def maybe_nil type
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?
         ComplexType.new(type.items + [ComplexType::NIL])
+      end
+
+      protected
+
+      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      def equality_fields
+        [links, node]
       end
     end
   end
