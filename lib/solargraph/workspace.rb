@@ -80,14 +80,6 @@ module Solargraph
       @pin_cache ||= fresh_pincache
     end
 
-    # @param stdlib_name [String]
-    #
-    # @return [Array<String>]
-    def stdlib_dependencies stdlib_name
-      deps = RbsMap::StdlibMap.stdlib_dependencies(stdlib_name, nil) || []
-      deps.map { |dep| dep['name'] }.compact
-    end
-
     # @return [Environ]
     def global_environ
       # empty docmap, since the result needs to work in any possible
@@ -127,7 +119,7 @@ module Solargraph
 
     # @param level [Symbol]
     # @return [TypeChecker::Rules]
-    def rules(level)
+    def rules level
       @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
     end
 
@@ -147,7 +139,7 @@ module Solargraph
       includes_any = false
       sources.each do |source|
         # @sg-ignore Need to add nil check here
-        next unless directory == "*" || config.calculated.include?(source.filename)
+        next unless directory == '*' || config.calculated.include?(source.filename)
 
         # @sg-ignore Need to add nil check here
         source_hash[source.filename] = source
@@ -199,7 +191,7 @@ module Solargraph
     def would_require? path
       require_paths.each do |rp|
         full = File.join rp, path
-        return true if File.file?(full) || File.file?(full << ".rb")
+        return true if File.file?(full) || File.file?(full << '.rb')
       end
       false
     end
@@ -223,17 +215,15 @@ module Solargraph
 
     # @return [String, nil]
     def rbs_collection_path
-      @gem_rbs_collection ||= read_rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
     end
 
     # @return [String, nil]
     def rbs_collection_config_path
       @rbs_collection_config_path ||=
-        begin
-          unless directory.empty? || directory == '*'
-            yaml_file = File.join(directory, 'rbs_collection.yaml')
-            yaml_file if File.file?(yaml_file)
-          end
+        unless directory.empty? || directory == '*'
+          yaml_file = File.join(directory, 'rbs_collection.yaml')
+          yaml_file if File.file?(yaml_file)
         end
     end
 
@@ -249,14 +239,6 @@ module Solargraph
     # @return [Array<Gem::Specification>]
     def all_gemspecs_from_bundle
       gemspecs.all_gemspecs_from_bundle
-    end
-
-    # @todo make this actually work against bundle instead of pulling
-    #   all installed gemspecs -
-    #   https://github.com/apiology/solargraph/pull/10
-    # @return [Array<Gem::Specification>]
-    def all_gemspecs_from_bundle
-      Gem::Specification.to_a
     end
 
     # @param out [StringIO, IO, nil] output stream for logging
@@ -278,7 +260,7 @@ module Solargraph
       # which are likely to be newer and have more pins
       pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
 
-      out&.puts "Documentation cached for core, standard library and gems."
+      out&.puts 'Documentation cached for core, standard library and gems.'
     end
 
     # Synchronize the workspace from the provided updater.
@@ -323,30 +305,25 @@ module Solargraph
     # @return [void]
     def load_sources
       source_hash.clear
-      unless directory.empty? || directory == '*'
-        size = config.calculated.length
-        if config.max_files > 0 and size > config.max_files
-          raise WorkspaceTooLargeError,
-                "The workspace is too large to index (#{size} files, #{config.max_files} max)"
-        end
-        config.calculated.each do |filename|
-          begin
-            source_hash[filename] = Solargraph::Source.load(filename)
-          rescue Errno::ENOENT => e
-            Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
-          end
-        end
+      return if directory.empty? || directory == '*'
+      size = config.calculated.length
+      if config.max_files.positive? && (size > config.max_files)
+        raise WorkspaceTooLargeError,
+              "The workspace is too large to index (#{size} files, #{config.max_files} max)"
+      end
+      config.calculated.each do |filename|
+        source_hash[filename] = Solargraph::Source.load(filename)
+      rescue Errno::ENOENT => e
+        Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
       end
     end
 
     # @return [void]
     def require_plugins
       config.plugins.each do |plugin|
-        begin
-          require plugin
-        rescue LoadError
-          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
-        end
+        require plugin
+      rescue LoadError
+        Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
       end
     end
 

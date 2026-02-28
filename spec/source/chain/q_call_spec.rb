@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::QCall do
   it 'understands &. in chains' do
     source = Solargraph::Source.load_string(%(

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Or do
   it 'handles simple nil-removal' do
     source = Solargraph::Source.load_string(%(

@@ -1,22 +1,24 @@
+# frozen_string_literal: true
+
 require 'tmpdir'
 require 'yard'
 
 describe Solargraph::Library do
-  it "does not open created files in the workspace" do
+  it 'does not open created files in the workspace' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
       workspace_path = File.realpath(temp_dir_path)
       file_path = File.join(workspace_path, 'file.rb')
       File.write(file_path, 'a = b')
-      library = Solargraph::Library.load(workspace_path)
+      library = described_class.load(workspace_path)
       result = library.create(file_path, File.read(file_path))
       expect(result).to be(true)
       expect(library.open?(file_path)).to be(false)
     end
   end
 
-  it "returns a Completion" do
-    library = Solargraph::Library.new
+  it 'returns a Completion' do
+    library = described_class.new
     library.attach Solargraph::Source.load_string(%(
       x = 1
       x
@@ -31,9 +33,9 @@ describe Solargraph::Library do
       Solargraph::Shell.new.uncache('backport')
     end
 
-    it "returns a Completion", time_limit_seconds: 50 do
-      library = Solargraph::Library.new(Solargraph::Workspace.new(Dir.pwd,
-                                                                  Solargraph::Workspace::Config.new))
+    it 'returns a Completion', time_limit_seconds: 50 do
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+                                                              Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
 
@@ -42,7 +44,6 @@ describe Solargraph::Library do
           adapter.remo
         end
       ), 'file.rb', 0)
-      completion = nil
       # give Solargraph time to cache the gem
       while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
         sleep 0.25
@@ -57,9 +58,9 @@ describe Solargraph::Library do
       Solargraph::Shell.new.gems('backport')
     end
 
-    it "returns a Completion" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new(Dir.pwd,
-                                                                  Solargraph::Workspace::Config.new))
+    it 'returns a Completion' do
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+                                                              Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
 
@@ -74,8 +75,8 @@ describe Solargraph::Library do
     end
   end
 
-  it "gets definitions from a file" do
-    library = Solargraph::Library.new
+  it 'gets definitions from a file' do
+    library = described_class.new
     src = Solargraph::Source.load_string %(
       class Foo
         def bar
@@ -87,8 +88,8 @@ describe Solargraph::Library do
     expect(paths).to include('Foo#bar')
   end
 
-  it "gets type definitions from a file" do
-    library = Solargraph::Library.new
+  it 'gets type definitions from a file' do
+    library = described_class.new
     src = Solargraph::Source.load_string %(
       class Bar; end
       class Foo
@@ -103,8 +104,8 @@ describe Solargraph::Library do
     expect(paths).to include('Bar')
   end
 
-  it "signifies method arguments" do
-    library = Solargraph::Library.new
+  it 'signifies method arguments' do
+    library = described_class.new
     src = Solargraph::Source.load_string %(
       class Foo
         def bar baz, key: ''
@@ -118,18 +119,18 @@ describe Solargraph::Library do
     expect(pins.first.path).to eq('Foo#bar')
   end
 
-  it "ignores invalid filenames in create_from_disk" do
-    library = Solargraph::Library.new
+  it 'ignores invalid filenames in create_from_disk' do
+    library = described_class.new
     filename = 'not_a_real_file.rb'
     expect(library.create_from_disk(filename)).to be(false)
     expect(library.contain?(filename)).to be(false)
   end
 
-  it "adds mergeable files to the workspace in create_from_disk" do
+  it 'adds mergeable files to the workspace in create_from_disk' do
     Dir.mktmpdir do |temp_dir_path|
       # Ensure we resolve any symlinks to their real path
       workspace_path = File.realpath(temp_dir_path)
-      library = Solargraph::Library.load(workspace_path)
+      library = described_class.load(workspace_path)
       file_path = File.join(workspace_path, 'created.rb')
       File.write(file_path, "puts 'hello'")
       expect(library.create_from_disk(file_path)).to be(true)
@@ -137,9 +138,9 @@ describe Solargraph::Library do
     end
   end
 
-  it "ignores non-mergeable files in create_from_disk" do
+  it 'ignores non-mergeable files in create_from_disk' do
     Dir.mktmpdir do |dir|
-      library = Solargraph::Library.load(dir)
+      library = described_class.load(dir)
       filename = File.join(dir, 'created.txt')
       File.write(filename, "puts 'hello'")
       expect(library.create_from_disk(filename)).to be(false)
@@ -147,8 +148,8 @@ describe Solargraph::Library do
     end
   end
 
-  it "diagnoses files" do
-    library = Solargraph::Library.new
+  it 'diagnoses files' do
+    library = described_class.new
     src = Solargraph::Source.load_string(%(
       puts 'hello'
     ), 'file.rb', 0)
@@ -163,7 +164,7 @@ describe Solargraph::Library do
     config = instance_double(Solargraph::Workspace::Config)
     allow(config).to receive_messages(plugins: [], required: [], reporters: ['all!'])
     workspace = Solargraph::Workspace.new directory, config
-    library = Solargraph::Library.new workspace
+    library = described_class.new workspace
     src = Solargraph::Source.load_string(%(
       puts 'hello'
     ), 'file.rb', 0)
@@ -172,8 +173,8 @@ describe Solargraph::Library do
     expect(result.to_s).to include('rubocop')
   end
 
-  it "documents symbols" do
-    library = Solargraph::Library.new
+  it 'documents symbols' do
+    library = described_class.new
     src = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -188,9 +189,9 @@ describe Solargraph::Library do
   end
 
   describe '#references_from' do
-    it "collects references to a new method on a constant from assignment of Class.new" do
+    it 'collects references to a new method on a constant from assignment of Class.new' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       src1 = Solargraph::Source.load_string(%(
         Foo.new
       ), 'file1.rb', 0)
@@ -202,12 +203,12 @@ describe Solargraph::Library do
       library.catalog
       locs = library.references_from('file1.rb', 1, 12)
       expect(locs.map { |l| [l.filename, l.range.start.line] })
-        .to eq([["file1.rb", 1]])
+        .to eq([['file1.rb', 1]])
     end
 
-    it "collects references to a new method to a constant from assignment" do
+    it 'collects references to a new method to a constant from assignment' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       src1 = Solargraph::Source.load_string(%(
         Foo.new
       ), 'file1.rb', 0)
@@ -221,12 +222,12 @@ describe Solargraph::Library do
       library.catalog
       locs = library.references_from('file2.rb', 3, 21)
       expect(locs.map { |l| [l.filename, l.range.start.line] })
-        .to eq([["file1.rb", 1], ["file2.rb", 3]])
+        .to eq([['file1.rb', 1], ['file2.rb', 3]])
     end
 
-    it "collects references to an instance method symbol" do
+    it 'collects references to an instance method symbol' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       src1 = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -248,12 +249,12 @@ describe Solargraph::Library do
       library.catalog
       locs = library.references_from('file2.rb', 2, 11)
       expect(locs.length).to eq(3)
-      expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 6}).to be_empty
+      expect(locs.select { |l| l.filename == 'file2.rb' && l.range.start.line == 6 }).to be_empty
     end
 
-    it "collects references to a class method symbol" do
+    it 'collects references to a class method symbol' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       src1 = Solargraph::Source.load_string(%(
       class Foo
         def self.bar
@@ -281,14 +282,14 @@ describe Solargraph::Library do
       library.catalog
       locs = library.references_from('file2.rb', 1, 11)
       expect(locs.length).to eq(3)
-      expect(locs.select{|l| l.filename == 'file1.rb' && l.range.start.line == 2}).not_to be_empty
-      expect(locs.select{|l| l.filename == 'file1.rb' && l.range.start.line == 9}).not_to be_empty
-      expect(locs.select{|l| l.filename == 'file2.rb' && l.range.start.line == 1}).not_to be_empty
+      expect(locs.select { |l| l.filename == 'file1.rb' && l.range.start.line == 2 }).not_to be_empty
+      expect(locs.select { |l| l.filename == 'file1.rb' && l.range.start.line == 9 }).not_to be_empty
+      expect(locs.select { |l| l.filename == 'file2.rb' && l.range.start.line == 1 }).not_to be_empty
     end
 
-    it "collects stripped references to constant symbols" do
+    it 'collects stripped references to constant symbols' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       src1 = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -311,13 +312,13 @@ describe Solargraph::Library do
         code = library.read_text(l.filename)
         o1 = Solargraph::Position.to_offset(code, l.range.start)
         o2 = Solargraph::Position.to_offset(code, l.range.ending)
-        expect(code[o1..o2-1]).to eq('Foo')
+        expect(code[o1..(o2 - 1)]).to eq('Foo')
       end
     end
 
     it 'rejects new references from different classes' do
       workspace = Solargraph::Workspace.new('*')
-      library = Solargraph::Library.new(workspace)
+      library = described_class.new(workspace)
       source = Solargraph::Source.load_string(%(
       class Foo
         def bar
@@ -334,21 +335,21 @@ describe Solargraph::Library do
       expect(obj_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(6, 12, 6, 15))])
     end
 
-    it "searches the core for queries" do
-      library = Solargraph::Library.new
+    it 'searches the core for queries' do
+      library = described_class.new
       result = library.search('String')
       expect(result).not_to be_empty
     end
 
-    it "returns YARD documentation from the core" do
-      library = Solargraph::Library.new
-      api_map, result = library.document('String')
+    it 'returns YARD documentation from the core' do
+      library = described_class.new
+      _, result = library.document('String')
       expect(result).not_to be_empty
       expect(result.first).to be_a(Solargraph::Pin::Base)
     end
 
-    it "returns YARD documentation from sources" do
-      library = Solargraph::Library.new
+    it 'returns YARD documentation from sources' do
+      library = described_class.new
       src = Solargraph::Source.load_string(%(
       class Foo
         # My bar method
@@ -356,13 +357,13 @@ describe Solargraph::Library do
       end
     ), 'test.rb', 0)
       library.attach src
-      api_map, result = library.document('Foo#bar')
+      _, result = library.document('Foo#bar')
       expect(result).not_to be_empty
       expect(result.first).to be_a(Solargraph::Pin::Base)
     end
 
-    it "synchronizes sources from updaters" do
-      library = Solargraph::Library.new
+    it 'synchronizes sources from updaters' do
+      library = described_class.new
       src = Solargraph::Source.load_string(%(
       class Foo
       end
@@ -382,8 +383,8 @@ describe Solargraph::Library do
       expect(library.current.code).to eq(repl)
     end
 
-    it "finds unique references" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    it 'finds unique references' do
+      library = described_class.new(Solargraph::Workspace.new('*'))
       src1 = Solargraph::Source.load_string(%(
       class Foo
       end
@@ -398,8 +399,8 @@ describe Solargraph::Library do
       expect(refs.length).to eq(2)
     end
 
-    it "includes method parameters in references" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    it 'includes method parameters in references' do
+      library = described_class.new(Solargraph::Workspace.new('*'))
       source = Solargraph::Source.load_string(%(
       class Foo
         def bar(baz)
@@ -415,7 +416,7 @@ describe Solargraph::Library do
     end
 
     it "lies about names when client can't handle the truth" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+      library = described_class.new(Solargraph::Workspace.new('*'))
       source = Solargraph::Source.load_string(%(
       class Foo
         def 🤦🏻foo♀️; 123; end
@@ -426,8 +427,8 @@ describe Solargraph::Library do
       expect(from_def.first.range.start.column).to eq(14)
     end
 
-    it "tells the truth about names when client can handle the truth" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    it 'tells the truth about names when client can handle the truth' do
+      library = described_class.new(Solargraph::Workspace.new('*'))
       source = Solargraph::Source.load_string(%(
       class Foo
         def 🤦🏻foo♀️; 123; end
@@ -438,8 +439,8 @@ describe Solargraph::Library do
       expect(from_def.first.range.start.column).to eq(12)
     end
 
-    it "includes block parameters in references" do
-      library = Solargraph::Library.new(Solargraph::Workspace.new('*'))
+    it 'includes block parameters in references' do
+      library = described_class.new(Solargraph::Workspace.new('*'))
       source = Solargraph::Source.load_string(%(
       100.times do |foo|
         puts foo
@@ -454,7 +455,7 @@ describe Solargraph::Library do
   end
 
   it 'defines YARD tags' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class TaggedExample
       end
@@ -476,7 +477,7 @@ describe Solargraph::Library do
   end
 
   it 'defines YARD tags with nested namespaces' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class Tagged
         class Example; end
@@ -496,7 +497,7 @@ describe Solargraph::Library do
   end
 
   it 'defines generic YARD tags' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class TaggedExample; end
       class CallerExample
@@ -510,7 +511,7 @@ describe Solargraph::Library do
   end
 
   it 'defines multiple YARD tags' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class TaggedExample; end
       class CallerExample
@@ -524,7 +525,7 @@ describe Solargraph::Library do
   end
 
   it 'skips comment text outside of tags' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       # String
       def foo; end
@@ -535,7 +536,7 @@ describe Solargraph::Library do
   end
 
   it 'marks aliases as methods or attributes in completion items' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class Example
         attr_reader :foo
@@ -558,7 +559,7 @@ describe Solargraph::Library do
   end
 
   it 'marks aliases as methods or attributes in definitions' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class Example
         attr_reader :foo
@@ -577,7 +578,7 @@ describe Solargraph::Library do
   end
 
   it 'detaches current source with nil' do
-    library = Solargraph::Library.new
+    library = described_class.new
     source = Solargraph::Source.load_string(%(
       class Example
         attr_reader :foo
@@ -595,7 +596,7 @@ describe Solargraph::Library do
   describe '#locate_ref' do
     it 'returns nil without a matching reference location' do
       workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
-      library = Solargraph::Library.load(workspace)
+      library = described_class.load(workspace)
       library.map!
       location = Solargraph::Location.new(File.join(workspace, 'app.rb'), Solargraph::Range.from_to(0, 8, 0, 8))
       found = library.locate_ref(location)
@@ -606,7 +607,7 @@ describe Solargraph::Library do
   describe '#delete' do
     it 'removes files from Library#source_map_hash' do
       workspace = File.absolute_path(File.join('spec', 'fixtures', 'workspace'))
-      library = Solargraph::Library.load(workspace)
+      library = described_class.load(workspace)
       library.map!
       library.catalog
       other_file = File.absolute_path(File.join('spec', 'fixtures', 'workspace', 'lib', 'other.rb'))
@@ -623,36 +624,36 @@ describe Solargraph::Library do
     end
   end
 
-  context 'unsynchronized' do
-    let(:library) { Solargraph::Library.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
+  context 'when unsynchronized' do
+    let(:library) { described_class.load File.absolute_path(File.join('spec', 'fixtures', 'workspace')) }
     let(:good_file) { File.join(library.workspace.directory, 'lib', 'thing.rb') }
     let(:bad_file) { File.join(library.workspace.directory, 'lib', 'not_a_thing.rb') }
 
     describe 'Library#completions_at' do
       it 'gracefully handles unmapped sources' do
-        expect {
+        expect do
           library.completions_at(good_file, 0, 0)
-        }.not_to raise_error
+        end.not_to raise_error
       end
 
       it 'raises errors for nonexistent sources' do
-        expect {
+        expect do
           library.completions_at(bad_file, 0, 0)
-        }.to raise_error(Solargraph::FileNotFoundError)
+        end.to raise_error(Solargraph::FileNotFoundError)
       end
     end
 
     describe 'Library#definitions_at' do
       it 'gracefully handles unmapped sources' do
-        expect {
+        expect do
           library.definitions_at(good_file, 0, 0)
-        }.not_to raise_error
+        end.not_to raise_error
       end
 
       it 'raises errors for nonexistent sources' do
-        expect {
+        expect do
           library.definitions_at(bad_file, 0, 0)
-        }.to raise_error(Solargraph::FileNotFoundError)
+        end.to raise_error(Solargraph::FileNotFoundError)
       end
     end
   end

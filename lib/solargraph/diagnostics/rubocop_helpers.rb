@@ -13,7 +13,7 @@ module Solargraph
       # @param version [String, nil]
       # @raise [InvalidRubocopVersionError] if _version_ is not installed
       # @return [void]
-      def require_rubocop(version = nil)
+      def require_rubocop version = nil
         begin
           # @type [String]
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
@@ -24,7 +24,7 @@ module Solargraph
           # @type [Array<Gem::Specification>]
           specs = e.specs
           raise InvalidRubocopVersionError,
-                "could not find '#{e.name}' (#{e.requirement}) - "\
+                "could not find '#{e.name}' (#{e.requirement}) - " \
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
@@ -52,7 +52,7 @@ module Solargraph
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
         # @sg-ignore Need to add nil check here
-        path[0].upcase + path[1..-1]
+        path[0].upcase + path[1..]
       end
 
       # @todo This is a smelly way to redirect output, but the RuboCop specs do

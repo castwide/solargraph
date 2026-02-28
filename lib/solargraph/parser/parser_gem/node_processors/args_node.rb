@@ -14,17 +14,17 @@ module Solargraph
                 node.children.each do |u|
                   loc = get_node_location(u)
                   locals.push Solargraph::Pin::Parameter.new(
-                                location: loc,
-                                closure: callable,
-                                comments: comments_for(node),
-                                name: u.children[0].to_s,
-                                assignment: u.children[1],
-                                asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
-                                # @sg-ignore Need to add nil check here
-                                presence: callable.location.range,
-                                decl: get_decl(u),
-                                source: :parser
-                              )
+                    location: loc,
+                    closure: callable,
+                    comments: comments_for(node),
+                    name: u.children[0].to_s,
+                    assignment: u.children[1],
+                    asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
+                    # @sg-ignore Need to add nil check here
+                    presence: callable.location.range,
+                    decl: get_decl(u),
+                    source: :parser
+                  )
                   callable.parameters.push locals.last
                 end
               end
@@ -36,7 +36,7 @@ module Solargraph
 
           # @param callable [Pin::Callable]
           # @return [void]
-          def forward(callable)
+          def forward callable
             loc = get_node_location(node)
             locals.push Solargraph::Pin::Parameter.new(
               location: loc,

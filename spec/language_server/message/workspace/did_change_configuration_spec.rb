@@ -71,8 +71,8 @@ RSpec.describe Solargraph::LanguageServer::Message::Workspace::DidChangeConfigur
         described_class.new(host, message).process
 
         expect(
-          host.registered?('textDocument/completion')
-        ).to be_truthy, 'Expected textDocument/completion to be registered'
+          host
+        ).to be_registered('textDocument/completion'), 'Expected textDocument/completion to be registered'
       end
     end
 
@@ -83,8 +83,8 @@ RSpec.describe Solargraph::LanguageServer::Message::Workspace::DidChangeConfigur
         described_class.new(host, message).process
 
         expect(
-          host.registered?('textDocument/completion')
-        ).to be_falsy, 'Expected textDocument/completion to not be registered'
+          host
+        ).not_to be_registered('textDocument/completion'), 'Expected textDocument/completion to not be registered'
       end
     end
   end
