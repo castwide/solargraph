@@ -376,7 +376,10 @@ module Solargraph
       begin
         require 'vernier'
       rescue LoadError
-        warn 'vernier gem not found. Install with: gem install vernier'
+        $stderr.puts 'vernier gem not found. Add this line to your .Gemfile and run `bundle install` to use this command:'
+        $stderr.puts
+        $stderr.puts "  gem 'vernier', '>1.0', '<2'"
+
         return
       end
 
