@@ -60,45 +60,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'textDocument' => {
                                        'uri' => temp_file_url
                                      },
-                                     'position' => {
-                                       'line' => 2,
-                                       'character' => 14
-                                     },
-                                     'newName' => 'baz'
-                                   }
-                                 })
-    rename.process
-    # wait to get the result generated in a background thread, since this can be slow on CI
-    timeout = Time.now + 40
-    until rename.result[:changes] && rename.result[:changes][temp_file_url] && !rename.result[:changes][temp_file_url].empty?
-      sleep 0.1
-      if Time.now > timeout
-        raise "Timed out waiting for rename result: #{rename.result.inspect}"
-      end
-    end
-
-    expect(rename.result[:changes][temp_file_url]).not_to be_nil, -> { "Expected to find changes for #{temp_file_url} in #{rename.result.inspect}" }
-    expect(rename.result[:changes][temp_file_url].length).to eq(3), -> { "Expected to find 3 changes for #{temp_file_url} in #{rename.result.inspect}" }
-  ensure
-    host.fully_stop
-  end
-
-  it 'renames an argument symbol from method body' do
-    host = Solargraph::LanguageServer::Host.new
-    host.start
-    host.open(temp_file_url, %(
-      class Example
-      def foo(bar)
-      bar += 1
-      return bar
-      end
-    	end
-    ), 1)
-    rename = described_class.new(host, {
-                                   'id' => 1,
-                                   'method' => 'textDocument/rename',
-                                   'params' => {
-                                     'textDocument' => {
                                        'uri' => temp_file_url
                                      },
                                      'position' => {

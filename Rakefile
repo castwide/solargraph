@@ -42,7 +42,6 @@ desc 'Run all RSpec tests'
 task :full_spec do
   warn 'starting spec'
   sh 'TEST_COVERAGE_COMMAND_NAME=full-new bundle exec parallel_rspec --runtime-log spec/parallel_runtime_rspec.log --verbose-command spec/' #  --profile'
-  warn 'ending spec'
   # clear now-outdated coverage
   FileUtils.rm_rf('coverage/full')
   # move coverage/full-new to coverage/full on success so that we

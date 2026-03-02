@@ -176,7 +176,13 @@ Naming/PredicatePrefix:
     - 'lib/solargraph/workspace.rb'
 
 RSpec/BeforeAfterAll:
-  Enabled: false
+  Exclude:
+    - '**/spec/spec_helper.rb'
+    - '**/spec/rails_helper.rb'
+    - '**/spec/support/**/*.rb'
+    - 'spec/api_map_spec.rb'
+    - 'spec/language_server/host/dispatch_spec.rb'
+    - 'spec/language_server/protocol_spec.rb'
 
 # Configuration parameters: IgnoredMetadata.
 RSpec/DescribeClass:
@@ -187,15 +193,6 @@ RSpec/DescribeClass:
     - '**/spec/system/**/*'
     - '**/spec/views/**/*'
     - 'spec/complex_type_spec.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
-RSpec/EmptyHook:
-  Exclude:
-    - 'spec/gem_pins_spec.rb'
-    - 'spec/library_spec.rb'
-    - 'spec/logging_spec.rb'
-    - 'spec/pin/method_spec.rb'
-    - 'spec/workspace/gemspecs_resolve_require_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 RSpec/ExpectActual:
@@ -242,6 +239,16 @@ Style/AccessModifierDeclarations:
 Style/ArgumentsForwarding:
   Exclude:
     - 'lib/solargraph/complex_type.rb'
+
+# This cop supports safe autocorrection (--autocorrect).
+# Configuration parameters: EnforcedStyle, ProceduralMethods, FunctionalMethods, AllowedMethods, AllowedPatterns, AllowBracesOnProceduralOneLiners, BracesRequiredMethods.
+# SupportedStyles: line_count_based, semantic, braces_for_chaining, always_braces
+# ProceduralMethods: benchmark, bm, bmbm, create, each_with_object, measure, new, realtime, tap, with_object
+# FunctionalMethods: let, let!, subject, watch
+# AllowedMethods: lambda, proc, it
+Style/BlockDelimiters:
+  Exclude:
+    - 'spec/source/chain_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle, SingleLineConditionsOnly, IncludeTernaryExpressions.
@@ -331,6 +338,7 @@ Style/SlicingWithRange:
 Style/StringLiterals:
   Exclude:
     - 'spec/fixtures/rdoc-lib/rdoc-lib.gemspec'
+    - 'spec/source/chain_spec.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 Style/SuperArguments:
@@ -352,4 +360,4 @@ YARD/TagTypeSyntax:
 # Configuration parameters: AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
 # URISchemes: http, https
 Layout/LineLength:
-  Max: 215
+  Max: 224

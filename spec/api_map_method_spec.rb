@@ -173,7 +173,6 @@ describe Solargraph::ApiMap do
   describe '#uncached_gemspecs' do
     it 'can get uncached gemspecs workspace without a bench' do
       api_map = described_class.new
-
       expect(api_map.uncached_gemspecs).not_to be_nil
     end
   end

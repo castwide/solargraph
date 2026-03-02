@@ -49,11 +49,13 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
       response = data
     end
     reader.receive host.flush
-    action = {
-      'id' => response['id'],
-      'result' => response['params']['actions'].first
-    }
-    host.receive action
+    expect do
+      action = {
+        'id' => response['id'],
+        'result' => response['params']['actions'].first
+      }
+      host.receive action
+    end.not_to raise_error
     expect(Open3).to have_received(:capture2).with('gem update solargraph')
   end
 
