@@ -1,18 +1,20 @@
+# frozen_string_literal: true
+
 describe Solargraph::RbsMap::StdlibMap do
-  it "finds stdlib require paths" do
-    rbs_map = Solargraph::RbsMap::StdlibMap.load('fileutils')
+  it 'finds stdlib require paths' do
+    rbs_map = described_class.load('fileutils')
     pin = rbs_map.path_pin('FileUtils#chdir')
-    expect(pin).to be
+    expect(pin).not_to be_nil
   end
 
   it 'maps YAML' do
-    rbs_map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    rbs_map = described_class.load('yaml')
     pin = rbs_map.path_pin('YAML')
     expect(pin).to be_a(Solargraph::Pin::Base)
   end
 
   it 'processes RBS module aliases' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     yaml_pins = constant_pins.select do |pin|
@@ -25,7 +27,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'pins are marked as coming from RBS parsing' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     pin = constant_pins.first

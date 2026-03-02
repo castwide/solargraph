@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 describe Solargraph::Parser do
   def parse source
     Solargraph::Parser.parse(source, 'file.rb', 0)
   end
 
-  it "parses nodes" do
+  it 'parses nodes' do
     node = parse('class Foo; end')
-    expect(Solargraph::Parser.is_ast_node?(node)).to be(true)
+    expect(described_class.is_ast_node?(node)).to be(true)
   end
 
   it 'raises repairable SyntaxError for unknown encoding errors' do

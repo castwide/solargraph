@@ -58,13 +58,13 @@ module Solargraph
         # @sg-ignore downcast output of Enumerable#select
         # @return [Solargraph::Pin::Breakable, nil]
         def enclosing_breakable_pin
-          pins.select{|pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position)}.last
+          pins.select { |pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position) }.last
         end
 
         # @todo downcast output of Enumerable#select
         # @return [Solargraph::Pin::CompoundStatement, nil]
         def enclosing_compound_statement_pin
-          pins.select{|pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position)}.last
+          pins.select { |pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position) }.last
         end
 
         # @param subregion [Region]
@@ -80,14 +80,14 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [Solargraph::Location]
-        def get_node_location(node)
+        def get_node_location node
           range = Parser.node_range(node)
           Location.new(region.filename, range)
         end
 
         # @param node [Parser::AST::Node]
         # @return [String, nil]
-        def comments_for(node)
+        def comments_for node
           region.source.comments_for(node)
         end
 

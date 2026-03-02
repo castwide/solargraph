@@ -117,7 +117,7 @@ module Solargraph
       #
       # @return [Array<Gem::Specification>]
       def fetch_dependencies gemspec, out: $stderr
-        gemspecs = all_gemspecs_from_bundle
+        all_gemspecs_from_bundle
 
         # @type [Hash{String => Gem::Specification}]
         deps_so_far = {}

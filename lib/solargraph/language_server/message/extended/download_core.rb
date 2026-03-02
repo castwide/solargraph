@@ -10,7 +10,8 @@ module Solargraph
         #
         class DownloadCore < Base
           def process
-            host.show_message "Downloading cores is deprecated. Solargraph currently uses RBS for core and stdlib documentation", LanguageServer::MessageTypes::INFO
+            host.show_message 'Downloading cores is deprecated. Solargraph currently uses RBS for core and stdlib documentation',
+                              LanguageServer::MessageTypes::INFO
           end
         end
       end

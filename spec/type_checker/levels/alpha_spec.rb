@@ -6,6 +6,20 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     end
 
+    it 'reports use of superclass when subclass is required' do
+      checker = type_checker(%(
+        class Sup; end
+        class Sub < Sup
+          # @return [Sub]
+          def foo
+            Sup.new
+          end
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
     it 'allows a compatible function call from two distinct types in a union' do
       checker = type_checker(%(
         class Foo
@@ -122,7 +136,8 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(["Foo#bar return type could not be inferred", "Unresolved call to round on Integer, nil"])
+      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
+                                                     'Unresolved call to round on Integer, nil'])
     end
 
     it 'understands &. in return position' do
