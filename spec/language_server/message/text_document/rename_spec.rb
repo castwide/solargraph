@@ -60,8 +60,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
                                      'textDocument' => {
                                        'uri' => temp_file_url
                                      },
-                                       'uri' => temp_file_url
-                                     },
                                      'position' => {
                                        'line' => 3,
                                        'character' => 6
