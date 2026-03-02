@@ -10,8 +10,8 @@ module Solargraph
             col = params['position']['character']
             suggestions = host.signatures_at(params['textDocument']['uri'], line, col)
             set_result({
-              signatures: suggestions.flat_map { |pin| pin.signature_help }
-            })
+                         signatures: suggestions.flat_map(&:signature_help)
+                       })
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
             # @sg-ignore Need to add nil check here

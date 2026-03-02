@@ -1,5 +1,11 @@
+## 0.58.2 - January 19, 2026
+- Avoid rbs pollution (#1146)
+- Fix 'solargraph pin --references ClassName' private method call (#1150)
+- Improve memory efficiency of Position class (#1054)
+- Raise InvalidOffsetError for offsets > text (#1155)
+
 ## 0.58.1 - January 2, 2026
--  Normalize line endings to LF (#1142)
+- Normalize line endings to LF (#1142)
 
 ## 0.58.0 - January 1, 2026
 - Faster constant resolution (#1083)

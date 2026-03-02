@@ -13,7 +13,7 @@ module Solargraph
 
         # @param uri [String]
         # @return [void]
-        def add_uri(uri)
+        def add_uri uri
           queue.push(uri)
         end
 

@@ -1,28 +1,36 @@
 # frozen_string_literal: true
 
-class Solargraph::LanguageServer::Message::TextDocument::DocumentSymbol < Solargraph::LanguageServer::Message::Base
-  include Solargraph::LanguageServer::UriHelpers
+module Solargraph
+  module LanguageServer
+    module Message
+      module TextDocument
+        class DocumentSymbol < Solargraph::LanguageServer::Message::Base
+          include Solargraph::LanguageServer::UriHelpers
 
-  def process
-    pins = host.document_symbols params['textDocument']['uri']
-    info = pins.map do |pin|
-      next nil unless pin.best_location&.filename
+          def process
+            pins = host.document_symbols params['textDocument']['uri']
+            info = pins.map do |pin|
+              next nil unless pin.best_location&.filename
 
-      result = {
-        name: pin.name,
-        containerName: pin.namespace,
-        kind: pin.symbol_kind,
-        location: {
-          # @sg-ignore Need to add nil check here
-          uri: file_to_uri(pin.best_location.filename),
-          # @sg-ignore Need to add nil check here
-          range: pin.best_location.range.to_hash
-        },
-        deprecated: pin.deprecated?
-      }
-      result
-    end.compact
+              result = {
+                name: pin.name,
+                containerName: pin.namespace,
+                kind: pin.symbol_kind,
+                location: {
+                  # @sg-ignore Need to add nil check here
+                  uri: file_to_uri(pin.best_location.filename),
+                  # @sg-ignore Need to add nil check here
+                  range: pin.best_location.range.to_hash
+                },
+                deprecated: pin.deprecated?
+              }
+              result
+            end.compact
 
-    set_result info
+            set_result info
+          end
+        end
+      end
+    end
   end
 end

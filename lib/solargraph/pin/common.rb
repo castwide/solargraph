@@ -18,7 +18,7 @@ module Solargraph
 
       # @param value [Pin::Closure]
       # @return [void]
-      def closure=(value)
+      def closure= value
         @closure = value
         # remove cached values generated from closure
         reset_generated!
@@ -26,7 +26,10 @@ module Solargraph
 
       # @return [Pin::Closure, nil]
       def closure
-        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        unless @closure
+          Solargraph.assert_or_log(:closure,
+                                   "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}")
+        end
         @closure
       end
 

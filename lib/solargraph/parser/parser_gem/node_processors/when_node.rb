@@ -12,7 +12,7 @@ module Solargraph
               location: get_node_location(node),
               closure: region.closure,
               node: node,
-              source: :parser,
+              source: :parser
             )
             process_children
           end

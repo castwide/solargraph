@@ -4,14 +4,12 @@ module Solargraph
   class Source
     class Chain
       class Or < Link
-        def word
-          '<or>'
-        end
-
         attr_reader :links
 
         # @param links [::Array<Chain>]
         def initialize links
+          super('<or>')
+
           @links = links
         end
 
