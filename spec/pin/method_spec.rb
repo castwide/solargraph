@@ -626,4 +626,17 @@ describe Solargraph::Pin::Method do
       expect(pin.overloads).to be_empty
     end
   end
+
+  context 'with inline rbs' do
+    it 'sets return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> String
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+  end
 end

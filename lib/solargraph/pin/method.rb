@@ -175,7 +175,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
+        @return_type ||= generate_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
       end
 
       # @param parameters [::Array<Parameter>]
@@ -468,6 +468,8 @@ module Solargraph
 
       attr_writer :documentation
 
+      attr_writer :return_type
+
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
@@ -664,9 +666,22 @@ module Solargraph
         .concat("```\n")
       end
 
-      protected
+      def generate_from_inline_rbs
+        return nil if inline_rbs.empty?
 
-      attr_writer :return_type
+        method_type = RBS::Parser.parse_method_type(inline_rbs)
+        type_name = method_type.type.return_type.name.to_s
+        ComplexType.try_parse(method_type.type.return_type.name.to_s)
+      rescue RBS::ParsingError
+        nil
+      end
+
+      def inline_rbs
+        comments.lines
+                .select { |line| line.start_with?(': ') }
+                .map { |line| line[2..].strip }
+                .join("\n")
+      end
     end
   end
 end
