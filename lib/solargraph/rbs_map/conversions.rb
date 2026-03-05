@@ -274,7 +274,10 @@ module Solargraph
         # @type [Hash{String => ComplexType, ComplexType::UniqueType}]
         generic_defaults = {}
         decl.type_params.each do |param|
-          generic_defaults[param.name.to_s] = other_type_to_type param.default_type if param.default_type
+          if param.default_type
+            complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
+            generic_defaults[param.name.to_s] = complex_type
+          end
         end
 
         class_name = fqns(decl.name)
@@ -406,9 +409,8 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
-        target_type = other_type_to_type(decl.type)
-        constant_name = fqns(decl.name)
-        pins.push create_constant(constant_name, target_type, decl.comment&.string, decl)
+        tag = RbsTranslator.to_complex_type(decl.type).to_s
+        pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl)
       end
 
       # @param decl [RBS::AST::Declarations::Global]
@@ -423,7 +425,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = other_type_to_type(decl.type).rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -685,7 +687,7 @@ module Solargraph
           visibility: visibility,
           source: :rbs
         )
-        rooted_tag = other_type_to_type(decl.type).rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         logger.debug do
           "Conversions#attr_reader_to_pin(name=#{name.inspect}, visibility=#{visibility.inspect}) => #{pin.inspect}"
@@ -716,13 +718,13 @@ module Solargraph
         pin.parameters <<
           Solargraph::Pin::Parameter.new(
             name: 'value',
-            return_type: other_type_to_type(decl.type),
+            return_type: RbsTranslator.to_complex_type(decl.type).force_rooted,
             source: :rbs,
             closure: pin,
             type_location: type_location
           )
-        rooted_tags = other_type_to_type(decl.type).rooted_tags
-        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tags))
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
+        pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
       end
 
@@ -746,7 +748,7 @@ module Solargraph
           comments: decl.comment&.string,
           source: :rbs
         )
-        rooted_tag = other_type_to_type(decl.type).rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -763,7 +765,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = other_type_to_type(decl.type).rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -780,7 +782,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = other_type_to_type(decl.type).rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -854,84 +856,16 @@ module Solargraph
         tag
       end
 
-      # @param type [RBS::Types::Bases::Base,Object] RBS type object.
-      #   Note: Generally these extend from RBS::Types::Bases::Base,
-      #   but not all.
-      #
-      # @return [ComplexType, ComplexType::UniqueType]
-      def other_type_to_type type
-        case type
-        when RBS::Types::Optional
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          ComplexType.new([other_type_to_type(type.type),
-                           ComplexType::UniqueType::NIL])
-        when RBS::Types::Bases::Any
-          ComplexType::UNDEFINED
-        when RBS::Types::Bases::Bool
-          ComplexType::BOOLEAN
-        when RBS::Types::Tuple
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          tuple_types = type.types.map { |t| other_type_to_type(t) }
-          ComplexType::UniqueType.new('Array', [], tuple_types, rooted: true, parameters_type: :fixed)
-        when RBS::Types::Literal
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          ComplexType.try_parse(type.literal.inspect).force_rooted
-        when RBS::Types::Union
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          ComplexType.new(type.types.map { |t| other_type_to_type(t) })
-        when RBS::Types::Record
-          # @todo Better record support
-          ComplexType::UniqueType.new('Hash', rooted: true)
-        when RBS::Types::Bases::Nil
-          ComplexType::NIL
-        when RBS::Types::Bases::Self
-          ComplexType::SELF
-        when RBS::Types::Bases::Void
-          ComplexType::VOID
-        when RBS::Types::Variable
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          ComplexType.parse("generic<#{type.name}>").force_rooted
-        when RBS::Types::ClassInstance # && !type.args.empty?
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          build_type(type.name, type.args)
-        when RBS::Types::Bases::Instance
-          ComplexType::SELF
-        when RBS::Types::Bases::Top
-          # top is the most super superclass
-          ComplexType::UniqueType.new('BasicObject', rooted: true)
-        when RBS::Types::Bases::Bottom
-          # bottom is used in contexts where nothing will ever return
-          # - e.g., it could be the return type of 'exit()' or 'raise'
-          #
-          # @todo define a specific bottom type and use it to
-          #   determine dead code
-          ComplexType::UNDEFINED
-        when RBS::Types::Intersection
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          ComplexType.new(type.types.map { |member| other_type_to_type(member) })
-        when RBS::Types::Proc
-          ComplexType::UniqueType.new('Proc', rooted: true)
-        when RBS::Types::Alias
-          # type-level alias use - e.g., 'bool' in "type bool = true | false"
-          # @todo ensure these get resolved after processing all aliases
-          # @todo handle recursive aliases
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          build_type(type.name, type.args)
-        when RBS::Types::Interface
-          # represents a mix-in module which can be considered a
-          # subtype of a consumer of it
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          build_type(type.name, type.args)
-        when RBS::Types::ClassSingleton
-          # e.g., singleton(String)
-          # @sg-ignore flow based typing needs to understand case when class pattern
-          build_type(type.name)
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [ComplexType::UniqueType]
+      def build_type(type_name, type_args = [])
+        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
+        if base == 'Hash' && params.length == 2
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
         else
-          # RBS doesn't provide a common base class for its type AST nodes
-          #
-          # @sg-ignore all types should include location
-          Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
-          ComplexType::UNDEFINED
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
         end
       end
 
