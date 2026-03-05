@@ -634,7 +634,7 @@ describe Solargraph::Pin::Method do
   end
 
   context 'with inline rbs' do
-    it 'sets return types' do
+    it 'sets instance return types' do
       source = Solargraph::Source.load_string(%(
         #: () -> String
         def foo; end
@@ -643,6 +643,39 @@ describe Solargraph::Pin::Method do
       api_map.map source
       pin = api_map.get_path_pins('#foo').first
       expect(pin.return_type.to_s).to eq('String')
+    end
+
+    it 'sets parameterized instance return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> Array[String]
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('Array<String>')
+    end
+
+    it 'sets parametrized instance return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> Array[String]
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('Array<String>')
+    end
+
+    it 'sets YARD conventional return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> bool
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('Boolean')
     end
   end
 end
