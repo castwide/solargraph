@@ -670,8 +670,7 @@ module Solargraph
         return nil if inline_rbs.empty?
 
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        type_name = method_type.type.return_type.name.to_s
-        ComplexType.try_parse(method_type.type.return_type.name.to_s)
+        RbsToComplex.convert(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
       end
