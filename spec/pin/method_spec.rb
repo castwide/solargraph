@@ -677,5 +677,20 @@ describe Solargraph::Pin::Method do
       pin = api_map.get_path_pins('#foo').first
       expect(pin.return_type.to_s).to eq('Boolean')
     end
+
+    it 'sets signatures' do
+      source = Solargraph::Source.load_string(%(
+        #: (String) -> bool
+        def foo(bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('String')
+      expect(pin.signatures.first.return_type.to_s).to eq('Boolean')
+    end
   end
 end

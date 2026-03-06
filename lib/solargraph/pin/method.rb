@@ -189,16 +189,22 @@ module Solargraph
       # @return [::Array<Signature>]
       def signatures
         @signatures ||= begin
-          top_type = generate_complex_type
-          result = []
-          result.push generate_signature(parameters, top_type) if top_type.defined?
-          unless overloads.empty?
-            result.concat(overloads.map do |meth|
-              generate_signature(meth.parameters, meth.return_type)
-            end)
+          if inline_rbs.empty?
+            top_type = generate_complex_type
+            result = []
+            result.push generate_signature(parameters, top_type) if top_type.defined?
+            result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+            result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
+            result
+          else
+            these = []
+            # @type [RBS::MethodType]
+            method_type = RBS::Parser.parse_method_type(inline_rbs)
+            method_type.type.required_positionals.each_with_index do |pos, idx|
+              these.push RbsTranslator.to_parameter_pin(pos, parameter_names[idx] || "arg_#{idx}", self)
+            end
+            [generate_signature(these, return_type)]
           end
-          result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
-          result
         end
       end
 
@@ -725,9 +731,8 @@ module Solargraph
 
       def generate_from_inline_rbs
         return nil if inline_rbs.empty?
-
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        RbsToComplex.convert(method_type.type.return_type)
+        RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
       end

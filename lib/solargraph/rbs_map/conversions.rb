@@ -184,8 +184,8 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def convert_self_type_to_pins decl, closure
-        type = build_type(decl.name, decl.args)
-        generic_values = type.all_params.map(&:rooted_tags)
+        type = RbsTranslator.build_unique_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: type.name,
           type_location: location_decl_to_pin_location(decl.location),
@@ -275,8 +275,7 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           if param.default_type
-            complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
-            generic_defaults[param.name.to_s] = complex_type
+            generic_defaults[param.name.to_s] = RbsTranslator.to_complex_type(param.default_type)
           end
         end
 
@@ -299,8 +298,9 @@ module Solargraph
         )
         pins.push class_pin
         if decl.super_class
-          type = build_type(decl.super_class.name, decl.super_class.args)
-          generic_values = type.all_params.map(&:rooted_tags)
+          type = RbsTranslator.build_unique_type(decl.super_class.name, decl.super_class.args)
+          generic_values = type.all_params.map(&:to_s)
+          superclass_name = decl.super_class.name.to_s
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
@@ -409,7 +409,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
-        tag = RbsTranslator.to_complex_type(decl.type).to_s
+        tag = RbsTranslator.to_complex_type(decl.type)
         pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl)
       end
 
@@ -791,8 +791,8 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def include_to_pin decl, closure
-        type = build_type(decl.name, decl.args)
-        generic_values = type.all_params.map(&:rooted_tags)
+        type = RbsTranslator.build_unique_type(decl.name, decl.args)
+        generic_values = type.all_params.map(&:to_s)
         pins.push Solargraph::Pin::Reference::Include.new(
           name: type.rooted_name, # reference pins use rooted names
           type_location: location_decl_to_pin_location(decl.location),
@@ -847,26 +847,16 @@ module Solargraph
         )
       end
 
-      # @param type [RBS::MethodType, RBS::Types::Block]
-      # @param implicit_nil [Boolean]
-      # @return [ComplexType, ComplexType::UniqueType]
-      def method_type_to_type type, implicit_nil
-        tag = other_type_to_type type.type.return_type
-        return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
-        tag
-      end
-
-      # @param type_name [RBS::TypeName]
-      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [ComplexType::UniqueType]
-      def build_type(type_name, type_args = [])
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
-        if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
-        else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
-        end
+      # @param type [RBS::MethodType]
+      # @return [String]
+      def method_type_to_tag type
+        RbsTranslator.to_complex_type(
+          if type_aliases.key?(type.type.return_type.to_s)
+            type_aliases[type.type.return_type.to_s].type
+          else
+            type.type.return_type
+          end
+        )
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]
@@ -877,8 +867,8 @@ module Solargraph
         decl.each_mixin do |mixin|
           # @todo are we handling prepend correctly?
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
-          type = build_type(mixin.name, mixin.args)
-          generic_values = type.all_params.map(&:rooted_tags)
+          type = RbsTranslator.build_unique_type(mixin.name, mixin.args)
+          generic_values = type.all_params.map(&:to_s)
           pins.push klass.new(
             name: type.rooted_name, # reference pins use rooted names
             type_location: location_decl_to_pin_location(mixin.location),
