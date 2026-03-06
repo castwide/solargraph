@@ -111,13 +111,12 @@ module Solargraph
         PinCache.serialize_yard_gem(gemspec, pins)
       end
 
-      rbs_map = RbsMap.from_gemspec(gemspec, nil, nil)
-      pins = rbs_map.pins
-      rbs_version_cache_key = rbs_map.cache_key
-      if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_version_cache_key)
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+      rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+      if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
         # cache pins even if result is zero, so we don't retry building pins
-        pins ||= []
-        PinCache.serialize_rbs_collection_gem(gemspec, rbs_version_cache_key, pins)
+        pins = rbs_map.pins || []
+        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
       end
     end
 
