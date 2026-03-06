@@ -31,6 +31,7 @@ jobs:
         version: 1.0
     - name: Install gems
       run: |
+        gem update --system
         echo 'gem "solargraph-rails"' > .Gemfile
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
@@ -62,6 +63,7 @@ jobs:
         version: 1.0
     - name: Install gems
       run: |
+        gem update --system
         echo 'gem "solargraph-rails"' > .Gemfile
         bundle install
         bundle update rbs
@@ -91,6 +93,7 @@ jobs:
         version: 1.0
     - name: Install gems
       run: |
+        gem update --system
         echo 'gem "solargraph-rspec"' >> .Gemfile
         bundle install
         bundle update rbs
@@ -133,6 +136,7 @@ jobs:
        set -x
 
        cd ../solargraph-rspec
+       gem update --system
        echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
        bundle config path ${{ env.BUNDLE_PATH }}
        bundle install --jobs 4 --retry 3
@@ -186,6 +190,7 @@ jobs:
     - name: Install gems
       run: |
        set -x
+       gem update --system
        BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
        export BUNDLE_PATH
        cd ../solargraph-rails
