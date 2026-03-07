@@ -650,17 +650,6 @@ describe Solargraph::Pin::Method do
       expect(pin.return_type.to_s).to eq('Array<String>')
     end
 
-    it 'sets parametrized instance return types' do
-      source = Solargraph::Source.load_string(%(
-        #: () -> Array[String]
-        def foo; end
-      ))
-      api_map = Solargraph::ApiMap.new
-      api_map.map source
-      pin = api_map.get_path_pins('#foo').first
-      expect(pin.return_type.to_s).to eq('Array<String>')
-    end
-
     it 'sets YARD conventional return types' do
       source = Solargraph::Source.load_string(%(
         #: () -> bool
