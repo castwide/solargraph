@@ -39,6 +39,12 @@ module Solargraph
     # @param parameter_names [Array<String>]
     # @return [Array<Pin::Parameter>]
     def self.to_parameter_pins method_type, closure, parameter_names = []
+      if defined?(RBS::Types::UntypedFunction) && method_type.type.is_a?(RBS::Types::UntypedFunction)
+        return [
+          Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: closure, source: :rbs, type_location: to_sg_location(method_type.location)),
+        ]
+      end
+
       arg_num = 0
       params = []
       method_type.type.required_positionals.each do |param|
