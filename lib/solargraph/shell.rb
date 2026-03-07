@@ -104,9 +104,20 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      api_map = Solargraph::ApiMap.load(Dir.pwd)
-      spec = Gem::Specification.find_by_name(gem, version)
-      api_map.cache_gem(spec, rebuild: options[:rebuild], out: $stdout)
+      gemspec = Gem::Specification.find_by_name(gem, version)
+
+      if options[:rebuild] || !PinCache.has_yard?(gemspec)
+        pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+        PinCache.serialize_yard_gem(gemspec, pins)
+      end
+
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+      rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+      if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+        # cache pins even if result is zero, so we don't retry building pins
+        pins = rbs_map.pins || []
+        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+      end
     end
 
     desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"

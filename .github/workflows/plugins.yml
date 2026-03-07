@@ -125,7 +125,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.1'
+        ruby-version: '3.2'
         rubygems: latest
         bundler-cache: false
     - name: Install gems
@@ -178,7 +178,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.0'
+        # This job uses 3.2 due to a problem compiling sqlite3 in earlier versions
+        ruby-version: '3.2'
         bundler-cache: false
         bundler: latest
       env:
