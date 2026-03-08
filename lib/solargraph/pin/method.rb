@@ -220,12 +220,10 @@ module Solargraph
 
       # @return [::Array<Signature>]
       def signatures
-        @signatures ||= begin
-          if inline_rbs.empty?
-            signatures_from_yard
-          else
-            signatures_from_inline_rbs
-          end
+        @signatures ||= if inline_rbs.empty?
+          signatures_from_yard
+        else
+          signatures_from_inline_rbs
         end
       end
 
