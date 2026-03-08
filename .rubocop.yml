@@ -69,6 +69,11 @@ Metrics/ParameterLists:
 Style/ClassVars:
   Enabled: false
 
+# Allow $stderr.puts for communication with users as 'warn' can be
+# suppressed for unrelated reasons.
+Style/StderrPuts:
+  Enabled: false
+
 #
 # Set a relaxed standard on harder-to-address item for ease of
 # contribution - if you are good at refactoring, we welcome PRs to
