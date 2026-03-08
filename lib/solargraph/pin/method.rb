@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
+    # rubocop:disable Metrics/ClassLength
     class Method < Callable
       include Solargraph::Parser::NodeMethods
 
@@ -696,5 +697,6 @@ module Solargraph
                 .join("\n")
       end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
