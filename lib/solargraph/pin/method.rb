@@ -725,6 +725,7 @@ module Solargraph
         nil
       end
 
+      # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
@@ -732,6 +733,7 @@ module Solargraph
         signatures_from_yard
       end
 
+      # @return [Array<Pin::Signature>]
       def signatures_from_yard
         top_type = generate_complex_type
         result = []
@@ -741,6 +743,7 @@ module Solargraph
         result
       end
 
+      # @return [String]
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
