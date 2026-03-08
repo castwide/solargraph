@@ -16,7 +16,7 @@ module Solargraph
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
-      ComplexType.try_parse(tag)
+      ComplexType.try_parse(tag).force_rooted
     end
 
     # @param param_type [RBS::Types::Function::Param]
