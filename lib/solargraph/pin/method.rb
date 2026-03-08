@@ -717,6 +717,7 @@ module Solargraph
         .concat("```\n")
       end
 
+      # @return [ComplexType, nil]
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
