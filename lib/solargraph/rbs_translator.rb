@@ -78,7 +78,7 @@ module Solargraph
     # @param parameter_names [Array<String>]
     # @return [Pin::Signature]
     def self.to_signature method_type, closure, parameter_names = []
-      # there may be edge cases here around different signatures
+      # There may be edge cases here around different signatures
       # having different type params / orders - we may need to match
       # this data model and have generics live in signatures to
       # handle those correctly
@@ -125,59 +125,54 @@ module Solargraph
       # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def type_to_tag type
-        if type.is_a?(RBS::Types::Optional)
+        case type
+        when RBS::Types::Optional
           "#{type_to_tag(type.type)}, nil"
-        elsif type.is_a?(RBS::Types::Bases::Any)
-          'undefined'
-        elsif type.is_a?(RBS::Types::Bases::Bool)
+        when RBS::Types::Bases::Bool
           'Boolean'
-        elsif type.is_a?(RBS::Types::Tuple)
+        when RBS::Types::Tuple
           "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
-        elsif type.is_a?(RBS::Types::Literal)
+        when RBS::Types::Literal
           type.literal.inspect
-        elsif type.is_a?(RBS::Types::Union)
+        when RBS::Types::Union
           type.types.map { |t| type_to_tag(t) }.join(', ')
-        elsif type.is_a?(RBS::Types::Record)
+        when RBS::Types::Record
           # @todo Better record support
           'Hash'
-        elsif type.is_a?(RBS::Types::Bases::Nil)
+        when RBS::Types::Bases::Nil
           'nil'
-        elsif type.is_a?(RBS::Types::Bases::Self)
-          'self'
-        elsif type.is_a?(RBS::Types::Bases::Void)
+        when RBS::Types::Bases::Void
           'void'
-        elsif type.is_a?(RBS::Types::Variable)
+        when RBS::Types::Variable
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
-        elsif type.is_a?(RBS::Types::ClassInstance) # && !type.args.empty?
-          type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::Bases::Instance)
+        when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
-        elsif type.is_a?(RBS::Types::Bases::Top)
-          # top is the most super superclass
+        when RBS::Types::Bases::Top
+          # `Top` is the most super superclass
           'BasicObject'
-        elsif type.is_a?(RBS::Types::Bases::Bottom)
-          # bottom is used in contexts where nothing will ever return
-          # - e.g., it could be the return type of 'exit()' or 'raise'
-          #
-          # @todo define a specific bottom type and use it to
-          #   determine dead code
-          'undefined'
-        elsif type.is_a?(RBS::Types::Intersection)
+        when RBS::Types::Intersection
           type.types.map { |member| type_to_tag(member) }.join(', ')
-        elsif type.is_a?(RBS::Types::Proc)
+        when RBS::Types::Proc
           'Proc'
-        elsif type.is_a?(RBS::Types::Alias)
-          # type-level alias use - e.g., 'bool' in "type bool = true | false"
+        when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
+          # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
           # @todo ensure these get resolved after processing all aliases
           # @todo handle recursive aliases
-          type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::Interface)
-          # represents a mix-in module which can be considered a
+          #
+          # `Interface represents a mix-in module which can be considered a
           # subtype of a consumer of it
+          #
           type_tag(type.name, type.args)
-        elsif type.is_a?(RBS::Types::ClassSingleton)
+        when RBS::Types::ClassSingleton
           # e.g., singleton(String)
           type_tag(type.name)
+        when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
+          # `Bottom`` is used in contexts where nothing will ever return
+          # - e.g., it could be the return type of 'exit()' or 'raise'
+          # @todo define a specific bottom type and use it to
+          #   determine dead code
+          #
+          'undefined'
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
