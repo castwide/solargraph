@@ -30,7 +30,7 @@ module Solargraph
       elsif decl == :kwrestarg
         ComplexType.parse('Hash{Symbol => Object}')
       else
-        RbsTranslator.to_complex_type(param_type.type).force_rooted
+        RbsTranslator.to_complex_type(param_type.type)
       end
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
     end
@@ -100,7 +100,7 @@ module Solargraph
     def self.build_unique_type(type_name, type_args = [])
       base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
       params = type_args.map do |a|
-        RbsTranslator.to_complex_type(a).force_rooted
+        RbsTranslator.to_complex_type(a)
       end
       if base == 'Hash' && params.length == 2
         ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
@@ -193,7 +193,7 @@ module Solargraph
       def build_type(type_name, type_args = [])
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
         params = type_args.map { |a| type_to_tag(a) }.map do |t|
-          ComplexType.try_parse(t).force_rooted
+          ComplexType.try_parse(t)
         end
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
