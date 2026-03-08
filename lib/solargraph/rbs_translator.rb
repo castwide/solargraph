@@ -23,7 +23,7 @@ module Solargraph
     # @param name [String]
     # @param decl [Symbol]
     # @param closure [Pin::Closure]
-    # @return [Pin::Signature]
+    # @return [Pin::Parameter]
     def self.to_parameter_pin(param_type, name, decl, closure)
       return_type = if decl == :restarg
         ComplexType.parse('Array')
