@@ -62,9 +62,18 @@ describe Solargraph::Yardoc do
     end
 
     it 'is idempotent' do
+      result = instance_double(Process::Status)
+      allow(result).to receive(:success?).and_return(true)
+      allow(Open3).to receive(:capture2e).and_return([output, result]).once do
+        # write the complete file to simulate successful run
+        FileUtils.mkdir_p(gem_yardoc_path)
+        FileUtils.touch(File.join(gem_yardoc_path, 'complete'))
+      end
+
       described_class.build_docs(gem_yardoc_path, [], gemspec)
       described_class.build_docs(gem_yardoc_path, [], gemspec) # second time
-      expect(File.exist?(File.join(gem_yardoc_path, 'complete'))).to be true
+
+      expect(Open3).to have_received(:capture2e).once
     end
 
     context 'with an error from yard' do

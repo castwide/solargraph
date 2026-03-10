@@ -97,7 +97,12 @@ describe Solargraph::RbsMap::Conversions do
 
   context 'with standard loads for solargraph project' do
     before :all do # rubocop:disable RSpec/BeforeAfterAll
-      @api_map = Solargraph::ApiMap.load_with_cache('.')
+      @api_map = Solargraph::ApiMap.load('.')
+      gems = %w[parser ast open3]
+      bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
+      @api_map.catalog(bench)
+      @api_map.cache_all_for_doc_map!
+      @api_map.catalog(bench)
     end
 
     let(:api_map) { @api_map }
@@ -151,7 +156,9 @@ describe Solargraph::RbsMap::Conversions do
   if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('3.9.1')
     context 'with method pin for Open3.capture2e' do
       it 'accepts chdir kwarg' do
-        api_map = Solargraph::ApiMap.load_with_cache('.', $stdout)
+        api_map = Solargraph::ApiMap.load('.')
+        bench = Solargraph::Bench.new(external_requires: ['open3'])
+        api_map.catalog(bench)
 
         method_pin = api_map.pins.find do |pin|
           pin.is_a?(Solargraph::Pin::Method) && pin.path == 'Open3.capture2e'

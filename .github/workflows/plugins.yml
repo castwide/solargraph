@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  regression:
+  rails_and_rspec_typechecking:
     runs-on: ubuntu-latest
 
     steps:
@@ -46,9 +46,36 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
+  rails_and_rspec_specs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4 # keep same as typecheck.yml
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rails"' > .Gemfile
+        echo 'gem "solargraph-rspec"' >> .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Install gem types
+      run: bundle exec rbs collection update
     - name: Ensure specs still run
       run: bundle exec rake spec
-  rails:
+  rails_typechecking:
     runs-on: ubuntu-latest
 
     steps:
@@ -59,7 +86,7 @@ jobs:
         ruby-version: 3.4 # keep same as typecheck.yml
         # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
         rubygems: latest
-        bundler-cache: false
+        bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -79,9 +106,7 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
-    - name: Ensure specs still run
-      run: bundle exec rake spec
-  rspec:
+  rails_specs:
     runs-on: ubuntu-latest
 
     steps:
@@ -90,7 +115,36 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4 # keep same as typecheck.yml
-        bundler-cache: false
+        # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
+        rubygems: latest
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rails"' > .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+    - name: Install gem types
+      run: bundle exec rbs collection update
+    - name: Ensure specs still run
+      run: bundle exec rake spec
+  rspec_typechecking:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4 # keep same as typecheck.yml
+        bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -110,9 +164,33 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
+  rspec_specs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4 # keep same as typecheck.yml
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rspec"' >> .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Install gem types
+      run: bundle exec rbs collection update
     - name: Ensure specs still run
       run: bundle exec rake spec
-
   run_solargraph_rspec_specs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
     runs-on: ubuntu-latest
@@ -135,7 +213,7 @@ jobs:
       with:
         ruby-version: 3.4
         rubygems: latest
-        bundler-cache: false
+        bundler-cache: true
     - name: Install gems
       run: |
         set -x
@@ -190,7 +268,7 @@ jobs:
       with:
         # solargraph-rails supports Ruby 3.0+
         ruby-version: '3.0'
-        bundler-cache: false
+        bundler-cache: true
         # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
         rubygems: latest
         bundler: latest
