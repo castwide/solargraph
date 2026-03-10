@@ -70,6 +70,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby-version }}
+        # See https://github.com/apiology/solargraph/actions/runs/21799883466/job/62893545490?pr=27
+        rubygems: latest
         bundler-cache: true
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
@@ -83,9 +85,24 @@ jobs:
       run: |
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
-      run: bundle exec rbs collection update
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Run tests
-      run: bundle exec rake spec
+      run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
+        bundle exec rake full_spec
   undercover:
     runs-on: ubuntu-latest
     steps:
@@ -99,10 +116,31 @@ jobs:
       with:
         ruby-version: '3.4'
         bundler-cache: true
+    - name: Update gems
+      run: |
+        bundle update rbs # use latest available for this Ruby version
     - name: Update types
-      run: bundle exec rbs collection update
+      run: |
+        set -x
+
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib ast parser
     - name: Run tests
-      run: bundle exec rake spec
+      run: |
+        set -x
+
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
+
+        bundle exec rake full_spec
     - name: Check PR coverage
-      run: bundle exec rake undercover
+      run: |
+        bundle exec rake undercover
       continue-on-error: true

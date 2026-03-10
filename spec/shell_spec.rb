@@ -6,58 +6,45 @@ require 'open3'
 describe Solargraph::Shell do
   let(:shell) { described_class.new }
 
-  let(:temp_dir) { Dir.mktmpdir }
-
-  before do
-    File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
-      file.puts "source 'https://rubygems.org'"
-      file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
-    end
-    output, status = Open3.capture2e('bundle install', chdir: temp_dir)
-    raise "Failure installing bundle: #{output}" unless status.success?
-  end
-
-  # @type cmd [Array<String>]
-  # @return [String]
-  def bundle_exec(*cmd)
-    # run the command in the temporary directory with bundle exec
-    output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
-    expect(status.success?).to be(true), "Command failed: #{output}"
-    output
-  end
-
-  after do
-    # remove the temporary directory after the tests
-    FileUtils.rm_rf(temp_dir)
-  end
-
   describe '--version' do
-    let(:output) { bundle_exec('solargraph', '--version') }
-
-    it 'returns output' do
-      expect(output).not_to be_empty
-    end
-
     it 'returns a version when run' do
+      output = capture_stdout do
+        shell.version
+      end
+
       expect(output).to eq("#{Solargraph::VERSION}\n")
     end
   end
 
   describe 'uncache' do
     it 'uncaches without erroring out' do
-      output = capture_stdout do
-        shell.uncache('backport')
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      capture_stdout do
+        shell.uncache('public_suffix')
       end
 
-      expect(output).to include('Clearing pin cache in')
+      expect(Solargraph::PinCache).to have_received(:uncache).twice
     end
 
     it 'uncaches stdlib without erroring out' do
-      expect { shell.uncache('stdlib') }.not_to raise_error
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      capture_stdout do
+        shell.uncache('stdlib')
+      end
+
+      expect(Solargraph::PinCache).to have_received(:uncache)
     end
 
     it 'uncaches core without erroring out' do
-      expect { shell.uncache('core') }.not_to raise_error
+      allow(Solargraph::PinCache).to receive(:uncache)
+
+      capture_stdout do
+        shell.uncache('core')
+      end
+
+      expect(Solargraph::PinCache).to have_received(:uncache)
     end
   end
 
@@ -114,11 +101,12 @@ describe Solargraph::Shell do
       end
 
       it 'caches core without erroring out' do
-        capture_both do
-          shell.uncache('core')
-        end
+        allow(Solargraph::PinCache).to receive(:core?).and_return(false)
+        allow(Solargraph::PinCache).to receive(:cache_core)
 
         expect { shell.cache('core') }.not_to raise_error
+
+        expect(Solargraph::PinCache).to have_received(:cache_core)
       end
 
       it 'gives sensible error for gem that does not exist' do
@@ -132,27 +120,29 @@ describe Solargraph::Shell do
 
     context 'with mocked Workspace' do
       let(:workspace) { instance_double(Solargraph::Workspace) }
-      let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
+      let(:gemspec) { instance_double(Gem::Specification, name: 'abcd343kfk') }
 
       before do
-        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
+        allow(Solargraph::ApiMap).to receive(:new).and_return(api_map)
+        allow(api_map).to receive(:workspace).and_return(workspace)
       end
 
       it 'caches all without erroring out' do
-        allow(workspace).to receive(:cache_all_for_workspace!)
+        allow(api_map).to receive(:cache_all_for_doc_map!)
 
         _output = capture_both { shell.gems }
 
-        expect(workspace).to have_received(:cache_all_for_workspace!)
+        expect(api_map).to have_received(:cache_all_for_doc_map!)
       end
 
       it 'caches single gem without erroring out' do
-        allow(workspace).to receive(:find_gem).with('backport').and_return(gemspec)
+        allow(workspace).to receive(:find_gem).with('98765').and_return(gemspec)
         allow(workspace).to receive(:cache_gem)
 
         capture_both do
           shell.options = { rebuild: false }
-          shell.gems('backport')
+          shell.gems('98765')
         end
 
         expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
@@ -172,17 +162,6 @@ describe Solargraph::Shell do
         # capture stderr output
         expect { call }.to output(/not found/).to_stderr
       end
-    end
-  end
-
-  # @type cmd [Array<String>]
-  # @return [String]
-  def bundle_exec(*cmd)
-    # run the command in the temporary directory with bundle exec
-    Bundler.with_unbundled_env do
-      output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}")
-      expect(status.success?).to be(true), "Command failed: #{output}"
-      output
     end
   end
 

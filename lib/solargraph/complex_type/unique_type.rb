@@ -302,7 +302,6 @@ module Solargraph
         rooted_tags
       end
 
-      # @sg-ignore Need better if/elseanalysis
       # @return [String]
       def to_rbs
         if duck_type?
@@ -311,8 +310,8 @@ module Solargraph
           'bool'
         elsif name.downcase == 'nil'
           'nil'
-        elsif name == GENERIC_TAG_NAME
-          all_params.first&.name
+        elsif name == GENERIC_TAG_NAME && !all_params.empty?
+          all_params.first.name
         elsif %w[Class Module].include?(name)
           rbs_name
         elsif %w[Tuple Array].include?(name) && fixed_parameters?
@@ -554,6 +553,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param gates [Array<String>] The namespaces from which to resolve names
+      #
       # @return [self, ComplexType, UniqueType] The generated ComplexType
       def qualify api_map, *gates
         transform do |t|

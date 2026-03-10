@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'fileutils'
 require 'tmpdir'
 require 'rubygems/commands/install_command'
@@ -17,7 +18,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
 
       it 'finds a known dependency' do
-        expect(deps.map(&:name)).to include('backport')
+        expect(deps.map(&:name)).to include('ostruct')
       end
     end
 
@@ -27,7 +28,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
       end
 
       it 'finds a known dependency' do
-        expect(deps.map(&:name)).to include('backport')
+        expect(deps.map(&:name)).to include('rbs')
       end
     end
 
@@ -64,7 +65,7 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
 
       # run bundle install
       output, status = Solargraph.with_clean_env do
-        Open3.capture2e('bundle install --verbose', chdir: dir_path)
+        Open3.capture2e('bundle install --verbose --local || bundle install --verbose', chdir: dir_path)
       end
       raise "Failure installing bundle: #{output}" unless status.success?
 
@@ -75,20 +76,20 @@ describe Solargraph::Workspace::Gemspecs, '#fetch_dependencies' do
     end
 
     context 'with gem that exists in our bundle' do
-      let(:gem_name) { 'undercover' }
+      let(:gem_name) { 'simplecov' }
 
       it 'finds dependencies' do
-        expect(deps.map(&:name)).to include('ast')
+        expect(deps.map(&:name)).to include('simplecov-html')
       end
     end
 
     context 'with gem does not exist in our bundle' do
-      let(:gem_name) { 'activerecord' }
+      let(:gem_name) { 'functional-ruby' }
 
       it 'gives a useful message' do
         dep_names = nil
         output = capture_both { dep_names = deps.map(&:name) }
-        expect(output).to include('Please install the gem activerecord')
+        expect(output).to include("Please install the gem #{gem_name}")
       end
     end
   end

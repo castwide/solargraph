@@ -12,6 +12,7 @@ module Solargraph
           @mutex = Mutex.new
           @queue = []
           @stopped = true
+          @fully_stopped = true
         end
 
         # Schedule a file to be diagnosed.
@@ -36,17 +37,25 @@ module Solargraph
           @stopped
         end
 
+        def fully_stopped?
+          @fully_stopped
+        end
+
         # Start the diagnosis thread.
         #
         # @return [self, nil]
         def start
           return unless @stopped
-          @stopped = false
+          @fully_stopped = @stopped = false
+          old_thread_id = Thread.current.object_id
           Thread.new do
             until stopped?
+              STDERR.puts "Diagnoser: start tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               tick
+              STDERR.puts "Diagnoser: end tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               sleep 0.1
             end
+            @fully_stopped = true
           end
           self
         end

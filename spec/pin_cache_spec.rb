@@ -3,7 +3,7 @@
 require 'bundler'
 require 'benchmark'
 
-describe Solargraph::PinCache do
+describe Solargraph::PinCache, order: :defined do
   subject(:pin_cache) do
     described_class.new(rbs_collection_path: '.gem_rbs_collection',
                         rbs_collection_config_path: 'rbs_collection.yaml',
@@ -12,11 +12,13 @@ describe Solargraph::PinCache do
   end
 
   describe '#cached?' do
-    it 'returns true for a gem that is cached' do
-      allow(File).to receive(:file?).with(%r{.*stdlib/backport.ser$}).and_return(false)
-      allow(File).to receive(:file?).with(%r{.*combined/.*/backport-.*.ser$}).and_return(true)
+    let(:gem_name) { 'not_a_gem_vmb' }
 
-      gemspec = Gem::Specification.find_by_name('backport')
+    it 'returns true for a gem that is cached' do
+      allow(File).to receive(:file?).with(%r{.*stdlib/#{gem_name}.ser$}).and_return(false)
+      allow(File).to receive(:file?).with(%r{.*combined/.*/#{gem_name}-.*.ser$}).and_return(true)
+
+      gemspec = instance_double(Gem::Specification, name: gem_name, version: '0.0.1')
       expect(pin_cache.cached?(gemspec)).to be true
     end
 
@@ -47,7 +49,7 @@ describe Solargraph::PinCache do
     it 'is tolerant of less usual Ruby installations' do
       stub_const('Gem::RUBYGEMS_DIR', nil)
 
-      expect(pin_cache.possible_stdlibs).to eq([])
+      expect { pin_cache.possible_stdlibs }.not_to raise_error
     end
   end
 
@@ -63,16 +65,16 @@ describe Solargraph::PinCache do
 
   describe '#cache_gem' do
     context 'with an already in-memory gem' do
-      let(:backport_gemspec) { Gem::Specification.find_by_name('backport') }
+      let(:jaro_winkler_gemspec) { Gem::Specification.find_by_name('jaro_winkler') }
 
       before do
-        pin_cache.cache_gem(gemspec: backport_gemspec, out: nil)
+        pin_cache.cache_gem(gemspec: jaro_winkler_gemspec, out: $stderr)
       end
 
       it 'does not load the gem again' do
         allow(Marshal).to receive(:load).and_call_original
 
-        pin_cache.cache_gem(gemspec: backport_gemspec, out: nil)
+        pin_cache.cache_gem(gemspec: jaro_winkler_gemspec, out: $stderr)
 
         expect(Marshal).not_to have_received(:load).with(anything)
       end
@@ -86,7 +88,7 @@ describe Solargraph::PinCache do
 
       it 'chooses not to use YARD' do
         parser_gemspec = Gem::Specification.find_by_name('parser')
-        pin_cache.cache_gem(gemspec: parser_gemspec, out: nil)
+        pin_cache.cache_gem(gemspec: parser_gemspec, out: $stderr)
         # if this fails, you may not have run `bundle exec rbs collection update`
         expect(Solargraph::Yardoc).not_to have_received(:build_docs).with(any_args)
       end
@@ -98,9 +100,11 @@ describe Solargraph::PinCache do
       end
 
       it 'uncaches when asked' do
+        allow(FileUtils).to receive(:rm_rf)
+
         gemspec = Gem::Specification.find_by_name('kramdown')
         expect do
-          pin_cache.uncache_gem(gemspec, out: nil)
+          pin_cache.uncache_gem(gemspec, out: $stderr)
         end.not_to raise_error
       end
     end
@@ -112,7 +116,7 @@ describe Solargraph::PinCache do
 
       it 'chooses not to use YARD' do
         parser_gemspec = Gem::Specification.find_by_name('parser')
-        pin_cache.cache_gem(gemspec: parser_gemspec, rebuild: true, out: nil)
+        pin_cache.cache_gem(gemspec: parser_gemspec, rebuild: true, out: $stderr)
         # if this fails, you may not have run `bundle exec rbs collection update`
         expect(Solargraph::Yardoc).not_to have_received(:build_docs).with(any_args)
       end
@@ -129,7 +133,7 @@ describe Solargraph::PinCache do
         yaml_gemspec = Gem::Specification.find_by_name(gem_name)
         allow(File).to receive(:write).and_call_original
 
-        pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
+        pin_cache.cache_gem(gemspec: yaml_gemspec, out: $stderr)
 
         # match arguments with regexp using rspec-matchers syntax
         expect(File).to have_received(:write).with(%r{combined/.*/logger-.*-stdlib.ser$}, any_args).once
@@ -147,7 +151,7 @@ describe Solargraph::PinCache do
         yaml_gemspec = Gem::Specification.find_by_name(gem_name)
         allow(File).to receive(:write).and_call_original
 
-        pin_cache.cache_gem(gemspec: yaml_gemspec, out: nil)
+        pin_cache.cache_gem(gemspec: yaml_gemspec, out: $stderr)
 
         # match arguments with regexp using rspec-matchers syntax
         expect(File).to have_received(:write).with(%r{combined/.*/rubocop-yard-.*-export.ser$}, any_args,
@@ -166,9 +170,11 @@ describe Solargraph::PinCache do
     end
 
     context 'with an already cached gem' do
-      let(:gemspec) { Gem::Specification.find_by_name('backport') }
+      let(:gemspec) { Gem::Specification.find_by_name('ast') }
 
       it 'deletes files' do
+        pin_cache.cache_gem(gemspec: gemspec, out: $stderr)
+
         call
 
         expect(FileUtils).to have_received(:rm_rf).at_least(:once)

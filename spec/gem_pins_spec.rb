@@ -10,23 +10,29 @@ describe Solargraph::GemPins do
   end
 
   context 'with a combined method pin' do
-    let(:path) { 'RBS::EnvironmentLoader#core_root' }
-    let(:requires) { ['rbs'] }
+    let(:path) { 'Hashdiff.diff' }
+    let(:requires) { ['hashdiff'] }
 
     it 'can merge YARD and RBS' do
-      expect(pin.source).to eq(:combined)
+      expect(pin.source).to eq(:combined), "Expected to merge YARD and RBS for #{path} in #{workspace.directory}"
     end
 
     it 'finds types from RBS' do
-      expect(pin.return_type.to_s).to eq('Pathname, nil')
+      expect(pin.return_type.to_s).to eq('Array')
     end
 
     it 'finds locations from YARD' do
-      expect(pin.location.filename).to end_with('environment_loader.rb')
+      expect(pin).not_to be_nil, "Expected to find pin for #{path} in #{workspace.directory}"
+      expect(pin.location.filename).to end_with('diff.rb')
     end
   end
 
   context 'with a YARD-only pin' do
+    before :context do
+      # run these on same runner so we don't cache rake in parallel;
+      # seems like we still have a race condition in pin caching
+    end
+
     let(:requires) { ['rake'] }
     let(:path) { 'Rake::Task#prerequisites' }
 

@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 
 describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
+  around do |testobj|
+    # we need a consistent directory
+    Solargraph::CHDIR_MUTEX.synchronize do
+      testobj.run
+    end
+  end
+
   it 'finds definitions of methods' do
     host = Solargraph::LanguageServer::Host.new
     host.prepare('spec/fixtures/workspace')
@@ -19,6 +26,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
                                       }
                                     }
                                   })
+    library = host.library_for(file_uri)
+    # keep this from syncing a bunch of bundle gems in background
+    allow(library).to receive(:cacheable_specs).and_return([])
     message.process
     expect(message.result.first[:uri]).to eq(something_uri)
   end

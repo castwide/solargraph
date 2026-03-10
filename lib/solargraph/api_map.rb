@@ -219,17 +219,19 @@ module Solargraph
     #
     # @param directory [String]
     # @param out [IO, StringIO, nil] The output stream for messages
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @param loose_unions [Boolean] See #initialize
     #
     # @return [ApiMap]
-    def self.load_with_cache directory, out = $stderr, loose_unions: true
+    # @api Used by solargraph-rails at least
+    def self.load_with_cache directory, out = $stderr, rebuild: false, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
-      if api_map.uncached_gemspecs.empty?
+      if api_map.uncached_gemspecs.empty? && !rebuild
         logger.info { "All gems cached for #{directory}" }
         return api_map
       end
 
-      api_map.cache_all_for_doc_map!(out: out)
+      api_map.cache_all_for_doc_map!(out: out, rebuild: rebuild)
       load(directory, loose_unions: loose_unions)
     end
 
@@ -752,6 +754,13 @@ module Solargraph
     # @return [String, nil]
     def qualify_superclass fq_sub_tag
       store.qualify_superclass fq_sub_tag
+    end
+
+    # @param require_path [String]
+    #
+    # @return [Array<Gem::Specification>, nil]
+    def resolve_require require_path
+      workspace.resolve_require require_path
     end
 
     private

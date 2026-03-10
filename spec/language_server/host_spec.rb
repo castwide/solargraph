@@ -67,8 +67,11 @@ describe Solargraph::LanguageServer::Host do
       File.write(file, "foo = 'foo'")
       host.start
       host.prepare dir
-      Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
+      file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(file)
       host.open(file, File.read(file), 1)
+      # keep this from syncing a bunch of bundle gems in background
+      library = host.library_for(file_uri)
+      allow(library).to receive(:cacheable_specs).and_return([])
       buffer = host.flush
       times = 0
       # @todo Weak timeout for waiting until the diagnostics thread
@@ -79,7 +82,8 @@ describe Solargraph::LanguageServer::Host do
         buffer = host.flush
       end
       expect(buffer).to include('textDocument/publishDiagnostics')
-      host.stop
+    ensure
+      host.fully_stop
     end
   end
 
@@ -110,7 +114,13 @@ describe Solargraph::LanguageServer::Host do
     file1_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri("#{app1_folder}/app.rb")
     file2_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri("#{app2_folder}/app.rb")
     host.open_from_disk file1_uri
+    library = host.library_for(file1_uri)
+    # keep this from syncing a bunch of bundle gems in background
+    allow(library).to receive(:cacheable_specs).and_return([])
     host.open_from_disk file2_uri
+    library = host.library_for(file2_uri)
+    # keep this from syncing a bunch of bundle gems in background
+    allow(library).to receive(:cacheable_specs).and_return([])
     app1_map = host.document_symbols(file1_uri).map(&:path)
     expect(app1_map).to include('Folder1App')
     expect(app1_map).not_to include('Folder2App')
@@ -121,8 +131,8 @@ describe Solargraph::LanguageServer::Host do
 
   it 'stops' do
     host = described_class.new
-    host.stop
-    expect(host.stopped?).to be(true)
+    host.fully_stop
+    expect(host.fully_stopped?).to be(true)
   end
 
   it 'retains orphaned sources' do
@@ -133,6 +143,9 @@ describe Solargraph::LanguageServer::Host do
     host.prepare(dir)
     host.open(file_uri, File.read(file), 1)
     host.remove(dir)
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(file_uri)
+    allow(library).to receive(:cacheable_specs).and_return([])
     expect do
       host.document_symbols(file_uri)
     end.not_to raise_error
@@ -209,6 +222,9 @@ describe Solargraph::LanguageServer::Host do
       host = described_class.new
       host.prepare ''
       host.open uri, code, 1
+      library = host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
       sleep 0.1 until host.libraries.all?(&:mapped?)
       result = host.locate_pins({
                                   'data' => {
@@ -247,15 +263,23 @@ describe Solargraph::LanguageServer::Host do
 
     it 'rescues InvalidOffset errors' do
       host = described_class.new
-      host.open('file:///file.rb', 'class Foo; end', 1)
+      uri = 'file:///file.rb'
+      host.open(uri, 'class Foo; end', 1)
+      library = host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
       expect { host.references_from('file:///file.rb', 0, 100) }.not_to raise_error
     end
 
     it 'logs InvalidOffset errors' do
       allow(Solargraph.logger).to receive(:warn)
       host = described_class.new
-      host.open('file:///file.rb', 'class Foo; end', 1)
-      host.references_from('file:///file.rb', 0, 100)
+      uri = 'file:///file.rb'
+      host.open(uri, 'class Foo; end', 1)
+      library = host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
+      host.references_from(uri, 0, 100)
       expect(Solargraph.logger).to have_received(:warn).with(/InvalidOffsetError/)
     end
   end
@@ -266,19 +290,27 @@ describe Solargraph::LanguageServer::Host do
     end
 
     after do
-      @host.stop
+      @host.fully_stop
     end
 
     it 'creates a library for a file without a workspace' do
-      @host.open('file:///file.rb', 'class Foo; end', 1)
-      symbols = @host.document_symbols('file:///file.rb')
+      uri = 'file:///file.rb'
+      @host.open(uri, 'class Foo; end', 1)
+      library = @host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
+      symbols = @host.document_symbols(uri)
       expect(symbols).not_to be_empty
     end
 
     it 'opens a file outside of prepared libraries' do
       @host.prepare(File.absolute_path(File.join('spec', 'fixtures', 'workspace')))
-      @host.open('file:///file.rb', 'class Foo; end', 1)
-      symbols = @host.document_symbols('file:///file.rb')
+      uri = 'file:///file.rb'
+      @host.open(uri, 'class Foo; end', 1)
+      library = @host.library_for(uri)
+      # keep this from syncing a bunch of bundle gems in background
+      allow(library).to receive(:cacheable_specs).and_return([])
+      symbols = @host.document_symbols(uri)
       expect(symbols).not_to be_empty
     end
   end

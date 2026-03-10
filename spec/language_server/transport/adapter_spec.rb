@@ -21,7 +21,8 @@ describe Solargraph::LanguageServer::Transport::Adapter do
     tester = AdapterTester.new
     tester.opening
     expect(tester.host).to be_a(Solargraph::LanguageServer::Host)
-    expect(tester.host).not_to be_stopped
+    expect(tester.host).not_to be_fully_stopped
+    tester.host.fully_stop
   end
 
   it 'stops a host on close' do
@@ -29,6 +30,7 @@ describe Solargraph::LanguageServer::Transport::Adapter do
     tester.opening
     tester.closing
     expect(tester.host).to be_stopped
+    tester.host.fully_stop
   end
 
   it 'stops Backport when the host stops' do
@@ -40,6 +42,8 @@ describe Solargraph::LanguageServer::Transport::Adapter do
       end
     end
     expect(tester.host).to be_stopped
+    tester.host.fully_stop
+    expect(tester.host).to be_fully_stopped
   end
 
   it 'processes sent data' do
@@ -50,5 +54,6 @@ describe Solargraph::LanguageServer::Transport::Adapter do
       tester.receiving "Content-Length: #{message.length}\r\n\r\n#{message}"
     end.not_to raise_error
     tester.closing
+    tester.host.fully_stop
   end
 end

@@ -32,6 +32,7 @@ module Solargraph
           end
           generated_pins = pins
           logger.debug { "Found #{generated_pins.length} pins for stdlib library #{library}" }
+          out&.puts "Caching RBS gem standard library pins for #{library}"
           PinCache.serialize_stdlib_require library, generated_pins
         end
       end
@@ -65,6 +66,11 @@ module Solargraph
       # @return [StdlibMap]
       def self.load library
         @stdlib_maps_hash[library] ||= StdlibMap.new(library)
+      end
+
+      # @return [Array<String>]
+      def self.possible_stdlibs
+        RBS::Repository.default.gems.keys
       end
     end
   end

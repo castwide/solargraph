@@ -9,7 +9,7 @@ describe Solargraph::DocMap do
   end
 
   let(:out) { StringIO.new }
-  let(:pre_cache) { true }
+  let(:pre_cache) { false }
   let(:requires) { [] }
 
   let(:workspace) do
@@ -19,10 +19,12 @@ describe Solargraph::DocMap do
   let(:plain_doc_map) { described_class.new([], workspace, out: nil) }
 
   before do
-    doc_map.cache_doc_map_gems!(nil) if pre_cache
+    doc_map.cache_doc_map_gems!($stderr) if pre_cache
   end
 
   context 'with a require in solargraph test bundle' do
+    let(:pre_cache) { true }
+
     let(:requires) do
       ['ast']
     end
@@ -34,6 +36,8 @@ describe Solargraph::DocMap do
   end
 
   context 'when understanding rspec + rspec-mocks require pattern' do
+    let(:pre_cache) { true }
+
     let(:requires) do
       ['rspec-mocks']
     end
@@ -67,17 +71,21 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'does not warn for redundant requires' do
-    # Requiring 'set' is unnecessary because it's already included in core. It
-    # might make sense to log redundant requires, but a warning is overkill.
-    allow(Solargraph.logger).to receive(:warn).and_call_original
-    described_class.new(['set'], workspace)
-    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
+  context 'with a redundant require' do
+    let(:pre_cache) { false }
+
+    it 'does not warn' do
+      # Requiring 'set' is unnecessary because it's already included in core. It
+      # might make sense to log redundant requires, but a warning is overkill.
+      allow(Solargraph.logger).to receive(:warn).and_call_original
+      described_class.new(['set'], workspace)
+      expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
+    end
   end
 
   context 'when deserialization takes a while' do
     let(:pre_cache) { false }
-    let(:requires) { ['backport'] }
+    let(:requires) { ['rubocop-rspec'] }
 
     before do
       # proxy this method to simulate a long-running deserialization
@@ -114,9 +122,13 @@ describe Solargraph::DocMap do
   end
 
   context 'with require as bundle/require' do
+    let(:pre_cache) { false }
+
     it 'imports all gems when bundler/require used' do
-      doc_map_with_bundler_require = described_class.new(['bundler/require'], workspace, out: nil)
-      doc_map_with_bundler_require.cache_doc_map_gems!(nil)
+      doc_map_with_bundler_require = described_class.new(['bundler/require'], workspace, out: $stderr)
+      if doc_map_with_bundler_require.pins.length <= plain_doc_map.pins.length
+        doc_map_with_bundler_require.cache_doc_map_gems!(nil)
+      end
       expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
     end
   end

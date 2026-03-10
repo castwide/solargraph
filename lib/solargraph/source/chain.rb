@@ -148,6 +148,7 @@ module Solargraph
           @@inference_invalidation_key = api_map.hash
           @@inference_cache = {}
         end
+        # @todo Missed nil violation
         out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
         logger.debug do
           "Chain#infer() - caching result - cache_key_hash=#{cache_key.hash}, links.map(&:hash)=#{links.map(&:hash)}, links=#{links}, cache_key.map(&:hash) = #{cache_key.map(&:hash)}, cache_key=#{cache_key}"
@@ -170,7 +171,11 @@ module Solargraph
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type)
         logger.debug do
-          "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, name_pin=#{name_pin}, name_pin.closure=#{name_pin.closure.inspect}, name_pin.binder=#{name_pin.binder}) => #{out.rooted_tags.inspect}"
+          "Chain#infer_uncached(links=#{links.map(&:desc)}, " \
+            "locals=#{locals.map(&:desc)}, " \
+            "name_pin=#{name_pin}, " \
+            "name_pin.closure=#{name_pin&.closure.inspect}, " \
+            "name_pin.binder=#{name_pin&.binder}) => #{out.rooted_tags.inspect}"
         end
         out
       end

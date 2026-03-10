@@ -20,7 +20,11 @@ module Solargraph
 
       # @param directory [String]
       def initialize directory = ''
-        @directory = File.absolute_path(directory)
+        @directory = if directory.empty?
+                       ''
+                     else
+                       File.absolute_path(directory)
+                     end
         @raw_data = config_data
         included
         excluded

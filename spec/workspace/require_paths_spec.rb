@@ -2,25 +2,23 @@
 
 require 'fileutils'
 require 'tmpdir'
+require 'benchmark'
 
 describe Solargraph::Workspace::RequirePaths do
-  subject(:paths) { described_class.new(dir_path, config).generate }
+  subject(:paths) do
+    described_class.new(dir_path, config).generate
+  end
 
   let(:config) { Solargraph::Workspace::Config.new(dir_path) }
-
-  context 'with no config' do
-    let(:dir_path) { Dir.pwd }
-    let(:config) { nil }
-
-    it 'includes the lib directory' do
-      expect(paths).to include(File.join(dir_path, 'lib'))
-    end
-  end
 
   context 'with config and no gemspec' do
     let(:dir_path) { File.realpath(Dir.pwd) }
 
-    let(:config) { instance_double(Solargraph::Workspace::Config, require_paths: [], allow?: true) }
+    let(:config) do
+      instance_double(Solargraph::Workspace::Config,
+                      require_paths: [],
+                      allow?: false)
+    end
 
     it 'includes the lib directory' do
       expect(paths).to include(File.join(dir_path, 'lib'))

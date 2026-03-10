@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'concurrent-ruby'
 require 'open3'
 require 'json'
 require 'yaml'
@@ -23,8 +24,9 @@ module Solargraph
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @todo Remove '' and '*' special cases
-    # @param directory [String]
+    # @todo Remove '*' special case
+    # @param directory [String] If empty, no config will be loaded,
+    #   and no RBS collection will be used.  Useful for specs.
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
@@ -245,22 +247,43 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_workspace! out, rebuild: false
+      out&.puts 'Caching all gems available'
       PinCache.cache_core(out: out) unless PinCache.core? && !rebuild
 
       gem_specs = all_gemspecs_from_bundle
       # try any possible standard libraries, but be quiet about it
       stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
       specs = (gem_specs + stdlib_specs)
-      specs.each do |spec|
-        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+
+      pool_size = Concurrent.processor_count # roughly your CPU count
+      pool = Concurrent::FixedThreadPool.new(pool_size)
+
+      # Using 'names' as queue, run!
+      futures = specs.map do |spec|
+        Concurrent::Promises.future_on(pool, spec) do
+          pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+        end
       end
-      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      Concurrent::Promises.zip(*futures).value!
+      pool.shutdown
+      pool.wait_for_termination
+
+      out&.puts "Documentation cached for all #{specs.length} gems using #{pool_size} threads."
 
       # do this after so that we prefer stdlib requires from gems,
       # which are likely to be newer and have more pins
-      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
+      cache_all_stdlibs(out: out, rebuild: rebuild)
 
       out&.puts 'Documentation cached for core, standard library and gems.'
+    end
+
+    # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
+    # @return [void]
+    def cache_all_stdlibs out: nil, rebuild: false
+      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
     end
 
     # Synchronize the workspace from the provided updater.

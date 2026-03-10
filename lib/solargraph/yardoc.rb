@@ -18,6 +18,21 @@ module Solargraph
     def build_docs gem_yardoc_path, yard_plugins, gemspec
       return if docs_built?(gem_yardoc_path)
 
+      # @todo there's still a small race condition here
+      if processing?(gem_yardoc_path)
+        Solargraph.logger.info { "YARD doc build already in process for #{gemspec.name} #{gemspec.version}" }
+
+        # Wait for up to 60 seconds for another process to finish building
+        timeout = 60
+        start_time = Time.now
+
+        sleep 1 until docs_built?(gem_yardoc_path) || (Time.now - start_time > timeout)
+
+        return if docs_built?(gem_yardoc_path)
+
+        raise "YARD doc build for #{gemspec.name} #{gemspec.version} did not finish in #{timeout} seconds"
+      end
+
       unless Dir.exist? gemspec.gem_dir
         # Can happen in at least some (old?) RubyGems versions when we
         # have a gemspec describing a standard library like bundler.

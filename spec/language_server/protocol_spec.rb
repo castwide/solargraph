@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+require 'rubocop'
+
 class Protocol
-  attr_reader :response
+  attr_reader :response, :host
 
-  # @return [Solargraph::LanguageServer::Host]
-  attr_reader :host
-
+  # @param host [Solargraph::LanguageServer::Host]
   def initialize host
     @host = host
     @host.start
@@ -14,6 +15,7 @@ class Protocol
       @response = message
     end
     @message_id = 0
+    STDERR.puts "Started in thread #{Thread.current.object_id}"
   end
 
   def request method, params
@@ -30,16 +32,30 @@ class Protocol
   end
 
   def stop
-    @host.stop
+    @host.fully_stop
   end
 end
 
-describe Protocol do
+describe Protocol, order: :defined do
   before :all do
     @protocol = described_class.new(Solargraph::LanguageServer::Host.new)
   end
 
-  after :all do
+  # Ensure we don't start caching gems from current bundle in background
+  around do |testobj|
+    raise "Requests not finished #{testobj} - #{@protocol.host.pending_requests.inspect}" unless @protocol.host.pending_requests.empty?
+    temp_dir = Dir.mktmpdir
+    Dir.chdir temp_dir
+    Solargraph.with_clean_env do
+      testobj.run
+    end
+    raise "Requests not finished - #{@protocol.host.send(:requests).inspect}" unless @protocol.host.pending_requests.empty?
+  ensure
+    Dir.chdir PROJECT_DIRECTORY
+    FileUtils.remove_entry(temp_dir)
+  end
+
+  after :context do
     @protocol.stop
   end
 
@@ -84,6 +100,9 @@ describe Protocol do
     @protocol.request 'initialized', nil
     response = @protocol.response
     expect(response['error']).to be_nil
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'configured default dynamic registration capabilities from initialized' do
@@ -113,9 +132,10 @@ describe Protocol do
   end
 
   it 'handles textDocument/documentHighlight' do
+    file_uri = 'file:///file.rb'
     @protocol.request 'textDocument/documentHighlight', {
       'textDocument' => {
-        'uri' => 'file:///file.rb'
+        'uri' => file_uri
       },
       'position' => {
         'line' => 1,
@@ -123,8 +143,9 @@ describe Protocol do
       }
     }
     response = @protocol.response
+    expect(response['result']).not_to be_nil, -> { "Expected result to be non-nil, got #{response.inspect}" }
     # Two references to Foo: the class definition and the Foo.new call
-    expect(response['result'].length).to eq(2)
+    expect(response['result'].length).to eq(2), -> { "Expected 2 highlights for Foo, got #{response['result'].length} in #{response.inspect}" }
   end
 
   it 'handles textDocument/didChange' do
@@ -290,6 +311,7 @@ describe Protocol do
     }
     response = @protocol.response
     expect(response['error']).to be_nil
+    expect(response['result']).not_to be_nil, -> { "Expected result to be non-nil, got #{response.inspect}" }
     expect(response['result']['signatures']).not_to be_empty
   end
 
@@ -414,6 +436,9 @@ describe Protocol do
     }
     expect(@protocol.host.options['autoformat']).to be(false)
     expect(@protocol.host.registered?('textDocument/completion')).to be(false)
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'handles $/solargraph/checkGemVersion' do
@@ -422,25 +447,35 @@ describe Protocol do
     expect(response['error']).to be_nil
     expect(response['result']['installed']).to be_a(String)
     expect(response['result']['available']).to be_a(String)
+    expect(@protocol.host.pending_requests.size).to eq(1)
+    pending_id = @protocol.host.pending_requests.first
+    @protocol.host.receive({ 'id' => pending_id })
   end
 
   it 'handles $/solargraph/documentGems' do
+    status = instance_double(Process::Status)
+    allow(status).to receive(:==).with(0).and_return(true)
+    allow(Open3).to receive(:capture2).with('solargraph', 'gems').and_return(['', status])
+
     @protocol.request '$/solargraph/documentGems', {}
     response = @protocol.response
+
     expect(response['error']).to be_nil
+    expect(Open3).to have_received(:capture2).with('solargraph', 'gems')
   end
 
   it 'handles textDocument/formatting' do
+    filename = File.realpath('spec/fixtures/formattable.rb', PROJECT_DIRECTORY)
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb')),
-        'text' => File.read('spec/fixtures/formattable.rb'),
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename),
+        'text' => File.read(filename),
         'version' => 1
       }
     }
     @protocol.request 'textDocument/formatting', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable.rb'))
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename)
       }
     }
     response = @protocol.response
@@ -449,16 +484,17 @@ describe Protocol do
   end
 
   it 'can format file without file extension' do
+    filename = File.realpath('spec/fixtures/formattable', PROJECT_DIRECTORY)
     @protocol.request 'textDocument/didOpen', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable')),
-        'text' => File.read('spec/fixtures/formattable'),
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename),
+        'text' => File.read(filename),
         'version' => 1
       }
     }
     @protocol.request 'textDocument/formatting', {
       'textDocument' => {
-        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.realpath('spec/fixtures/formattable'))
+        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(filename)
       }
     }
     response = @protocol.response

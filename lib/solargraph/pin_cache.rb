@@ -134,19 +134,24 @@ module Solargraph
 
     # @return [Array<String>] a list of possible standard library names
     def possible_stdlibs
-      # all dirs and .rb files in Gem::RUBYGEMS_DIR
-      Dir.glob(File.join(Gem::RUBYGEMS_DIR, '*')).map do |file_or_dir|
-        basename = File.basename(file_or_dir)
-        # remove .rb
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
-        basename = basename[0..-4] if basename.end_with?('.rb')
-        basename
-      end.sort.uniq
-    rescue StandardError => e
-      logger.info { "Failed to get possible stdlibs: #{e.message}" }
-      # @sg-ignore Need to add nil check here
-      logger.debug { e.backtrace.join("\n") }
-      []
+      # all dirs and .rb files in Gem::RUBYGEMS_DIR/rubygems
+      local_stdlibs =
+        begin
+          Dir.glob(File.join(Gem::RUBYGEMS_DIR, 'rubygems', '*')).map do |file_or_dir|
+            basename = File.basename(file_or_dir)
+            # remove .rb
+            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            basename = basename[0..-4] if basename.end_with?('.rb')
+            basename
+          end.sort.uniq
+        rescue StandardError => e
+          logger.info { "Failed to get possible stdlibs: #{e.message}" }
+          # @sg-ignore Need to add nil check here
+          logger.debug { e.backtrace.join("\n") }
+          []
+        end
+      rbs_stdlibs = RbsMap::StdlibMap.possible_stdlibs
+      (local_stdlibs + rbs_stdlibs).sort.uniq
     end
 
     private

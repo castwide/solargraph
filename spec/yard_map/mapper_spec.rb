@@ -1,24 +1,29 @@
 # frozen_string_literal: true
 
 describe Solargraph::YardMap::Mapper do
-  before :all do # rubocop:disable RSpec/BeforeAfterAll
-    @api_map = Solargraph::ApiMap.load('.')
+  # before :context here disables parallel tests in prspec, which
+  # would be needed regardless as we are changing the working
+  # directory
+  before :context do
+    @api_map = Solargraph::ApiMap.new
   end
 
   def pins_with require
-    doc_map = Solargraph::DocMap.new([require], @api_map.workspace, out: nil)
-    doc_map.cache_doc_map_gems!(nil)
+    doc_map = Solargraph::DocMap.new([require], @api_map.workspace, out: $stderr)
+    doc_map.cache_doc_map_gems!($stderr)
     doc_map.pins
   end
 
   it 'converts nil docstrings to empty strings' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
-    Dir.chdir dir do
-      YARD::Registry.load([File.join(dir, 'attr.rb')], true)
-      mapper = described_class.new(YARD::Registry.all)
-      pins = mapper.map
-      pin = pins.select { |pin| pin.path == 'Foo#bar' }.first
-      expect(pin.comments).to be_a(String)
+    Solargraph::CHDIR_MUTEX.synchronize do
+      Dir.chdir dir do
+        YARD::Registry.load([File.join(dir, 'attr.rb')], true)
+        mapper = described_class.new(YARD::Registry.all)
+        pins = mapper.map
+        pin = pins.select { |pin| pin.path == 'Foo#bar' }.first
+        expect(pin.comments).to be_a(String)
+      end
     end
     # Cleanup
     FileUtils.remove_entry_secure File.join(dir, '.yardoc')
@@ -39,14 +44,16 @@ describe Solargraph::YardMap::Mapper do
 
   it 'marks correct return type from RuboCop::Options.new' do
     # Using rubocop because it's a known dependency
-    pins = pins_with('rubocop').select { |pin| pin.path == 'RuboCop::Options.new' }
-    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
-    expect(pins.flat_map(&:signatures).map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
+    all_pins = pins_with('open3')
+    pins = all_pins.select { |pin| pin.path == 'Open3.capture2e' }
+    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['Array(String, Process::Status)'])
+    expect(pins.flat_map(&:signatures).map(&:return_type).uniq.map(&:to_s)).to eq(['Array(String, Process::Status)'])
   end
 
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
     pin = pins_with('rspec/expectations').find { |pin| pin.path == 'RSpec::Matchers#expect' }
+
     expect(pin.explicit?).to be(false)
   end
 
