@@ -62,7 +62,7 @@ module Solargraph
         when RBS::AST::Declarations::TypeAlias
           pins.push(
             Solargraph::Pin::Reference::TypeAlias.new(
-              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(decl.type.to_s).force_rooted, closure: closure, source: :rbs
+              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(decl.type.to_s).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
         when RBS::AST::Declarations::Module
