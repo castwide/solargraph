@@ -60,7 +60,7 @@ module Solargraph
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
-          pins.push Solargraph::Pin::Reference::TypeAlias.new(name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(decl.type.to_s))
+          pins.push Solargraph::Pin::Reference::TypeAlias.new(name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(decl.type.to_s).force_rooted, closure: closure)
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
