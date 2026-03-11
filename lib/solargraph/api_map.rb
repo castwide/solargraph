@@ -241,7 +241,9 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
-    def alias(name)
+    # @param name [String]
+    # @return [ComplexType, nil]
+    def unalias(name)
       store.unalias(name)
     end
 
