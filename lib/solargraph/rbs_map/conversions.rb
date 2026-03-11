@@ -37,11 +37,6 @@ module Solargraph
 
       private
 
-      # @return [Hash{String => RBS::AST::Declarations::TypeAlias}]
-      def type_aliases
-        @type_aliases ||= {}
-      end
-
       # @param loader [RBS::EnvironmentLoader]
       # @return [void]
       def load_environment_to_pins(loader)
@@ -65,8 +60,7 @@ module Solargraph
           # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl, closure
         when RBS::AST::Declarations::TypeAlias
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
-          type_aliases[decl.name.to_s] = decl
+          pins.push Solargraph::Pin::Reference::TypeAlias.new(name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(decl.type.to_s))
         when RBS::AST::Declarations::Module
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
@@ -708,11 +702,7 @@ module Solargraph
       # @param type [RBS::MethodType]
       # @return [String]
       def method_type_to_tag type
-        if type_aliases.key?(type.type.return_type.to_s)
-          other_type_to_tag(type_aliases[type.type.return_type.to_s].type)
-        else
-          other_type_to_tag type.type.return_type
-        end
+        other_type_to_tag type.type.return_type
       end
 
       # @param type_name [RBS::TypeName]
