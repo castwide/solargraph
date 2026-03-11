@@ -160,8 +160,8 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           if param.default_type
-            tag = other_type_to_tag param.default_type
-            generic_defaults[param.name.to_s] = ComplexType.parse(tag).force_rooted
+            complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
+            generic_defaults[param.name.to_s] = complex_type
           end
         end
         class_name = decl.name.relative!.to_s
@@ -303,7 +303,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -461,7 +461,7 @@ module Solargraph
         if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
           return [
             [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs, type_location: type_location)],
-            ComplexType.try_parse(method_type_to_tag(type)).force_rooted
+            method_type_to_tag(type).force_rooted
           ]
         end
 
@@ -471,21 +471,20 @@ module Solargraph
           # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           # @sg-ignore RBS generic type understanding issue
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted, source: :rbs, type_location: type_location)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: RbsTranslator.to_complex_type(param.type).force_rooted, source: :rbs, type_location: type_location)
         end
         type.type.optional_positionals.each do |param|
           # @sg-ignore RBS generic type understanding issue
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
+                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
                                                          type_location: type_location,
                                                          source: :rbs)
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          inner_rest_positional_type =
-            ComplexType.try_parse(other_type_to_tag(type.type.rest_positionals.type))
+          inner_rest_positional_type = RbsTranslator.to_complex_type(type.type.rest_positionals.type)
           rest_positional_type = ComplexType::UniqueType.new('Array',
                                                              [],
                                                              [inner_rest_positional_type],
@@ -504,7 +503,7 @@ module Solargraph
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
+                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
                                                          source: :rbs, type_location: type_location)
         end
         type.type.optional_keywords.each do |orig, param|
@@ -512,7 +511,7 @@ module Solargraph
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
-                                                         return_type: ComplexType.try_parse(other_type_to_tag(param.type)).force_rooted,
+                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
                                                          type_location: type_location,
                                                          source: :rbs)
         end
@@ -523,7 +522,7 @@ module Solargraph
         end
 
         rooted_tag = method_type_to_tag(type)
-        return_type = ComplexType.try_parse(rooted_tag).force_rooted
+        return_type = rooted_tag.force_rooted
         [parameters, return_type]
       end
 
@@ -545,7 +544,7 @@ module Solargraph
           visibility: visibility,
           source: :rbs
         )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         logger.debug { "Conversions#attr_reader_to_pin(name=#{name.inspect}, visibility=#{visibility.inspect}) => #{pin.inspect}" }
         pins.push pin
@@ -574,12 +573,12 @@ module Solargraph
         pin.parameters <<
           Solargraph::Pin::Parameter.new(
             name: 'value',
-            return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted,
+            return_type: RbsTranslator.to_complex_type(decl.type).force_rooted,
             source: :rbs,
             closure: pin,
             type_location: type_location
           )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:return, '', rooted_tag))
         pins.push pin
       end
@@ -604,7 +603,7 @@ module Solargraph
           comments: decl.comment&.string,
           source: :rbs
         )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -621,7 +620,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -638,7 +637,7 @@ module Solargraph
           type_location: location_decl_to_pin_location(decl.location),
           source: :rbs
         )
-        rooted_tag = ComplexType.parse(other_type_to_tag(decl.type)).force_rooted.rooted_tags
+        rooted_tag = RbsTranslator.to_complex_type(decl.type).force_rooted.rooted_tags
         pin.docstring.add_tag(YARD::Tags::Tag.new(:type, '', rooted_tag))
         pins.push pin
       end
@@ -709,9 +708,9 @@ module Solargraph
       # @return [String]
       def method_type_to_tag type
         if type_aliases.key?(type.type.return_type.to_s)
-          other_type_to_tag(type_aliases[type.type.return_type.to_s].type)
+          RbsTranslator.to_complex_type(type_aliases[type.type.return_type.to_s].type)
         else
-          other_type_to_tag type.type.return_type
+          RbsTranslator.to_complex_type(type.type.return_type)
         end
       end
 
