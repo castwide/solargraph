@@ -591,7 +591,7 @@ module Solargraph
       def parts_of_function type, pin
         [
           RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names),
-          method_type_to_tag(type).force_rooted
+          extract_method_type_return_type(type).force_rooted
         ]
       end
 
@@ -779,9 +779,13 @@ module Solargraph
         'NilClass' => 'nil'
       }
 
+      # Extract a ComplexType from a MethodType's return type.
+      #
+      # This method will convert type aliases to concrete types.
+      #
       # @param type [RBS::MethodType]
-      # @return [String]
-      def method_type_to_tag type
+      # @return [ComplexType]
+      def extract_method_type_return_type type
         if type_aliases.key?(type.type.return_type.to_s)
           RbsTranslator.to_complex_type(type_aliases[type.type.return_type.to_s].type)
         else
