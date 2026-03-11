@@ -457,73 +457,10 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin
-        type_location = pin.type_location
-        if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
-          return [
-            [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs, type_location: type_location)],
-            method_type_to_tag(type).force_rooted
-          ]
-        end
-
-        parameters = []
-        arg_num = -1
-        type.type.required_positionals.each do |param|
-          # @sg-ignore RBS generic type understanding issue
-          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
-          # @sg-ignore RBS generic type understanding issue
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, return_type: RbsTranslator.to_complex_type(param.type).force_rooted, source: :rbs, type_location: type_location)
-        end
-        type.type.optional_positionals.each do |param|
-          # @sg-ignore RBS generic type understanding issue
-          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
-                                                         # @sg-ignore RBS generic type understanding issue
-                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
-                                                         type_location: type_location,
-                                                         source: :rbs)
-        end
-        if type.type.rest_positionals
-          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          inner_rest_positional_type = RbsTranslator.to_complex_type(type.type.rest_positionals.type)
-          rest_positional_type = ComplexType::UniqueType.new('Array',
-                                                             [],
-                                                             [inner_rest_positional_type],
-                                                             rooted: true, parameters_type: :list)
-          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin,
-                                                         source: :rbs, type_location: type_location,
-                                                         return_type: rest_positional_type,)
-        end
-        type.type.trailing_positionals.each do |param|
-          # @sg-ignore RBS generic type understanding issue
-          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, source: :rbs, type_location: type_location)
-        end
-        type.type.required_keywords.each do |orig, param|
-          # @sg-ignore RBS generic type understanding issue
-          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
-                                                         # @sg-ignore RBS generic type understanding issue
-                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
-                                                         source: :rbs, type_location: type_location)
-        end
-        type.type.optional_keywords.each do |orig, param|
-          # @sg-ignore RBS generic type understanding issue
-          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
-                                                         # @sg-ignore RBS generic type understanding issue
-                                                         return_type: RbsTranslator.to_complex_type(param.type).force_rooted,
-                                                         type_location: type_location,
-                                                         source: :rbs)
-        end
-        if type.type.rest_keywords
-          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg_#{arg_num += 1}"
-          parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg, name: type.type.rest_keywords.name.to_s, closure: pin,
-                                                         source: :rbs, type_location: type_location)
-        end
-
-        rooted_tag = method_type_to_tag(type)
-        return_type = rooted_tag.force_rooted
-        [parameters, return_type]
+        [
+          RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names),
+          method_type_to_tag(type).force_rooted
+        ]
       end
 
       # @param decl [RBS::AST::Members::AttrReader,RBS::AST::Members::AttrAccessor]
