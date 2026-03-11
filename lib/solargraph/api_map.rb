@@ -241,6 +241,10 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
+    def alias(name)
+      store.unalias(name)
+    end
+
     # True if the namespace exists.
     #
     # @param name [String] The namespace to match

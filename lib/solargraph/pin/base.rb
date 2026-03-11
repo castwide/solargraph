@@ -522,6 +522,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify api_map
+        aliased = api_map.alias(return_type.to_s)
+        return aliased if aliased
+
         return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 

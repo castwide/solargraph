@@ -266,6 +266,10 @@ module Solargraph
         @constants ||= Constants.new(self)
       end
 
+      def unalias(name)
+        index.alias_hash[name]
+      end
+
       private
 
       # @return [Index]
