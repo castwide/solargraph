@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
+    # rubocop:disable Metrics/ClassLength
     class Method < Callable
       include Solargraph::Parser::NodeMethods
 
@@ -175,7 +176,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
+        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
       end
 
       # @param parameters [::Array<Parameter>]
@@ -219,13 +220,10 @@ module Solargraph
 
       # @return [::Array<Signature>]
       def signatures
-        @signatures ||= begin
-          top_type = generate_complex_type
-          result = []
-          result.push generate_signature(parameters, top_type) if top_type.defined?
-          result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
-          result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
-          result
+        @signatures ||= if inline_rbs.empty?
+          signatures_from_yard
+        else
+          signatures_from_inline_rbs
         end
       end
 
@@ -468,6 +466,8 @@ module Solargraph
 
       attr_writer :documentation
 
+      attr_writer :return_type
+
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
@@ -664,9 +664,41 @@ module Solargraph
         .concat("```\n")
       end
 
-      protected
+      # @return [ComplexType, nil]
+      def return_type_from_inline_rbs
+        return nil if inline_rbs.empty?
+        method_type = RBS::Parser.parse_method_type(inline_rbs)
+        RbsTranslator.to_complex_type(method_type.type.return_type)
+      rescue RBS::ParsingError
+        nil
+      end
 
-      attr_writer :return_type
+      # @return [Array<Pin::Signature>]
+      def signatures_from_inline_rbs
+        method_type = RBS::Parser.parse_method_type(inline_rbs)
+        [RbsTranslator.to_signature(method_type, self, parameter_names)]
+      rescue RBS::ParsingError
+        signatures_from_yard
+      end
+
+      # @return [Array<Pin::Signature>]
+      def signatures_from_yard
+        top_type = generate_complex_type
+        result = []
+        result.push generate_signature(parameters, top_type) if top_type.defined?
+        result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+        result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
+        result
+      end
+
+      # @return [String]
+      def inline_rbs
+        comments.lines
+                .select { |line| line.start_with?(': ') }
+                .map { |line| line[2..].strip }
+                .join("\n")
+      end
     end
+    # rubocop:enable Metrics/ClassLength
   end
 end
