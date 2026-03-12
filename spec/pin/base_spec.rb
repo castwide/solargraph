@@ -65,7 +65,7 @@ describe Solargraph::Pin::Base do
   describe '#typify' do
     it 'resolves RBS type aliases' do
       # @todo WIP Failures in CI not occurring locally
-      next if Gem::Version.new('3.4.0') > Gem::Version.new(RUBY_VERSION)
+      next unless RBS::VERSION =~ /^4\./
 
       # @todo This test relies on RBS type data in the local workspace
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
