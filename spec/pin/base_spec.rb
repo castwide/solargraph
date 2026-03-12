@@ -67,7 +67,7 @@ describe Solargraph::Pin::Base do
       # @todo This test relies on RBS type data in the local workspace
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
       pin = api_map.get_path_pins('RBS::MethodType#type').first
-      expect(pin.typify(api_map).to_s).to eq('RBS::Types::Function | ::RBS::Types::UntypedFunction')
+      expect(pin.typify(api_map).to_s).to eq('RBS::Types::Function, RBS::Types::UntypedFunction')
     end
   end
 end
