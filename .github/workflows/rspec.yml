@@ -28,6 +28,8 @@ jobs:
           - ruby-version: '3.0'
             rbs-version: '3.9.5'
           - ruby-version: '3.0'
+            rbs-version: '3.10.0'
+          - ruby-version: '3.0'
             rbs-version: '4.0.0.dev.4'
           # Missing require in 'rbs collection update' - hopefully
           # fixed in next RBS release
