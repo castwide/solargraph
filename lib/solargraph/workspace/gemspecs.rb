@@ -219,6 +219,8 @@ module Solargraph
 
       # @sg-ignore need boolish support for ? methods
       def in_this_bundle?
+        return false unless ENV.key?('BUNDLE_GEMFILE')
+
         Bundler.definition&.lockfile&.to_s&.start_with?(directory)
       end
 
