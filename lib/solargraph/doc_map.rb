@@ -16,9 +16,6 @@ module Solargraph
     # @return [Workspace]
     attr_reader :workspace
 
-    # @return [Environ]
-    attr_reader :environ
-
     # @param requires [Array<String>]
     # @param workspace [Workspace, nil]
     # @param out [IO, nil] output stream for logging

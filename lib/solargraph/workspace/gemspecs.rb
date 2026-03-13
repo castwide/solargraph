@@ -70,7 +70,6 @@ module Solargraph
               "Require path #{require} could not be resolved to a gem via find_by_path or guess of #{gem_name}"
             end
           end
-
           # look ourselves just in case this is hanging out somewhere
           # that find_by_path doesn't index
           gemspec = all_gemspecs.find do |spec|
@@ -79,6 +78,7 @@ module Solargraph
             # @sg-ignore Translate to something flow sensitive typing understands
             spec&.files&.any? { |gemspec_file| file == gemspec_file }
           end
+
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           return [gemspec_or_preference(gemspec)] if gemspec
         end
@@ -125,7 +125,15 @@ module Solargraph
         # @param runtime_dep [Gem::Dependency]
         # @param deps [Hash{String => Gem::Specification}]
         gem_dep_gemspecs = only_runtime_dependencies(gemspec).each_with_object(deps_so_far) do |runtime_dep, deps|
+          next if deps[runtime_dep.name]
+
+          Solargraph.logger.info "Adding #{runtime_dep.name} dependency for #{gemspec.name}"
+
           dep = find_gem(runtime_dep.name, runtime_dep.requirement)
+          dep ||= Gem::Specification.find_by_name(runtime_dep.name, runtime_dep.requirement)
+        rescue Gem::MissingSpecError
+          dep = resolve_gem_ignoring_local_bundle runtime_dep.name, out: out
+        ensure
           next unless dep
 
           fetch_dependencies(dep, out: out).each { |sub_dep| deps[sub_dep.name] ||= sub_dep }
@@ -170,6 +178,7 @@ module Solargraph
         # print time including milliseconds
         self.class.gem_specification_cache[specish] ||= case specish
                                                         when Gem::Specification
+                                                          # yay!
                                                           specish
                                                         when Bundler::LazySpecification
                                                           # materializing didn't work.  Let's look in the local
@@ -186,6 +195,11 @@ module Solargraph
                                                             # A Bundler::StubSpecification is a Bundler::
                                                             # RemoteSpecification which ought to proxy a Gem::
                                                             # Specification
+                                                            @@warned_on_gem_type ||= false
+                                                            unless @@warned_on_gem_type
+                                                              logger.warn "Unexpected type while resolving gem: #{specish.class}"
+                                                              @@warned_on_gem_type = true
+                                                            end
                                                             specish
                                                           end
                                                         # @sg-ignore Unresolved constant Gem::StubSpecification

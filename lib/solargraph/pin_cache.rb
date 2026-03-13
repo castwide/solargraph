@@ -99,8 +99,8 @@ module Solargraph
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
     # @param rbs_version_cache_key [String, nil]
-    # @param yard_pins [Array<Pin::Base>]
-    # @param rbs_collection_pins [Array<Pin::Base>]
+    # @param yard_pins [Array<Pin::Method>]
+    # @param rbs_collection_pins [Array<Pin::Method>]
     # @return [void]
     def cache_combined_pins gemspec, rbs_version_cache_key, yard_pins, rbs_collection_pins
       combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
@@ -231,6 +231,7 @@ module Solargraph
 
     # @param gemspec [Gem::Specification]
     # @param out [StringIO, IO, nil]
+    #
     # @return [Array<Pin::Base>]
     def cache_yard_pins gemspec, out
       gem_yardoc_path = yardoc_path(gemspec)

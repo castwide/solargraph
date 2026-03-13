@@ -117,9 +117,13 @@ module Solargraph
       return rbs_map if rbs_map.resolved?
 
       # try any version of the gem in the collection
-      RbsMap.new(gemspec.name, nil,
-                 rbs_collection_paths: [rbs_collection_path].compact,
-                 rbs_collection_config_path: rbs_collection_config_path)
+      rbs_map = RbsMap.new(gemspec.name, nil,
+                           rbs_collection_paths: [rbs_collection_path].compact,
+                           rbs_collection_config_path: rbs_collection_config_path)
+
+      return rbs_map if rbs_map.resolved?
+
+      StdlibMap.new(gemspec.name)
     end
 
     # @param out [IO, nil] where to log messages

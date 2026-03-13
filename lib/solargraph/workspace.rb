@@ -19,10 +19,6 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
-    # @return [Array<String>]
-    attr_reader :gemnames
-    alias source_gems gemnames
-
     # @todo Remove '' and '*' special cases
     # @param directory [String]
     # @param config [Config, nil]
@@ -38,7 +34,6 @@ module Solargraph
       @config = config
       @server = server
       load_sources
-      @gemnames = []
       require_plugins
     end
 
@@ -70,6 +65,7 @@ module Solargraph
     end
 
     # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    #
     # @return [Array<Gem::Specification>, nil]
     def resolve_require require
       gemspecs.resolve_require(require)

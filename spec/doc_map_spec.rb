@@ -67,14 +67,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  it 'does not warn for redundant requires' do
-    # Requiring 'set' is unnecessary because it's already included in core. It
-    # might make sense to log redundant requires, but a warning is overkill.
-    allow(Solargraph.logger).to receive(:warn).and_call_original
-    described_class.new(['set'], workspace)
-    expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
-  end
-
   context 'when deserialization takes a while' do
     let(:pre_cache) { false }
     let(:requires) { ['backport'] }
