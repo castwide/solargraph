@@ -105,7 +105,7 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      gems(gem + (version ? "=#{version}" : ''), rebuild: options[:rebuild])
+      gems(gem + (version ? "=#{version}" : ''))
       # gemspec = Gem::Specification.find_by_name(gem, version)
 
       # if options[:rebuild] || !PinCache.has_yard?(gemspec)
