@@ -51,25 +51,25 @@ describe Solargraph::Position do
 
   it 'avoids fencepost errors' do
     text = "      class Foo\n        def bar baz, boo = 'boo'\n        end\n      end\n    "
-    offset = Solargraph::Position.to_offset(text, Solargraph::Position.new(3, 6))
+    offset = Described_class.to_offset(text, Described_class.new(3, 6))
     expect(offset).to eq(67)
   end
 
   it 'avoids fencepost errors with multiple blank lines' do
     text = "      class Foo\n        def bar baz, boo = 'boo'\n\n        end\n      end\n    "
-    offset = Solargraph::Position.to_offset(text, Solargraph::Position.new(4, 6))
+    offset = Described_class.to_offset(text, Described_class.new(4, 6))
     expect(offset).to eq(68)
   end
 
   it 'avoids fencepost errors' do
     text = "      class Foo\n        def bar baz, boo = 'boo'\n        end\n      end\n    "
-    offset = Solargraph::Position.to_offset(text, Solargraph::Position.new(3, 6))
+    offset = Described_class.to_offset(text, Described_class.new(3, 6))
     expect(offset).to eq(67)
   end
 
   it 'avoids fencepost errors with multiple blank lines' do
     text = "      class Foo\n        def bar baz, boo = 'boo'\n\n        end\n      end\n    "
-    offset = Solargraph::Position.to_offset(text, Solargraph::Position.new(4, 6))
+    offset = Described_class.to_offset(text, Described_class.new(4, 6))
     expect(offset).to eq(68)
   end
 end
