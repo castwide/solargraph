@@ -62,11 +62,10 @@ module Solargraph
         line += 1
         break if line == position.line
 
-        line_length = newline_index - last_line_index
         last_line_index = newline_index
       end
 
-      last_line_index += 1 if position.line > 0
+      last_line_index += 1 if position.line.positive?
       last_line_index + position.character
     end
 
