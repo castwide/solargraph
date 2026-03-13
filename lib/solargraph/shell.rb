@@ -39,7 +39,7 @@ module Solargraph
         end
         # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        warn "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -105,8 +105,21 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      gems(gem + (version ? "=#{version}" : ''))
-      # '
+      gems(gem + (version ? "=#{version}" : ''), rebuild: options[:rebuild])
+      # gemspec = Gem::Specification.find_by_name(gem, version)
+
+      # if options[:rebuild] || !PinCache.has_yard?(gemspec)
+      #   pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+      #   PinCache.serialize_yard_gem(gemspec, pins)
+      # end
+
+      # workspace = Solargraph::Workspace.new(Dir.pwd)
+      # rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+      # if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+      #   # cache pins even if result is zero, so we don't retry building pins
+      #   pins = rbs_map.pins || []
+      #   PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+      # end
     end
 
     desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'

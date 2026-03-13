@@ -1,3 +1,6 @@
+## 0.58.3 - March 9, 2026
+- Ignore workspace dependencies in cache processes (#1174)
+
 ## 0.58.2 - January 19, 2026
 - Avoid rbs pollution (#1146)
 - Fix 'solargraph pin --references ClassName' private method call (#1150)

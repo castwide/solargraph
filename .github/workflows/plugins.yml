@@ -189,7 +189,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         # solargraph-rails supports Ruby 3.0+
-        ruby-version: '3.0'
+        # This job uses 3.2 due to a problem compiling sqlite3 in earlier versions
+        ruby-version: '3.2'
         bundler-cache: false
         # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
         rubygems: latest
