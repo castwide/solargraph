@@ -95,6 +95,8 @@ module Solargraph
       character = offset
       newline_index = -1
 
+      # @sg-ignore Typechecker thinks `newline_index` inside of the assignment
+      #   can be nil
       while (newline_index = text.index("\n", newline_index + 1)) && newline_index < offset
         line += 1
         character = offset - newline_index - 1
