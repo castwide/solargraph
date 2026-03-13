@@ -58,10 +58,13 @@ module Solargraph
       line = -1
       last_line_index = 0
 
+      # @sg-ignore Typechecker thinks `newline_index` inside of the assignment
+      #   can be nil
       while (newline_index = text.index("\n", newline_index + 1)) && line <= position.line
         line += 1
         break if line == position.line
 
+        # @sg-ignore `last_line_index` is always an Integer inside the while block
         last_line_index = newline_index
       end
 
@@ -99,6 +102,7 @@ module Solargraph
       #   can be nil
       while (newline_index = text.index("\n", newline_index + 1)) && newline_index < offset
         line += 1
+        # @sg-ignore `newline_index` is always an Integer inside the while block
         character = offset - newline_index - 1
       end
       character = 0 if character.nil? && (cursor - offset).between?(0, 1)
