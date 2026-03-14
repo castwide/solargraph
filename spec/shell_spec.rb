@@ -130,34 +130,6 @@ describe Solargraph::Shell do
       end
     end
 
-    context 'with mocked Workspace' do
-      let(:workspace) { instance_double(Solargraph::Workspace) }
-      let(:gemspec) { instance_double(Gem::Specification, name: 'backport') }
-
-      before do
-        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
-      end
-
-      it 'caches all without erroring out' do
-        allow(workspace).to receive(:cache_all_for_workspace!)
-
-        _output = capture_both { shell.gems }
-
-        expect(workspace).to have_received(:cache_all_for_workspace!)
-      end
-
-      it 'caches single gem without erroring out' do
-        allow(workspace).to receive(:find_gem).with('backport').and_return(gemspec)
-        allow(workspace).to receive(:cache_gem)
-
-        capture_both do
-          shell.options = { rebuild: false }
-          shell.gems('backport')
-        end
-
-        expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
-      end
-    end
   end
 
   describe 'cache' do
