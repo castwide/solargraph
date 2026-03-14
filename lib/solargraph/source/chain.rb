@@ -170,7 +170,9 @@ module Solargraph
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type)
         logger.debug do
-          "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, name_pin=#{name_pin}, name_pin.closure=#{name_pin&.closure&.inspect}, name_pin.binder=#{name_pin&.binder}) => #{out.rooted_tags.inspect}"
+          "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
+            "name_pin=#{name_pin}, name_pin.closure=#{name_pin&.closure&.inspect}, " \
+            "name_pin.binder=#{name_pin&.binder}) => #{out.rooted_tags.inspect}"
         end
         out
       end
