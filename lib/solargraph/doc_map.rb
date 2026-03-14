@@ -46,7 +46,6 @@ module Solargraph
     attr_reader :environ
 
     # @param requires [Array<String>]
-    # @param preferences [Array<Gem::Specification>]
     # @param workspace [Workspace, nil]
     # @param [Object] out
     def initialize requires, workspace, out: $stderr
@@ -114,7 +113,7 @@ module Solargraph
         type = []
         type << 'YARD' if build_yard
         type << 'RBS collection' if build_rbs_collection
-        out.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}") if out
+        out&.puts("Caching #{type.join(' and ')} pins for gem #{gemspec.name}:#{gemspec.version}")
       end
       cache_yard_pins(gemspec, out) if build_yard
       cache_rbs_collection_pins(gemspec, out) if build_rbs_collection
@@ -132,12 +131,12 @@ module Solargraph
 
     # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_yard_gems_in_memory
-      @yard_gems_in_memory ||= {}
+      @all_yard_gems_in_memory ||= {}
     end
 
     # @return [Hash{String => Hash{Array(String, String) => Array<Pin::Base>}}] stored by RBS collection path
     def self.all_rbs_collection_gems_in_memory
-      @rbs_collection_gems_in_memory ||= {}
+      @all_rbs_collection_gems_in_memory ||= {}
     end
 
     # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
@@ -152,7 +151,7 @@ module Solargraph
 
     # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_combined_pins_in_memory
-      @combined_pins_in_memory ||= {}
+      @all_combined_pins_in_memory ||= {}
     end
 
     # @todo this should also include an index by the hash of the RBS collection
@@ -181,10 +180,10 @@ module Solargraph
       with_gemspecs, without_gemspecs = required_gems_map.partition { |_, v| v }
       # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<String>]
-      paths = Hash[without_gemspecs].keys
+      paths = without_gemspecs.to_h.keys
       # @sg-ignore Need support for RBS duck interfaces like _ToHash
       # @type [Array<Gem::Specification>]
-      gemspecs = Hash[with_gemspecs].values.flatten.compact + dependencies.to_a
+      gemspecs = with_gemspecs.to_h.values.flatten.compact + dependencies.to_a
 
       paths.each do |path|
         deserialize_stdlib_rbs_map path
@@ -390,7 +389,7 @@ module Solargraph
       # @todo Handle projects with custom Bundler/Gemfile setups
       return unless workspace.gemfile?
 
-      if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory)
+      if workspace.gemfile? && Bundler.definition&.lockfile&.to_s&.start_with?(workspace.directory) # rubocop:disable Style/SafeNavigationChainLength
         # Find only the gems bundler is now using
         Bundler.definition.locked_gems.specs.flat_map do |lazy_spec|
           logger.info "Handling #{lazy_spec.name}:#{lazy_spec.version}"

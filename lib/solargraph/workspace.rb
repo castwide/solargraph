@@ -129,7 +129,7 @@ module Solargraph
 
     # @return [String, nil]
     def rbs_collection_path
-      @gem_rbs_collection ||= read_rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
     end
 
     # @return [String, nil]
@@ -211,7 +211,7 @@ module Solargraph
       source_hash.clear
       return if directory.empty? || directory == '*'
       size = config.calculated.length
-      raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
+      raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files.positive? && size > config.max_files
       config.calculated.each do |filename|
         source_hash[filename] = Solargraph::Source.load(filename)
       rescue Errno::ENOENT => e

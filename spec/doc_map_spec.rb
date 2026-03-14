@@ -38,6 +38,7 @@ describe Solargraph::DocMap do
       ['rspec-mocks']
     end
 
+    # Test fails after reversion (https://github.com/castwide/solargraph/pull/1180)
     xit 'generates pins from gems' do
       ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
       expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
@@ -73,19 +74,6 @@ describe Solargraph::DocMap do
     allow(Solargraph.logger).to receive(:warn).and_call_original
     described_class.new(['set'], workspace)
     expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
-  end
-
-  context 'when deserialization takes a while' do
-    let(:pre_cache) { false }
-    let(:requires) { ['backport'] }
-
-    before do
-      # proxy this method to simulate a long-running deserialization
-      allow(Benchmark).to receive(:measure) do |&block|
-        block.call
-        5.0
-      end
-    end
   end
 
   context 'with require as bundle/require' do
