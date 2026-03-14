@@ -286,4 +286,29 @@ describe Solargraph::Shell do
       end
     end
   end
+
+  context 'with unbundled environments' do
+    let!(:command_path) { File.realpath(File.join('spec', 'fixtures', 'shim.rb')) }
+    let!(:unbundled_env) { Bundler.unbundled_env.merge({ 'BUNDLE_GEMFILE' => nil }) }
+
+    describe '#cache' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), "foo")
+          _o, _e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
+          expect(s).to be_success
+        end
+      end
+    end
+
+    describe '#gems' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), "foo")
+          o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
+          expect(s).to be_success
+        end
+      end
+    end
+  end
 end
