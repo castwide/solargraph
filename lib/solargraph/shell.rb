@@ -123,7 +123,7 @@ module Solargraph
       warn "Gem '#{gem}' not found"
     end
 
-    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.

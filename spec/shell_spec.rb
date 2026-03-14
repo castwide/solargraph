@@ -129,7 +129,6 @@ describe Solargraph::Shell do
         expect(output).to include("Gem 'solargraph123' not found")
       end
     end
-
   end
 
   describe 'cache' do
@@ -294,7 +293,7 @@ describe Solargraph::Shell do
     describe '#cache' do
       it 'succeeds' do
         Dir.mktmpdir do |tmpdir|
-          File.write(File.join(tmpdir, 'test.rb'), "foo")
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
           _o, _e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
           expect(s).to be_success
         end
@@ -304,8 +303,8 @@ describe Solargraph::Shell do
     describe '#gems' do
       it 'succeeds' do
         Dir.mktmpdir do |tmpdir|
-          File.write(File.join(tmpdir, 'test.rb'), "foo")
-          o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
+          _o, _e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
           expect(s).to be_success
         end
       end
