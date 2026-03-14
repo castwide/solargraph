@@ -38,8 +38,8 @@ describe Solargraph::DocMap do
       ['rspec-mocks']
     end
 
-    # Test fails after reversion (https://github.com/castwide/solargraph/pull/1180)
-    xit 'generates pins from gems' do
+    it 'generates pins from gems' do
+      skip 'Test fails after reversion (https://github.com/castwide/solargraph/pull/1180)'
       ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
       expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
     end
