@@ -116,7 +116,7 @@ module Solargraph
       unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
                         workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
-                        @doc_map.any_uncached?
+                        @doc_map.uncached_gemspecs.any?
 
       if recreate_docmap
         @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
@@ -135,6 +135,16 @@ module Solargraph
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       doc_map.uncached_gemspecs || []
+    end
+
+    # @return [::Array<Gem::Specification>]
+    def uncached_rbs_collection_gemspecs
+      @doc_map.uncached_rbs_collection_gemspecs
+    end
+
+    # @return [::Array<Gem::Specification>]
+    def uncached_yard_gemspecs
+      @doc_map.uncached_yard_gemspecs
     end
 
     # @return [Enumerable<Pin::Base>]
@@ -198,7 +208,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_doc_map! out: $stderr, rebuild: false
-      doc_map.cache_doc_map_gems!(out, rebuild: rebuild)
+      doc_map.cache_all!(out, rebuild: rebuild)
     end
 
     # @param gemspec [Gem::Specification]
