@@ -181,7 +181,7 @@ module Solargraph
       workspace = Solargraph::Workspace.new('.')
 
       if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec, options[:rebuild] }
+        Gem::Specification.to_a.each { |spec| do_cache spec, rebuild: options[:rebuild] }
         STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
         warn("Caching these gems: #{names}")
