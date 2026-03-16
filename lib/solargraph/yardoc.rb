@@ -32,6 +32,8 @@ module Solargraph
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel
+      # @sg-ignore Unrecognized keyword argument chdir to Open3.capture2e
+      # @todo Is the chdir argument being used here?
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       unless status.success?
         Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
@@ -78,6 +80,7 @@ module Solargraph
     # @return [Hash{String => String}] a hash of environment variables to override
     def current_bundle_env_tweaks
       tweaks = {}
+      # @sg-ignore Unresolved call to empty? on String, nil
       if ENV['BUNDLE_GEMFILE'] && !ENV['BUNDLE_GEMFILE'].empty?
         tweaks['BUNDLE_GEMFILE'] = File.expand_path(ENV['BUNDLE_GEMFILE'])
       end

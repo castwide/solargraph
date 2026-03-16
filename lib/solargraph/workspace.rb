@@ -161,6 +161,7 @@ module Solargraph
 
     # @return [String]
     def command_path
+      # @sg-ignore Solargraph::Workspace#command_path return type could not be inferred
       server['commandPath'] || 'solargraph'
     end
 
