@@ -7,7 +7,7 @@ module Solargraph
         # @return [::Array<YARD::Tags::Tag>]
         attr_reader :tags
 
-        # @return [::Array<Symbol>]
+        # @return [::Array<::Symbol>]
         attr_reader :delete
 
         def closure

@@ -3,6 +3,7 @@
 require 'benchmark'
 require 'thor'
 require 'yard'
+require 'yaml'
 
 module Solargraph
   class Shell < Thor
@@ -15,7 +16,7 @@ module Solargraph
 
     map %w[--version -v] => :version
 
-    desc "--version, -v", "Print the version"
+    desc '--version, -v', 'Print the version'
     # @return [void]
     def version
       puts Solargraph::VERSION
@@ -30,15 +31,15 @@ module Solargraph
       port = options[:port]
       port = available_port if port.zero?
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+        $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -47,15 +48,15 @@ module Solargraph
     def stdio
       require 'backport'
       Backport.run do
-        Signal.trap("INT") do
+        Signal.trap('INT') do
           Backport.stop
         end
-        Signal.trap("TERM") do
+        Signal.trap('TERM') do
           Backport.stop
         end
         # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        STDERR.puts "Solargraph is listening on stdio PID=#{Process.pid}"
+        $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
 
@@ -63,11 +64,11 @@ module Solargraph
     option :extensions, type: :boolean, aliases: :e, desc: 'Add installed extensions', default: true
     # @param directory [String]
     # @return [void]
-    def config(directory = '.')
+    def config directory = '.'
       matches = []
       if options[:extensions]
         Gem::Specification.each do |g|
-          if g.name.match(/^solargraph\-[A-Za-z0-9_\-]*?\-ext/)
+          if g.name.match(/^solargraph-[A-Za-z0-9_-]*?-ext/)
             require g.name
             matches.push g.name
           end
@@ -83,7 +84,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      STDOUT.puts "Configuration file initialized."
+      $stdout.puts 'Configuration file initialized.'
     end
 
     desc 'clear', 'Delete all cached documentation'
@@ -92,7 +93,7 @@ module Solargraph
     )
     # @return [void]
     def clear
-      puts "Deleting all cached documentation (gems, core and stdlib)"
+      puts 'Deleting all cached documentation (gems, core and stdlib)'
       Solargraph::PinCache.clear
     end
     map 'clear-cache' => :clear
@@ -118,9 +119,11 @@ module Solargraph
         pins = rbs_map.pins || []
         PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
       end
+    rescue Gem::MissingSpecError
+      warn "Gem '#{gem}' not found"
     end
 
-    desc 'uncache GEM [...GEM]', "Delete specific cached gem documentation"
+    desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.
@@ -146,23 +149,74 @@ module Solargraph
       end
     end
 
-    desc 'gems [GEM[=VERSION]]', 'Cache documentation for installed gems'
+    desc 'gems [GEM[=VERSION]...] [STDLIB...] [core]', 'Cache documentation for
+         installed libraries'
+    long_desc %( This command will cache the
+    generated type documentation for the specified libraries.  While
+    Solargraph will generate this on the fly when needed, it takes
+    time.  This command will generate it in advance, which can be
+    useful for CI scenarios.
+
+        With no arguments, it will cache all libraries in the current
+        workspace.  If a gem or standard library name is specified, it
+        will cache that library's type documentation.
+
+        An equals sign after a gem will allow a specific gem version
+        to be cached.
+
+        The 'core' argument can be used to cache the type
+        documentation for the core Ruby libraries.
+
+        If the library is already cached, it will be rebuilt if the
+        --rebuild option is set.
+
+        Cached documentation is stored in #{PinCache.base_dir}, which
+        can be stored between CI runs.
+    )
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
     def gems *names
-      api_map = ApiMap.load('.')
+      # print time with ms
+      workspace = Solargraph::Workspace.new('.')
+
       if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec, api_map }
-        STDERR.puts "Documentation cached for all #{Gem::Specification.count} gems."
+        Gem::Specification.to_a.each { |spec| do_cache spec, rebuild: options[:rebuild] }
+        $stderr.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
+        warn("Caching these gems: #{names}")
         names.each do |name|
-          spec = Gem::Specification.find_by_name(*name.split('='))
-          do_cache spec, api_map
+          if name == 'core'
+            PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
+            next
+          end
+
+          gemspec = workspace.find_gem(*name.split('='))
+          if gemspec.nil?
+            warn "Gem '#{name}' not found"
+          else
+            if options[:rebuild] || !PinCache.has_yard?(gemspec)
+              pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+              PinCache.serialize_yard_gem(gemspec, pins)
+            end
+
+            workspace = Solargraph::Workspace.new(Dir.pwd)
+            rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+            if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+              # cache pins even if result is zero, so we don't retry building pins
+              pins = rbs_map.pins || []
+              PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+            end
+          end
         rescue Gem::MissingSpecError
           warn "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          warn "Gem '#{name}' failed while loading"
+          warn e.message
+          # @sg-ignore Need to add nil check here
+          warn e.backtrace.join("\n")
         end
-        STDERR.puts "Documentation cached for #{names.count} gems."
+        warn "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -179,7 +233,7 @@ module Solargraph
 
       Type checking levels are normal, typed, strict, and strong.
     )
-    option :level, type: :string, aliases: [:mode, :m, :l], desc: 'Type checking level', default: 'normal'
+    option :level, type: :string, aliases: %i[mode m l], desc: 'Type checking level', default: 'normal'
     option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
     # @return [void]
     def typecheck *files
@@ -187,7 +241,10 @@ module Solargraph
       workspace = Solargraph::Workspace.new(directory)
       level = options[:level].to_sym
       rules = workspace.rules(level)
-      api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+      api_map =
+        Solargraph::ApiMap.load_with_cache(directory, $stdout,
+                                           loose_unions:
+                                             !rules.require_all_unique_types_support_call?)
       probcount = 0
       if files.empty?
         files = api_map.source_maps.map(&:filename)
@@ -195,23 +252,28 @@ module Solargraph
         files.map! { |file| File.realpath(file) }
       end
       filecount = 0
-
-      time = Benchmark.measure {
+      time = Benchmark.measure do
         files.each do |file|
-          checker = TypeChecker.new(file, api_map: api_map, level: options[:level].to_sym, workspace: workspace)
+          checker = TypeChecker.new(file, api_map: api_map, rules: rules, level: options[:level].to_sym,
+                                          workspace: workspace)
           problems = checker.problems
           next if problems.empty?
           problems.sort! { |a, b| a.location.range.start.line <=> b.location.range.start.line }
-          puts problems.map { |prob| "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}" }.join("\n")
+          puts problems.map { |prob|
+            "#{prob.location.filename}:#{prob.location.range.start.line + 1} - #{prob.message}"
+          }.join("\n")
           filecount += 1
           probcount += problems.length
         end
-        # "
-      }
+      end
       puts "Typecheck finished in #{time.real} seconds."
-      puts "#{probcount} problem#{probcount != 1 ? 's' : ''} found#{files.length != 1 ? " in #{filecount} of #{files.length} files" : ''}."
+      puts "#{probcount} problem#{if probcount != 1
+                                    's'
+                                  end} found#{if files.length != 1
+                                                                  " in #{filecount} of #{files.length} files"
+                                                                end}."
       # "
-      exit 1 if probcount > 0
+      exit 1 if probcount.positive?
     end
 
     desc 'scan', 'Test the workspace for problems'
@@ -228,21 +290,27 @@ module Solargraph
       directory = File.realpath(options[:directory])
       # @type [Solargraph::ApiMap, nil]
       api_map = nil
-      time = Benchmark.measure {
+      time = Benchmark.measure do
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
+        # @sg-ignore flow sensitive typing should be able to handle redefinition
         api_map.pins.each do |pin|
-          begin
-            puts pin_description(pin) if options[:verbose]
-            pin.typify api_map
-            pin.probe api_map
-          rescue StandardError => e
-            STDERR.puts "Error testing #{pin_description(pin)} #{pin.location ? "at #{pin.location.filename}:#{pin.location.range.start.line + 1}" : ''}"
-            STDERR.puts "[#{e.class}]: #{e.message}"
-            STDERR.puts e.backtrace.join("\n")
-            exit 1
-          end
+          puts pin_description(pin) if options[:verbose]
+          pin.typify api_map
+          pin.probe api_map
+        rescue StandardError => e
+          # @todo to add nil check here
+          # @todo should warn on nil dereference below
+          warn "Error testing #{pin_description(pin)} #{if pin.location
+                                                          "at #{pin.location.filename}:#{pin.location.range.start.line + 1}"
+                                                        end}"
+          warn "[#{e.class}]: #{e.message}"
+          # @todo Need to add nil check here
+          # @todo flow sensitive typing should be able to handle redefinition
+          warn e.backtrace.join("\n")
+          exit 1
         end
-      }
+      end
+      # @sg-ignore Need to add nil check here
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
@@ -256,12 +324,15 @@ module Solargraph
       puts "#{workspace.filenames.length} files total."
     end
 
-    desc 'pin [PATH]', 'Describe a pin', hide: true
+    desc 'pin [PATH]', 'Describe a pin'
     option :rbs, type: :boolean, desc: 'Output the pin as RBS', default: false
-    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations', default: false
+    option :typify, type: :boolean, desc: 'Output the calculated return type of the pin from annotations',
+                    default: false
     option :references, type: :boolean, desc: 'Show references', default: false
-    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference', default: false
-    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses', default: false
+    option :probe, type: :boolean, desc: 'Output the calculated return type of the pin from annotations and inference',
+                   default: false
+    option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses',
+                   default: false
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
@@ -286,10 +357,11 @@ module Solargraph
       pin = pins.first
       case pin
       when nil
-        $stderr.puts "Pin not found for path '#{path}'"
+        warn "Pin not found for path '#{path}'"
         exit 1
       when Pin::Namespace
         if options[:references]
+          # @sg-ignore Need to add nil check here
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
           references[:superclass] = superclass_pin if superclass_pin
@@ -313,36 +385,133 @@ module Solargraph
       end
     end
 
+    desc 'profile [FILE]', 'Profile go-to-definition performance using vernier'
+    option :directory, type: :string, aliases: :d, desc: 'The workspace directory', default: '.'
+    option :output_dir, type: :string, aliases: :o, desc: 'The output directory for profiles', default: './tmp/profiles'
+    option :line, type: :numeric, aliases: :l, desc: 'Line number (0-based)', default: 4
+    option :column, type: :numeric, aliases: :c, desc: 'Column number', default: 10
+    option :memory, type: :boolean, aliases: :m, desc: 'Include memory usage counter', default: true
+    # @param file [String, nil]
+    # @return [void]
+    def profile file = nil
+      begin
+        require 'vernier'
+      rescue LoadError
+        $stderr.puts 'vernier gem not found. Please install this dependency:'
+        $stderr.puts
+        $stderr.puts "  gem 'vernier', '>1.0', '<2'"
+
+        return
+      end
+
+      hooks = []
+      hooks << :memory_usage if options[:memory]
+
+      directory = File.realpath(options[:directory])
+      FileUtils.mkdir_p(options[:output_dir])
+
+      host = Solargraph::LanguageServer::Host.new
+      host.client_capabilities.merge!({ 'window' => { 'workDoneProgress' => true } })
+      # @param method [String] The message method
+      # @param params [Hash] The method parameters
+      # @return [void]
+      def host.send_notification method, params
+        puts "Notification: #{method} - #{params}"
+      end
+
+      puts 'Parsing and mapping source files...'
+      prepare_start = Time.now
+      Vernier.profile(out: "#{options[:output_dir]}/parse_benchmark.json.gz", hooks: hooks) do
+        puts 'Mapping libraries'
+        host.prepare(directory)
+        sleep 0.2 until host.libraries.all?(&:mapped?)
+      end
+      prepare_time = Time.now - prepare_start
+
+      puts 'Building the catalog...'
+      catalog_start = Time.now
+      Vernier.profile(out: "#{options[:output_dir]}/catalog_benchmark.json.gz", hooks: hooks) do
+        host.catalog
+      end
+      catalog_time = Time.now - catalog_start
+
+      # Determine test file
+      if file
+        test_file = File.join(directory, file)
+      else
+        test_file = File.join(directory, 'lib', 'other.rb')
+        unless File.exist?(test_file)
+          # Fallback to any Ruby file in the workspace
+          workspace = Solargraph::Workspace.new(directory)
+          test_file = workspace.filenames.find { |f| f.end_with?('.rb') }
+          unless test_file
+            warn 'No Ruby files found in workspace'
+            return
+          end
+        end
+      end
+
+      file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
+
+      puts "Profiling go-to-definition for #{test_file}"
+      puts "Position: line #{options[:line]}, column #{options[:column]}"
+
+      definition_start = Time.now
+      Vernier.profile(out: "#{options[:output_dir]}/definition_benchmark.json.gz", hooks: hooks) do
+        message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
+          host, {
+            'params' => {
+              'textDocument' => { 'uri' => file_uri },
+              'position' => { 'line' => options[:line], 'character' => options[:column] }
+            }
+          }
+        )
+        puts 'Processing go-to-definition request...'
+        result = message.process
+
+        puts "Result: #{result.inspect}"
+      end
+      definition_time = Time.now - definition_start
+
+      puts "\n=== Timing Results ==="
+      puts "Parsing & mapping: #{(prepare_time * 1000).round(2)}ms"
+      puts "Catalog building: #{(catalog_time * 1000).round(2)}ms"
+      puts "Go-to-definition: #{(definition_time * 1000).round(2)}ms"
+      total_time = prepare_time + catalog_time + definition_time
+      puts "Total time: #{(total_time * 1000).round(2)}ms"
+
+      puts "\nProfiles saved to:"
+      puts "  - #{File.expand_path('parse_benchmark.json.gz', options[:output_dir])}"
+      puts "  - #{File.expand_path('catalog_benchmark.json.gz', options[:output_dir])}"
+      puts "  - #{File.expand_path('definition_benchmark.json.gz', options[:output_dir])}"
+
+      puts "\nUpload the JSON files to https://vernier.prof/ to view the profiles."
+      puts 'Or use https://rubygems.org/gems/profile-viewer to view them locally.'
+    end
+
     private
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
-        if pin.closure
-          "#{pin.closure.path} | #{pin.name}"
-        else
-          "#{pin.context.namespace} | #{pin.name}"
-        end
-      else
-        pin.path
-      end
+               if pin.closure
+                 # @sg-ignore Need to add nil check here
+                 "#{pin.closure.path} | #{pin.name}"
+               else
+                 "#{pin.context.namespace} | #{pin.name}"
+               end
+             else
+               pin.path
+             end
+      # @sg-ignore Need to add nil check here
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
 
-    # @param gemspec [Gem::Specification]
-    # @param api_map [ApiMap]
+    # @param type [ComplexType, ComplexType::UniqueType]
     # @return [void]
-    def do_cache gemspec, api_map
-      # @todo if the rebuild: option is passed as a positional arg,
-      #   typecheck doesn't complain on the below line
-      api_map.cache_gem(gemspec, rebuild: options.rebuild, out: $stdout)
-    end
-
-    # @param type [ComplexType]
-    # @return [void]
-    def print_type(type)
+    def print_type type
       if options[:rbs]
         puts type.to_rbs
       else
@@ -352,11 +521,30 @@ module Solargraph
 
     # @param pin [Solargraph::Pin::Base]
     # @return [void]
-    def print_pin(pin)
+    def print_pin pin
       if options[:rbs]
         puts pin.to_rbs
       else
         puts pin.inspect
+      end
+    end
+
+    def do_cache gemspec, rebuild: false
+      if gemspec.nil?
+        warn "Gem '#{name}' not found"
+      else
+        if rebuild || !PinCache.has_yard?(gemspec)
+          pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+          PinCache.serialize_yard_gem(gemspec, pins)
+        end
+
+        workspace = Solargraph::Workspace.new(Dir.pwd)
+        rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+        if rebuild || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+          # cache pins even if result is zero, so we don't retry building pins
+          pins = rbs_map.pins || []
+          PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+        end
       end
     end
   end

@@ -7,7 +7,7 @@ module Solargraph
         basename = File.basename(source_map.filename)
         return EMPTY_ENVIRON unless basename.end_with?('.rake') || basename == 'Rakefile'
 
-        @environ ||= Environ.new(
+        @local ||= Environ.new(
           requires: ['rake'],
           domains: ['Rake::DSL']
         )

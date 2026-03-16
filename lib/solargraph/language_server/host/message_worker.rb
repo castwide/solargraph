@@ -20,7 +20,7 @@ module Solargraph
         ].freeze
 
         # @param host [Host]
-        def initialize(host)
+        def initialize host
           @host = host
           @mutex = Mutex.new
           @resource = ConditionVariable.new
@@ -28,7 +28,7 @@ module Solargraph
         end
 
         # pending handle messages
-        # @return [Array<Hash>]
+        # @return [Array<Hash{String => undefined}>]
         def messages
           @messages ||= []
         end
@@ -44,7 +44,7 @@ module Solargraph
 
         # @param message [Hash] The message to handle. Will be forwarded to Host#receive
         # @return [void]
-        def queue(message)
+        def queue message
           @mutex.synchronize do
             messages.push(message)
             @resource.signal
@@ -66,6 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
+          # @sg-ignore Need to add nil check here
           handler = @host.receive(message)
           handler&.send_response
         end

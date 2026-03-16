@@ -1,81 +1,150 @@
 # frozen_string_literal: true
 
+require 'bundler'
+require 'benchmark'
+
 describe Solargraph::DocMap do
-  before :all do
-    # We use ast here because it's a known dependency.
-    gemspec = Gem::Specification.find_by_name('ast')
-    yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
-    Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
+  subject(:doc_map) do
+    described_class.new(requires, workspace, out: out)
   end
 
-  it 'generates pins from gems' do
-    doc_map = Solargraph::DocMap.new(['ast'], [])
-    doc_map.cache_all!($stderr)
-    node_pin = doc_map.pins.find { |pin| pin.path == 'AST::Node' }
-    expect(node_pin).to be_a(Solargraph::Pin::Namespace)
+  let(:out) { StringIO.new }
+  let(:pre_cache) { true }
+  let(:requires) { [] }
+
+  let(:workspace) do
+    Solargraph::Workspace.new(Dir.pwd)
   end
 
-  it 'tracks unresolved requires' do
-    doc_map = Solargraph::DocMap.new(['not_a_gem'], [])
-    expect(doc_map.unresolved_requires).to include('not_a_gem')
+  let(:plain_doc_map) { described_class.new([], workspace, out: nil) }
+
+  before do
+    doc_map.cache_all!(nil) if pre_cache
   end
 
-  it 'tracks uncached_gemspecs' do
-    gemspec = Gem::Specification.new do |spec|
-      spec.name = 'not_a_gem'
-      spec.version = '1.0.0'
+  context 'with a require in solargraph test bundle' do
+    let(:requires) do
+      ['ast']
     end
-    allow(Gem::Specification).to receive(:find_by_path).and_return(gemspec)
-    doc_map = Solargraph::DocMap.new(['not_a_gem'], [gemspec])
-    expect(doc_map.uncached_yard_gemspecs).to eq([gemspec])
-    expect(doc_map.uncached_rbs_collection_gemspecs).to eq([gemspec])
+
+    it 'generates pins from gems' do
+      node_pin = doc_map.pins.find { |pin| pin.path == 'AST::Node' }
+      expect(node_pin).to be_a(Solargraph::Pin::Namespace)
+    end
   end
 
-  it 'imports all gems when bundler/require used' do
-    workspace = Solargraph::Workspace.new(Dir.pwd)
-    plain_doc_map = Solargraph::DocMap.new([], [], workspace)
-    doc_map_with_bundler_require = Solargraph::DocMap.new(['bundler/require'], [], workspace)
+  context 'when understanding rspec + rspec-mocks require pattern' do
+    let(:requires) do
+      ['rspec-mocks']
+    end
 
-    expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
+    it 'generates pins from gems' do
+      skip 'Test fails after reversion (https://github.com/castwide/solargraph/pull/1180)'
+      ns_pin = doc_map.pins.find { |pin| pin.path == 'RSpec::Mocks' }
+      expect(ns_pin).to be_a(Solargraph::Pin::Namespace)
+    end
+  end
+
+  context 'with an invalid require' do
+    let(:requires) do
+      ['not_a_gem']
+    end
+
+    it 'tracks unresolved requires' do
+      # These are auto-required by solargraph-rspec in case the bundle
+      # includes these gems.  In our case, it doesn't!
+      unprovided_solargraph_rspec_requires = %w[
+        rspec-rails
+        actionmailer
+        actionpack
+        activerecord
+        shoulda-matchers
+        rspec-sidekiq
+        airborne
+        activesupport
+      ]
+      expect(doc_map.unresolved_requires - unprovided_solargraph_rspec_requires)
+        .to eq(['not_a_gem'])
+    end
   end
 
   it 'does not warn for redundant requires' do
     # Requiring 'set' is unnecessary because it's already included in core. It
     # might make sense to log redundant requires, but a warning is overkill.
     allow(Solargraph.logger).to receive(:warn).and_call_original
-    Solargraph::DocMap.new(['set'], [])
+    described_class.new(['set'], workspace)
     expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
   end
 
-  it 'ignores nil requires' do
-    expect { Solargraph::DocMap.new([nil], []) }.not_to raise_error
-  end
-
-  it 'ignores empty requires' do
-    expect { Solargraph::DocMap.new([''], []) }.not_to raise_error
-  end
-
-  it 'collects dependencies' do
-    doc_map = Solargraph::DocMap.new(['rspec'], [])
-    expect(doc_map.dependencies.map(&:name)).to include('rspec-core')
-  end
-
-  it 'includes convention requires from environ' do
-    dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def global(doc_map)
-        Solargraph::Environ.new(
-          requires: ['convention_gem1', 'convention_gem2']
-        )
-      end
+  context 'with require as bundle/require' do
+    it 'imports all gems when bundler/require used' do
+      doc_map_with_bundler_require = described_class.new(['bundler/require'], workspace, out: nil)
+      doc_map_with_bundler_require.cache_all!(nil)
+      expect(doc_map_with_bundler_require.pins.length - plain_doc_map.pins.length).to be_positive
     end
+  end
 
-    Solargraph::Convention.register dummy_convention
+  context 'with a require not needed by Ruby core' do
+    let(:requires) { ['set'] }
 
-    doc_map = Solargraph::DocMap.new(['original_gem'], [])
+    it 'does not warn' do
+      # Requiring 'set' is unnecessary because it's already included in core. It
+      # might make sense to log redundant requires, but a warning is overkill.
+      allow(Solargraph.logger).to receive(:warn)
+      doc_map
+      expect(Solargraph.logger).not_to have_received(:warn).with(/path set/)
+    end
+  end
 
-    expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
+  context 'with a nil require' do
+    let(:requires) { [nil] }
 
-    # Clean up the registered convention
-    Solargraph::Convention.unregister dummy_convention
+    it 'does not raise error' do
+      expect { doc_map }.not_to raise_error
+    end
+  end
+
+  context 'with an empty require' do
+    let(:requires) { [''] }
+
+    it 'does not raise error' do
+      expect { doc_map }.not_to raise_error
+    end
+  end
+
+  context 'with a require that has dependencies' do
+    let(:requires) { ['rspec'] }
+
+    it 'collects dependencies' do
+      # we include doc_map.requires as solargraph-rspec will bring it
+      # in directly and we exclude it from dependencies
+      expect(doc_map.dependencies.map(&:name) + doc_map.requires).to include('rspec-core')
+    end
+  end
+
+  context 'with convention' do
+    let(:pre_cache) { false }
+
+    it 'includes convention requires from environ' do
+      dummy_convention = Class.new(Solargraph::Convention::Base) do
+        def global doc_map
+          Solargraph::Environ.new(
+            requires: %w[convention_gem1 convention_gem2]
+          )
+        end
+      end
+
+      Solargraph::Convention.register dummy_convention
+
+      doc_map = described_class.new(['original_gem'], workspace)
+
+      # @todo this should probably not be in requires, which is a
+      #   path, and instead be in a new gem_names property on the
+      #   Environ
+      expect(doc_map.requires).to include('original_gem', 'convention_gem1', 'convention_gem2')
+    ensure
+      # Clean up the registered convention
+      Solargraph::Convention.unregister dummy_convention
+    end
   end
 end

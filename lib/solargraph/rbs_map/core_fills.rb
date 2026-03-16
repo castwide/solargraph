@@ -19,7 +19,7 @@ module Solargraph
         Solargraph::Pin::Method.new(name: 'class', scope: :instance,
                                     closure: Solargraph::Pin::Namespace.new(name: 'Object', source: :core_fill), comments: '@return [::Class<self>]',
                                     source: :core_fill)
-      ]
+      ].freeze
 
       OVERRIDES = [
         Override.from_comment('BasicObject#instance_eval', '@yieldreceiver [self]',
@@ -38,43 +38,50 @@ module Solargraph
                               source: :core_fill),
         # RBS does not define Class with a generic, so all calls to
         # generic() return an 'untyped'.  We can do better:
-        Override.method_return('Class#allocate', 'self', source: :core_fill),
-      ]
+        Override.method_return('Class#allocate', 'self', source: :core_fill)
+      ].freeze
 
       # @todo I don't see any direct link in RBS to build this from -
       #   presumably RBS is using duck typing to match interfaces
       #   against concrete classes
       INCLUDES = [
         Solargraph::Pin::Reference::Include.new(name: '_ToAry',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'Array', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Array',
+                                                                                        source: :core_fill),
                                                 generic_values: ['generic<Elem>'],
                                                 source: :core_fill),
         Solargraph::Pin::Reference::Include.new(name: '_ToAry',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'Set', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Set',
+                                                                                        source: :core_fill),
                                                 generic_values: ['generic<Elem>'],
                                                 source: :core_fill),
         Solargraph::Pin::Reference::Include.new(name: '_Each',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'Array', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Array',
+                                                                                        source: :core_fill),
                                                 generic_values: ['generic<Elem>'],
                                                 source: :core_fill),
         Solargraph::Pin::Reference::Include.new(name: '_Each',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'Set', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Set',
+                                                                                        source: :core_fill),
                                                 generic_values: ['generic<Elem>'],
                                                 source: :core_fill),
         Solargraph::Pin::Reference::Include.new(name: '_ToS',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'Object', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'Object',
+                                                                                        source: :core_fill),
                                                 source: :core_fill),
         Solargraph::Pin::Reference::Include.new(name: '_ToS',
-                                                closure: Solargraph::Pin::Namespace.new(name: 'String', source: :core_fill),
+                                                closure: Solargraph::Pin::Namespace.new(name: 'String',
+                                                                                        source: :core_fill),
                                                 source: :core_fill)
-      ]
+      ].freeze
 
       # HACK: Add Errno exception classes
       errno = Solargraph::Pin::Namespace.new(name: 'Errno', source: :core_fill)
       errnos = []
       Errno.constants.each do |const|
         errnos.push Solargraph::Pin::Namespace.new(type: :class, name: const.to_s, closure: errno, source: :core_fill)
-        errnos.push Solargraph::Pin::Reference::Superclass.new(closure: errnos.last, name: 'SystemCallError', source: :core_fill)
+        errnos.push Solargraph::Pin::Reference::Superclass.new(closure: errnos.last, name: 'SystemCallError',
+                                                               source: :core_fill)
       end
       ERRNOS = errnos
 

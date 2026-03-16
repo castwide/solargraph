@@ -144,6 +144,34 @@ module Solargraph
                | [T] (8 index) { (int index) -> T } -> (I | T)
                | [T] (9 index) { (int index) -> T } -> (J | T)
                | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F | G | H | I | J | T)
+
+      # <!--
+      #   rdoc-file=array.rb
+      #   - first -> object or nil
+      #   - first(count) -> new_array
+      # -->
+      # Returns elements from `self`, or `nil`; does not modify `self`.
+      #
+      # With no argument given, returns the first element (if available):
+      #
+      #     a = [:foo, 'bar', 2]
+      #     a.first # => :foo
+      #     a # => [:foo, "bar", 2]
+      #
+      # If `self` is empty, returns `nil`.
+      #
+      #     [].first # => nil
+      #
+      # With a non-negative integer argument `count` given, returns the first `count`
+      # elements (as available) in a new array:
+      #
+      #     a.first(0)  # => []
+      #     a.first(2)  # => [:foo, "bar"]
+      #     a.first(50) # => [:foo, "bar", 2]
+      #
+      # Related: see [Methods for Querying](rdoc-ref:Array@Methods+for+Querying).
+      #
+      def first: %a{implicitly-returns-nil} () -> A
     end
   end
 end

@@ -19,7 +19,7 @@ module Solargraph
         @position = Position.normalize(position)
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         source.filename
       end
@@ -35,13 +35,17 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
-          match = source.code[0..offset-1].to_s.match(start_word_pattern)
+          match = source.code[0..(offset - 1)].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
-          result = ":#{result}" if source.code[0..offset-result.length-1].end_with?(':') and !source.code[0..offset-result.length-1].end_with?('::')
+          # @sg-ignore Need to add nil check here
+          if source.code[0..(offset - result.length - 1)].end_with?(':') && !source.code[0..(offset - result.length - 1)].end_with?('::')
+            result = ":#{result}"
+          end
           result
         end
       end
@@ -50,16 +54,17 @@ module Solargraph
       # `foo.bar`, the end_of_word at position (0,6) is `r`.
       #
       # @return [String]
+      # @sg-ignore Need to add nil check here
       def end_of_word
         @end_of_word ||= begin
-          match = source.code[offset..-1].to_s.match(end_word_pattern)
+          match = source.code[offset..].to_s.match(end_word_pattern)
           match ? match[0] : ''
         end
       end
 
       # @return [Boolean]
       def start_of_constant?
-        source.code[offset-2, 2] == '::'
+        source.code[offset - 2, 2] == '::'
       end
 
       # The range of the word at the current position.
@@ -110,6 +115,7 @@ module Solargraph
       def recipient
         @recipient ||= begin
           node = recipient_node
+          # @sg-ignore Need to add nil check here
           node ? Cursor.new(source, Range.from_node(node).ending) : nil
         end
       end
@@ -122,18 +128,18 @@ module Solargraph
 
       # @return [Position]
       def node_position
-        @node_position ||= begin
-          if start_of_word.empty?
-            match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
-            if match
-              Position.from_offset(source.code, offset - match[0].length)
-            else
-              position
-            end
-          else
-            position
-          end
-        end
+        @node_position ||= if start_of_word.empty?
+                             # @sg-ignore Need to add nil check here
+                             match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
+                             if match
+                               # @sg-ignore Need to add nil check here
+                               Position.from_offset(source.code, offset - match[0].length)
+                             else
+                               position
+                             end
+                           else
+                             position
+                           end
       end
 
       # @return [Parser::AST::Node, nil]

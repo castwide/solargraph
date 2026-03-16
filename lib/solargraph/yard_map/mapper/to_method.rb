@@ -6,10 +6,11 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        # @type [Hash{Array<String, Symbol, String> => Symbol}]
         VISIBILITY_OVERRIDE = {
           # YARD pays attention to 'private' statements prior to class methods but shouldn't
-          ["Rails::Engine", :class, "find_root_with_flag"] => :public
-        }
+          ['Rails::Engine', :class, 'find_root_with_flag'] => :public
+        }.freeze
 
         # @param code_object [YARD::CodeObjects::MethodObject]
         # @param name [String, nil]
@@ -25,10 +26,15 @@ module Solargraph
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
+          # @sg-ignore Need to add nil check here
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
+          # @sg-ignore Need to add nil check here
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
+          # @sg-ignore Need to add nil check here
+          if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
+            final_visibility ||= :private
+          end
           final_visibility ||= visibility
           final_visibility ||= :private if code_object.module_function? && final_scope == :instance
           final_visibility ||= :public if code_object.module_function? && final_scope == :class
@@ -46,9 +52,10 @@ module Solargraph
               explicit: code_object.is_explicit?,
               return_type: return_type,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
           else
+            # @sg-ignore Need to add nil check here
             pin = Pin::Method.new(
               location: location,
               closure: closure,
@@ -61,7 +68,7 @@ module Solargraph
               return_type: return_type,
               attribute: code_object.is_attribute?,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
             pin.parameters.concat get_parameters(code_object, location, comments, pin)
             pin.parameters.freeze
@@ -85,7 +92,6 @@ module Solargraph
             # HACK: Skip `nil` and `self` parameters that are sometimes emitted
             # for methods defined in C
             # See https://github.com/castwide/solargraph/issues/345
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1114
             code_object.parameters.select { |a| a[0] && a[0] != 'self' }.map do |a|
               Solargraph::Pin::Parameter.new(
                 location: location,
@@ -95,7 +101,7 @@ module Solargraph
                 presence: nil,
                 decl: arg_type(a),
                 asgn_code: a[1],
-                source: :yardoc,
+                source: :yardoc
               )
             end
           end

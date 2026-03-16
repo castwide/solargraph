@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::SourceMap do
-  it "locates named path pins" do
-    map = Solargraph::SourceMap.load_string(%(
+  it 'locates named path pins' do
+    map = described_class.load_string(%(
       class Foo
         def bar; end
       end
@@ -9,19 +11,21 @@ describe Solargraph::SourceMap do
     expect(pin.path).to eq('Foo#bar')
   end
 
-  it "queries symbols using fuzzy matching" do
-    map = Solargraph::SourceMap.load_string(%(
+  it 'queries symbols using fuzzy matching' do
+    map = described_class.load_string(%(
       class FooBar
         def baz_qux; end
       end
     ))
-    expect(map.query_symbols("foo")).to eq(map.document_symbols)
-    expect(map.query_symbols("foobar")).to eq(map.document_symbols)
-    expect(map.query_symbols("bazqux")).to eq(map.document_symbols.select{ |pin_namespace| pin_namespace.name == "baz_qux" })
+    expect(map.query_symbols('foo')).to eq(map.document_symbols)
+    expect(map.query_symbols('foobar')).to eq(map.document_symbols)
+    expect(map.query_symbols('bazqux')).to eq(map.document_symbols.select { |pin_namespace|
+      pin_namespace.name == 'baz_qux'
+    })
   end
 
   it 'returns all pins, except for references as document symbols' do
-    map = Solargraph::SourceMap.load_string(%(
+    map = described_class.load_string(%(
       class FooBar
         require 'foo'
         include SomeModule
@@ -37,7 +41,7 @@ describe Solargraph::SourceMap do
 
   it 'includes convention pins in document symbols' do
     dummy_convention = Class.new(Solargraph::Convention::Base) do
-      def local(source_map)
+      def local source_map
         source_map.document_symbols # call memoized method
 
         Solargraph::Environ.new(
@@ -54,7 +58,7 @@ describe Solargraph::SourceMap do
 
     Solargraph::Convention.register dummy_convention
 
-    map = Solargraph::SourceMap.load_string(%(
+    map = described_class.load_string(%(
       class FooBar
         def baz_qux; end
       end
@@ -65,8 +69,8 @@ describe Solargraph::SourceMap do
     Solargraph::Convention.unregister dummy_convention
   end
 
-  it "locates block pins" do
-    map = Solargraph::SourceMap.load_string(%(
+  it 'locates block pins' do
+    map = described_class.load_string(%(
       class Foo
         100.times do
         end
@@ -76,8 +80,8 @@ describe Solargraph::SourceMap do
     expect(pin).to be_a(Solargraph::Pin::Block)
   end
 
-  it 'scopes local variables correctly from root def blocks' do
-    map = Solargraph::SourceMap.load_string(%(
+  it 'scopes local variables correctly from root def methods' do
+    map = described_class.load_string(%(
       x = 'string'
       def foo
         x
@@ -88,13 +92,27 @@ describe Solargraph::SourceMap do
     expect(locals).to be_empty
   end
 
+  it 'scopes local variables correctly from class methods' do
+    map = described_class.load_string(%(
+      class Foo
+        x = 'string'
+        def foo
+          x
+        end
+      end
+    ), 'test.rb')
+    loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 11, 3, 11))
+    locals = map.locals_at(loc)
+    expect(locals).to be_empty
+  end
+
   it 'handles op_asgn case with assertions on' do
     # set SOLARGRAPH_ASSERTS=onto test this
     old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
     ENV['SOLARGRAPH_ASSERTS'] = 'on'
 
     expect do
-      map = Solargraph::SourceMap.load_string(%(
+      map = described_class.load_string(%(
             Foo.bar += baz
        ), 'test.rb')
       loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
@@ -111,7 +129,7 @@ describe Solargraph::SourceMap do
     ENV['SOLARGRAPH_ASSERTS'] = 'on'
 
     expect do
-      map = Solargraph::SourceMap.load_string(%(
+      map = described_class.load_string(%(
             Foo.bar ||= baz
        ), 'test.rb')
       loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
@@ -128,7 +146,7 @@ describe Solargraph::SourceMap do
     ENV['SOLARGRAPH_ASSERTS'] = 'on'
 
     expect do
-      map = Solargraph::SourceMap.load_string(%(
+      map = described_class.load_string(%(
             Foo.bar = baz
        ), 'test.rb')
       loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 9, 3, 9))
@@ -140,7 +158,7 @@ describe Solargraph::SourceMap do
   end
 
   it 'scopes local variables correctly in class_eval blocks' do
-    map = Solargraph::SourceMap.load_string(%(
+    map = described_class.load_string(%(
       class Foo; end
       x = 'y'
       Foo.class_eval do
@@ -149,16 +167,16 @@ describe Solargraph::SourceMap do
       end
     ), 'test.rb')
     locals = map.locals_at(Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 0, 5, 0))).map(&:name)
-    expect(locals).to eq(['x', 'foo'])
+    expect(locals).to eq(%w[x foo])
   end
 
   it 'updates cached inference when the ApiMap changes' do
-    file1 = Solargraph::SourceMap.load_string(%(
+    file1 = described_class.load_string(%(
       def foo
         ''
       end
     ), 'file1.rb')
-    file2 = Solargraph::SourceMap.load_string(%(
+    file2 = described_class.load_string(%(
       foo
     ), 'file2.rb')
 
@@ -170,7 +188,7 @@ describe Solargraph::SourceMap do
     original_api_map_hash = api_map.hash
     original_source_map_hash = file1.hash
 
-    file1 = Solargraph::SourceMap.load_string(%(
+    file1 = described_class.load_string(%(
       def foo
         []
       end
