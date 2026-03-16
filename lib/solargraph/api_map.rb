@@ -257,7 +257,7 @@ module Solargraph
 
     # @param name [String]
     # @return [ComplexType, nil]
-    def unalias(name)
+    def unalias name
       store.unalias(name)
     end
 
