@@ -175,7 +175,7 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
-      # @param out [IO, nil]
+      # @param out [IO, StringIO, nil]
       # @return [void]
       def uncache_gem gemspec, out: nil
         uncache(yardoc_path(gemspec), out: out)
