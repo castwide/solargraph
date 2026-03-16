@@ -79,7 +79,7 @@ module Solargraph
           pins.push(
             Solargraph::Pin::Reference::TypeAlias.new(
               # @sg-ignore Unresolved calls to name, type, type_location
-              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: ComplexType.try_parse(other_type_to_tag(decl.type)).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
+              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: other_type_to_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
         when RBS::AST::Declarations::Module
@@ -834,11 +834,7 @@ module Solargraph
       # @param type [RBS::MethodType, RBS::Types::Block]
       # @return [ComplexType, ComplexType::UniqueType]
       def method_type_to_type type
-        if type_aliases.key?(type.type.return_type.to_s)
-          other_type_to_type(type_aliases[type.type.return_type.to_s].type)
-        else
-          other_type_to_type type.type.return_type
-        end
+        other_type_to_type type.type.return_type
       end
 
       # @param type [RBS::Types::Bases::Base,Object] RBS type object.
