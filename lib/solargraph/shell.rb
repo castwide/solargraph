@@ -396,7 +396,7 @@ module Solargraph
     # @return [void]
     def profile file = nil
       begin
-        require 'vernier' # rubocop:disable Lint/SuppressedException
+        require 'vernier'
       rescue LoadError
         $stderr.puts 'vernier gem not found. Please install this dependency:'
         $stderr.puts
