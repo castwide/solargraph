@@ -74,7 +74,6 @@ module Solargraph
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
         gem_config = nil
         if rbs_collection_config_path
-          # @sg-ignore flow sensitive typing needs to handle attrs
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
           if lockfile_path.exist?
             collection_config = RBS::Collection::Config.from_path lockfile_path
@@ -95,8 +94,7 @@ module Solargraph
           when 'stdlib'
             CACHE_KEY_STDLIB
           else
-            # @sg-ignore Need to add nil check here
-            Digest::SHA1.hexdigest(data)
+            Digest::SHA1.hexdigest(data || '')
           end
         end
       end

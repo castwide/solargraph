@@ -115,6 +115,7 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
+                        # @sg-ignore Unresolved call to rbs_collection_path on Solargraph::Workspace, nil
                         workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
                         @doc_map.uncached_gemspecs.any?
 
@@ -724,7 +725,7 @@ module Solargraph
       GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
-    # @return [Workspace]
+    # @return [Workspace, nil]
     def workspace
       doc_map.workspace
     end

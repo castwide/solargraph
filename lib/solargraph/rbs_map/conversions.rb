@@ -77,8 +77,9 @@ module Solargraph
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           pins.push(
+            # @sg-ignore Wrong argument type for Solargraph::Pin::Reference::TypeAlias.new: return_type expected Solargraph::ComplexType, received Solargraph::ComplexType::UniqueType, Solargraph::ComplexType
             Solargraph::Pin::Reference::TypeAlias.new(
-              # @sg-ignore Unresolved calls to name, type, type_location
+              # @sg-ignore Unresolved calls to name, type, type_location; return_type type mismatch
               name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: other_type_to_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
@@ -597,6 +598,7 @@ module Solargraph
         parameters = []
         arg_num = -1
         type.type.required_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
@@ -604,6 +606,7 @@ module Solargraph
                                                          source: :rbs, type_location: type_location)
         end
         type.type.optional_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
@@ -623,11 +626,13 @@ module Solargraph
                                                          return_type: rest_positional_type)
         end
         type.type.trailing_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
           name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, source: :rbs,
                                                          type_location: type_location)
         end
         type.type.required_keywords.each do |orig, param|
+          # @sg-ignore Unresolved call to to_s
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
@@ -635,6 +640,7 @@ module Solargraph
                                                          source: :rbs, type_location: type_location)
         end
         type.type.optional_keywords.each do |orig, param|
+          # @sg-ignore Unresolved call to to_s
           name = orig ? orig.to_s : "arg_#{arg_num += 1}"
           parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
                                                          # @sg-ignore RBS generic type understanding issue
@@ -922,7 +928,7 @@ module Solargraph
       # @param namespace [Pin::Namespace, nil]
       # @return [void]
       def add_mixins decl, namespace
-        # @param mixin [RBS::AST::Members::Include, RBS::AST::Members::Members::Extend, RBS::AST::Members::Members::Prepend]
+        # @param mixin [RBS::AST::Members::Include, RBS::AST::Members::Extend, RBS::AST::Members::Prepend]
         decl.each_mixin do |mixin|
           # @todo are we handling prepend correctly?
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend

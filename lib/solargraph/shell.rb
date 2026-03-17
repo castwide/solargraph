@@ -187,6 +187,7 @@ module Solargraph
         warn("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
+            # @sg-ignore cache_core and core? are dynamically defined
             PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
             next
           end
@@ -395,7 +396,7 @@ module Solargraph
     # @return [void]
     def profile file = nil
       begin
-        require 'vernier'
+        require 'vernier' # rubocop:disable Lint/SuppressedException
       rescue LoadError
         $stderr.puts 'vernier gem not found. Please install this dependency:'
         $stderr.puts
@@ -421,6 +422,7 @@ module Solargraph
 
       puts 'Parsing and mapping source files...'
       prepare_start = Time.now
+      # @sg-ignore Vernier is loaded dynamically
       Vernier.profile(out: "#{options[:output_dir]}/parse_benchmark.json.gz", hooks: hooks) do
         puts 'Mapping libraries'
         host.prepare(directory)
@@ -430,6 +432,7 @@ module Solargraph
 
       puts 'Building the catalog...'
       catalog_start = Time.now
+      # @sg-ignore Vernier is loaded dynamically
       Vernier.profile(out: "#{options[:output_dir]}/catalog_benchmark.json.gz", hooks: hooks) do
         host.catalog
       end
@@ -457,6 +460,7 @@ module Solargraph
       puts "Position: line #{options[:line]}, column #{options[:column]}"
 
       definition_start = Time.now
+      # @sg-ignore Vernier is loaded dynamically
       Vernier.profile(out: "#{options[:output_dir]}/definition_benchmark.json.gz", hooks: hooks) do
         message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
           host, {
@@ -529,9 +533,12 @@ module Solargraph
       end
     end
 
+    # @param gemspec [Gem::Specification, nil]
+    # @param rebuild [Boolean]
+    # @return [void]
     def do_cache gemspec, rebuild: false
       if gemspec.nil?
-        warn "Gem '#{name}' not found"
+        warn "Gem '#{gemspec&.name}' not found"
       else
         if rebuild || !PinCache.has_yard?(gemspec)
           pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)

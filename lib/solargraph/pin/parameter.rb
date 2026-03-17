@@ -212,6 +212,7 @@ module Solargraph
         # sniff based on param tags
         new_type = closure.is_a?(Pin::Block) ? typify_block_param(api_map) : typify_method_param(api_map)
 
+        # @sg-ignore full_context may return UniqueType; self_to_type accepts both
         return adjust_type api_map, new_type.self_to_type(full_context) if new_type.defined?
 
         adjust_type api_map, super.self_to_type(full_context)
