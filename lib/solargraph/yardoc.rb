@@ -33,6 +33,7 @@ module Solargraph
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel
       # @todo Is the chdir argument being used here?
+      # @sg-ignore Unrecognized keyword argument chdir to Open3.capture2e
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
       unless status.success?
         Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
