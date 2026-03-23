@@ -190,7 +190,7 @@ module Solargraph
                                                           end
                                                         # @sg-ignore Unresolved constant Gem::StubSpecification
                                                         when Gem::StubSpecification
-                                                          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+                                                          # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
                                                         else
                                                           raise "Unexpected type while resolving gem: #{specish.class}"
@@ -313,7 +313,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+      # @sg-ignore return type could not be inferred
       # @return [Array<Gem::Specification>]
       def all_gemspecs_from_external_bundle
         @all_gemspecs_from_external_bundle ||=

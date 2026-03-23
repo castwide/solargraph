@@ -175,7 +175,7 @@ module Solargraph
       end
 
       # @param gemspec [Gem::Specification]
-      # @param out [IO, nil]
+      # @param out [IO, StringIO, nil]
       # @return [void]
       def uncache_gem gemspec, out: nil
         uncache(yardoc_path(gemspec), out: out)
@@ -192,6 +192,7 @@ module Solargraph
       private
 
       # @param file [String]
+      # @sg-ignore Marshal.load returns Object; we know it's Array<Pin::Base>
       # @return [Array<Solargraph::Pin::Base>, nil]
       def load file
         return nil unless File.file?(file)

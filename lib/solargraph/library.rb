@@ -57,9 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        source_map_hash.delete @current.filename
-        source_map_external_require_hash.delete @current.filename
+      # @type [String, nil]
+      current_filename = @current&.filename
+      if @current && (!source || current_filename != source.filename) && current_filename && source_map_hash.key?(current_filename) && !workspace.has_file?(current_filename)
+        source_map_hash.delete current_filename
+        source_map_external_require_hash.delete current_filename
         @external_requires = nil
       end
       changed = source && @current != source
@@ -182,9 +184,12 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
-        lft = source.code[0..(offset - 1)].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
-        rgt = source.code[offset..].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
+        # @type [MatchData, nil]
+        lft = source.code[0..(offset - 1)]&.match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        # @type [MatchData, nil]
+        rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore lft and rgt are checked for nil above
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -246,6 +251,7 @@ module Solargraph
       clip = mutex.synchronize { api_map.clip(cursor) }
       pin = clip.define.first
       return [] unless pin
+
       result = []
       files = if only
                 [api_map.source_map(filename)]
@@ -255,7 +261,7 @@ module Solargraph
       files.uniq(&:filename).each do |source|
         found = source.references(pin.name)
         found.select! do |loc|
-          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
+          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)&.first
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
@@ -273,6 +279,7 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
           found.map! do |loc|
+            # @sg-ignore Unresolved call to []
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -299,7 +306,7 @@ module Solargraph
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
-      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
+      pin = map.requires.select { |p| p.location&.range&.contain?(location.range.start) }.first
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
@@ -403,14 +410,17 @@ module Solargraph
       workspace.config.reporters.each do |line|
         if line == 'all!'
           Diagnostics.reporters.each do |reporter_name|
-            repargs[Diagnostics.reporter(reporter_name)] ||= []
+            r = Diagnostics.reporter(reporter_name)
+            repargs[r] ||= [] if r
           end
         else
           args = line.split(':').map(&:strip)
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          # @sg-ignore Hash errors
           repargs[reporter] ||= []
+          # @sg-ignore Hash errors
           repargs[reporter].concat args
         end
       end
@@ -433,6 +443,7 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
+        # @sg-ignore OK if @current.filename is nil
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -472,7 +483,9 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename]
       else
         false
@@ -482,7 +495,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore OK if src.filename is nil
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -512,6 +527,7 @@ module Solargraph
       new_set = source_map.requires.to_set(&:name)
       _filenames = nil
       filenames = -> { _filenames ||= workspace.filenames.to_set }
+      # @sg-ignore OK if source_map.filename is nil
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -558,11 +574,14 @@ module Solargraph
     # @return [void]
     def maybe_map source
       return unless source
+      # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
+        # @sg-ignore OK if source.filename is nil
         source_map_hash[source.filename] = new_map
       else
+        # @sg-ignore OK if source.filename is nil
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end
@@ -628,11 +647,15 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
+      # @sg-ignore Wrong argument type for Integer#>: arg_0 expected Numeric, received Integer, nil
       @total = pending if pending > @total
+      # @sg-ignore Unresolved call to - on Integer, nil
       finished = @total - pending
+      # @sg-ignore @total should always be an Integer
       pct = if @total.zero?
               0
             else
+              # @sg-ignore Unresolved call to to_f
               ((finished.to_f / @total) * 100).to_i
             end
       message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
@@ -641,10 +664,12 @@ module Solargraph
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
+        # @sg-ignore Unresolved call to begin
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
       end
+      # @sg-ignore Unresolved call to report
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress

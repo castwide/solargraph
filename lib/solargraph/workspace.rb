@@ -71,10 +71,11 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
-        if directory == '*' || config.calculated.include?(source.filename)
-          source_hash[source.filename] = source
-          includes_any = true
-        end
+        next unless directory == '*' || config.calculated.include?(source.filename)
+
+        # @sg-ignore Wrong argument type for Hash#[]=: arg0 expected String, received String, nil
+        source_hash[source.filename] = source
+        includes_any = true
       end
 
       includes_any
@@ -157,6 +158,7 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @sg-ignore return type could not be inferred
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'

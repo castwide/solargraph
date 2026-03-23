@@ -279,7 +279,6 @@ module Solargraph
         sc_ref = store.get_superclass(fqns)
         if sc_ref
           fqsc = dereference(sc_ref)
-          # @sg-ignore Need to add nil check here
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end
         result

@@ -9,6 +9,7 @@ module Solargraph
       autoload :Prepend,    'solargraph/pin/reference/prepend'
       autoload :Extend,     'solargraph/pin/reference/extend'
       autoload :Override,   'solargraph/pin/reference/override'
+      autoload :TypeAlias,  'solargraph/pin/reference/type_alias'
 
       attr_reader :generic_values
 

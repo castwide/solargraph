@@ -187,6 +187,7 @@ module Solargraph
         warn("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
+            # @sg-ignore cache_core and core? are dynamically defined
             PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
             next
           end
@@ -529,9 +530,12 @@ module Solargraph
       end
     end
 
+    # @param gemspec [Gem::Specification, nil]
+    # @param rebuild [Boolean]
+    # @return [void]
     def do_cache gemspec, rebuild: false
       if gemspec.nil?
-        warn "Gem '#{name}' not found"
+        warn "Gem '#{gemspec&.name}' not found"
       else
         if rebuild || !PinCache.has_yard?(gemspec)
           pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
