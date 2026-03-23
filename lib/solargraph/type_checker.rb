@@ -351,7 +351,6 @@ module Solargraph
           all_closest = all_found.map { |pin| pin.typify(api_map) }
           closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          # @sg-ignore Need to add nil check here
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
@@ -479,7 +478,7 @@ module Solargraph
             ptype = params.key?(par.name) ? params[par.name][:qualified] : ComplexType::UNDEFINED
             ptype = ptype.self_to_type(par.context)
             if ptype.nil?
-            # @todo Some level (strong, I guess) should require the param here
+              # @todo Some level (strong, I guess) should require the param here
             else
               argtype = argchain.infer(api_map, closure_pin, locals)
               argtype = argtype.self_to_type(closure_pin.context)

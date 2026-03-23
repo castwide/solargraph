@@ -43,8 +43,9 @@ module Solargraph
         @rooted_tag ||= rooted_name + rooted_substring
       end
 
+      # Whether this is an RBS interface like _ToAry or Hash::_Key.
       def interface?
-        name.start_with?('_')
+        name.start_with?('_') || name.include?('::_')
       end
 
       # @return [Boolean]

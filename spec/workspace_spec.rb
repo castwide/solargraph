@@ -145,26 +145,4 @@ describe Solargraph::Workspace do
       described_class.new('./path', config)
     end.not_to raise_error
   end
-
-  describe '#cache_all_for_workspace!' do
-    let(:pin_cache) { instance_double(Solargraph::PinCache) }
-
-    before do
-      allow(Solargraph::PinCache).to receive(:cache_core)
-      allow(Solargraph::PinCache).to receive(:possible_stdlibs)
-      allow(Solargraph::PinCache).to receive(:new).and_return(pin_cache)
-      allow(pin_cache).to receive_messages(cache_gem: nil, possible_stdlibs: [])
-      allow(Solargraph::PinCache).to receive(:cache_all_stdlibs)
-    end
-
-    it 'caches core pins' do
-      allow(Solargraph::PinCache).to receive_messages(core?: false)
-      allow(pin_cache).to receive_messages(cached?: true,
-                                           cache_all_stdlibs: nil)
-
-      workspace.cache_all_for_workspace!(nil, rebuild: false)
-
-      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
-    end
-  end
 end

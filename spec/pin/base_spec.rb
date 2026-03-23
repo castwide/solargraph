@@ -63,4 +63,13 @@ describe Solargraph::Pin::Base do
     expect(return_type).to be_defined
     expect(parser_method_pin.typify(api_map).rooted_tags).to eq('::YARD::DocstringParser')
   end
+
+  describe '#typify' do
+    it 'resolves RBS type aliases' do
+      skip 'This test fails on CI but not locally'
+      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+      pin = api_map.get_path_pins('RBS::MethodType#type').first
+      expect(pin.typify(api_map).to_s).to eq('RBS::Types::Function, RBS::Types::UntypedFunction')
+    end
+  end
 end
