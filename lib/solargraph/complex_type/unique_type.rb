@@ -236,9 +236,9 @@ module Solargraph
         end
       end
 
-      # Whether this is an RBS interface like _ToAry or _Each.
+      # Whether this is an RBS interface like _ToAry or Hash::_Key.
       def interface?
-        name.start_with?('_')
+        name.start_with?('_') || name.include?('::_')
       end
 
       # @param other [UniqueType]
