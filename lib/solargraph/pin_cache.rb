@@ -186,7 +186,6 @@ module Solargraph
 
       # @return [void]
       def clear
-        # @sg-ignore FileUtils types accept String
         FileUtils.rm_rf base_dir, secure: true
       end
 
@@ -200,7 +199,6 @@ module Solargraph
         Marshal.load(File.read(file, mode: 'rb'))
       rescue StandardError => e
         Solargraph.logger.warn "Failed to load cached file #{file}: [#{e.class}] #{e.message}"
-        # @sg-ignore FileUtils types accept String
         FileUtils.rm_f file
         nil
       end
@@ -215,7 +213,6 @@ module Solargraph
       # @return [void]
       def save file, pins
         base = File.dirname(file)
-        # @sg-ignore FileUtils types accept String
         FileUtils.mkdir_p base unless File.directory?(base)
         ser = Marshal.dump(pins)
         File.write file, ser, mode: 'wb'
@@ -228,7 +225,6 @@ module Solargraph
       def uncache *path_segments, out: nil
         path = File.join(*path_segments)
         return unless File.exist?(path)
-        # @sg-ignore FileUtils types accept String
         FileUtils.rm_rf path, secure: true
         out&.puts "Clearing pin cache in #{path}"
       end
@@ -242,7 +238,6 @@ module Solargraph
         out&.puts "Clearing pin cache in #{glob}"
         Dir.glob(glob).each do |file|
           next unless File.file?(file)
-          # @sg-ignore FileUtils types accept String
           FileUtils.rm_rf file, secure: true
           out&.puts "Clearing pin cache in #{file}"
         end

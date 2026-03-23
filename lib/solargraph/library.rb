@@ -480,7 +480,6 @@ module Solargraph
     # @return [SourceMap, Boolean]
     def next_map
       return false if mapped?
-      # @sg-ignore OK if s.filename is nil
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
@@ -577,7 +576,6 @@ module Solargraph
       return unless source
       # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
       return unless @current == source || workspace.has_file?(source.filename)
-      # @sg-ignore OK if source.filename is nil
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
         # @sg-ignore OK if source.filename is nil

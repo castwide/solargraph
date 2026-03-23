@@ -64,8 +64,6 @@ module Solargraph
     # @param sources [Array<Solargraph::Source>]
     # @return [Boolean] True if the source was added to the workspace
     def merge *sources
-      # @sg-ignore Wrong argument type for Hash#key?: arg0 expected String, received String, nil
-      #   source.filename may be nil but is acceptable here
       unless directory == '*' || sources.all? { |source| source_hash.key?(source.filename) }
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
@@ -73,7 +71,6 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
-        # @sg-ignore Wrong argument type for Array#include?: object expected String, received String, nil
         next unless directory == '*' || config.calculated.include?(source.filename)
 
         # @sg-ignore Wrong argument type for Hash#[]=: arg0 expected String, received String, nil

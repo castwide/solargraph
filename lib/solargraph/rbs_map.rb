@@ -74,6 +74,7 @@ module Solargraph
         # @type gem_config [nil, Hash{String => Hash{String => String}}]
         gem_config = nil
         if rbs_collection_config_path
+          # @sg-ignore rbs_collection_config_path is not nil here
           lockfile_path = RBS::Collection::Config.to_lockfile_path(Pathname.new(rbs_collection_config_path))
           if lockfile_path.exist?
             collection_config = RBS::Collection::Config.from_path lockfile_path

@@ -175,7 +175,6 @@ module Solargraph
         return 'NilClass' if name == 'nil'
         return 'Boolean' if %w[true false].include?(name)
         return 'Symbol' if name[0] == ':'
-        # @sg-ignore Need to add nil check here
         return 'String' if ['"', "'"].include?(name[0])
         return 'Integer' if name.match?(/^-?\d+$/)
         name
@@ -385,7 +384,6 @@ module Solargraph
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return self unless generics_to_resolve.include? type_param
           # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?

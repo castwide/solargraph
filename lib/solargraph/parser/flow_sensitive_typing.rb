@@ -275,7 +275,6 @@ module Solargraph
         end
         # or like this:
         # (lvar :repr)
-        # @sg-ignore Need to look at Tuple#include? handling
         variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
@@ -463,7 +462,6 @@ module Solargraph
       # @param clause_node [Parser::AST::Node, nil]
       def always_leaves_compound_statement? clause_node
         # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
-        # @sg-ignore Need to look at Tuple#include? handling
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 

@@ -53,7 +53,6 @@ module Solargraph
         # @return [Array<Location>]
         def references source, name
           if name.end_with?('=')
-            # @sg-ignore Wrong argument type for Regexp.escape: str expected Symbol, String, received String, nil
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]

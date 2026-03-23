@@ -474,6 +474,8 @@ module Solargraph
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
       # @return [Symbol]
+      # @sg-ignore Declared return type ::Symbol does not match inferred type
+      #   ::Symbol, :public, :private, nil for Solargraph::RbsMap::Conversions#calculate_method_visibility
       def calculate_method_visibility decl, context, closure, scope, name
         override_key = [closure.path, scope, name]
         visibility = VISIBILITY_OVERRIDE[override_key]
@@ -552,6 +554,8 @@ module Solargraph
       def method_def_to_sigs decl, pin
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
+          # @sg-ignore Wrong argument type for Solargraph::RbsMap::Conversions#location_decl_to_pin_location:
+          #   location expected RBS::Location, nil, received RBS::Location<:type, :type_params>, RBS::AST::Members::Attribute::loc, nil
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = type_parameter_names(overload.method_type)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
