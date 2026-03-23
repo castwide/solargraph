@@ -568,9 +568,6 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def typify api_map
-        unaliased = api_map.unalias(return_type.to_s)
-        return unaliased if unaliased
-
         return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
