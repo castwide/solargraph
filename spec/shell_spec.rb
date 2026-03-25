@@ -294,8 +294,8 @@ describe Solargraph::Shell do
       it 'succeeds' do
         Dir.mktmpdir do |tmpdir|
           File.write(File.join(tmpdir, 'test.rb'), 'foo')
-          _o, _e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
-          expect(s).to be_success
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
         end
       end
     end
@@ -304,8 +304,8 @@ describe Solargraph::Shell do
       it 'succeeds' do
         Dir.mktmpdir do |tmpdir|
           File.write(File.join(tmpdir, 'test.rb'), 'foo')
-          _o, _e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
-          expect(s).to be_success
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
         end
       end
     end
