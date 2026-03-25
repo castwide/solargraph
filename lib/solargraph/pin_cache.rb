@@ -1,5 +1,6 @@
 require 'yard-activesupport-concern'
 require 'fileutils'
+require 'pathname' # @todo Required by RBS but not loaded in some use cases
 require 'rbs'
 
 module Solargraph
