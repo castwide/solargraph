@@ -44,8 +44,13 @@ module Solargraph
       # @return [Array<Pin::Method>]
       def signify
         return [] unless cursor.argument?
+        return [] if cursor.recipient_node.nil?
         chain = Parser.chain(cursor.recipient_node, cursor.filename)
-        chain.define(api_map, context_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
+        name_pin = context_pin
+        if name_pin.nil?
+          name_pin = Pin::ProxyType.anonymous(ComplexType.try_parse('::Object'))
+        end
+        chain.define(api_map, name_pin, locals).select { |pin| pin.is_a?(Pin::Method) }
       end
 
       # @return [ComplexType]
