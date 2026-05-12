@@ -34,7 +34,6 @@ jobs:
         # Add optional gem to be able to typecheck related code
         echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile
         bundle install
-        bundle update --pre rbs # use latest available for this Ruby version
     - name: Install gem types
       run: bundle exec rbs collection install
     - name: Typecheck self

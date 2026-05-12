@@ -36,7 +36,6 @@ jobs:
         # Add optional gem to be able to typecheck related code
         echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile
         bundle install
-        bundle update --pre rbs
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
