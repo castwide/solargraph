@@ -1,3 +1,14 @@
+## 0.59.0 - May 12, 2026
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Pre-release branch 2026-01-12 (#1152)
+- 2026-01-27 dev branch (#1165)
+- Merge branch 'master' into v0.59
+- Merge branch 'master' into v0.59
+- Position linting (#1179)
+- Revert YARD and RBS pin caching (#1180)
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Limit default include glob to current directory (#1184) 
+
 ## 0.58.3 - March 9, 2026
 - Ignore workspace dependencies in cache processes (#1174)
 
