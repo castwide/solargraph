@@ -8,6 +8,8 @@
 - Revert YARD and RBS pin caching (#1180)
 - Ensure pathname is required for rbs in shell caching processes (#1183)
 - Limit default include glob to current directory (#1184) 
+- Require Ruby >= 3.1.0
+- Require RBS >= 3.10.0
 
 ## 0.58.3 - March 9, 2026
 - Ignore workspace dependencies in cache processes (#1174)

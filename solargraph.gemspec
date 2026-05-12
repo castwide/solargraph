@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.metadata['source_code_uri'] = 'https://github.com/castwide/solargraph'
   s.metadata['rubygems_mfa_required'] = 'true'
 
-  s.required_ruby_version = '>= 3.0'
+  s.required_ruby_version = '>= 3.1'
 
   s.add_dependency 'ast', '~> 2.4.3'
   s.add_dependency 'backport', '~> 1.2'
@@ -44,7 +44,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'ostruct', '~> 0.6'
   s.add_dependency 'parser', '~> 3.0'
   s.add_dependency 'prism', '~> 1.4'
-  s.add_dependency 'rbs', ['>= 3.6.1']
+  s.add_dependency 'rbs', '>= 3.10.0'
   s.add_dependency 'reverse_markdown', '~> 3.0'
   s.add_dependency 'rubocop', '~> 1.76'
   s.add_dependency 'thor', '~> 1.0'
