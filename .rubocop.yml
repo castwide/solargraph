@@ -19,7 +19,7 @@ AllCops:
     - "spec/fixtures/invalid_utf8.rb"
     - "vendor/**/*"
     - "vendor/**/.*"
-  TargetRubyVersion: 3.0
+  TargetRubyVersion: 3.1
 
 Gemspec/RequiredRubyVersion:
   Exclude:
