@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::BaseVariable do
-  it "checks assignments for equality" do
+  it 'checks assignments for equality' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin1 = smap.locals.first
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
@@ -43,5 +45,20 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simple_tags).to eq('Integer, NilClass')
     expect(type.to_rbs).to eq('(1 | nil)')
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
+  end
+
+  it "understands proc kwarg parameters aren't affected by @type" do
+    code = %(
+      # @return [Proc]
+      def foo
+        # @type [Proc]
+        # @param layout [Boolean]
+        @render_method = proc { |layout = false|
+          123 if layout
+        }
+      end
+    )
+    checker = Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
+    expect(checker.problems.map(&:message)).to eq([])
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Solargraph
   class Source
     class Chain
@@ -20,11 +22,11 @@ module Solargraph
           child_types = @children.map do |child|
             child.infer(api_map, name_pin, locals).simplify_literals
           end
-          type = if child_types.length == 0 || child_types.any?(&:undefined?)
+          type = if child_types.empty? || child_types.any?(&:undefined?)
                    ComplexType::UniqueType.new('Array', rooted: true)
                  elsif child_types.uniq.length == 1 && child_types.first.defined?
                    ComplexType::UniqueType.new('Array', [], child_types.uniq, rooted: true, parameters_type: :list)
-                 elsif child_types.length == 0
+                 elsif child_types.empty?
                    ComplexType::UniqueType.new('Array', rooted: true, parameters_type: :list)
                  else
                    ComplexType::UniqueType.new('Array', [], child_types, rooted: true, parameters_type: :fixed)

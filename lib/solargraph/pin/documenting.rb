@@ -62,7 +62,7 @@ module Solargraph
 
         # @return [String]
         def to_code
-          "\n```ruby\n#{Documenting.normalize_indentation(@plaintext)}#{@plaintext.end_with?("\n") ? '' : "\n"}```\n\n"
+          "\n```ruby\n#{Documenting.normalize_indentation(@plaintext)}#{"\n" unless @plaintext.end_with?("\n")}```\n\n"
         end
 
         # @return [String]
@@ -78,7 +78,8 @@ module Solargraph
           # line and at least two spaces of indentation. This is a common
           # convention in Ruby core documentation, e.g., String#split.
           sections = [DocSection.new(false)]
-          Documenting.normalize_indentation(Documenting.strip_html_comments(docstring.to_s.gsub("\t", '  '))).lines.each do |l|
+          Documenting.normalize_indentation(Documenting.strip_html_comments(docstring.to_s.gsub("\t",
+                                                                                                '  '))).lines.each do |l|
             if l.start_with?('  ')
               # Code block
               sections.push DocSection.new(true) unless sections.last.code?
@@ -104,6 +105,7 @@ module Solargraph
         left = text.lines.map do |line|
           match = line.match(/^ +/)
           next 0 unless match
+          # @sg-ignore Need to add nil check here
           match[0].length
         end.min
         return text if left.nil? || left.zero?

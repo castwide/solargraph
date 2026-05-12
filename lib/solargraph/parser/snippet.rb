@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module Solargraph
   module Parser
     class Snippet
-      # @return [Range]
+      # @return [Solargraph::Range]
       attr_reader :range
       # @return [String]
       attr_reader :text

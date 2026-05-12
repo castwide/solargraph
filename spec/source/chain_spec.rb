@@ -1,12 +1,12 @@
 describe Solargraph::Source::Chain do
   it "gets empty definitions for undefined links" do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
-    expect(chain.define(nil, nil, nil)).to be_empty
+    expect(chain.define(nil, nil, [])).to be_empty
   end
 
   it "infers undefined types for undefined links" do
     chain = described_class.new([Solargraph::Source::Chain::Link.new])
-    expect(chain.infer(nil, nil, nil)).to be_undefined
+    expect(chain.infer(nil, nil, [])).to be_undefined
   end
 
   it "calls itself undefined if any of its links are undefined" do
@@ -362,7 +362,9 @@ describe Solargraph::Source::Chain do
     expect(chain.links[1]).to be_with_block
   end
 
-  xit 'infers instance variables from multiple assignments' do
+  it 'infers instance variables from sequential assignments' do
+    pending('sequential assignment support')
+
     source = Solargraph::Source.load_string(%(
       def foo
         @foo = nil
@@ -428,8 +430,9 @@ describe Solargraph::Source::Chain do
       str = obj.stringify
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
+    obj_fn_pin = api_map.get_path_pins('Example.obj').first
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(12, 6))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
 end
