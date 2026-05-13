@@ -505,6 +505,9 @@ module Solargraph
       #
       # @return [Array<Pin::Signature>]
       def combine_same_type_arity_signatures same_type_arity_signatures
+        # @todo Stubbing this method while we debug an infinite loop bug in Ruby 3.x
+        return same_type_arity_signatures
+
         # This is an O(n^2) operation, so bail out if n is not small
         return same_type_arity_signatures if same_type_arity_signatures.length > 10
 
