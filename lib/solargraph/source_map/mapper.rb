@@ -224,7 +224,6 @@ module Solargraph
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
         when 'override'
-          # @sg-ignore Need to add nil check here
           pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags,
                                                  source: :source_map)
         when 'macro'
