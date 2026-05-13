@@ -361,3 +361,6 @@ YARD/TagTypeSyntax:
 # URISchemes: http, https
 Layout/LineLength:
   Max: 224
+
+Naming/BlockForwarding:
+  Enabled: false
