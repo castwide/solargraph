@@ -101,6 +101,44 @@ module Solargraph
           signature
         end
 
+        # Convert a DSL method call argument with directly inferrable simple params.
+        # @param node [Parser::AST::Node, nil]
+        # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
+        def simple_convert(node)
+          return nil unless Parser.is_ast_node?(node)
+          case node.type
+          when :const
+            unpack_name(node)
+          when :str, :dstr, :int, :float, :sym, :true, :false
+            node.children[0]
+          when :array
+            simple_convert_array(node)
+          when :hash
+            simple_convert_hash(node)
+          else
+            Solargraph::Parser.chain(node)
+          end
+        end
+
+        # @param node [Parser::AST::Node]
+        # @return [Array]
+        def simple_convert_array node
+          return [] unless Parser.is_ast_node?(node) && node.type == :array
+          node.children.compact.map { |c| simple_convert(c) }
+        end
+
+        # @param node [Parser::AST::Node]
+        # @return [Hash]
+        def simple_convert_hash node
+          return {} unless Parser.is_ast_node?(node) && node.type == :hash
+          result = {}
+          node.children.each do |pair|
+            next unless Parser.is_ast_node?(pair) && pair.children[0]
+            result[pair.children[0].children[0]] = simple_convert(pair.children[1])
+          end
+          result
+        end
+
         # @param node [Parser::AST::Node, nil]
         # @return [Hash{Symbol => Chain}]
         def convert_hash node

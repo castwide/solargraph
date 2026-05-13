@@ -290,6 +290,46 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('String')
   end
 
+  it "completes generated methods from attached dsl macros" do
+    source = Solargraph::Source.load_string(%(
+      class Macro
+        # @!macro prop
+        #   @!method $1(value)
+        #     $3
+        #     @return [$2]
+        def self.property(name, ret_type, docstring)
+        end
+
+        property :foo, String, "create a foo", [1, :two, '3'], test_key: 'test_value', test_key2: 3
+
+        # @!macro multi_property
+        #   @!method $1
+        #   @!method $2
+        def self.multi_property
+          do_something
+        end
+
+        # @return [String]
+        multi_property :a, :b
+      end
+
+      Macro.new.foo
+      Macro.new.a
+      Macro.new.b
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(22, 18))
+    expect(clip.define.first.path).to eq('Macro#foo')
+    expect(clip.infer.tag).to eq('String')
+    clip = map.clip_at('test.rb', Solargraph::Position.new(23, 16))
+    expect(clip.define.first.path).to eq('Macro#a')
+    expect(clip.infer.tag).to eq('String')
+    clip = map.clip_at('test.rb', Solargraph::Position.new(24, 16))
+    expect(clip.define.first.path).to eq('Macro#b')
+    expect(clip.infer.tag).to eq('String')
+  end
+
   it 'infers method types from return nodes - initialization' do
     source = Solargraph::Source.load_string(%(
       def foo

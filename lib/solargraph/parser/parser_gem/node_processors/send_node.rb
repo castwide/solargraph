@@ -43,6 +43,8 @@ module Solargraph
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
+              elsif dsl_method_call?(method_name)
+                process_dsl_method(method_name)
               end
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
               pins.push Pin::Reference::Require.new(
@@ -294,6 +296,30 @@ module Solargraph
               process_children region.update(scope: :class, visibility: :private)
               true
             end
+          end
+
+          # @param method_name [Symbol]
+          # @return [Boolean]
+          def dsl_method_call?(method_name)
+            region.scope.nil? && method_name.instance_of?(Symbol) && node.children.length > 2
+          end
+
+          # @param method_name [Symbol]
+          # @return [void]
+          def process_dsl_method(method_name)
+            pins.push Pin::Ephemeral::ClassMethodSend.new(
+              location: get_node_location(node),
+              closure: region.closure,
+              name: method_name,
+              code: region.source.code_for(node),
+              comments: comments_for(node),
+              arguments: node.children[2..].map do |a|
+                Solargraph::Pin::Ephemeral::ClassMethodSend::ArgumentValue.new(
+                  value: simple_convert(a)
+                )
+              end,
+              source: :parser
+            )
           end
         end
       end

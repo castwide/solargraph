@@ -1,0 +1,18 @@
+PATH
+  remote: .
+  specs:
+    gem-with-yard-macros (0.1.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+
+PLATFORMS
+  arm64-darwin-22
+  ruby
+
+DEPENDENCIES
+  gem-with-yard-macros!
+
+BUNDLED WITH
+   2.5.20

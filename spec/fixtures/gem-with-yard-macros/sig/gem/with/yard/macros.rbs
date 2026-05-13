@@ -1,0 +1,10 @@
+module Gem
+  module With
+    module Yard
+      module Macros
+        VERSION: String
+        # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+      end
+    end
+  end
+end
