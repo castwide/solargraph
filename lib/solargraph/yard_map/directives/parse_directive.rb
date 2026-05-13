@@ -3,7 +3,7 @@
 module Solargraph
   class YardMap
     module Directives
-      module ParseDirective # rubocop:disable Style/Documentation
+      module ParseDirective
         module_function
 
         # @param source [Solargraph::Source]
@@ -12,7 +12,7 @@ module Solargraph
         # @param comment_position [Position]
         # @param directive [YARD::Tags::Directive]
         # @return [Array<Solargraph::Pin::Method>]
-        def process_directive(source, pins, source_position, comment_position, directive) # rubocop:disable Metrics/AbcSize
+        def process_directive source, pins, source_position, comment_position, directive
           ns = closure_at(pins, source_position)
           pins_copy = pins.dup
           src = Solargraph::Source.load_string(directive.tag.text, source.filename)
@@ -33,12 +33,12 @@ module Solargraph
           end
 
           new_pins
-        rescue Parser::SyntaxError => e
+        rescue Parser::SyntaxError
           # @todo Handle parser errors in !parse directives
           []
         end
 
-        def closure_at(pins, position)
+        def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end
       end

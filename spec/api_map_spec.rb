@@ -925,7 +925,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[Integer Integer])
   end
 
-  it "generates methods from @!attribute tag in attached dsl macros" do
+  it 'generates methods from @!attribute tag in attached dsl macros' do
     source = Solargraph::SourceMap.load_string(%(
       class Macro
         # @!macro prop
@@ -945,7 +945,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String String])
   end
 
-  it "generates methods from @!parse tag in attached dsl macros" do
+  it 'generates methods from @!parse tag in attached dsl macros' do
     source = Solargraph::SourceMap.load_string(%(
       class Macro
         # @!macro prop
@@ -971,7 +971,7 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String])
   end
 
-  it "expands keword arguments as flat array of params from DSL methods with attached macros" do
+  it 'expands keword arguments as flat array of params from DSL methods with attached macros' do
     source = Solargraph::SourceMap.load_string(%(
       class Macro
         # @!macro prop

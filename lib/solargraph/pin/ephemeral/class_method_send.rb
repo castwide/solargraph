@@ -3,12 +3,11 @@
 module Solargraph
   module Pin
     module Ephemeral
-      class ClassMethodSend < Base # rubocop:disable Style/Documentation
-        class ArgumentValue < Struct.new(:value)
-          # @!attribute [r] value
-          #   - literal, splat or kwargs
-          #   @return [String, Integer, Float, nil, true, false, Symbol, Array, Hash]
-        end
+      class ClassMethodSend < Base
+        ArgumentValue = Struct.new(:value)
+        # @!attribute [r] value
+        #   - literal, splat or kwargs
+        #   @return [String, Integer, Float, nil, true, false, Symbol, Array, Hash]
 
         # @return [Array<Argument>]
         attr_reader :arguments
@@ -17,13 +16,12 @@ module Solargraph
         attr_reader :code
 
         # @param name [String] - name of the method called
-        # @param comments [String] - name of the method called
+        # @param comments [String] - comments above the method call
         # @param arguments [Array<Argument>] - arguments of the method
         # @param code [String] - code of the method call
-        # @param location [Solargraph::Location, nil]
-        # @param kind [Integer]
         # @param closure [Solargraph::Pin::Closure, nil]
-        def initialize name: '', arguments: [], code:, closure: nil, comments: '', **splat
+        # @param [Hash{Symbol => Object}] splat - forwarded to Pin::Base (e.g. :location, :source)
+        def initialize code:, name: '', arguments: [], closure: nil, comments: '', **splat
           super(closure: closure, name: name.to_s, comments: comments, **splat)
           @arguments = arguments
           @code = code
@@ -39,7 +37,7 @@ module Solargraph
         end
 
         # @return [Pin::Method]
-        def matches?(method_pin)
+        def matches? method_pin
           return false unless method_pin.is_a?(Method)
 
           method_pin.name == name

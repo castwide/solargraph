@@ -66,7 +66,7 @@ module Solargraph
           end
         when YARD::CodeObjects::MethodObject
           closure = @namespace_pins[code_object.namespace.to_s]
-          macros = macros_for_method_object(code_object)
+          macros_for_method_object(code_object)
           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
@@ -94,7 +94,7 @@ module Solargraph
 
       # @param method_object [YARD::CodeObjects::MethodObject]
       # @return [Array<YARD::CodeObjects::MacroObject>]
-      def macros_for_method_object(method_object)
+      def macros_for_method_object method_object
         attached_macros_by_method_object[method_object]
       end
     end

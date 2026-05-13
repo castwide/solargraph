@@ -73,7 +73,7 @@ module Solargraph
       end
 
       # @return [void, Enumerator<Pin::Base>]
-      def each_closure(&block)
+      def each_closure &block
         return enum_for(:each_closure) unless block_given?
 
         here = closure

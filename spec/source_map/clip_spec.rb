@@ -290,7 +290,7 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('String')
   end
 
-  it "completes generated methods from attached dsl macros" do
+  it 'completes generated methods from attached dsl macros' do
     source = Solargraph::Source.load_string(%(
       class Macro
         # @!macro prop

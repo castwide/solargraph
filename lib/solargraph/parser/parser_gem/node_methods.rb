@@ -104,12 +104,12 @@ module Solargraph
         # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node, nil]
         # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
-        def simple_convert(node)
+        def simple_convert node
           return nil unless Parser.is_ast_node?(node)
           case node.type
           when :const
             unpack_name(node)
-          when :str, :dstr, :int, :float, :sym, :true, :false
+          when :str, :dstr, :int, :float, :sym, true, false
             node.children[0]
           when :array
             simple_convert_array(node)

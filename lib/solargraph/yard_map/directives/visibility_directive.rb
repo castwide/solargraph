@@ -3,7 +3,7 @@
 module Solargraph
   class YardMap
     module Directives
-      module VisibilityDirective # rubocop:disable Style/Documentation
+      module VisibilityDirective
         module_function
 
         VALID_VISIBILITIES = %i[public protected private].freeze
@@ -14,7 +14,7 @@ module Solargraph
         # @param comment_position [Position]
         # @param directive [YARD::Tags::Directive]
         # @return [Array<Solargraph::Pin::Method>]
-        def process_directive(source, pins, source_position, comment_position, directive)
+        def process_directive source, pins, source_position, comment_position, directive
           kind = directive.tag.text&.to_sym
           return unless VALID_VISIBILITIES.include?(kind)
 
@@ -28,10 +28,14 @@ module Solargraph
             closure.instance_variable_set(:@visibility, kind)
           else
             matches = pins.select do |pin|
-              pin.is_a?(Pin::Method) &&
-                pin.name == name &&
-                pin.namespace == namespace &&
-                pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance
+              if pin.is_a?(Pin::Method) &&
+                 pin.name == name &&
+                 pin.namespace == namespace &&
+                 pin.context.scope == namespace.is_a?(Pin::Singleton)
+                :class
+              else
+                :instance
+              end
             end
 
             matches.each do |pin|
@@ -43,11 +47,11 @@ module Solargraph
           []
         end
 
-        def no_empty_lines?(code, line1, line2)
+        def no_empty_lines? code, line1, line2
           code.lines[line1..line2].none? { |line| line.strip.empty? }
         end
 
-        def closure_at(pins, position)
+        def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end
       end

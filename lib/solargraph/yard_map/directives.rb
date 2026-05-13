@@ -2,7 +2,7 @@
 
 module Solargraph
   class YardMap
-    module Directives # rubocop:disable Style/Documentation
+    module Directives
       autoload :AttributeDirective, 'solargraph/yard_map/directives/attribute_directive'
       autoload :MethodDirective, 'solargraph/yard_map/directives/method_directive'
       autoload :DomainDirective, 'solargraph/yard_map/directives/domain_directive'
@@ -12,7 +12,7 @@ module Solargraph
 
       # @param directive [YARD::Tags::Directive]
       # @return [Class<AttributeDirective>, Class<MethodDirective>, Class<DomainDirective>, Class<OverrideDirective>, Class<ParseDirective>, Class<VisibilityDirective>, nil]
-      def self.for(directive)
+      def self.for directive
         case directive.tag.tag_name
         when 'attribute'
           AttributeDirective

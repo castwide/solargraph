@@ -300,13 +300,13 @@ module Solargraph
 
           # @param method_name [Symbol]
           # @return [Boolean]
-          def dsl_method_call?(method_name)
+          def dsl_method_call? method_name
             region.scope.nil? && method_name.instance_of?(Symbol) && node.children.length > 2
           end
 
           # @param method_name [Symbol]
           # @return [void]
-          def process_dsl_method(method_name)
+          def process_dsl_method method_name
             pins.push Pin::Ephemeral::ClassMethodSend.new(
               location: get_node_location(node),
               closure: region.closure,

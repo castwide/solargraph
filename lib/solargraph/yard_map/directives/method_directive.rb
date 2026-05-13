@@ -3,7 +3,7 @@
 module Solargraph
   class YardMap
     module Directives
-      module MethodDirective # rubocop:disable Style/Documentation
+      module MethodDirective
         module_function
 
         # @param source [Solargraph::Source]
@@ -12,7 +12,7 @@ module Solargraph
         # @param comment_position [Position]
         # @param directive [YARD::Tags::Directive]
         # @return [Array<Solargraph::Pin::Method>]
-        def process_directive(source, pins, source_position, comment_position, directive) # rubocop:disable Metrics/AbcSize
+        def process_directive source, pins, source_position, comment_position, directive
           namespace = closure_at(pins, source_position) || pins.first
           namespace = closure_at(pins, comment_position) if namespace.location.range.start.line < comment_position.line
           begin
@@ -32,13 +32,13 @@ module Solargraph
                                           Solargraph::Location.new(source.filename, Range.new(shifted, shifted)))
             gen_pin.instance_variable_set(:@explicit, false)
             [gen_pin]
-          rescue Parser::SyntaxError => e
+          rescue Parser::SyntaxError
             # @todo Handle error in directive
             []
           end
         end
 
-        def closure_at(pins, position)
+        def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end
       end

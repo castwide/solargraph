@@ -136,7 +136,7 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Method>]
-    def process_macros(pins)
+    def process_macros pins
       macro_pins = []
       pins_with_macros = pins.select { |p| p.is_a?(Pin::Base) && p.macros.any? }
       dsl_method_sends = pins.select { |p| p.instance_of?(Solargraph::Pin::Ephemeral::ClassMethodSend) }

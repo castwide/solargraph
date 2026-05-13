@@ -2,7 +2,7 @@
 
 module Solargraph
   module Pin
-    module Ephemeral # rubocop:disable Style/Documentation
+    module Ephemeral
       autoload :ClassMethodSend, 'solargraph/pin/ephemeral/class_method_send'
     end
   end
