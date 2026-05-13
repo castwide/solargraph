@@ -1,4 +1,4 @@
-## 0.59.0 - May 12, 2026
+## 0.59.0 - May 13, 2026
 - Ensure pathname is required for rbs in shell caching processes (#1183)
 - Pre-release branch 2026-01-12 (#1152)
 - 2026-01-27 dev branch (#1165)
