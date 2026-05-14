@@ -28,7 +28,8 @@ module Solargraph
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public,
               explicit: false,
-              attribute: true
+              attribute: true,
+              source: :yard_map
             )
           end
           if t.nil? || t.include?('w')
@@ -39,10 +40,11 @@ module Solargraph
               comments: docstring.all.to_s,
               scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
               visibility: :public,
-              attribute: true
+              attribute: true,
+              source: :yard_map
             )
             new_pins.push(write_pin)
-            write_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: write_pin)
+            write_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: write_pin, source: :yard_map)
             if write_pin.return_type.defined?
               write_pin.docstring.add_tag YARD::Tags::Tag.new(:param, '', write_pin.return_type.to_s.split(', '), 'value')
             end

@@ -15,7 +15,7 @@ module Solargraph
         def process_directive source, _pins, _source_position, comment_position, directive
           docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
           location = Location.new(source.filename, Range.new(comment_position, comment_position))
-          [Pin::Reference::Override.new(location, directive.tag.name, docstring.tags)]
+          [Pin::Reference::Override.new(location, directive.tag.name, docstring.tags, source: :yard_map)]
         end
 
         def closure_at pins, position
