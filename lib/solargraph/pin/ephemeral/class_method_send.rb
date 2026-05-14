@@ -4,10 +4,10 @@ module Solargraph
   module Pin
     module Ephemeral
       class ClassMethodSend < Base
-        ArgumentValue = Struct.new(:value)
-        # @!attribute [r] value
-        #   - literal, splat or kwargs
-        #   @return [String, Integer, Float, nil, true, false, Symbol, Array, Hash]
+        # rubocop:disable YARD/MeaninglessTag
+        # @param [String, Integer, Float, nil, true, false, Symbol, Array, Hash] value
+        ArgumentValue = Struct.new(:value, keyword_init: true)
+        # rubocop:enable YARD/MeaninglessTag
 
         # @return [Array<Argument>]
         attr_reader :arguments
