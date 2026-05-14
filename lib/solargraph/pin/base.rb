@@ -304,7 +304,7 @@ module Solargraph
         # @type [undefined]
         values1 = arr1.map(&)
         # @type [undefined]
-        values2 = arr2.map(&block)
+        values2 = arr2.map(&)
         # @sg-ignore
         return arr1 if values1 == values2
         Solargraph.assert_or_log(:"combine_with_#{attr}",
