@@ -310,9 +310,9 @@ module Solargraph
             pins.push Pin::Ephemeral::ClassMethodSend.new(
               location: get_node_location(node),
               closure: region.closure,
-              name: method_name,
+              name: method_name.to_s,
               code: region.source.code_for(node),
-              comments: comments_for(node),
+              comments: comments_for(node).to_s,
               arguments: node.children[2..].map do |a|
                 Solargraph::Pin::Ephemeral::ClassMethodSend::ArgumentValue.new(
                   value: simple_convert(a)

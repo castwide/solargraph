@@ -25,7 +25,7 @@ module Solargraph
             # as originating from a comment
             shifted = Solargraph::Position.new(comment_position.line,
                                                source.code.lines[comment_position.line].to_s.chomp.length)
-            comments = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring.all.to_s
+            comments = Solargraph::Source.parse_docstring(directive.tag.text.to_s).to_docstring.all.to_s
             # @todo: Smelly instance variable access
             gen_pin.instance_variable_set(:@comments, comments)
             gen_pin.instance_variable_set(:@location,
@@ -38,6 +38,9 @@ module Solargraph
           end
         end
 
+        # @param [Array<Pin::Base>] pins
+        # @param [Position] position
+        # @return [Pin::Closure]
         def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end

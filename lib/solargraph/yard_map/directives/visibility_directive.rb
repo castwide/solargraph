@@ -13,13 +13,15 @@ module Solargraph
         # @param source_position [Position]
         # @param comment_position [Position]
         # @param directive [YARD::Tags::Directive]
-        # @return [Array<Solargraph::Pin::Method>]
+        # @return [Array<Solargraph::Pin::Base>]
         def process_directive source, pins, source_position, comment_position, directive
           kind = directive.tag.text&.to_sym
-          return unless VALID_VISIBILITIES.include?(kind)
+
+          # @sg-ignore include? only expects Symbol, but receives Symbol or nil
+          return [] unless VALID_VISIBILITIES.include?(kind.to_sym)
 
           name = directive.tag.name
-          closure = closure_at(pins, source_position) || @pins.first
+          closure = closure_at(pins, source_position) || pins.first
           if closure.location.range.start.line < comment_position.line
             closure = closure_at(pins, comment_position)
           end
@@ -27,6 +29,7 @@ module Solargraph
             # @todo Smelly instance variable access
             closure.instance_variable_set(:@visibility, kind)
           else
+            namespace = closure_at(pins, source_position)
             matches = pins.select do |pin|
               if pin.is_a?(Pin::Method) &&
                  pin.name == name &&
@@ -47,10 +50,17 @@ module Solargraph
           []
         end
 
+        # @param [String] code
+        # @param [Integer] line1
+        # @param [Integer] line2
+        # @return [Boolean]
         def no_empty_lines? code, line1, line2
           code.lines[line1..line2].none? { |line| line.strip.empty? }
         end
 
+        # @param [Array<Pin::Base>] pins
+        # @param [Position] position
+        # @return [Pin::Closure]
         def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end

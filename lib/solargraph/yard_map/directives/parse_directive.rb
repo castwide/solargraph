@@ -11,11 +11,11 @@ module Solargraph
         # @param source_position [Position]
         # @param comment_position [Position]
         # @param directive [YARD::Tags::Directive]
-        # @return [Array<Solargraph::Pin::Method>]
+        # @return [Array<Solargraph::Pin::Base>]
         def process_directive source, pins, source_position, comment_position, directive
           ns = closure_at(pins, source_position)
           pins_copy = pins.dup
-          src = Solargraph::Source.load_string(directive.tag.text, source.filename)
+          src = Solargraph::Source.load_string(directive.tag.text.to_s, source.filename)
           region = Parser::Region.new(source: src, closure: ns)
           # @todo These pins may need to be marked not explicit
           old_pins_index = pins.length
@@ -32,12 +32,15 @@ module Solargraph
             p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
           end
 
-          new_pins
+          new_pins || []
         rescue Parser::SyntaxError
           # @todo Handle parser errors in !parse directives
           []
         end
 
+        # @param [Array<Pin::Base>] pins
+        # @param [Position] position
+        # @return [Pin::Closure]
         def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end

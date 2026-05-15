@@ -12,7 +12,7 @@ module Solargraph
         def from_directive directive, method_pin
           macro_name = directive.tag.name.empty? ? method_pin.path.downcase : directive.tag.name
           method_object = method_object_from_pin(method_pin)
-          macro_object = YARD::CodeObjects::MacroObject.create(macro_name, directive.tag.text, method_object)
+          macro_object = YARD::CodeObjects::MacroObject.create(macro_name, directive.tag.text.to_s, method_object)
           new(macro_object, method_pin, directive)
         end
 
@@ -30,6 +30,9 @@ module Solargraph
               namespace_pin.name.to_sym
             )
           end
+          # @sg-ignore Wrong argument type for YARD::CodeObjects::MethodObject.new: namespace
+          # expected YARD::CodeObjects::NamespaceObject, got nil.
+          #   False positive because namespace_object is set in the loop above.
           YARD::CodeObjects::MethodObject.new(namespace_object, method_pin.name)
         end
       end
@@ -50,12 +53,12 @@ module Solargraph
 
       # @return [String]
       def name
-        @directive.tag.name
+        @directive.tag.name.to_s
       end
 
       # @return [String]
       def text
-        @directive.tag.text
+        @directive.tag.text.to_s
       end
 
       # @return [YARD::Tags::Tag]

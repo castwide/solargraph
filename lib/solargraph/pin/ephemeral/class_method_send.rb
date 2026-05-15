@@ -5,7 +5,7 @@ module Solargraph
     module Ephemeral
       class ClassMethodSend < Base
         # rubocop:disable YARD/MeaninglessTag
-        # @param [String, Integer, Float, nil, true, false, Symbol, Array, Hash] value
+        # @param [String, Integer, Float, nil, true, false, Symbol, Array, Hash, Source::Chain] value
         ArgumentValue = Struct.new(:value, keyword_init: true)
         # rubocop:enable YARD/MeaninglessTag
 
@@ -22,6 +22,7 @@ module Solargraph
         # @param closure [Solargraph::Pin::Closure, nil]
         # @param [Hash{Symbol => Object}] splat - forwarded to Pin::Base (e.g. :location, :source)
         def initialize code:, name: '', arguments: [], closure: nil, comments: '', **splat
+          # @sg-ignore splat is not recognized as splat argument but as positional one.
           super(closure: closure, name: name.to_s, comments: comments, **splat)
           @arguments = arguments
           @code = code
@@ -36,7 +37,8 @@ module Solargraph
           @arguments.map(&:value).map { |a| Array(a) }.flatten.map(&:to_s)
         end
 
-        # @return [Pin::Method]
+        # @param [Pin::Method] method_pin
+        # @return [Boolean]
         def matches? method_pin
           return false unless method_pin.is_a?(Method)
 

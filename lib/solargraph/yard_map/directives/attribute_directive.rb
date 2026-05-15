@@ -15,7 +15,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           new_pins = []
           location = Location.new(source.filename, Range.new(comment_position, comment_position))
-          docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
+          docstring = Solargraph::Source.parse_docstring(directive.tag.text.to_s).to_docstring
           return [] if directive.tag.name.nil?
           namespace = closure_at(pins, source_position)
           t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.join
@@ -53,6 +53,9 @@ module Solargraph
           new_pins.compact
         end
 
+        # @param [Array<Pin::Base>] pins
+        # @param [Position] position
+        # @return [Pin::Closure]
         def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
         end

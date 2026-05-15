@@ -72,6 +72,7 @@ module Solargraph
         @path ||= name.empty? ? context.namespace : "#{context.namespace}::#{name}"
       end
 
+      # @yieldparam [Pin::Base]
       # @return [void, Enumerator<Pin::Base>]
       def each_closure &block
         return enum_for(:each_closure) unless block_given?

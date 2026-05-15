@@ -25,7 +25,6 @@ module Solargraph
         end
         # Some yardocs contain documentation for dependencies that can be
         # ignored here. The YardMap will load dependencies separately.
-        # @sg-ignore Need to add nil check here
         @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end
@@ -87,7 +86,7 @@ module Solargraph
         @attached_macros ||= @macro_code_objects.select(&:attached?)
       end
 
-      # @return [Hash{YARD::CodeObjects::MethodObject => YARD::CodeObjects::MacroObject}]
+      # @return [Hash{YARD::CodeObjects::MethodObject => Array<YARD::CodeObjects::MacroObject>}]
       def attached_macros_by_method_object
         @attached_macros_by_method_object ||= attached_macros.group_by(&:method_object)
       end
