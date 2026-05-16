@@ -1,3 +1,15 @@
+## 0.59.0 - May 13, 2026
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Pre-release branch 2026-01-12 (#1152)
+- 2026-01-27 dev branch (#1165)
+- Position linting (#1179)
+- Revert YARD and RBS pin caching (#1180)
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Limit default include glob to current directory (#1184) 
+- Require Ruby >= 3.1.0
+- Require RBS >= 3.10.0
+- Stub combine_same_type_arity_signatures (#1186)
+
 ## 0.58.3 - March 9, 2026
 - Ignore workspace dependencies in cache processes (#1174)
 

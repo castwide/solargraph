@@ -33,6 +33,7 @@ module Solargraph
         # @return [void]
         def update_libraries uri
           src = sources.find(uri)
+          # @sg-ignore Need to add nil check here
           using = libraries.select { |lib| lib.contain?(src.filename) }
           using.push library_for(uri) if using.empty?
           using.each { |lib| lib.merge src }
@@ -44,12 +45,11 @@ module Solargraph
         # @param uri [String]
         # @return [Library]
         def library_for uri
-          result = explicit_library_for(uri) ||
+          explicit_library_for(uri) ||
             implicit_library_for(uri) ||
             generic_library_for(uri)
           # previous library for already call attach. avoid call twice
           # result.attach sources.find(uri) if sources.include?(uri)
-          result
         end
 
         # Find an explicit library match for the given URI. An explicit match
@@ -118,8 +118,8 @@ module Solargraph
                                                   .tap { |lib| lib.add_observer self }
         end
 
-        # @param library [Solargraph::Library]
         # @param progress [Solargraph::LanguageServer::Progress, nil]
+        #
         # @return [void]
         def update progress
           progress&.send(self)

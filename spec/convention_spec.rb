@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Convention do
   it 'newly defined pins are resolved by ApiMap after file changes' do
     filename = 'test.rb'

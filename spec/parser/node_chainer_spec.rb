@@ -1,55 +1,61 @@
+# frozen_string_literal: true
+
 describe 'NodeChainer' do
-  it "recognizes self keywords" do
-    chain = Solargraph::Parser.chain_string('self.foo')
+  def chain_string str
+    Solargraph::Parser.chain_string(str, 'file.rb', 0)
+  end
+
+  it 'recognizes self keywords' do
+    chain = chain_string('self.foo')
     expect(chain.links.first.word).to eq('self')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Head)
   end
 
-  it "recognizes super keywords" do
-    chain = Solargraph::Parser.chain_string('super.foo')
+  it 'recognizes super keywords' do
+    chain = chain_string('super.foo')
     expect(chain.links.first.word).to eq('super')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ZSuper)
   end
 
-  it "recognizes constants" do
-    chain = Solargraph::Parser.chain_string('Foo::Bar')
+  it 'recognizes constants' do
+    chain = chain_string('Foo::Bar')
     expect(chain.links.length).to eq(1)
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::Constant)
     expect(chain.links.map(&:word)).to eq(['Foo::Bar'])
   end
 
-  it "splits method calls with arguments and blocks" do
-    chain = Solargraph::Parser.chain_string('var.meth1(1, 2).meth2 do; end')
-    expect(chain.links.map(&:word)).to eq(['var', 'meth1', 'meth2'])
+  it 'splits method calls with arguments and blocks' do
+    chain = chain_string('var.meth1(1, 2).meth2 do; end')
+    expect(chain.links.map(&:word)).to eq(%w[var meth1 meth2])
   end
 
-  it "recognizes literals" do
-    chain = Solargraph::Parser.chain_string('"string"')
+  it 'recognizes literals' do
+    chain = chain_string('"string"')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('100')
+    chain = chain_string('100')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('[1, 2, 3]')
+    chain = chain_string('[1, 2, 3]')
     expect(chain).to be_literal
-    chain = Solargraph::Parser.chain_string('{ foo: "bar" }')
+    chain = chain_string('{ foo: "bar" }')
     expect(chain).to be_literal
   end
 
-  it "recognizes instance variables" do
-    chain = Solargraph::Parser.chain_string('@foo')
+  it 'recognizes instance variables' do
+    chain = chain_string('@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::InstanceVariable)
   end
 
-  it "recognizes class variables" do
-    chain = Solargraph::Parser.chain_string('@@foo')
+  it 'recognizes class variables' do
+    chain = chain_string('@@foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::ClassVariable)
   end
 
-  it "recognizes global variables" do
-    chain = Solargraph::Parser.chain_string('$foo')
+  it 'recognizes global variables' do
+    chain = chain_string('$foo')
     expect(chain.links.first).to be_a(Solargraph::Source::Chain::GlobalVariable)
   end
 
-  it "operates on nodes" do
+  it 'operates on nodes' do
     source = Solargraph::Source.load_string(%(
       class Foo
         Bar.meth1(1, 2).meth2{}
@@ -57,7 +63,7 @@ describe 'NodeChainer' do
     ))
     node = source.node_at(2, 26)
     chain = Solargraph::Parser.chain(node)
-    expect(chain.links.map(&:word)).to eq(['Bar', 'meth1', 'meth2'])
+    expect(chain.links.map(&:word)).to eq(%w[Bar meth1 meth2])
   end
 
   it 'chains and/or nodes' do
@@ -141,7 +147,9 @@ describe 'NodeChainer' do
     expect(chain.links.first).to be_with_block
   end
 
-  xit 'tracks complex multiple assignment' do
+  it 'tracks complex multiple assignment' do
+    pending('complex multiple assignment support')
+
     source = Solargraph::Source.load_string(%(
       foo.baz, bar = [1, 2]
     ))

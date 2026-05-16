@@ -13,7 +13,7 @@ module Solargraph
 
         # @param uri [String]
         # @return [void]
-        def add_uri(uri)
+        def add_uri uri
           queue.push(uri)
         end
 
@@ -55,6 +55,7 @@ module Solargraph
         # @raise [FileNotFoundError] if the URI does not match an open source.
         #
         # @param uri [String]
+        # @sg-ignore flow ensitive typing should understand raise
         # @return [Solargraph::Source]
         def find uri
           open_source_hash[uri] || raise(Solargraph::FileNotFoundError, "Host could not find #{uri}")

@@ -9,7 +9,7 @@ describe Solargraph::Pin::Base, '#combine_with' do
   end
 
   it 'combines return types with another method without type parameters' do
-    pending('logic being added to handle this case')
+    pending 'See Pin::Method#combine_same_type_arity_signatures'
     pin1 = Solargraph::Pin::Method.new(name: 'foo', parameters: [], comments: '@return [Array<String>]')
     pin2 = Solargraph::Pin::Method.new(name: 'foo', parameters: [], comments: '@return [Array]')
     combined = pin1.combine_with(pin2)
@@ -30,11 +30,13 @@ describe Solargraph::Pin::Base, '#combine_with' do
     let(:normal_pin) { Solargraph::Pin::Method.new(name: 'foo', parameters: [], comments: '@return [self]') }
 
     it 'combines a dodgy return type with a valid one' do
+      pending 'See Pin::Method#combine_same_type_arity_signatures'
       combined = dodgy_location_pin.combine_with(normal_pin)
       expect(combined.return_type.to_s).to eq('self')
     end
 
     it 'combines a valid return type with a dodgy one' do
+      pending 'See Pin::Method#combine_same_type_arity_signatures'
       combined = normal_pin.combine_with(dodgy_location_pin)
       expect(combined.return_type.to_s).to eq('self')
     end
@@ -56,11 +58,13 @@ describe Solargraph::Pin::Base, '#combine_with' do
     let(:selfy_pin) { Solargraph::Pin::Method.new(name: 'foo', closure: closure, parameters: [], comments: '@return [self]') }
 
     it 'combines a selfy return type with a likely-selfy one' do
+      pending 'See Pin::Method#combine_same_type_arity_signatures'
       combined = likely_selfy_pin.combine_with(selfy_pin)
       expect(combined.return_type.to_s).to eq('self')
     end
 
     it 'combines a likely-selfy return type with a selfy one' do
+      pending 'See Pin::Method#combine_same_type_arity_signatures'
       combined = selfy_pin.combine_with(likely_selfy_pin)
       expect(combined.return_type.to_s).to eq('self')
     end

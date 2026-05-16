@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler/setup'
 require 'webmock/rspec'
 WebMock.disable_net_connect!(allow_localhost: true)
@@ -26,21 +28,23 @@ RSpec.configure do |c|
   c.example_status_persistence_file_path = 'rspec-examples.txt'
 end
 require 'solargraph'
-# Suppress logger output in specs (if possible)
+# execute any logging blocks to make sure they don't blow up
+Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
+# ...but still suppress logger output in specs (if possible)
 if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
   Solargraph::Logging.logger.reopen(File::NULL)
 end
 
 # @param name [String]
 # @param value [String]
-def with_env_var(name, value)
-  old_value = ENV[name]  # Store the old value
-  ENV[name] = value      # Set to new value
+def with_env_var name, value
+  old_value = ENV.fetch(name, nil) # Store the old value
+  ENV[name] = value # Set to new value
 
   begin
-    yield               # Execute the block
+    yield # Execute the block
   ensure
-    ENV[name] = old_value  # Restore the old value
+    ENV[name] = old_value # Restore the old value
   end
 end
 

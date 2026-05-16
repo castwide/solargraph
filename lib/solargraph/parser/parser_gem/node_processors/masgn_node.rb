@@ -37,8 +37,10 @@ module Solargraph
               pin = if lhs.type == :lvasgn
                       # lvasgn is a local variable
                       locals.find { |l| l.location == location }
+                    elsif lhs.type == :ivasgn
+                      # ivasgn is an instance variable assignment
+                      ivars.find { |iv| iv.location == location }
                     else
-                      # e.g., ivasgn is an instance variable, etc
                       pins.find { |iv| iv.location == location && iv.is_a?(Pin::BaseVariable) }
                     end
               # @todo in line below, nothing in typechecking alerts
