@@ -115,8 +115,17 @@ module Solargraph
       def recipient
         @recipient ||= begin
           node = recipient_node
-          # @sg-ignore Need to add nil check here
-          node ? Cursor.new(source, Range.from_node(node).ending) : nil
+          if node.nil?
+            nil
+          else
+            rng = Range.from_node(node)
+            if rng
+              Cursor.new(source, rng.ending)
+            else
+              pos = Position.new(position.line, [position.column - 1, 0].max)
+              Cursor.new(source, pos)
+            end
+          end
         end
       end
       alias receiver recipient
