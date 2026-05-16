@@ -152,6 +152,16 @@ module Solargraph
       locals.select { |pin| pin.visible_at?(closure, location) }
     end
 
+    def method_call_nodes
+      @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)     
+    end
+
+    def macro_method_candidates(macro_method_names)
+      return @macro_method_candidates if @macro_method_names == macro_method_names
+      @macro_method_names = macro_method_names
+      @macro_method_candidates = method_call_nodes.select { |node| macro_method_names.include?(node.children[1].to_s) }
+    end
+
     class << self
       # @param filename [String]
       # @return [SourceMap]

@@ -22,10 +22,9 @@ module Solargraph
       #   - pinsets[1] = documentation/gem pins
       #   - pinsets[2] = convention pins
       #   - pinsets[3] = workspace source pins (aka. "iced_pins")
-      #   - pinsets[4] = yard macro generated pins
-      #   - pinsets[5] = currently open file pins
+      #   - pinsets[4] = currently open file pins
       # @return [Boolean] True if the index was updated
-      def update *pinsets
+      def update *pinsets, &block
         return catalog(pinsets) if pinsets.length != @pinsets.length
 
         changed = pinsets.find_index.with_index { |pinset, idx| @pinsets[idx] != pinset }
@@ -44,6 +43,8 @@ module Solargraph
                                       @indexes[changed + idx - 1].merge(pins)
                                     end
         end
+        @index = @indexes.last.clone
+        @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true
@@ -278,17 +279,21 @@ module Solargraph
         index.alias_hash[name]
       end
 
+      def macro_method_names
+        index.macro_method_names
+      end
+
       private
 
       # @return [Index]
       def index
-        @indexes.last
+        @index ||= Index.new
       end
 
       # @param pinsets [Array<Array<Pin::Base>>]
       #
       # @return [true]
-      def catalog pinsets
+      def catalog pinsets, &block
         @pinsets = pinsets
         # @type [Array<Index>]
         @indexes = []
@@ -299,6 +304,8 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
+        @index = @indexes.last.clone
+        @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true
