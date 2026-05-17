@@ -176,7 +176,7 @@ module Solargraph
         result
       end
 
-      # @return [Hash{String => YARD::Tags::MacroDirective}]
+      # @return [Hash{String => YardMap::Macro}]
       def named_macros
         @named_macros ||= begin
           result = {}
