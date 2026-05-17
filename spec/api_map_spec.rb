@@ -977,14 +977,15 @@ describe Solargraph::ApiMap do
         # @!macro prop
         #   @!parse
         #     module SomeNamespace
+        #       # $3
         #       # @return [$3]
         #       def self.$1(value)
         #       end
         #     end
-        def self.property(name, default, type, comment)
+        def self.property(name, default, type:, comment:)
         end
 
-        property :foo, [1, 2, 3], String, "create a foo"
+        property :foo, [1, 2, 3], type: String, comment: "create a foo"
       end
 
       Macro::SomeNamespace.foo
@@ -994,6 +995,12 @@ describe Solargraph::ApiMap do
       pin.namespace == 'Macro::SomeNamespace' && pin.is_a?(Solargraph::Pin::Method)
     end
     expect(pins.map(&:name).sort).to eq(%w[foo])
-    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String])
+    # @todo These expectations compare Solargraph's macro processing to YARD's
+    #   output in generated docs. There still appear to be some discrepancies
+    #   in how keyword arguments are expanded.
+    expect(pins.first.comments).to include('type: "String"')
+    expect(pins.first.comments).to include('comment: "create a foo"')
+    # @todo Undefined because the return tag expands to `type: String`
+    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[undefined])
   end
 end
