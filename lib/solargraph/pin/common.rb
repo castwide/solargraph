@@ -80,7 +80,7 @@ module Solargraph
         here = closure
         until here.nil?
           yield here
-          here = here.closure
+          here = here&.closure
         end
       end
 

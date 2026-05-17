@@ -17,7 +17,7 @@ module Solargraph
 
         # @param name [String] - name of the method called
         # @param comments [String] - comments above the method call
-        # @param arguments [Array<Argument>] - arguments of the method
+        # @param arguments [Array<ArgumentValue>] - arguments of the method
         # @param code [String] - code of the method call
         # @param closure [Solargraph::Pin::Closure, nil]
         # @param [Hash{Symbol => Object}] splat - forwarded to Pin::Base (e.g. :location, :source)
