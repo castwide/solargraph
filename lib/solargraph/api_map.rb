@@ -107,6 +107,7 @@ module Solargraph
     # @return [self]
     def catalog bench
       @source_map_hash = bench.source_map_hash
+      # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
       live_pins = bench.live_map&.all_pins || []
       conventions_environ.clear
@@ -143,7 +144,9 @@ module Solargraph
       pins_with_macros.each do |pin_with_macro|
         dsl_method_sends.select { |dsl_method_send| dsl_method_send.matches?(pin_with_macro) }.each do |dsl_method_send|
           ref = dsl_method_send.location
-          source_map = source_map_hash[ref.filename]
+          next unless ref
+          source_map = source_map_hash[ref.filename.to_s]
+          next unless source_map
           pin_with_macro.macros.each do |macro|
             macro_pins += macro.generate_pins_from(dsl_method_send, source_map)
           end
