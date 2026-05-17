@@ -125,8 +125,7 @@ module Solargraph
       end
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       Solargraph.logger.info 'Cataloging ApiMap started'
-      updated = store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
-      @cache.clear if updated
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @missing_docs = [] # @todo Implement missing docs
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
