@@ -132,6 +132,7 @@ module Solargraph
       self
     end
 
+    # @return [Array<Pin::Base>]
     def process_macros
       macro_pins = []
       source_maps.each do |source_map|

@@ -152,10 +152,14 @@ module Solargraph
       locals.select { |pin| pin.visible_at?(closure, location) }
     end
 
+    # @return [Array<Parser::AST::Node>]
     def method_call_nodes
+      # @sg-ignore node expected Parser::AST::Node, received Parser::AST::Node, nil
       @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)
     end
 
+    # @param macro_method_names [Array<String>]
+    # @return [Array<Parser::AST::Node>]
     def macro_method_candidates macro_method_names
       return @macro_method_candidates if @macro_method_names == macro_method_names
       @macro_method_names = macro_method_names

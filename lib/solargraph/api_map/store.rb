@@ -43,6 +43,7 @@ module Solargraph
                                       @indexes[changed + idx - 1].merge(pins)
                                     end
         end
+        # @type [Index]
         @index = @indexes.last.clone
         @index = @index.merge(block.call) if block
         constants.clear
@@ -279,6 +280,7 @@ module Solargraph
         index.alias_hash[name]
       end
 
+      # @return [Array<String>]
       def macro_method_names
         index.macro_method_names
       end
