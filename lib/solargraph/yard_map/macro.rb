@@ -12,7 +12,8 @@ module Solargraph
         def from_directive directive, method_pin
           macro_name = directive.tag.name.empty? ? method_pin.path.downcase : directive.tag.name
           method_object = method_object_from_pin(method_pin)
-          macro_object = YARD::CodeObjects::MacroObject.create(macro_name, directive.tag.text.to_s, method_object)
+          code = directive.tag.text.to_s.gsub(/\n(?!@!|\s)/, "\n  ")
+          macro_object = YARD::CodeObjects::MacroObject.create(macro_name, code, method_object)
           new(macro_object, method_pin, directive)
         end
 
@@ -87,10 +88,8 @@ module Solargraph
         name = chain.links.last.word
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
         code = source_map.source.code_for(chain.node)
-        # Solargraph.logger.warn "Code: #{code}"
-        # Solargraph.logger.warn "Values: #{values}"
         expanded_comment = macro_object.expand([name, *values], source_map.source.code_for(chain.node))
-        Solargraph.logger.warn "EC: #{expanded_comment}"
+                                       .gsub(/\n(?!@!|\s)/, "\n  ")
         directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
         end

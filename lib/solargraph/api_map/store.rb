@@ -25,7 +25,7 @@ module Solargraph
       #   - pinsets[4] = currently open file pins
       # @return [Boolean] True if the index was updated
       def update *pinsets, &block
-        return catalog(pinsets) if pinsets.length != @pinsets.length
+        return catalog(pinsets, &block) if pinsets.length != @pinsets.length
 
         changed = pinsets.find_index.with_index { |pinset, idx| @pinsets[idx] != pinset }
         return false unless changed

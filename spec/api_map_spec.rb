@@ -971,27 +971,27 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String])
   end
 
-  it 'expands keword arguments as flat array of params from DSL methods with attached macros' do
+  it 'expands keyword arguments as flat array of params from DSL methods with attached macros' do
     source = Solargraph::SourceMap.load_string(%(
       class Macro
         # @!macro prop
         #   @!parse
         #     module SomeNamespace
-        #       # @return [$6]
+        #       # @return [$3]
         #       def self.$1(value)
         #       end
         #     end
-        def self.property(name, default, type:, comment:)
+        def self.property(name, default, type, comment)
         end
 
-        property :foo, [1, 2, 3], type: String, comment: "create a foo"
+        property :foo, [1, 2, 3], String, "create a foo"
       end
 
       Macro::SomeNamespace.foo
     ), 'test.rb')
     @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
     pins = @api_map.get_methods('Macro::SomeNamespace', scope: :class).select do |pin|
-      pin.namespace == 'Macro::SomeNamespace' and pin.is_a?(Solargraph::Pin::Method)
+      pin.namespace == 'Macro::SomeNamespace' && pin.is_a?(Solargraph::Pin::Method)
     end
     expect(pins.map(&:name).sort).to eq(%w[foo])
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String])
