@@ -40,6 +40,7 @@ module Solargraph
     autoload :Callable,         'solargraph/pin/callable'
     autoload :CompoundStatement,
              'solargraph/pin/compound_statement'
+    autoload :Ephemeral, 'solargraph/pin/ephemeral'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil, source: :pin_rb)
   end

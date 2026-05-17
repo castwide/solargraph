@@ -123,9 +123,33 @@ module Solargraph
         @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      Solargraph.logger.info 'Processing macros started'
+      macro_pins = process_macros(iced_pins + live_pins + @doc_map.pins)
+      iced_pins = iced_pins.reject { |p| p.is_a?(Pin::Ephemeral::ClassMethodSend) }
+      live_pins = live_pins.reject { |p| p.is_a?(Pin::Ephemeral::ClassMethodSend) }
+      Solargraph.logger.info "Processing macros finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, macro_pins, live_pins)
       @missing_docs = [] # @todo Implement missing docs
       self
+    end
+
+    # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Method>]
+    def process_macros pins
+      macro_pins = []
+      pins_with_macros = pins.select { |p| p.is_a?(Pin::Base) && p.macros.any? }
+      dsl_method_sends = pins.select { |p| p.instance_of?(Solargraph::Pin::Ephemeral::ClassMethodSend) }
+      pins_with_macros.each do |pin_with_macro|
+        dsl_method_sends.select { |dsl_method_send| dsl_method_send.matches?(pin_with_macro) }.each do |dsl_method_send|
+          ref = dsl_method_send.location
+          source_map = source_map_hash[ref.filename]
+          pin_with_macro.macros.each do |macro|
+            macro_pins += macro.generate_pins_from(dsl_method_send, source_map)
+          end
+        end
+      end
+      macro_pins
     end
 
     # @return [DocMap]
@@ -154,7 +178,7 @@ module Solargraph
     end
 
     # @param name [String, nil]
-    # @return [YARD::Tags::MacroDirective, nil]
+    # @return [Solargraph::YardMap::Macro, nil]
     def named_macro name
       # @sg-ignore Need to add nil check here
       store.named_macros[name]

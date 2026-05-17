@@ -81,4 +81,14 @@ describe Solargraph::YardMap::Mapper do
     end
     expect(ext).to be_a(Solargraph::Pin::Reference::Extend)
   end
+
+  it 'loads macros from gems' do
+    # Using gem-with-yard-macros fixture, which declares `@!macro my_attribute`
+    # on `Gem::With::Yard::Macros::MyStruct.my_attribute`.
+    pin = pins_with('gem-with-yard-macros').find do |pin|
+      pin.is_a?(Solargraph::Pin::Method) && pin.path == 'Gem::With::Yard::Macros::MyStruct.my_attribute'
+    end
+    expect(pin).to be_a(Solargraph::Pin::Method)
+    expect(pin.macros.map(&:name)).to include('my_attribute')
+  end
 end
