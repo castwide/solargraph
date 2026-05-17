@@ -307,17 +307,19 @@ module Solargraph
           # @param method_name [Symbol]
           # @return [void]
           def process_dsl_method method_name
+            # @type [Array<Pin::Ephemeral::ClassMethodSend::ArgumentValue>]
+            # @sg-ignore .map return type could not be inferred properly
+            arguments = node.children[2..]&.map do |a|
+              Pin::Ephemeral::ClassMethodSend::ArgumentValue.new(value: simple_convert(a))
+            end || []
+
             pins.push Pin::Ephemeral::ClassMethodSend.new(
               location: get_node_location(node),
               closure: region.closure,
               name: method_name.to_s,
               code: region.source.code_for(node),
               comments: comments_for(node).to_s,
-              arguments: node.children[2..].map do |a|
-                Solargraph::Pin::Ephemeral::ClassMethodSend::ArgumentValue.new(
-                  value: simple_convert(a)
-                )
-              end,
+              arguments: arguments,
               source: :parser
             )
           end
