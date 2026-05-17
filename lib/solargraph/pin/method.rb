@@ -505,7 +505,8 @@ module Solargraph
       #
       # @return [Array<Pin::Signature>]
       def combine_same_type_arity_signatures same_type_arity_signatures
-        # @todo Stubbing this method while we debug an infinite loop bug in Ruby 3.x
+        # @todo Stubbing this method while we debug an infinite loop bug in Ruby 3.x.
+        #   The body below is intentionally preserved for when the stub is removed.
         return same_type_arity_signatures
 
         # rubocop:disable Lint/UnreachableCode
