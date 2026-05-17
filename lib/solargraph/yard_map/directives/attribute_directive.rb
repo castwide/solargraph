@@ -45,7 +45,7 @@ module Solargraph
             )
             new_pins.push(write_pin)
             write_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: write_pin, source: :yard_map)
-            if write_pin.return_type.defined?
+            if write_pin.return_type&.defined?
               write_pin.docstring.add_tag YARD::Tags::Tag.new(:param, '', write_pin.return_type.to_s.split(', '), 'value')
             end
           end
@@ -57,7 +57,7 @@ module Solargraph
         # @param [Position] position
         # @return [Pin::Closure]
         def closure_at pins, position
-          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
         end
       end
     end
