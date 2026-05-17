@@ -12,7 +12,7 @@ module Solargraph
         def from_directive directive, method_pin
           macro_name = directive.tag.name.empty? ? method_pin.path.downcase : directive.tag.name
           method_object = method_object_from_pin(method_pin)
-          macro_object = YARD::CodeObjects::MacroObject.create(macro_name, directive.tag.text.to_s, method_object)
+          macro_object = YARD::CodeObjects::MacroObject.create(macro_name.to_s, directive.tag.text.to_s, method_object)
           new(macro_object, method_pin, directive)
         end
 
@@ -75,7 +75,7 @@ module Solargraph
         # @param generated_pins [Array<Pin::Base>]
         generate_yardoc_from(dsl_method_send).reduce([]) do |generated_pins, directive|
           directive_processor = YardMap::Directives.for(directive)
-          next generated_pins unless directive_processor
+          next generated_pins unless directive_processor && call_location
           generated_pins + directive_processor.process_directive(
             source_map.source, source_map.pins, call_location.range.start, call_location.range.start, directive
           )

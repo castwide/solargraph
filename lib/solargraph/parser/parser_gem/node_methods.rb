@@ -105,6 +105,8 @@ module Solargraph
         # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node]
         # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
+        # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
+        # `.children[0]` call, which is not recognized as returning a literal value.
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 
