@@ -145,8 +145,8 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
-        macro_pins = pins_by_class(Pin::Method).select { |pin|  pin.macros.any? }
-        @macro_method_names = macro_pins.map(&:name).to_set
+        macro_pins = pins_by_class(Pin::Method).select { |pin| pin.macros.any? }
+        @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
         map_overrides
         pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }

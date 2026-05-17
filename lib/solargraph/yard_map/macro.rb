@@ -84,11 +84,12 @@ module Solargraph
       private
 
       # @param chain [Solargraph::Source::Chain]
+      # @param [Object] source_map
       def generate_yardoc_from chain, source_map
         name = chain.links.last.word
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
-        code = source_map.source.code_for(chain.node)
-        expanded_comment = macro_object.expand([name, *values], source_map.source.code_for(chain.node))
+        source_map.source.code_for(chain.node)
+        expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
         directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
