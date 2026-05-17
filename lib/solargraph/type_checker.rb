@@ -773,9 +773,9 @@ module Solargraph
         return [] if parameters.any?(&:rest?)
         opt = optional_param_count(parameters)
         return [] if unchecked.length <= req + opt
-        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && (parameters.map(&:decl) & %i[
-          kwarg kwoptarg kwrestarg
-        ]).any?
+        if req + add_params + 1 == unchecked.length && any_splatted_call?(unchecked.map(&:node)) && parameters.map(&:decl).intersect?(%i[
+                                                                                                                                        kwarg kwoptarg kwrestarg
+                                                                                                                                      ])
           return []
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length

@@ -482,8 +482,8 @@ module Solargraph
       # @yieldparam t [self]
       # @yieldreturn [self]
       # @return [Enumerable<self>]
-      def each &block
-        [self].each(&block)
+      def each(&)
+        [self].each(&)
       end
 
       # @return [Array<UniqueType>]

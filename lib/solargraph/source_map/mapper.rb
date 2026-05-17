@@ -61,13 +61,6 @@ module Solargraph
         @pins ||= []
       end
 
-      # @param position [Solargraph::Position]
-      # @return [Solargraph::Pin::Closure]
-      def closure_at position
-        # @sg-ignore Need to add nil check here
-        pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
-      end
-
       # @param source_position [Position]
       # @param comment_position [Position]
       # @param comment [String]
@@ -108,135 +101,12 @@ module Solargraph
       # @param directive [YARD::Tags::Directive]
       # @return [void]
       def process_directive source_position, comment_position, directive
-        # @sg-ignore Need to add nil check here
-        docstring = Solargraph::Source.parse_docstring(directive.tag.text).to_docstring
-        location = Location.new(@filename, Range.new(comment_position, comment_position))
-        case directive.tag.tag_name
-        when 'method'
-          namespace = closure_at(source_position) || @pins.first
-          # @sg-ignore Need to add nil check here
-          namespace = closure_at(comment_position) if namespace.location.range.start.line < comment_position.line
-          begin
-            src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
-            region = Parser::Region.new(source: src, closure: namespace)
-            # @type [Array<Pin::Method>]
-            method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
-            gen_pin = method_gen_pins.last
-            return if gen_pin.nil?
-            # Move the location to the end of the line so it gets recognized
-            # as originating from a comment
-            shifted = Solargraph::Position.new(comment_position.line,
-                                               @code.lines[comment_position.line].to_s.chomp.length)
-            # @todo: Smelly instance variable access
-            gen_pin.instance_variable_set(:@comments, docstring.all.to_s)
-            gen_pin.instance_variable_set(:@location, Solargraph::Location.new(@filename, Range.new(shifted, shifted)))
-            gen_pin.instance_variable_set(:@explicit, false)
-            @pins.push gen_pin
-          rescue Parser::SyntaxError
-            # @todo Handle error in directive
-          end
-        when 'attribute'
-          return if directive.tag.name.nil?
-          namespace = closure_at(source_position)
-          t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.join
-          if t.nil? || t.include?('r')
-            pins.push Solargraph::Pin::Method.new(
-              location: location,
-              closure: namespace,
-              name: directive.tag.name,
-              comments: docstring.all.to_s,
-              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
-              visibility: :public,
-              explicit: false,
-              attribute: true,
-              source: :source_map
-            )
-          end
-          if t.nil? || t.include?('w')
-            method_pin = Solargraph::Pin::Method.new(
-              location: location,
-              closure: namespace,
-              name: "#{directive.tag.name}=",
-              comments: docstring.all.to_s,
-              scope: namespace.is_a?(Pin::Singleton) ? :class : :instance,
-              visibility: :public,
-              attribute: true,
-              source: :source_map
-            )
-            pins.push method_pin
-            method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last,
-                                                          source: :source_map)
-            if pins.last.return_type.defined?
-              pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '),
-                                                              'value')
-            end
-          end
-        when 'visibility'
+        directive_processor = YardMap::Directives.for(directive)
+        return unless directive_processor
 
-          kind = directive.tag.text&.to_sym
-          return unless %i[private protected public].include?(kind)
-
-          name = directive.tag.name
-          closure = closure_at(source_position) || @pins.first
-          # @sg-ignore Need to add nil check here
-          closure = closure_at(comment_position) if closure.location.range.start.line < comment_position.line
-          if closure.is_a?(Pin::Method) && no_empty_lines?(comment_position.line, source_position.line)
-            # @todo Smelly instance variable access
-            closure.instance_variable_set(:@visibility, kind)
-          else
-            matches = pins.select do |pin|
-              pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == namespace && pin.context.scope == namespace.is_a?(Pin::Singleton) ? :class : :instance
-            end
-            matches.each do |pin|
-              # @todo Smelly instance variable access
-              pin.instance_variable_set(:@visibility, kind)
-            end
-          end
-
-        when 'parse'
-          begin
-            ns = closure_at(source_position)
-            # @sg-ignore Need to add nil check here
-            src = Solargraph::Source.load_string(directive.tag.text, @source.filename)
-            region = Parser::Region.new(source: src, closure: ns)
-            # @todo These pins may need to be marked not explicit
-            index = @pins.length
-            loff = if @code.lines[comment_position.line].strip.end_with?('@!parse')
-                     comment_position.line + 1
-                   else
-                     comment_position.line
-                   end
-            locals = []
-            ivars = []
-            Parser.process_node(src.node, region, @pins, locals, ivars)
-            @pins.concat ivars
-            # @sg-ignore Need to add nil check here
-            @pins[index..].each do |p|
-              # @todo Smelly instance variable access
-              p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
-              p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
-            end
-          rescue Parser::SyntaxError
-            # @todo Handle parser errors in !parse directives
-          end
-        when 'domain'
-          namespace = closure_at(source_position) || Pin::ROOT_PIN
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
-          namespace.domains.concat directive.tag.types unless directive.tag.types.nil?
-        when 'override'
-          pins.push Pin::Reference::Override.new(location, directive.tag.name, docstring.tags,
-                                                 source: :source_map)
-        when 'macro'
-          # @todo Handle macros
-        end
-      end
-
-      # @param line1 [Integer]
-      # @param line2 [Integer]
-      # @sg-ignore Need to add nil check here
-      def no_empty_lines? line1, line2
-        # @sg-ignore Need to add nil check here
-        @code.lines[line1..line2].none? { |line| line.strip.empty? }
+        @pins += directive_processor.process_directive(
+          @source, @pins, source_position, comment_position, directive
+        )
       end
 
       # @param comment [String]
