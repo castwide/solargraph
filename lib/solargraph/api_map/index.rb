@@ -5,7 +5,11 @@ module Solargraph
     class Index
       include Logging
 
+      # @return [Array<String>]
       attr_reader :macro_method_names
+
+      # @return [Hash{String => Array<Pin::Method>}]
+      attr_reader :macro_method_name_pins
 
       # @param pins [Array<Pin::Base>]
       def initialize pins = []
@@ -97,7 +101,8 @@ module Solargraph
       protected
 
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
-                  :extend_references, :prepend_references, :superclass_references, :macro_method_names
+                  :extend_references, :prepend_references, :superclass_references, :macro_method_names,
+                  :macro_method_name_pins
 
       # @return [self]
       def deep_clone
@@ -107,7 +112,7 @@ module Solargraph
           copy.macro_method_names = macro_method_names
           %i[
             namespace_hash pin_class_hash path_pin_hash include_references extend_references prepend_references
-            superclass_references
+            superclass_references macro_method_name_pins
           ].each do |sym|
             copy.send("#{sym}=", send(sym).clone)
             copy.send(sym)&.transform_values!(&:clone)
@@ -140,7 +145,9 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
-        @macro_method_names = pins_by_class(Pin::Method).select { |pin| pin.macros.any? }.map(&:name).to_set
+        macro_pins = pins_by_class(Pin::Method).select { |pin|  pin.macros.any? }
+        @macro_method_names = macro_pins.map(&:name).to_set
+        @macro_method_name_pins = macro_pins.to_set.classify(&:name)
         map_overrides
         pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }
         self

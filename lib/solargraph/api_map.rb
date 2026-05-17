@@ -124,10 +124,11 @@ module Solargraph
         @unresolved_requires = @doc_map.unresolved_requires
       end
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      Solargraph.logger.info 'Processing macros started'
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      Solargraph.logger.info 'Cataloging ApiMap started'
+      updated = store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      @cache.clear if updated
       @missing_docs = [] # @todo Implement missing docs
-      Solargraph.logger.warn "Processing macros finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
+      Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
     end
 
@@ -135,8 +136,19 @@ module Solargraph
       macro_pins = []
       source_maps.each do |source_map|
         source_map.macro_method_candidates(store.macro_method_names).each do |node|
-          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
+          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+              super_and_sub?(pin.namespace, closure.name)
+            end
+            if match
+              match.macros.each do |macro|
+                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+              end
+              next
+            end
+          end
           pin = chain.define(self, closure, []).first
           next unless pin&.macros&.any?
           pin.macros.each do |macro|
