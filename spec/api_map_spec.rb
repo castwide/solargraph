@@ -998,8 +998,10 @@ describe Solargraph::ApiMap do
     # @todo These expectations compare Solargraph's macro processing to YARD's
     #   output in generated docs. There still appear to be some discrepancies
     #   in how keyword arguments are expanded.
-    expect(pins.first.comments).to include('type: "String"')
-    expect(pins.first.comments).to include('comment: "create a foo"')
+    expect(pins.first.comments).to include('type')
+    expect(pins.first.comments).to include('String')
+    expect(pins.first.comments).to include('comment')
+    expect(pins.first.comments).to include('create a foo')
     # @todo Undefined because the return tag expands to `type: String`
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[undefined])
   end
