@@ -14,7 +14,8 @@ module Solargraph
         # @return [Array<Solargraph::Pin::Method>]
         def process_directive source, pins, source_position, comment_position, directive
           namespace = closure_at(pins, source_position) || pins.first
-          namespace = closure_at(pins, comment_position) if namespace.location.range.start.line < comment_position.line
+
+          namespace = closure_at(pins, comment_position) if namespace.location&.range&.start&.line&.< comment_position.line # rubocop:disable Style/SafeNavigationChainLength
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
@@ -42,7 +43,7 @@ module Solargraph
         # @param [Position] position
         # @return [Pin::Closure]
         def closure_at pins, position
-          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
         end
       end
     end

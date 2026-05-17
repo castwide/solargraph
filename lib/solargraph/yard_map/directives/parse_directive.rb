@@ -25,14 +25,17 @@ module Solargraph
                    comment_position.line
                  end
           Parser.process_node(src.node, region, pins_copy)
-          new_pins = pins_copy[old_pins_index..]
+          new_pins = pins_copy[old_pins_index..] || []
           new_pins.each do |p|
             # @todo Smelly instance variable access
+            next if p.location.nil?
+            # @sg-ignore Unresolved call to range on Solargraph::Location, nil - does not account for next clause above.
             p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
+            # @sg-ignore Unresolved call to range on Solargraph::Location, nil
             p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
           end
 
-          new_pins || []
+          new_pins
         rescue Parser::SyntaxError
           # @todo Handle parser errors in !parse directives
           []
@@ -42,7 +45,7 @@ module Solargraph
         # @param [Position] position
         # @return [Pin::Closure]
         def closure_at pins, position
-          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
         end
       end
     end

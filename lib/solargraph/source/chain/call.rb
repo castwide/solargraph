@@ -198,13 +198,7 @@ module Solargraph
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
-            # @todo 'Wrong argument type for
-            #   Solargraph::Source::Chain::Call#inner_process_macro:
-            #   macro expected YARD::Tags::MacroDirective, received
-            #   generic<Elem>' is because we lose 'rooted' information
-            #   in the 'Chain::Array' class internally, leaving
-            #   ::Array#each shadowed when it shouldn't be.
-            result = inner_process_macro(pin, macro, api_map, context, locals)
+            result = inner_process_macro(pin, macro.directive, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
           Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
@@ -219,7 +213,7 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            result = inner_process_macro(pin, macro, api_map, context, locals)
+            result = inner_process_macro(pin, macro.directive, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
           Pin::ProxyType.anonymous ComplexType::UNDEFINED, source: :chain
