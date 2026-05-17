@@ -22,7 +22,7 @@ module Solargraph
         # @param [Position] position
         # @return [Pin::Closure]
         def closure_at pins, position
-          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
+          pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
         end
       end
     end
