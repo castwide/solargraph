@@ -125,10 +125,9 @@ module Solargraph
       end
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       Solargraph.logger.info 'Processing macros started'
-      store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
-      @cache.clear
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @missing_docs = [] # @todo Implement missing docs
-      Solargraph.logger.info "Processing macros finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
+      Solargraph.logger.warn "Processing macros finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
     end
 
