@@ -113,13 +113,13 @@ module Solargraph
   # @yieldreturn [generic<T>]
   # @sg-ignore dynamic call, but both functions behave the same
   # @return [generic<T>]
-  def self.with_clean_env &block
+  def self.with_clean_env(&)
     meth = if Bundler.respond_to?(:with_original_env)
              :with_original_env
            else
              :with_clean_env
            end
-    Bundler.send meth, &block
+    Bundler.send(meth, &)
   end
 end
 

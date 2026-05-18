@@ -289,16 +289,12 @@ module Solargraph
 
           # Skip whitespace before '(' to find method name
           idx = paren_pos - 1
-          while idx >= 0 && code[idx] =~ /\s/
-            idx -= 1
-          end
+          idx -= 1 while idx >= 0 && code[idx] =~ /\s/
           return nil if idx < 0
 
           # Read method name (including ? and !)
           name_end = idx + 1
-          while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_?!]/
-            idx -= 1
-          end
+          idx -= 1 while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_?!]/
           name_start = idx + 1
           return nil if name_start >= name_end
           method_name = code[name_start...name_end]
@@ -306,19 +302,12 @@ module Solargraph
 
           # Check for receiver pattern: receiver.method( or receiver::method(
           idx = name_start - 1
-          while idx >= 0 && code[idx] =~ /\s/
-            idx -= 1
-          end
+          idx -= 1 while idx >= 0 && code[idx] =~ /\s/
           if idx >= 0 && code[idx] == '.'
-            dot_pos = idx
             idx -= 1
-            while idx >= 0 && code[idx] =~ /\s/
-              idx -= 1
-            end
+            idx -= 1 while idx >= 0 && code[idx] =~ /\s/
             recv_end = idx + 1
-            while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_@$]/
-              idx -= 1
-            end
+            idx -= 1 while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_@$]/
             recv_start = idx + 1
             if recv_start < recv_end
               recv_name = code[recv_start...recv_end]
@@ -327,12 +316,10 @@ module Solargraph
                 return ::Parser::AST::Node.new(:send, [receiver_node, method_name.to_sym])
               end
             end
-          elsif idx >= 0 && idx > 0 && code[idx-1] == ':' && code[idx] == ':'
+          elsif idx >= 0 && idx > 0 && code[idx - 1] == ':' && code[idx] == ':'
             const_end = idx - 1
             const_start = const_end
-            while const_start > 0 && code[const_start-1] =~ /[a-zA-Z0-9_]/
-              const_start -= 1
-            end
+            const_start -= 1 while const_start > 0 && code[const_start - 1] =~ /[a-zA-Z0-9_]/
             const_name = code[const_start...const_end]
             unless const_name.empty? || method_name.empty?
               const_node = ::Parser::AST::Node.new(:const, [nil, const_name.to_sym])

@@ -166,7 +166,7 @@ module Solargraph
     # @param name [Symbol]
     # @param include_private [Boolean]
     def respond_to_missing? name, include_private = false
-      TypeMethods.public_instance_methods.include?(name) || super
+      TypeMethods.public_method_defined?(name) || super
     end
 
     def to_s
