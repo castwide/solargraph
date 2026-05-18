@@ -162,15 +162,6 @@ module Solargraph
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
-            if !p.macros.empty?
-              result = process_macro(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
-              next result unless result.return_type.undefined?
-            elsif !p.directives.empty?
-              result = process_directive(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
-              next result unless result.return_type.undefined?
-            end
             p
           end
           logger.debug do
