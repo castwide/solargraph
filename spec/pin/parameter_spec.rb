@@ -202,6 +202,22 @@ describe Solargraph::Pin::Parameter do
     expect(pin1.combine_with(pin2).comments).to eq('a comment')
   end
 
+  it 'does not combine with local variables in different closures' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @return [Array<String>]
+        def strings; end
+      end
+      example = Example.new
+      str = example.strings.find { |str| str == 'foo' }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin1, pin2 = api_map.source_map('test.rb').locals.select { |pin| pin.name == 'str' }
+    combo = pin2.combine_with(pin1)
+    expect(combo).to be(pin2)
+  end
+
   it 'infers undefined types by default' do
     source = Solargraph::Source.load_string(%(
       func do |foo|

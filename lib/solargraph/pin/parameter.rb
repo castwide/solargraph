@@ -31,7 +31,9 @@ module Solargraph
       end
 
       def combine_with other, attrs = {}
-        # Parameters can be combined with local variables
+        # Parameters can only be combined with local variables in the same closure
+        return self unless other.closure == closure
+
         new_attrs = if other.is_a?(Parameter)
                       {
                         decl: assert_same(other, :decl),
