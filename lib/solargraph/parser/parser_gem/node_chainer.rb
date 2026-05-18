@@ -153,6 +153,7 @@ module Solargraph
           else
             lit = infer_literal_node_type(n)
             result.push(lit ? Chain::Literal.new(lit, n) : Chain::Link.new)
+            # result.push Chain::Link.new
           end
           result
         end

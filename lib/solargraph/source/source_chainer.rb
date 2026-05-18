@@ -32,10 +32,10 @@ module Solargraph
       # @return [Source::Chain]
       def chain
         # Special handling for files that end with an integer and a period
-        if phrase =~ /^[0-9]+\.$/
-          return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])),
-                            Chain::UNDEFINED_CALL])
-        end
+        # if phrase =~ /^[0-9]+\.$/
+        #   return Chain.new([Chain::Literal.new('Integer', Integer(phrase[0..-2])),
+        #                     Chain::UNDEFINED_CALL])
+        # end
         if phrase.start_with?(':') && !phrase.start_with?('::')
           return Chain.new([Chain::Literal.new('Symbol',
                                                # @sg-ignore Need to add nil check here

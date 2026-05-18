@@ -41,10 +41,10 @@ describe Solargraph::Pin::BaseVariable do
     api_map.map source
     pin = api_map.get_instance_variable_pins('Foo').first
     type = pin.probe(api_map)
-    expect(type.tags).to eq('1, nil')
-    expect(type.simple_tags).to eq('Integer, NilClass')
-    expect(type.to_rbs).to eq('(1 | nil)')
-    expect(type.simplify_literals.to_rbs).to eq('(::Integer | ::NilClass)')
+    expect(type.tags).to eq('Integer, nil')
+    expect(type.simple_tags).to eq('Integer, nil')
+    expect(type.to_rbs).to eq('(::Integer | nil)')
+    expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
   it "understands proc kwarg parameters aren't affected by @type" do

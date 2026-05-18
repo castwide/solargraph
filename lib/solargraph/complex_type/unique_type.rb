@@ -147,6 +147,7 @@ module Solargraph
       end
 
       def literal?
+        return false
         non_literal_name != name
       end
 
@@ -228,11 +229,11 @@ module Solargraph
         #   covariant
         # contravariant?: Proc - can be changed, so we can pass
         #   in less specific super types
-        if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
-          :covariant
-        else
+        # if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
+        #   :covariant
+        # else
           default
-        end
+        # end
       end
 
       # Whether this is an RBS interface like _ToAry or Hash::_Key.
@@ -374,6 +375,7 @@ module Solargraph
 
       # @return [UniqueType]
       def downcast_to_literal_if_possible
+        return self
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
       end
 

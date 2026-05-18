@@ -188,7 +188,7 @@ module Solargraph
         names.each do |name|
           if name == 'core'
             # @sg-ignore cache_core and core? are dynamically defined
-            PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
+            PinCache.cache_core(out: $stdout) #if !PinCache.core? || options[:rebuild]
             next
           end
 

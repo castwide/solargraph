@@ -59,6 +59,7 @@ module Solargraph
       end
 
       def tuple?
+        return false
         @tuple ||= (name == 'Tuple') || (name == 'Array' && subtypes.length >= 1 && fixed_parameters?)
       end
 
