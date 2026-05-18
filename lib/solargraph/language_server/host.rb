@@ -648,15 +648,14 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param block [Proc] The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
-      def show_message_request text, type, actions, &block
-        send_request 'window/showMessageRequest', {
-          type: type,
-          message: text,
-          actions: actions
-        }, &block
+      def show_message_request(text, type, actions, &)
+        send_request('window/showMessageRequest', {
+                       type: type,
+                       message: text,
+                       actions: actions
+                     }, &)
       end
 
       # Get a list of IDs for server requests that are waiting for responses

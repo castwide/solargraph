@@ -32,7 +32,7 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
           # @sg-ignore Need to add nil check here
-          if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name.to_sym)
+          if closure.path == 'Kernel' && Kernel.private_method_defined?(name.to_sym, false)
             final_visibility ||= :private
           end
           final_visibility ||= visibility

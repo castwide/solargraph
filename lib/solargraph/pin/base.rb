@@ -293,7 +293,7 @@ module Solargraph
       # @param attr [::Symbol]
       # @return [void]
       # @todo strong typechecking should complain when there are no block-related tags
-      def assert_same_array_content other, attr, &block
+      def assert_same_array_content(other, attr, &)
         arr1 = send(attr)
         raise "Expected #{attr} on #{self} to be an Enumerable, got #{arr1.class}" unless arr1.is_a?(::Enumerable)
         # @type arr1 [::Enumerable]
@@ -302,9 +302,9 @@ module Solargraph
         # @type arr2 [::Enumerable]
 
         # @type [undefined]
-        values1 = arr1.map(&block)
+        values1 = arr1.map(&)
         # @type [undefined]
-        values2 = arr2.map(&block)
+        values2 = arr2.map(&)
         # @sg-ignore
         return arr1 if values1 == values2
         Solargraph.assert_or_log(:"combine_with_#{attr}",
