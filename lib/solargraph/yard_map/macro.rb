@@ -12,7 +12,8 @@ module Solargraph
         def from_directive directive, method_pin
           macro_name = directive.tag.name.empty? ? method_pin.path.downcase : directive.tag.name
           method_object = method_object_from_pin(method_pin)
-          macro_object = YARD::CodeObjects::MacroObject.create(macro_name.to_s, directive.tag.text.to_s, method_object)
+          code = directive.tag.text.to_s.gsub(/\n(?!@!|\s)/, "\n  ")
+          macro_object = YARD::CodeObjects::MacroObject.create(macro_name.to_s, code, method_object)
           new(macro_object, method_pin, directive)
         end
 
@@ -66,14 +67,14 @@ module Solargraph
         @directive.tag
       end
 
-      # @param dsl_method_send [Pin::Ephemeral::ClassMethodSend]
+      # @param chain [Source::Chain]
+      # @param pin [Pin::Closure]
       # @param source_map [SourceMap]
       # @return [Array<Pin::Base>]
-      def generate_pins_from dsl_method_send, source_map
-        call_location = dsl_method_send.location
-        # @param directive [YARD::Tags::MethodDirective, YARD::Tags::AttributeDirective, YARD::Tags::ParseDirective]
+      def generate_pins_from chain, pin, source_map
+        call_location = Solargraph::Location.from_node(chain.node)
         # @param generated_pins [Array<Pin::Base>]
-        generate_yardoc_from(dsl_method_send).reduce([]) do |generated_pins, directive|
+        generate_yardoc_from(chain, source_map).reduce([]) do |generated_pins, directive|
           directive_processor = YardMap::Directives.for(directive)
           next generated_pins unless directive_processor && call_location
           generated_pins + directive_processor.process_directive(
@@ -84,17 +85,25 @@ module Solargraph
 
       private
 
-      # @param class_method_send [Pin::Ephemeral::ClassMethodSend]
-      # @return [Array<YARD::Tags::MethodDirective>, Array<YARD::Tags::AttributeDirective>, Array<YARD::Tags::ParseDirective>]
-      def generate_yardoc_from class_method_send
-        expanded_comment = macro_object.expand([class_method_send.name, *class_method_send.argument_values],
-                                               class_method_send.code)
+      # @param chain [Solargraph::Source::Chain]
+      # @param [SourceMap] source_map
+      # @return [Array<YARD::Tags::Directive>]
+      def generate_yardoc_from chain, source_map
+        name = chain.links.last.word
+        # @sg-ignore chain.links.last is assumed to be a Chain::Call
+        values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
+        # @sg-ignore chain.node is assumed to exist
+        code = source_map.source.code_for(chain.node)
+        expanded_comment = macro_object.expand([name, *values], code)
+                                       .gsub(/\n(?!@!|\s)/, "\n  ")
         directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
         end
         directives.each do |directive|
-          if class_method_send.comments.length.positive? && directive.tag.tag_name != 'parse'
-            directive.tag.text += "\n#{class_method_send.comments}"
+          # @sg-ignore chain.node is assumed to exist
+          comments = source_map.source.comments_for(chain.node)
+          if comments&.length&.positive? && directive.tag.tag_name != 'parse'
+            directive.tag.text += "\n#{comments}"
           end
         end
         directives

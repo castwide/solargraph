@@ -125,30 +125,35 @@ module Solargraph
         @unresolved_requires = @doc_map.unresolved_requires
       end
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      Solargraph.logger.info 'Processing macros started'
-      macro_pins = process_macros(iced_pins + live_pins + @doc_map.pins)
-      iced_pins = iced_pins.reject { |p| p.is_a?(Pin::Ephemeral::ClassMethodSend) }
-      live_pins = live_pins.reject { |p| p.is_a?(Pin::Ephemeral::ClassMethodSend) }
-      Solargraph.logger.info "Processing macros finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, macro_pins, live_pins)
+      Solargraph.logger.info 'Cataloging ApiMap started'
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @missing_docs = [] # @todo Implement missing docs
+      Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
     end
 
-    # @param pins [Array<Pin::Base>]
-    # @return [Array<Pin::Method>]
-    def process_macros pins
+    # @return [Array<Pin::Base>]
+    def process_macros
       macro_pins = []
-      pins_with_macros = pins.select { |p| p.is_a?(Pin::Base) && p.macros.any? }
-      dsl_method_sends = pins.select { |p| p.instance_of?(Solargraph::Pin::Ephemeral::ClassMethodSend) }
-      pins_with_macros.each do |pin_with_macro|
-        dsl_method_sends.select { |dsl_method_send| dsl_method_send.matches?(pin_with_macro) }.each do |dsl_method_send|
-          ref = dsl_method_send.location
-          next unless ref
-          source_map = source_map_hash[ref.filename.to_s]
-          next unless source_map
-          pin_with_macro.macros.each do |macro|
-            macro_pins += macro.generate_pins_from(dsl_method_send, source_map)
+      source_maps.each do |source_map|
+        source_map.macro_method_candidates(store.macro_method_names).each do |node|
+          closure = source_map.locate_closure_pin(node.location.line, node.location.column)
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
+          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+              super_and_sub?(pin.namespace, closure.name)
+            end
+            if match
+              match.macros.each do |macro|
+                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+              end
+              next
+            end
+          end
+          pin = chain.define(self, closure, []).first
+          next unless pin&.macros&.any?
+          pin.macros.each do |macro|
+            macro_pins.concat macro.generate_pins_from(chain, pin, source_map)
           end
         end
       end
