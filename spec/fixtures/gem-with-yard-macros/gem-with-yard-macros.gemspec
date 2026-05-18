@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name = "gem-with-yard-macros"
   spec.version = Gem::With::Yard::Macros::VERSION
   spec.authors = ["Lekë Mula"]
-  spec.email = ["l.mula@finlink.de"]
+  spec.email = ["leke.mula@gmail.com"]
 
   spec.summary = "Test fixture for Solargraph's YARD macro support."
   spec.description = "Provides a class with a `@!macro`-decorated DSL method, used by Solargraph specs to verify gem-defined macro loading."
