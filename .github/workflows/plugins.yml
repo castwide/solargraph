@@ -23,7 +23,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4 # keep same as typecheck.yml
+        ruby-version: 4.0 # keep same as typecheck.yml
         bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
