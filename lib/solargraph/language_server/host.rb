@@ -648,7 +648,6 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param block [Proc] The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
       def show_message_request(text, type, actions, &)

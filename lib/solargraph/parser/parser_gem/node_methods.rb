@@ -4,6 +4,7 @@ require 'parser'
 require 'ast'
 
 # https://github.com/whitequark/parser
+# rubocop:disable Metrics/ModuleLength
 module Solargraph
   module Parser
     module ParserGem
@@ -264,7 +265,7 @@ module Solargraph
 
           # The '(' could be at offset-1 (cursor after '(') or at offset (cursor on '(')
           start_pos = offset - 1
-          if start_pos > 0 && code[start_pos] != '(' && code[offset] == '('
+          if start_pos.positive? && code[start_pos] != '(' && code[offset] == '('
             start_pos = offset
           end
 
@@ -277,7 +278,7 @@ module Solargraph
             when ')'
               depth += 1
             when '('
-              if depth == 0
+              if depth.zero?
                 paren_pos = pos
                 break
               end
@@ -290,7 +291,7 @@ module Solargraph
           # Skip whitespace before '(' to find method name
           idx = paren_pos - 1
           idx -= 1 while idx >= 0 && code[idx] =~ /\s/
-          return nil if idx < 0
+          return nil if idx.negative?
 
           # Read method name (including ? and !)
           name_end = idx + 1
@@ -316,10 +317,10 @@ module Solargraph
                 return ::Parser::AST::Node.new(:send, [receiver_node, method_name.to_sym])
               end
             end
-          elsif idx >= 0 && idx > 0 && code[idx - 1] == ':' && code[idx] == ':'
+          elsif idx >= 0 && idx.positive? && code[idx - 1] == ':' && code[idx] == ':'
             const_end = idx - 1
             const_start = const_end
-            const_start -= 1 while const_start > 0 && code[const_start - 1] =~ /[a-zA-Z0-9_]/
+            const_start -= 1 while const_start.positive? && code[const_start - 1] =~ /[a-zA-Z0-9_]/
             const_name = code[const_start...const_end]
             unless const_name.empty? || method_name.empty?
               const_node = ::Parser::AST::Node.new(:const, [nil, const_name.to_sym])
@@ -590,3 +591,4 @@ module Solargraph
     end
   end
 end
+# rubocop:enable Metrics/ModuleLength
