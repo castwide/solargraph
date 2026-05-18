@@ -1,3 +1,8 @@
+## 0.59.1 - May 18, 2026
+- Fix signatureHelp bug (#1185)
+- Linting fixes for Ruby 3.1 (#1193)
+- Parameters shadow local variables with same name (#1192)
+
 ## 0.59.0 - May 13, 2026
 - Ensure pathname is required for rbs in shell caching processes (#1183)
 - Pre-release branch 2026-01-12 (#1152)
