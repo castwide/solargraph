@@ -11,6 +11,7 @@ module Solargraph
       # @param spec [Gem::Specification, nil]
       def initialize code_objects, spec = nil
         @code_objects = code_objects
+        @macro_code_objects = code_objects.select { |co| co.is_a?(YARD::CodeObjects::MacroObject) }
         @spec = spec
         # @type [Array<Solargraph::Pin::Base>]
         @pins = []
@@ -24,7 +25,7 @@ module Solargraph
         end
         # Some yardocs contain documentation for dependencies that can be
         # ignored here. The YardMap will load dependencies separately.
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore does not consider `pin.location.nil? || ` condition
         @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end
@@ -65,6 +66,7 @@ module Solargraph
           end
         when YARD::CodeObjects::MethodObject
           closure = @namespace_pins[code_object.namespace.to_s]
+          macros_for_method_object(code_object)
           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
@@ -78,6 +80,22 @@ module Solargraph
           result.push ToConstant.make(code_object, closure, @spec)
         end
         result
+      end
+
+      # @return [Array<YARD::CodeObjects::MacroObject>]
+      def attached_macros
+        @attached_macros ||= @macro_code_objects.select(&:attached?)
+      end
+
+      # @return [Hash{YARD::CodeObjects::MethodObject => Array<YARD::CodeObjects::MacroObject>}]
+      def attached_macros_by_method_object
+        @attached_macros_by_method_object ||= attached_macros.group_by(&:method_object)
+      end
+
+      # @param method_object [YARD::CodeObjects::MethodObject]
+      # @return [Array<YARD::CodeObjects::MacroObject>]
+      def macros_for_method_object method_object
+        attached_macros_by_method_object[method_object]
       end
     end
   end

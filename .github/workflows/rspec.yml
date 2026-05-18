@@ -21,7 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['3.1', '3.2', '3.3', '3.4', '4.0', 'head']
+        # @todo Restore 'head' once ruby/setup-ruby publishes it for ubuntu-24.04.
+        #   It currently 404s ("Unavailable version head for ruby"), failing CI:
+        #   https://github.com/castwide/solargraph/actions/runs/25863741955/job/76000137015?pr=1187
+        ruby-version: ['3.1', '3.2', '3.3', '3.4', '4.0']
         rbs-version: ['3.10.0', '4.0.0', '4.0.1', '4.0.2']
         exclude:
           - ruby-version: '3.1'

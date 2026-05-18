@@ -107,6 +107,7 @@ module Solargraph
     # @return [self]
     def catalog bench
       @source_map_hash = bench.source_map_hash
+      # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
       live_pins = bench.live_map&.all_pins || []
       conventions_environ.clear
@@ -123,9 +124,40 @@ module Solargraph
         @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      Solargraph.logger.info 'Cataloging ApiMap started'
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @missing_docs = [] # @todo Implement missing docs
+      Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
+    end
+
+    # @return [Array<Pin::Base>]
+    def process_macros
+      macro_pins = []
+      source_maps.each do |source_map|
+        source_map.macro_method_candidates(store.macro_method_names).each do |node|
+          closure = source_map.locate_closure_pin(node.location.line, node.location.column)
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
+          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+              super_and_sub?(pin.namespace, closure.name)
+            end
+            if match
+              match.macros.each do |macro|
+                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+              end
+              next
+            end
+          end
+          pin = chain.define(self, closure, []).first
+          next unless pin&.macros&.any?
+          pin.macros.each do |macro|
+            macro_pins.concat macro.generate_pins_from(chain, pin, source_map)
+          end
+        end
+      end
+      macro_pins
     end
 
     # @return [DocMap]
@@ -154,7 +186,7 @@ module Solargraph
     end
 
     # @param name [String, nil]
-    # @return [YARD::Tags::MacroDirective, nil]
+    # @return [Solargraph::YardMap::Macro, nil]
     def named_macro name
       # @sg-ignore Need to add nil check here
       store.named_macros[name]
