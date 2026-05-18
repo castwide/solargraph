@@ -182,63 +182,6 @@ module Solargraph
           end
         end
 
-        # @param pin [Pin::Base]
-        # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
-        # @return [Pin::Base]
-        def process_macro pin, api_map, context, locals
-          pin.macros.each do |macro|
-            result = inner_process_macro(pin, macro.directive, api_map, context, locals)
-            return result unless result.return_type.undefined?
-          end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
-        end
-
-        # @param pin [Pin::Method]
-        # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
-        # @return [Pin::ProxyType]
-        def process_directive pin, api_map, context, locals
-          pin.directives.each do |dir|
-            macro = api_map.named_macro(dir.tag.name)
-            next if macro.nil?
-            result = inner_process_macro(pin, macro.directive, api_map, context, locals)
-            return result unless result.return_type.undefined?
-          end
-          Pin::ProxyType.anonymous ComplexType::UNDEFINED, source: :chain
-        end
-
-        # @param pin [Pin::Base]
-        # @param macro [YARD::Tags::MacroDirective] - TODO: Unify this with [YardMap::Macro]
-        # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
-        # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
-        # @return [Pin::ProxyType]
-        def inner_process_macro pin, macro, api_map, context, locals
-          vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
-          txt = macro.tag.text.clone
-          # @sg-ignore Need to add nil check here
-          if txt.empty? && macro.tag.name
-            named = api_map.named_macro(macro.tag.name)
-            txt = named.tag.text.clone if named
-          end
-          i = 1
-          vals.each do |v|
-            # @sg-ignore Need to add nil check here
-            txt.gsub!(/\$#{i}/, v.context.namespace)
-            i += 1
-          end
-          # @sg-ignore Need to add nil check here
-          docstring = Solargraph::Source.parse_docstring(txt).to_docstring
-          tag = docstring.tag(:return)
-          unless tag.nil? || tag.types.nil?
-            return Pin::ProxyType.anonymous(ComplexType.try_parse(*tag.types), source: :chain)
-          end
-          Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)
-        end
-
         # @param docstring [YARD::Docstring]
         # @param context [ComplexType]
         # @return [ComplexType, nil]
