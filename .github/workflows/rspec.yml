@@ -19,7 +19,7 @@ permissions:
 jobs:
   rspec:
     env:
-      SOLARGRAPH_CACHE: ./solargraph-cache
+      SOLARGRAPH_CACHE: ~/solargraph-cache
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -56,7 +56,7 @@ jobs:
       id: cache-documentation
       uses: actions/cache@v5
       with:
-        path: ./solargraph-cache
+        path: ~/solargraph-cache
         key: ${{ runner.os }}-solargraph-cache
     - name: Generate YARD documentation
       if: steps.cache-documentation.outputs.cache-hit != 'true'
