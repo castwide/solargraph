@@ -552,7 +552,9 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [void]
       def method_def_to_sigs decl, pin
+        # rubocop:disable Style/SafeNavigationChainLength
         implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil')
+        # rubocop:enable Style/SafeNavigationChainLength
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
           # @sg-ignore Wrong argument type for Solargraph::RbsMap::Conversions#location_decl_to_pin_location:
@@ -847,7 +849,7 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def method_type_to_type type, implicit_nil
         tag = other_type_to_type type.type.return_type
-        return ComplexType.parse(tag.to_s + ', nil') if tag && implicit_nil
+        return ComplexType.parse("#{tag.to_s}, nil") if tag && implicit_nil
         tag
       end
 
