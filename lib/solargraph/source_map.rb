@@ -109,7 +109,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Pin::Base]
+    # @return [Pin::Base, nil]
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -123,14 +123,14 @@ module Solargraph
 
     # @param line [Integer]
     # @param character [Integer]
-    # @return [Pin::Method,Pin::Namespace]
+    # @return [Pin::Method, Pin::Namespace, nil]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
 
     # @param line [Integer]
     # @param character [Integer]
-    # @return [Pin::Closure]
+    # @return [Pin::Closure, nil]
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end
@@ -149,6 +149,7 @@ module Solargraph
     def locals_at location
       return [] if location.filename != filename
       closure = locate_closure_pin(location.range.start.line, location.range.start.character)
+      # @sg-ignore assume closure exists
       locals.select { |pin| pin.visible_at?(closure, location) }
     end
 

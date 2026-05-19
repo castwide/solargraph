@@ -226,9 +226,8 @@ module Solargraph
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
-          # @type [ComplexType]
           type = data[:qualified]
-          if type.undefined?
+          if type&.undefined?
             result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}",
                                     pin: pin)
           end
@@ -340,7 +339,7 @@ module Solargraph
           found = nil
           # @type [Array<Solargraph::Pin::Base>]
           all_found = []
-          until base.links.first.undefined?
+          until base.links.first&.undefined?
             # @sg-ignore Need to add nil check here
             all_found = base.define(api_map, closure_pin, locals)
             found = all_found.first
@@ -353,9 +352,9 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
+              result.push Problem.new(location, "Unresolved call to #{missing.links.last&.word} on #{closest}")
             else
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              result.push Problem.new(location, "Unresolved call to #{missing.links.last&.word}")
             end
             @marked_ranges.push rng
           end
@@ -515,7 +514,8 @@ module Solargraph
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
-      # @type [Solargraph::Source::Chain]
+      return [] unless par # @todo Safeguard for typechecking errors
+      # @type [Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
         result.concat kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
@@ -537,7 +537,7 @@ module Solargraph
             end
           end
         end
-      elsif par.decl == :kwarg
+      elsif par&.decl == :kwarg
         result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
       end
       result
@@ -633,7 +633,9 @@ module Solargraph
         next unless param_names.include?(param_name)
 
         param_details[param_name] ||= {}
+        # @sg-ignore assuming param_details values
         param_details[param_name][:tagged] ||= details[:tagged]
+        # @sg-ignore assuming param_details values
         param_details[param_name][:qualified] ||= details[:qualified]
       end
     end
@@ -698,7 +700,7 @@ module Solargraph
         found = nil
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
-        until base.links.first.undefined?
+        until base.links.first&.undefined?
           all_found = base.define(api_map, closure_pin, locals)
           found = all_found.first
           break if found
@@ -721,7 +723,7 @@ module Solargraph
         return [] if r.empty?
         r
       end
-      results.first
+      results.first || []
     end
 
     # @param pin [Pin::Method]
@@ -743,7 +745,7 @@ module Solargraph
         if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = parameters.count(&:keyword?)
         else
-          kwargs = convert_hash(unchecked.last.node)
+          kwargs = convert_hash(unchecked.last&.node)
           if parameters.any? { |param| %i[kwarg kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
               add_params += 1
@@ -755,7 +757,7 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
-                  last_arg_last_link = arguments.last.links.last
+                  last_arg_last_link = arguments.last&.links&.last
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
@@ -780,7 +782,7 @@ module Solargraph
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
+      elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last&.splat? && !arguments.last&.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
         # See https://github.com/castwide/solargraph/issues/418
         unless arguments.empty? && pin.path == 'Kernel#raise'
