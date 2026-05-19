@@ -11,17 +11,6 @@ module Solargraph
       include Logging
     end
 
-    # @param pins [Array<Pin::Base>]
-    # @return [Array<Pin::Base>]
-    def self.combine_method_pins_by_path pins
-      method_pins, alias_pins = pins.partition { |pin| pin.instance_of?(Pin::Method) }
-      by_path = method_pins.group_by(&:path)
-      by_path.transform_values! do |pins|
-        GemPins.combine_method_pins(*pins)
-      end
-      by_path.values + alias_pins
-    end
-
     # @param pins [Array<Pin::Method>]
     # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
