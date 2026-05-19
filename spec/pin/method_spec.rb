@@ -368,7 +368,7 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
-    expect(type.to_s).to eq('String')
+    expect(type.to_s).to eq('String, nil')
   end
 
   it 'infers from multiple-assignment chains' do

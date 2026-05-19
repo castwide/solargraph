@@ -552,16 +552,19 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [void]
       def method_def_to_sigs decl, pin
+        # rubocop:disable Style/SafeNavigationChainLength
+        implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil') || false
+        # rubocop:enable Style/SafeNavigationChainLength
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
           # @sg-ignore Wrong argument type for Solargraph::RbsMap::Conversions#location_decl_to_pin_location:
           #   location expected RBS::Location, nil, received RBS::Location<:type, :type_params>, RBS::AST::Members::Attribute::loc, nil
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = type_parameter_names(overload.method_type)
-          signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin)
+          signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)
           rbs_block = overload.method_type.block
           block = if rbs_block
-                    block_parameters, block_return_type = parts_of_function(rbs_block, pin)
+                    block_parameters, block_return_type = parts_of_function(rbs_block, pin, implicit_nil)
                     Pin::Signature.new(generics: generics, parameters: block_parameters,
                                        return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
@@ -588,14 +591,15 @@ module Solargraph
 
       # @param type [RBS::MethodType, RBS::Types::Block]
       # @param pin [Pin::Method]
+      # @param implicit_nil [Boolean]
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
-      def parts_of_function type, pin
+      def parts_of_function type, pin, implicit_nil
         type_location = pin.type_location
         if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
           return [
             [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs,
                                             type_location: type_location)],
-            method_type_to_type(type)
+            method_type_to_type(type, implicit_nil)
           ]
         end
 
@@ -659,7 +663,7 @@ module Solargraph
                                                          source: :rbs, type_location: type_location)
         end
 
-        return_type = method_type_to_type(type)
+        return_type = method_type_to_type(type, implicit_nil)
         [parameters, return_type]
       end
 
@@ -842,9 +846,12 @@ module Solargraph
       end
 
       # @param type [RBS::MethodType, RBS::Types::Block]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType, ComplexType::UniqueType]
-      def method_type_to_type type
-        other_type_to_type type.type.return_type
+      def method_type_to_type type, implicit_nil
+        tag = other_type_to_type type.type.return_type
+        return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
+        tag
       end
 
       # @param type [RBS::Types::Bases::Base,Object] RBS type object.
