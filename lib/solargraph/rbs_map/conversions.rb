@@ -553,7 +553,7 @@ module Solargraph
       # @return [void]
       def method_def_to_sigs decl, pin
         # rubocop:disable Style/SafeNavigationChainLength
-        implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil')
+        implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil') || false
         # rubocop:enable Style/SafeNavigationChainLength
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
