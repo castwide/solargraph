@@ -859,6 +859,7 @@ module Solargraph
         'untyped' => '',
         'NilClass' => 'nil'
       }
+      private_constant :RBS_TO_YARD_TYPE
 
       # Extract a ComplexType from a MethodType's return type.
       #
