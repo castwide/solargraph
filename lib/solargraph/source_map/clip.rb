@@ -40,7 +40,7 @@ module Solargraph
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
-        if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
+        if cursor.chain.literal? && cursor.chain.links.last&.word == '<Symbol>'
           return package_completions(api_map.get_symbols)
         end
         return Completion.new([], cursor.range) if cursor.chain.literal?
@@ -118,12 +118,12 @@ module Solargraph
 
       # @return [Solargraph::Pin::Closure]
       def closure
-        @closure ||= source_map.locate_closure_pin(cursor.node_position.line, cursor.node_position.character)
+        @closure ||= source_map.locate_closure_pin(cursor.node_position.line, cursor.node_position.character) || Pin::ROOT_PIN
       end
 
       # The context at the current position.
       #
-      # @return [Pin::Base]
+      # @return [Pin::Base, nil]
       def context_pin
         @context_pin ||= source_map.locate_named_path_pin(cursor.node_position.line, cursor.node_position.character)
       end
@@ -141,7 +141,7 @@ module Solargraph
             next unless param.keyword?
             result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
-          next unless !pin.parameters.empty? && pin.parameters.last.kwrestarg?
+          next unless !pin.parameters.empty? && pin.parameters.last&.kwrestarg?
           pin.docstring.tags(:param).each do |tag|
             next if done.include?(tag.name)
             done.push tag.name
@@ -193,9 +193,12 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
+          # @sg-ignore assume no nils in method calls
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
+                   # @sg-ignore assume context_pin exists
                    cursor.chain.base.infer(api_map, context_pin, locals)
+                 # @sg-ignore assume full exists
                  elsif full.include?('::') && cursor.chain.links.length == 1
                    # @sg-ignore Need to add nil check here
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
@@ -205,13 +208,16 @@ module Solargraph
                    ComplexType::UNDEFINED
                  end
           if type.undefined?
+            # @sg-ignore assume full exists
             if full.include?('::')
               result.concat api_map.get_constants(full, *gates)
             else
-              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) # .select { |pin| pin.name.start_with?(full) }
+              # @sg-ignore assume context_pin exists
+              result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
             end
           else
             result.concat api_map.get_constants(type.namespace,
+                                                # @sg-ignore assume context_pin exists
                                                 cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
           end
         else
@@ -219,6 +225,7 @@ module Solargraph
           result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
+              # @sg-ignore assume context_pin exists
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))
             elsif cursor.word.start_with?('@')
               return package_completions(api_map.get_instance_variable_pins(closure.full_context.namespace,
@@ -228,6 +235,7 @@ module Solargraph
             end
             result.concat locals
             result.concat file_global_methods unless closure.binder.namespace.empty?
+            # @sg-ignore assume context_pin exists
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(closure.binder.namespace, scope: closure.binder.scope,
                                                                         visibility: %i[public private protected])

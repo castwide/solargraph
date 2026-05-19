@@ -74,6 +74,7 @@ module Solargraph
     # @param line [Integer]
     # @param column [Integer]
     # @return [AST::Node]
+    # @sg-ignore assume return value is not nil
     def node_at line, column
       tree_at(line, column).first
     end
@@ -277,6 +278,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
+      # @sg-ignore while condition ensures code_lines[cursor] exists
       cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor

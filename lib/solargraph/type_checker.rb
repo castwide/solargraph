@@ -294,10 +294,12 @@ module Solargraph
         chain = Solargraph::Parser.chain(const, filename)
         # @sg-ignore Need to add nil check here
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
+        # @sg-ignore assume closure_pin exists
         closure_pin.rebind(api_map)
         # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
+        # @sg-ignore assume closure_pin exists
         pins = chain.define(api_map, closure_pin, locals)
         if pins.empty?
           result.push Problem.new(location, "Unresolved constant #{Solargraph::Parser::NodeMethods.unpack_name(const)}")
@@ -321,8 +323,7 @@ module Solargraph
           # blocks in the AST include the method call as well, so the
           # node returned by #call_nodes_from needs to be backed out
           # one closure
-          # @todo Need to add nil check here
-          # @todo Should warn on nil deference here
+          # @sg-ignore assume closure_pin exists
           closure_pin = closure_pin.closure
         end
         # @sg-ignore Need to add nil check here
@@ -693,6 +694,7 @@ module Solargraph
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
+      # @sg-ignore assume closure_pin exists
       type = chain.infer(api_map, closure_pin, locals)
       if type.undefined? && !rules.ignore_all_undefined?
         base = chain
@@ -701,6 +703,7 @@ module Solargraph
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
         until base.links.first&.undefined?
+          # @sg-ignore assume closure_pin exists
           all_found = base.define(api_map, closure_pin, locals)
           found = all_found.first
           break if found
