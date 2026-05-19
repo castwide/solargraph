@@ -18,6 +18,8 @@ permissions:
 
 jobs:
   rspec:
+    env:
+      SOLARGRAPH_CACHE: ./solargraph-cache
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -45,11 +47,16 @@ jobs:
     #    starting from Ruby 3.6.0
     - name: Work around legacy rbs deprecation on ruby > 3.4
       run: echo "gem 'tsort'" >> .Gemfile
-    - name: Update gems
-      run: |
-        bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: bundle exec rbs collection update
+    - name: Cache documentation
+      id: cache-documentation
+      uses: actions/cache@v5
+      with:
+        path: ./solargraph-cache
+        key: ${{ runner.os }}-solargraph-cache
+    - name: Generate documentation
+      run: bundle exec solargraph gems
     - name: Run tests
       run: bundle exec rake spec
   undercover:
