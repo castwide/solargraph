@@ -846,6 +846,7 @@ module Solargraph
       end
 
       # @param type [RBS::MethodType, RBS::Types::Block]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType, ComplexType::UniqueType]
       def method_type_to_type type, implicit_nil
         tag = other_type_to_type type.type.return_type
