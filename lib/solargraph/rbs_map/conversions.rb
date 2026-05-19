@@ -67,7 +67,6 @@ module Solargraph
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on interface #{decl.inspect}")
           end
-          # STDERR.puts "Skipping interface #{decl.name.relative!}"
           interface_decl_to_pin decl
         when RBS::AST::Declarations::TypeAlias
           # @sg-ignore flow sensitive typing should support case/when
@@ -80,7 +79,7 @@ module Solargraph
             # @sg-ignore Wrong argument type for Solargraph::Pin::Reference::TypeAlias.new: return_type expected Solargraph::ComplexType, received Solargraph::ComplexType::UniqueType, Solargraph::ComplexType
             Solargraph::Pin::Reference::TypeAlias.new(
               # @sg-ignore Unresolved calls to name, type, type_location; return_type type mismatch
-              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: other_type_to_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
+              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: RbsTranslator.to_complex_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
         when RBS::AST::Declarations::Module
@@ -169,7 +168,8 @@ module Solargraph
         rbs_name = type_name.relative!.to_s
         base = RBS_TO_CLASS.fetch(rbs_name, rbs_name)
 
-        params = type_args.map { |a| other_type_to_type(a) }
+        params = type_args.map { |a| RbsTranslator.to_complex_type(a) }
+        # @todo Tuples are in flux
         # tuples have their own class and are handled in other_type_to_type
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?,
@@ -413,7 +413,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
-        tag = RbsTranslator.to_complex_type(decl.type).to_s
+        tag = RbsTranslator.to_complex_type(decl.type)
         pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl)
       end
 
@@ -786,11 +786,11 @@ module Solargraph
       # @param type [RBS::MethodType]
       # @return [ComplexType]
       def extract_method_type_return_type type
-        if type_aliases.key?(type.type.return_type.to_s)
-          RbsTranslator.to_complex_type(type_aliases[type.type.return_type.to_s].type)
-        else
+        # if type_aliases.key?(type.type.return_type.to_s)
+        #   RbsTranslator.to_complex_type(type_aliases[type.type.return_type.to_s].type)
+        # else
           RbsTranslator.to_complex_type(type.type.return_type)
-        end
+        # end
       end
 
       # @param type_name [RBS::TypeName]
