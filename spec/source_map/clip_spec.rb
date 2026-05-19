@@ -1129,7 +1129,7 @@ describe Solargraph::SourceMap::Clip do
     clip = map.clip_at('test.rb', Solargraph::Position.new(4, 15))
     expect(clip.infer.to_s).to eq('Array<String>, nil')
     clip = map.clip_at('test.rb', Solargraph::Position.new(5, 15))
-    expect(clip.infer.to_s).to eq('String')
+    expect(clip.infer.to_s).to eq('String, nil')
   end
 
   it 'infers overloads with splats' do
@@ -1779,7 +1779,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Enumerable<String>')
+    expect(type.to_s).to eq('Enumerable<String>, nil')
     clip = api_map.clip_at('test.rb', [7, 6])
     type = clip.infer
     expect(type.to_s).to eq('String, nil')

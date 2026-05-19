@@ -445,7 +445,7 @@ describe Solargraph::Source::Chain::Call do
     foo_pin = api_map.source_map('test.rb').pins.find { |p| p.name == 'foo' }
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 8))
     type = chain.infer(api_map, foo_pin, api_map.source_map('test.rb').locals)
-    expect(type.rooted_tags).to eq('::Array, ::Hash{::String => undefined}, ::String, ::Integer')
+    expect(type.rooted_tags).to eq('::Array, ::Hash{::String => undefined}, ::String, ::Integer, nil')
   end
 
   it 'preserves undefined and underdefined tyypes in resolution' do
