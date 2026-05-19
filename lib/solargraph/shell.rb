@@ -221,6 +221,14 @@ module Solargraph
       end
     end
 
+    # @todo Gem selection
+    desc 'yardoc', 'Generate yardocs for all gems'
+    option :rebuild, type: :boolean, desc: 'Rebuild existing yardocs', default: false
+    # @return [void]
+    def yardoc
+      Gem::Specification.to_a.each { |spec| do_yard_cache spec, rebuild: options[:rebuild] }
+    end
+
     desc 'reporters', 'Get a list of diagnostics reporters'
     # @return [void]
     def reporters
@@ -549,6 +557,15 @@ module Solargraph
           pins = rbs_map.pins || []
           PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
         end
+      end
+    end
+
+    # @param gemspec [Gem::Specification, nil]
+    # @param rebuild [Boolean]
+    def do_yard_cache gemspec, rebuild: false
+      if rebuild || !PinCache.has_yard?(gemspec)
+        pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+        PinCache.serialize_yard_gem(gemspec, pins)
       end
     end
   end
