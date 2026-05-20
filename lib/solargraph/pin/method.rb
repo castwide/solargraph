@@ -4,7 +4,6 @@ module Solargraph
   module Pin
     # The base class for method and attribute pins.
     #
-    # rubocop:disable Metrics/ClassLength
     class Method < Callable
       include Solargraph::Parser::NodeMethods
 
@@ -190,10 +189,10 @@ module Solargraph
       # @return [::Array<Signature>]
       def signatures
         @signatures ||= if inline_rbs.empty?
-          signatures_from_yard
-        else
-          signatures_from_inline_rbs
-        end
+                          signatures_from_yard
+                        else
+                          signatures_from_inline_rbs
+                        end
       end
 
       # @param return_type [ComplexType]
@@ -444,8 +443,6 @@ module Solargraph
       protected
 
       attr_writer :block, :signature_help, :documentation, :return_type
-
-      attr_writer :return_type
 
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
@@ -752,6 +749,5 @@ module Solargraph
                 .join("\n")
       end
     end
-    # rubocop:enable Metrics/ClassLength
   end
 end
