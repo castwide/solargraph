@@ -1021,7 +1021,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not complain when passing NilClass to nil parameter' do
-      pending "should be feasible"
+      pending 'should be feasible'
       checker = type_checker(%(
         # @param a [nil]
         def foo(a); end
