@@ -96,7 +96,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'infers types from macros' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       class Foo
         # @!macro

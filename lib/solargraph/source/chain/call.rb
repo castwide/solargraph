@@ -161,6 +161,7 @@ module Solargraph
               break if type.defined?
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
+            type = macro_return_type(p, api_map) || type if type.undefined?
             next p.proxy(type) if type.defined?
             p
           end
@@ -180,6 +181,22 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # @param pin [Pin::Method]
+        # @param api_map [ApiMap]
+        # @return [ComplexType, nil]
+        def macro_return_type pin, api_map
+          return nil if pin.macros.empty?
+          call_params = [word, *arguments.map { |arg| simple_convert(arg.node).to_s }]
+          pin.macros.each do |macro|
+            expanded = macro.macro_object.expand(call_params)
+            return_tag = Solargraph::Source.parse_docstring(expanded).to_docstring.tag(:return)
+            next if return_tag.nil? || return_tag.types.nil? || return_tag.types.empty?
+            type = ComplexType.try_parse(*return_tag.types)
+            return type.qualify(api_map, *pin.gates) if type.defined?
+          end
+          nil
         end
 
         # @param docstring [YARD::Docstring]
