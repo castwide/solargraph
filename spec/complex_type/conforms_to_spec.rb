@@ -80,12 +80,13 @@ describe Solargraph::ComplexType do
     expect(match).to be(true)
   end
 
-  # it 'handles singleton types compared against their literals' do
-  #   exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
-  #   inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
-  #   match = inf.conforms_to?(api_map, exp, :method_call)
-  #   expect(match).to be(true)
-  # end
+  it 'handles singleton types compared against their literals' do
+    pending "side of effect of inference changes"
+    exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
+    inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
+    match = inf.conforms_to?(api_map, exp, :method_call)
+    expect(match).to be(true)
+  end
 
   # it 'invalidates inferred superclasses (expected must be super)' do
   # # @todo This test might be invalid. There are use cases where inheritance

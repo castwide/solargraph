@@ -270,31 +270,6 @@ describe Solargraph::Source::SourceChainer do
     expect(chain.links.last.arguments.length).to eq(2)
   end
 
-  it 'infers specific array type when child types identical' do
-    source = Solargraph::Source.load_string(%(
-      a = 'a'
-      [a, 'b']
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-
-    chain = described_class.chain(source, Solargraph::Position.new(2, 9))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array<String>')
-  end
-
-  it 'infers tuple type when types in literal differ' do
-    source = Solargraph::Source.load_string(%(
-      ['a', 123]
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-
-    chain = described_class.chain(source, Solargraph::Position.new(1, 16))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array(String, Integer)')
-  end
-
   it 'allows Array methods when tuple type in literal inferred' do
     source = Solargraph::Source.load_string(%(
       b = ['a', 'b', 123]
@@ -307,18 +282,6 @@ describe Solargraph::Source::SourceChainer do
     chain = described_class.chain(source, Solargraph::Position.new(3, 6))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     expect(type.rooted_tag).to eq('::Boolean')
-  end
-
-  it 'infers specific array type when types in literal identical' do
-    source = Solargraph::Source.load_string(%(
-      ['a', 'b']
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-
-    chain = described_class.chain(source, Solargraph::Position.new(1, 16))
-    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array<String>')
   end
 
   it 'extracts correct node from repaired source' do

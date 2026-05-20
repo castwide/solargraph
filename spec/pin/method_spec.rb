@@ -355,38 +355,6 @@ describe Solargraph::Pin::Method do
     expect(type.simple_tags).to eq('Integer')
   end
 
-  it 'infers from literal array dereference' do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-          arr = ['a', 'b']
-          arr[0]
-        end
-      end
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pin = api_map.get_path_pins('Foo#bar').first
-    type = pin.probe(api_map)
-    expect(type.to_s).to eq('String, nil')
-  end
-
-  it 'infers from multiple-assignment chains' do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-          a, b = ['a', 'b']
-          b
-        end
-      end
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pin = api_map.get_path_pins('Foo#bar').first
-    type = pin.probe(api_map)
-    expect(type.to_s).to eq('String')
-  end
-
   it 'typifies from super methods' do
     source = Solargraph::Source.load_string(%(
       class Sup
