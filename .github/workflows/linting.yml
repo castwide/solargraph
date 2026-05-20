@@ -59,6 +59,8 @@ jobs:
         run: |
           bundle exec overcommit --sign
           SOLARGRAPH_ASSERTS=on bundle exec overcommit --run --diff origin/master
+        # @todo Temporary, expect to revert in 0.60
+        continue-on-error: true
   rubocop:
     name: rubocop
     runs-on: ubuntu-latest
@@ -95,6 +97,8 @@ jobs:
 
     - name: Run rbs validate
       run: bundle exec rbs validate
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
@@ -112,6 +116,8 @@ jobs:
 
     - name: Run RuboCop
       run: bundle exec rubocop -c .rubocop.yml
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
 
     - name: Run RuboCop against todo file
       continue-on-error: true

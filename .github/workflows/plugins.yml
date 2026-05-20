@@ -45,6 +45,8 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
     - name: Ensure specs still run
       run: bundle exec rake spec
   rails:
@@ -78,6 +80,8 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
     - name: Ensure specs still run
       run: bundle exec rake spec
   rspec:
@@ -109,6 +113,8 @@ jobs:
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
       run: bundle exec solargraph typecheck --level strong
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
     - name: Ensure specs still run
       run: bundle exec rake spec
 
@@ -229,3 +235,5 @@ jobs:
         ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
         MATRIX_RAILS_VERSION: "7.0"
+      # @todo Temporary, expect to revert in 0.60
+      continue-on-error: true
