@@ -1116,7 +1116,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'infers Array#[] types from overloads' do
-    pending "Probably not"
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
       arr = []
