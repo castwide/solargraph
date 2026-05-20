@@ -3080,4 +3080,32 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [11, 8])
     expect(clip.define.map(&:path)).to eq(['Base.foo'])
   end
+
+  it 'combines types from tuples in completions' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Array(String, Integer)]
+      def foo; end
+
+      foo[0]._
+
+      foo.each do |bar|
+        bar._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 13])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+    expect(paths).to include('Integer#abs')
+    # @todo Fix
+    # expect(clip.infer.to_s).to eq('String, Integer, nil')
+
+    clip = api_map.clip_at('test.rb', [7, 12])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+    expect(paths).to include('Integer#abs')
+    # @todo Fix
+    # expect(clip.infer.to_s).to eq('String, Integer, nil')
+  end
 end

@@ -417,9 +417,8 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
       if rooted_tag.start_with? 'Array('
-        # Array() are really tuples - use our fill, as the RBS repo
-        # does not give us definitions for it
-        rooted_tag = "Solargraph::Fills::Tuple(#{rooted_tag[6..-2]})"
+        # @todo Quick and dirty hack to treat tuples like parameterized arrays
+        rooted_tag = rooted_tag.gsub('(', '<').gsub(')', '>')
       end
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
