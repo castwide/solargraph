@@ -232,7 +232,7 @@ module Solargraph
         # if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
         #   :covariant
         # else
-          default
+        default
         # end
       end
 
@@ -460,12 +460,10 @@ module Solargraph
               end
             # @todo Treating parameterized classes and tuples the same for now
             # elsif context_type.all?(&:implicit_union?) || true
+            elsif idx.zero? && !context_type.all_params.empty?
+              ComplexType.new(context_type.all_params)
             else
-              if idx.zero? && !context_type.all_params.empty?
-                ComplexType.new(context_type.all_params)
-              else
-                ComplexType::UNDEFINED
-              end
+              ComplexType::UNDEFINED
             end
           else
             t
