@@ -3094,18 +3094,17 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
+    clip = api_map.clip_at('test.rb', [4, 12])
+    expect(clip.infer.to_s).to eq('String, Integer, nil')
+
     clip = api_map.clip_at('test.rb', [4, 13])
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
-    # @todo Fix
-    # expect(clip.infer.to_s).to eq('String, Integer, nil')
 
     clip = api_map.clip_at('test.rb', [7, 12])
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
-    # @todo Fix
-    # expect(clip.infer.to_s).to eq('String, Integer, nil')
   end
 end
