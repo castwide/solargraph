@@ -13,6 +13,9 @@ module Solargraph
         def initialize type, node
           super("<#{type}>")
 
+          # @todo We might be able to do some light inference from literals and
+          #   tuples as long as literal values are intransitive.
+
           # if node.is_a?(::Parser::AST::Node)
           #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
           #   if node.type == :true
