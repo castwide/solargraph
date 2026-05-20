@@ -458,15 +458,14 @@ module Solargraph
               else
                 next ComplexType::UNDEFINED
               end
-            elsif context_type.all?(&:implicit_union?)
+            # @todo Treating parameterized classes and tuples the same for now
+            # elsif context_type.all?(&:implicit_union?) || true
+            else
               if idx.zero? && !context_type.all_params.empty?
                 ComplexType.new(context_type.all_params)
               else
                 ComplexType::UNDEFINED
               end
-            else
-              # @sg-ignore Need to add nil check here
-              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
             t

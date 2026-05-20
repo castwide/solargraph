@@ -416,10 +416,6 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
-      if rooted_tag.start_with? 'Array('
-        # @todo Quick and dirty hack to treat tuples like parameterized arrays
-        rooted_tag = rooted_tag.gsub('(', '<').gsub(')', '>')
-      end
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
