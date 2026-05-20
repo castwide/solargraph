@@ -56,7 +56,6 @@ module Solargraph
         ].compact.uniq
         # @param gem_name [String]
         gem_names_to_try.each do |gem_name|
-          # @sg-ignore Unresolved call to == on Boolean
           gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           return [gemspec_or_preference(gemspec)] if gemspec
@@ -100,11 +99,9 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name && specish.version == version }
         return to_gem_specification specish if specish
 
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
         # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
         return to_gem_specification specish if specish
@@ -136,6 +133,7 @@ module Solargraph
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+        # @sg-ignore assuming dep values are not nil
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
         (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end
@@ -347,8 +345,10 @@ module Solargraph
       # @return [Gem::Specification]
       def gemspec_or_preference gemspec
         return gemspec unless preference_map.key?(gemspec.name)
+        # @sg-ignore preference_map[gemspec.name] is not nil
         return gemspec if gemspec.version == preference_map[gemspec.name].version
 
+        # @sg-ignore preference_map[gemspec.name] is not nil
         change_gemspec_version gemspec, preference_map[gemspec.name].version
       end
 

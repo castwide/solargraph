@@ -107,9 +107,9 @@ module Solargraph
           end
 
           # @param a [Array<String>]
-          # @return [String]
+          # @return [String, nil]
           def arg_name a
-            a[0].gsub(/[^a-z0-9_]/i, '')
+            a[0]&.gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array]

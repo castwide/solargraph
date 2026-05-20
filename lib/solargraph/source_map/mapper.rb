@@ -62,7 +62,7 @@ module Solargraph
       end
 
       # @param position [Solargraph::Position]
-      # @return [Solargraph::Pin::Closure]
+      # @return [Solargraph::Pin::Closure, nil]
       def closure_at position
         # @sg-ignore Need to add nil check here
         pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location.range.contain?(position) }.last
@@ -119,7 +119,6 @@ module Solargraph
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", @source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
-            # @type [Array<Pin::Method>]
             method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last
             return if gen_pin.nil?
@@ -166,7 +165,8 @@ module Solargraph
             pins.push method_pin
             method_pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pins.last,
                                                           source: :source_map)
-            if pins.last.return_type.defined?
+            if pins.last&.return_type&.defined?
+              # @sg-ignore assume pins.last exists
               pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '', pins.last.return_type.to_s.split(', '),
                                                               'value')
             end
@@ -201,7 +201,7 @@ module Solargraph
             region = Parser::Region.new(source: src, closure: ns)
             # @todo These pins may need to be marked not explicit
             index = @pins.length
-            loff = if @code.lines[comment_position.line].strip.end_with?('@!parse')
+            loff = if @code.lines[comment_position.line]&.strip&.end_with?('@!parse')
                      comment_position.line + 1
                    else
                      comment_position.line
