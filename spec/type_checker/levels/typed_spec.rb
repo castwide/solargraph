@@ -223,7 +223,7 @@ describe Solargraph::TypeChecker do
         def foo(bar = 123); end
         ))
       expect(checker.problems.map(&:message))
-        .to eq(['Declared type String does not match inferred type 123 for variable bar'])
+        .to eq(['Declared type String does not match inferred type Integer for variable bar'])
     end
 
     it 'validates string default values of parameters' do

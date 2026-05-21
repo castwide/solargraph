@@ -189,6 +189,7 @@ module Solargraph
 
     # @return [ComplexType]
     def downcast_to_literal_if_possible
+      return self
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
     end
 
