@@ -569,6 +569,10 @@ module Solargraph
         return_type.qualify(api_map, *(closure&.gates || ['']))
       end
 
+      def maybe_macros?
+        comments.include?('@macro')        
+      end
+
       # Infer the pin's return type via static code analysis.
       #
       # @param api_map [ApiMap]

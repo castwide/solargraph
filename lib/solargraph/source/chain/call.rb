@@ -154,7 +154,7 @@ module Solargraph
                 # @todo Need to add nil check here
                 if new_return_type.defined?
                   type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map,
-                                                                                                 *p.gates)
+                                                                                                 *p.gates, preserve: ol.parameter_names, replace: arguments.map { |arg| simple_convert(arg.node).to_s })
                 end
                 type ||= ComplexType::UNDEFINED
               end

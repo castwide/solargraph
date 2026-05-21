@@ -136,6 +136,20 @@ module Solargraph
     def process_macros
       macro_pins = []
       source_maps.each do |source_map|
+        source_map.pins.select(&:maybe_macros?).each do |pin|
+          pin.comments.scan(/\s*?@macro +(\S+).*?\n/).each do |match|
+            directive = named_macro(match[0])
+            next unless directive
+            macro = Solargraph::YardMap::Macro.from_directive(directive, pin)
+            expanded = macro.macro_object.expand([pin.name, *pin.parameters.map(&:name)])
+            docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
+            pin.docstring.delete_tags(*docstring.tags.map(&:tag_name)) if docstring.tags.any?
+            pin.docstring.add_tag(*docstring.tags)
+            # @todo Smelly instance variable access
+            pin.instance_variable_set(:@return_type, ComplexType.try_parse(*pin.docstring.tags(:return).flat_map(&:types)))
+            # @todo Appending the comment breaks the tags
+          end
+        end
         source_map.macro_method_candidates(store.macro_method_names).each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)

@@ -33,12 +33,13 @@ module Solargraph
     # @param gates [Array<String>]
     #
     # @return [ComplexType]
-    def qualify api_map, *gates
+    def qualify api_map, *gates, preserve: [], replace: preserve
       red = reduce_object
       types = red.items.map do |t|
+        next ComplexType.try_parse(replace[preserve.index(t.name)]) if preserve.include?(t.name)
         next t if %w[nil void undefined].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
-        api_map.unalias(t.name) || t.qualify(api_map, *gates)
+        api_map.unalias(t.name) || t.qualify(api_map, *gates, preserve: preserve, replace: replace)
       end
       ComplexType.new(types).reduce_object
     end

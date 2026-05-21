@@ -274,7 +274,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'infers types from named macros' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       # @!macro firstarg
       #   @return [$1]
