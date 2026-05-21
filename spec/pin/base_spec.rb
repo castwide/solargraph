@@ -72,4 +72,11 @@ describe Solargraph::Pin::Base do
       expect(pin.typify(api_map).to_s).to eq('RBS::Types::Function, RBS::Types::UntypedFunction')
     end
   end
+
+  describe '#macro_names' do
+    it 'returns names' do
+      pin = described_class.new(name: 'Example', comments: "@macro addcomment\n@macro returnself")
+      expect(pin.macro_names).to eq(['addcomment', 'returnself'])
+    end
+  end
 end
