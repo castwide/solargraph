@@ -143,10 +143,7 @@ module Solargraph
             macro = Solargraph::YardMap::Macro.from_directive(directive, pin)
             expanded = macro.macro_object.expand([pin.name, *pin.parameters.map(&:name)])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
-            pin.docstring.delete_tags(*docstring.tags.map(&:tag_name)) if docstring.tags.any?
             pin.docstring.add_tag(*docstring.tags)
-            # @todo Smelly instance variable access
-            pin.instance_variable_set(:@return_type, ComplexType.try_parse(*pin.docstring.tags(:return).flat_map(&:types)))
             # @todo Appending the comment breaks the tags
           end
         end
