@@ -14,6 +14,12 @@ module Solargraph
         @params = params.map { |par| Typedef.tokenize(par) }
       end
 
+      def resolve_named_tokens(named_values)
+        new_base = base.resolve_named_tokens(named_values)
+        new_params = params.map { |par| base.resolve_named_tokens(named_values) }
+        Type.new(new_base, *new_params)
+      end
+
       def resolved?
         base.resolved? && params.all?(&:resolved?)
       end

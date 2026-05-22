@@ -56,4 +56,29 @@ describe Solargraph::Typedef::Type do
       end
     end
   end
+
+  describe '#resolve_named_tokens' do
+    it 'resolves simple named tokens to paths' do
+      named_values = { "foo" => "String" }
+      type = described_class.new('foo')
+      resolved = type.resolve_named_tokens(named_values)
+      expect(resolved.to_s).to eq('String')
+    end
+
+    it 'resolves simple named tokens to rooted paths' do
+      named_values = { "foo" => "::String" }
+      type = described_class.new('foo')
+      resolved = type.resolve_named_tokens(named_values)
+      expect(resolved.to_s).to eq('String')
+      expect(resolved).to be_resolved
+    end
+
+    it 'returns unresolved types' do
+      named_values = { "foo" => "String" }
+      type = described_class.new('bar')
+      unresolved = type.resolve_named_tokens(named_values)
+      expect(unresolved.to_s).to eq('bar')
+      expect(unresolved).not_to be_resolved
+    end
+  end
 end

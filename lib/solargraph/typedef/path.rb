@@ -17,6 +17,10 @@ module Solargraph
         end
       end
 
+      def resolve_named_tokens(named_values)
+        self
+      end
+
       def rooted?
         @rooted
       end
