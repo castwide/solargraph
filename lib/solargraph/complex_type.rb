@@ -399,7 +399,11 @@ module Solargraph
       ComplexType.new(types)
     end
 
+    # @return [Array<Typedef::Type>]
     def to_typedef_types
+      # @todo Quick and dirty hack
+      return [Typedef::Type::ROOT] if to_s == 'Class<>'
+
       items.map do |item|
         item.to_typedef_types
       end

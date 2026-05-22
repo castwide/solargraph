@@ -29,7 +29,10 @@ module Solargraph
       # @return [Path, Token]
       def convert string
         case string
+        when ""
+          Path::ROOT
         # @todo Should interfaces (e.g, `_Each`) be paths?
+        #   (Probably)
         when /^(::)?[A-Z_][A-Za-z_(::)]*?/
           Path.new(string)
         when /^generic\[[A-Za-z\d_]*\]$/

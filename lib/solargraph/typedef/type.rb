@@ -29,6 +29,20 @@ module Solargraph
         Type.new(new_base, *new_params)
       end
 
+      def resolve(api_map, gates)
+        new_base = base.resolve_rooted(api_map, gates)
+        return self unless new_base.resolved?
+
+        path_pins = api_map.get_path_pins(new_base.name)
+        tokens = path_pins.flat_map(&:generics)
+                          .map { |name| "generics[#{name}]" }
+        new_generic_values = tokens.zip(params).to_h
+        new_params = params.map { |par| par.resolve_named_tokens(new_generic_values).resolve_rooted(api_map, gates) }
+        return self unless new_params.all?(&:resolved?)
+
+        Type.new(new_base, *new_params)
+      end
+
       def resolved?
         base.resolved? && params.all?(&:resolved?)
       end
@@ -49,6 +63,8 @@ module Solargraph
         return "" if @params.empty?
         "[#{params.join(', ')}]"
       end
+
+      ROOT = Type.new(Path::ROOT)
     end
   end
 end

@@ -13,7 +13,6 @@ module Solargraph
         closure = api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
         pins = []
         chain.links.each do |link|
-          # @todo next closure
           pins = define_from_link(link, api_map, closure)
           return [] if pins.empty?
           closure = closure_from(pins, api_map)
@@ -24,12 +23,16 @@ module Solargraph
 
       # @param link [Solargraph::Source::Chain::Link]
       # @param api_map [Solargraph::Source::ApiMap]
+      # @param closure [Solargraph::Pin::Closure]
+      # @return [Array<Pin::Base>]
       def define_from_link link, api_map, closure
         case link
         when Solargraph::Source::Chain::Call
-          # @todo Is checking the first return type enough?
-          api_map.typedef_path_methods(closure.typedef_path)
-                  .select { |pin| pin.name == link.word }
+          closure.typedef_return_types
+                 .map { |type| type.resolve(api_map, [closure.namespace]) }
+                 .select(&:resolved?)
+                 .flat_map { |type| api_map.typedef_path_methods(type.base) }
+                 .select { |pin| pin.name == link.word }
         end
       end
 
@@ -37,8 +40,7 @@ module Solargraph
         pins.each do |pin|
           # @todo Is checking the first return type enough?
           found = pins.find { |pin| pin.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates).resolved? }
-          resolved = found.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates)
-          return resolved if resolved.resolved?
+          return found if found
         end
         nil
       end

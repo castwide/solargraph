@@ -54,6 +54,8 @@ module Solargraph
       def to_s
         name
       end
+
+      ROOT = Path.new('', rooted: true)
     end
   end
 end
