@@ -592,7 +592,6 @@ module Solargraph
 
       # @return [ComplexType]
       def generate_complex_type
-        Solargraph.logger.warn("I should check the macros") if macro_names?
         tags = docstring.tags(:return).map(&:types).flatten.compact
         return ComplexType::UNDEFINED if tags.empty?
         ComplexType.try_parse(*tags)
