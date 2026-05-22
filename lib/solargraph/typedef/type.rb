@@ -25,7 +25,7 @@ module Solargraph
       # @return [Type]
       def resolve_rooted(api_map, gates)
         new_base = base.resolve_rooted(api_map, gates)
-        new_params = base.resolve_rooted(api_map, gates)
+        new_params = params.map { |par| par.resolve_rooted(api_map, gates) }
         Type.new(new_base, *new_params)
       end
 
