@@ -5,12 +5,9 @@ module Solargraph
     class Path
       attr_reader :name
 
-      attr_reader :parts
-
       def initialize name, rooted: false
         @name = name
         @rooted = rooted
-        @parts ||= name.split('::')
         if name.start_with?('::')
           @name = @name[2..]
           @rooted = true
@@ -19,6 +16,21 @@ module Solargraph
 
       def resolve_named_tokens(named_values)
         self
+      end
+
+      # @param api_map [ApiMap]
+      # @param gates [Array<String>]
+      def resolve_rooted(api_map, gates)
+        return self if rooted?
+
+        new_path = api_map.qualify(name, *gates)
+        if new_path
+          # @todo Inefficient but effective
+          rooted = api_map.get_path_pins(new_path).any?
+          Path.new(new_path, rooted: rooted) if new_path
+        else
+          self
+        end
       end
 
       def rooted?

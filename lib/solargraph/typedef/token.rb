@@ -19,6 +19,10 @@ module Solargraph
         Typedef.tokenize(named_values[name])
       end
 
+      def resolve_rooted(_api_map, _gates)
+        self
+      end
+
       def resolved?
         RESERVED_NAMES.include?(name)
       end

@@ -616,7 +616,7 @@ module Solargraph
 
       def to_typedef_types
         base = name
-        base = "::#{base}" if rooted?
+        base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         params = subtypes.map(&:to_typedef_types)
         Typedef::Type.new(base, *params)
       end

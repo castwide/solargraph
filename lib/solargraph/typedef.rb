@@ -8,7 +8,7 @@ module Solargraph
     autoload :Type,    'solargraph/typedef/type'
 
     # Convert a value to a Path or Token
-    # @param value [String, Path, Token, Type]
+    # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
     # @return [Path, Token, Type]
     def self.tokenize value
       case value
@@ -16,8 +16,10 @@ module Solargraph
         convert value
       when Path, Token, Type
         value
+      when Array
+        Typedef::Type.new(*value)
       else
-        raise 'Invalid'
+        raise "Invalid value #{value}"
       end
     end
 
@@ -28,14 +30,18 @@ module Solargraph
       # @return [Path, Token]
       def convert string
         case string
-        when /^(::)?[A-Z][A-Za-z_(::)]*?/
+        # @todo Should interfaces (e.g, `_Each`) be paths?
+        when /^(::)?[A-Z_][A-Za-z_(::)]*?/
           Path.new(string)
-        when /^generic<[A-Za-z_]*>$/
+        when /^generic<[A-Za-z\d_]*>$/
           Token.new('generic', Token.new(string.scan(/<(.*?)>/)[0][0]))
-        when /^[a-z]/i
+        when /^[a-z]*/
+          Token.new(string)
+        # @todo How to handle integers?
+        when /\d+/
           Token.new(string)
         else
-          raise 'Invalid'
+          raise "Invalid string: #{string}"
         end
       end
     end

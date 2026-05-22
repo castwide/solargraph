@@ -65,6 +65,14 @@ module Solargraph
         assert_location_provided
       end
 
+      def typedef_path
+        Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
+      end
+
+      def typedef_return_type
+        Typedef::Type.from_complex_type(return_type)
+      end
+
       # @return [void]
       def assert_location_provided
         return unless best_location.nil? && %i[yardoc source rbs].include?(source)

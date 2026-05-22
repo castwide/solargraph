@@ -20,6 +20,15 @@ module Solargraph
         Type.new(new_base, *new_params)
       end
 
+      # @param api_map [ApiMap]
+      # @param api_map [Array<Path>]
+      # @return [Type]
+      def resolve_rooted(api_map, gates)
+        new_base = base.resolve_rooted(api_map, gates)
+        new_params = base.resolve_rooted(api_map, gates)
+        Type.new(new_base, *new_params)
+      end
+
       def resolved?
         base.resolved? && params.all?(&:resolved?)
       end

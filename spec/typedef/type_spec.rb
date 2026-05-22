@@ -7,6 +7,11 @@ describe Solargraph::Typedef::Type do
   end
 
   describe '.from_complex_type' do
+    it 'converts core pin return types' do
+      api_map = Solargraph::ApiMap.new
+      api_map.pins.each { |pin| Solargraph::Typedef::Type.from_complex_type(pin.return_type) }
+    end
+
     context 'with an unrooted path' do
       let(:complex_type) { Solargraph::ComplexType.parse('Foo') }
       let(:types) { described_class.from_complex_type(complex_type) }
