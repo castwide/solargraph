@@ -22,6 +22,11 @@ module Solargraph
         @decl = decl
       end
 
+      # @param arguments [Array<Typedef::Type>]
+      def typedef_resolve_generics(arguments)
+        
+      end
+
       def type_location
         super || closure&.type_location
       end

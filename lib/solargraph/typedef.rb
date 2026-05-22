@@ -2,11 +2,10 @@
 
 module Solargraph
   module Typedef
-    autoload :Path,    'solargraph/typedef/path'
-    autoload :Token,   'solargraph/typedef/token'
-    autoload :Generic, 'solargraph/typedef/generic'
-    autoload :Type,    'solargraph/typedef/type'
-
+    autoload :Path,      'solargraph/typedef/path'
+    autoload :Token,     'solargraph/typedef/token'
+    autoload :Type,      'solargraph/typedef/type'
+    autoload :Inference, 'solargraph/typedef/inference'
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
     # @return [Path, Token, Type]
@@ -33,9 +32,9 @@ module Solargraph
         # @todo Should interfaces (e.g, `_Each`) be paths?
         when /^(::)?[A-Z_][A-Za-z_(::)]*?/
           Path.new(string)
-        when /^generic<[A-Za-z\d_]*>$/
-          Token.new('generic', Token.new(string.scan(/<(.*?)>/)[0][0]))
-        when /^[a-z]*/
+        when /^generic\[[A-Za-z\d_]*\]$/
+          Token.new(string)
+        when /^[a-z]*$/
           Token.new(string)
         # @todo How to handle integers?
         when /\d+/
