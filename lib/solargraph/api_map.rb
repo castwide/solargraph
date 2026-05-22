@@ -403,7 +403,7 @@ module Solargraph
     # @param candidates [Array<Pin::BaseVariable>]
     # @param name [String]
     # @param closure [Pin::Closure]
-    # @param location [Location]
+    # @param location [Location, nil]
     #
     # @return [Pin::BaseVariable, nil]
     def var_at_location candidates, name, closure, location

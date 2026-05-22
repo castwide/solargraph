@@ -5,9 +5,12 @@ module Solargraph
     class Path
       attr_reader :name
 
+      attr_reader :parts
+
       def initialize name, rooted: false
         @name = name
         @rooted = rooted
+        @parts ||= name.split('::')
         if name.start_with?('::')
           @name = @name[2..]
           @rooted = true
@@ -18,10 +21,22 @@ module Solargraph
         @rooted
       end
 
-      def join(base)
+      def resolved?
+        rooted?
+      end
+
+      def root?
+        name.empty?
+      end
+
+      def from(base)
         return self if rooted?
 
-        Route.new("#{base.name}::#{name}", rooted: base.rooted)
+        Path.new("#{base.name}::#{name}", rooted: base.rooted?)
+      end
+
+      def to_s
+        name
       end
     end
   end

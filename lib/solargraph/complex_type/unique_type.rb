@@ -614,6 +614,13 @@ module Solargraph
         self.class.can_root_name?(name_to_check)
       end
 
+      def to_typedef_types
+        base = name
+        base = "::#{base}" if rooted?
+        params = subtypes.map(&:to_typedef_types)
+        Typedef::Type.new(base, *params)
+      end
+
       # @param name [String]
       def self.can_root_name? name
         # name is not lowercase

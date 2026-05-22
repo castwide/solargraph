@@ -399,6 +399,12 @@ module Solargraph
       ComplexType.new(types)
     end
 
+    def to_typedef_types
+      items.map do |item|
+        item.to_typedef_types
+      end
+    end
+
     protected
 
     def equality_fields
