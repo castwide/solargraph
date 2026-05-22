@@ -35,7 +35,7 @@ module Solargraph
         #   (Probably)
         when /^(::)?[A-Z_][A-Za-z_(::)]*?/
           Path.new(string)
-        when /^generic\[[A-Za-z\d_]*\]$/
+        when /^generic<[A-Za-z\d_]*>$/
           Token.new(string)
         when /^[a-z]*$/
           Token.new(string)

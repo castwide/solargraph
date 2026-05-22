@@ -615,6 +615,9 @@ module Solargraph
       end
 
       def to_typedef_types
+        # @todo Quick and dirty hack
+        return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+
         base = name
         base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         params = subtypes.map(&:to_typedef_types)
