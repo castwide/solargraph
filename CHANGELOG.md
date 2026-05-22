@@ -1,3 +1,10 @@
+## 0.59.2 - May 22, 2026
+- Convert RBS implicit nil annotations (#1197)
+- Temporary job stubs (#1200)
+- Limit pin combination to doc maps (#1195)
+- Ignore literal values in type inference (#1201)
+- Fix for clips with flaky node recipients
+
 ## 0.59.1 - May 18, 2026
 - Fix signatureHelp bug (#1185)
 - Linting fixes for Ruby 3.1 (#1193)
