@@ -15,9 +15,9 @@ describe Solargraph::Typedef do
     end
 
     it 'creates a YARD generic token' do
-      token = described_class.tokenize('generic[T]')
+      token = described_class.tokenize('generic<T>')
       expect(token).to be_a(Solargraph::Typedef::Token)
-      expect(token.name).to eq('generic[T]')
+      expect(token.name).to eq('generic<T>')
     end
   end
 end

@@ -71,7 +71,7 @@ module Solargraph
 
       # @return [Array<Typedef::Type>]
       def typedef_return_types
-        Typedef::Type.from_complex_type(return_type)
+        [Typedef::Type.from_complex_type(return_type)].flatten
       end
 
       # @return [void]

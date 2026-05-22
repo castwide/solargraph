@@ -9,12 +9,44 @@ module Solargraph
       # @param chain [Solargraph::Source::Chain]
       # @param api_map [Solargraph::Source::ApiMap]
       # @param location [Solargraph::Location]
+      # @return [Array<Typedef::Type>]
+      def infer_from_chain chain, api_map, location
+        closure = api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
+        pins = define_from_chain(chain, api_map, location)
+        # @todo Limit to first?
+        receiver = short_define(chain.base, api_map, closure).first
+        # pins.flat_map do |pin|
+        pin = pins.first
+          named_values = pin.closure.generics
+                            .map { |name| "generic<#{name}>" }
+                            .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
+                            .to_h
+          pin.typedef_return_types
+             .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
+        # end
+      end
+
+      def short_define chain, api_map, closure
+        pins = []
+        chain.links.each do |link|
+          pins = define_from_link(link, api_map, closure)
+          return [] unless pins&.any?
+          closure = closure_from(pins, api_map)
+          return [] unless closure
+        end
+        pins
+      end
+
+      # @param chain [Solargraph::Source::Chain]
+      # @param api_map [Solargraph::Source::ApiMap]
+      # @param location [Solargraph::Location]
+      # @return [Array<Pin::Base>]
       def define_from_chain chain, api_map, location
         closure = api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
         pins = []
         chain.links.each do |link|
           pins = define_from_link(link, api_map, closure)
-          return [] if pins.empty?
+          return [] unless pins&.any?
           closure = closure_from(pins, api_map)
           return [] unless closure
         end
@@ -27,12 +59,16 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define_from_link link, api_map, closure
         case link
+        when Solargraph::Source::Chain::Head
+          return [Pin::ProxyType.anonymous(closure.binder, source: :chain)] if link.word == 'self'
+          []
         when Solargraph::Source::Chain::Call
           closure.typedef_return_types
-                 .map { |type| type.resolve(api_map, [closure.namespace]) }
-                 .select(&:resolved?)
+                 .map { |type| type.resolve_rooted(api_map, [closure.namespace]) }
                  .flat_map { |type| api_map.typedef_path_methods(type.base) }
                  .select { |pin| pin.name == link.word }
+        else
+          raise "#{link.class} not implemented"
         end
       end
 
