@@ -127,10 +127,15 @@ module Solargraph
                                 block_call_type(api_map, name_pin, locals)
                               end
                 end
-                # @type new_signature_pin [Pin::Signature]
                 new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil,
                                                                                     blocktype)
-                new_return_type = new_signature_pin.return_type
+                # @todo It shouldn't be necessary to choose either generics or macros
+                new_return_type = if new_signature_pin.return_type.defined?
+                  new_signature_pin.return_type
+                else
+                  named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
+                  p.typify(api_map).expand(named_types)
+                end
                 self_type = if head?
                               # If we're at the head of the chain, we called a
                               # method somewhere that marked itself as returning
@@ -153,8 +158,7 @@ module Solargraph
                 # the docs were written - from the method pin.
                 # @todo Need to add nil check here
                 if new_return_type.defined?
-                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map,
-                                                                                                 *p.gates, preserve: ol.parameter_names, replace: arguments.map { |arg| simple_convert(arg.node).to_s })
+                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates)
                 end
                 type ||= ComplexType::UNDEFINED
               end

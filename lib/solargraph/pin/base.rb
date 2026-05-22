@@ -637,6 +637,8 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        # Macros should have been processed already
+        result.macro_names.clear
         result
       end
 

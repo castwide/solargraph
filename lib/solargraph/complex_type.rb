@@ -33,13 +33,12 @@ module Solargraph
     # @param gates [Array<String>]
     #
     # @return [ComplexType]
-    def qualify api_map, *gates, preserve: [], replace: preserve
+    def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
-        next ComplexType.try_parse(replace[preserve.index(t.name)]) if preserve.include?(t.name)
         next t if %w[nil void undefined].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
-        api_map.unalias(t.name) || t.qualify(api_map, *gates, preserve: preserve, replace: replace)
+        api_map.unalias(t.name) || t.qualify(api_map, *gates)
       end
       ComplexType.new(types).reduce_object
     end
@@ -297,6 +296,10 @@ module Solargraph
         raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}"
       end
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
+    end
+
+    def expand named_types
+      ComplexType.new(map { |ut| ut.expand(named_types) })
     end
 
     # @return [self]
