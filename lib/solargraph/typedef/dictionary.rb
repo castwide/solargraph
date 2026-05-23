@@ -32,7 +32,7 @@ module Solargraph
         current_closure = closure
         pins = []
         chain.links.each do |link|
-          pins = define_from_link(link, api_map, current_closure)
+          pins = resolve_link(link, current_closure)
           return [] unless pins&.any?
           current_closure = closure_from(pins)
           return [] unless current_closure
@@ -60,11 +60,12 @@ module Solargraph
 
       def define_from chain
         pins = []
+        current_closure = closure
         chain.links.each do |link|
-          pins = define_from_link(link, api_map, closure)
+          pins = resolve_link(link, current_closure)
           return [] unless pins&.any?
-          closure = closure_from(pins)
-          return [] unless closure
+          current_closure = closure_from(pins)
+          return [] unless current_closure
         end
         pins
       end
@@ -73,7 +74,7 @@ module Solargraph
       # @param api_map [Solargraph::Source::ApiMap]
       # @param closure [Solargraph::Pin::Closure]
       # @return [Array<Pin::Base>]
-      def define_from_link link, api_map, closure
+      def resolve_link link, closure
         case link
         when Solargraph::Source::Chain::Head
           return [Pin::ProxyType.anonymous(closure.binder, source: :chain)] if link.word == 'self'

@@ -6,7 +6,7 @@ module Solargraph
     autoload :Token,      'solargraph/typedef/token'
     autoload :Type,       'solargraph/typedef/type'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
-    autoload :Inference,  'solargraph/typedef/inference'
+
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
     # @return [Path, Token, Type]
