@@ -23,22 +23,25 @@ module Solargraph
         @chain ||= Solargraph::Source::SourceChainer.chain(source_map.source, location.range.start)
       end
 
+      def closure
+        @closure ||= api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
+      end
+
       # @return [Array<Pin::Base>]
       def define
-        closure = api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
+        current_closure = closure
         pins = []
         chain.links.each do |link|
-          pins = define_from_link(link, api_map, closure)
+          pins = define_from_link(link, api_map, current_closure)
           return [] unless pins&.any?
-          closure = closure_from(pins)
-          return [] unless closure
+          current_closure = closure_from(pins)
+          return [] unless current_closure
         end
         pins
       end
 
       # @return [Array<Typedef::Type>]
       def infer
-        closure = api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
         pins = define
         # @todo Limit to first?
         receiver = define_from(chain.base).first
