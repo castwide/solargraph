@@ -29,15 +29,7 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        current_closure = closure
-        pins = []
-        chain.links.each do |link|
-          pins = resolve_link(link, current_closure)
-          return [] unless pins&.any?
-          current_closure = closure_from(pins)
-          return [] unless current_closure
-        end
-        pins
+        define_from chain
       end
 
       # @return [Array<Typedef::Type>]
