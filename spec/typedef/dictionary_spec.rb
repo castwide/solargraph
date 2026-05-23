@@ -1,0 +1,67 @@
+# frozen_string_literal: true
+
+describe Solargraph::Typedef::Dictionary do
+  it 'resolves generics' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Array<String>]
+      def foo; end
+
+      foo.first
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 10, 4, 10))
+    dictionary = described_class.new(api_map, location)
+    pins = dictionary.define
+    expect(pins.map(&:path)).to eq(['Array#first', 'Enumerable#first'])
+  end
+
+  it 'infers types' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Array<String>]
+      def foo; end
+
+      foo.first
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 10, 4, 10))
+    dictionary = described_class.new(api_map, location)
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to match_array(['String', 'nil'])
+  end
+
+  it 'resolves self' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar; end
+
+        def baz
+          self.bar
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 17, 5, 17))
+    dictionary = described_class.new(api_map, location)
+    pins = dictionary.define
+    expect(pins.map(&:path)).to eq(['Foo#bar'])
+  end
+
+  it 'infers local variables' do
+    source = Solargraph::Source.load_string(%(
+      x = 0
+      x
+
+      y = 'foo'
+      z = []
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(2, 6, 2, 6))
+    dictionary = described_class.new(api_map, location)
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Integer'])
+  end
+end
