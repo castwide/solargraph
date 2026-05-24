@@ -5,6 +5,7 @@ module Solargraph
     autoload :Path,       'solargraph/typedef/path'
     autoload :Token,      'solargraph/typedef/token'
     autoload :Type,       'solargraph/typedef/type'
+    autoload :Linker,     'solargraph/typedef/linker'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
 
     # Convert a value to a Path or Token
