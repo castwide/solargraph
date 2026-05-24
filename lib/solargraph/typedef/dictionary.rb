@@ -53,6 +53,8 @@ module Solargraph
       private
 
       def define_from chain
+        return [[closure], nil] if chain.undefined?
+
         pins = []
         current_closure = closure
         last_link = chain.links.last
@@ -92,11 +94,12 @@ module Solargraph
         else
           {}
         end
-        named_values['self'] = receiver.namespace
+        named_values['self'] = receiver&.namespace
         pins.map(&:typedef_return_types)
             .map { |array| array.map { |type| type.resolve_named_tokens(named_values) } }
             .map do |array|
               array.map.with_index do |type, idx|
+                type = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
                 if type.base.to_s == 'undefined'
                   pins[idx].probe(api_map).to_typedef_types.first # @todo Better way?
                 else
