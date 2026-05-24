@@ -3,6 +3,8 @@
 module Solargraph
   module Typedef
     class Path
+      RESERVED_NAMES = ['Boolean']
+
       attr_reader :name
 
       def initialize name, rooted: false
@@ -21,7 +23,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param gates [Array<String>]
       def resolve_rooted(api_map, gates)
-        return self if rooted?
+        return self if rooted? || RESERVED_NAMES.include?(name)
 
         new_path = api_map.qualify(name, *gates)
         if new_path

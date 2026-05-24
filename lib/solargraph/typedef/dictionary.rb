@@ -29,6 +29,14 @@ module Solargraph
         @closure ||= source_map.locate_closure_pin(position.line, position.character)
       end
 
+      def location
+        @location ||= Location.new(source_map.filename, Range.new(position, position))
+      end
+
+      def locals
+        @locals ||= source_map.locals_at(location)
+      end
+
       # @return [Array<Pin::Base>]
       def define
         define_from chain
@@ -41,12 +49,23 @@ module Solargraph
         receiver = define_from(chain.base).first
         # pins.flat_map do |pin|
         pin = pins.first
-          named_values = pin.closure.generics
-                            .map { |name| "generic<#{name}>" }
-                            .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
-                            .to_h
-          pin.typedef_return_types
-             .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
+          named_values = if receiver
+            pin.closure.generics
+                       .map { |name| "generic<#{name}>" }
+                       .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
+                       .to_h
+          else
+            {}
+          end
+          type = pin.typedef_return_types
+                    .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
+                    .flat_map do |type|
+                      if type.base.to_s == 'undefined'
+                        pin.probe(api_map).to_typedef_types
+                      else
+                        type
+                      end
+                    end
         # end
       end
 
