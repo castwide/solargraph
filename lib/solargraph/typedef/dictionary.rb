@@ -48,28 +48,6 @@ module Solargraph
         pins, receiver = define_from chain
         proxies = infer_from(pins, receiver)
         proxies.flat_map(&:typedef_return_types)
-        # # @todo Limit to first?
-        # receiver = define_from(chain.base).first
-        # # pins.flat_map do |pin|
-        # pin = pins.first
-        #   named_values = if receiver
-        #     pin.closure.generics
-        #                .map { |name| "generic<#{name}>" }
-        #                .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
-        #                .to_h
-        #   else
-        #     {}
-        #   end
-        #   type = pin.typedef_return_types
-        #             .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
-        #             .flat_map do |type|
-        #               if type.base.to_s == 'undefined'
-        #                 pin.probe(api_map).to_typedef_types
-        #               else
-        #                 type
-        #               end
-        #             end
-        # # end
       end
 
       private
@@ -82,13 +60,13 @@ module Solargraph
           last_closure = current_closure
           pins = hitch(link, current_closure)
           pins = infer_from(pins, last_closure) if link != last_link
+          return [[], nil] unless pins&.any?
           current_closure = if link == last_link
             current_closure
           else
             closure_from(pins)
           end
-          return [] unless pins&.any?
-          return [] unless current_closure
+          return [[], nil] unless current_closure
         end
         [pins, current_closure]
       end
@@ -101,9 +79,31 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_from pins, receiver
-        named_values = { 'self' => receiver.namespace }
+        named_values = if receiver
+          pins.reduce({}) do |hash, pin|
+            hash.merge (
+              pin.closure
+                .generics
+                .map { |name| "generic<#{name}>" }
+                .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
+                .to_h
+            )            
+          end
+        else
+          {}
+        end
+        named_values['self'] = receiver.namespace
         pins.map(&:typedef_return_types)
             .map { |array| array.map { |type| type.resolve_named_tokens(named_values) } }
+            .map do |array|
+              array.map.with_index do |type, idx|
+                if type.base.to_s == 'undefined'
+                  pins[idx].probe(api_map).to_typedef_types.first # @todo Better way?
+                else
+                  type
+                end
+              end
+            end
             .map { |types| Pin::ProxyType.anonymous(ComplexType.new(types.map(&:to_complex_type))) }
       end
     end

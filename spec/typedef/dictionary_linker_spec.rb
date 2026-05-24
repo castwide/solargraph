@@ -187,7 +187,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers self from Object#freeze' do
-    pending 'Fix Array#new first'
     source = Solargraph::Source.load_string(%(
       Array.new.freeze
     ), 'test.rb')
