@@ -209,19 +209,9 @@ describe Solargraph::Typedef::Dictionary do
         end
       end
     ), 'test.rb')
-    # api_map = Solargraph::ApiMap.new
-    # api_map.map source
-    # closure = api_map.get_path_pins('Outer::Inner').first
-
-    # outer_node = api_map.get_path_pins('Outer::Inner.outer_string').first.send(:method_body_node)
-    # outer_chain = Solargraph::Parser.chain(outer_node)
-    # outer_type = outer_chain.infer(api_map, closure, [])
-    # expect(outer_type.tag).to eq('Class<Outer::String>')
-
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 19])
-    pins = dictionary.define
-    puts pins.inspect
-    # expect(types.map(&:to_s)).to eq(['Class[Outer::String]'])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Class[Outer::String]'])
   end
 end

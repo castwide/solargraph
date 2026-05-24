@@ -53,7 +53,7 @@ module Solargraph
       private
 
       def define_from chain
-        return [[closure], nil] if chain.undefined?
+        return [[closure], closure.closure] if chain.undefined?
 
         pins = []
         current_closure = closure
