@@ -84,12 +84,7 @@ module Solargraph
       end
 
       def closure_from pins
-        pins.each do |pin|
-          # @todo Is checking the first return type enough?
-          found = pins.find { |pin| pin.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates).resolved? }
-          return found if found
-        end
-        nil
+        pins.find { |pin| pin.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates) }
       end
     end
   end
