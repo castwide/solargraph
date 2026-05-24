@@ -214,4 +214,168 @@ describe Solargraph::Typedef::Dictionary do
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Class[Outer::String]'])
   end
+
+  it 'infers rooted constants' do
+    source = Solargraph::Source.load_string(%(
+      module Outer
+        class String; end
+      end
+      module Outer
+        module Inner
+          def self.core_string
+            ::String
+          end
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [6, 19])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Class[String]'])
+  end
+
+  it 'infers String from interpolated strings' do
+    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [0, 0])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
+
+  it 'infers Symbol from symbols' do
+    source = Solargraph::Source.load_string(':foo', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [0, 0])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Symbol'])
+  end
+
+  it 'infers Symbol from quoted symbols' do
+    source = Solargraph::Source.load_string(':"foo"', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [0, 0])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Symbol'])
+  end
+
+  it 'infers Symbol from interpolated symbols' do
+    source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [0, 0])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Symbol'])
+  end
+
+  it 'infers namespaces from constant aliases' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        class Bar; end
+      end
+      Alias = Foo
+      Alias::Bar.new
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [5, 17])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Foo::Bar'])
+  end
+
+  it 'infers instance variables from sequential assignments' do
+    pending('sequential assignment support')
+
+    source = Solargraph::Source.load_string(%(
+      def foo
+        @foo = nil
+        @foo = 'foo'
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('#foo').first
+    type = pin.probe(api_map)
+    expect(type.simple_tags).to eq('String')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [3, 8])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
+
+  it 'recognizes nil safe navigation without upstream nil' do
+    source = Solargraph::Source.load_string(%(
+      String.new&.strip
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 18])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
+
+  it 'recognizes nil safe navigation with upstream nil' do
+    source = Solargraph::Source.load_string(%(
+      # @return [String, nil]
+      def foo; end
+      foo&.upcase
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [2, 11])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+  end
+
+  it 'infers Class<self> from Object#class' do
+    source = Solargraph::Source.load_string(%(
+      String.new.class
+    ), 'test.rb')
+    # api_map = Solargraph::ApiMap.new.map(source)
+    # chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(1, 17))
+    # tag = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    # expect(tag.to_s).to eq('Class<String>')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 17])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Class[String]', 'Class'])
+  end
+
+  it 'gracefully handles requests for type of generic method in chain' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param x [generic<T>]
+      # @return [generic<T>]}
+      def foo(x); x; end
+      foo('string')
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [5, 7])
+    expect { dictionary.infer }.not_to raise_error
+
+    # @todo The original test suggested that the method call should be inferred
+    #   as [String]. That functionality is currently possible with macros. I'm
+    #   not sure that generics are a good fit here.
+  end
+
+  it 'resolves variable and method name collisions' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @return [String]
+        def stringify; end
+
+        class << self
+          # @return [Example]
+          def obj(foo); end
+        end
+      end
+
+      obj = Example.obj
+      str = obj.stringify
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [12, 7])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
 end

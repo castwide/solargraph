@@ -9,6 +9,9 @@ module Solargraph
           return [Pin::ProxyType.anonymous(closure.binder, source: :chain)] if link.word == 'self'
           []
         when Solargraph::Source::Chain::Call
+          found = api_map.var_at_location(locals, link.word, closure, location) if link.head?
+          return infer_from([found], closure) if found
+
           closure.typedef_return_types
                  .map { |type| type.resolve_rooted(api_map, [closure.namespace]) }
                  .flat_map { |type| api_map.typedef_path_methods(type.base) }
