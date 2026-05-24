@@ -40,6 +40,7 @@ module Solargraph
           complex_type = ComplexType.parse(type_name)
           [Pin::ProxyType.anonymous(complex_type, source: :chain)]
         when Source::Chain::Or
+          # @todo Use dictionary instead of link.infer
           types = link.links.map { |link| link.infer(api_map, closure, locals) }
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
