@@ -39,13 +39,17 @@ module Solargraph
           Path.new(string)
         when /^generic<[A-Za-z\d_]*>$/
           Token.new(string)
-        when /^[a-z]*$/
+        when /^?[a-z\d_]*?$/
+          Token.new(string)
+        when /^"?[a-z\d_]*?"$/
+          Token.new(string)
+        when /^\:?[a-z\d_]*?$/
           Token.new(string)
         # @todo How to handle integers?
-        when /\d+/
+        when /^\d+$/
           Token.new(string)
         else
-          raise "Invalid string: #{string}"
+          raise "Invalid Typedef token string: #{string.inspect}"
         end
       end
     end
