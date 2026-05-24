@@ -20,7 +20,7 @@ module Solargraph
       when Array
         Typedef::Type.new(*value)
       else
-        raise "Invalid value #{value}"
+        raise "Invalid value #{value.inspect}"
       end
     end
 
