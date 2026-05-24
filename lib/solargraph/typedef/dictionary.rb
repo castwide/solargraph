@@ -39,34 +39,37 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        define_from chain
+        pins, _ = define_from chain
+        pins
       end
 
       # @return [Array<Typedef::Type>]
       def infer
-        pins = define
-        # @todo Limit to first?
-        receiver = define_from(chain.base).first
-        # pins.flat_map do |pin|
-        pin = pins.first
-          named_values = if receiver
-            pin.closure.generics
-                       .map { |name| "generic<#{name}>" }
-                       .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
-                       .to_h
-          else
-            {}
-          end
-          type = pin.typedef_return_types
-                    .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
-                    .flat_map do |type|
-                      if type.base.to_s == 'undefined'
-                        pin.probe(api_map).to_typedef_types
-                      else
-                        type
-                      end
-                    end
-        # end
+        pins, receiver = define_from chain
+        proxies = infer_from(pins, receiver)
+        proxies.flat_map(&:typedef_return_types)
+        # # @todo Limit to first?
+        # receiver = define_from(chain.base).first
+        # # pins.flat_map do |pin|
+        # pin = pins.first
+        #   named_values = if receiver
+        #     pin.closure.generics
+        #                .map { |name| "generic<#{name}>" }
+        #                .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
+        #                .to_h
+        #   else
+        #     {}
+        #   end
+        #   type = pin.typedef_return_types
+        #             .map { |type| type.resolve_named_tokens(named_values).resolve_rooted(api_map, [type.base.name]) }
+        #             .flat_map do |type|
+        #               if type.base.to_s == 'undefined'
+        #                 pin.probe(api_map).to_typedef_types
+        #               else
+        #                 type
+        #               end
+        #             end
+        # # end
       end
 
       private
@@ -74,17 +77,34 @@ module Solargraph
       def define_from chain
         pins = []
         current_closure = closure
+        last_link = chain.links.last
         chain.links.each do |link|
+          last_closure = current_closure
           pins = hitch(link, current_closure)
+          pins = infer_from(pins, last_closure) if link != last_link
+          current_closure = if link == last_link
+            current_closure
+          else
+            closure_from(pins)
+          end
           return [] unless pins&.any?
-          current_closure = closure_from(pins)
           return [] unless current_closure
         end
-        pins
+        [pins, current_closure]
       end
 
       def closure_from pins
         pins.find { |pin| pin.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates) }
+      end
+
+      # @param pins [Array<Pin::Base>]
+      # @param receiver [Pin::Closure]
+      # @return [Array<Pin::ProxyType>]
+      def infer_from pins, receiver
+        named_values = { 'self' => receiver.namespace }
+        pins.map(&:typedef_return_types)
+            .map { |array| array.map { |type| type.resolve_named_tokens(named_values) } }
+            .map { |types| Pin::ProxyType.anonymous(ComplexType.new(types.map(&:to_complex_type))) }
       end
     end
   end

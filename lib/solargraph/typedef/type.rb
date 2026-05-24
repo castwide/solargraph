@@ -37,6 +37,15 @@ module Solargraph
         "#{base}#{params_to_s}"
       end
 
+      def to_complex_type
+        if params.empty?
+          ComplexType.try_parse("#{base}")
+        else
+          ComplexType.try_parse("#{base}<#{params.join(', ')}>")
+        end
+        
+      end
+
       # @param [ComplexType]
       # @return [Array<Type>]
       def self.from_complex_type complex_type

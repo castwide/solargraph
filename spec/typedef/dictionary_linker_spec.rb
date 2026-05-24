@@ -2,7 +2,6 @@
 
 describe Solargraph::Typedef::Dictionary do
   it "infers types from new subclass calls without a subclass initialize method" do
-    pending 'Problem with initialize method'
     source = Solargraph::Source.load_string(%(
       class Sup
         def initialize; end
@@ -171,15 +170,30 @@ describe Solargraph::Typedef::Dictionary do
     source = Solargraph::Source.load_string(%(
       @x = true
     ), 'test.rb')
-    # api_map = Solargraph::ApiMap.new
-    # api_map.map source
-    # node = source.node_at(1, 6)
-    # # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
-    # chain = Solargraph::Parser.chain(node, 'test.rb')
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 8])
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Boolean'])
+  end
+
+  it 'infers self from Array#new' do
+    source = Solargraph::Source.load_string(%(
+      Array.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 12])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Array'])
+  end
+
+  it 'infers self from Object#freeze' do
+    pending 'Fix Array#new first'
+    source = Solargraph::Source.load_string(%(
+      Array.new.freeze
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 16])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Array'])
   end
 end

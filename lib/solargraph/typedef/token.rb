@@ -19,7 +19,7 @@ module Solargraph
         Typedef.tokenize(named_values[name])
       end
 
-      def resolve_rooted(_api_map, _gates)
+      def resolve_rooted(api_map, gates)
         self
       end
 
