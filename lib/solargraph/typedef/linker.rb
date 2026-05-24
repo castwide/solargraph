@@ -3,19 +3,16 @@
 module Solargraph
   module Typedef
     module Linker
+      autoload :Base, 'solargraph/typedef/linker/base'
+      autoload :Call, 'solargraph/typedef/linker/call'
+
       def hitch link, closure
         case link
         when Solargraph::Source::Chain::Head
           return [Pin::ProxyType.anonymous(closure.binder, source: :chain)] if link.word == 'self'
           []
         when Solargraph::Source::Chain::Call
-          found = api_map.var_at_location(locals, link.word, closure, location) if link.head?
-          return infer_from([found], closure) if found
-
-          closure.typedef_return_types
-                 .map { |type| type.resolve_rooted(api_map, [closure.namespace]) }
-                 .flat_map { |type| api_map.typedef_path_methods(type.base) }
-                 .select { |pin| pin.name == link.word }
+          Call.resolve(self, link, closure)
         when Solargraph::Source::Chain::Constant
           return [Pin::ROOT_PIN] if link.word.empty?
           if link.word.start_with?('::')

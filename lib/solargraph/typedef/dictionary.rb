@@ -50,7 +50,7 @@ module Solargraph
         proxies.flat_map(&:typedef_return_types)
       end
 
-      private
+      protected
 
       def define_from chain
         return [[closure], closure.closure] if chain.undefined?
