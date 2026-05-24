@@ -13,7 +13,7 @@ module Solargraph
       attr_reader :position
 
       # @param api_map [ApiMap]
-      # @param source_map [SourceMap, String]
+      # @param source_map [SourceMap, String] A SourceMap object or filename
       # @param position [Position, Array(Integer, Integer)]
       def initialize api_map, source_map, position
         @api_map = api_map
