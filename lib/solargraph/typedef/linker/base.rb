@@ -17,6 +17,22 @@ module Solargraph
           @closure = closure
         end
 
+        def api_map
+          dictionary.api_map
+        end
+
+        # @param pin [Pin::Base]
+        def delegate pin
+          # @todo This delegation doesn't work for some reason
+          # result = Dictionary.new(api_map, pin.filename, pin.location.range.start).infer
+          result = pin.probe(api_map)
+          if result.defined?
+            [Pin::ProxyType.anonymous(result)]
+          else
+            [pin]
+          end
+        end
+
         def resolve
           raise 'Not implemented'
         end

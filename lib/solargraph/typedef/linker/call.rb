@@ -5,10 +5,9 @@ module Solargraph
     module Linker
       class Call < Base
         def resolve
-          found = dictionary.api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
+          found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
           if found
-            type = found.infer(dictionary.api_map)
-            return [Pin::ProxyType.anonymous(type, closure: closure)]
+            return delegate(found)
           end
 
           closure.typedef_return_types

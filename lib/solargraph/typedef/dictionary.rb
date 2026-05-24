@@ -101,7 +101,7 @@ module Solargraph
               array.map.with_index do |type, idx|
                 type = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
                 if type.base.to_s == 'undefined'
-                  pins[idx].probe(api_map).to_typedef_types.first # @todo Better way?
+                  pins[idx].infer(api_map).to_typedef_types.first # @todo Better way?
                 else
                   type
                 end
