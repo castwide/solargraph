@@ -8,25 +8,25 @@ module Solargraph
 
       attr_reader :api_map
 
-      attr_reader :location
+      attr_reader :source_map
+
+      attr_reader :position
 
       # @param api_map [ApiMap]
-      # @param location [Location]
-      def initialize api_map, location
+      # @param source_map [SourceMap, String]
+      # @param position [Position, Array(Integer, Integer)]
+      def initialize api_map, source_map, position
         @api_map = api_map
-        @location = location
-      end
-
-      def source_map
-        @source_map ||= api_map.source_map(location.filename)
+        @source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
+        @position = Solargraph::Position.normalize(position)
       end
 
       def chain
-        @chain ||= Solargraph::Source::SourceChainer.chain(source_map.source, location.range.start)
+        @chain ||= Solargraph::Source::SourceChainer.chain(source_map.source, position)
       end
 
       def closure
-        @closure ||= api_map.source_map(location.filename).locate_closure_pin(location.range.start.line, location.range.start.character)
+        @closure ||= source_map.locate_closure_pin(position.line, position.character)
       end
 
       # @return [Array<Pin::Base>]

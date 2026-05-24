@@ -14,8 +14,7 @@ describe Solargraph::Typedef::Dictionary do
       Sub.new
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(9, 10, 9, 10))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [9, 10])
     types = dictionary.infer
     expect(types.map(&:to_s)).to match_array(['Sub'])
   end
@@ -29,8 +28,7 @@ describe Solargraph::Typedef::Dictionary do
       Container::Foo::Mixin
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 23, 5, 23))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [5, 23])
     pins = dictionary.define
     expect(pins).to be_empty
   end
@@ -43,8 +41,7 @@ describe Solargraph::Typedef::Dictionary do
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(3, 16, 3, 16))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [3, 16])
     pins = dictionary.define
     expect(pins.first.path).to eq('Foo::Bar')
   end

@@ -10,8 +10,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 10, 4, 10))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [4, 10])
     pins = dictionary.define
     expect(pins.map(&:path)).to eq(['Array#first', 'Enumerable#first'])
   end
@@ -25,8 +24,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 10, 4, 10))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [4, 10])
     types = dictionary.infer
     expect(types.map(&:to_s)).to match_array(['String', 'nil'])
   end
@@ -43,8 +41,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 17, 5, 17))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [5, 17])
     pins = dictionary.define
     expect(pins.map(&:path)).to eq(['Foo#bar'])
   end
@@ -59,8 +56,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    location = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(2, 6, 2, 6))
-    dictionary = described_class.new(api_map, location)
+    dictionary = described_class.new(api_map, 'test.rb', [2, 6])
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Integer'])
   end
