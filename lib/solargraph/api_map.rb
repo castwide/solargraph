@@ -531,6 +531,16 @@ module Solargraph
       end
     end
 
+    # @param path [Typedef::Type]
+    # @return [Array<Pin::Method>]
+    def typedef_type_methods type
+      scope = if %w[Class Module].include?(type.base.to_s)
+        get_methods(type.params.first.to_s, scope: :class)
+      else
+        get_methods(type.base.to_s, scope: :instance)
+      end
+    end
+
     # Get an array of method pins for a complex type.
     #
     # The type's namespace and the context should be fully qualified. If the
