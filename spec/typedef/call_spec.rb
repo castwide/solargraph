@@ -150,16 +150,36 @@ describe Solargraph::Typedef::Dictionary do
 
       Baz.bar.baz
     ), 'test.rb')
-    # api_map = Solargraph::ApiMap.new
-    # api_map.map source
-    # chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(16, 15))
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # expect(type.tag).to eq('Array<String>')
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [16, 15])
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Array[String]'])
+  end
 
+  it 'infers generic-class method return values with self reference' do
+    source = Solargraph::Source.load_string(%(
+      # @generic GenericTypeParam
+      module Foo
+        # @return [Hash<generic<GenericTypeParam>, self>]
+        def baz
+        end
+      end
+
+      class Baz
+        # @return [Baz<String>]
+        def self.bar
+        end
+
+        include Foo
+      end
+
+      Baz.bar.baz
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [16, 15])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Hash[String, Baz]'])
   end
 end
