@@ -33,6 +33,18 @@ module Solargraph
         base.resolved? && params.all?(&:resolved?)
       end
 
+      def scope
+        %w[Class Module].include?(base.to_s) ? :class : :instance
+      end
+
+      def class?
+        scope == :class
+      end
+
+      def instance?
+        scope == :instance
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end

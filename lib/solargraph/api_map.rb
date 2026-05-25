@@ -531,10 +531,10 @@ module Solargraph
       end
     end
 
-    # @param path [Typedef::Type]
+    # @param type [Typedef::Type]
     # @return [Array<Pin::Method>]
     def typedef_type_methods type
-      scope = if %w[Class Module].include?(type.base.to_s)
+      if type.class?
         get_methods(type.params.first.to_s, scope: :class)
       else
         get_methods(type.base.to_s, scope: :instance)
