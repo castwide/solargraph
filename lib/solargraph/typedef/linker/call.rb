@@ -7,7 +7,10 @@ module Solargraph
         def resolve
           found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
           if found
-            return delegate(found)
+            # @todo Pin probing is still necessary for local variables
+            result = found.probe(api_map)
+            return [Pin::ProxyType.anonymous(result)] if result.defined?
+            return [found]
           end
 
           closure.typedef_return_types
