@@ -37,10 +37,13 @@ module Solargraph
           complex_type = ComplexType.parse(type_name)
           [Pin::ProxyType.anonymous(complex_type, source: :chain)]
         when Source::Chain::Or
-          # @todo Use dictionary instead of link.infer
-          types = link.links.map { |link| link.infer(api_map, closure, locals) }
+          types = link.links.map do |link|
+            pins, receiver = define_from(link)
+            infer_proxies pins, receiver
+          end
+          .flatten.map(&:return_type)
           combined_type = Solargraph::ComplexType.new(types)
-          unless types.all?(&:nullable?)
+          unless types.flatten.all?(&:nullable?)
             # @sg-ignore flow sensitive typing should be able to handle redefinition
             combined_type = combined_type.without_nil
           end
