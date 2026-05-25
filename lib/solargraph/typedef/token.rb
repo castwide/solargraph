@@ -27,6 +27,10 @@ module Solargraph
         RESERVED_NAMES.include?(name)
       end
 
+      def expanded?
+        RESERVED_NAMES.include?(name)
+      end
+
       def to_s
         "#{([name] + params).join(', ')}"
       end

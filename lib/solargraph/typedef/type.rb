@@ -45,6 +45,10 @@ module Solargraph
         scope == :instance
       end
 
+      def expanded?
+        base.expanded? && params.all?(&:expanded?)
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end

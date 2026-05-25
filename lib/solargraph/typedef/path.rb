@@ -45,6 +45,10 @@ module Solargraph
         name.empty?
       end
 
+      def expanded?
+        true
+      end
+
       def from(base)
         return self if rooted?
 

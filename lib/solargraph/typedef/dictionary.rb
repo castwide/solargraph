@@ -15,10 +15,11 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param source_map [SourceMap, String] A SourceMap object or filename
       # @param position [Position, Array(Integer, Integer)]
-      def initialize api_map, source_map, position
+      def initialize api_map, source_map, position, chain: nil
         @api_map = api_map
         @source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
         @position = Solargraph::Position.normalize(position)
+        @chain = chain
       end
 
       def chain
@@ -49,8 +50,6 @@ module Solargraph
         proxies = infer_proxies(pins, receiver)
         proxies.flat_map(&:typedef_return_types)
       end
-
-      protected
 
       def define_from chain
         return [[closure], closure.closure] if chain.undefined?

@@ -8,6 +8,17 @@ module Solargraph
           found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
           if found
             # @todo Pin probing is still necessary for local variables
+            # lchain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
+            # inf = Dictionary.new(api_map, found.filename, found.location.range.start, chain: lchain)
+            #                 .infer
+            #                 # @todo Not sure why a generic<T> type is getting inferred in
+            #                 #   spec\typedef\call_spec.rb:429
+            #                 .select(&:expanded?)
+            # return [found] if inf.empty?
+            # result = ComplexType.new(inf.map(&:to_complex_type))
+            # return [Pin::ProxyType.anonymous(result)] if result.defined?
+            # return [found]
+
             result = found.probe(api_map)
             return [Pin::ProxyType.anonymous(result)] if result.defined?
             return [found]
