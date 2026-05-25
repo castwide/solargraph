@@ -46,7 +46,7 @@ module Solargraph
       # @return [Array<Typedef::Type>]
       def infer
         pins, receiver = define_from chain
-        proxies = infer_from(pins, receiver)
+        proxies = infer_proxies(pins, receiver)
         proxies.flat_map(&:typedef_return_types)
       end
 
@@ -61,7 +61,7 @@ module Solargraph
         chain.links.each do |link|
           last_closure = current_closure
           pins = hitch(link, current_closure)
-          pins = infer_from(pins, last_closure) if link != last_link
+          pins = infer_proxies(pins, last_closure) if link != last_link
           return [[], nil] unless pins&.any?
           current_closure = if link == last_link
             current_closure
@@ -80,7 +80,7 @@ module Solargraph
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
-      def infer_from pins, receiver
+      def infer_proxies pins, receiver
         named_values = if receiver
           pins.reduce({}) do |hash, pin|
             hash.merge (
