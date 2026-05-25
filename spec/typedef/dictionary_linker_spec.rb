@@ -378,4 +378,45 @@ describe Solargraph::Typedef::Dictionary do
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['String'])
   end
+
+  it 'infers class variables' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        @@foo = 'string'
+
+        def bar
+          @@foo
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [4, 12])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
+
+  it 'understands &. in chains' do
+    source = Solargraph::Source.load_string(%(
+      # @param a [String, nil]
+      # @return [String, nil]
+      def foo a
+        b = a&.upcase
+        b
+      end
+
+      b = foo 123
+      b
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    dictionary = described_class.new(api_map, 'test.rb', [5, 8])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+
+    dictionary = described_class.new(api_map, 'test.rb', [9, 6])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+  end
 end
