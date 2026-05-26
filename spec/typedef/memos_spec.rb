@@ -20,6 +20,13 @@ describe Solargraph::Typedef::Memos do
     expect(memos.cache).to be_empty
   end
 
+  it 'tracks pending memos' do
+    memos.cache['key'] do
+      expect(memos.pending).to include('key')
+    end
+    expect(memos.pending).not_to include('key')
+  end
+
   it 'raises errors on recursive actions' do
     expect {
       memos.fetch('key') do
