@@ -3,9 +3,10 @@
 module Solargraph
   module Typedef
     module Linker
-      autoload :Base, 'solargraph/typedef/linker/base'
-      autoload :Call, 'solargraph/typedef/linker/call'
-      autoload :Or, 'solargraph/typedef/linker/or'
+      autoload :Base,          'solargraph/typedef/linker/base'
+      autoload :Call,          'solargraph/typedef/linker/call'
+      autoload :ClassVariable, 'solargraph/typedef/linker/class_variable'
+      autoload :Or,            'solargraph/typedef/linker/or'
 
       def hitch link, closure
         case link
@@ -39,6 +40,8 @@ module Solargraph
           [Pin::ProxyType.anonymous(complex_type, source: :chain)]
         when Source::Chain::Or
           Or.resolve(self, link, closure)
+        when Source::Chain::ClassVariable
+          ClassVariable.resolve(self, link, closure)
         else
           raise "#{link.class} not implemented"
         end
