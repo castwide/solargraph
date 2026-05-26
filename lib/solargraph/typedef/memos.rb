@@ -5,10 +5,13 @@ module Solargraph
     # @todo Eventually it should be possible to clear memos for specific filenames
     #
     class Memos
-      def fetch key
+      def fetch key, default = nil
         return cache[key] if cache.key?(key)
-        raise "Recursive action detected for #{key}" unless pending.add?(key)
-        cache[key] = yield
+        if pending.add?(key)
+          cache[key] = yield.tap { pending.delete(key) }
+        else
+          default
+        end
       ensure
         pending.delete key
       end
