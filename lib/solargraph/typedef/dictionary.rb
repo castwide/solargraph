@@ -128,7 +128,7 @@ module Solargraph
           if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
             next_chain = next_chain(pin)
             next rooted unless next_chain
-            Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: next_chain).infer
+            Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
           else
             rooted
           end

@@ -16,9 +16,12 @@ module Solargraph
         private
 
         def local_variable
-          found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
+          found = if link.head?
+            api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) ||
+              # @todo Rough way to access parameters
+              (closure.is_a?(Pin::Method) ? closure.parameters.find { |pin| pin.name == link.word } : nil )
+          end
           return unless found
-
           return [found] if found.return_type.defined?
 
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
