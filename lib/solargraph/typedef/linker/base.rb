@@ -4,8 +4,6 @@ module Solargraph
   module Typedef
     module Linker
       class Base
-        include Helpers
-
         # @return [Dictionary]
         attr_reader :dictionary
 

@@ -5,7 +5,6 @@ module Solargraph
     # Temporary utilities for using typedef in chain inference.
     class Dictionary
       include Linker
-      include Helpers
 
       attr_reader :api_map
 
@@ -92,6 +91,26 @@ module Solargraph
           expanded = expand_tokens(pin, receiver)
           inferred = root_and_infer(pin, expanded, receiver)
           pin.proxy(ComplexType.new(inferred.map(&:to_complex_type)))
+        end
+      end
+
+      # @param pin [Pin::Base]
+      # @param receiver [Pin::Closure]
+      # @return [Array<Typedef::Type>]
+      def expand_tokens pin, receiver
+        pin.typedef_return_types.map do |type|
+          next type if type.expanded?
+
+          named_values = if type.generic?
+            # The type has generics. Crawl back up the closures to find their names. Apply values from the receiver. Replace the generics.
+            generic_keys = pin.closure.generics.map { |name| "generic<#{name}>" }
+            generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
+            generic_keys.zip(generic_values&.params || []).to_h
+          else
+            {}
+          end
+          named_values['self'] = receiver.binder.namespace
+          type.resolve_named_tokens(named_values)
         end
       end
 
