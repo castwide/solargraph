@@ -7,7 +7,7 @@ module Solargraph
     class Memos
       def fetch key
         return cache[key] if cache.key?(key)
-        raise "Recursive action detected" unless pending.add?(key)
+        raise "Recursive action detected for #{key}" unless pending.add?(key)
         cache[key] = yield
       ensure
         pending.delete key

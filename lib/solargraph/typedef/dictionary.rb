@@ -88,22 +88,26 @@ module Solargraph
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
-            .flat_map do |pin|
-          expand_tokens(pin, receiver).map { |type| root_and_infer(pin, type, receiver) }
-                                      .map { |type| Pin::ProxyType.anonymous(type.to_complex_type, closure: pin.closure) }
+            .map do |pin|
+          expanded = expand_tokens(pin, receiver)
+          inferred = root_and_infer(pin, expanded, receiver)
+          pin.proxy(ComplexType.new(inferred.map(&:to_complex_type)))
         end
       end
 
       # @param pin [Pin::Base]
-      # @param type [Typedef::Type]
+      # @param types [Array<Typedef::Type>]
       # @param receiver [Pin::Closure]
-      # @return [Typedef::Type]
-      def root_and_infer pin, type, receiver
-        rooted = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
-        if rooted.base.to_s == 'undefined'
-          pin.infer(api_map).to_typedef_types.first # @todo Better way without #first?
-        else
-          rooted
+      # @return [Array<Typedef::Type>]
+      def root_and_infer pin, types, receiver
+        types.flat_map do |type|
+          rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
+          if rooted.base.to_s == 'undefined'
+            next_chain = Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
+            Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: next_chain).infer
+          else
+            rooted
+          end
         end
       end
 
