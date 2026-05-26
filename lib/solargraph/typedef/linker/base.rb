@@ -26,6 +26,10 @@ module Solargraph
           dictionary.api_map
         end
 
+        def source_map
+          dictionary.source_map
+        end
+
         # @return [Array<Pin::Base>]
         def resolve
           raise 'Not implemented'

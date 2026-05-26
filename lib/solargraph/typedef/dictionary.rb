@@ -14,12 +14,13 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param source_map [SourceMap, String] A SourceMap object or filename
-      # @param position [Position, Array(Integer, Integer)]
-      def initialize api_map, source_map, position, chain: nil
+      # @param position [Position, Array(Integer, Integer), nil]
+      def initialize api_map, source_map, position, chain: nil, closure: nil
         @api_map = api_map
         @source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
-        @position = Solargraph::Position.normalize(position)
+        @position = Solargraph::Position.normalize(position) if position
         @chain = chain
+        @closure = closure
       end
 
       def chain
