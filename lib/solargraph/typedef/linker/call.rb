@@ -28,7 +28,7 @@ module Solargraph
         end
 
         def method_call
-          pins = closure.typedef_return_types
+          pins = (closure&.typedef_return_types || [])
                  .map { |type| type.resolve_rooted(dictionary.api_map, [closure.namespace]) }
                  .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                  .select { |pin| pin.name == link.word }

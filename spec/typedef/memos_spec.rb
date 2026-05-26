@@ -27,11 +27,10 @@ describe Solargraph::Typedef::Memos do
     expect(memos.pending).not_to include('key')
   end
 
-  it 'raises errors on recursive actions' do
-    expect {
-      memos.fetch('key') do
-        memos.fetch('key') { 'oops' }
+  it 'returns default on recursive actions' do
+      result = memos.fetch('key') do
+        memos.fetch('key', 'safe') { 'oops' }
       end
-    }.to raise_error
+      expect(result).to be('safe')
   end
 end

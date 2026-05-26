@@ -47,7 +47,7 @@ module Solargraph
 
       # @return [Array<Typedef::Type>]
       def infer
-        Typedef.memos.fetch memo_key(:infer) do
+        Typedef.memos.fetch memo_key(:infer), [] do
           pins, receiver = define_from chain
           proxies = infer_proxies(pins, receiver)
           proxies.flat_map(&:typedef_return_types)
@@ -57,7 +57,7 @@ module Solargraph
       # @param [Source::Chain]
       # @return [Array(Array<Pin::Base>, Pin::Closure)]
       def define_from chain
-        Typedef.memos.fetch memo_key(:define) do
+        Typedef.memos.fetch memo_key(:define), [[], nil] do
           next [[closure], closure.closure] if chain.undefined?
 
           pins = []
@@ -80,7 +80,7 @@ module Solargraph
       end
 
       def closure_from pins
-        pins.find { |pin| pin.typedef_return_types.first.resolve_rooted(api_map, pin.closure.gates) }
+        pins.find { |pin| pin.typedef_return_types.first&.resolve_rooted(api_map, pin.closure.gates) }
       end
 
       # @param pins [Array<Pin::Base>]
@@ -117,7 +117,7 @@ module Solargraph
           return Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
         elsif pin.is_a?(Pin::Method)
           node = method_body_node(pin)
-          Parser::ParserGem::NodeChainer.chain(node)
+          Parser::ParserGem::NodeChainer.chain(node) if node
         elsif pin.is_a?(Pin::BaseVariable)
           Parser::ParserGem::NodeChainer.chain(pin.assignment)
         else
