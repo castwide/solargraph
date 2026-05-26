@@ -6,6 +6,7 @@ module Solargraph
     autoload :Token,      'solargraph/typedef/token'
     autoload :Type,       'solargraph/typedef/type'
     autoload :Linker,     'solargraph/typedef/linker'
+    autoload :Memos,      'solargraph/typedef/memos'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Helpers,    'solargraph/typedef/helpers'
 
@@ -23,6 +24,10 @@ module Solargraph
       else
         raise "Invalid value #{value.inspect}"
       end
+    end
+
+    def self.memos
+      @memos ||= Memos.new
     end
 
     class << self

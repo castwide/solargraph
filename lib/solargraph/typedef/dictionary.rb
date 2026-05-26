@@ -47,32 +47,36 @@ module Solargraph
 
       # @return [Array<Typedef::Type>]
       def infer
-        pins, receiver = define_from chain
-        proxies = infer_proxies(pins, receiver)
-        proxies.flat_map(&:typedef_return_types)
+        Typedef.memos.fetch memo_key(:infer) do
+          pins, receiver = define_from chain
+          proxies = infer_proxies(pins, receiver)
+          proxies.flat_map(&:typedef_return_types)
+        end
       end
 
       # @param [Source::Chain]
       # @return [Array(Array<Pin::Base>, Pin::Closure)]
       def define_from chain
-        return [[closure], closure.closure] if chain.undefined?
+        Typedef.memos.fetch memo_key(:define) do
+          next [[closure], closure.closure] if chain.undefined?
 
-        pins = []
-        current_closure = closure
-        last_link = chain.links.last
-        chain.links.each do |link|
-          last_closure = current_closure
-          pins = hitch(link, current_closure)
-          pins = infer_proxies(pins, last_closure) if link != last_link
-          return [[], nil] unless pins&.any?
-          current_closure = if link == last_link
-            current_closure
-          else
-            closure_from(pins)
+          pins = []
+          current_closure = closure
+          last_link = chain.links.last
+          chain.links.each do |link|
+            last_closure = current_closure
+            pins = hitch(link, current_closure)
+            pins = infer_proxies(pins, last_closure) if link != last_link
+            next [[], nil] unless pins&.any?
+            current_closure = if link == last_link
+              current_closure
+            else
+              closure_from(pins)
+            end
+            next [[], nil] unless current_closure
           end
-          return [[], nil] unless current_closure
+          [pins, current_closure]
         end
-        [pins, current_closure]
       end
 
       def closure_from pins
@@ -99,7 +103,7 @@ module Solargraph
         if rooted.base.to_s == 'undefined'
           pin.infer(api_map).to_typedef_types.first # @todo Better way without #first?
         else
-          type
+          rooted
         end
       end
 
@@ -111,6 +115,10 @@ module Solargraph
           # puts "Check against #{chain.inspect}"
           false
         end || pin
+      end
+
+      def memo_key(action)
+        [source_map.filename, [api_map, position, chain, action]]
       end
     end
   end
