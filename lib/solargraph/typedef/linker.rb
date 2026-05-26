@@ -5,6 +5,7 @@ module Solargraph
     module Linker
       autoload :Base, 'solargraph/typedef/linker/base'
       autoload :Call, 'solargraph/typedef/linker/call'
+      autoload :Or, 'solargraph/typedef/linker/or'
 
       def hitch link, closure
         case link
@@ -37,18 +38,7 @@ module Solargraph
           complex_type = ComplexType.parse(type_name)
           [Pin::ProxyType.anonymous(complex_type, source: :chain)]
         when Source::Chain::Or
-          types = link.links.map do |link|
-            pins, receiver = define_from(link)
-            infer_proxies pins, receiver
-          end
-          .flatten.map(&:return_type)
-          combined_type = Solargraph::ComplexType.new(types)
-          unless types.flatten.all?(&:nullable?)
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
-            combined_type = combined_type.without_nil
-          end
-
-          [Solargraph::Pin::ProxyType.anonymous(combined_type, source: :chain)]
+          Or.resolve(self, link, closure)
         else
           raise "#{link.class} not implemented"
         end
