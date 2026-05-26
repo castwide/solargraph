@@ -104,6 +104,9 @@ module Solargraph
           named_values = if type.generic?
             # The type has generics. Crawl back up the closures to find their names. Apply values from the receiver. Replace the generics.
             generic_keys = pin.closure.generics.map { |name| "generic<#{name}>" }
+                           .concat(pin.generics.map { |name| "generic<#{name}>" })
+                           .uniq
+            # @todo This is almost certainly wrong
             generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
             generic_keys.zip(generic_values&.params || []).to_h
           else
