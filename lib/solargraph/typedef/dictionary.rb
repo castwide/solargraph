@@ -118,6 +118,8 @@ module Solargraph
         elsif pin.is_a?(Pin::Method)
           node = method_body_node(pin)
           Parser::ParserGem::NodeChainer.chain(node)
+        elsif pin.is_a?(Pin::BaseVariable)
+          Parser::ParserGem::NodeChainer.chain(pin.assignment)
         else
           nil
         end
