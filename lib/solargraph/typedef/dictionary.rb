@@ -103,12 +103,33 @@ module Solargraph
         types.flat_map do |type|
           rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
           if rooted.base.to_s == 'undefined'
-            next_chain = Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
+            next_chain = next_chain(pin)
             Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: next_chain).infer
           else
             rooted
           end
         end
+      end
+
+      # @param pin [Pin::Base]
+      def next_chain(pin)
+        if pin.location.range.start != position
+          return Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
+        elsif pin.is_a?(Pin::Method)
+          node = method_body_node(pin)
+          Parser::ParserGem::NodeChainer.chain(node)
+        else
+          nil
+        end
+      end
+
+      def method_body_node(pin)
+        node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        return unless node
+        return node.children[1].children.last if node.type == :DEFN
+        return node.children[2].children.last if node.type == :DEFS
+        return node.children[2] if %i[def DEFS].include?(node.type)
+        return node.children[3] if node.type == :defs
       end
 
       # @todo Either implement this or (more likely) handle it in Linker::Call
