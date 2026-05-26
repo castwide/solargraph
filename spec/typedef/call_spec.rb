@@ -495,4 +495,16 @@ describe Solargraph::Typedef::Dictionary do
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Set[Foo::Bar::Symbol]'])
   end
+
+  it 'handles this weird case' do
+    pending 'Generic and signature issues'
+    source = Solargraph::Source.load_string(%(
+      Encoding.default_external = 'UTF-8'
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 15])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['String'])
+  end
 end
