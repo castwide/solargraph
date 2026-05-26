@@ -14,12 +14,6 @@ module Solargraph
           found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
           return unless found
 
-          # result = found.probe(api_map)
-          # return [found.proxy(result)] if result.defined?
-          # return [found]
-
-          # [found]
-
           return [found] if found.return_type.defined?
 
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
@@ -28,12 +22,12 @@ module Solargraph
         end
 
         def method_call
-          top = closure.is_a?(Pin::Method) ? closure.closure : closure
-          return [] unless top
-          pins = (top.typedef_return_types)
-                 .map { |type| type.resolve_rooted(dictionary.api_map, [top.namespace]) }
-                 .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
-                 .select { |pin| pin.name == link.word }
+          types = (closure.typedef_return_types)
+                 .map { |type| type.resolve_rooted(dictionary.api_map, [closure.context.namespace]) }
+          # @todo Quick and dirty hack to force UniqueType to ComplexType
+          pins = ComplexType.new([closure.binder]).to_typedef_types
+                            .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
+                            .select { |pin| pin.name == link.word }
           return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }

@@ -227,7 +227,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers method return types with unused blocks' do
-    pending 'Block support'
     source = Solargraph::Source.load_string(%(
       def bar
         123
