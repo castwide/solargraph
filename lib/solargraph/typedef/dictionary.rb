@@ -49,7 +49,8 @@ module Solargraph
         Typedef.memos.fetch memo_key(:infer), [] do
           pins, receiver = define_from chain
           proxies = infer_proxies(pins, receiver)
-          proxies.flat_map(&:typedef_return_types)
+          # @todo Smelly uniqueness
+          proxies.flat_map(&:typedef_return_types).uniq(&:to_s)
         end
       end
 

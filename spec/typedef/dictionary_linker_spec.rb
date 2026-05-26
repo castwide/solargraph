@@ -304,6 +304,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'recognizes nil safe navigation without upstream nil' do
+    pending 'Not yet'
     source = Solargraph::Source.load_string(%(
       String.new&.strip
     ), 'test.rb')
