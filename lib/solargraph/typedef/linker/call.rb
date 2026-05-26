@@ -20,7 +20,7 @@ module Solargraph
             # return [found]
 
             result = found.probe(api_map)
-            return [Pin::ProxyType.anonymous(result)] if result.defined?
+            return [found.proxy(result)] if result.defined?
             return [found]
           end
 
