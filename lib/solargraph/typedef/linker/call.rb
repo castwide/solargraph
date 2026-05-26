@@ -14,28 +14,26 @@ module Solargraph
           found = api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) if link.head?
           return unless found
 
-          # @todo Pin probing is still necessary for local variables
-          # lchain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
-          # inf = Dictionary.new(api_map, found.filename, found.location.range.start, chain: lchain)
-          #                 .infer
-          #                 # @todo Not sure why a generic<T> type is getting inferred in
-          #                 #   spec\typedef\call_spec.rb:429
-          #                 .select(&:expanded?)
-          # return [found] if inf.empty?
-          # result = ComplexType.new(inf.map(&:to_complex_type))
-          # return [Pin::ProxyType.anonymous(result)] if result.defined?
+          # result = found.probe(api_map)
+          # return [found.proxy(result)] if result.defined?
           # return [found]
 
-          result = found.probe(api_map)
-          return [found.proxy(result)] if result.defined?
-          return [found]
+          [found]
+          # return [found] if found.return_type.defined?
+          # chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignments.first)
+          # result = Dictionary.new(api_map, found.filename, found.location.range.start, chain: chain).define
+          # return [found] if found
         end
 
         def method_call
-          closure.typedef_return_types
+          # puts "Call #{link.word} with #{link.arguments} #{link.nullable?}"
+          pins = closure.typedef_return_types
                  .map { |type| type.resolve_rooted(dictionary.api_map, [closure.namespace]) }
                  .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                  .select { |pin| pin.name == link.word }
+          # return pins unless link.nullable?
+
+          # pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
         end
       end
     end
