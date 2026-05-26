@@ -20,7 +20,7 @@ module Solargraph
           else
             {}
           end
-          named_values['self'] = receiver&.namespace
+          named_values['self'] = receiver.binder.namespace
           type.resolve_named_tokens(named_values)
         end
       end
