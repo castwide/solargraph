@@ -49,6 +49,10 @@ module Solargraph
         true
       end
 
+      def generic?
+        false
+      end
+
       def from(base)
         return self if rooted?
 

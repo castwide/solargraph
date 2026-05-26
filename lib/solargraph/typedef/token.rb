@@ -31,6 +31,10 @@ module Solargraph
         RESERVED_NAMES.include?(name)
       end
 
+      def generic?
+        name.start_with?('generic<')        
+      end
+
       def to_s
         "#{([name] + params).join(', ')}"
       end

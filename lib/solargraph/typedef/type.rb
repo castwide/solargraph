@@ -49,6 +49,10 @@ module Solargraph
         base.expanded? && params.all?(&:expanded?)
       end
 
+      def generic?
+        all.any?(&:generic?)        
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end
@@ -59,7 +63,10 @@ module Solargraph
         else
           ComplexType.try_parse("#{base}<#{params.join(', ')}>")
         end
-        
+      end
+
+      def all
+        [base] + params
       end
 
       # @param [ComplexType]
