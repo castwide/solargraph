@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Dictionary do
-  it 'resolves generics' do
+  it 'resolves methods with parameters' do
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def foo; end

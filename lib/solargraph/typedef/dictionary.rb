@@ -64,9 +64,8 @@ module Solargraph
           current_closure = closure
           last_link = chain.links.last
           chain.links.each do |link|
-            last_closure = current_closure
             pins = hitch(link, current_closure)
-            pins = infer_proxies(pins, last_closure) if link != last_link
+            pins = infer_proxies(pins, current_closure) if link != last_link
             next [[], nil] unless pins&.any?
             current_closure = if link == last_link
               current_closure
@@ -91,7 +90,7 @@ module Solargraph
             .map do |pin|
           expanded = expand_tokens(pin, receiver)
           inferred = root_and_infer(pin, expanded, receiver)
-          pin.proxy(ComplexType.new(inferred.map(&:to_complex_type)))
+          Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)), closure: receiver)
         end
       end
 
