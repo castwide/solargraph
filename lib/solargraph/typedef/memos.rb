@@ -7,7 +7,10 @@ module Solargraph
     class Memos
       def fetch key
         return cache[key] if cache.key?(key)
+        raise "Recursive action detected" unless processing.add?(key)
         cache[key] = yield
+      ensure
+        processing.delete key
       end
 
       def clear
@@ -16,6 +19,10 @@ module Solargraph
 
       def cache
         @cache ||= {}
+      end
+
+      def processing
+        @processing ||= Set.new
       end
     end
   end

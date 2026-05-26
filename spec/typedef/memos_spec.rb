@@ -19,4 +19,12 @@ describe Solargraph::Typedef::Memos do
     memos.clear
     expect(memos.cache).to be_empty
   end
+
+  it 'raises errors on recursive actions' do
+    expect {
+      memos.fetch('key') do
+        memos.fetch('key') { 'oops' }
+      end
+    }.to raise_error
+  end
 end
