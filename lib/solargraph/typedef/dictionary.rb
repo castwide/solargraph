@@ -51,6 +51,8 @@ module Solargraph
         proxies.flat_map(&:typedef_return_types)
       end
 
+      # @param [Source::Chain]
+      # @return [Array(Array<Pin::Base>, Pin::Closure)]
       def define_from chain
         return [[closure], closure.closure] if chain.undefined?
 
@@ -80,9 +82,10 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        pins.flat_map do |pin|
+        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
+            .flat_map do |pin|
           expand_tokens(pin, receiver).map { |type| root_and_infer(pin, type, receiver) }
-                                      .map { |type| Pin::ProxyType.anonymous(type.to_complex_type) }
+                                      .map { |type| Pin::ProxyType.anonymous(type.to_complex_type, closure: pin.closure) }
         end
       end
 
@@ -106,13 +109,27 @@ module Solargraph
         end
       end
 
+      # @param pin [Pin::Base]
+      # @param type [Typedef::Type]
+      # @param receiver [Pin::Closure]
+      # @return [Typedef::Type]
       def root_and_infer pin, type, receiver
         rooted = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
         if rooted.base.to_s == 'undefined'
-          pin.infer(api_map).to_typedef_types.first # @todo Better way withough #first?
+          pin.infer(api_map).to_typedef_types.first # @todo Better way without #first?
         else
           type
         end
+      end
+
+      # @todo Either implement this or (more likely) handle it in Linker::Call
+      # @param pin [Pin::Method]
+      # @return [Pin::Signature, Pin::Method]
+      def find_matching_signature(pin)
+        pin.signatures.find do |sig|
+          # puts "Check against #{chain.inspect}"
+          false
+        end || pin
       end
     end
   end
