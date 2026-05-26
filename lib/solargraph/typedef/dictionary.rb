@@ -91,7 +91,7 @@ module Solargraph
             .map do |pin|
           expanded = expand_tokens(pin, receiver)
           inferred = root_and_infer(pin, expanded, receiver)
-          Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)), closure: receiver)
+          pin.proxy(ComplexType.new(inferred.map(&:to_complex_type)))
         end
       end
 
