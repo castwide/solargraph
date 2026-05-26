@@ -10,6 +10,7 @@ module Solargraph
         if pending.add?(key)
           cache[key] = yield.tap { pending.delete(key) }
         else
+          Solargraph.logger.warn "Recursive definition detected: #{key}"
           default
         end
       ensure
