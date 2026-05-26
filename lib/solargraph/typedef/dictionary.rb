@@ -102,8 +102,9 @@ module Solargraph
       def root_and_infer pin, types, receiver
         types.flat_map do |type|
           rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
-          if rooted.base.to_s == 'undefined'
+          if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
             next_chain = next_chain(pin)
+            next rooted unless next_chain
             Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: next_chain).infer
           else
             rooted
@@ -112,7 +113,10 @@ module Solargraph
       end
 
       # @param pin [Pin::Base]
+      # @return [Source::Chain, nil]
       def next_chain(pin)
+        return unless pin.location
+
         if pin.location.range.start != position
           return Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
         elsif pin.is_a?(Pin::Method)

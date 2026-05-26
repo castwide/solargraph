@@ -28,8 +28,10 @@ module Solargraph
         end
 
         def method_call
-          pins = (closure&.typedef_return_types || [])
-                 .map { |type| type.resolve_rooted(dictionary.api_map, [closure.namespace]) }
+          top = closure.is_a?(Pin::Method) ? closure.closure : closure
+          return [] unless top
+          pins = (closure.typedef_return_types)
+                 .map { |type| type.resolve_rooted(dictionary.api_map, [top.namespace]) }
                  .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                  .select { |pin| pin.name == link.word }
           return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
