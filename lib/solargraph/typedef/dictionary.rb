@@ -80,33 +80,39 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        named_values = if receiver
-          pins.reduce({}) do |hash, pin|
-            hash.merge (
-              pin.closure
-                .generics
-                .map { |name| "generic<#{name}>" }
-                .zip(receiver.typedef_return_types.first.params.map { |type| type.resolve_rooted(api_map, [receiver.path]) })
-                .to_h
-            )            
-          end
-        else
-          {}
+        pins.flat_map do |pin|
+          expand_tokens(pin, receiver).map { |type| root_and_infer(pin, type, receiver) }
+                                      .map { |type| Pin::ProxyType.anonymous(type.to_complex_type) }
         end
-        named_values['self'] = receiver&.namespace
-        pins.map(&:typedef_return_types)
-            .map { |array| array.map { |type| type.resolve_named_tokens(named_values) } }
-            .map do |array|
-              array.map.with_index do |type, idx|
-                type = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
-                if type.base.to_s == 'undefined'
-                  pins[idx].infer(api_map).to_typedef_types.first # @todo Better way?
-                else
-                  type
-                end
-              end
-            end
-            .map { |types| Pin::ProxyType.anonymous(ComplexType.new(types.map(&:to_complex_type))) }
+      end
+
+      # @param pin [Pin::Base]
+      # @param receiver [Pin::Closure]
+      # @return [Array<Typedef::Type>]
+      def expand_tokens pin, receiver
+        pin.typedef_return_types.map do |type|
+          next type if type.expanded?
+
+          named_values = if type.generic?
+            # The type has generics. Crawl back up the closures to find their names. Apply values from the receiver. Replace the generics.
+            generic_keys = pin.closure.generics.map { |name| "generic<#{name}>" }
+            generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
+            generic_keys.zip(generic_values&.params || []).to_h
+          else
+            {}
+          end
+          named_values['self'] = receiver&.namespace
+          type.resolve_named_tokens(named_values)
+        end
+      end
+
+      def root_and_infer pin, type, receiver
+        rooted = type.resolve_rooted(api_map, receiver.closure&.gates || [''])
+        if rooted.base.to_s == 'undefined'
+          pin.infer(api_map).to_typedef_types.first # @todo Better way withough #first?
+        else
+          type
+        end
       end
     end
   end

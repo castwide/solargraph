@@ -429,6 +429,10 @@ module Solargraph
                                                         resolved_generic_values: resolved_generic_values)
       end
 
+      def generics
+        @generics ||= []
+      end
+
       # @yieldparam [ComplexType]
       # @yieldreturn [ComplexType]
       # @return [self]
