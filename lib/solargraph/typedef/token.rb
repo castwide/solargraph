@@ -14,7 +14,7 @@ module Solargraph
         @params = params
       end
 
-      def resolve_named_tokens(named_values)
+      def expand(named_values)
         return self unless named_values[name]
         Typedef.tokenize(named_values[name])
       end
