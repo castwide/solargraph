@@ -53,6 +53,10 @@ module Solargraph
         all.any?(&:generic?)        
       end
 
+      def nullable?
+        base.to_s == 'nil'
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end

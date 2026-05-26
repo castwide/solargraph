@@ -32,7 +32,7 @@ module Solargraph
                  .map { |type| type.resolve_rooted(dictionary.api_map, [closure.namespace]) }
                  .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                  .select { |pin| pin.name == link.word }
-          return pins unless link.nullable?
+          return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
         end
