@@ -86,7 +86,7 @@ module Solargraph
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
             .map { |pin| expand_tokens(pin, receiver) }
-            .map { |pin| Pin::ProxyType.anonymous(ComplexType.new(pin.typedef_return_types.map(&:to_complex_type))) }
+            # .map { |pin| root_and_infer(pin, receiver) }
       end
 
       # @param pin [Pin::Base]
