@@ -17,9 +17,9 @@ module Solargraph
 
         def local_variable
           found = if link.head?
-            api_map.var_at_location(dictionary.locals, link.word, closure, dictionary.location) ||
-              # @todo Rough way to access parameters
-              (closure.is_a?(Pin::Method) ? closure.parameters.find { |pin| pin.name == link.word } : nil )
+            source_map.locals_at(dictionary.location)
+                      .reverse
+                      .find { |pin| pin.name == link.word }
           end
 
           # @todo The linker should probably return the raw pin and let the dictionary handle

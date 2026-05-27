@@ -101,17 +101,20 @@ module Solargraph
       def expand_generic_types pin, receiver
         namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
         generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
-        return pin.typedef_return_types if generic_names.empty?
 
-        type = receiver.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
-        return pin.typedef_return_types unless type
+        type = unless generic_names.empty?
+          receiver.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
+        end
 
-        named_values = generic_names.zip(type.params).to_h
-                                    .merge({ 'self' => receiver.binder.namespace })
+        named_values = if type
+          generic_names.zip(type.params).to_h
+        else
+          {}
+        end
+        named_values['self'] = receiver.binder.namespace
+
         pin.typedef_return_types.map do |type|
-          next type unless type.generic?
-
-          type.expand(named_values)
+          type.generic? ? type.expand(named_values) : type
         end        
       end
 
