@@ -2,7 +2,8 @@
 
 module Solargraph
   module Typedef
-    # Temporary utilities for using typedef in chain inference.
+    # Type expansions and resolution utilities.
+    #
     class Dictionary
       include Linker
 
