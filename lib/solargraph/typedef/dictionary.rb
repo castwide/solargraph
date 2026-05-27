@@ -41,8 +41,8 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        pins, receiver = define_from chain
-        pins.map { |pin| expand_tokens(pin, receiver) }
+        pins, _receiver = define_from chain
+        pins
       end
 
       # @return [Array<Typedef::Type>]
@@ -65,44 +65,53 @@ module Solargraph
           current_closure = closure
           last_link = chain.links.last
           chain.links.each do |link|
-            pins = hitch(link, current_closure)
+            pins = hitch(link, current_closure).map { |pin| expand_tokens(pin, current_closure) }
             next pins, current_closure if link == last_link
 
             proxies = infer_proxies(pins, current_closure)
-            return [[], nil] if proxies.empty?
+            break [[], current_closure] if proxies.empty?
             current_closure = proxies.first
-            return [[], nil] unless current_closure
+            break [[], nil] unless current_closure
           end
           [pins, current_closure]
         end
       end
 
       # @param pins [Array<Pin::Base>]
-      # @param receiver [Pin::Closure]
+      # @param receiver [Pin::Closure, nil]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        expanded = pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
-            .map do |pin|
-          types = pin.typedef_return_types
-          if types.empty?
-            # @todo Deep inference
-          end
-          expand_tokens(pin, receiver)
-        end
-        expanded.map { |pin| root_and_infer(pin, receiver) }
+        return pins unless receiver
+
+        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
+            .map { |pin| root_and_infer(pin, receiver) }
+            .map { |pin| expand_tokens(pin, receiver) }
+            .map { |pin| Pin::ProxyType.anonymous(ComplexType.new(pin.typedef_return_types.map(&:to_complex_type))) }
       end
 
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
       def expand_tokens pin, receiver
-        generic_keys = receiver.generics.map { |name| "generic<#{name}>"}
-        generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
-        named_values = generic_keys.zip(generic_values&.params || [])
-                                   .to_h
-                                   .merge({ 'self' => receiver.binder.namespace })
-        expanded = pin.typedef_return_types.map { |type| type.expand(named_values) }
+        expanded = expand_generic_types(pin, receiver)
         pin.proxy(ComplexType.new(expanded.map(&:to_complex_type)))
+      end
+
+      def expand_generic_types pin, receiver
+        namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
+        generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
+        return pin.typedef_return_types if generic_names.empty?
+
+        type = receiver.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
+        return pin.typedef_return_types unless type
+
+        named_values = generic_names.zip(type.params).to_h
+                                    .merge({ 'self' => receiver.binder.namespace })
+        pin.typedef_return_types.map do |type|
+          next type unless type.generic?
+
+          type.expand(named_values)
+        end        
       end
 
       # @param pin [Pin::Base]
