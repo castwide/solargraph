@@ -33,6 +33,8 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
+      attr_reader :expansions
+
       def presence_certain?
         true
       end
@@ -47,7 +49,7 @@ module Solargraph
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
-                     docstring: nil, directives: nil, combine_priority: nil
+                     docstring: nil, directives: nil, combine_priority: nil, expansions: {}
         @location = location
         @type_location = type_location
         @closure = closure
@@ -60,6 +62,7 @@ module Solargraph
         @combine_priority = combine_priority
         # @type [ComplexType, ComplexType::UniqueType, nil]
         @binder = nil
+        @expansions = expansions
 
         assert_source_provided
         assert_location_provided
@@ -72,6 +75,11 @@ module Solargraph
       # @return [Array<Typedef::Type>]
       def typedef_return_types
         [Typedef::Type.from_complex_type(return_type)].flatten
+      end
+
+
+      def expansions
+        @expansions ||= {}
       end
 
       # @return [void]

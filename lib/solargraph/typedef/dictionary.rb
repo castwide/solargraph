@@ -41,8 +41,8 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        pins, _ = define_from chain
-        pins
+        pins, receiver = define_from chain
+        pins.map { |pin| expand_tokens(pin, receiver) }
       end
 
       # @return [Array<Typedef::Type>]
@@ -77,58 +77,39 @@ module Solargraph
         end
       end
 
-      def closure_from pins
-        pins.first
-        # pins.first.typedef_return_types.first&.resolve_rooted(api_map, pins.first.closure.gates)
-        # # pins.find { |pin| pin.typedef_return_types.first&.resolve_rooted(api_map, pin.closure.gates) }
-      end
-
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
+        expanded = pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map do |pin|
           types = pin.typedef_return_types
           if types.empty?
             # @todo Deep inference
           end
-          expanded = expand_tokens(pin, receiver)
-          inferred = root_and_infer(pin, expanded, receiver)
-          Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
+          expand_tokens(pin, receiver)
         end
+        expanded.map { |pin| root_and_infer(pin, receiver) }
       end
 
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
-      # @return [Array<Typedef::Type>]
+      # @return [Pin::Base]
       def expand_tokens pin, receiver
-        pin.typedef_return_types.map do |type|
-          next type if type.expanded?
-
-          named_values = if type.generic?
-            # The type has generics. Crawl back up the closures to find their names. Apply values from the receiver. Replace the generics.
-            generic_keys = pin.closure.generics.map { |name| "generic<#{name}>" }
-                           .concat(pin.generics.map { |name| "generic<#{name}>" })
-                           .uniq
-            # @todo This is almost certainly wrong
-            generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
-            generic_keys.zip(generic_values&.params || []).to_h
-          else
-            {}
-          end
-          named_values['self'] = receiver.binder.namespace
-          type.expand(named_values)
-        end
+        generic_keys = receiver.generics.map { |name| "generic<#{name}>"}
+        generic_values = receiver.typedef_return_types.find { |type| type.params.length == generic_keys.length }
+        named_values = generic_keys.zip(generic_values&.params || [])
+                                   .to_h
+                                   .merge({ 'self' => receiver.binder.namespace })
+        expanded = pin.typedef_return_types.map { |type| type.expand(named_values) }
+        pin.proxy(ComplexType.new(expanded.map(&:to_complex_type)))
       end
 
       # @param pin [Pin::Base]
-      # @param types [Array<Typedef::Type>]
       # @param receiver [Pin::Closure]
-      # @return [Array<Typedef::Type>]
-      def root_and_infer pin, types, receiver
-        # @todo infer pin if no return type
-        types.flat_map do |type|
+      # @return [Pin::ProxyType]
+      def root_and_infer pin, receiver
+        inferred = pin.typedef_return_types.flat_map do |type|
           rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
           if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
             next_chain = next_chain(pin)
@@ -138,6 +119,7 @@ module Solargraph
             rooted
           end
         end
+        Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
       end
 
       # @param pin [Pin::Base]
