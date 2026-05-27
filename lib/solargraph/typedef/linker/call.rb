@@ -21,6 +21,10 @@ module Solargraph
               # @todo Rough way to access parameters
               (closure.is_a?(Pin::Method) ? closure.parameters.find { |pin| pin.name == link.word } : nil )
           end
+
+          # @todo The linker should probably return the raw pin and let the dictionary handle
+          #   inference
+
           return unless found
           return [found] if found.return_type.defined?
 
@@ -37,9 +41,9 @@ module Solargraph
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
                             # .flat_map { |pin| overload(pin) }
-          # return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
+          return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
 
-          # pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+          pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
         end
 
         # @param pin [Pin::Method]
