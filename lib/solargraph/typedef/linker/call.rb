@@ -31,20 +31,26 @@ module Solargraph
 
         def method_call
           types = closure.typedef_return_types
-                         .map { |type| type.resolve_rooted(dictionary.api_map, [closure.context.namespace]) }
+                        #  .map { |type| type.resolve_rooted(dictionary.api_map, [closure.context.namespace]) }
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([closure.binder]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
-                            .flat_map { |pin| select_signatures(pin) }
-                            .compact
-          return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
+                            # .flat_map { |pin| overload(pin) }
+          # return pins unless link.nullable? && closure.typedef_return_types.any?(&:nullable?)
 
-          pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+          # pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
         end
 
+        # @param pin [Pin::Method]
+        def overload(pin)
+          pin.overloads.find { |overload| overload.arity_matches?(link.arguments, link.arguments )} || pin
+        end
+
+        # @todo Legacy stuff
+
         def select_signatures original_pin
-          # return pin # @todo placeholder
+          return original_pin # @todo signatures are stubbed
           result = proc do
             signatures = original_pin.signatures
             with_block, without_block = signatures.partition(&:block?)
@@ -102,17 +108,12 @@ module Solargraph
           end.call&.compact
           return original_pin if result.nil? || result.empty?
           result.map do |pin|
-            if pin.path == 'Class#new' && context.binder.tag != 'Class'
-              reduced_context = name_pin.binder.reduce_class_type
-              pin.proxy(reduced_context)
-            else
-              # @sg-ignore Need to add nil check here
-              next pin if pin.return_type.undefined?
-              # @sg-ignore Need to add nil check here
-              selfy = pin.return_type.self_to_type(closure.binder)
-              # @sg-ignore Need to add nil check here
-              selfy == pin.return_type ? pin : pin.proxy(selfy)
-            end
+            # @todo Nasty hacks to fix signature shortcomings
+            pin.name = original_pin.name
+            pin.closure = original_pin.closure
+            pin.context = original_pin.context
+            pin.scope = original_pin.scope
+            pin
           end
         end
 

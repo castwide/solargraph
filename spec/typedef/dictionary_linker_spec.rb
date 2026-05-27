@@ -186,7 +186,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(types.map(&:to_s)).to eq(['Array'])
   end
 
-  it 'infers self from Object#freeze' do
+  it 'infers self from inherited Object#freeze' do
     source = Solargraph::Source.load_string(%(
       Array.new.freeze
     ), 'test.rb')

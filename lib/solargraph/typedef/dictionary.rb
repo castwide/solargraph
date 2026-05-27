@@ -66,13 +66,11 @@ module Solargraph
           last_link = chain.links.last
           chain.links.each do |link|
             pins = hitch(link, current_closure)
-            pins = infer_proxies(pins, current_closure) if link != last_link
-            return [[], nil] unless pins&.any?
-            current_closure = if link == last_link
-              current_closure
-            else
-              closure_from(pins)
-            end
+            next pins, current_closure if link == last_link
+            proxies = infer_proxies(pins, current_closure)
+            proxies = infer_proxies(pins, current_closure) if link != last_link
+            return [[], nil] if proxies.empty?
+            current_closure = proxies.first
             return [[], nil] unless current_closure
           end
           [pins, current_closure]
@@ -80,7 +78,9 @@ module Solargraph
       end
 
       def closure_from pins
-        pins.find { |pin| pin.typedef_return_types.first&.resolve_rooted(api_map, pin.closure.gates) }
+        pins.first
+        # pins.first.typedef_return_types.first&.resolve_rooted(api_map, pins.first.closure.gates)
+        # # pins.find { |pin| pin.typedef_return_types.first&.resolve_rooted(api_map, pin.closure.gates) }
       end
 
       # @param pins [Array<Pin::Base>]
@@ -89,9 +89,13 @@ module Solargraph
       def infer_proxies pins, receiver
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map do |pin|
+          types = pin.typedef_return_types
+          if types.empty?
+            # @todo Deep inference
+          end
           expanded = expand_tokens(pin, receiver)
           inferred = root_and_infer(pin, expanded, receiver)
-          pin.proxy(ComplexType.new(inferred.map(&:to_complex_type)))
+          Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
         end
       end
 
@@ -123,6 +127,7 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Typedef::Type>]
       def root_and_infer pin, types, receiver
+        # @todo infer pin if no return type
         types.flat_map do |type|
           rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
           if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
