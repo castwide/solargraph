@@ -21,7 +21,16 @@ module Solargraph
               # @todo Rough way to access parameters
               (closure.is_a?(Pin::Method) ? closure.parameters.find { |pin| pin.name == link.word } : nil )
           end
-          return [found] if found
+
+          # @todo The linker should probably return the raw pin and let the dictionary handle
+          #   inference, but doing it here passes some existing specs
+
+          return unless found
+          return [found] if found.return_type.defined?
+
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
+          types = Dictionary.new(api_map, found.filename, closure.location.range.start, chain: chain).infer
+          [found.proxy(ComplexType.new(types.map(&:to_complex_type)))]
         end
 
         def method_call
