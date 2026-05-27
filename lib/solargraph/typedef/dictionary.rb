@@ -67,7 +67,8 @@ module Solargraph
           chain.links.each do |link|
             pins = hitch(link, current_closure)
             next pins, current_closure if link == last_link
-            proxies = infer_proxies(pins, current_closure) if link != last_link
+
+            proxies = infer_proxies(pins, current_closure)
             return [[], nil] if proxies.empty?
             current_closure = proxies.first
             return [[], nil] unless current_closure
