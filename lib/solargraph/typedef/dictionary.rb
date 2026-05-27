@@ -125,14 +125,24 @@ module Solargraph
         inferred = pin.typedef_return_types.flat_map do |type|
           rooted = type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
           if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
-            next_chain = next_chain(pin)
-            next rooted unless next_chain
-            Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+            infer_by_pin_type pin, receiver
           else
             rooted
           end
         end
         Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
+      end
+
+      def infer_by_pin_type pin, receiver
+        case pin
+        when Pin::BaseVariable, Pin::Constant
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(pin.assignment)
+          Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
+        else
+          next_chain = next_chain(pin)
+          return rooted unless next_chain
+          Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+        end
       end
 
       # @param pin [Pin::Base]

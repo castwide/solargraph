@@ -21,16 +21,7 @@ module Solargraph
                       .reverse
                       .find { |pin| pin.name == link.word }
           end
-
-          # @todo The linker should probably return the raw pin and let the dictionary handle
-          #   inference, but doing it here passes some existing specs
-
-          return unless found
-          return [found] if found.return_type.defined?
-
-          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
-          types = Dictionary.new(api_map, found.filename, closure.location.range.start, chain: chain).infer
-          [found.proxy(ComplexType.new(types.map(&:to_complex_type)))]
+          return [found] if found
         end
 
         def method_call
