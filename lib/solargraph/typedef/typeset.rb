@@ -5,6 +5,7 @@ module Solargraph
     class Typeset
       attr_reader :types
 
+      # @param types [Array<Type>]
       def initialize types
         @types = types
       end
@@ -12,6 +13,10 @@ module Solargraph
       # @return [ComplexType]
       def to_complex_type
         ComplexType.new(types.map(&:to_complex_type))
+      end
+
+      def to_s
+        types.join(', ')
       end
 
       # @param [ComplexType]
