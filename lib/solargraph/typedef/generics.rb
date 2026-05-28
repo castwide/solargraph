@@ -19,8 +19,8 @@ module Solargraph
 
       def expand
         pin.typedef_return_types
-           .map { |type| type.expand zip_pin_generic_values }
-           .map { |type| type.expand zip_receiver_generic_values }
+           .map { |type| type.expand zip_generic_values(pin) }
+           .map { |type| type.expand zip_generic_values(receiver) }
       end
 
       def names
@@ -51,37 +51,17 @@ module Solargraph
         pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 
-      def zip_pin_generic_values
-        generic_names = pin.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
+      def zip_generic_values reference
+        return {} unless receiver.closure
+        generic_names = reference.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.base.to_s == pin.context.namespace && type.params.length == generic_names.length }
+          receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length }
         end
         named_values = if type
           generic_names.zip(type.params).to_h
         else
           {}
         end
-        named_values.merge({'self' => receiver.binder.namespace})
-      end
-
-      def zip_receiver_generic_values
-        # namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
-        # generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
-        # return {} unless receiver.closure
-
-        # generic_names = receiver.closure.generics.map { |name| "generic<#{name}>"}
-        generic_names = receiver.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
-
-        type = unless generic_names.empty?
-          receiver.closure.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
-        end
-
-        named_values = if type
-          generic_names.zip(type.params).to_h
-        else
-          {}
-        end
-        named_values.merge({'self' => receiver.binder.namespace})
       end
     end
   end
