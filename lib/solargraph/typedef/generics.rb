@@ -52,12 +52,9 @@ module Solargraph
       end
 
       def zip_pin_generic_values
-        # @todo Figure this out. See spec/typedef/call_spec.rb:464
-        #   ('sends proper gates in ProxyType')
-        # return {}
         generic_names = pin.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.params.length == generic_names.length }
+          receiver.typedef_return_types.find { |type| type.base.to_s == pin.context.namespace && type.params.length == generic_names.length }
         end
         named_values = if type
           generic_names.zip(type.params).to_h
