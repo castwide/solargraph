@@ -180,34 +180,38 @@ describe Solargraph::Typedef::Dictionary do
   #   #   not sure that generics are a good fit here.
   # end
 
-  # @todo Temporary testing of #names
-  it 'finds generics from source pins' do
-    source = Solargraph::Source.load_string(%(
-      # @generic T
-      class Example
-        def foo; end
-      end
-    ), 'test.rb')
+  describe '#names' do
+    let(:pin) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
+    let(:receiver) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
 
-    api_map = Solargraph::ApiMap.new.map(source)
-    pin = api_map.get_path_pins('Example#foo').first
-    generics = Solargraph::Typedef::Generics.new(api_map, pin, nil)
-    expect(generics.names).to eq(['T'])
-  end
+    it 'finds generics from source pins' do
+      source = Solargraph::Source.load_string(%(
+        # @generic T
+        class Example
+          def foo; end
+        end
+      ), 'test.rb')
 
-  # @todo Temporary testing of #names
-  it 'finds generics from doc pins' do
-    source = Solargraph::Source.load_string(%(
-      class Example
-        # @return [Array]
-        def foo; end
-      end
-    ), 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      pin = api_map.get_path_pins('Example#foo').first
+      generics = Solargraph::Typedef::Generics.new(api_map, pin, receiver)
+      expect(generics.names).to eq(['T'])
+    end
 
-    api_map = Solargraph::ApiMap.new.map(source)
-    # Simulating the receiver
-    receiver = api_map.get_path_pins('Array').first
-    generics = Solargraph::Typedef::Generics.new(api_map, nil, receiver)
-    expect(generics.names).to eq(['Elem'])
+    # @todo Temporary testing of #names
+    it 'finds generics from doc pins' do
+      source = Solargraph::Source.load_string(%(
+        class Example
+          # @return [Array]
+          def foo; end
+        end
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new.map(source)
+      # Simulating the receiver
+      receiver = api_map.get_path_pins('Array').first
+      generics = Solargraph::Typedef::Generics.new(api_map, pin, receiver)
+      expect(generics.names).to eq(['Elem'])
+    end
   end
 end

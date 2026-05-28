@@ -728,6 +728,10 @@ module Solargraph
         end
       end
 
+      def typedef_generics
+        @generics ||= docstring.tags(:generic).map(&:name)
+      end
+
       protected
 
       # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
