@@ -19,9 +19,12 @@ module Solargraph
 
       def expand
         types = pin.typedef_return_types
-           .map { |type| type.expand zip_pin_generic_values }
-           .map { |type| type.expand zip_receiver_generic_values }
-        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
+                   .map { |type| type.expand zip_pin_generic_values }
+                   .map { |type| type.expand zip_receiver_generic_values }
+      end
+
+      def names
+        generics_from(pin).concat(generics_from(receiver))
       end
 
       def self.expand api_map, pin, receiver
@@ -29,6 +32,17 @@ module Solargraph
       end
 
       private
+
+      # @param pin [Pin::Base]
+      def generics_from pin
+        names = []
+        cursor = pin
+        while cursor
+          names.concat cursor.typedef_generics
+          cursor = cursor.closure
+        end
+        names
+      end
 
       def expand_generic_types
         types = pin.typedef_return_types

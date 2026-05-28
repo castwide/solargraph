@@ -179,4 +179,35 @@ describe Solargraph::Typedef::Dictionary do
     #   as [String]. That functionality is currently possible with macros. I'm
     #   not sure that generics are a good fit here.
   end
+
+  # @todo Temporary testing of #names
+  it 'finds generics from source pins' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      class Example
+        def foo; end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Example#foo').first
+    generics = Solargraph::Typedef::Generics.new(api_map, pin, nil)
+    expect(generics.names).to eq(['T'])
+  end
+
+  # @todo Temporary testing of #names
+  it 'finds generics from doc pins' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @return [Array]
+        def foo; end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    # Simulating the receiver
+    receiver = api_map.get_path_pins('Array').first
+    generics = Solargraph::Typedef::Generics.new(api_map, nil, receiver)
+    expect(generics.names).to eq(['Elem'])
+  end
 end
