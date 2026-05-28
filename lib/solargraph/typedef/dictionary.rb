@@ -2,7 +2,7 @@
 
 module Solargraph
   module Typedef
-    # Type expansions and resolution utilities.
+    # Type expansion and resolution utilities.
     #
     class Dictionary
       include Linker
@@ -66,7 +66,7 @@ module Solargraph
           current_closure = closure
           last_link = chain.links.last
           chain.links.each do |link|
-            pins = hitch(link, current_closure).map { |pin| expand_tokens(pin, current_closure) }
+            pins = hitch(link, current_closure).map { |pin| expand_generics(pin, current_closure) }
             next pins, current_closure if link == last_link
 
             proxies = infer_proxies(pins, current_closure)
@@ -86,58 +86,15 @@ module Solargraph
 
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
-            .map { |pin| expand_tokens(pin, receiver) }
+            .map { |pin| expand_generics(pin, receiver) }
             # .map { |pin| root_and_infer(pin, receiver) }
-      end
-
-      def expand_generics pin, receiver
-        pin.proxy Generics.expand(api_map, pin, receiver)
       end
 
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
-      def expand_tokens pin, receiver
-        expanded = expand_generic_types(pin, receiver)
-        pin.proxy(ComplexType.new(expanded.map(&:to_complex_type)))
-      end
-
-      def expand_generic_types pin, receiver
-        pin.typedef_return_types
-           .map { |type| type.expand zip_pin_generic_values(pin, receiver) }
-           .map { |type| type.expand zip_receiver_generic_values(pin, receiver) }
-      end
-
-      def zip_pin_generic_values pin, receiver
-        # @todo Figure this out. See spec/typedef/call_spec.rb:464
-        #   ('sends proper gates in ProxyType')
-        return {}
-        generic_names = pin.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
-        type = unless generic_names.empty?
-          pin.closure.typedef_return_types.find { |type| type.params.first.to_s == pin.binder.namespace && type.params.length == generic_names.length }
-        end
-        named_values = if type
-          generic_names.zip(type.params).to_h
-        else
-          {}
-        end
-        named_values.merge({'self' => receiver.binder.namespace})
-      end
-
-      def zip_receiver_generic_values pin, receiver
-        namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
-        generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
-
-        type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
-        end
-
-        named_values = if type
-          generic_names.zip(type.params).to_h
-        else
-          {}
-        end
-        named_values.merge({'self' => receiver.binder.namespace})
+      def expand_generics pin, receiver
+        Generics.expand(api_map, pin, receiver)
       end
 
       # @param pin [Pin::Base]

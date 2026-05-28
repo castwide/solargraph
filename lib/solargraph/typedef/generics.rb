@@ -2,21 +2,42 @@
 
 module Solargraph
   module Typedef
+    # Contextual expansion of generic tokens
+    #
     class Generics
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Closure]
-      # @return [Pin::Base]
+      attr_reader :api_map
+
+      attr_reader :pin
+
+      attr_reader :receiver
+
+      def initialize api_map, pin, receiver
+        @api_map = api_map
+        @pin = pin
+        @receiver = receiver
+      end
+
+      def expand
+        types = pin.typedef_return_types
+           .map { |type| type.expand zip_pin_generic_values }
+           .map { |type| type.expand zip_receiver_generic_values }
+        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
+      end
+
       def self.expand api_map, pin, receiver
-        expand_generic_types(api_map, pin, receiver)
+        new(api_map, pin, receiver).expand
       end
 
-      def self.expand_generic_types api_map, pin, receiver
-        pin.typedef_return_types
-           .map { |type| type.expand zip_pin_generic_values(api_map, pin, receiver) }
-           .map { |type| type.expand zip_receiver_generic_values(api_map, pin, receiver) }
+      private
+
+      def expand_generic_types
+        types = pin.typedef_return_types
+           .map { |type| type.expand zip_pin_generic_values }
+           .map { |type| type.expand zip_receiver_generic_values }
+        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 
-      def self.zip_pin_generic_values api_map, pin, receiver
+      def zip_pin_generic_values
         # @todo Figure this out. See spec/typedef/call_spec.rb:464
         #   ('sends proper gates in ProxyType')
         return {}
@@ -32,7 +53,7 @@ module Solargraph
         named_values.merge({'self' => receiver.binder.namespace})
       end
 
-      def self.zip_receiver_generic_values api_map, pin, receiver
+      def zip_receiver_generic_values
         namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
         generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
 
