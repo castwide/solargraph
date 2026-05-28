@@ -99,6 +99,9 @@ module Solargraph
       # @return [Pin::Base]
       def expand_generics pin, receiver
         types = Generics.expand(api_map, pin, receiver)
+                        # @todo There might be a better place for this
+                        .map { |type| type.expand({ 'self' => receiver.binder.namespace }) }
+
         pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 

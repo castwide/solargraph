@@ -51,11 +51,13 @@ module Solargraph
         pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 
+      # @param reference [Pin::Base] The pin with the @generic tag(s)
       def zip_generic_values reference
         return {} unless receiver.closure
         generic_names = reference.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length }
+          receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length } ||
+            receiver.typedef_return_types.find { |type| type.base.to_s == receiver.context.namespace && type.params.length == generic_names.length }
         end
         named_values = if type
           generic_names.zip(type.params).to_h
