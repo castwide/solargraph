@@ -198,7 +198,7 @@ describe Solargraph::Typedef::Dictionary do
       expect(generics.names).to eq(['T'])
     end
 
-    it 'finds generics from receiver pins' do
+    it 'finds generic names from receiver pins' do
       source = Solargraph::Source.load_string(%(
         class Example
           # @return [Array]
