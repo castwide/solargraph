@@ -9,6 +9,7 @@ module Solargraph
     autoload :Memos,      'solargraph/typedef/memos'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Generics,   'solargraph/typedef/generics'
+    autoload :Typeset,    'solargraph/typedef/typeset'
 
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
