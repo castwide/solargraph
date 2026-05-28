@@ -873,4 +873,136 @@ describe Solargraph::ApiMap do
     clip = api_map.clip_at('test.rb', [18, 4])
     expect(clip.infer.to_s).to eq('Integer')
   end
+
+  it 'generates pins from attached macros to DSL methods' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro prop
+        #   @!method $1(value)
+        #     $3
+        #     @return [$2]
+        def self.property(name, ret_type, docstring)
+        end
+
+        property :foo, String, "create a foo", [1, :two, '3'], test_key: 'test_value', test_key2: 3
+
+        # @!macro multi_property
+        #   @!method $1
+        #   @!method $2
+        def self.multi_property
+          do_something
+        end
+
+        multi_property :a, :b
+      end
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    pins = @api_map.get_methods('Macro', scope: :instance).select do |pin|
+      pin.namespace == 'Macro' and pin.is_a?(Solargraph::Pin::Method)
+    end
+    expect(pins.map(&:name).sort).to eq(%w[a b foo])
+  end
+
+  it 'applies inline yard tags to DSL generated methods from attached macros' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro multi_property
+        #   @!method $1
+        #   @!method $2
+        def self.multi_property
+          do_something
+        end
+
+        # @return [Integer]
+        multi_property :a, :b
+      end
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    pins = @api_map.get_methods('Macro', scope: :instance).select do |pin|
+      pin.namespace == 'Macro' and pin.is_a?(Solargraph::Pin::Method)
+    end
+    expect(pins.map(&:name).sort).to eq(%w[a b])
+    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[Integer Integer])
+  end
+
+  it 'generates methods from @!attribute tag in attached dsl macros' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro prop
+        #   @!attribute [rw] $1
+        #     @return [$2]
+        def self.property(name, ret_type, docstring)
+        end
+
+        property :foo, String, "create a foo"
+      end
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    pins = @api_map.get_methods('Macro', scope: :instance).select do |pin|
+      pin.namespace == 'Macro' and pin.is_a?(Solargraph::Pin::Method)
+    end
+    expect(pins.map(&:name).sort).to eq(%w[foo foo=])
+    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String String])
+  end
+
+  it 'generates methods from @!parse tag in attached dsl macros' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro prop
+        #   @!parse
+        #     module SomeNamespace
+        #       # @return [$2]
+        #       def self.$1(value)
+        #       end
+        #     end
+        def self.property(name, ret_type, docstring)
+        end
+
+        property :foo, String, "create a foo"
+      end
+
+      Macro::SomeNamespace.foo
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    pins = @api_map.get_methods('Macro::SomeNamespace', scope: :class).select do |pin|
+      pin.namespace == 'Macro::SomeNamespace' and pin.is_a?(Solargraph::Pin::Method)
+    end
+    expect(pins.map(&:name).sort).to eq(%w[foo])
+    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[String])
+  end
+
+  it 'expands keyword arguments as flat array of params from DSL methods with attached macros' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro prop
+        #   @!parse
+        #     module SomeNamespace
+        #       # $3
+        #       # @return [$3]
+        #       def self.$1(value)
+        #       end
+        #     end
+        def self.property(name, default, type:, comment:)
+        end
+
+        property :foo, [1, 2, 3], type: String, comment: "create a foo"
+      end
+
+      Macro::SomeNamespace.foo
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    pins = @api_map.get_methods('Macro::SomeNamespace', scope: :class).select do |pin|
+      pin.namespace == 'Macro::SomeNamespace' && pin.is_a?(Solargraph::Pin::Method)
+    end
+    expect(pins.map(&:name).sort).to eq(%w[foo])
+    # @todo These expectations compare Solargraph's macro processing to YARD's
+    #   output in generated docs. There still appear to be some discrepancies
+    #   in how keyword arguments are expanded.
+    expect(pins.first.comments).to include('type')
+    expect(pins.first.comments).to include('String')
+    expect(pins.first.comments).to include('comment')
+    expect(pins.first.comments).to include('create a foo')
+    # @todo Undefined because the return tag expands to `type: String`
+    expect(pins.map(&:return_type).map(&:tag)).to eq(%w[undefined])
+  end
 end

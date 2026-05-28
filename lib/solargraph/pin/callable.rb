@@ -161,8 +161,8 @@ module Solargraph
       end
 
       def typify api_map
-        type = super
-        return type if type.defined?
+        type = return_type
+        return type.qualify(api_map, *gates) if type.defined?
         if method_name.end_with?('?')
           logger.debug { "Callable#typify(self=#{self}) => Boolean (? suffix)" }
           ComplexType::BOOLEAN
