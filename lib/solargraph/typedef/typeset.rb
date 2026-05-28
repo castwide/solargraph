@@ -10,6 +10,19 @@ module Solargraph
         @types = types
       end
 
+      # @param named_values [Hash]
+      def expand(named_values)
+        Typeset.new(types.map { |type| type.expand(named_values) })
+      end
+
+      def resolve_rooted(api_map, gates)
+        Typeset.new(types.map { |type| type.resolve_rooted(api_map, gates) })
+      end
+
+      def generic?
+        types.any?(&:generic?)
+      end
+
       # @return [ComplexType]
       def to_complex_type
         ComplexType.new(types.map(&:to_complex_type))
