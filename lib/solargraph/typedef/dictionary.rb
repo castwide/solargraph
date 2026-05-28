@@ -90,6 +90,10 @@ module Solargraph
             # .map { |pin| root_and_infer(pin, receiver) }
       end
 
+      def expand_generics pin, receiver
+        pin.proxy Generics.expand(api_map, pin, receiver)
+      end
+
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
