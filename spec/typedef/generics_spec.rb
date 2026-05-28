@@ -184,7 +184,7 @@ describe Solargraph::Typedef::Dictionary do
     let(:pin) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
     let(:receiver) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
 
-    it 'finds generics from source pins' do
+    it 'finds generic names from source pins' do
       source = Solargraph::Source.load_string(%(
         # @generic T
         class Example
@@ -198,8 +198,7 @@ describe Solargraph::Typedef::Dictionary do
       expect(generics.names).to eq(['T'])
     end
 
-    # @todo Temporary testing of #names
-    it 'finds generics from doc pins' do
+    it 'finds generics from receiver pins' do
       source = Solargraph::Source.load_string(%(
         class Example
           # @return [Array]
