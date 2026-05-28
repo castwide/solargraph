@@ -24,18 +24,22 @@ module Solargraph
         @closure = closure
       end
 
+      # @return [Source::Chain]
       def chain
         @chain ||= Solargraph::Source::SourceChainer.chain(source_map.source, position)
       end
 
+      # @return [Pin::Closure]
       def closure
         @closure ||= source_map.locate_closure_pin(position.line, position.character)
       end
 
+      # @return [Location]
       def location
         @location ||= Location.new(source_map.filename, Range.new(position, position))
       end
 
+      # @return [Array<Pin::BaseVariable>]
       def locals
         @locals ||= source_map.locals_at(location)
       end
@@ -113,6 +117,7 @@ module Solargraph
         Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
       end
 
+      # @return [Array<Type>]
       def infer_by_pin_type pin, receiver
         case pin
         when Pin::BaseVariable, Pin::Constant
@@ -142,6 +147,7 @@ module Solargraph
         end
       end
 
+      # @return [Parser::AST::Node, nil]
       def method_body_node(pin)
         node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
         return unless node
