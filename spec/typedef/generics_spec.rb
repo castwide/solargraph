@@ -161,4 +161,22 @@ describe Solargraph::Typedef::Dictionary do
     types = dictionary.infer
     expect(types.map(&:to_s)).to eq(['Set[Foo::Bar::Symbol]'])
   end
+
+  it 'gracefully handles requests for type of generic method in chain' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param x [generic<T>]
+      # @return [generic<T>]}
+      def foo(x); x; end
+      foo('string')
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [5, 7])
+    expect { dictionary.infer }.not_to raise_error
+
+    # @todo The original test suggested that the method call should be inferred
+    #   as [String]. That functionality is currently possible with macros. I'm
+    #   not sure that generics are a good fit here.
+  end
 end
