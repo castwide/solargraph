@@ -728,8 +728,16 @@ module Solargraph
         end
       end
 
+      def generics
+        @generics ||= []
+      end
+
       def typedef_generics
-        @generics ||= docstring.tags(:generic).map(&:name)
+        @typedef_generics ||= if generics.empty?
+          docstring.tags(:generic).map(&:name)
+        else
+          generics
+        end
       end
 
       protected

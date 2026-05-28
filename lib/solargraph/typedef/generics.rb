@@ -38,7 +38,7 @@ module Solargraph
         names = []
         cursor = pin
         while cursor
-          names.concat cursor.typedef_generics
+          names.concat(cursor.typedef_generics)
           cursor = cursor.closure
         end
         names
@@ -54,10 +54,10 @@ module Solargraph
       def zip_pin_generic_values
         # @todo Figure this out. See spec/typedef/call_spec.rb:464
         #   ('sends proper gates in ProxyType')
-        return {}
-        generic_names = pin.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
+        # return {}
+        generic_names = pin.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
-          pin.closure.typedef_return_types.find { |type| type.params.first.to_s == pin.binder.namespace && type.params.length == generic_names.length }
+          receiver.typedef_return_types.find { |type| type.params.length == generic_names.length }
         end
         named_values = if type
           generic_names.zip(type.params).to_h
@@ -68,11 +68,15 @@ module Solargraph
       end
 
       def zip_receiver_generic_values
-        namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
-        generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
+        # namespaces = api_map.get_path_pins(receiver.namespace).select { |pin| pin.is_a?(Pin::Namespace) }
+        # generic_names = namespaces.flat_map(&:generics).map { |name| "generic<#{name}>"}
+        # return {} unless receiver.closure
+
+        # generic_names = receiver.closure.generics.map { |name| "generic<#{name}>"}
+        generic_names = receiver.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
 
         type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
+          receiver.closure.typedef_return_types.find { |type| type.base.to_s == receiver.namespace && type.params.length == generic_names.length }
         end
 
         named_values = if type
