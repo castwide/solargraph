@@ -274,7 +274,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'infers types from named macros' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       # @!macro firstarg
       #   @return [$1]
@@ -289,6 +288,24 @@ describe Solargraph::SourceMap::Clip do
     map.map source
     clip = map.clip_at('test.rb', Solargraph::Position.new(8, 14))
     expect(clip.infer.tag).to eq('String')
+  end
+
+  it 'infers parameterized types from named macros' do
+    pending "Macros and generics don't mix yet"
+    source = Solargraph::Source.load_string(%(
+      # @!macro firstarg
+      #   @return [Array<$1>]
+      class Foo
+        # @macro firstarg
+        def bar klass
+        end
+      end
+      Foo.new.bar(String)
+    ), 'test.rb')
+    map = Solargraph::ApiMap.new
+    map.map source
+    clip = map.clip_at('test.rb', Solargraph::Position.new(8, 14))
+    expect(clip.infer.tag).to eq('Array<String>')
   end
 
   it 'completes generated methods from attached dsl macros' do

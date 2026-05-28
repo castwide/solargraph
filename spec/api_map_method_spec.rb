@@ -184,4 +184,21 @@ describe Solargraph::ApiMap do
       expect(pins.map(&:path)).to include('Foo::Bar#baz')
     end
   end
+
+  describe '#typify' do
+    it 'expands named macros' do
+      source = Solargraph::Source.load_string(%(
+        # @!macro [new] klassify
+        #   @return [Array<$1>]
+        class Example
+          # @macro klassify
+          def foo(klass)
+          end  
+        end
+      ))
+      api_map = Solargraph::ApiMap.new.map(source)
+      pin = api_map.get_path_pins('Example#foo').first
+      expect(pin.typify(api_map).to_s).to eq('Array<klass>')
+    end
+  end
 end

@@ -279,7 +279,19 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
         end
-        decl = super
+        decl = if macro_names?
+          types = macro_names.flat_map do |mac|
+            directive = api_map.named_macro(mac)
+            next unless directive
+            macro = Solargraph::YardMap::Macro.from_directive(directive, self)
+            expanded = macro.macro_object.expand([name, *parameter_names])
+            docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
+            docstring.tags(:return).flat_map(&:types)
+          end
+          ComplexType.try_parse(*types)
+        else
+          super
+        end
         unless decl.undefined?
           logger.debug do
             "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context}) => #{decl.rooted_tags.inspect} - decl found"

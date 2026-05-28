@@ -547,6 +547,10 @@ module Solargraph
         yield new_type
       end
 
+      def expand named_types
+        named_types[name] || self
+      end
+
       # Generate a ComplexType that fully qualifies this type's namespaces.
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification

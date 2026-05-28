@@ -298,6 +298,10 @@ module Solargraph
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
+    def expand named_types
+      ComplexType.new(map { |ut| ut.expand(named_types) })
+    end
+
     # @return [self]
     def force_rooted
       transform do |t|
