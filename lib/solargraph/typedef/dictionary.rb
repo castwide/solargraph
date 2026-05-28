@@ -120,7 +120,7 @@ module Solargraph
           Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
         else
           next_chain = next_chain(pin)
-          return pin unless next_chain
+          return pin.typedef_return_types unless next_chain
           Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
         end
       end
