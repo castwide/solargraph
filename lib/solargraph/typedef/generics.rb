@@ -18,9 +18,9 @@ module Solargraph
       end
 
       def expand
-        types = pin.typedef_return_types
-                   .map { |type| type.expand zip_pin_generic_values }
-                   .map { |type| type.expand zip_receiver_generic_values }
+        pin.typedef_return_types
+           .map { |type| type.expand zip_pin_generic_values }
+           .map { |type| type.expand zip_receiver_generic_values }
       end
 
       def names

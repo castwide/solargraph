@@ -82,7 +82,7 @@ module Solargraph
       # @param receiver [Pin::Closure, nil]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        return pins unless receiver
+        return pins unless receiver # @todo Why is this necessary?
 
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
@@ -94,7 +94,8 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
       def expand_generics pin, receiver
-        Generics.expand(api_map, pin, receiver)
+        types = Generics.expand(api_map, pin, receiver)
+        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 
       # @param pin [Pin::Base]
@@ -119,7 +120,7 @@ module Solargraph
           Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
         else
           next_chain = next_chain(pin)
-          return rooted unless next_chain
+          return pin unless next_chain
           Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
         end
       end
