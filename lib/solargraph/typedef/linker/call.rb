@@ -28,7 +28,7 @@ module Solargraph
           types = closure.typedef_return_types
                         #  .map { |type| type.resolve_rooted(dictionary.api_map, [closure.context.namespace]) }
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          pins = ComplexType.new([closure.binder]).to_typedef_types
+          pins = ComplexType.new([closure.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
                             # .flat_map { |pin| overload(pin) }
