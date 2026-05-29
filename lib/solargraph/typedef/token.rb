@@ -38,6 +38,10 @@ module Solargraph
       def to_s
         "#{([name] + params).join(', ')}"
       end
+
+      def to_s_for_complex_type
+        to_s
+      end
     end
   end
 end

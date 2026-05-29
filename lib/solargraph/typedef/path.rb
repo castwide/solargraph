@@ -63,6 +63,10 @@ module Solargraph
         name
       end
 
+      def to_s_for_complex_type
+        "#{rooted? ? '::' : ''}#{to_s}"
+      end
+
       ROOT = Path.new('', rooted: true)
     end
   end

@@ -63,10 +63,14 @@ module Solargraph
 
       def to_complex_type
         if params.empty?
-          ComplexType.try_parse("#{base}")
+          ComplexType.try_parse(base.to_s_for_complex_type)
         else
-          ComplexType.try_parse("#{base}<#{params.join(', ')}>")
+          ComplexType.try_parse("#{base.to_s_for_complex_type}<#{params.map(&:to_s_for_complex_type).join(', ')}>")
         end
+      end
+
+      def to_s_for_complex_type
+        "#{base.to_s_for_complex_type}#{params_to_s_for_complex_type}"
       end
 
       def all
@@ -84,6 +88,11 @@ module Solargraph
       def params_to_s
         return "" if @params.empty?
         "[#{params.join(', ')}]"
+      end
+
+      def params_to_s_for_complex_type
+        return "" if @params.empty?
+        "[#{params.map(&:to_s_for_complex_type).join(', ')}]"
       end
 
       ROOT = Type.new(Path::ROOT)
