@@ -56,8 +56,6 @@ module Solargraph
 
       # @param reference [Pin::Base] The pin with the @generic tag(s)
       def zip_generic_values reference
-        return {} unless receiver.closure
-
         generic_names = names.map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
           receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length } ||
