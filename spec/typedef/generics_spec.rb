@@ -214,4 +214,17 @@ describe Solargraph::Typedef::Dictionary do
       expect(generics.names).to eq(['Elem'])
     end
   end
+
+  it 'infers generic types from Array#reverse' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      list = array_of_strings
+      list.reverse
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [3, 11])
+    types = dictionary.infer
+    expect(types.map(&:to_s)).to eq(['Array[String]'])
+  end
 end
