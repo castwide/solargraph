@@ -11,7 +11,7 @@ module Solargraph
       def hitch link, closure
         case link
         when Solargraph::Source::Chain::Head
-          return [Pin::ProxyType.anonymous(closure.binder, source: :chain)] if link.word == 'self'
+          return [Pin::ProxyType.anonymous(closure.context, source: :chain)] if link.word == 'self'
           []
         when Solargraph::Source::Chain::Call
           Call.resolve(self, link, closure)
