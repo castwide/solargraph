@@ -6,6 +6,7 @@ module Solargraph
       autoload :Base,          'solargraph/typedef/linker/base'
       autoload :Call,          'solargraph/typedef/linker/call'
       autoload :ClassVariable, 'solargraph/typedef/linker/class_variable'
+      autoload :Constant,      'solargraph/typedef/linker/constant'
       autoload :Or,            'solargraph/typedef/linker/or'
 
       def hitch link, closure
@@ -16,18 +17,7 @@ module Solargraph
         when Solargraph::Source::Chain::Call
           Call.resolve(self, link, closure)
         when Solargraph::Source::Chain::Constant
-          return [Pin::ROOT_PIN] if link.word.empty?
-          if link.word.start_with?('::')
-            base = link.word[2..]
-            gates = ['']
-          else
-            base = link.word
-            gates = closure.gates
-          end
-          # @sg-ignore Need to add nil check here
-          fqns = api_map.resolve(base, gates)
-          # @sg-ignore Need to add nil check here
-          api_map.get_path_pins(fqns)
+          Constant.resolve(self, link, closure)
         when Source::Chain::InstanceVariable
           ivars = api_map.get_instance_variable_pins(closure.context.namespace, closure.context.scope).select do |p|
             p.name == link.word
