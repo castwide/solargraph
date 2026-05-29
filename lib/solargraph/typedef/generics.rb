@@ -5,10 +5,13 @@ module Solargraph
     # Contextual expansion of generic tokens
     #
     class Generics
+      # @return [ApiMap]
       attr_reader :api_map
 
+      # @return [Pin::Base]
       attr_reader :pin
 
+      # @return [Pin::Closure]
       attr_reader :receiver
 
       def initialize api_map, pin, receiver
@@ -54,7 +57,8 @@ module Solargraph
       # @param reference [Pin::Base] The pin with the @generic tag(s)
       def zip_generic_values reference
         return {} unless receiver.closure
-        generic_names = reference.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
+        generic_names = reference.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"}
+        generic_names = reference.closure.docstring.tags(:generic).map(&:name).map { |name| "generic<#{name}>"} if generic_names.empty?
         type = unless generic_names.empty?
           receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length } ||
             receiver.typedef_return_types.find { |type| type.base.to_s == receiver.context.namespace && type.params.length == generic_names.length }

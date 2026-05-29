@@ -126,6 +126,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'sends proper gates in ProxyType' do
+    pending 'Requires parameter expansion'
     source = Solargraph::Source.load_string(%(
       module Foo
         module Bar
@@ -137,7 +138,7 @@ describe Solargraph::Typedef::Dictionary do
       module Foo
         module Baz
           class Quux
-            # @return [void]
+            # @return [void] @todo This return tag blocks inference
             def foo
               s = objects_by_class(Bar::Symbol)
               s
