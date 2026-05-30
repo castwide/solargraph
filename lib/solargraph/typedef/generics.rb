@@ -47,13 +47,6 @@ module Solargraph
         names
       end
 
-      def expand_generic_types
-        types = pin.typedef_return_types
-           .map { |type| type.expand zip_pin_generic_values }
-           .map { |type| type.expand zip_receiver_generic_values }
-        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
-      end
-
       # @param reference [Pin::Base] The pin with the @generic tag(s)
       def zip_generic_values reference
         generic_names = names.map { |name| "generic<#{name}>"}
