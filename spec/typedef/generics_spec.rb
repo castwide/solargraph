@@ -126,7 +126,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'sends proper gates in ProxyType' do
-    pending 'Requires parameter expansion'
     source = Solargraph::Source.load_string(%(
       module Foo
         module Bar

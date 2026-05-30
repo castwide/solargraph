@@ -51,8 +51,10 @@ module Solargraph
       def zip_generic_values reference
         generic_names = names.map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
-          receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length } ||
-            receiver.typedef_return_types.find { |type| type.base.to_s == receiver.context.namespace && type.params.length == generic_names.length }
+          # receiver.typedef_return_types.find { |type| type.base.to_s == reference.context.namespace && type.params.length == generic_names.length } ||
+          #   receiver.typedef_return_types.find { |type| type.base.to_s == receiver.context.namespace && type.params.length == generic_names.length }
+          receiver.typedef_return_types.find { |type| type.params.length == generic_names.length } ||
+            receiver.typedef_return_types.find { |type| type.params.length == generic_names.length }
         end
         named_values = if type
           generic_names.zip(type.params).to_h
