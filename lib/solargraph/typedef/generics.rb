@@ -47,7 +47,7 @@ module Solargraph
         names
       end
 
-      # @param reference [Pin::Base] The pin with the @generic tag(s)
+      # @param reference [Pin::Base]
       def zip_generic_values reference
         generic_names = names.map { |name| "generic<#{name}>"}
         type = unless generic_names.empty?
