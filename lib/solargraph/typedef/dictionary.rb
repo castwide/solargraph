@@ -104,24 +104,24 @@ module Solargraph
         pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
       end
 
+      # @param pin [Pin::Base]
+      # @param receiver [Pin::Closure, Pin::ProxyType]
+      # @return [Typeset]
       def resolve_rooted pin, receiver
-        pin.typedef_return_types.map do |type|
-          type.resolve_rooted(api_map, receiver&.closure&.gates || [''])
-        end
+        pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
       end
 
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::ProxyType]
       def root_and_infer pin, receiver
-        inferred = resolve_rooted(pin, receiver).flat_map do |rooted|
-          if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
-            infer_by_pin_type(pin, receiver).types
-          else
-            rooted
-          end
+        rooted = resolve_rooted(pin, receiver)
+        inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
+          infer_by_pin_type pin, receiver
+        else
+          rooted
         end
-        Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
+        Pin::ProxyType.anonymous(inferred.to_complex_type)
       end
 
       # @return [Typeset]

@@ -77,9 +77,9 @@ module Solargraph
         [Typedef::Type.from_complex_type(return_type)].flatten
       end
 
-      # @return [Typeset]
+      # @return [Typedef::Typeset]
       def typedef_typeset
-        Typeset.new(typedef_return_types)
+        Typedef::Typeset.new(typedef_return_types)
       end
 
       def expansions
