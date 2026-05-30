@@ -15,8 +15,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [9, 10])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to match_array(['Sub'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Sub')
   end
 
   it "follows constant chains" do
@@ -82,8 +82,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it "uses last line of a begin expression as return type" do
@@ -95,8 +95,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 9])
-    type = dictionary.infer
-    expect(type.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it "matches constants on complete symbols" do
@@ -117,8 +117,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 7])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Boolean'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Boolean')
   end
 
   it 'infers last type from and-nodes' do
@@ -127,8 +127,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 14])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers multiple types from or-nodes' do
@@ -140,8 +140,8 @@ describe Solargraph::Typedef::Dictionary do
     # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 10])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array', 'String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array, String')
   end
 
   it 'infers Procs from block-pass nodes' do
@@ -162,8 +162,8 @@ describe Solargraph::Typedef::Dictionary do
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
     pins = dictionary.define
     expect(pins.map(&:return_type).map(&:tag)).to eq(['Proc'])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Proc'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Proc')
   end
 
   it 'infers Boolean from true' do
@@ -172,8 +172,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Boolean'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Boolean')
   end
 
   it 'infers self from Array#new' do
@@ -182,8 +182,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 12])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array')
   end
 
   it 'infers self from inherited Object#freeze' do
@@ -192,8 +192,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 16])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array')
   end
 
   it 'infers the nearest constants first' do
@@ -211,8 +211,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 19])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Class[Outer::String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Class[Outer::String]')
   end
 
   it 'infers rooted constants' do
@@ -231,40 +231,40 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 19])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Class[String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Class[String]')
   end
 
   it 'infers String from interpolated strings' do
     source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers Symbol from symbols' do
     source = Solargraph::Source.load_string(':foo', 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Symbol'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Symbol')
   end
 
   it 'infers Symbol from quoted symbols' do
     source = Solargraph::Source.load_string(':"foo"', 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Symbol'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Symbol')
   end
 
   it 'infers Symbol from interpolated symbols' do
     source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Symbol'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Symbol')
   end
 
   it 'infers namespaces from constant aliases' do
@@ -278,8 +278,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [5, 17])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Foo::Bar'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Foo::Bar')
   end
 
   it 'infers instance variables from sequential assignments' do
@@ -299,8 +299,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [3, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'recognizes nil safe navigation without upstream nil' do
@@ -309,8 +309,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 18])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'recognizes nil safe navigation with upstream nil' do
@@ -321,8 +321,8 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String, nil')
   end
 
   it 'infers Class<self> from Object#class' do
@@ -335,8 +335,8 @@ describe Solargraph::Typedef::Dictionary do
     # expect(tag.to_s).to eq('Class<String>')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 17])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Class[String]', 'Class'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Class[String], Class')
   end
 
   it 'resolves variable and method name collisions' do
@@ -357,8 +357,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [12, 7])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers class variables' do
@@ -374,8 +374,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 12])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'understands &. in chains' do
@@ -394,11 +394,11 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
 
     dictionary = described_class.new(api_map, 'test.rb', [5, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String, nil')
 
     dictionary = described_class.new(api_map, 'test.rb', [9, 6])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String', 'nil'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String, nil')
   end
 end

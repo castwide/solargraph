@@ -50,13 +50,12 @@ module Solargraph
         pins
       end
 
-      # @return [Array<Typedef::Type>]
+      # @return [Typeset]
       def infer
         Typedef.memos.fetch memo_key(:infer), [] do
           pins, receiver = define_from chain
           proxies = infer_proxies(pins, receiver)
-          # @todo Smelly uniqueness
-          proxies.flat_map(&:typedef_return_types).uniq(&:to_s)
+          Typeset.new(proxies.flat_map(&:typedef_return_types))
         end
       end
 
@@ -117,7 +116,7 @@ module Solargraph
       def root_and_infer pin, receiver
         inferred = resolve_rooted(pin, receiver).flat_map do |rooted|
           if rooted.base.to_s == 'undefined' # @todo Better way to identify undefined
-            infer_by_pin_type pin, receiver
+            infer_by_pin_type(pin, receiver).types
           else
             rooted
           end
@@ -125,7 +124,7 @@ module Solargraph
         Pin::ProxyType.anonymous(ComplexType.new(inferred.map(&:to_complex_type)))
       end
 
-      # @return [Array<Type>]
+      # @return [Typeset]
       def infer_by_pin_type pin, receiver
         case pin
         when Pin::BaseVariable, Pin::Constant
@@ -133,7 +132,7 @@ module Solargraph
           Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
         else
           next_chain = next_chain(pin)
-          return pin.typedef_return_types unless next_chain
+          return Typeset.new(pin.typedef_return_types) unless next_chain
           Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
         end
       end

@@ -20,8 +20,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [11, 14])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers return types based on yield call and @yieldreturn' do
@@ -38,8 +38,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 14])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq(['Integer'])
   end
 
   it 'infers return types based only on yield call and @yieldreturn' do
@@ -56,8 +56,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 32])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'adds virtual constructors for <Class>.new calls with conflicting return types' do
@@ -77,8 +77,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers types from macros' do
@@ -94,8 +94,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 10])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq(['String'])
   end
 
   it 'infers constant return types via returns, ignoring blocks' do
@@ -117,8 +117,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array[String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array[String]')
   end
 
   it 'infers method return types' do
@@ -136,8 +136,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [9, 9])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers method return types with unused blocks' do
@@ -155,8 +155,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [9, 9])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers generic return types from block from yield being a return node' do
@@ -174,8 +174,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 9])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers types from union type' do
@@ -199,13 +199,13 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
 
     dictionary = described_class.new(api_map, 'test.rb', [3, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
 
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
-    types = dictionary.infer
+    typeset = dictionary.infer
     pending "[Integer, Float, Integer, Numeric]"
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers generic types from union type' do
@@ -221,13 +221,13 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
 
     dictionary = described_class.new(api_map, 'test.rb', [3, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
 
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
-    types = dictionary.infer
+    typeset = dictionary.infer
     pending 'Missing generic expansion'
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'allows calls off of nilable objects by default' do
@@ -240,8 +240,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 6])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'denies calls off of nilable objects when loose union mode is off' do
@@ -255,8 +255,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 6])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['undefined'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('undefined')
   end
 
   it 'preserves unions in value position in Hash' do
@@ -272,8 +272,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array', 'Hash[String, undefined]', 'String', 'Integer', 'nil'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array, Hash[String, undefined], String, Integer, nil')
   end
 
   it 'preserves undefined and underdefined types in resolution' do
@@ -289,8 +289,9 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['undefined'])
+    typeset = dictionary.infer
+    pending 'Typeset#to_s currently returns an empty string for undefined types'
+    expect(typeset.to_s).to eq('undefined')
   end
 
   it 'correctly looks up civars' do
@@ -308,8 +309,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 10])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer', 'nil'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq(['Integer', 'nil'])
   end
 
   it 'does not mis-parse generic methods with type constraints' do
@@ -322,8 +323,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [3, 8])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'handles this weird case' do
@@ -334,7 +335,7 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 15])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 end

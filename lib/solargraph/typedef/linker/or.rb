@@ -5,10 +5,10 @@ module Solargraph
     module Linker
       class Or < Base
         def resolve
-          # @todo Don't call define_from here. It causes infinite recursion.
+          # @todo Lots of unnecessary conversion here
           types = link.links.map do |link|
             range = Solargraph::Range.from_node(link.node)
-            Dictionary.new(api_map, dictionary.source_map.filename, range.start, chain: link).infer
+            Dictionary.new(api_map, dictionary.source_map.filename, range.start, chain: link).infer.types
           end
           .flatten.map(&:to_complex_type)
           combined_type = Solargraph::ComplexType.new(types)

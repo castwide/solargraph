@@ -27,7 +27,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 10])
     types = dictionary.infer
-    expect(types.map(&:to_s)).to match_array(['String', 'nil'])
+    expect(typeset.to_s).to eq('String, nil')
   end
 
   it 'resolves self' do
@@ -58,7 +58,7 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 6])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Integer'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Integer')
   end
 end

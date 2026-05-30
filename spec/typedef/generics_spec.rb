@@ -24,8 +24,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [16, 15])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array[String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array[String]')
   end
 
   it 'infers generic-class method return values with self reference' do
@@ -50,8 +50,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [16, 15])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Hash[String, Baz]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Hash[String, Baz]')
   end
 
   it 'infers method return types based on method generic' do
@@ -72,8 +72,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [10, 6])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers generic types from @generic tag' do
@@ -97,12 +97,12 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
 
     dictionary = described_class.new(api_map, 'test.rb', [12, 15])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array[String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq(['Array[String]'])
 
     dictionary = described_class.new(api_map, 'test.rb', [13, 20])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array')
   end
 
   it 'calculates class return type based on class generic' do
@@ -121,8 +121,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [10, 7])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['String'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'sends proper gates in ProxyType' do
@@ -159,8 +159,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [14, 14])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Set[Foo::Bar::Symbol]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Set[Foo::Bar::Symbol]')
   end
 
   it 'gracefully handles requests for type of generic method in chain' do
@@ -224,7 +224,7 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [3, 11])
-    types = dictionary.infer
-    expect(types.map(&:to_s)).to eq(['Array[String]'])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Array[String]')
   end
 end
