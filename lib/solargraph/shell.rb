@@ -420,74 +420,104 @@ module Solargraph
         puts "Notification: #{method} - #{params}"
       end
 
-      puts 'Parsing and mapping source files...'
-      prepare_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/parse_benchmark.json.gz", hooks: hooks) do
-        puts 'Mapping libraries'
-        host.prepare(directory)
-        sleep 0.2 until host.libraries.all?(&:mapped?)
-      end
-      prepare_time = Time.now - prepare_start
+      parse_path = File.join(options[:output_dir], 'parse_benchmark.json.gz')
+      catalog_path = File.join(options[:output_dir], 'catalog_benchmark.json.gz')
+      definition_path = File.join(options[:output_dir], 'definition_benchmark.json.gz')
 
-      puts 'Building the catalog...'
-      catalog_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/catalog_benchmark.json.gz", hooks: hooks) do
-        host.catalog
-      end
-      catalog_time = Time.now - catalog_start
+      prepare_time = catalog_time = definition_time = nil
 
-      # Determine test file
-      if file
-        test_file = File.join(directory, file)
-      else
-        test_file = File.join(directory, 'lib', 'other.rb')
-        unless File.exist?(test_file)
-          # Fallback to any Ruby file in the workspace
-          workspace = Solargraph::Workspace.new(directory)
-          test_file = workspace.filenames.find { |f| f.end_with?('.rb') }
-          unless test_file
-            warn 'No Ruby files found in workspace'
-            return
-          end
+      # Trap CTRL-C so the in-progress Vernier.profile block can unwind through
+      # its ensure clause and still write its output file. A second CTRL-C
+      # restores default handling for a hard exit.
+      interrupted = false
+      previous_int_trap = Signal.trap('INT') do
+        if interrupted
+          Signal.trap('INT', 'DEFAULT')
+          Process.kill('INT', Process.pid)
+        else
+          interrupted = true
+          puts "\nInterrupted. Finishing current profile (CTRL-C again to force exit)..."
+          raise Interrupt
         end
       end
 
-      file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
+      begin
+        puts 'Parsing and mapping source files...'
+        prepare_start = Time.now
+        Vernier.profile(out: parse_path, hooks: hooks) do
+          puts 'Mapping libraries'
+          host.prepare(directory)
+          sleep 0.2 until host.libraries.all?(&:mapped?)
+        end
+        prepare_time = Time.now - prepare_start
 
-      puts "Profiling go-to-definition for #{test_file}"
-      puts "Position: line #{options[:line]}, column #{options[:column]}"
+        puts 'Building the catalog...'
+        catalog_start = Time.now
+        Vernier.profile(out: catalog_path, hooks: hooks) do
+          host.catalog
+        end
+        catalog_time = Time.now - catalog_start
 
-      definition_start = Time.now
-      Vernier.profile(out: "#{options[:output_dir]}/definition_benchmark.json.gz", hooks: hooks) do
-        message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
-          host, {
-            'params' => {
-              'textDocument' => { 'uri' => file_uri },
-              'position' => { 'line' => options[:line], 'character' => options[:column] }
+        # Determine test file
+        if file
+          test_file = File.join(directory, file)
+        else
+          test_file = File.join(directory, 'lib', 'other.rb')
+          unless File.exist?(test_file)
+            # Fallback to any Ruby file in the workspace
+            workspace = Solargraph::Workspace.new(directory)
+            test_file = workspace.filenames.find { |f| f.end_with?('.rb') }
+            unless test_file
+              puts 'No Ruby files found in workspace'
+              return
+            end
+          end
+        end
+
+        file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
+
+        puts "Profiling go-to-definition for #{test_file}"
+        puts "Position: line #{options[:line]}, column #{options[:column]}"
+
+        definition_start = Time.now
+        Vernier.profile(out: definition_path, hooks: hooks) do
+          message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
+            host, {
+              'params' => {
+                'textDocument' => { 'uri' => file_uri },
+                'position' => { 'line' => options[:line], 'character' => options[:column] }
+              }
             }
-          }
-        )
-        puts 'Processing go-to-definition request...'
-        result = message.process
+          )
+          puts 'Processing go-to-definition request...'
+          result = message.process
 
-        puts "Result: #{result.inspect}"
+          puts "Result: #{result.inspect}"
+        end
+        definition_time = Time.now - definition_start
+      rescue Interrupt
+        puts "\nProfile run interrupted; partial profile(s) have been written."
+      ensure
+        Signal.trap('INT', previous_int_trap || 'DEFAULT')
+
+        puts "\n=== Timing Results ==="
+        puts "Parsing & mapping: #{(prepare_time * 1000).round(2)}ms" if prepare_time
+        puts "Catalog building: #{(catalog_time * 1000).round(2)}ms" if catalog_time
+        puts "Go-to-definition: #{(definition_time * 1000).round(2)}ms" if definition_time
+        if prepare_time && catalog_time && definition_time
+          total_time = prepare_time + catalog_time + definition_time
+          puts "Total time: #{(total_time * 1000).round(2)}ms"
+        end
+
+        saved = [parse_path, catalog_path, definition_path].select { |p| File.exist?(p) }
+        unless saved.empty?
+          puts "\nProfiles saved to:"
+          saved.each { |p| puts "  - #{File.expand_path(p)}" }
+
+          puts "\nUpload the JSON files to https://vernier.prof/ to view the profiles."
+          puts 'Or use https://rubygems.org/gems/profile-viewer to view them locally.'
+        end
       end
-      definition_time = Time.now - definition_start
-
-      puts "\n=== Timing Results ==="
-      puts "Parsing & mapping: #{(prepare_time * 1000).round(2)}ms"
-      puts "Catalog building: #{(catalog_time * 1000).round(2)}ms"
-      puts "Go-to-definition: #{(definition_time * 1000).round(2)}ms"
-      total_time = prepare_time + catalog_time + definition_time
-      puts "Total time: #{(total_time * 1000).round(2)}ms"
-
-      puts "\nProfiles saved to:"
-      puts "  - #{File.expand_path('parse_benchmark.json.gz', options[:output_dir])}"
-      puts "  - #{File.expand_path('catalog_benchmark.json.gz', options[:output_dir])}"
-      puts "  - #{File.expand_path('definition_benchmark.json.gz', options[:output_dir])}"
-
-      puts "\nUpload the JSON files to https://vernier.prof/ to view the profiles."
-      puts 'Or use https://rubygems.org/gems/profile-viewer to view them locally.'
     end
 
     private
