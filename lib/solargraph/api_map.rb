@@ -150,11 +150,6 @@ module Solargraph
               next
             end
           end
-          pin = chain.define(self, closure, []).first
-          next unless pin&.macros&.any?
-          pin.macros.each do |macro|
-            macro_pins.concat macro.generate_pins_from(chain, pin, source_map)
-          end
         end
       end
       macro_pins
