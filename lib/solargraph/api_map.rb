@@ -135,8 +135,13 @@ module Solargraph
     # @return [Array<Pin::Base>]
     def process_macros
       macro_pins = []
+      Solargraph.logger.debug { "ApiMap#process_macros: processing macros for #{source_maps.size} source maps" }
+      Solargraph.logger.debug { "ApiMap#process_macros: store has #{store.macro_method_name_pins.size} macro method name pins" }
+      Solargraph.logger.debug { "ApiMap#process_macros: named macros: #{store.named_macros.keys.join(', ')}" }
       source_maps.each do |source_map|
-        source_map.macro_method_candidates(store.macro_method_names).each do |node|
+        method_candidates = source_map.macro_method_candidates(store.macro_method_names)
+        Solargraph.logger.debug { "ApiMap#process_macros: processing source map for #{source_map.filename} with #{method_candidates.size} macro method candidates" }
+        method_candidates.each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
@@ -149,11 +154,6 @@ module Solargraph
               end
               next
             end
-          end
-          pin = chain.define(self, closure, []).first
-          next unless pin&.macros&.any?
-          pin.macros.each do |macro|
-            macro_pins.concat macro.generate_pins_from(chain, pin, source_map)
           end
         end
       end
