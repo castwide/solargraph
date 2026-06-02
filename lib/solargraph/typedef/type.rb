@@ -7,8 +7,8 @@ module Solargraph
 
       attr_reader :params
 
-      # @param base [String, Path, Token]
-      # @param params [Array<String, Path, Token>]
+      # @param base [Path, Token]
+      # @param params [Array<Path, Token, Typeset>]
       def initialize base, *params
         @base = Typedef.tokenize(base)
         @params = params.map { |par| Typedef.tokenize(par) }

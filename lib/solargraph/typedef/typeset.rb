@@ -29,13 +29,13 @@ module Solargraph
       end
 
       def to_s
-        types.join(', ')
+        types.join(' | ')
       end
 
       # @param [ComplexType]
       # @return [self]
       def self.from_complex_type complex_type
-        new(complex_type.to_typedef_types)
+        complex_type.to_typedef_typeset
       end
     end
   end

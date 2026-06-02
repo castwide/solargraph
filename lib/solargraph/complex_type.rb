@@ -409,6 +409,12 @@ module Solargraph
       end
     end
 
+    def to_typedef_typeset
+      # @todo Quick and dirty hack
+      return Typedef::Typeset.new([Typedef::Type::ROOT]) if to_s == 'Class<>'
+      Typedef::Typeset.new(items.map { |item| item.to_typedef_typeset })
+    end
+
     protected
 
     def equality_fields

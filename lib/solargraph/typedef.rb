@@ -18,7 +18,7 @@ module Solargraph
       case value
       when String
         convert value
-      when Path, Token, Type
+      when Path, Token, Type, Typeset
         value
       when Array
         Typedef::Type.new(*value)

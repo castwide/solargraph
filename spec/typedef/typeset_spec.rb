@@ -25,6 +25,25 @@ describe Solargraph::Typedef::Typeset do
       typeset = described_class.from_complex_type(complex_type)
       expect(typeset.to_s).to eq('Array, String')
     end
+
+    it 'converts from complex types with simple parameters' do
+      complex_type = Solargraph::ComplexType.parse('Array<String>')
+      typeset = described_class.from_complex_type(complex_type)
+      expect(typeset.to_s).to eq('Array[String]')
+    end
+
+    it 'converts from complex types with complex parameters' do
+      complex_type = Solargraph::ComplexType.parse('Array<String, Integer>')
+      typeset = described_class.from_complex_type(complex_type)
+      expect(typeset.to_s).to eq('Array[String, Integer]')
+    end
+
+    it 'converts from complex types with complex parameters' do
+      pending 'WIP'
+      complex_type = Solargraph::ComplexType.parse('Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}')
+      typeset = described_class.from_complex_type(complex_type)
+      expect(typeset.to_s).to eq('Array[String, Array[undefined] | Hash[String, undefined] | String | Integer]')
+    end
   end
 
   describe '#expand' do

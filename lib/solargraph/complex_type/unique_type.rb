@@ -624,6 +624,21 @@ module Solargraph
         Typedef::Type.new(base, *params)
       end
 
+      def to_typedef_typeset
+        # @todo Quick and dirty hack
+        return Typedef::Type.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+
+        base = name
+        base = "::#{base}" if rooted? && base =~ /^[A-Z]/
+        if all_params.empty?
+          Typedef::Type.new(base)
+        else
+          params = all_params.map(&:to_typedef_typeset)
+          param_typeset = Typedef::Typeset.new(params)
+          Typedef::Typeset.new([Typedef::Type.new(base, *param_typeset)])
+        end
+      end
+
       # @param name [String]
       def self.can_root_name? name
         # name is not lowercase
