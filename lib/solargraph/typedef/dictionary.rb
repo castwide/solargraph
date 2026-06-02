@@ -55,7 +55,7 @@ module Solargraph
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain
           proxies = infer_proxies(pins, receiver)
-          Typeset.new(proxies.flat_map(&:typedef_return_types))
+          Typeset.new(proxies.map(&:typedef_typeset))
         end
       end
 
@@ -97,11 +97,11 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
       def expand_generics pin, receiver
-        types = Generics.expand(api_map, pin, receiver)
+        typeset = Generics.expand(api_map, pin, receiver)
                         # @todo There might be a better place for this
-                        .map { |type| type.expand({ 'self' => receiver.namespace }) }
+                        .expand({ 'self' => receiver.namespace })
 
-        pin.proxy(ComplexType.new(types.map(&:to_complex_type)))
+        pin.proxy(typeset.to_complex_type)
       end
 
       # @param pin [Pin::Base]
@@ -205,7 +205,7 @@ module Solargraph
         chain.links.last.arguments.each do |arg|
           inferred = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: arg).infer
           expanded = Generics.expand(api_map, defined, Pin::ProxyType.anonymous(inferred.to_complex_type))
-          final = Typeset.new(expanded)
+          final = expanded
         end
         final
       end

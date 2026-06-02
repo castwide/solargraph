@@ -20,10 +20,11 @@ module Solargraph
         @receiver = receiver
       end
 
+      # @return [Typeset]
       def expand
-        pin.typedef_return_types
-           .map { |type| type.expand zip_generic_values(pin) }
-           .map { |type| type.expand zip_generic_values(receiver) }
+        pin.typedef_typeset
+           .expand(zip_generic_values(pin))
+           .expand(zip_generic_values(receiver))
       end
 
       def names
