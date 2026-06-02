@@ -77,6 +77,7 @@ module Solargraph
         [base] + params
       end
 
+      # @return [Array<String>]
       def brackets
         [ '[', ']' ]
       end
