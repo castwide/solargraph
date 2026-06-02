@@ -70,4 +70,13 @@ describe Solargraph::Parser::NodeProcessor do
     described_class.deregister(:def, dummy_processor1)
     described_class.deregister(:def, dummy_processor2)
   end
+
+  it 'parses RBS parameters for classes' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo < Array #[String]
+      end
+    ), 'test.rb')
+
+    expect(map.pins.last.type.to_s).to eq('Array<String>')
+  end
 end

@@ -50,6 +50,7 @@ module Solargraph
   autoload :GemPins,          'solargraph/gem_pins'
   autoload :PinCache,         'solargraph/pin_cache'
   autoload :Typedef,          'solargraph/typedef'
+  autoload :RbsTranslator,    'solargraph/rbs_translator'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')

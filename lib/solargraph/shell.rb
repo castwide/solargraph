@@ -112,12 +112,10 @@ module Solargraph
         PinCache.serialize_yard_gem(gemspec, pins)
       end
 
-      workspace = Solargraph::Workspace.new(Dir.pwd)
-      rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+      workspace = Solargraph::Workspace.new(Dir.pwd) if File.exist?('rbs_collection.yaml')
+      rbs_map = RbsMap.from_gemspec(gemspec, workspace&.rbs_collection_path, workspace&.rbs_collection_config_path)
       if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
-        # cache pins even if result is zero, so we don't retry building pins
-        pins = rbs_map.pins || []
-        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, rbs_map.pins)
       end
     rescue Gem::MissingSpecError
       warn "Gem '#{gem}' not found"

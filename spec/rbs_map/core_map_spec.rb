@@ -82,7 +82,7 @@ describe Solargraph::RbsMap::CoreMap do
     #   correctly. It would be better to test RbsMap or RbsMap::Conversions
     #   with an RBS fixture.
     core_map = described_class.new
-    pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == '::Enumerable' }
+    pins = core_map.pins.select { |pin| pin.is_a?(Solargraph::Pin::Reference::Include) && pin.name == 'Enumerable' }
     expect(pins.map(&:closure).map(&:namespace)).to include('Enumerator')
   end
 
