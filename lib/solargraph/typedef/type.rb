@@ -21,7 +21,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param api_map [Array<Path>]
+      # @param gates [Array<Path>]
       # @return [Type]
       def resolve_rooted(api_map, gates)
         new_base = base.resolve_rooted(api_map, gates)
@@ -77,6 +77,10 @@ module Solargraph
         [base] + params
       end
 
+      def brackets
+        [ '[', ']' ]
+      end
+
       # @param [ComplexType]
       # @return [Array<Type>]
       def self.from_complex_type complex_type
@@ -86,13 +90,13 @@ module Solargraph
       private
 
       def params_to_s
-        return "" if @params.empty?
-        "[#{params.join(', ')}]"
+        return "" if params.empty?
+        "#{brackets.first}#{params.join(', ')}#{brackets.last}"
       end
 
       def params_to_s_for_complex_type
         return "" if @params.empty?
-        "[#{params.map(&:to_s_for_complex_type).join(', ')}]"
+        "#{brackets.first}#{params.map(&:to_s_for_complex_type).join(', ')}#{brackets.last}"
       end
 
       ROOT = Type.new(Path::ROOT)

@@ -418,8 +418,10 @@ module Solargraph
         key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
         val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
         Typedef::Type.new(top, key, val)
-      # @todo Tuple support
-      # elseif list_parameters?
+      elsif fixed_parameters?
+        top = Typedef.tokenize(name)
+        vals = value_types.map(&:to_typedef_typeset)
+        Typedef::Tuple.new(top, *vals)
       else
         Typedef::Typeset.new(items.map { |item| item.to_typedef_typeset })
       end

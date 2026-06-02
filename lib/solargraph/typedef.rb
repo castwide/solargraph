@@ -10,6 +10,7 @@ module Solargraph
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Generics,   'solargraph/typedef/generics'
     autoload :Typeset,    'solargraph/typedef/typeset'
+    autoload :Tuple,      'solargraph/typedef/tuple'
 
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
@@ -18,7 +19,7 @@ module Solargraph
       case value
       when String
         convert value
-      when Path, Token, Type, Typeset
+      when Path, Token, Type, Typeset, Tuple
         value
       when Array
         Typedef::Type.new(*value)
