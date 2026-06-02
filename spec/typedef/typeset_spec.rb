@@ -38,11 +38,10 @@ describe Solargraph::Typedef::Typeset do
       expect(typeset.to_s).to eq('Array[String, Integer]')
     end
 
-    it 'converts from complex types with complex parameters' do
-      pending 'WIP'
+    it 'converts from complex types with hash parameters' do
       complex_type = Solargraph::ComplexType.parse('Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}')
       typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array[String, Array[undefined] | Hash[String, undefined] | String | Integer]')
+      expect(typeset.to_s).to eq('Hash[String, Array[undefined] | Hash[String, undefined] | String | Integer]')
     end
   end
 
