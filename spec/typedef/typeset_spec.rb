@@ -5,7 +5,7 @@ describe Solargraph::Typedef::Typeset do
     type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
     type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
     typeset = described_class.new([type1, type2])
-    expect(typeset.to_s).to eq('Array, String')
+    expect(typeset.to_s).to eq('Array | String')
   end
 
   describe '#to_complex_type' do
@@ -23,7 +23,7 @@ describe Solargraph::Typedef::Typeset do
     it 'converts from complex types' do
       complex_type = Solargraph::ComplexType.parse('Array', 'String')
       typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array, String')
+      expect(typeset.to_s).to eq('Array | String')
     end
 
     it 'converts from complex types with simple parameters' do
@@ -35,7 +35,7 @@ describe Solargraph::Typedef::Typeset do
     it 'converts from complex types with complex parameters' do
       complex_type = Solargraph::ComplexType.parse('Array<String, Integer>')
       typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array[String, Integer]')
+      expect(typeset.to_s).to eq('Array[String | Integer]')
     end
 
     it 'converts from complex types with hash parameters' do
@@ -52,7 +52,7 @@ describe Solargraph::Typedef::Typeset do
       typeset = described_class.new([type1, type2])
       named_values = { 'generic<T>' => 'String' }
       expanded = typeset.expand(named_values)
-      expect(expanded.to_s).to eq('Array[String], Set[String]')
+      expect(expanded.to_s).to eq('Array[String] | Set[String]')
     end
   end
 end

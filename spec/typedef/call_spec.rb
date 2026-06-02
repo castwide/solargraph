@@ -310,7 +310,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 10])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq(['Integer', 'nil'])
+    expect(typeset.to_s).to eq('Integer | nil')
   end
 
   it 'does not mis-parse generic methods with type constraints' do

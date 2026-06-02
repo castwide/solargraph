@@ -141,7 +141,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 10])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('Array, String')
+    expect(typeset.to_s).to eq('Array | String')
   end
 
   it 'infers Procs from block-pass nodes' do
@@ -322,7 +322,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 11])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('String, nil')
+    expect(typeset.to_s).to eq('String | nil')
   end
 
   it 'infers Class<self> from Object#class' do
@@ -336,7 +336,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [1, 17])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('Class[String], Class')
+    expect(typeset.to_s).to eq('Class[String] | Class')
   end
 
   it 'resolves variable and method name collisions' do
@@ -395,10 +395,10 @@ describe Solargraph::Typedef::Dictionary do
 
     dictionary = described_class.new(api_map, 'test.rb', [5, 8])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('String, nil')
+    expect(typeset.to_s).to eq('String | nil')
 
     dictionary = described_class.new(api_map, 'test.rb', [9, 6])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('String, nil')
+    expect(typeset.to_s).to eq('String | nil')
   end
 end
