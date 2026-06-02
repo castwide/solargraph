@@ -66,7 +66,7 @@ module Solargraph
           ComplexType.try_parse(base.to_s_for_complex_type)
         else
           if base.to_s == 'Hash'
-            ComplexType.try_parse("#{base.to_s_for_complex_type}{#{params.map(&:to_s_for_complex_type).join(' => ')}}")
+            ComplexType.try_parse("#{base.to_s_for_complex_type}{#{params.first.to_s_for_complex_type} => #{params.last.to_s_for_complex_type}}")
           else
             ComplexType.try_parse("#{base.to_s_for_complex_type}<#{params.map(&:to_s_for_complex_type).join(', ')}>")
           end
