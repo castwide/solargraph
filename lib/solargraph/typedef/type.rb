@@ -65,7 +65,11 @@ module Solargraph
         if params.empty?
           ComplexType.try_parse(base.to_s_for_complex_type)
         else
-          ComplexType.try_parse("#{base.to_s_for_complex_type}<#{params.map(&:to_s_for_complex_type).join(', ')}>")
+          if base.to_s == 'Hash'
+            ComplexType.try_parse("#{base.to_s_for_complex_type}{#{params.map(&:to_s_for_complex_type).join(' => ')}}")
+          else
+            ComplexType.try_parse("#{base.to_s_for_complex_type}<#{params.map(&:to_s_for_complex_type).join(', ')}>")
+          end
         end
       end
 

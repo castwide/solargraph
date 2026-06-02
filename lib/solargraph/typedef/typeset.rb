@@ -32,6 +32,10 @@ module Solargraph
         types.join(' | ')
       end
 
+      def to_s_for_complex_type
+        "#{types.map(&:to_complex_type).map(&:to_s).join(', ')}"
+      end
+
       # @param [ComplexType]
       # @return [self]
       def self.from_complex_type complex_type
