@@ -37,6 +37,8 @@ module Solargraph
       def self.from_complex_type complex_type
         complex_type.to_typedef_typeset
       end
+
+      UNDEFINED = Typeset.new([Type::UNDEFINED])
     end
   end
 end

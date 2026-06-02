@@ -52,7 +52,7 @@ module Solargraph
 
       # @return [Typeset]
       def infer
-        Typedef.memos.fetch memo_key(:infer), [] do
+        Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain
           proxies = infer_proxies(pins, receiver)
           Typeset.new(proxies.flat_map(&:typedef_return_types))
@@ -178,7 +178,6 @@ module Solargraph
       # @param typeset [Typeset]
       # @param pin [Pin::Base]
       # @param receiver [Pin::Base]
-      # @param chain [Source::Chain]
       # @return [Typeset]
       def expand_generic_parameters typeset, pin, receiver
         case pin
@@ -189,6 +188,10 @@ module Solargraph
         end
       end
 
+      # @param typeset [Typeset]
+      # @param pin [Pin::BaseVariable]
+      # @param receiver [Pin::Base]
+      # @return [Typeset]
       def expand_generic_parameters_from_variable(typeset, pin, receiver)
         return typeset unless pin.assignment
 

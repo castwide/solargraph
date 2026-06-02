@@ -100,6 +100,7 @@ module Solargraph
       end
 
       ROOT = Type.new(Path::ROOT)
+      UNDEFINED = Type.new(Typedef.tokenize('undefined'))
     end
   end
 end
