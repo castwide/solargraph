@@ -8,6 +8,7 @@ module Solargraph
       autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
       autoload :Constant,         'solargraph/typedef/linker/constant'
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
+      autoload :Literal,          'solargraph/typedef/linker/literal'
       autoload :Or,               'solargraph/typedef/linker/or'
 
       def hitch link, closure
@@ -22,9 +23,7 @@ module Solargraph
         when Source::Chain::InstanceVariable
           InstanceVariable.resolve(self, link, closure)
         when Source::Chain::Literal
-          type_name = link.word.sub(/^</, '').sub(/>$/, '')
-          complex_type = ComplexType.parse(type_name)
-          [Pin::ProxyType.anonymous(complex_type, source: :chain)]
+          Literal.resolve(self, link, closure)
         when Source::Chain::Or
           Or.resolve(self, link, closure)
         when Source::Chain::ClassVariable
