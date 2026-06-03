@@ -376,7 +376,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'understands &. in chains' do
-    pending 'Inferred as String instead of String | nil'
     source = Solargraph::Source.load_string(%(
       # @param a [String, nil]
       # @return [String, nil]
@@ -385,11 +384,15 @@ describe Solargraph::Typedef::Dictionary do
         b
       end
 
-      b = foo 123
-      b
+      c = foo 123
+      c
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
+
+    dictionary = described_class.new(api_map, 'test.rb', [4, 15])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String | nil')
 
     dictionary = described_class.new(api_map, 'test.rb', [5, 8])
     typeset = dictionary.infer

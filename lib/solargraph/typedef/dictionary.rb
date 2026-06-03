@@ -54,8 +54,14 @@ module Solargraph
       def infer
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain
+          return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
+          return pins.first.typedef_typeset if receiver.typedef_typeset.to_s == pins.first.typedef_typeset.to_s && pins.first.typedef_typeset.to_s != 'undefined'
+
           proxies = infer_proxies(pins, receiver)
-          Typeset.new(proxies.map(&:typedef_typeset))
+          inferred = proxies.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
+          return inferred.typedef_typeset if inferred
+
+          ComplexType::UNDEFINED.to_typedef_typeset
         end
       end
 
@@ -66,18 +72,18 @@ module Solargraph
           next [[closure], closure.closure] if chain.undefined?
 
           pins = []
-          current_closure = closure
+          receiver = closure
           last_link = chain.links.last
           chain.links.each do |link|
-            pins = hitch(link, current_closure).map { |pin| expand_generics(pin, current_closure) }
-            next pins, current_closure if link == last_link
+            pins = hitch(link, receiver).map { |pin| expand_generics(pin, receiver) }
+            break if link == last_link
 
-            proxies = infer_proxies(pins, current_closure)
-            break [[], current_closure] if proxies.empty?
-            current_closure = proxies.first
-            break [[], nil] unless current_closure
+            proxies = infer_proxies(pins, receiver)
+            return [[], receiver] if proxies.empty?
+            receiver = proxies.first
+            return [[], nil] unless receiver
           end
-          [pins, current_closure]
+          [pins, receiver]
         end
       end
 

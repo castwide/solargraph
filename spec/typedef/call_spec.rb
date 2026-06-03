@@ -174,16 +174,6 @@ describe Solargraph::Typedef::Dictionary do
       list.upcase
       list.ceil
     ), 'test.rb')
-    # api_map = Solargraph::ApiMap.new
-    # api_map.map source
-
-    # chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # expect(type.tag).to eq('String')
-
-    # chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # expect(type.tag).to eq('Integer')
 
     api_map = Solargraph::ApiMap.new.map(source)
 

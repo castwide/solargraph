@@ -91,4 +91,18 @@ describe Solargraph::Typedef::Typeset do
       expect(expanded.to_s).to eq('Array[String] | Set[String]')
     end
   end
+
+  describe '#nullable?' do
+    it 'returns true with a nil return type' do
+      complex_type = Solargraph::ComplexType.parse('String, nil')
+      typeset = complex_type.to_typedef_typeset
+      expect(typeset).to be_nullable
+    end
+
+    it 'returns false without a nil return type' do
+      complex_type = Solargraph::ComplexType.parse('String')
+      typeset = complex_type.to_typedef_typeset
+      expect(typeset).not_to be_nullable
+    end
+  end
 end
