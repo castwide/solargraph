@@ -57,6 +57,14 @@ module Solargraph
         base.to_s == 'nil'
       end
 
+      def rooted?
+        all.all?(&:rooted?)
+      end
+
+      def flat_types
+        [self]
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end

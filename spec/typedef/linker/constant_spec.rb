@@ -12,11 +12,9 @@ describe Solargraph::Typedef::Linker::Constant do
     dictionary = double(Solargraph::Typedef::Dictionary, api_map: api_map)
     constant = Solargraph::Typedef::Linker::Constant.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
-    type = result.typedef_return_types.first
-    # @todo Simpler expectations based on typeset
-    expect(type.to_s).to eq('Class[String]')
-    expect(type.base).to be_rooted
-    expect(type.params.first.base).to be_rooted
+    typeset = result.typedef_typeset
+    expect(typeset.to_s).to eq('Class[String]')
+    expect(typeset).to be_rooted
   end
 
   it 'resolves relative paths' do
@@ -30,10 +28,8 @@ describe Solargraph::Typedef::Linker::Constant do
     dictionary = double(Solargraph::Typedef::Dictionary, api_map: api_map)
     constant = Solargraph::Typedef::Linker::Constant.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
-    type = result.typedef_return_types.first
-    # @todo Simpler expectations based on typeset
-    expect(type.to_s).to eq('Class[Example::String]')
-    expect(type.base).to be_rooted
-    expect(type.params.first.base).to be_rooted
+    typeset = result.typedef_typeset
+    expect(typeset.to_s).to eq('Class[Example::String]')
+    expect(typeset).to be_rooted
   end
 end

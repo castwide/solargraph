@@ -72,14 +72,9 @@ module Solargraph
         Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
       end
 
-      # @return [Array<Typedef::Type>]
-      def typedef_return_types
-        [Typedef::Type.from_complex_type(return_type)].flatten
-      end
-
       # @return [Typedef::Typeset]
       def typedef_typeset
-        Typedef::Typeset.new(typedef_return_types)
+        return_type.to_typedef_typeset
       end
 
       def expansions

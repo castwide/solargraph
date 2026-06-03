@@ -23,9 +23,21 @@ module Solargraph
         types.any?(&:generic?)
       end
 
+      def rooted?
+        types.all?(&:rooted?)
+      end
+
       # @return [ComplexType]
       def to_complex_type
         ComplexType.new(types.map(&:to_complex_type))
+      end
+
+      def flat_types
+        types.flat_map(&:flat_types)
+      end
+
+      def nullable?
+        types.any?(&:nullable?)
       end
 
       def to_s
