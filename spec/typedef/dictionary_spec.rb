@@ -16,7 +16,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers types' do
-    pending "Refine with overloads"
+    pending 'Overload/signature issue'
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def foo; end
@@ -26,8 +26,8 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 10])
-    types = dictionary.infer
-    expect(typeset.to_s).to eq('String, nil')
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('String | nil')
   end
 
   it 'resolves self' do
