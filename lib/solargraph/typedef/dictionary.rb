@@ -75,7 +75,7 @@ module Solargraph
           receiver = closure
           last_link = chain.links.last
           chain.links.each do |link|
-            pins = hitch(link, receiver).map { |pin| expand_generics(pin, receiver) }
+            pins = hitch(link, receiver)
             break if link == last_link
 
             proxies = infer_proxies(pins, receiver)
