@@ -73,7 +73,6 @@ describe Solargraph::Typedef::Typeset do
       reversion = typeset.to_complex_type
       expect(reversion.to_s).to eq('Class<String>')
       expect(reversion).to be_rooted
-      puts reversion.items.inspect
 
       reversion2 = reversion.to_typedef_typeset
       expect(reversion2.to_s).to eq('Class[String]')
