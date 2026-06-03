@@ -3,7 +3,6 @@
 # @todo describe Linker::Call
 describe Solargraph::Typedef::Dictionary do
   it 'handles super calls to same method' do
-    pending 'Returns [Integer, Integer]'
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -61,7 +60,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'adds virtual constructors for <Class>.new calls with conflicting return types' do
-    pending "May need to skip probes for expanded types"
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -71,9 +69,6 @@ describe Solargraph::Typedef::Dictionary do
       Foo.new
     ), 'test.rb')
     api_map.map source
-    # chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
-    # expect(type.tag).to eq('String')
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
@@ -198,7 +193,6 @@ describe Solargraph::Typedef::Dictionary do
 
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
-    pending "[Integer, Float, Integer, Numeric]"
     expect(typeset.to_s).to eq('Integer')
   end
 

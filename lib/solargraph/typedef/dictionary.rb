@@ -87,11 +87,15 @@ module Solargraph
       def infer_proxies pins, receiver
         return pins unless receiver # @todo Why is this necessary?
 
-        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_overload(pin) : pin }
+        # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
+        #   or undefined otherwise
+        result = pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin, receiver) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
             .map { |pin| expand_generics(pin, receiver) }
             # @todo It might make more sense to root after expanding generics
             # .map { |pin| root_and_infer(pin, receiver) }
+        # @todo Making a proxy for undefined types seems inefficient
+        [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
       end
 
       # @param pin [Pin::Base]
@@ -169,10 +173,13 @@ module Solargraph
       # @todo Either implement this or (more likely) handle it in Linker::Call
       # @param pin [Pin::Method]
       # @return [Pin::Signature, Pin::Method]
-      def find_matching_overload(pin)
-        pin.overloads.each do |overload|
+      def find_matching_signature(pin, receiver)
+        pin.signatures.each do |signature|
           # @todo Match on more precise criteria than mere argument length
-          return overload if chain.links.last.arguments.length == overload.parameters.length
+          next unless chain.links.last.arguments.length == signature.parameters.length
+
+          expanded = Generics.expand(api_map, signature, receiver)
+          return pin.proxy(expanded.to_complex_type)
         end
         pin
       end

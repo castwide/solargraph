@@ -16,7 +16,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers types' do
-    pending 'Overload/signature issue'
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def foo; end
