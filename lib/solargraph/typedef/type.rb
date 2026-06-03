@@ -107,7 +107,7 @@ module Solargraph
 
       def params_to_s_for_complex_type
         return "" if @params.empty?
-        "#{brackets.first}#{params.map(&:to_s_for_complex_type).join(', ')}#{brackets.last}"
+        "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
 
       ROOT = Type.new(Path::ROOT)
