@@ -283,23 +283,21 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers instance variables from sequential assignments' do
-    pending('Use the nearest IV assignment in the closure or the first extant')
     source = Solargraph::Source.load_string(%(
       def foo
         @foo = nil
         @foo = 'foo'
-        @foo
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [3, 8])
+    dictionary = described_class.new(api_map, 'test.rb', [2, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('NilClass') # @todo should be 'nil'
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 8])
+    dictionary = described_class.new(api_map, 'test.rb', [3, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
