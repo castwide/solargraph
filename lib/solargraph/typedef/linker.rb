@@ -3,11 +3,12 @@
 module Solargraph
   module Typedef
     module Linker
-      autoload :Base,          'solargraph/typedef/linker/base'
-      autoload :Call,          'solargraph/typedef/linker/call'
-      autoload :ClassVariable, 'solargraph/typedef/linker/class_variable'
-      autoload :Constant,      'solargraph/typedef/linker/constant'
-      autoload :Or,            'solargraph/typedef/linker/or'
+      autoload :Base,             'solargraph/typedef/linker/base'
+      autoload :Call,             'solargraph/typedef/linker/call'
+      autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
+      autoload :Constant,         'solargraph/typedef/linker/constant'
+      autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
+      autoload :Or,               'solargraph/typedef/linker/or'
 
       def hitch link, closure
         case link
@@ -19,11 +20,7 @@ module Solargraph
         when Solargraph::Source::Chain::Constant
           Constant.resolve(self, link, closure)
         when Source::Chain::InstanceVariable
-          ivars = api_map.get_instance_variable_pins(closure.context.namespace, closure.context.scope).select do |p|
-            p.name == link.word
-          end
-          out = api_map.var_at_location(ivars, link.word, closure, location)
-          [out].compact
+          InstanceVariable.resolve(self, link, closure)
         when Source::Chain::Literal
           type_name = link.word.sub(/^</, '').sub(/>$/, '')
           complex_type = ComplexType.parse(type_name)
