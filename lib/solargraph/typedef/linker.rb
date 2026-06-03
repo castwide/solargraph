@@ -4,6 +4,7 @@ module Solargraph
   module Typedef
     module Linker
       autoload :Base,             'solargraph/typedef/linker/base'
+      autoload :BlockSymbol,      'solargraph/typedef/linker/block_symbol'
       autoload :Call,             'solargraph/typedef/linker/call'
       autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
       autoload :Constant,         'solargraph/typedef/linker/constant'
@@ -28,6 +29,8 @@ module Solargraph
           Or.resolve(self, link, closure)
         when Source::Chain::ClassVariable
           ClassVariable.resolve(self, link, closure)
+        when Source::Chain::BlockSymbol
+          BlockSymbol.resolve(self, link, closure)
         else
           raise "#{link.class} not implemented"
         end

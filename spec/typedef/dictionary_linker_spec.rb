@@ -145,21 +145,13 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers Procs from block-pass nodes' do
-    pending 'Not sure what position to define/infer'
     source = Solargraph::Source.load_string(%(
       x = []
       x.map(&:foo)
     ), 'test.rb')
-    # api_map = Solargraph::ApiMap.new
-    # api_map.map source
-    # node = source.node_at(2, 12)
-    # chain = Solargraph::Parser.chain(node, 'test.rb')
-    # pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
-    # expect(pin.return_type.tag).to eq('Proc')
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    # expect(type.tag).to eq('Proc')
+
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [0, 0])
+    dictionary = described_class.new(api_map, 'test.rb', [2, 12])
     pins = dictionary.define
     expect(pins.map(&:return_type).map(&:tag)).to eq(['Proc'])
     typeset = dictionary.infer
