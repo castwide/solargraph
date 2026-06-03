@@ -87,7 +87,7 @@ module Solargraph
       def infer_proxies pins, receiver
         return pins unless receiver # @todo Why is this necessary?
 
-        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
+        pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_overload(pin) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
             .map { |pin| expand_generics(pin, receiver) }
             # @todo It might make more sense to root after expanding generics
@@ -169,11 +169,12 @@ module Solargraph
       # @todo Either implement this or (more likely) handle it in Linker::Call
       # @param pin [Pin::Method]
       # @return [Pin::Signature, Pin::Method]
-      def find_matching_signature(pin)
-        pin.signatures.find do |sig|
-          # puts "Check against #{chain.inspect}"
-          false
-        end || pin
+      def find_matching_overload(pin)
+        pin.overloads.each do |overload|
+          # @todo Match on more precise criteria than mere argument length
+          return overload if chain.links.last.arguments.length == overload.parameters.length
+        end
+        pin
       end
 
       # @param typeset [Typeset]

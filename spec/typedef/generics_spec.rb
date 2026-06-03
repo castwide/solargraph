@@ -77,7 +77,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers generic types from @generic tag' do
-    pending 'Signature support'
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
       class Foo
@@ -98,11 +97,11 @@ describe Solargraph::Typedef::Dictionary do
 
     dictionary = described_class.new(api_map, 'test.rb', [12, 15])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq(['Array[String]'])
+    expect(typeset.to_s).to eq('Array[String]')
 
     dictionary = described_class.new(api_map, 'test.rb', [13, 20])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('Array')
+    expect(typeset.to_s).to eq('String | nil')
   end
 
   it 'calculates class return type based on class generic' do
