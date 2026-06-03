@@ -204,8 +204,7 @@ describe Solargraph::Typedef::Dictionary do
 
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
-    pending 'Missing generic expansion'
-    expect(typeset.to_s).to eq('Integer')
+    expect(typeset.to_s).to eq('Enumerator[Integer | String]')
   end
 
   it 'allows calls off of nilable objects by default' do
