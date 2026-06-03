@@ -90,6 +90,7 @@ module Solargraph
         pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
             .map { |pin| expand_generics(pin, receiver) }
+            # @todo It might make more sense to root after expanding generics
             # .map { |pin| root_and_infer(pin, receiver) }
       end
 

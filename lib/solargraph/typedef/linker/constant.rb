@@ -8,13 +8,13 @@ module Solargraph
         def resolve
           return [Pin::ROOT_PIN] if link.word.empty?
           base = link.word
-          gates = closure.gates
-          fqns = if base.start_with?('::')
-            api_map.resolve(base, '')
+          if base.start_with?('::')
+            api_map.get_path_pins(base[2..])
           else
-            api_map.resolve(base, *gates)
+            gates = closure.gates
+            fqns = api_map.resolve(base, *gates)
+            api_map.get_path_pins(fqns)
           end
-          api_map.get_path_pins(fqns)
         end
       end
     end
