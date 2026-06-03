@@ -63,6 +63,22 @@ describe Solargraph::Typedef::Typeset do
       typeset = described_class.from_complex_type(complex_type)
       expect(typeset.to_s).to eq('Array(String, Integer)')
     end
+
+    it 'preserves roots in parameters' do
+      complex_type = Solargraph::ComplexType.parse('::Class<::String>')
+      typeset = described_class.from_complex_type(complex_type)
+      expect(typeset.to_s).to eq('Class[String]')
+      expect(typeset).to be_rooted
+
+      reversion = typeset.to_complex_type
+      expect(reversion.to_s).to eq('Class<String>')
+      expect(reversion).to be_rooted
+      puts reversion.items.inspect
+
+      reversion2 = reversion.to_typedef_typeset
+      expect(reversion2.to_s).to eq('Class[String]')
+      expect(reversion2).to be_rooted
+    end
   end
 
   describe '#expand' do

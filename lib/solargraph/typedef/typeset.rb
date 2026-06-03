@@ -45,7 +45,7 @@ module Solargraph
       end
 
       def to_s_for_complex_type
-        "#{types.map(&:to_complex_type).map(&:to_s).join(', ')}"
+        "#{types.map(&:to_s_for_complex_type).join(', ')}"
       end
 
       # @param [ComplexType]
