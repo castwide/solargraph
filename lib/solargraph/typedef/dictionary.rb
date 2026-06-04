@@ -216,6 +216,9 @@ module Solargraph
 
         defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.find { |pin| pin.is_a?(Pin::Callable) }
         return typeset unless defined
+        defined = find_matching_signature(defined, receiver)
+        inferred = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
+        defined = defined.proxy(inferred.to_complex_type)
 
         final = typeset
         chain.links.last.arguments.each do |arg|

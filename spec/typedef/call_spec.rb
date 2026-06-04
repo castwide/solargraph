@@ -272,7 +272,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'correctly looks up civars' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       class Foo
         BAZ = /aaa/
