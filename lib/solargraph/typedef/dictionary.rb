@@ -163,44 +163,6 @@ module Solargraph
         return node.children[3] if node.type == :defs
       end
 
-      # @param typeset [Typeset]
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Base]
-      # @return [Typeset]
-      def expand_generic_parameters typeset, pin, receiver
-        case pin
-        when Pin::BaseVariable
-          expand_generic_parameters_from_variable(typeset, pin, receiver)
-        else
-          typeset
-        end
-      end
-
-      # @param typeset [Typeset]
-      # @param pin [Pin::BaseVariable]
-      # @param receiver [Pin::Base]
-      # @return [Typeset]
-      def expand_generic_parameters_from_variable(typeset, pin, receiver)
-        return typeset unless pin.assignment
-
-        chain = Parser::ParserGem::NodeChainer.chain(pin.assignment)
-        return typeset unless chain.links.last.is_a?(Source::Chain::Call)
-
-        defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.find { |pin| pin.is_a?(Pin::Callable) }
-        return typeset unless defined
-        defined = find_matching_signature(defined, receiver)
-        inferred = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
-        defined = defined.proxy(inferred.to_complex_type)
-
-        final = typeset
-        chain.links.last.arguments.each do |arg|
-          inferred = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: arg).infer
-          expanded = Generics.expand(api_map, defined, Pin::ProxyType.anonymous(inferred.to_complex_type))
-          final = expanded
-        end
-        final
-      end
-
       def memo_key(action)
         [source_map.filename, [api_map, position, chain, action]]
       end
