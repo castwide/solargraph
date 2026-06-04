@@ -29,15 +29,9 @@ module Solargraph
           pins = ComplexType.new([closure.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
-                            # .flat_map { |pin| overload(pin) }
           return pins unless link.nullable? && closure.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
-        end
-
-        # @param pin [Pin::Method]
-        def overload(pin)
-          pin.overloads.find { |overload| overload.arity_matches?(link.arguments, link.arguments )} || pin
         end
       end
     end
