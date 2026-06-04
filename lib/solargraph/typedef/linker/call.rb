@@ -10,6 +10,10 @@ module Solargraph
         include Solargraph::Parser::NodeMethods
 
         def resolve
+          # @todo We shouldn't need to check for local variables here. Local variables
+          #   are always the head of the chain, so they should go to the Head link.
+          #   This change will require a change to the way chainers work, so it might
+          #   have to wait until processes outside of Typedef stop using chains.
           local_variable || method_call
         end
 
