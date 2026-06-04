@@ -213,8 +213,8 @@ module Solargraph
         chain = Parser::ParserGem::NodeChainer.chain(pin.assignment)
         # return typeset unless chain.links.last.is_a?(Source::Chain::Call)
 
-        defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.first
-        return typeset unless defined.is_a?(Pin::Method)
+        defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.find { |pin| pin.is_a?(Pin::Method) }
+        return typeset unless defined
 
         final = typeset
         chain.links.last.arguments.each do |arg|
