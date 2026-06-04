@@ -8,6 +8,7 @@ module Solargraph
       autoload :Call,             'solargraph/typedef/linker/call'
       autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
       autoload :Constant,         'solargraph/typedef/linker/constant'
+      autoload :Head,         'solargraph/typedef/linker/head'
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
       autoload :Literal,          'solargraph/typedef/linker/literal'
       autoload :Or,               'solargraph/typedef/linker/or'
@@ -15,8 +16,7 @@ module Solargraph
       def hitch link, closure
         case link
         when Solargraph::Source::Chain::Head
-          return [Pin::ProxyType.anonymous(closure.context, source: :chain)] if link.word == 'self'
-          []
+          Head.resolve(self, link, closure)
         when Solargraph::Source::Chain::Call
           Call.resolve(self, link, closure)
         when Solargraph::Source::Chain::Constant
