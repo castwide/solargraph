@@ -33,10 +33,24 @@ module Solargraph
           pins = ComplexType.new([closure.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
+                            .map { |pin| find_matching_signature(pin, closure) }
                             .map { |pin| expand_generic_parameters_from_arguments(pin) }
           return pins unless link.nullable? && closure.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+        end
+
+        # @param pin [Pin::Method]
+        # @return [Pin::Signature, Pin::Method]
+        def find_matching_signature(pin, receiver)
+          pin.signatures.each do |signature|
+            # @todo Match on more precise criteria than mere argument length
+            next unless signature.arity_matches?(link.arguments, link.with_block?)
+
+            return signature
+          end
+
+          pin
         end
 
         # Expanding generic parameters needs to be done here because we need to

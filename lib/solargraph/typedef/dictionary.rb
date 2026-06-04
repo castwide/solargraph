@@ -94,8 +94,7 @@ module Solargraph
 
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
         #   or undefined otherwise
-        result = pins.map { |pin| pin.is_a?(Pin::Callable) ? find_matching_signature(pin, receiver) : pin }
-                     .map { |pin| root_and_infer(pin, receiver) }
+        result = pins.map { |pin| root_and_infer(pin, receiver) }
         # @todo Making a proxy for undefined types seems inefficient
         [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
       end
@@ -162,22 +161,6 @@ module Solargraph
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
         return node.children[3] if node.type == :defs
-      end
-
-      # @todo Either implement this or (more likely) handle it in Linker::Call
-      # @param pin [Pin::Method]
-      # @return [Pin::Signature, Pin::Method]
-      def find_matching_signature(pin, receiver)
-        return pin # @todo testing generic parameter expansion
-        pin.signatures.each do |signature|
-          # @todo Match on more precise criteria than mere argument length
-          next unless signature.arity_matches?(chain.links.last.arguments, chain.links.last.with_block?)
-
-          expanded = Generics.expand(api_map, signature, receiver)
-          return signature.proxy(expanded.to_complex_type)
-        end
-        expanded = Generics.expand(api_map, pin, receiver)
-        return pin.proxy(expanded.to_complex_type)
       end
 
       # @param typeset [Typeset]
