@@ -33,9 +33,31 @@ module Solargraph
           pins = ComplexType.new([closure.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
+                            .map { |pin| expand_generic_parameters_from_arguments(pin) }
           return pins unless link.nullable? && closure.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+        end
+
+        # Expanding generic parameters needs to be done here because we need to
+        # infer values from the call link's arguments.
+        #
+        def expand_generic_parameters_from_arguments pin
+          return pin unless pin.is_a?(Pin::Callable)
+          return pin unless pin.typedef_typeset.generic?
+          return pin unless pin.parameters.map(&:typedef_typeset).any?(&:generic?)
+
+          named_values = pin.parameters.map.with_index do |param, idx|
+            next unless param.typedef_typeset.generic?
+
+            key = param.typedef_typeset.to_s
+            val = Dictionary.new(api_map, source_map, param.location.range.start, chain: link.arguments[idx]).infer
+            [key, val]
+          end
+          .compact
+          .to_h
+
+          pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
         end
       end
     end

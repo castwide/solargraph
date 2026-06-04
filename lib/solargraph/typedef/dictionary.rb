@@ -168,6 +168,7 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [Pin::Signature, Pin::Method]
       def find_matching_signature(pin, receiver)
+        return pin # @todo testing generic parameter expansion
         pin.signatures.each do |signature|
           # @todo Match on more precise criteria than mere argument length
           next unless signature.arity_matches?(chain.links.last.arguments, chain.links.last.with_block?)
