@@ -55,7 +55,6 @@ module Solargraph
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
-          return pins.first.typedef_typeset if receiver.typedef_typeset.to_s == pins.first.typedef_typeset.to_s && pins.first.typedef_typeset.to_s != 'undefined'
 
           proxies = infer_proxies(pins, receiver)
           inferred = proxies.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
@@ -95,24 +94,10 @@ module Solargraph
 
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
         #   or undefined otherwise
-        result = pins.flat_map { |pin| pin.is_a?(Pin::Callable) ? find_matching_signature(pin, receiver) : pin }
-            .map { |pin| root_and_infer(pin, receiver) }
-            .map { |pin| expand_generics(pin, receiver) }
-            # @todo It might make more sense to root after expanding generics
-            # .map { |pin| root_and_infer(pin, receiver) }
+        result = pins.map { |pin| pin.is_a?(Pin::Callable) ? find_matching_signature(pin, receiver) : pin }
+                     .map { |pin| root_and_infer(pin, receiver) }
         # @todo Making a proxy for undefined types seems inefficient
         [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
-      end
-
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Closure]
-      # @return [Pin::Base]
-      def expand_generics pin, receiver
-        typeset = Generics.expand(api_map, pin, receiver)
-                        # @todo There might be a better place for this
-                        .expand({ 'self' => receiver.namespace })
-
-        pin.proxy(typeset.to_complex_type)
       end
 
       # @param pin [Pin::Base]
@@ -124,16 +109,19 @@ module Solargraph
 
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
-      # @return [Pin::ProxyType]
+      # @return [Pin::Base]
       def root_and_infer pin, receiver
+        # Early self expansion for the sake of Class#new et al.
+        pin = pin.proxy(Expansions::Self.expand(api_map, pin, receiver).to_complex_type)
         rooted = resolve_rooted(pin, receiver)
         inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
           infer_by_pin_type pin, receiver
         else
           rooted
         end
-        expanded = expand_generic_parameters(inferred, pin, receiver)
-        Pin::ProxyType.anonymous(expanded.to_complex_type)
+        # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
+        #   breaks a whole lot of stuff
+        Pin::ProxyType.anonymous(inferred.to_complex_type)
       end
 
       # @return [Typeset]
