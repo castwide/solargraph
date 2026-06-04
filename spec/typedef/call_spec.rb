@@ -90,7 +90,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [6, 10])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq(['String'])
+    expect(typeset.to_s).to eq('String')
   end
 
   it 'infers constant return types via returns, ignoring blocks' do
