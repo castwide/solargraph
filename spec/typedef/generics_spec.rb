@@ -55,7 +55,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers method return types based on method generic' do
-    pending('deeper inference support')
+    pending('support generic parameter expansion from arguments')
 
     source = Solargraph::Source.load_string(%(
       class Foo
