@@ -95,7 +95,7 @@ module Solargraph
 
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
         #   or undefined otherwise
-        result = pins.flat_map { |pin| pin.is_a?(Pin::Method) ? find_matching_signature(pin, receiver) : pin }
+        result = pins.flat_map { |pin| pin.is_a?(Pin::Callable) ? find_matching_signature(pin, receiver) : pin }
             .map { |pin| root_and_infer(pin, receiver) }
             .map { |pin| expand_generics(pin, receiver) }
             # @todo It might make more sense to root after expanding generics
@@ -156,7 +156,7 @@ module Solargraph
 
         if pin.location.range.start != position
           return Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
-        elsif pin.is_a?(Pin::Method)
+        elsif pin.is_a?(Pin::Callable)
           node = method_body_node(pin)
           Parser::ParserGem::NodeChainer.chain(node) if node
         elsif pin.is_a?(Pin::BaseVariable)
@@ -182,12 +182,13 @@ module Solargraph
       def find_matching_signature(pin, receiver)
         pin.signatures.each do |signature|
           # @todo Match on more precise criteria than mere argument length
-          next unless chain.links.last.arguments.length == signature.parameters.length
+          next unless signature.arity_matches?(chain.links.last.arguments, chain.links.last.with_block?)
 
           expanded = Generics.expand(api_map, signature, receiver)
-          return pin.proxy(expanded.to_complex_type)
+          return signature.proxy(expanded.to_complex_type)
         end
-        pin
+        expanded = Generics.expand(api_map, pin, receiver)
+        return pin.proxy(expanded.to_complex_type)
       end
 
       # @param typeset [Typeset]
@@ -211,9 +212,9 @@ module Solargraph
         return typeset unless pin.assignment
 
         chain = Parser::ParserGem::NodeChainer.chain(pin.assignment)
-        # return typeset unless chain.links.last.is_a?(Source::Chain::Call)
+        return typeset unless chain.links.last.is_a?(Source::Chain::Call)
 
-        defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.find { |pin| pin.is_a?(Pin::Method) }
+        defined = Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).define.find { |pin| pin.is_a?(Pin::Callable) }
         return typeset unless defined
 
         final = typeset
