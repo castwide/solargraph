@@ -5,9 +5,16 @@ module Solargraph
     class Typeset
       attr_reader :types
 
-      # @param types [Array<Type>]
+      # @param types [Array<Typeset, Type>]
       def initialize types
-        @types = types
+        # @todo Slightly naive reduction of nested typesets to types
+        @types = types.map do |type_or_set|
+          if type_or_set.is_a?(Typedef::Typeset) && type_or_set.types.one?
+            type_or_set.types.first
+          else
+            type_or_set
+          end
+        end
       end
 
       # @param named_values [Hash]
