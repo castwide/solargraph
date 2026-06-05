@@ -35,6 +35,10 @@ module Solargraph
         name.start_with?('generic<')        
       end
 
+      def combine token
+        generic? ? token : self
+      end
+
       def to_s
         "#{([name] + params).join(', ')}"
       end

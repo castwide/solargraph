@@ -53,6 +53,10 @@ module Solargraph
         false
       end
 
+      def combine _
+        self
+      end
+
       def from(base)
         return self if rooted?
 

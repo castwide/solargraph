@@ -25,7 +25,7 @@ module Solargraph
       # @param typeset [Typeset, nil]
       # @return [Typeset]
       def combine(typeset)
-        return self if typeset.nil?
+        return self unless typeset.is_a?(Typeset)
         Typeset.new(types.map.with_index { |type, idx| type.combine(typeset.types[idx]) })
       end
 

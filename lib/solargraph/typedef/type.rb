@@ -24,18 +24,8 @@ module Solargraph
       def combine(type)
         return self unless type.is_a?(Type)
 
-        combined_base = if base.to_s.start_with?('generic<') || base.to_s == type.base.to_s
-          type
-        else
-          base
-        end
-        combined_params = params.map.with_index do |par, idx|
-          if par.to_s.start_with?('generic<') || par.to_s == type.params[idx].to_s
-            type.params[idx]
-          else
-            par
-          end
-        end
+        combined_base = base.combine(type.base)
+        combined_params = params.map.with_index { |par, idx| par.combine(type.params[idx]) }
         Type.new(combined_base, *combined_params)
       end
 
