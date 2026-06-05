@@ -8,7 +8,6 @@ module Solargraph
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memos,      'solargraph/typedef/memos'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
-    autoload :Generics,   'solargraph/typedef/generics'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
     autoload :Tuple,      'solargraph/typedef/tuple'

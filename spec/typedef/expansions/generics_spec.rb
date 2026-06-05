@@ -191,7 +191,7 @@ describe Solargraph::Typedef::Dictionary do
 
       api_map = Solargraph::ApiMap.new.map(source)
       pin = api_map.get_path_pins('Example#foo').first
-      generics = Solargraph::Typedef::Generics.new(api_map, pin, receiver)
+      generics = Solargraph::Typedef::Expansions::Generics.new(api_map, pin, receiver)
       expect(generics.names).to eq(['T'])
     end
 
@@ -206,7 +206,7 @@ describe Solargraph::Typedef::Dictionary do
       api_map = Solargraph::ApiMap.new.map(source)
       # Simulating the receiver
       receiver = api_map.get_path_pins('Array').first
-      generics = Solargraph::Typedef::Generics.new(api_map, pin, receiver)
+      generics = Solargraph::Typedef::Expansions::Generics.new(api_map, pin, receiver)
       expect(generics.names).to eq(['Elem'])
     end
   end

@@ -94,7 +94,7 @@ module Solargraph
 
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
         #   or undefined otherwise
-        result = pins.map { |pin| pin.proxy(Generics.expand(api_map, pin, receiver).to_complex_type) }
+        result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                      .map { |pin| root_and_infer(pin, receiver) }
 
         # @todo Making a proxy for undefined types seems inefficient
