@@ -20,6 +20,25 @@ module Solargraph
         Type.new(new_base, *new_params)
       end
 
+      # @param type [Type, nil]
+      def combine(type)
+        return self unless type.is_a?(Type)
+
+        combined_base = if base.to_s.start_with?('generic<') || base.to_s == type.base.to_s
+          type
+        else
+          base
+        end
+        combined_params = params.map.with_index do |par, idx|
+          if par.to_s.start_with?('generic<') || par.to_s == type.params[idx].to_s
+            type.params[idx]
+          else
+            par
+          end
+        end
+        Type.new(combined_base, *combined_params)
+      end
+
       # @param api_map [ApiMap]
       # @param gates [Array<Path>]
       # @return [Type]

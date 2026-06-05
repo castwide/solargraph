@@ -91,6 +91,15 @@ describe Solargraph::Typedef::Typeset do
     end
   end
 
+  describe '#combine' do
+    it 'combines typesets recursively' do
+      generic = Solargraph::Typedef::Typeset.from_complex_type(Solargraph::ComplexType.parse('Set<generic<T>>'))
+      expander = Solargraph::Typedef::Typeset.from_complex_type(Solargraph::ComplexType.parse('Array<String>'))
+      combined = generic.combine(expander)
+      expect(combined.to_s).to eq('Set[String]')
+    end
+  end
+
   describe '#nullable?' do
     it 'returns true with a nil return type' do
       complex_type = Solargraph::ComplexType.parse('String, nil')
