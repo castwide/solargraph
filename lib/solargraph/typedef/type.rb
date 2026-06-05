@@ -29,6 +29,14 @@ module Solargraph
         Type.new(combined_base, *combined_params)
       end
 
+      def extract_generics type
+        return {} unless generic? && type.is_a?(Type)
+
+        extracted = base.extract_generics(type.base)
+        params.map.with_index { |par, idx| extracted.merge!(par.extract_generics(type.params[idx])) }
+        extracted
+      end
+
       # @param api_map [ApiMap]
       # @param gates [Array<Path>]
       # @return [Type]

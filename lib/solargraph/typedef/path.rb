@@ -57,6 +57,10 @@ module Solargraph
         self
       end
 
+      def extract_generics _
+        {}
+      end
+
       def from(base)
         return self if rooted?
 

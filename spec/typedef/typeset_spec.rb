@@ -1,11 +1,21 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Typeset do
-  it 'accepts multiple types' do
-    type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
-    type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
-    typeset = described_class.new([type1, type2])
-    expect(typeset.to_s).to eq('Array | String')
+  describe '.new' do
+    it 'accepts multiple types' do
+      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
+      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
+      typeset = described_class.new([type1, type2])
+      expect(typeset.to_s).to eq('Array | String')
+    end
+
+    it 'reduces to unique types' do
+      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
+      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
+      type3 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
+      typeset = described_class.new([type1, type2, type3])
+      expect(typeset.to_s).to eq('Array | String')
+    end
   end
 
   describe '#to_complex_type' do

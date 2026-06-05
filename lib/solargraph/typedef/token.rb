@@ -39,6 +39,11 @@ module Solargraph
         generic? ? token : self
       end
 
+      def extract_generics token
+        return unless generic?
+        { name => token }
+      end
+
       def to_s
         "#{([name] + params).join(', ')}"
       end

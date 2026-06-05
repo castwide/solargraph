@@ -15,11 +15,20 @@ module Solargraph
             type_or_set
           end
         end
+        reduce!
       end
 
       # @param named_values [Hash]
       def expand(named_values)
         Typeset.new(types.map { |type| type.expand(named_values) })
+      end
+
+      # @param typeset [Typeset, nil]
+      def extract_generics(typeset)
+        return {} unless generic? && typeset.is_a?(Typeset)
+        extracted = {}
+        types.each.with_index { |type, idx| extracted.merge! type.extract_generics(typeset.types[idx]) }
+        extracted
       end
 
       # @param typeset [Typeset, nil]
@@ -66,6 +75,12 @@ module Solargraph
       # @return [self]
       def self.from_complex_type complex_type
         complex_type.to_typedef_typeset
+      end
+
+      private
+
+      def reduce!
+        types.uniq!(&:to_s)
       end
 
       UNDEFINED = Typeset.new([Type::UNDEFINED])

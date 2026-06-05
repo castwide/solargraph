@@ -316,4 +316,20 @@ describe Solargraph::Typedef::Dictionary do
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
+
+  it 'extracts generic values from parameters' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param klass [Class<generic<T>>]
+      # @return [Set<generic<T>>]
+      def foo klass; end
+
+      foo(String)
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [6, 6])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Set[String]')
+  end
 end

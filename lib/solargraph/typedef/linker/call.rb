@@ -61,17 +61,14 @@ module Solargraph
           return pin unless pin.typedef_typeset.generic?
           return pin unless pin.parameters.map(&:typedef_typeset).any?(&:generic?)
 
-          named_values = pin.parameters.map.with_index do |param, idx|
-            next unless param.typedef_typeset.generic?
-
-            key = param.typedef_typeset.to_s
-            val = Dictionary.new(api_map, source_map, param.location.range.start, chain: link.arguments[idx]).infer
-            [key, val]
+          named_values = {}
+          pin.parameters.map.with_index do |param, idx|
+            arg = Dictionary.new(api_map, source_map, param.location.range.start, chain: link.arguments[idx]).infer
+            next_hash = param.typedef_typeset.extract_generics(arg)
+            named_values.merge! next_hash
           end
-          .compact
-          .to_h
-
-          pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
+          expanded = pin.typedef_typeset.expand(named_values)
+          pin.proxy(expanded.to_complex_type)
         end
       end
     end
