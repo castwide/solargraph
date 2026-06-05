@@ -31,13 +31,6 @@ module Solargraph
         extracted
       end
 
-      # @param typeset [Typeset, nil]
-      # @return [Typeset]
-      def combine(typeset)
-        return self unless typeset.is_a?(Typeset)
-        Typeset.new(types.map.with_index { |type, idx| type.combine(typeset.types[idx]) })
-      end
-
       def resolve_rooted(api_map, gates)
         Typeset.new(types.map { |type| type.resolve_rooted(api_map, gates) })
       end

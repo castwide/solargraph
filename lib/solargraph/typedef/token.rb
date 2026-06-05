@@ -35,10 +35,6 @@ module Solargraph
         name.start_with?('generic<')        
       end
 
-      def combine token
-        generic? ? token : self
-      end
-
       def extract_generics token
         return unless generic?
         { name => token }

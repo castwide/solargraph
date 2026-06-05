@@ -53,10 +53,6 @@ module Solargraph
         false
       end
 
-      def combine _
-        self
-      end
-
       def extract_generics _
         {}
       end
