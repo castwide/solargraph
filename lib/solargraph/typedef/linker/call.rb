@@ -29,6 +29,8 @@ module Solargraph
         end
 
         def method_call
+          return closure.signatures.map(&:block).compact if link.word == 'yield'
+
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([closure.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }

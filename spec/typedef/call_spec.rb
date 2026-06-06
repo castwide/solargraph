@@ -24,7 +24,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers return types based on yield call and @yieldreturn' do
-    pending 'Block suport'
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -38,11 +37,10 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [7, 14])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq(['Integer'])
+    expect(typeset.to_s).to eq('Integer')
   end
 
   it 'infers return types based only on yield call and @yieldreturn' do
-    pending 'Block support'
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
