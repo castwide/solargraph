@@ -100,12 +100,6 @@ module Solargraph
         [ '[', ']' ]
       end
 
-      # @param [ComplexType]
-      # @return [Array<Type>]
-      def self.from_complex_type complex_type
-        complex_type.to_typedef_types
-      end
-
       private
 
       def params_to_s

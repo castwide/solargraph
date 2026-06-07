@@ -29,71 +29,10 @@ describe Solargraph::Typedef::Typeset do
     end
   end
 
-  describe '.from_complex_type' do
-    it 'converts from complex types' do
-      complex_type = Solargraph::ComplexType.parse('Array', 'String')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array | String')
-    end
-
-    it 'converts from complex types with simple parameters' do
-      complex_type = Solargraph::ComplexType.parse('Array<String>')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array[String]')
-    end
-
-    it 'converts from complex types with complex parameters' do
-      complex_type = Solargraph::ComplexType.parse('Array<String, Integer>')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array[String | Integer]')
-    end
-
-    it 'converts from complex types with hash parameters' do
-      complex_type = Solargraph::ComplexType.parse('Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Hash[String, Array[undefined] | Hash[String, undefined] | String | Integer]')
-    end
-
-    it 'converts from hash complex types with non-hash parameters' do
-      complex_type = Solargraph::ComplexType.parse('Hash<String, Array>')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Hash[String, Array]')
-    end
-
-    it 'converts back from complex types with hash parameters' do
-      complex_type = Solargraph::ComplexType.parse('Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Hash[String, Array[undefined] | Hash[String, undefined] | String | Integer]')
-      # @todo The format from #to_complex_type is slightly different but functionally equivalent
-      expect(typeset.to_complex_type.to_s).to eq('Hash{String => Array, Hash<String, undefined>, String, Integer}')
-    end
-
-    it 'converts from complex types with tuple parameters' do
-      complex_type = Solargraph::ComplexType.parse('Array(String, Integer)')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Array(String, Integer)')
-    end
-
-    it 'preserves roots in parameters' do
-      complex_type = Solargraph::ComplexType.parse('::Class<::String>')
-      typeset = described_class.from_complex_type(complex_type)
-      expect(typeset.to_s).to eq('Class[String]')
-      expect(typeset).to be_rooted
-
-      reversion = typeset.to_complex_type
-      expect(reversion.to_s).to eq('Class<String>')
-      expect(reversion).to be_rooted
-
-      reversion2 = reversion.to_typedef_typeset
-      expect(reversion2.to_s).to eq('Class[String]')
-      expect(reversion2).to be_rooted
-    end
-  end
-
   describe '#expand' do
     it 'expands all types' do
-      type1 = Solargraph::Typedef::Type.from_complex_type(Solargraph::ComplexType.parse('Array<generic<T>>')).first
-      type2 = Solargraph::Typedef::Type.from_complex_type(Solargraph::ComplexType.parse('Set<generic<T>>')).first
+      type1 = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_typeset
+      type2 = Solargraph::ComplexType.parse('Set<generic<T>>').to_typedef_typeset
       typeset = described_class.new([type1, type2])
       named_values = { 'generic<T>' => 'String' }
       expanded = typeset.expand(named_values)

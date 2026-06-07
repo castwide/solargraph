@@ -64,12 +64,6 @@ module Solargraph
         "#{types.map(&:to_s_for_complex_type).join(', ')}"
       end
 
-      # @param [ComplexType]
-      # @return [self]
-      def self.from_complex_type complex_type
-        complex_type.to_typedef_typeset
-      end
-
       private
 
       def reduce!
