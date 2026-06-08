@@ -58,8 +58,23 @@ describe Solargraph::Typedef::Typeset do
   # because they're specific to the Typedef library. They'll eventually get
   # deprecated along with the ComplexType library itself.
   describe 'ComplexType#to_typedef_typeset' do
+    it 'handles complex types with hashes' do
+      complex_type = Solargraph::ComplexType.parse('Hash{String => Integer}')
+      expect(complex_type.to_typedef_typeset.to_s).to eq('Hash[String, Integer]')
+    end
+
+    it 'handles complex types with hashes and non-hash parameters' do
+      complex_type = Solargraph::ComplexType.parse('Hash<String, Integer>')
+      expect(complex_type.to_typedef_typeset.to_s).to eq('Hash[String, Integer]')
+    end
+
     it 'handles complex types with inline hashes' do
       complex_type = Solargraph::ComplexType.parse('Array<undefined>, Hash{String => undefined}, String, Integer')
+      expect(complex_type.to_typedef_typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer')
+    end
+
+    it 'handles complex types with inline hashes and non-hash parameters' do
+      complex_type = Solargraph::ComplexType.parse('Array<undefined>, Hash<String, undefined>, String, Integer')
       expect(complex_type.to_typedef_typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer')
     end
   end
