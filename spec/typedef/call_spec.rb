@@ -248,8 +248,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [4, 8])
     typeset = dictionary.infer
-    pending 'Hash is inferred as Hash[String | undefined]'
-    expect(typeset.to_s).to eq('Array | Hash[String, undefined] | String | Integer | nil')
+    expect(typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer | nil')
   end
 
   it 'preserves undefined and underdefined types in resolution' do

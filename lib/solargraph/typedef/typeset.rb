@@ -8,9 +8,11 @@ module Solargraph
       # @param types [Array<Typeset, Type>]
       def initialize types
         # @todo Slightly naive reduction of nested typesets to types
-        @types = types.map do |type_or_set|
-          if type_or_set.is_a?(Typedef::Typeset) && type_or_set.types.one?
-            type_or_set.types.first
+        @types = types.flat_map do |type_or_set|
+          if type_or_set.is_a?(Typeset)
+            type_or_set.types
+          elsif type_or_set.is_a?(Type) && type_or_set.base.is_a?(Typeset) && type_or_set.params.empty?
+            type_or_set.base.types
           else
             type_or_set
           end

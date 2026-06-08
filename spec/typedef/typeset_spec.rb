@@ -53,4 +53,14 @@ describe Solargraph::Typedef::Typeset do
       expect(typeset).not_to be_nullable
     end
   end
+
+  # Although these tests are for a ComplexType method, they're collected here
+  # because they're specific to the Typedef library. They'll eventually get
+  # deprecated along with the ComplexType library itself.
+  describe 'ComplexType#to_typedef_typeset' do
+    it 'handles complex types with inline hashes' do
+      complex_type = Solargraph::ComplexType.parse('Array<undefined>, Hash{String => undefined}, String, Integer')
+      expect(complex_type.to_typedef_typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer')
+    end
+  end
 end
