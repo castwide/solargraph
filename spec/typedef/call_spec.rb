@@ -147,8 +147,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers generic return types from block from yield being a return node' do
-    pending('deeper inference support')
-
     source = Solargraph::Source.load_string(%(
       def yielder(&blk)
         yield

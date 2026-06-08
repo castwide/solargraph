@@ -127,6 +127,8 @@ module Solargraph
 
       # @return [Typeset]
       def infer_by_pin_type pin, receiver
+        return infer_from_block_receiver(pin, receiver) if receiver.is_a?(Pin::Block)
+
         case pin
         when Pin::BaseVariable, Pin::Constant
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(pin.assignment)
@@ -136,6 +138,11 @@ module Solargraph
           return pin.typedef_typeset unless next_chain
           Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
         end
+      end
+
+      def infer_from_block_receiver pin, receiver
+        call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
+        Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
       end
 
       # @param pin [Pin::Base]
