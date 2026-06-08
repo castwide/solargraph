@@ -141,8 +141,18 @@ module Solargraph
       end
 
       def infer_from_block_receiver pin, receiver
+        # @todo For now, we assume that an undefined typeset from call chain
+        #   inference requires a type to be inferred from the block chain. We
+        #   might need to make it more accurate, e.g., the call chain should
+        #   be calling the native `yield` method or `call` on a block parameter.
+        next_chain = next_chain(pin)
+        if next_chain
+          chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+          return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
+        end
+
         call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-        Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+        block_inferred = Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
       end
 
       # @param pin [Pin::Base]
