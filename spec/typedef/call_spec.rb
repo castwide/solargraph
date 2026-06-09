@@ -285,7 +285,6 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'does not mis-parse generic methods with type constraints' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       def bl
         out = (Encoding.default_external = 'UTF-8')
@@ -295,18 +294,6 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
     dictionary = described_class.new(api_map, 'test.rb', [3, 8])
-    typeset = dictionary.infer
-    expect(typeset.to_s).to eq('String')
-  end
-
-  it 'handles this weird case' do
-    pending 'Generic and signature issues'
-    source = Solargraph::Source.load_string(%(
-      Encoding.default_external = 'UTF-8'
-    ), 'test.rb')
-
-    api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [1, 15])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end

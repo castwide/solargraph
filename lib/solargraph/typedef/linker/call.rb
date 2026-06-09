@@ -47,13 +47,28 @@ module Solargraph
         # @return [Pin::Signature, Pin::Method]
         def find_matching_signature(pin, receiver)
           pin.signatures.each do |signature|
-            # @todo Match on more precise criteria than mere argument length
             next unless signature.arity_matches?(link.arguments, link.with_block?)
 
-            return signature
+            arguments = link.arguments.map do |arg|
+              Dictionary.new(api_map, source_map, Range.from_node(arg.node).start, chain: arg).infer
+            end
+            match = true
+            signature.parameters.each.with_index do |par, idx|
+              next if compatible_arg?(par, arguments[idx])
+              match = false
+              break
+            end
+            return signature if match
           end
-
           pin
+        end
+
+        def compatible_arg? parameter, argument
+          return true if parameter.typedef_typeset.to_complex_type.undefined? ||
+            parameter.typedef_typeset.generic?
+          # @todo Conformance needs to work for typesets
+          atype = argument&.to_complex_type || ComplexType::UNDEFINED
+            atype.conforms_to?(api_map, parameter.typedef_typeset.to_complex_type, :method_call, %i[allow_empty_params allow_undefined])
         end
 
         # Expanding generic parameters needs to be done here because we need to
@@ -61,7 +76,7 @@ module Solargraph
         #
         def expand_generic_parameters_from_arguments pin
           return pin unless pin.is_a?(Pin::Callable)
-          return pin unless pin.typedef_typeset.generic?
+          # return pin unless pin.typedef_typeset.generic?
           return pin unless pin.parameters.map(&:typedef_typeset).any?(&:generic?)
 
           named_values = {}
