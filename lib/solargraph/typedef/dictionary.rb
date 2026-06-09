@@ -113,7 +113,7 @@ module Solargraph
       # @return [Pin::Base]
       def root_and_infer pin, receiver
         # Early self expansion for the sake of Class#new et al.
-        pin = pin.proxy(Expansions::Self.expand(api_map, pin, receiver).to_complex_type)
+        pin = pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.namespace }).to_complex_type)
         rooted = resolve_rooted(pin, receiver)
         inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
           infer_by_pin_type pin, receiver
