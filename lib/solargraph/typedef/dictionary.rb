@@ -46,8 +46,8 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        pins, _receiver = define_from chain
-        pins
+        pins, receiver = define_from chain
+        pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
       end
 
       # @return [Typeset]

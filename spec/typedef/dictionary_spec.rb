@@ -60,4 +60,21 @@ describe Solargraph::Typedef::Dictionary do
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
+
+  it 'expands named macros' do
+    source = Solargraph::Source.load_string(%(
+      # @!macro [new] klassify
+      #   @return [Array<$1>]
+      class Example
+        # @macro klassify
+        def foo(klass)
+        end  
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Example#foo').first
+    dictionary = described_class.new(api_map, 'test.rb', [5, 12])
+    defined = dictionary.define.first
+    expect(defined.typedef_typeset.to_s).to eq('Array[klass]')
+  end
 end
