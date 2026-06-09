@@ -29,16 +29,16 @@ module Solargraph
         end
 
         def method_call
-          return closure.signatures.map(&:block).compact if link.word == 'yield'
+          return receiver.signatures.map(&:block).compact if link.word == 'yield'
 
           # @todo Quick and dirty hack to force UniqueType to ComplexType
-          pins = ComplexType.new([closure.context]).to_typedef_types
+          pins = ComplexType.new([receiver.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
-                            .map { |pin| find_matching_signature(pin, closure) }
+                            .map { |pin| find_matching_signature(pin, receiver) }
                             .map { |pin| expand_generic_parameters_from_arguments(pin) }
                             .map { |pin| expand_macros_from_arguments(pin) }
-          return pins unless link.nullable? && closure.typedef_typeset.nullable?
+          return pins unless link.nullable? && receiver.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
         end

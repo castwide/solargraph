@@ -5,7 +5,7 @@ module Solargraph
     module Linker
       class ClassVariable < Base
         def resolve
-          found = api_map.get_class_variable_pins(closure.context.namespace).select { |p| p.name == link.word }.first
+          found = api_map.get_class_variable_pins(receiver.context.namespace).select { |p| p.name == link.word }.first
           return [] unless found
 
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)

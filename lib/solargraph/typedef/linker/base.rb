@@ -11,15 +11,15 @@ module Solargraph
         attr_reader :link
 
         # @return [Pin::Closure]
-        attr_reader :closure
+        attr_reader :receiver
 
         # @param dictionary [Dictionary]
         # @param link [Source::Chain::Link]
-        # @param closure [Pin::Closure]
-        def initialize(dictionary, link, closure)
+        # @param receiver [Pin::Closure]
+        def initialize(dictionary, link, receiver)
           @dictionary = dictionary
           @link = link
-          @closure = closure
+          @receiver = receiver
         end
 
         def api_map
@@ -35,8 +35,8 @@ module Solargraph
           raise 'Not implemented'
         end
 
-        def self.resolve(dictionary, link, closure)
-          new(dictionary, link, closure).resolve
+        def self.resolve(dictionary, link, receiver)
+          new(dictionary, link, receiver).resolve
         end
       end
     end

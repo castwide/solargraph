@@ -11,7 +11,7 @@ module Solargraph
           if base.start_with?('::')
             api_map.get_path_pins(base[2..])
           else
-            gates = closure.gates
+            gates = receiver.gates
             fqns = api_map.resolve(base, *gates)
             api_map.get_path_pins(fqns)
           end

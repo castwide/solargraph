@@ -6,7 +6,7 @@ module Solargraph
       class InstanceVariable < Base
         # @return [Array<Pin::Base>]
         def resolve
-          ivars = api_map.get_instance_variable_pins(closure.context.namespace, closure.context.scope).select do |p|
+          ivars = api_map.get_instance_variable_pins(receiver.context.namespace, receiver.context.scope).select do |p|
             p.name == link.word
           end
           nearby = dictionary.source_map
