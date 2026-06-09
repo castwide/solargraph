@@ -37,6 +37,7 @@ module Solargraph
                             .select { |pin| pin.name == link.word }
                             .map { |pin| find_matching_signature(pin, closure) }
                             .map { |pin| expand_generic_parameters_from_arguments(pin) }
+                            .map { |pin| expand_macros_from_arguments(pin) }
           return pins unless link.nullable? && closure.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
@@ -71,6 +72,26 @@ module Solargraph
           end
           expanded = pin.typedef_typeset.expand(named_values)
           pin.proxy(expanded.to_complex_type)
+        end
+
+        # @param pin [Pin::Method]
+        def expand_macros_from_arguments pin
+          return pin unless pin.closure.maybe_directives?
+
+          pin.closure.directives.each do |directive|
+            macro = Solargraph::YardMap::Macro.from_directive(pin.closure.directives.first, pin.closure)
+            expanded = macro.macro_object.expand([pin.name, *pin.parameter_names])
+            docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
+            types = docstring.tags(:return).flat_map(&:types)
+            complex_type = ComplexType.try_parse(*types)
+            pin = pin.proxy(complex_type)
+          end
+          arguments = pin.parameters.map.with_index do |param, idx|
+            token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(link.arguments[idx].node))
+            Typeset.new([Type.new(token)])
+          end
+          named_values = pin.parameter_names.zip(arguments).to_h
+          pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
         end
       end
     end

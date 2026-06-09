@@ -75,12 +75,11 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers types from macros' do
-    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       class Foo
         # @!macro
         #   @return [$1]
-        def self.bar; end
+        def self.bar(klass); end
       end
       Foo.bar(String)
     ), 'test.rb')
