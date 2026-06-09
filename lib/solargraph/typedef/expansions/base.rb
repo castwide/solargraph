@@ -17,7 +17,7 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param pin [Pin::Base]
-        # @param receiver [Pin::Receiver]
+        # @param receiver [Pin::Closure]
         def initialize api_map, pin, receiver
           @api_map = api_map
           @pin = pin
