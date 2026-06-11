@@ -160,6 +160,24 @@ module Solargraph
         callable
       end
 
+      # @param api_map [ApiMap]
+      # @return [Array<Typedef::Type>]
+      def typedef_resolve_rooted api_map
+        typedef_return_types.map { |rt| rt.resolve_rooted(api_map, gates) }
+      end
+
+      # @param arguments [Array<Typedef::Type>]
+      # @return [Array<Typedef::Type>]
+      def typedef_resolve_call(arguments)
+        # named_values = closure.generics
+        #                       .map { |name| "generic[#{name}]" }
+        #                       .zip(arguments)
+        #                       .to_h
+        # puts "Named values from typedef_resolve_call #{named_values.inspect}"
+        # puts "With arguments #{arguments.inspect}"
+        typedef_return_types
+      end
+
       def typify api_map
         type = return_type
         return type.qualify(api_map, *gates) if type.defined?

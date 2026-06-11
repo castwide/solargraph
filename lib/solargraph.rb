@@ -49,6 +49,7 @@ module Solargraph
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'
   autoload :PinCache,         'solargraph/pin_cache'
+  autoload :Typedef,          'solargraph/typedef'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
 
   dir = File.dirname(__FILE__)
