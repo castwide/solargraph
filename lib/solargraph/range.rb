@@ -19,12 +19,8 @@ module Solargraph
       @ending = ending
     end
 
-    # @sg-ignore Fix "Not enough arguments to Module#protected"
-    protected def equality_fields
-      [start, ending]
-    end
-
-    def <=>(other)
+    # @param other [BasicObject]
+    def <=> other
       return nil unless other.is_a?(Range)
       if start == other.start
         ending <=> other.ending
@@ -36,7 +32,7 @@ module Solargraph
     # Get a hash of the range. This representation is suitable for use in
     # the language server protocol.
     #
-    # @return [Hash<Symbol, Position>]
+    # @return [Hash{Symbol => Position}]
     def to_hash
       {
         start: start.to_hash,
@@ -50,8 +46,11 @@ module Solargraph
     # @return [Boolean]
     def contain? position
       position = Position.normalize(position)
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       return false if position.line < start.line || position.line > ending.line
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       return false if position.line == start.line && position.character < start.character
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       return false if position.line == ending.line && position.character > ending.character
       true
     end
@@ -59,9 +58,11 @@ module Solargraph
     # True if the range contains the specified position and the position does not precede it.
     #
     # @param position [Position, Array(Integer, Integer)]
+    # @sg-ignore flow sensitive typing should be able to handle redefinition
     # @return [Boolean]
     def include? position
       position = Position.normalize(position)
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 
@@ -78,12 +79,11 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [Parser::AST::Node]
+    # @param node [::Parser::AST::Node]
     # @return [Range, nil]
     def self.from_node node
-      if node&.loc && node.loc.expression
-        from_expr(node.loc.expression)
-      end
+      return unless node&.loc&.expression
+      from_expr(node.loc.expression)
     end
 
     # Get a range from a Parser range, usually found in
@@ -102,6 +102,12 @@ module Solargraph
 
     def inspect
       "#<#{self.class} #{start.inspect} to #{ending.inspect}>"
+    end
+
+    protected
+
+    def equality_fields
+      [start, ending]
     end
   end
 end

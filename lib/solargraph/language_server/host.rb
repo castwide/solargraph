@@ -53,7 +53,7 @@ module Solargraph
         logger.level = LOG_LEVELS[options['logLevel']] || DEFAULT_LOG_LEVEL
       end
 
-      # @return [Hash{String => [Boolean, String]}]
+      # @return [Hash{String => Boolean, String}]
       def options
         @options ||= default_configuration
       end
@@ -94,7 +94,8 @@ module Solargraph
       # processed, caller is responsible for sending the response.
       #
       # @param request [Hash{String => unspecified}] The contents of the message.
-      # @return [Solargraph::LanguageServer::Message::Base, nil] The message handler.
+      #
+      # @return [Solargraph::LanguageServer::Message::Base, Solargraph::LanguageServer::Request, nil] The message handler.
       def receive request
         if request['method']
           logger.info "Host received ##{request['id']} #{request['method']}"
@@ -104,6 +105,7 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            # @sg-ignore Need to add nil check here
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
@@ -117,7 +119,7 @@ module Solargraph
             nil
           end
         else
-          logger.warn "Invalid message received."
+          logger.warn 'Invalid message received.'
           logger.debug request
           nil
         end
@@ -152,7 +154,7 @@ module Solargraph
           lib.delete(*filenames)
         end
         uris.each do |uri|
-          send_notification "textDocument/publishDiagnostics", {
+          send_notification 'textDocument/publishDiagnostics', {
             uri: uri,
             diagnostics: []
           }
@@ -207,7 +209,7 @@ module Solargraph
             logger.info "Diagnosing #{uri}"
             begin
               results = library.diagnose uri_to_file(uri)
-              send_notification "textDocument/publishDiagnostics", {
+              send_notification 'textDocument/publishDiagnostics', {
                 uri: uri,
                 diagnostics: results
               }
@@ -299,7 +301,11 @@ module Solargraph
         end
       end
 
+      # @sg-ignore Need to validate config
+      # @return [String]
+      # @sg-ignore Need to validate config
       def command_path
+        # @type [String]
         options['commandPath'] || 'solargraph'
       end
 
@@ -348,7 +354,7 @@ module Solargraph
       # @return [void]
       def send_notification method, params
         response = {
-          jsonrpc: "2.0",
+          jsonrpc: '2.0',
           method: method,
           params: params
         }
@@ -371,7 +377,7 @@ module Solargraph
       def send_request method, params, &block
         @request_mutex.synchronize do
           message = {
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             method: method,
             params: params,
             id: @next_request_id
@@ -413,13 +419,13 @@ module Solargraph
       # @return [void]
       def unregister_capabilities methods
         logger.debug "Unregistering capabilities: #{methods}"
-        unregisterations = methods.select{|m| registered?(m)}.map{ |m|
+        unregisterations = methods.select { |m| registered?(m) }.map do |m|
           @registered_capabilities.delete m
           {
             id: m,
             method: m
           }
-        }
+        end
         return if unregisterations.empty?
         send_request 'client/unregisterCapability', { unregisterations: unregisterations }
       end
@@ -487,7 +493,7 @@ module Solargraph
               params['data']['location']['range']['end']['character']
             )
           )
-          result.concat library.locate_pins(location).select{ |pin| pin.name == params['label'] }
+          result.concat(library.locate_pins(location).select { |pin| pin.name == params['label'] })
         end
         if params['data']['path']
           result.concat library.path_pins(params['data']['path'])
@@ -502,6 +508,7 @@ module Solargraph
                 name: 'new',
                 scope: :class,
                 location: pin.location,
+                # @sg-ignore Unresolved call to parameters on Solargraph::Pin::Base
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
@@ -533,21 +540,21 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Solargraph::SourceMap::Completion]
+      # @return [Solargraph::SourceMap::Completion, nil]
       def completions_at uri, line, column
         library = library_for(uri)
         library.completions_at uri_to_file(uri), line, column
       end
 
       # @return [Bool] if has pending completion request
-      def has_pending_completions?
+      def pending_completions?
         message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
 
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def definitions_at uri, line, column
         library = library_for(uri)
         library.definitions_at(uri_to_file(uri), line, column)
@@ -556,7 +563,7 @@ module Solargraph
       # @param uri [String]
       # @param line [Integer]
       # @param column [Integer]
-      # @return [Array<Solargraph::Pin::Base>]
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def type_definitions_at uri, line, column
         library = library_for(uri)
         library.type_definitions_at(uri_to_file(uri), line, column)
@@ -580,6 +587,10 @@ module Solargraph
       def references_from uri, line, column, strip: true, only: false
         library = library_for(uri)
         library.references_from(uri_to_file(uri), line, column, strip: strip, only: only)
+      rescue FileNotFoundError, InvalidOffsetError => e
+        Solargraph.logger.warn "[#{e.class}] #{e.message}"
+        Solargraph.logger.debug e.backtrace
+        []
       end
 
       # @param query [String]
@@ -637,15 +648,14 @@ module Solargraph
       # @param text [String]
       # @param type [Integer] A MessageType constant
       # @param actions [Array<String>] Response options for the client
-      # @param block The block that processes the response
       # @yieldparam [String] The action received from the client
       # @return [void]
-      def show_message_request text, type, actions, &block
-        send_request 'window/showMessageRequest', {
-          type: type,
-          message: text,
-          actions: actions
-        }, &block
+      def show_message_request(text, type, actions, &)
+        send_request('window/showMessageRequest', {
+                       type: type,
+                       message: text,
+                       actions: actions
+                     }, &)
       end
 
       # Get a list of IDs for server requests that are waiting for responses
@@ -656,7 +666,7 @@ module Solargraph
         requests.keys
       end
 
-      # @return [Hash{String => [Boolean,String]}]
+      # @return [Hash{String => Boolean,String}]
       def default_configuration
         {
           'completion' => true,
@@ -716,15 +726,17 @@ module Solargraph
       # A hash of client requests by ID. The host uses this to keep track of
       # pending responses.
       #
-      # @return [Hash{Integer => Solargraph::LanguageServer::Host}]
+      # @return [Hash{Integer => Solargraph::LanguageServer::Request}]
       def requests
         @requests ||= {}
       end
 
       # @param path [String]
+      # @sg-ignore Need to be able to choose signature on String#gsub
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
+        # @sg-ignore flow sensitive typing needs to handle constants
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
@@ -735,9 +747,12 @@ module Solargraph
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
           changes.push Solargraph::Source::Change.new(
-            (chng['range'].nil? ?
-              nil :
-              Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'], chng['range']['end']['line'], chng['range']['end']['character'])
+            (if chng['range'].nil?
+               nil
+             else
+               Solargraph::Range.from_to(chng['range']['start']['line'], chng['range']['start']['character'],
+                                         chng['range']['end']['line'], chng['range']['end']['character'])
+             end
             ),
             chng['text']
           )
@@ -757,8 +772,7 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
-        return change if diffs.length.zero? || diffs.length > 1 || diffs.first.length > 1
-        # @sg-ignore push this upstream
+        return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
@@ -801,10 +815,10 @@ module Solargraph
           # documentSymbolProvider: true,
           # workspaceSymbolProvider: true,
           # workspace: {
-            # workspaceFolders: {
-              # supported: true,
-              # changeNotifications: true
-            # }
+          # workspaceFolders: {
+          # supported: true,
+          # changeNotifications: true
+          # }
           # }
           'textDocument/definition' => {
             definitionProvider: true
@@ -851,7 +865,7 @@ module Solargraph
       end
 
       # @param library [Library]
-      # @param uuid [String, nil]
+      #
       # @return [void]
       def sync_library_map library
         total = library.workspace.sources.length

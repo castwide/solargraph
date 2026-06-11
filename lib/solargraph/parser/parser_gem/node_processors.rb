@@ -27,8 +27,10 @@ module Solargraph
         autoload :SymNode,       'solargraph/parser/parser_gem/node_processors/sym_node'
         autoload :ResbodyNode,   'solargraph/parser/parser_gem/node_processors/resbody_node'
         autoload :UntilNode,     'solargraph/parser/parser_gem/node_processors/until_node'
+        autoload :WhenNode,      'solargraph/parser/parser_gem/node_processors/when_node'
         autoload :WhileNode,     'solargraph/parser/parser_gem/node_processors/while_node'
         autoload :AndNode,       'solargraph/parser/parser_gem/node_processors/and_node'
+        autoload :OrNode,        'solargraph/parser/parser_gem/node_processors/or_node'
       end
     end
 
@@ -42,6 +44,8 @@ module Solargraph
       register :defs,         ParserGem::NodeProcessors::DefsNode
       register :if,           ParserGem::NodeProcessors::IfNode
       register :send,         ParserGem::NodeProcessors::SendNode
+      register :class,        Convention::StructDefinition::NodeProcessors::StructNode
+      register :class,        Convention::DataDefinition::NodeProcessors::DataNode
       register :class,        ParserGem::NodeProcessors::NamespaceNode
       register :module,       ParserGem::NodeProcessors::NamespaceNode
       register :sclass,       ParserGem::NodeProcessors::SclassNode
@@ -49,6 +53,8 @@ module Solargraph
       register :cvasgn,       ParserGem::NodeProcessors::CvasgnNode
       register :lvasgn,       ParserGem::NodeProcessors::LvasgnNode
       register :gvasgn,       ParserGem::NodeProcessors::GvasgnNode
+      register :casgn,        Convention::StructDefinition::NodeProcessors::StructNode
+      register :casgn,        Convention::DataDefinition::NodeProcessors::DataNode
       register :casgn,        ParserGem::NodeProcessors::CasgnNode
       register :masgn,        ParserGem::NodeProcessors::MasgnNode
       register :alias,        ParserGem::NodeProcessors::AliasNode
@@ -59,8 +65,10 @@ module Solargraph
       register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
       register :until,        ParserGem::NodeProcessors::UntilNode
+      register :when,         ParserGem::NodeProcessors::WhenNode
       register :while,        ParserGem::NodeProcessors::WhileNode
       register :and,          ParserGem::NodeProcessors::AndNode
+      register :or,           ParserGem::NodeProcessors::OrNode
     end
   end
 end

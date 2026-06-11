@@ -29,6 +29,7 @@ module Solargraph
       # @param text [String]
       # @return [String]
       def htmlify text
+        # @type [String]
         YARD::Templates::Helpers::Markup::RDocMarkup.new(text).to_html
       end
 
@@ -48,7 +49,7 @@ module Solargraph
 
     # @param directory [String]
     def initialize directory = VIEWS_PATH
-      directory = VIEWS_PATH if directory.nil? or !File.directory?(directory)
+      directory = VIEWS_PATH if directory.nil? || !File.directory?(directory)
       directories = [directory]
       directories.push VIEWS_PATH if directory != VIEWS_PATH
       # @type [Proc]
@@ -70,8 +71,10 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
+    # @sg-ignore
     # @return [String]
     def render template, layout: true, locals: {}
+      # @type [String]
       @render_method.call(template, layout: layout, locals: locals)
     end
 

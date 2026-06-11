@@ -10,35 +10,51 @@ module Solargraph
   #
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
+    autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
     attr_reader :directory
-
-    # The require paths associated with the workspace.
-    #
-    # @return [Array<String>]
-    attr_reader :require_paths
 
     # @return [Array<String>]
     attr_reader :gemnames
     alias source_gems gemnames
 
-    # @param directory [String]
+    # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
-      @directory = directory
+      raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
+
+      @directory = if ['*', ''].include?(directory)
+                     directory
+                   else
+                     File.absolute_path(directory)
+                   end
       @config = config
       @server = server
       load_sources
       @gemnames = []
-      @require_paths = generate_require_paths
       require_plugins
+    end
+
+    # The require paths associated with the workspace.
+    #
+    # @return [Array<String>]
+    def require_paths
+      # @todo are the semantics of '*' the same as '', meaning 'don't send back any require paths'?
+      @require_paths ||= RequirePaths.new(directory_or_nil, config).generate
     end
 
     # @return [Solargraph::Workspace::Config]
     def config
       @config ||= Solargraph::Workspace::Config.new(directory)
+    end
+
+    # @param level [Symbol]
+    # @return [TypeChecker::Rules]
+    def rules level
+      @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
     end
 
     # Merge the source. A merge will update the existing source for the file
@@ -55,10 +71,11 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
-        if directory == "*" || config.calculated.include?(source.filename)
-          source_hash[source.filename] = source
-          includes_any = true
-        end
+        next unless directory == '*' || config.calculated.include?(source.filename)
+
+        # @sg-ignore Wrong argument type for Hash#[]=: arg0 expected String, received String, nil
+        source_hash[source.filename] = source
+        includes_any = true
       end
 
       includes_any
@@ -106,31 +123,31 @@ module Solargraph
     def would_require? path
       require_paths.each do |rp|
         full = File.join rp, path
-        return true if File.exist?(full) or File.exist?(full << ".rb")
+        return true if File.file?(full) || File.file?(full << '.rb')
       end
       false
     end
 
-    # True if the workspace contains at least one gemspec file.
-    #
-    # @return [Boolean]
-    def gemspec?
-      !gemspecs.empty?
-    end
-
-    # Get an array of all gemspec files in the workspace.
-    #
-    # @return [Array<String>]
-    def gemspecs
-      return [] if directory.empty? || directory == '*'
-      @gemspecs ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
-        config.allow? gs
-      end
+    # @return [String, nil]
+    def rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
     end
 
     # @return [String, nil]
-    def rbs_collection_path
-      @gem_rbs_collection ||= read_rbs_collection_path
+    def rbs_collection_config_path
+      @rbs_collection_config_path ||= unless directory.empty? || directory == '*'
+                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
+                                        yaml_file if File.file?(yaml_file)
+                                      end
+    end
+
+    # @param name [String]
+    # @param version [String, nil]
+    # @param out [IO, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem name, version = nil, out: nil
+      Gem::Specification.find_by_name(name, version)
     end
 
     # Synchronize the workspace from the provided updater.
@@ -141,9 +158,41 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @sg-ignore return type could not be inferred
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'
+    end
+
+    # @return [String, nil]
+    def directory_or_nil
+      return nil if directory.empty? || directory == '*'
+      directory
+    end
+
+    # True if the workspace has a root Gemfile.
+    #
+    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
+    #
+    def gemfile?
+      directory && File.file?(File.join(directory, 'Gemfile'))
+    end
+
+    # True if the workspace contains at least one gemspec file.
+    #
+    # @return [Boolean]
+    def gemspec?
+      !gemspec_files.empty?
+    end
+
+    # Get an array of all gemspec files in the workspace.
+    #
+    # @return [Array<String>]
+    def gemspec_files
+      return [] if directory.empty? || directory == '*'
+      @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
+        config.allow? gs
+      end
     end
 
     private
@@ -162,78 +211,32 @@ module Solargraph
     # @return [void]
     def load_sources
       source_hash.clear
-      unless directory.empty? || directory == '*'
-        size = config.calculated.length
-        raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
-        config.calculated.each do |filename|
-          begin
-            source_hash[filename] = Solargraph::Source.load(filename)
-          rescue Errno::ENOENT => e
-            Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
-          end
-        end
+      return if directory.empty? || directory == '*'
+      size = config.calculated.length
+      raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files.positive? && size > config.max_files
+      config.calculated.each do |filename|
+        source_hash[filename] = Solargraph::Source.load(filename)
+      rescue Errno::ENOENT => e
+        Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
       end
-    end
-
-    # Generate require paths from gemspecs if they exist or assume the default
-    # lib directory.
-    #
-    # @return [Array<String>]
-    def generate_require_paths
-      return configured_require_paths unless gemspec?
-      result = []
-      gemspecs.each do |file|
-        base = File.dirname(file)
-        # HACK: Evaluating gemspec files violates the goal of not running
-        #   workspace code, but this is how Gem::Specification.load does it
-        #   anyway.
-        cmd = ['ruby', '-e', "require 'rubygems'; require 'json'; spec = eval(File.read('#{file}'), TOPLEVEL_BINDING, '#{file}'); return unless Gem::Specification === spec; puts({name: spec.name, paths: spec.require_paths}.to_json)"]
-        o, e, s = Open3.capture3(*cmd)
-        if s.success?
-          begin
-            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
-            next if hash.empty?
-            @gemnames.push hash['name']
-            result.concat(hash['paths'].map { |path| File.join(base, path) })
-          rescue StandardError => e
-            Solargraph.logger.warn "Error reading #{file}: [#{e.class}] #{e.message}"
-          end
-        else
-          Solargraph.logger.warn "Error reading #{file}"
-          Solargraph.logger.warn e
-        end
-      end
-      result.concat(config.require_paths.map { |p| File.join(directory, p) })
-      result.push File.join(directory, 'lib') if result.empty?
-      result
-    end
-
-    # Get additional require paths defined in the configuration.
-    #
-    # @return [Array<String>]
-    def configured_require_paths
-      return ['lib'] if directory.empty?
-      return [File.join(directory, 'lib')] if config.require_paths.empty?
-      config.require_paths.map{|p| File.join(directory, p)}
     end
 
     # @return [void]
     def require_plugins
       config.plugins.each do |plugin|
-        begin
-          require plugin
-        rescue LoadError
-          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
-        end
+        require plugin
+      rescue LoadError
+        Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
       end
     end
 
     # @return [String, nil]
     def read_rbs_collection_path
-      yaml_file = File.join(directory, 'rbs_collection.yaml')
-      return unless File.file?(yaml_file)
+      return unless rbs_collection_config_path
 
-      YAML.load_file(yaml_file)&.fetch('path')
+      path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
+      # make fully qualified
+      File.expand_path(path, directory)
     end
   end
 end

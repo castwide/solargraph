@@ -2,6 +2,7 @@
 
 require 'pathname'
 require 'observer'
+require 'open3'
 
 module Solargraph
   # A Library handles coordination between a Workspace and an ApiMap.
@@ -56,9 +57,11 @@ module Solargraph
     # @param source [Source, nil]
     # @return [void]
     def attach source
-      if @current && (!source || @current.filename != source.filename) && source_map_hash.key?(@current.filename) && !workspace.has_file?(@current.filename)
-        source_map_hash.delete @current.filename
-        source_map_external_require_hash.delete @current.filename
+      # @type [String, nil]
+      current_filename = @current&.filename
+      if @current && (!source || current_filename != source.filename) && current_filename && source_map_hash.key?(current_filename) && !workspace.has_file?(current_filename)
+        source_map_hash.delete current_filename
+        source_map_external_require_hash.delete current_filename
         @external_requires = nil
       end
       changed = source && @current != source
@@ -115,8 +118,8 @@ module Solargraph
     # @return [Boolean] True if at least one file was added to the workspace.
     def create_from_disk *filenames
       sources = filenames
-        .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
-        .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
+                .reject { |filename| File.directory?(filename) || !File.exist?(filename) }
+                .map { |filename| Solargraph::Source.load_string(File.read(filename), filename) }
       result = workspace.merge(*sources)
       sources.each { |source| maybe_map source }
       result
@@ -181,9 +184,12 @@ module Solargraph
       if cursor.comment?
         source = read(filename)
         offset = Solargraph::Position.to_offset(source.code, Solargraph::Position.new(line, column))
-        lft = source.code[0..offset-1].match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
-        rgt = source.code[offset..-1].match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
+        # @type [MatchData, nil]
+        lft = source.code[0..(offset - 1)]&.match(/\[[a-z0-9_:<, ]*?([a-z0-9_:]*)\z/i)
+        # @type [MatchData, nil]
+        rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore lft and rgt are checked for nil above
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -245,24 +251,25 @@ module Solargraph
       clip = mutex.synchronize { api_map.clip(cursor) }
       pin = clip.define.first
       return [] unless pin
+
       result = []
       files = if only
-        [api_map.source_map(filename)]
-      else
-        (workspace.sources + (@current ? [@current] : []))
-      end
+                [api_map.source_map(filename)]
+              else
+                (workspace.sources + (@current ? [@current] : []))
+              end
       files.uniq(&:filename).each do |source|
         found = source.references(pin.name)
         found.select! do |loc|
-          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character).first
+          referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)&.first
           referenced&.path == pin.path
         end
         if pin.path == 'Class#new'
-          caller = cursor.chain.base.infer(api_map, clip.send(:block), clip.locals).first
+          caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
-              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:block), clip.locals).first
+              other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else
@@ -270,8 +277,9 @@ module Solargraph
           end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
-        if strip && match = cursor.word.match(/^[^a-z0-9_]+/i)
+        if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
           found.map! do |loc|
+            # @sg-ignore Unresolved call to []
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -298,7 +306,7 @@ module Solargraph
     def locate_ref location
       map = source_map_hash[location.filename]
       return if map.nil?
-      pin = map.requires.select { |p| p.location.range.contain?(location.range.start) }.first
+      pin = map.requires.select { |p| p.location&.range&.contain?(location.range.start) }.first
       return nil if pin.nil?
       # @param full [String]
       return_if_match = proc do |full|
@@ -308,8 +316,8 @@ module Solargraph
       end
       workspace.require_paths.each do |path|
         full = File.join path, pin.name
-        return_if_match.(full)
-        return_if_match.(full << ".rb")
+        return_if_match.call(full)
+        return_if_match.call(full << '.rb')
       end
       nil
     rescue FileNotFoundError
@@ -401,15 +409,18 @@ module Solargraph
       repargs = {}
       workspace.config.reporters.each do |line|
         if line == 'all!'
-          Diagnostics.reporters.each do |reporter|
-            repargs[reporter] ||= []
+          Diagnostics.reporters.each do |reporter_name|
+            r = Diagnostics.reporter(reporter_name)
+            repargs[r] ||= [] if r
           end
         else
           args = line.split(':').map(&:strip)
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
+          # @sg-ignore Hash errors
           repargs[reporter] ||= []
+          # @sg-ignore Hash errors
           repargs[reporter].concat args
         end
       end
@@ -432,19 +443,9 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
+        # @sg-ignore OK if @current.filename is nil
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
-    end
-
-    # Get an array of foldable ranges for the specified file.
-    #
-    # @deprecated The library should not need to handle folding ranges. The
-    #   source itself has all the information it needs.
-    #
-    # @param filename [String]
-    # @return [Array<Range>]
-    def folding_ranges filename
-      read(filename).folding_ranges
     end
 
     # Create a library from a directory.
@@ -482,7 +483,9 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename]
       else
         false
@@ -492,7 +495,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
+        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
+        # @sg-ignore OK if src.filename is nil
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -510,7 +515,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{String => Set<String>}]
+    # @return [Hash{String => Array<String>}]
     def source_map_external_require_hash
       @source_map_external_require_hash ||= {}
     end
@@ -518,20 +523,21 @@ module Solargraph
     # @param source_map [SourceMap]
     # @return [void]
     def find_external_requires source_map
-      new_set = source_map.requires.map(&:name).to_set
-      # return if new_set == source_map_external_require_hash[source_map.filename]
+      # @type [Set<String>]
+      new_set = source_map.requires.to_set(&:name)
       _filenames = nil
-      filenames = ->{ _filenames ||= workspace.filenames.to_set }
+      filenames = -> { _filenames ||= workspace.filenames.to_set }
+      # @sg-ignore OK if source_map.filename is nil
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
-          filenames[].include?(full) or filenames[].include?(full << ".rb")
+          filenames[].include?(full) or filenames[].include?(full << '.rb')
         end
       end
       @external_requires = nil
     end
 
-    # @return [Mutex]
+    # @return [Thread::Mutex]
     def mutex
       @mutex ||= Mutex.new
     end
@@ -559,23 +565,23 @@ module Solargraph
     # @param error [FileNotFoundError]
     # @return [nil]
     def handle_file_not_found filename, error
-      if workspace.source(filename)
-        Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
-        nil
-      else
-        raise error
-      end
+      raise error unless workspace.source(filename)
+      Solargraph.logger.debug "#{filename} is not cataloged in the ApiMap"
+      nil
     end
 
     # @param source [Source, nil]
     # @return [void]
     def maybe_map source
       return unless source
+      # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
       return unless @current == source || workspace.has_file?(source.filename)
       if source_map_hash.key?(source.filename)
         new_map = Solargraph::SourceMap.map(source)
+        # @sg-ignore OK if source.filename is nil
         source_map_hash[source.filename] = new_map
       else
+        # @sg-ignore OK if source.filename is nil
         source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
       end
     end
@@ -588,26 +594,52 @@ module Solargraph
     # @return [void]
     def cache_next_gemspec
       return if @cache_progress
-      spec = api_map.uncached_gemspecs.find { |spec| !cache_errors.include?(spec) }
+
+      spec = cacheable_specs.first
       return end_cache_progress unless spec
 
       pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
-      logger.info "Caching #{spec.name} #{spec.version}"
-      Thread.new do
-        cache_pid = Process.spawn(workspace.command_path, 'cache', spec.name, spec.version.to_s)
-        report_cache_progress spec.name, pending
-        Process.wait(cache_pid)
-        logger.info "Cached #{spec.name} #{spec.version}"
-      rescue Errno::EINVAL => _e
-        logger.info "Cached #{spec.name} #{spec.version} with EINVAL"
-      rescue StandardError => e
-        cache_errors.add spec
-        Solargraph.logger.warn "Error caching gemspec #{spec.name} #{spec.version}: [#{e.class}] #{e.message}"
-      ensure
-        end_cache_progress
+
+      if Yardoc.processing?(spec)
+        logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
+        queued_gemspec_cache.push(spec)
+        return if pending - queued_gemspec_cache.length < 1
+
         catalog
         sync_catalog
+      else
+        logger.info "Caching #{spec.name} #{spec.version}"
+        Thread.new do
+          report_cache_progress spec.name, pending
+          _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+          if s.success?
+            logger.info "Cached #{spec.name} #{spec.version}"
+          else
+            cache_errors.add spec
+            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+            logger.warn e
+          end
+          end_cache_progress
+          catalog
+          sync_catalog
+        end
       end
+    end
+
+    # @return [Array<Gem::Specification>]
+    def cacheable_specs
+      cacheable = api_map.uncached_yard_gemspecs +
+                  api_map.uncached_rbs_collection_gemspecs -
+                  queued_gemspec_cache -
+                  cache_errors.to_a
+      return cacheable unless cacheable.empty?
+
+      queued_gemspec_cache
+    end
+
+    # @return [Array<Gem::Specification>]
+    def queued_gemspec_cache
+      @queued_gemspec_cache ||= []
     end
 
     # @param gem_name [String]
@@ -615,26 +647,30 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
+      # @sg-ignore Wrong argument type for Integer#>: arg_0 expected Numeric, received Integer, nil
       @total = pending if pending > @total
+      # @sg-ignore Unresolved call to - on Integer, nil
       finished = @total - pending
+      # @sg-ignore @total should always be an Integer
       pct = if @total.zero?
-        0
-      else
-        ((finished.to_f / @total.to_f) * 100).to_i
-      end
-      message = "#{gem_name}#{pending > 0 ? " (+#{pending})" : ''}"
+              0
+            else
+              # @sg-ignore Unresolved call to to_f
+              ((finished.to_f / @total) * 100).to_i
+            end
+      message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
       # "
-      if @cache_progress
-        @cache_progress.report(message, pct)
-      else
+      unless @cache_progress
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
+        # @sg-ignore Unresolved call to begin
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
-        @cache_progress.report(message, pct)
       end
+      # @sg-ignore Unresolved call to report
+      @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress
     end
@@ -647,15 +683,17 @@ module Solargraph
       @total = nil
     end
 
+    # @return [void]
     def sync_catalog
-      return if @sync_count == 0
+      return if @sync_count.zero?
 
       mutex.synchronize do
         logger.info "Cataloging #{workspace.directory.empty? ? 'generic workspace' : workspace.directory}"
+        source_map_hash.each_value { |map| find_external_requires(map) }
         api_map.catalog bench
-        source_map_hash.values.each { |map| find_external_requires(map) }
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_gemspecs.length} uncached gemspecs"
+        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
+        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end

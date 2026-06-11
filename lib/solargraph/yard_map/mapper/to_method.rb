@@ -6,12 +6,13 @@ module Solargraph
       module ToMethod
         extend YardMap::Helpers
 
+        # @type [Hash{Array<String, Symbol, String> => Symbol}]
         VISIBILITY_OVERRIDE = {
           # YARD pays attention to 'private' statements prior to class methods but shouldn't
-          ["Rails::Engine", :class, "find_root_with_flag"] => :public
-        }
+          ['Rails::Engine', :class, 'find_root_with_flag'] => :public
+        }.freeze
 
-        # @param code_object [YARD::CodeObjects::Base]
+        # @param code_object [YARD::CodeObjects::MethodObject]
         # @param name [String, nil]
         # @param scope [Symbol, nil]
         # @param visibility [Symbol, nil]
@@ -19,21 +20,21 @@ module Solargraph
         # @param spec [Gem::Specification, nil]
         # @return [Solargraph::Pin::Method]
         def self.make code_object, name = nil, scope = nil, visibility = nil, closure = nil, spec = nil
-          closure ||= Solargraph::Pin::Namespace.new(
-            name: code_object.namespace.to_s,
-            gates: [code_object.namespace.to_s],
-            type: code_object.namespace.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
-            source: :yardoc,
-          )
+          closure ||= create_closure_namespace_for(code_object, spec)
           location = object_location(code_object, spec)
           name ||= code_object.name.to_s
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
+          # @sg-ignore Need to add nil check here
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
-          final_visibility ||= VISIBILITY_OVERRIDE[override_key[0..-2]]
-          final_visibility ||= :private if closure.path == 'Kernel' && Kernel.private_instance_methods(false).include?(name)
+          # @sg-ignore Need to add nil check here
+          final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
+          # @sg-ignore Need to add nil check here
+          if closure.path == 'Kernel' && Kernel.private_method_defined?(name.to_sym, false)
+            final_visibility ||= :private
+          end
           final_visibility ||= visibility
           final_visibility ||= :private if code_object.module_function? && final_scope == :instance
           final_visibility ||= :public if code_object.module_function? && final_scope == :class
@@ -51,9 +52,10 @@ module Solargraph
               explicit: code_object.is_explicit?,
               return_type: return_type,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
           else
+            # @sg-ignore Need to add nil check here
             pin = Pin::Method.new(
               location: location,
               closure: closure,
@@ -66,7 +68,7 @@ module Solargraph
               return_type: return_type,
               attribute: code_object.is_attribute?,
               parameters: [],
-              source: :yardoc,
+              source: :yardoc
             )
             pin.parameters.concat get_parameters(code_object, location, comments, pin)
             pin.parameters.freeze
@@ -99,7 +101,7 @@ module Solargraph
                 presence: nil,
                 decl: arg_type(a),
                 asgn_code: a[1],
-                source: :yardoc,
+                source: :yardoc
               )
             end
           end

@@ -17,11 +17,6 @@ module Solargraph
           @word = word
         end
 
-        # @sg-ignore Fix "Not enough arguments to Module#protected"
-        protected def equality_fields
-          [self.class, word]
-        end
-
         def undefined?
           word == '<undefined>'
         end
@@ -32,15 +27,10 @@ module Solargraph
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Enumerable<Pin::Base>]
+        # @param locals [::Array<Pin::Base>]
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           []
-        end
-
-        # debugging description of contents; not for machine use
-        def desc
-          word
         end
 
         def to_s
@@ -48,7 +38,7 @@ module Solargraph
         end
 
         def inspect
-          "#<#{self.class} - `#{self.desc}`>"
+          "#<#{self.class} - `#{desc}`>"
         end
 
         def head?
@@ -74,17 +64,26 @@ module Solargraph
         end
 
         # debugging description of contents; not for machine use
+        #
+        # @return [String]
         def desc
           word
-        end
-
-        def inspect
-          "#<#{self.class} - `#{self.desc}`>"
         end
 
         include Logging
 
         protected
+
+        # @sg-ignore two problems - Declared return type
+        #   ::Solargraph::Source::Chain::Array does not match inferred
+        #   type ::Array(::Class<::Solargraph::Source::Chain::Link>,
+        #   ::String) for
+        #   Solargraph::Source::Chain::Link#equality_fields
+        #   and
+        #   Not enough arguments to Module#protected
+        def equality_fields
+          [self.class, word]
+        end
 
         # Mark whether this link is the head of a chain
         #

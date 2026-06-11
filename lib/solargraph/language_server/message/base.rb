@@ -16,7 +16,7 @@ module Solargraph
         # @return [String]
         attr_reader :method
 
-        # @return [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
+        # @return [Hash{String => undefined}]
         attr_reader :params
 
         # @return [Hash, Array, nil]
@@ -69,7 +69,7 @@ module Solargraph
           }
           response[:result] = result unless result.nil?
           response[:error] = error unless error.nil?
-          response[:result] = nil if result.nil? and error.nil?
+          response[:result] = nil if result.nil? && error.nil?
           json = response.to_json
           envelope = "Content-Length: #{json.bytesize}\r\n\r\n#{json}"
           Solargraph.logger.debug envelope
@@ -79,6 +79,7 @@ module Solargraph
 
         private
 
+        # @return [void]
         def accept_or_cancel
           if host.cancel?(id)
             # https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest

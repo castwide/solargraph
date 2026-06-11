@@ -12,6 +12,8 @@ module Solargraph
         # @return [Pin::Base]
         attr_reader :pin
 
+        # @param match [Float] The match score for the pin
+        # @param pin [Pin::Base]
         def initialize match, pin
           @match = match
           @pin = pin
@@ -39,16 +41,20 @@ module Solargraph
           match = [fuzzy_string_match(pin.path, @query), fuzzy_string_match(pin.name, @query)].max
           Result.new(match, pin) if match > 0.7
         end
-          .compact
-          .sort { |a, b| b.match <=> a.match }
-          .map(&:pin)
+             .compact
+             # @param a [self]
+             # @param b [self]
+             # @sg-ignore https://github.com/castwide/solargraph/pull/1050
+             .sort { |a, b| b.match <=> a.match }
+             .map(&:pin)
       end
 
       # @param str1 [String]
       # @param str2 [String]
+      #
       # @return [Float]
       def fuzzy_string_match str1, str2
-        return (1.0 + (str2.length.to_f / str1.length.to_f)) if str1.downcase.include?(str2.downcase)
+        return 1.0 + (str2.length.to_f / str1.length) if str1.downcase.include?(str2.downcase)
         JaroWinkler.similarity(str1, str2, ignore_case: true)
       end
     end

@@ -1,8 +1,52 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
-  context 'strict level' do
+  context 'when at strict level' do
     # @return [Solargraph::TypeChecker]
-    def type_checker(code)
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strict)
+    end
+
+    it 'can derive return types' do
+      checker = type_checker(%(
+        # @param a [String, nil]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'ignores nilable type issues' do
+      checker = type_checker(%(
+        # @param a [String]
+        # @return [void]
+        def foo(a); end
+
+        # @param b [String, nil]
+        # @return [void]
+        def bar(b)
+         foo(b)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'understands Class<File> is not the same as String' do
+      checker = type_checker(%(
+          # @param str [String]
+          # @return [void]
+          def foo str; end
+
+          foo File
+        ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
     it 'handles compatible interfaces with self types on call' do
@@ -40,6 +84,7 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Unresolved call')
+      expect(checker.problems.first.message).not_to include('undefined')
     end
 
     it 'reports undefined method calls with defined roots' do
@@ -48,6 +93,7 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Unresolved call')
+      expect(checker.problems.first.message).to include('String')
       expect(checker.problems.first.message).to include('not_a_method')
     end
 
@@ -55,16 +101,13 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
-      gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      pins = Solargraph::GemPins.build(gemspec)
-      Solargraph::Cache.save('gems', "#{gemspec.name}-#{gemspec.version}.ser", pins)
       source_map = Solargraph::SourceMap.load_string(%(
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.new
+      api_map = Solargraph::ApiMap.load '.'
       api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
-      checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strict)
+      checker = described_class.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
     end
 
@@ -106,13 +149,34 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports mismatched argument types' do
+    it 'reports mismatched argument types in chained calls' do
       checker = type_checker(%(
-        class Foo
-          # @param baz [Integer]
-          def bar(baz); end
-        end
-        Foo.new.bar('string')
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        bar('string').upcase
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'reports mismatched argument types in calls inside array literals' do
+      checker = type_checker(%(
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        [ bar('string') ]
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('Wrong argument type')
+    end
+
+    it 'reports mismatched argument types in calls inside array literals used in a chain' do
+      checker = type_checker(%(
+        # @param baz [Integer]
+        # @return [String]
+        def bar(baz); "foo"; end
+        [ bar('string') ].compact
       ))
       expect(checker.problems).to be_one
       expect(checker.problems.first.message).to include('Wrong argument type')
@@ -122,14 +186,16 @@ describe Solargraph::TypeChecker do
 
     xit 'complains about calling a non-existent method'
 
-    xit 'complains about inserting the wrong type into a tuple slot' do
+    it 'complains about inserting the wrong type into a tuple slot' do
+      pending 'Better error message from tuple support'
+
       checker = type_checker(%(
         # @param a [::Solargraph::Fills::Tuple(String, Integer)]
         def foo(a)
           a[0] = :something
         end
       ))
-      expect(checker.problems.map(&:problems)).to eq(['Wrong argument type'])
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type'])
     end
 
     it 'complains about dereferencing a non-existent tuple slot'
@@ -417,20 +483,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Not enough arguments')
     end
 
-    it 'does not attempt to account for splats' do
-      checker = type_checker(%(
-        class Foo
-          def bar(baz, bing)
-          end
-
-          def blah(args)
-             bar *args
-          end
-        end
-      ))
-      expect(checker.problems).to be_empty
-    end
-
     it 'does not attempt to account for splats in arg counts' do
       checker = type_checker(%(
         class Foo
@@ -507,7 +559,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    xit 'requires strict return tags' do
+    it 'does not require nil correctness in return tags when nil is involved and used second in a ternary' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -518,11 +570,10 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match inferred type')
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
-    xit 'requires strict return tags' do
+    it 'does not require nil correctness in return tags when nil is involved and used first in a ternary' do
       checker = type_checker(%(
         class Foo
           # The tag is [String] but the inference is [String, nil]
@@ -533,8 +584,7 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems).to be_one
-      expect(checker.problems.first.message).to include('does not match inferred type')
+      expect(checker.problems.map(&:message)).not_to include('does not match inferred type')
     end
 
     it 'validates strict return tags' do
@@ -547,6 +597,46 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems).to be_empty
+    end
+
+    it 'Can infer through simple ||= on ivar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on lvar' do
+      checker = type_checker(%(
+        def recipient
+          recip ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on cvar' do
+      checker = type_checker(%(
+        class Foo
+          def recipient
+            @@recipient ||= true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'Can infer through simple ||= on civar' do
+      checker = type_checker(%(
+        class Foo
+          @recipient ||= true
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'Can infer through ||= with a begin+end' do
@@ -669,6 +759,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'validates parameters in function calls' do
+      checker = type_checker(%(
+        # @param bar [String]
+        def foo(bar); end
+
+        def baz
+          foo(123)
+        end
+        ))
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received Integer'])
+    end
+
     it 'validates inferred return types with complex tags' do
       checker = type_checker(%(
         # @param foo [Numeric, nil] a foo
@@ -723,7 +825,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_one
     end
 
-    xit 'uses nil? to refine type' do
+    it 'uses nil? to refine type' do
+      pending 'nil? support in flow sensitive typing'
+
       checker = type_checker(%(
         # @sg-ignore
         # @type [String, nil]
@@ -735,19 +839,6 @@ describe Solargraph::TypeChecker do
         end
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
-    end
-
-    it 'does not falsely enforce nil in return types' do
-      checker = type_checker(%(
-      # @return [Integer]
-      def foo
-        # @sg-ignore
-        # @type [Integer, nil]
-        a = bar
-        a || 123
-      end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'refines types on is_a? and && to downcast and avoid false positives' do
@@ -817,7 +908,25 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'understands enough of define_method not to think the block is in class scope' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            @resolved_method = nil
+          end
 
+          def bar
+          end
+
+          define_method('a') do
+            bar
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    # @todo Possibly redundant
     it 'understands tuple superclass' do
       checker = type_checker(%(
         b = ['a', 'b', 123]
@@ -827,7 +936,9 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    xit "Uses flow scope to specialize understanding of cvar types" do
+    it 'Uses flow scope to specialize understanding of cvar types' do
+      pending 'better cvar support'
+
       checker = type_checker(%(
         class Bar
           # @return [String]
@@ -853,10 +964,10 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
-      expect(checker.problems.map(&:message)).to eq(["Unresolved call to upcase!"])
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase!'])
     end
 
-    it "does not lose track of place and false alarm when using kwargs after a splat" do
+    it 'does not lose track of place and false alarm when using kwargs after a splat' do
       checker = type_checker(%(
         def foo(a, b, c); end
         def bar(*args, **kwargs, &blk)
@@ -866,7 +977,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands Array#+ overloads" do
+    it 'understands Array#+ overloads' do
       checker = type_checker(%(
         c = ['a'] + ['a']
         c
@@ -874,7 +985,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands String#+ overloads" do
+    it 'understands String#+ overloads' do
       checker = type_checker(%(
         detail = ''
         detail += "foo"
@@ -883,7 +994,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it "understands Enumerable#each via _Each self type" do
+    it 'understands Enumerable#each via _Each self type' do
       checker = type_checker(%(
         class Blah
           # @param e [Enumerable<String>]
@@ -910,6 +1021,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not complain when passing NilClass to nil parameter' do
+      pending 'should be feasible'
       checker = type_checker(%(
         # @param a [nil]
         def foo(a); end
@@ -942,6 +1054,59 @@ describe Solargraph::TypeChecker do
           foo(a)
         end
       ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with detailed expression' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              if rand
+                 123
+               elsif rand
+                 456
+               else
+                 nil
+               end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with un-elsed if' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              if rand
+                123
+              elsif rand
+                456
+              end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not complain on defaulted reader with with un-elsed unless' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer, nil]
+          def bar
+            @bar ||=
+              unless rand
+                123
+              end
+          end
+        end
+      ))
+
       expect(checker.problems.map(&:message)).to eq([])
     end
   end

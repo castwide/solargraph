@@ -3,21 +3,8 @@
 require 'parser'
 require 'ast'
 
-# Teach AST::Node#children about its generic type
-#
-# @todo contribute back to https://github.com/ruby/gem_rbs_collection/blob/main/gems/ast/2.4/ast.rbs
-#
-# @!parse
-#   module ::AST
-#     class Node
-#       # New children
-#
-#       # @return [Array<self, Integer, String, Symbol, nil>]
-#       attr_reader :children
-#     end
-#   end
-
 # https://github.com/whitequark/parser
+# rubocop:disable Metrics/ModuleLength
 module Solargraph
   module Parser
     module ParserGem
@@ -26,17 +13,17 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [String]
-        def unpack_name(node)
-          pack_name(node).join("::")
+        def unpack_name node
+          pack_name(node).join('::')
         end
 
         # @param node [Parser::AST::Node]
         # @return [Array<String>]
-        def pack_name(node)
+        def pack_name node
           # @type [Array<String>]
           parts = []
           if node.is_a?(AST::Node)
-            node.children.each { |n|
+            node.children.each do |n|
               if n.is_a?(AST::Node)
                 if n.type == :cbase
                   parts = [''] + pack_name(n)
@@ -46,16 +33,16 @@ module Solargraph
               else
                 parts.push n unless n.nil?
               end
-            }
+            end
           end
           parts
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
           return nil unless node.is_a?(AST::Node)
-          if node.type == :str || node.type == :dstr
+          if %i[str dstr].include?(node.type)
             return '::String'
           elsif node.type == :array
             return '::Array'
@@ -67,30 +54,30 @@ module Solargraph
             return '::Integer'
           elsif node.type == :float
             return '::Float'
-          elsif node.type == :sym || node.type == :dsym
+          elsif %i[sym dsym].include?(node.type)
             return '::Symbol'
           elsif node.type == :regexp
             return '::Regexp'
           elsif node.type == :irange
             return '::Range'
-          elsif node.type == :true || node.type == :false
+          elsif %i[true false].include?(node.type)
             return '::Boolean'
             # @todo Support `nil` keyword in types
-          # elsif node.type == :nil
-          #   return 'NilClass'
+            # elsif node.type == :nil
+            #   return 'NilClass'
           end
           nil
         end
 
         # @param node [Parser::AST::Node]
         # @return [Position]
-        def get_node_start_position(node)
+        def get_node_start_position node
           Position.new(node.loc.line, node.loc.column)
         end
 
         # @param node [Parser::AST::Node]
         # @return [Position]
-        def get_node_end_position(node)
+        def get_node_end_position node
           Position.new(node.loc.last_line, node.loc.last_column)
         end
 
@@ -100,33 +87,78 @@ module Solargraph
         # @return [String]
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
-          if node.type == :const or node.type == :cbase
-            unless node.children[0].nil?
-              signature += drill_signature(node.children[0], signature)
-            end
+          if %i[const cbase].include?(node.type)
+            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '::' unless signature.empty?
             signature += node.children[1].to_s
-          elsif node.type == :lvar or node.type == :ivar or node.type == :cvar
+          elsif %i[lvar ivar cvar].include?(node.type)
             signature += '.' unless signature.empty?
             signature += node.children[0].to_s
           elsif node.type == :send
-            unless node.children[0].nil?
-              signature += drill_signature(node.children[0], signature)
-            end
+            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '.' unless signature.empty?
             signature += node.children[1].to_s
           end
           signature
         end
 
+        # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node]
-        # @return [Hash{Parser::AST::Node => Chain}]
+        # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
+        # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
+        # `.children[0]` call, which is not recognized as returning a literal value.
+        def simple_convert node
+          return nil unless Parser.is_ast_node?(node)
+
+          case node.type
+          when :const
+            unpack_name(node)
+          when :str, :dstr, :int, :float, :sym, true, false
+            node.children[0]
+          when :array
+            simple_convert_array(node)
+          when :hash
+            simple_convert_hash(node)
+          else
+            Solargraph::Parser.chain(node)
+          end
+        end
+
+        # @param node [Parser::AST::Node]
+        # @return [Array]
+        def simple_convert_array node
+          return [] unless Parser.is_ast_node?(node) && node.type == :array
+          node.children.compact.map { |c| simple_convert(c) }
+        end
+
+        # @param node [Parser::AST::Node]
+        # @return [Hash]
+        def simple_convert_hash node
+          return {} unless Parser.is_ast_node?(node) && node.type == :hash
+          result = {}
+          # @param pair [Parser::AST::Node]
+          node.children.each do |pair|
+            next unless Parser.is_ast_node?(pair) && pair.children[0]
+            result[pair.children[0].children[0]] = simple_convert(pair.children[1])
+          end
+          result
+        end
+
+        # @param node [Parser::AST::Node, nil]
+        # @return [Hash{Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
+          # @sg-ignore Translate to something flow sensitive typing understands
           return convert_hash(node.children[0]) if node.type == :kwsplat
-          return convert_hash(node.children[0]) if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          # @sg-ignore Translate to something flow sensitive typing understands
+          if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+            # @sg-ignore Translate to something flow sensitive typing understands
+            return convert_hash(node.children[0])
+          end
+          # @sg-ignore Translate to something flow sensitive typing understands
           return {} unless node.type == :hash
           result = {}
+          # @sg-ignore Translate to something flow sensitive typing understands
           node.children.each do |pair|
             result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
           end
@@ -161,7 +193,7 @@ module Solargraph
         end
 
         # @param nodes [Enumerable<Parser::AST::Node>]
-        def any_splatted_call?(nodes)
+        def any_splatted_call? nodes
           nodes.any? { |n| splatted_call?(n) }
         end
 
@@ -174,13 +206,17 @@ module Solargraph
           if node.type == :block
             result.push node
             if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
-              node.children[0].children[2..-1].each { |child| result.concat call_nodes_from(child) }
+              # @sg-ignore Need to add nil check here
+              node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }
             end
-            node.children[1..-1].each { |child| result.concat call_nodes_from(child) }
+            # @sg-ignore Need to add nil check here
+            node.children[1..].each { |child| result.concat call_nodes_from(child) }
           elsif node.type == :send
             result.push node
-            node.children[2..-1].each { |child| result.concat call_nodes_from(child) }
-          elsif [:super, :zsuper].include?(node.type)
+            result.concat call_nodes_from(node.children.first)
+            # @sg-ignore Need to add nil check here
+            node.children[2..].each { |child| result.concat call_nodes_from(child) }
+          elsif %i[super zsuper].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
           else
@@ -211,52 +247,142 @@ module Solargraph
         # @return [Array<AST::Node>] low-level value nodes in
         #   value position.  Does not include explicit return
         #   statements
-        def value_position_nodes_only(node)
+        def value_position_nodes_only node
           DeepInference.value_position_nodes_only(node).map { |n| n || NIL_NODE }
         end
 
         # @param cursor [Solargraph::Source::Cursor]
         # @return [Parser::AST::Node, nil]
         def find_recipient_node cursor
-          return repaired_find_recipient_node(cursor) if cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '('
+          if cursor.source.repaired? && cursor.source.code[cursor.offset - 1] == '('
+            return repaired_find_recipient_node(cursor)
+          end
           source = cursor.source
           position = cursor.position
           offset = cursor.offset
           tree = if source.synchronized?
-            match = source.code[0..offset-1].match(/,\s*\z/)
-            if match
-              source.tree_at(position.line, position.column - match[0].length)
-            else
-              source.tree_at(position.line, position.column)
-            end
-          else
-            source.tree_at(position.line, position.column - 1)
-          end
+                   # @sg-ignore Need to add nil check here
+                   match = source.code[0..(offset - 1)].match(/,\s*\z/)
+                   if match
+                     # @sg-ignore Need to add nil check here
+                     source.tree_at(position.line, position.column - match[0].length)
+                   else
+                     source.tree_at(position.line, position.column)
+                   end
+                 else
+                   source.tree_at(position.line, position.column - 1)
+                 end
+          # @type [AST::Node, nil]
           prev = nil
           tree.each do |node|
             if node.type == :send
-              args = node.children[2..-1]
+              args = node.children[2..]
+              # @sg-ignore Need to add nil check here
               if !args.empty?
+                # @sg-ignore Need to add nil check here
                 return node if prev && args.include?(prev)
-              else
-                if source.synchronized?
-                  return node if source.code[0..offset-1] =~ /\(\s*\z/ && source.code[offset..-1] =~ /^\s*\)/
-                else
-                  return node if source.code[0..offset-1] =~ /\([^\(]*\z/
-                end
+              elsif source.synchronized?
+                return node if source.code[0..(offset - 1)] =~ /\(\s*\z/ && source.code[offset..] =~ /^\s*\)/
+              elsif source.code[0..(offset - 1)] =~ /\([^(]*\z/
+                return node
               end
             end
             prev = node
           end
-          nil
+          find_recipient_node_by_text(source, offset)
+        end
+
+        # Text-based fallback for finding a method call recipient when the AST
+        # is unavailable (e.g., unparseable source with syntax errors).
+        #
+        # Scans backward from cursor offset to find '(' and the method name
+        # before it, then creates a minimal :send node.
+        #
+        # @param source [Solargraph::Source]
+        # @param offset [Integer]
+        # @return [Parser::AST::Node, nil]
+        def find_recipient_node_by_text source, offset
+          code = source.code
+          return nil if offset.nil? || offset <= 0 || offset > code.length
+
+          # The '(' could be at offset-1 (cursor after '(') or at offset (cursor on '(')
+          start_pos = offset - 1
+          if start_pos.positive? && code[start_pos] != '(' && code[offset] == '('
+            start_pos = offset
+          end
+
+          # Scan backward to find the matching '(' (handle nested parens)
+          depth = 0
+          paren_pos = nil
+          pos = start_pos
+          while pos >= 0
+            case code[pos]
+            when ')'
+              depth += 1
+            when '('
+              if depth.zero?
+                paren_pos = pos
+                break
+              end
+              depth -= 1
+            end
+            pos -= 1
+          end
+          return nil if paren_pos.nil?
+
+          # Skip whitespace before '(' to find method name
+          idx = paren_pos - 1
+          idx -= 1 while idx >= 0 && code[idx] =~ /\s/
+          return nil if idx.negative?
+
+          # Read method name (including ? and !)
+          name_end = idx + 1
+          idx -= 1 while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_?!]/
+          name_start = idx + 1
+          return nil if name_start >= name_end
+          method_name = code[name_start...name_end]
+          return nil if method_name.empty?
+
+          # Check for receiver pattern: receiver.method( or receiver::method(
+          idx = name_start - 1
+          idx -= 1 while idx >= 0 && code[idx] =~ /\s/
+          if idx >= 0 && code[idx] == '.'
+            idx -= 1
+            idx -= 1 while idx >= 0 && code[idx] =~ /\s/
+            recv_end = idx + 1
+            idx -= 1 while idx >= 0 && code[idx] =~ /[a-zA-Z0-9_@$]/
+            recv_start = idx + 1
+            if recv_start < recv_end
+              recv_name = code[recv_start...recv_end]
+              unless recv_name.empty?
+                receiver_node = ::Parser::AST::Node.new(:send, [nil, recv_name.to_sym])
+                return ::Parser::AST::Node.new(:send, [receiver_node, method_name.to_sym])
+              end
+            end
+          elsif idx >= 0 && idx.positive? && code[idx - 1] == ':' && code[idx] == ':'
+            const_end = idx - 1
+            const_start = const_end
+            const_start -= 1 while const_start.positive? && code[const_start - 1] =~ /[a-zA-Z0-9_]/
+            const_name = code[const_start...const_end]
+            unless const_name.empty? || method_name.empty?
+              const_node = ::Parser::AST::Node.new(:const, [nil, const_name.to_sym])
+              return ::Parser::AST::Node.new(:send, [const_node, method_name.to_sym])
+            end
+          end
+
+          # Simple method call without receiver
+          ::Parser::AST::Node.new(:send, [nil, method_name.to_sym])
         end
 
         # @param cursor [Solargraph::Source::Cursor]
         # @return [Parser::AST::Node, nil]
         def repaired_find_recipient_node cursor
-          cursor = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
-          node = cursor.source.tree_at(cursor.position.line, cursor.position.column).first
-          return node if node && node.type == :send
+          c = cursor.source.cursor_at([cursor.position.line, cursor.position.column - 1])
+          tree = c.source.tree_at(c.position.line, c.position.column)
+          tree.each do |node|
+            return node if node.type == :send
+          end
+          find_recipient_node_by_text(cursor.source, cursor.offset)
         end
 
         #
@@ -313,19 +439,15 @@ module Solargraph
         #    statements in value positions.
         module DeepInference
           class << self
-            CONDITIONAL_ALL_BUT_FIRST = [:if, :unless]
-            CONDITIONAL_ALL = [:or]
-            ONLY_ONE_CHILD = [:return]
-            FIRST_TWO_CHILDREN = [:rescue]
-            COMPOUND_STATEMENTS = [:begin, :kwbegin]
-            SKIPPABLE = [:def, :defs, :class, :sclass, :module]
-            FUNCTION_VALUE = [:block]
-            CASE_STATEMENT = [:case]
+            CONDITIONAL_ALL_BUT_FIRST = %i[if unless].freeze
+            ONLY_ONE_CHILD = [:return].freeze
+            FIRST_TWO_CHILDREN = [:rescue].freeze
+            COMPOUND_STATEMENTS = %i[begin kwbegin].freeze
+            SKIPPABLE = %i[def defs class sclass module].freeze
+            FUNCTION_VALUE = [:block].freeze
+            CASE_STATEMENT = [:case].freeze
 
             # @param node [AST::Node] a method body compound statement
-            # @param include_explicit_returns [Boolean] If true,
-            #    include the value nodes of the parameter of the
-            #    'return' statements in the type returned.
             # @return [Array<AST::Node>] low-level value nodes from
             #   both nodes in value position as well as explicit
             #   return statements in the method's closure.
@@ -338,14 +460,14 @@ module Solargraph
             # @return [Array<AST::Node>] low-level value nodes in
             #   value position.  Does not include explicit return
             #   statements
-            def value_position_nodes_only(node)
+            def value_position_nodes_only node
               from_value_position_statement(node, include_explicit_returns: false)
             end
 
             # Look at known control statements and use them to find
             # more specific return nodes.
             #
-            # @param node [Parser::AST::Node] Statement which is in
+            # @param node [AST::Node] Statement which is in
             #    value position for a method body
             # @param include_explicit_returns [Boolean] If true,
             #    include the value nodes of the parameter of the
@@ -359,10 +481,9 @@ module Solargraph
               if COMPOUND_STATEMENTS.include?(node.type)
                 result.concat from_value_position_compound_statement node
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children[1..-1])
+                # @sg-ignore Need to add nil check here
+                result.concat reduce_to_value_nodes(node.children[1..])
                 # result.push NIL_NODE unless node.children[2]
-              elsif CONDITIONAL_ALL.include?(node.type)
-                result.concat reduce_to_value_nodes(node.children)
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif FIRST_TWO_CHILDREN.include?(node.type)
@@ -373,9 +494,12 @@ module Solargraph
                 # @todo any explicit returns actually return from
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
-                result.concat explicit_return_values_from_compound_statement(node.children[2]) if include_explicit_returns
+                if include_explicit_returns
+                  result.concat explicit_return_values_from_compound_statement(node.children[2])
+                end
               elsif CASE_STATEMENT.include?(node.type)
-                node.children[1..-1].each do |cc|
+                # @sg-ignore Need to add nil check here
+                node.children[1..].each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
                   elsif cc.type == :when
@@ -408,7 +532,7 @@ module Solargraph
             # @return [Array<Parser::AST::Node>]
             def from_value_position_compound_statement parent
               result = []
-              nodes = parent.children.select{|n| n.is_a?(AST::Node)}
+              nodes = parent.children.select { |n| n.is_a?(AST::Node) }
               nodes.each_with_index do |node, idx|
                 if node.type == :block
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
@@ -433,7 +557,10 @@ module Solargraph
                 # value position.  we already have the explicit values
                 # from above; now we need to also gather the value
                 # position nodes
-                result.concat from_value_position_statement(nodes.last, include_explicit_returns: false) if idx == nodes.length - 1
+                if idx == nodes.length - 1
+                  result.concat from_value_position_statement(nodes.last,
+                                                              include_explicit_returns: false)
+                end
               end
               result
             end
@@ -449,7 +576,7 @@ module Solargraph
             def explicit_return_values_from_compound_statement parent
               return [] unless parent.is_a?(::Parser::AST::Node)
               result = []
-              nodes = parent.children.select{|n| n.is_a?(::Parser::AST::Node)}
+              nodes = parent.children.select { |n| n.is_a?(::Parser::AST::Node) }
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :return
@@ -471,17 +598,28 @@ module Solargraph
               nodes.each do |node|
                 if !node.is_a?(::Parser::AST::Node)
                   result.push nil
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif COMPOUND_STATEMENTS.include?(node.type)
                   result.concat from_value_position_compound_statement(node)
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                  result.concat reduce_to_value_nodes(node.children[1..-1])
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+                  result.concat reduce_to_value_nodes(node.children[1..])
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :return
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[0]])
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :or
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes(node.children)
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[2]])
                 else
                   result.push node
@@ -495,3 +633,4 @@ module Solargraph
     end
   end
 end
+# rubocop:enable Metrics/ModuleLength

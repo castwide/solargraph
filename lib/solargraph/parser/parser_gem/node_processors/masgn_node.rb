@@ -7,6 +7,7 @@ module Solargraph
         class MasgnNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          # @return [void]
           def process
             # Example:
             #
@@ -21,8 +22,11 @@ module Solargraph
             #     s(:int, 2),
             #     s(:int, 3)))
             masgn = node
+            # @type [Parser::AST::Node]
             mlhs = masgn.children.fetch(0)
+            # @type [Array<Parser::AST::Node>]
             lhs_arr = mlhs.children
+            # @type [Parser::AST::Node]
             mass_rhs = node.children.fetch(1)
 
             # Get pins created for the mlhs node
@@ -33,14 +37,18 @@ module Solargraph
               pin = if lhs.type == :lvasgn
                       # lvasgn is a local variable
                       locals.find { |l| l.location == location }
+                    elsif lhs.type == :ivasgn
+                      # ivasgn is an instance variable assignment
+                      ivars.find { |iv| iv.location == location }
                     else
-                      # e.g., ivasgn is an instance variable, etc
                       pins.find { |iv| iv.location == location && iv.is_a?(Pin::BaseVariable) }
                     end
               # @todo in line below, nothing in typechecking alerts
               #   when a non-existant method is called on 'l'
               if pin.nil?
-                Solargraph.logger.debug { "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}" }
+                Solargraph.logger.debug do
+                  "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}"
+                end
                 next
               end
               pin.mass_assignment = [mass_rhs, i]

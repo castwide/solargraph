@@ -1,0 +1,195 @@
+# frozen_string_literal: true
+
+module Parser
+  ##
+  # Default AST builder. Uses {AST::Node}s.
+  #
+  module Builders
+    class Default
+      ##
+      # AST compatibility attribute; since `-> {}` is not semantically
+      # equivalent to `lambda {}`, all new code should set this attribute
+      # to true.
+      #
+      # If set to false (the default), `-> {}` is emitted as
+      # `s(:block, s(:send, nil, :lambda), s(:args), nil)`.
+      #
+      # If set to true, `-> {}` is emitted as
+      # `s(:block, s(:lambda), s(:args), nil)`.
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_lambda: bool
+
+      ##
+      # AST compatibility attribute; block arguments of `m { |a| }` are
+      # not semantically equivalent to block arguments of `m { |a,| }` or `m { |a, b| }`,
+      # all new code should set this attribute to true.
+      #
+      # If set to false (the default), arguments of `m { |a| }` are emitted as
+      # `s(:args, s(:arg, :a))`.
+      #
+      # If set to true, arguments of `m { |a| }` are emitted as
+      # `s(:args, s(:procarg0, :a)).
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_procarg0: bool
+
+      ##
+      # AST compatibility attribute; locations of `__ENCODING__` are not the same
+      # as locations of `Encoding::UTF_8` causing problems during rewriting,
+      # all new code should set this attribute to true.
+      #
+      # If set to false (the default), `__ENCODING__` is emitted as
+      # ` s(:const, s(:const, nil, :Encoding), :UTF_8)`.
+      #
+      # If set to true, `__ENCODING__` is emitted as
+      # `s(:__ENCODING__)`.
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_encoding: bool
+
+      ##
+      # AST compatibility attribute; indexed assignment, `x[] = 1`, is not
+      # semantically equivalent to calling the method directly, `x.[]=(1)`.
+      # Specifically, in the former case, the expression's value is always 1,
+      # and in the latter case, the expression's value is the return value
+      # of the `[]=` method.
+      #
+      # If set to false (the default), `self[1]` is emitted as
+      # `s(:send, s(:self), :[], s(:int, 1))`, and `self[1] = 2` is
+      # emitted as `s(:send, s(:self), :[]=, s(:int, 1), s(:int, 2))`.
+      #
+      # If set to true, `self[1]` is emitted as
+      # `s(:index, s(:self), s(:int, 1))`, and `self[1] = 2` is
+      # emitted as `s(:indexasgn, s(:self), s(:int, 1), s(:int, 2))`.
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_index: bool
+
+      ##
+      # AST compatibility attribute; causes a single non-mlhs
+      # block argument to be wrapped in s(:procarg0).
+      #
+      # If set to false (the default), block arguments `|a|` are emitted as
+      # `s(:args, s(:procarg0, :a))`
+      #
+      # If set to true, block arguments `|a|` are emitted as
+      # `s(:args, s(:procarg0, s(:arg, :a))`
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_arg_inside_procarg0: bool
+
+      ##
+      # AST compatibility attribute; arguments forwarding initially
+      # didn't have support for leading arguments
+      # (i.e. `def m(a, ...); end` was a syntax error). However, Ruby 3.0
+      # added support for any number of arguments in front of the `...`.
+      #
+      # If set to false (the default):
+      #   1. `def m(...) end` is emitted as
+      #      s(:def, :m, s(:forward_args), nil)
+      #   2. `def m(a, b, ...) end` is emitted as
+      #      s(:def, :m,
+      #        s(:args, s(:arg, :a), s(:arg, :b), s(:forward_arg)))
+      #
+      # If set to true it uses a single format:
+      #   1. `def m(...) end` is emitted as
+      #      s(:def, :m, s(:args, s(:forward_arg)))
+      #   2. `def m(a, b, ...) end` is emitted as
+      #      s(:def, :m, s(:args, s(:arg, :a), s(:arg, :b), s(:forward_arg)))
+      #
+      # It does't matter that much on 2.7 (because there can't be any leading arguments),
+      # but on 3.0 it should be better enabled to use a single AST format.
+      #
+      # @return [Boolean]
+      attr_accessor self.emit_forward_arg: bool
+
+      ##
+      # AST compatibility attribute; Starting from Ruby 2.7 keyword arguments
+      # of method calls that are passed explicitly as a hash (i.e. with curly braces)
+      # are treated as positional arguments and Ruby 2.7 emits a warning on such method
+      # call. Ruby 3.0 given an ArgumentError.
+      #
+      # If set to false (the default) the last hash argument is emitted as `hash`:
+      #
+      # ```
+      # (send nil :foo
+      #   (hash
+      #     (pair
+      #       (sym :bar)
+      #       (int 42))))
+      # ```
+      #
+      # If set to true it is emitted as `kwargs`:
+      #
+      # ```
+      # (send nil :foo
+      #   (kwargs
+      #     (pair
+      #       (sym :bar)
+      #       (int 42))))
+      # ```
+      #
+      # Note that `kwargs` node is just a replacement for `hash` argument,
+      # so if there's are multiple arguments (or a `kwsplat`) all of them
+      # are wrapped into `kwargs` instead of `hash`:
+      #
+      # ```
+      # (send nil :foo
+      #   (kwargs
+      #     (pair
+      #       (sym :a)
+      #       (int 42))
+      #     (kwsplat
+      #       (send nil :b))
+      #     (pair
+      #       (sym :c)
+      #       (int 10))))
+      # ```
+      attr_accessor self.emit_kwargs: bool
+
+      ##
+      # AST compatibility attribute; Starting from 3.0 Ruby returns
+      # true/false from single-line pattern matching with `in` keyword.
+      #
+      # Before 3.0 there was an exception if given value doesn't match pattern.
+      #
+      # NOTE: This attribute affects only Ruby 2.7 grammar.
+      # 3.0 grammar always emits `match_pattern`/`match_pattern_p`
+      #
+      # If compatibility attribute set to false `foo in bar` is emitted as `in_match`:
+      #
+      # ```
+      # (in-match
+      #   (send nil :foo)
+      #   (match-var :bar))
+      # ```
+      #
+      # If set to true it's emitted as `match_pattern_p`:
+      # ```
+      # (match-pattern-p
+      #   (send nil :foo)
+      #   (match-var :bar))
+      # ```
+      attr_accessor self.emit_match_pattern: bool
+
+      ##
+      # If set to true (the default), `__FILE__` and `__LINE__` are transformed to
+      # literal nodes. For example, `s(:str, "lib/foo.rb")` and `s(:int, 10)`.
+      #
+      # If set to false, `__FILE__` and `__LINE__` are emitted as-is,
+      # i.e. as `s(:__FILE__)` and `s(:__LINE__)` nodes.
+      #
+      # Source maps are identical in both cases.
+      #
+      # @return [Boolean]
+      attr_accessor emit_file_line_as_literals: bool
+
+      def value: (untyped token) -> untyped
+
+      def string_value: (untyped token) -> String
+
+      def loc: (untyped token) -> untyped
+    end
+  end
+end

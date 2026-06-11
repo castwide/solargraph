@@ -6,31 +6,38 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        def word
-          @word ||= "<#{@type}>"
-        end
-
-        attr_reader :value
+        attr_reader :word, :value
 
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
-          if node.is_a?(::Parser::AST::Node)
-            if node.type == :true
-              @value = true
-            elsif node.type == :false
-              @value = false
-            elsif [:int, :sym].include?(node.type)
-              @value = node.children.first
-            end
-          end
+          super("<#{type}>")
+
+          # @todo We might be able to do some light inference from literals and
+          #   tuples as long as literal values are intransitive.
+
+          # if node.is_a?(::Parser::AST::Node)
+          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   if node.type == :true
+          #     @value = true
+          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   elsif node.type == :false
+          #     @value = false
+          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   elsif %i[int sym].include?(node.type)
+          #     # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #     @value = node.children.first
+          #   end
+          # end
           @type = type
-          @literal_type = ComplexType.try_parse(@value.inspect)
+          # @literal_type = ComplexType.try_parse(@value.inspect)
+          @literal_type = ComplexType::UNDEFINED
           @complex_type = ComplexType.try_parse(type)
         end
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@value, @type, @literal_type, @complex_type]
         end
 

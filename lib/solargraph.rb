@@ -48,13 +48,16 @@ module Solargraph
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :GemPins,          'solargraph/gem_pins'
-  autoload :Cache,            'solargraph/cache'
+  autoload :PinCache,         'solargraph/pin_cache'
+  autoload :RbsTranslator,    'solargraph/rbs_translator'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
 
-  # @param type [Symbol] Type of assert.
-  def self.asserts_on?(type)
+  CHDIR_MUTEX = Mutex.new
+
+  def self.asserts_on?
+    # @sg-ignore Translate to something flow sensitive typing understands
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'
@@ -65,8 +68,35 @@ module Solargraph
     end
   end
 
-  def self.assert_or_log(type, msg = nil, &block)
-    raise (msg || block.call) if asserts_on?(type) && ![:combine_with_visibility].include?(type)
+  # @param type [Symbol] The type of assertion to perform.
+  # @param msg [String, nil] An optional message to log
+  # @param block [Proc] A block that returns a message to log
+  # @return [void]
+  def self.assert_or_log type, msg = nil, &block
+    if asserts_on?
+      # @type [String, nil]
+      msg ||= block.call
+
+      raise "No message given for #{type.inspect}" if msg.nil?
+
+      # conditional aliases to handle compatibility corner cases
+      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      return if type == :alias_target_missing && msg.include?('highline/compatibility.rb')
+      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      return if type == :alias_target_missing && msg.include?('lib/json/add/date.rb')
+      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      return if type == :alias_target_missing && msg.include?('rubocop-ast.rbs')
+      # @todo :combine_with_visibility is not ready for prime time -
+      #  lots of disagreements found in practice that heuristics need
+      #  to be created for and/or debugging needs to resolve in pin
+      #  generation.
+      # @todo :api_map_namespace_pin_stack triggers in a badly handled
+      #   self type case - 'keeps track of self type in method
+      #   parameters in subclass' in call_spec.rb
+      return if %i[api_map_namespace_pin_stack combine_with_visibility].include?(type)
+
+      raise msg
+    end
     logger.info msg, &block
   end
 
@@ -79,12 +109,21 @@ module Solargraph
 
   # A helper method that runs Bundler.with_unbundled_env or falls back to
   # Bundler.with_clean_env for earlier versions of Bundler.
-  def self.with_clean_env &block
+  #
+  # @generic T
+  # @yieldreturn [generic<T>]
+  # @sg-ignore dynamic call, but both functions behave the same
+  # @return [generic<T>]
+  def self.with_clean_env(&)
     meth = if Bundler.respond_to?(:with_original_env)
-      :with_original_env
-    else
-      :with_clean_env
-    end
-    Bundler.send meth, &block
+             :with_original_env
+           else
+             :with_clean_env
+           end
+    Bundler.send(meth, &)
   end
 end
+
+# Ensure that ParserGem node processors are properly loaded to avoid conflicts
+# with Convention node processors
+require 'solargraph/parser/parser_gem/node_processors'

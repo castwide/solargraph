@@ -2,19 +2,22 @@
 
 module Solargraph
   module Pin
-    class Closure < Base
+    class Closure < CompoundStatement
       # @return [::Symbol] :class or :instance
       attr_reader :scope
 
       # @param scope [::Symbol] :class or :instance
-      # @param generics [::Array<Pin::Parameter>, nil]
-      def initialize scope: :class, generics: nil, generic_defaults: {},  **splat
+      # @param generics [::Array<Pin::String>, nil]
+      # @param generic_defaults [Hash{String => ComplexType}]
+      # @param [Hash{Symbol => Object}] splat
+      def initialize scope: :class, generics: nil, generic_defaults: {}, **splat
         super(**splat)
         @scope = scope
         @generics = generics
         @generic_defaults = generic_defaults
       end
 
+      # @return [Hash{String => ComplexType}]
       def generic_defaults
         @generic_defaults ||= {}
       end
@@ -23,10 +26,10 @@ module Solargraph
       # @param attrs [Hash{Symbol => Object}]
       #
       # @return [self]
-      def combine_with(other, attrs={})
+      def combine_with other, attrs = {}
         new_attrs = {
           scope: assert_same(other, :scope),
-          generics: generics.empty? ? other.generics : generics,
+          generics: generics.empty? ? other.generics : generics
         }.merge(attrs)
         super(other, new_attrs)
       end
@@ -42,23 +45,15 @@ module Solargraph
         end
       end
 
-      def binder
-        @binder || context
-      end
-
-      # @return [::Array<String>]
-      def gates
-        # @todo This check might not be necessary. There should always be a
-        #   root pin
-        closure ? closure.gates : ['']
-      end
+      # @param api_map [Solargraph::ApiMap]
+      # @return [void]
+      def rebind api_map; end
 
       # @return [::Array<String>]
       def generics
         @generics ||= docstring.tags(:generic).map(&:name)
       end
 
-      # @return [String]
       def to_rbs
         rbs_generics + return_type.to_rbs
       end
@@ -67,7 +62,7 @@ module Solargraph
       def rbs_generics
         return '' if generics.empty?
 
-        '[' + generics.map { |gen| gen.to_s }.join(', ') + '] '
+        "[#{generics.map(&:to_s).join(', ')}] "
       end
     end
   end

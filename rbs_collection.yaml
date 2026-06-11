@@ -1,0 +1,19 @@
+# Download sources
+sources:
+  - type: local
+    name: shims
+    path: rbs/shims
+
+  - type: git
+    name: ruby/gem_rbs_collection
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    revision: main
+    repo_dir: gems
+
+# A directory to install the downloaded RBSs
+path: .gem_rbs_collection
+
+# gems:
+#   # If you want to avoid installing rbs files for gems, you can specify them here.
+#   - name: GEM_NAME
+#     ignore: true

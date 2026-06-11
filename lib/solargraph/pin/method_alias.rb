@@ -13,6 +13,9 @@ module Solargraph
       # @return [String]
       attr_reader :original
 
+      # @param scope [::Symbol]
+      # @param original [String, nil] The name of the original method
+      # @param splat [Hash] Additional options supported by superclasses
       def initialize scope: :instance, original: nil, **splat
         super(**splat)
         @scope = scope
@@ -21,6 +24,14 @@ module Solargraph
 
       def visibility
         :public
+      end
+
+      def to_rbs
+        if scope == :class
+          "alias self.#{name} self.#{original}"
+        else
+          "alias #{name} #{original}"
+        end
       end
 
       def path

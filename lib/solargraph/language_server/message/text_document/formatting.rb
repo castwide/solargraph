@@ -18,10 +18,18 @@ module Solargraph
 
             require_rubocop(config['version'])
             options, paths = ::RuboCop::Options.new.parse(args)
+            # @sg-ignore Unresolved call to []=
             options[:stdin] = original
-            corrections = redirect_stdout do
-              ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+
+            # Ensure only one instance of RuboCop::Runner is running at
+            # a time - it uses 'chdir' to read config files with ERB,
+            # which can conflict with other chdirs.
+            corrections = Solargraph::CHDIR_MUTEX.synchronize do
+              redirect_stdout do
+                ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
+              end
             end
+            # @sg-ignore Unresolved call to []=
             result = options[:stdin]
 
             log_corrections(corrections)
@@ -34,7 +42,8 @@ module Solargraph
           private
 
           # @param corrections [String]
-          def log_corrections(corrections)
+          # @return [void]
+          def log_corrections corrections
             corrections = corrections&.strip
             return if corrections&.empty?
 
@@ -45,23 +54,27 @@ module Solargraph
             end
           end
 
-          def config_for(file_uri)
+          # @param file_uri [String]
+          # @return [Hash{String => undefined}]
+          def config_for file_uri
             conf = host.formatter_config(file_uri)
             return {} unless conf.is_a?(Hash)
 
             conf['rubocop'] || {}
           end
 
+          # @param file_uri [String]
           # @param config [Hash{String => String}]
+          # @return [Array<String>]
           def cli_args file_uri, config
             file = UriHelpers.uri_to_file(file_uri)
             args = [
               config['cops'] == 'all' ? '-A' : '-a',
               '--cache', 'false',
-              '--format', formatter_class(config).name,
+              '--format', formatter_class(config).name
             ]
 
-            ['except', 'only'].each do |arg|
+            %w[except only].each do |arg|
               cops = cop_list(config[arg])
               args += ["--#{arg}", cops] if cops
             end
@@ -71,7 +84,9 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          def formatter_class(config)
+          # @sg-ignore
+          # @return [Class<RuboCop::Formatter::BaseFormatter>]
+          def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
               # @sg-ignore
               BlankRubocopFormatter
@@ -83,7 +98,11 @@ module Solargraph
           end
 
           # @param value [Array, String]
-          def cop_list(value)
+          #
+          # @return [String, nil]
+          def cop_list value
+            # @type [String]
+            # @sg-ignore Translate to something flow sensitive typing understands
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value

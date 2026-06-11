@@ -22,22 +22,30 @@ module Solargraph
       attr_reader :lvars
 
       # @param source [Source]
-      # @param namespace [String]
+      # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
+      # @param lvars [Array<Symbol>]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public, lvars: []
         @source = source
-        # @closure = closure
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @scope = scope
         @visibility = visibility
         @lvars = lvars
       end
 
-      # @return [String]
+      # @return [String, nil]
       def filename
         source.filename
+      end
+
+      # @return [Pin::Namespace, nil]
+      def namespace_pin
+        ns = closure
+        # @sg-ignore flow sensitive typing needs to handle while
+        ns = ns.closure while ns && !ns.is_a?(Pin::Namespace)
+        ns
       end
 
       # Generate a new Region with the provided attribute changes.
@@ -45,6 +53,7 @@ module Solargraph
       # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
+      # @param lvars [Array<Symbol>, nil]
       # @return [Region]
       def update closure: nil, scope: nil, visibility: nil, lvars: nil
         Region.new(

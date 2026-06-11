@@ -5,6 +5,8 @@ module Solargraph
     class Constant < BaseVariable
       attr_reader :visibility
 
+      # @param visibility [::Symbol] The visibility of the constant (:public, :protected, or :private)
+      # @param splat [Hash] Additional options supported by superclasses
       def initialize visibility: :public, **splat
         super(**splat)
         @visibility = visibility
@@ -31,12 +33,10 @@ module Solargraph
 
       # @return [ComplexType]
       def generate_complex_type
-        tags = docstring.tags(:return).map(&:types).flatten.reject(&:nil?)
-        if tags.empty?
-          tags = docstring.tags(:type).map(&:types).flatten.reject(&:nil?)
-        end
+        tags = docstring.tags(:return).map(&:types).flatten.compact
+        tags = docstring.tags(:type).map(&:types).flatten.compact if tags.empty?
         return ComplexType::UNDEFINED if tags.empty?
-        ComplexType.try_parse *tags
+        ComplexType.try_parse(*tags)
       end
     end
   end

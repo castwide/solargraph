@@ -13,17 +13,19 @@ module Solargraph
       # @param version [String, nil]
       # @raise [InvalidRubocopVersionError] if _version_ is not installed
       # @return [void]
-      def require_rubocop(version = nil)
+      def require_rubocop version = nil
         begin
+          # @type [String]
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
           gem_lib_path = File.join(gem_path, 'lib')
+          # @sg-ignore Should better support meaning of '&' in RBS
           $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)
-        # @todo Gem::MissingSpecVersionError is undocumented for some reason
-        # @sg-ignore
         rescue Gem::MissingSpecVersionError => e
+          # @type [Array<Gem::Specification>]
+          specs = e.specs
           raise InvalidRubocopVersionError,
-                "could not find '#{e.name}' (#{e.requirement}) - "\
-                "did find: [#{e.specs.map { |s| s.version.version }.join(', ')}]"
+                "could not find '#{e.name}' (#{e.requirement}) - " \
+                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
       end
@@ -37,6 +39,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
+        # @sg-ignore
         options[:stdin] = code
         [options, paths]
       end
@@ -48,7 +51,8 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        path[0].upcase + path[1..-1]
+        # @sg-ignore Need to add nil check here
+        path[0].upcase + path[1..]
       end
 
       # @todo This is a smelly way to redirect output, but the RuboCop specs do

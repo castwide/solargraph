@@ -3,14 +3,33 @@
 module Solargraph
   module Pin
     module Common
-      # @return [Location]
-      attr_reader :location
+      # @!method source
+      #   @abstract
+      #   @return [Source, nil]
+      # @!method reset_generated!
+      #   @abstract
+      #   @return [void]
+      # @type @closure [Pin::Closure, nil]
+      # @type @binder [ComplexType, ComplexType::UniqueType, nil]
+
+      # @todo Missed nil violation
+      # @return [Location, nil]
+      attr_accessor :location
+
+      # @param value [Pin::Closure]
+      # @return [void]
+      def closure= value
+        @closure = value
+        # remove cached values generated from closure
+        reset_generated!
+      end
 
       # @return [Pin::Closure, nil]
-      attr_reader :closure
-
       def closure
-        Solargraph.assert_or_log(:closure, "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}") unless @closure
+        unless @closure
+          Solargraph.assert_or_log(:closure,
+                                   "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}")
+        end
         @closure
       end
 
@@ -19,12 +38,13 @@ module Solargraph
         @name ||= ''
       end
 
+      # @todo redundant with Base#return_type?
       # @return [ComplexType]
       def return_type
         @return_type ||= ComplexType::UNDEFINED
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def context
         # Get the static context from the nearest namespace
         @context ||= find_context
@@ -36,7 +56,8 @@ module Solargraph
         context.namespace.to_s
       end
 
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def binder
         @binder || context
       end
@@ -49,6 +70,18 @@ module Solargraph
       # @return [String]
       def path
         @path ||= name.empty? ? context.namespace : "#{context.namespace}::#{name}"
+      end
+
+      # @yieldparam [Pin::Base]
+      # @return [void, Enumerator<Pin::Base>]
+      def each_closure &block
+        return enum_for(:each_closure) unless block_given?
+
+        here = closure
+        until here.nil?
+          yield here
+          here = here&.closure
+        end
       end
 
       protected
@@ -66,6 +99,7 @@ module Solargraph
           elsif here.is_a?(Pin::Method)
             return here.context
           end
+          # @sg-ignore Need to add nil check here
           here = here.closure
         end
         ComplexType::ROOT
