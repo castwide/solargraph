@@ -4,10 +4,14 @@ require 'benchmark'
 require 'thor'
 require 'yard'
 require 'yaml'
+require 'sord'
+require 'tmpdir'
+
 
 module Solargraph
   class Shell < Thor
     include Solargraph::ServerMethods
+    include ApiMap::SourceToYard
 
     # Tell Thor to ensure the process exits with status 1 if any error happens.
     def self.exit_on_failure?
@@ -516,6 +520,41 @@ module Solargraph
           puts 'Or use https://rubygems.org/gems/profile-viewer to view them locally.'
         end
       end
+    end
+
+    desc 'rbs', 'Generate RBS definitions'
+    option :filename, type: :string, alias: :f, desc: 'Generated file name', default: 'sig.rbs'
+    option :inference, type: :boolean, desc: 'Enhance definitions with type inference', default: true
+    def rbs
+      api_map = Solargraph::ApiMap.load('.')
+      pins = api_map.source_maps.flat_map(&:pins)
+      store = Solargraph::ApiMap::Store.new(pins)
+      if options[:inference]
+        puts 'Inferring untyped methods...'
+        store.method_pins.each do |pin|
+          next unless pin.return_type.undefined?
+          type = pin.typify(api_map)
+          type = pin.probe(api_map) if type.undefined?
+          pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
+          pin.instance_variable_set(:@return_type, type)
+        end
+      end
+      puts 'Generating yardocs...'
+      rake_yard(store)
+      work_dir = Dir.pwd
+      Dir.mktmpdir do |tmpdir|
+        Dir.chdir tmpdir do
+          yardoc = File.join(tmpdir, '.yardoc')
+          YARD::Registry.save(false, yardoc)
+          YARD::Registry.load(yardoc)
+          rel_dir = File.join('sig', options[:filename])
+          puts "Writing #{rel_dir}..."
+          target = File.join(work_dir, rel_dir)
+          FileUtils.mkdir_p(File.join(work_dir, 'sig'))
+          `sord #{target} --rbs --no-regenerate`
+        end
+      end
+      puts 'Done.'
     end
 
     private
