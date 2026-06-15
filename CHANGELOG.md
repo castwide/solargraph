@@ -1,3 +1,14 @@
+## 0.6.0 - June 15, 2026
+- Add YARD macro support for DSL methods (#1187)
+- YARD macros - More typecheck fixes (#1188)
+- Macro fixes (#1189)
+- Unused macro methods (#1191)
+- Transitive macros (#1203)
+- Allow CTRL-C interruption of profile command + macro debug logs (#1206)
+- Support for Inline RBS (#1173)
+- Make typechecker errors vim quickfix friendly (#1072)
+- Generate RBS (#812)
+
 ## 0.59.2 - May 22, 2026
 - Convert RBS implicit nil annotations (#1197)
 - Temporary job stubs (#1200)
