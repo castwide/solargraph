@@ -1,4 +1,4 @@
-## 0.6.0 - June 15, 2026
+## 0.60.0 - June 15, 2026
 - Add YARD macro support for DSL methods (#1187)
 - YARD macros - More typecheck fixes (#1188)
 - Macro fixes (#1189)
