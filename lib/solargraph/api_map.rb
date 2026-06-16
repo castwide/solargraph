@@ -140,13 +140,14 @@ module Solargraph
       Solargraph.logger.debug { "ApiMap#process_macros: named macros: #{store.named_macros.keys.join(', ')}" }
       source_maps.each do |source_map|
         method_candidates = source_map.macro_method_candidates(store.macro_method_names)
+        Solargraph.logger.warn "Candidates: #{method_candidates}"
         Solargraph.logger.debug { "ApiMap#process_macros: processing source map for #{source_map.filename} with #{method_candidates.size} macro method candidates" }
         method_candidates.each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
             match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-              super_and_sub?(pin.namespace, closure.name)
+              get_complex_type_methods(closure.return_type).include?(pin)
             end
             if match
               match.macros.each do |macro|
