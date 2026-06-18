@@ -4,9 +4,9 @@ require 'benchmark'
 require 'thor'
 require 'yard'
 require 'yaml'
+require 'pathname'
 require 'sord'
 require 'tmpdir'
-
 
 module Solargraph
   class Shell < Thor
