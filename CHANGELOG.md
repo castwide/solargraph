@@ -1,3 +1,8 @@
+## 0.60.1 - June 20, 2026
+- Process macro directives from included and extended modules (#1210)
+- Flaky pathname issue (#1211)
+- Check object equality in Pin::Base#nearly? (#1213)
+
 ## 0.60.0 - June 15, 2026
 - Add YARD macro support for DSL methods (#1187)
 - YARD macros - More typecheck fixes (#1188)
