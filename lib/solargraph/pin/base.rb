@@ -491,7 +491,7 @@ module Solargraph
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
           # @sg-ignore flow sensitive typing needs to handle attrs
-          (closure == other.closure || (closure && closure.nearly?(other.closure))) &&
+          (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
            # @sg-ignore Translate to something flow sensitive typing understands
