@@ -140,7 +140,6 @@ module Solargraph
       Solargraph.logger.debug { "ApiMap#process_macros: named macros: #{store.named_macros.keys.join(', ')}" }
       source_maps.each do |source_map|
         method_candidates = source_map.macro_method_candidates(store.macro_method_names)
-        Solargraph.logger.warn "Candidates: #{method_candidates}"
         Solargraph.logger.debug { "ApiMap#process_macros: processing source map for #{source_map.filename} with #{method_candidates.size} macro method candidates" }
         method_candidates.each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
