@@ -45,6 +45,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'parser', '~> 3.0'
   s.add_dependency 'prism', '~> 1.4'
   s.add_dependency 'rbs', '>= 3.10.0'
+  s.add_dependency 'rdoc', '~> 7.0'
   s.add_dependency 'reverse_markdown', '~> 3.0'
   s.add_dependency 'rubocop', '~> 1.76'
   s.add_dependency 'sord', '~> 7.0'
