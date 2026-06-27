@@ -1,3 +1,6 @@
+## 0.60.2 - June 27, 2026
+- Extraneous debug output (#1214)
+
 ## 0.60.1 - June 20, 2026
 - Process macro directives from included and extended modules (#1210)
 - Flaky pathname issue (#1211)
