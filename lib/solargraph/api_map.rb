@@ -403,7 +403,7 @@ module Solargraph
     # @param candidates [Array<Pin::BaseVariable>]
     # @param name [String]
     # @param closure [Pin::Closure]
-    # @param location [Location]
+    # @param location [Location, nil]
     #
     # @return [Pin::BaseVariable, nil]
     def var_at_location candidates, name, closure, location
@@ -518,6 +518,27 @@ module Solargraph
       end
       cache.set_methods(rooted_tag, scope, visibility, deep, result)
       result
+    end
+
+    # @param path [Typedef::Path]
+    # @return [Array<Pin::Method>]
+    def typedef_path_methods path
+      # @todo Can we just try to resolve the path here? I guess we'd need gates.
+      if path.resolved?
+        get_methods(path.to_s)
+      else
+        []
+      end
+    end
+
+    # @param type [Typedef::Type]
+    # @return [Array<Pin::Method>]
+    def typedef_type_methods type
+      if type.class?
+        get_methods(type.params.first.to_s, scope: :class)
+      else
+        get_methods(type.base.to_s, scope: :instance)
+      end
     end
 
     # Get an array of method pins for a complex type.
