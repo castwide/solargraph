@@ -1,6 +1,16 @@
 # frozen_string_literal: true
 
 describe Solargraph::RbsMap::StdlibMap do
+  it 'adds overrides' do
+    pending 'Pathname not in stdlib?'
+    # @todo Unlike the YardMap stdlib, the RBS version reports the correct
+    #   return type for Pathname#Join. Delete or modify this test depending
+    #   on how StdLibFills will be handled going forward.
+    rbs_map = Solargraph::RbsMap::StdlibMap.load('pathname')
+    pin = rbs_map.path_pin('Pathname#join')
+    expect(pin.signatures.first.return_type.tag).to eq('Pathname')
+  end
+
   it 'finds stdlib require paths' do
     rbs_map = described_class.load('fileutils')
     pin = rbs_map.path_pin('FileUtils#chdir')
@@ -13,8 +23,34 @@ describe Solargraph::RbsMap::StdlibMap do
     expect(pin).to be_a(Solargraph::Pin::Base)
   end
 
+  it 'processes RBS class variables' do
+    pending 'rbs not in stdlib?'
+    map = Solargraph::RbsMap::StdlibMap.load('rbs')
+    store = Solargraph::ApiMap::Store.new(map.pins)
+    class_variable_pins = store.pins_by_class(Solargraph::Pin::ClassVariable)
+    count_pins = class_variable_pins.select do |pin|
+      pin.name.to_s == '@@count' && pin.context.to_s == 'Class<RBS::Types::Variable>'
+    end
+    expect(count_pins.length).to eq(1)
+    count_pin = count_pins.first
+    expect(count_pin.return_type.to_s).to eq('Integer')
+  end
+
+  it 'processes RBS class instance variables' do
+    pending 'rbs not in stdlib?'
+    map = Solargraph::RbsMap::StdlibMap.load('rbs')
+    store = Solargraph::ApiMap::Store.new(map.pins)
+    instance_variable_pins = store.pins_by_class(Solargraph::Pin::InstanceVariable)
+    root_pins = instance_variable_pins.select do |pin|
+      pin.name.to_s == '@root' && pin.context.to_s == 'Class<RBS::Namespace>' && pin.scope == :class
+    end
+    expect(root_pins.length).to eq(1)
+    root_pin = root_pins.first
+    expect(root_pin.return_type.to_s).to eq('RBS::Namespace, nil')
+  end
+
   it 'processes RBS module aliases' do
-    map = described_class.load('yaml')
+    map = Solargraph::RbsMap::StdlibMap.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     yaml_pins = constant_pins.select do |pin|
@@ -27,7 +63,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'pins are marked as coming from RBS parsing' do
-    map = described_class.load('yaml')
+    map = Solargraph::RbsMap::StdlibMap.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     pin = constant_pins.first

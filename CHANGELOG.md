@@ -1,3 +1,23 @@
+## 0.60.2 - June 27, 2026
+- Extraneous debug output (#1214)
+- Pin rdoc to ~> 7.0 (#1216)
+
+## 0.60.1 - June 20, 2026
+- Process macro directives from included and extended modules (#1210)
+- Flaky pathname issue (#1211)
+- Check object equality in Pin::Base#nearly? (#1213)
+
+## 0.60.0 - June 15, 2026
+- Add YARD macro support for DSL methods (#1187)
+- YARD macros - More typecheck fixes (#1188)
+- Macro fixes (#1189)
+- Unused macro methods (#1191)
+- Transitive macros (#1203)
+- Allow CTRL-C interruption of profile command + macro debug logs (#1206)
+- Support for Inline RBS (#1173)
+- Make typechecker errors vim quickfix friendly (#1072)
+- Generate RBS (#812)
+
 ## 0.59.2 - May 22, 2026
 - Convert RBS implicit nil annotations (#1197)
 - Temporary job stubs (#1200)

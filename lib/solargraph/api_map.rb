@@ -146,7 +146,7 @@ module Solargraph
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
             match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-              super_and_sub?(pin.namespace, closure.name)
+              get_complex_type_methods(closure.return_type).include?(pin)
             end
             if match
               match.macros.each do |macro|

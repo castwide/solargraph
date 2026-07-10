@@ -10,7 +10,8 @@ module Solargraph
           def process
             name = unpack_name(node.children[0])
             comments = comments_for(node)
-            superclass_name = if node.type == :class
+
+            superclass_name = if node.type == :class && node.children[1]&.type == :const
               "#{type_from_node}#{parameters_from_inline_rbs}"
             end
 

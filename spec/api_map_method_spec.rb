@@ -201,4 +201,27 @@ describe Solargraph::ApiMap do
       expect(pin.typify(api_map).to_s).to eq('Array<klass>')
     end
   end
+
+  describe '#process_macros' do
+    it 'processes macro directives from extended modules' do
+      source = Solargraph::Source.load_string(%(
+        module Extension
+          # @!macro
+          #   @!method $1
+          #   @return [$2]
+          def make_method(name, klass)
+          end  
+        end
+
+        class Example
+          extend Extension
+
+          make_method :macro_method, String
+        end
+      ))
+      api_map = Solargraph::ApiMap.new.map(source)
+      pin = api_map.get_path_pins('Example#macro_method').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+  end
 end
