@@ -39,6 +39,8 @@ module Solargraph
     autoload :While,            'solargraph/pin/while'
     autoload :Callable,         'solargraph/pin/callable'
     autoload :FactoryParameter, 'solargraph/pin/factory_parameter'
+    autoload :CompoundStatement,
+             'solargraph/pin/compound_statement'
 
     ROOT_PIN = Pin::Namespace.new(type: :class, name: '', closure: nil, source: :pin_rb)
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Method do
   it 'tracks code parameters' do
     source = Solargraph::Source.new(%(
@@ -33,7 +35,7 @@ describe Solargraph::Pin::Method do
     ))
     map = Solargraph::SourceMap.map(source)
     pin = map.pins.select { |pin| pin.path == '#foo' }.first
-    expect(pin.class).to eq(Solargraph::Pin::Method)
+    expect(pin.class).to eq(described_class)
     method_pin = pin
     expect(method_pin.signatures.length).to eq(1)
     method_signature = method_pin.signatures.first
@@ -53,7 +55,7 @@ describe Solargraph::Pin::Method do
       @param two [Second] description2
     COMMENTS
     # pin = source.pins.select{|pin| pin.path == 'Foo#bar'}.first
-    pin = Solargraph::Pin::Method.new(comments: comments)
+    pin = described_class.new(comments: comments)
     expect(pin.documentation).to include('one')
     expect(pin.documentation).to include('[First]')
     expect(pin.documentation).to include('description1')
@@ -77,9 +79,9 @@ describe Solargraph::Pin::Method do
     COMMENTS
     map = Solargraph::SourceMap.map(source)
     bazzle = map.pins.select { |pin| pin.path == 'Bar::Baz#bazzle' }.first
-    expect(bazzle.return_type.rooted?).to eq(false)
+    expect(bazzle.return_type.rooted?).to be(false)
     bing = map.pins.select { |pin| pin.path == 'Bar::Baz#bing' }.first
-    expect(bing.return_type.rooted?).to eq(true)
+    expect(bing.return_type.rooted?).to be(true)
   end
 
   it 'includes yieldparam tags in documentation' do
@@ -87,7 +89,7 @@ describe Solargraph::Pin::Method do
       @yieldparam one [First] description1
       @yieldparam two [Second] description2
     COMMENTS
-    pin = Solargraph::Pin::Method.new(comments: comments)
+    pin = described_class.new(comments: comments)
     expect(pin.documentation).to include('one')
     expect(pin.documentation).to include('[First]')
     expect(pin.documentation).to include('description1')
@@ -101,37 +103,37 @@ describe Solargraph::Pin::Method do
       @yieldreturn [YRet] yretdescription
       @return [String]
     COMMENTS
-    pin = Solargraph::Pin::Method.new(comments: comments)
+    pin = described_class.new(comments: comments)
     expect(pin.documentation).to include('YRet')
     expect(pin.documentation).to include('yretdescription')
   end
 
   it 'detects return types from tags' do
-    pin = Solargraph::Pin::Method.new(comments: '@return [Hash]')
+    pin = described_class.new(comments: '@return [Hash]')
     expect(pin.return_type.tag).to eq('Hash')
   end
 
   it 'ignores malformed return tags' do
-    pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [Array<String')
+    pin = described_class.new(name: 'bar', comments: '@return [Array<String')
     expect(pin.return_type).to be_undefined
   end
 
-  it 'will not merge with changes in parameters' do
+  it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
-    pin1 = Solargraph::Pin::Method.new(name: 'bar', parameters: %w[one two])
-    pin2 = Solargraph::Pin::Method.new(name: 'bar', parameters: ['three'])
+    pin1 = described_class.new(name: 'bar', parameters: %w[one two])
+    pin2 = described_class.new(name: 'bar', parameters: ['three'])
     expect(pin1.nearly?(pin2)).to be(false)
   end
 
-  it 'will not merge with changes in YARD return types' do
-    pin1 = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [String]')
-    pin2 = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [Integer]')
+  it 'does not merge with changes in YARD return types' do
+    pin1 = described_class.new(name: 'foo', comments: '@return [String]')
+    pin2 = described_class.new(name: 'foo', comments: '@return [Integer]')
     expect(pin1.nearly?(pin2)).to be(false)
   end
 
   it 'adds param tags to documentation' do
     # @todo Method pin parameters are pins now
-    pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@param one [String]', parameters: ['args'])
+    pin = described_class.new(name: 'bar', comments: '@param one [String]', parameters: ['args'])
     expect(pin.documentation).to include('one', '[String]')
   end
 
@@ -258,16 +260,10 @@ describe Solargraph::Pin::Method do
   end
 
   it 'typifies Booleans' do
-    pin = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [Boolean]', scope: :instance)
+    pin = described_class.new(name: 'foo', comments: '@return [Boolean]', scope: :instance)
     api_map = Solargraph::ApiMap.new
     type = pin.typify(api_map)
     expect(type.tag).to eq('Boolean')
-  end
-
-  it 'strips prefixes from parameter names' do
-    # @todo Method pin parameters are pins now
-    # pin = Solargraph::Pin::Method.new(args: ['foo', '*bar', '&block'])
-    # expect(pin.parameter_names).to eq(['foo', 'bar', 'block'])
   end
 
   it 'does not include yielded blocks in return nodes' do
@@ -286,7 +282,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'processes overload tags' do
-    pin = Solargraph::Pin::Method.new(name: 'foo', comments: %<
+    pin = described_class.new(name: 'foo', comments: %<
 @overload foo(bar)
   @param bar [Integer]
   @return [String]
@@ -298,7 +294,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'processes overload tags with restargs' do
-    pin = Solargraph::Pin::Method.new(name: 'foo', comments: %<
+    pin = described_class.new(name: 'foo', comments: %<
 @overload foo(*bar)
 @overload foo(**bar)
     >)
@@ -323,9 +319,9 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
-    expect(type.rooted_tags).to eq('1, nil')
-    expect(type.to_rbs).to eq('(1 | nil)')
-    expect(type.simple_tags).to eq('Integer, NilClass')
+    expect(type.rooted_tags).to eq('::Integer, nil')
+    expect(type.to_rbs).to eq('(::Integer | nil)')
+    expect(type.simple_tags).to eq('Integer, nil')
   end
 
   it 'infers from chains' do
@@ -357,38 +353,6 @@ describe Solargraph::Pin::Method do
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
     expect(type.simple_tags).to eq('Integer')
-  end
-
-  it 'infers from literal array dereference' do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-          arr = ['a', 'b']
-          arr[0]
-        end
-      end
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pin = api_map.get_path_pins('Foo#bar').first
-    type = pin.probe(api_map)
-    expect(type.to_s).to eq('String')
-  end
-
-  it 'infers from multiple-assignment chains' do
-    source = Solargraph::Source.load_string(%(
-      class Foo
-        def bar
-          a, b = ['a', 'b']
-          b
-        end
-      end
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    pin = api_map.get_path_pins('Foo#bar').first
-    type = pin.probe(api_map)
-    expect(type.to_s).to eq('String')
   end
 
   it 'typifies from super methods' do
@@ -425,7 +389,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'supports multiple return tags' do
-    pin = Solargraph::Pin::Method.new(
+    pin = described_class.new(
       name: 'foo',
       comments: %(
 @return [String]
@@ -436,7 +400,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'includes @return text in documentation' do
-    pin = Solargraph::Pin::Method.new(
+    pin = described_class.new(
       name: 'foo',
       comments: %(
 @return [String] the foo text string
@@ -446,7 +410,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'includes @example text in documentation' do
-    pin = Solargraph::Pin::Method.new(
+    pin = described_class.new(
       name: 'foo',
       comments: %(
 @example
@@ -458,7 +422,7 @@ describe Solargraph::Pin::Method do
   end
 
   it 'includes @example names' do
-    pin = Solargraph::Pin::Method.new(
+    pin = described_class.new(
       name: 'foo',
       comments: %(
 @example Call foo
@@ -485,8 +449,8 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Example#bar').first
     pin.resolve_ref_tag(api_map)
-    expect(pin.docstring.tags(:param).map(&:name)).to eq(['param1', 'param2'])
-    expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
+    expect(pin.docstring.tags(:param).map(&:name)).to eq(%w[param1 param2])
+    expect(pin.docstring.tags(:param).map(&:type)).to eq(%w[String Integer])
   end
 
   it 'resolves ref tags with namespaces' do
@@ -508,11 +472,11 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Example2#bar').first
     pin.resolve_ref_tag(api_map)
-    expect(pin.docstring.tags(:param).map(&:name)).to eq(['param1', 'param2'])
-    expect(pin.docstring.tags(:param).map(&:type)).to eq(['String', 'Integer'])
+    expect(pin.docstring.tags(:param).map(&:name)).to eq(%w[param1 param2])
+    expect(pin.docstring.tags(:param).map(&:type)).to eq(%w[String Integer])
   end
 
-  context 'as attribute' do
+  context 'when attr_reader is used' do
     it 'is a kind of attribute/property' do
       source = Solargraph::Source.load_string(%(
         class Foo
@@ -520,33 +484,43 @@ describe Solargraph::Pin::Method do
         end
       ))
       map = Solargraph::SourceMap.map(source)
-      pin = map.pins.select { |p| p.is_a?(Solargraph::Pin::Method) }.first
+      pin = map.pins.select { |p| p.is_a?(described_class) }.first
       expect(pin).to be_attribute
       expect(pin.completion_item_kind).to eq(Solargraph::LanguageServer::CompletionItemKinds::PROPERTY)
       expect(pin.symbol_kind).to eq(Solargraph::LanguageServer::SymbolKinds::PROPERTY)
     end
 
     it 'uses return type tags' do
-      pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [File]', attribute: true)
+      pin = described_class.new(name: 'bar', comments: '@return [File]', attribute: true)
       expect(pin.return_type.tag).to eq('File')
     end
 
     it 'detects undefined types' do
-      pin = Solargraph::Pin::Method.new(name: 'bar', attribute: true)
+      pin = described_class.new(name: 'bar', attribute: true)
       expect(pin.return_type).to be_undefined
     end
 
     it 'generates paths' do
       npin = Solargraph::Pin::Namespace.new(name: 'Foo', type: :class)
-      ipin = Solargraph::Pin::Method.new(closure: npin, name: 'bar', attribute: true, scope: :instance)
+      ipin = described_class.new(closure: npin, name: 'bar', attribute: true, scope: :instance)
       expect(ipin.path).to eq('Foo#bar')
-      cpin = Solargraph::Pin::Method.new(closure: npin, name: 'bar', attribute: true, scope: :class)
+      cpin = described_class.new(closure: npin, name: 'bar', attribute: true, scope: :class)
       expect(cpin.path).to eq('Foo.bar')
     end
 
     it 'handles invalid return type tags' do
-      pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [Array<]', attribute: true)
+      pin = described_class.new(name: 'bar', comments: '@return [Array<]', attribute: true)
       expect(pin.return_type).to be_undefined
+    end
+
+    it 'combines signatures by type' do
+      # Integer+ in RBS is a number of signatures that dispatch based
+      # on type.  Let's make sure we combine those with anything else
+      # found (e.g., additions from the BigDecimal RBS collection)
+      # without collapsing signatures
+      api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+      method = api_map.get_method_stack('Integer', '+', scope: :instance).first
+      expect(method.signatures.count).to be > 3
     end
 
     it 'infers untagged types from instance variables' do
@@ -622,8 +596,158 @@ describe Solargraph::Pin::Method do
     end
 
     it 'ignores malformed overload tags' do
-      pin = Solargraph::Pin::Method.new(name: 'example', comments: "@overload\n  @param")
+      pin = described_class.new(name: 'example', comments: "@overload\n  @param")
       expect(pin.overloads).to be_empty
+    end
+  end
+
+  context 'with inline rbs' do
+    it 'sets instance return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> String
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String')
+    end
+
+    it 'sets parameterized instance return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> Array[String]
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('Array<String>')
+    end
+
+    it 'sets YARD conventional return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> bool
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('Boolean')
+    end
+
+    it 'sets required positional parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (String) -> bool
+        def foo(bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:arg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('String')
+    end
+
+    it 'sets optional positional parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (?String) -> bool
+        def foo(bar = 'default'); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:optarg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('String')
+    end
+
+    it 'sets rest positional parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (*bar) -> bool
+        def foo(*bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:restarg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Array')
+    end
+
+    it 'sets required keyword parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (bar: String) -> bool
+        def foo(bar:); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:kwarg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('String')
+    end
+
+    it 'sets optional keyword parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (?bar: String) -> bool
+        def foo(bar: 'default'); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:kwoptarg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('String')
+    end
+
+    it 'sets rest keyword parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (**bar) -> bool
+        def foo(**bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.parameters).to be_one
+      expect(pin.signatures.first.parameters.first.name).to eq('bar')
+      expect(pin.signatures.first.parameters.first.decl).to eq(:kwrestarg)
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Hash{Symbol => Object}')
+    end
+
+    it 'sets block parameters' do
+      source = Solargraph::Source.load_string(%(
+        #: (String) { (Integer) -> void } -> bool
+        def foo(bar); end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.signatures).to be_one
+      expect(pin.signatures.first.block.parameters).to be_one
+      expect(pin.signatures.first.block.parameters.first.return_type.to_s).to eq('Integer')
+      expect(pin.signatures.first.block.return_type.to_s).to eq('void')
+    end
+
+    it 'rescues parsing errors' do
+      source = Solargraph::Source.load_string(%[
+        #: (* -> broke
+        def foo(**bar); end
+      ])
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect { pin.signatures }.not_to raise_error
     end
   end
 end

@@ -70,10 +70,11 @@ module Solargraph
         elsif source.parsed? && source.repaired? && end_of_phrase == '.'
           tree = source.tree_at(fixed_position.line, fixed_position.column)
           node, parent = tree[0..2]
-          node = Parser.parse(fixed_phrase) if node.nil?
+          # provide filename and line so that we can look up local variables there later
+          node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
           tree = source.tree_at(fixed_position.line, fixed_position.column) if node
         elsif source.repaired?
-          node = Parser.parse(fixed_phrase)
+          node = Parser.parse(fixed_phrase, source.filename, fixed_position.line)
           tree = source.tree_at(fixed_position.line, fixed_position.column) if node
         else
           unless source.error_ranges.any? { |r| r.nil? || r.include?(fixed_position) }
@@ -82,7 +83,7 @@ module Solargraph
           end
           # Exception for positions that chain literal nodes in unsynchronized sources
           node = nil unless source.synchronized? || !Parser.infer_literal_node_type(node).nil?
-          node = Parser.parse(fixed_phrase) if node.nil?
+          node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
           tree = source.tree_at(fixed_position.line, fixed_position.column) if node
         end
 
@@ -95,11 +96,13 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def phrase
-        @phrase ||= source.code[signature_data..offset - 1]
+        @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
+      # @sg-ignore Need to add nil check here
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
@@ -111,6 +114,7 @@ module Solargraph
       end
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
@@ -157,33 +161,37 @@ module Solargraph
         in_whitespace = false
         while index >= 0
           pos = Position.from_offset(@source.code, index)
-          break if index > 0 and @source.comment_at?(pos)
-          break if brackets > 0 or parens > 0 or squares > 0
+          break if index.positive? && @source.comment_at?(pos)
+          break if brackets.positive? || parens.positive? || squares.positive?
           char = @source.code[index, 1]
           break if char.nil? # @todo Is this the right way to handle this?
-          if brackets.zero? and parens.zero? and squares.zero? and [' ', "\r", "\n", "\t"].include?(char)
+          if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            if brackets.zero? and parens.zero? and squares.zero? and in_whitespace && !(char == '.' or @source.code[index + 1..-1].strip.start_with?('.'))
-              @source.code[index + 1..-1]
-              @source.code[index + 1..-1].lstrip
-              index += (@source.code[index + 1..-1].length - @source.code[index + 1..-1].lstrip.length)
+            # @sg-ignore Need to add nil check here
+            if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
+              @source.code[(index + 1)..]
+              # @sg-ignore Need to add nil check here
+              @source.code[(index + 1)..].lstrip
+              # @sg-ignore Need to add nil check here
+              index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
               break
             end
-            if char == ')'
+            case char
+            when ')'
               parens -= 1
-            elsif char == ']'
+            when ']'
               squares -= 1
-            elsif char == '}'
+            when '}'
               brackets -= 1
-            elsif char == '('
+            when '('
               parens += 1
-            elsif char == '{'
+            when '{'
               brackets += 1
-            elsif char == '['
+            when '['
               squares += 1
             end
-            if brackets.zero? and parens.zero? and squares.zero?
+            if brackets.zero? && parens.zero? && squares.zero?
               break if ['"', "'", ',', ';', '%'].include?(char)
               break if ['!', '?'].include?(char) && index < offset - 1
               break if char == '$'

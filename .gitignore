@@ -14,3 +14,4 @@ coverage
 /Makefile
 /.pryrc
 /.rspec-local
+vendor/cache

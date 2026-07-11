@@ -24,13 +24,13 @@ module Solargraph
 
     # @param convention [Class<Convention::Base>]
     # @return [void]
-    def self.deregister convention
-      @@conventions.delete_if { |c| c.instance_of? convention }
+    def self.unregister convention
+      @@conventions.delete_if { |c| c.is_a?(convention) }
     end
 
     # @param source_map [SourceMap]
     # @return [Environ]
-    def self.for_local(source_map)
+    def self.for_local source_map
       result = Environ.new
       @@conventions.each do |conv|
         result.merge conv.local(source_map)
@@ -40,7 +40,7 @@ module Solargraph
 
     # @param doc_map [DocMap]
     # @return [Environ]
-    def self.for_global(doc_map)
+    def self.for_global doc_map
       result = Environ.new
       @@conventions.each do |conv|
         result.merge conv.global(doc_map)

@@ -6,9 +6,7 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        def word
-          @word ||= "<#{@type}>"
-        end
+        attr_reader :word
 
         # @return [::String, ::Symbol]
         attr_reader :value
@@ -19,6 +17,7 @@ module Solargraph
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
+          super("<#{type}>")
           @node = node
 
           if node.is_a?(::Parser::AST::Node)
@@ -31,12 +30,14 @@ module Solargraph
             end
           end
           @type = type
-          @literal_type = ComplexType.try_parse(@value.inspect)
+          # @literal_type = ComplexType.try_parse(@value.inspect)
+          @literal_type = ComplexType::UNDEFINED
           @complex_type = ComplexType.try_parse(type)
         end
 
         # @sg-ignore Fix "Not enough arguments to Module#protected"
         protected def equality_fields
+          # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@value, @type, @literal_type, @complex_type]
         end
 

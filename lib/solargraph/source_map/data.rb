@@ -8,13 +8,16 @@ module Solargraph
         @source = source
       end
 
+      # @sg-ignore Translate to something flow sensitive typing understands
       # @return [Array<Solargraph::Pin::Base>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1100
       def pins
         generate
         @pins || []
       end
 
-      # @return [Array<Solargraph::LocalVariable>]
+      # @sg-ignore Translate to something flow sensitive typing understands
+      # @return [Array<Solargraph::Pin::LocalVariable>]
       def locals
         generate
         @locals || []
