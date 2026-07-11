@@ -144,17 +144,15 @@ module Solargraph
         method_candidates.each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
-          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-              get_complex_type_methods(closure.return_type).include?(pin)
-            end
-            if match
-              match.macros.each do |macro|
-                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
-              end
-              next
-            end
+          next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+          match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+            get_complex_type_methods(closure.return_type).include?(pin)
           end
+          next unless match
+          match.macros.each do |macro|
+            macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+          end
+          next
         end
       end
       macro_pins
@@ -299,7 +297,7 @@ module Solargraph
     #
     # @param method_pin [Solargraph::Pin::Method]
     # @return [Array<Solargraph::Pin::FactoryParameter>]
-    def factory_parameters_for_method(method_pin)
+    def factory_parameters_for_method method_pin
       store.factory_parameters_for_method(method_pin)
     end
 

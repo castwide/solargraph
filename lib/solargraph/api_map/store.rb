@@ -265,7 +265,7 @@ module Solargraph
       #
       # @param method_pin [Pin::Method]
       # @return [Array<Pin::FactoryParameter>]
-      def factory_parameters_for_method(method_pin)
+      def factory_parameters_for_method method_pin
         factory_parameter_hash[method_pin.path] || []
       end
 

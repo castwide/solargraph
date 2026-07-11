@@ -131,11 +131,11 @@ module Solargraph
                                                                                     blocktype)
                 # @todo It shouldn't be necessary to choose either generics or macros
                 new_return_type = if new_signature_pin.return_type.defined?
-                  new_signature_pin.return_type
-                else
-                  named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
-                  p.typify(api_map).expand(named_types)
-                end
+                                    new_signature_pin.return_type
+                                  else
+                                    named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
+                                    p.typify(api_map).expand(named_types)
+                                  end
                 self_type = if head?
                               # If we're at the head of the chain, we called a
                               # method somewhere that marked itself as returning
@@ -157,11 +157,11 @@ module Solargraph
                 # qualify(), however, happens in the namespace where
                 # the docs were written - from the method pin.
                 # @todo Need to add nil check here
-                if new_return_type.defined?
-                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates)
-                else
-                  type = inferr_from_factory_parameters(api_map, p)
-                end
+                type = if new_return_type.defined?
+                         with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates)
+                       else
+                         inferr_from_factory_parameters(api_map, p)
+                       end
                 type ||= ComplexType::UNDEFINED
               end
               break if type.defined?
@@ -191,7 +191,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param method_pin [Pin::Method]
         # @return [ComplexType, nil]
-        def inferr_from_factory_parameters(api_map, method_pin)
+        def inferr_from_factory_parameters api_map, method_pin
           factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
             method_pin.parameters.each_with_index.find do |param, index|
               current_argument = arguments[index]
