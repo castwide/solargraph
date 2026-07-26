@@ -312,6 +312,10 @@ module Solargraph
       started = false
       skip = nil
       comments.lines.each do |l|
+        if l =~ /^#-\R/
+          ctxt = String.new('')
+          next
+        end
         # Trim the comment and minimum leading whitespace
         p = l.force_encoding('UTF-8').encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
         if p.strip.empty?
