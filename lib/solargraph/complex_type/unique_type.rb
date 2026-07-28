@@ -147,7 +147,6 @@ module Solargraph
       end
 
       def literal?
-        return false
         non_literal_name != name
       end
 
@@ -229,11 +228,11 @@ module Solargraph
         #   covariant
         # contravariant?: Proc - can be changed, so we can pass
         #   in less specific super types
-        # if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
-        #   :covariant
-        # else
-        default
-        # end
+        if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
+          :covariant
+        else
+          default
+        end
       end
 
       # Whether this is an RBS interface like _ToAry or Hash::_Key.
@@ -375,7 +374,6 @@ module Solargraph
 
       # @return [UniqueType]
       def downcast_to_literal_if_possible
-        return self
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
       end
 
@@ -458,12 +456,15 @@ module Solargraph
               else
                 next ComplexType::UNDEFINED
               end
-            # @todo Treating parameterized classes and tuples the same for now
-            # elsif context_type.all?(&:implicit_union?) || true
-            elsif idx.zero? && !context_type.all_params.empty?
-              ComplexType.new(context_type.all_params)
+            elsif context_type.all?(&:implicit_union?)
+              if idx.zero? && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
+              end
             else
-              ComplexType::UNDEFINED
+              # @sg-ignore Need to add nil check here
+              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
             end
           else
             t
