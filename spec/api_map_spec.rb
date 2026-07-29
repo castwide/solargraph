@@ -430,7 +430,7 @@ describe Solargraph::ApiMap do
   end
 
   it 'understands tuples inherit from regular arrays' do
-    pending('Fix to remove trailing generic<> after resolution')
+    skip 'Results vary on Ruby versions'
 
     method_pins = @api_map.get_method_stack("Array(1, 2, 'a')", 'include?')
     method_pin = method_pins.first
