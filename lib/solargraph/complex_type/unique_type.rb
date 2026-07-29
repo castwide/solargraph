@@ -103,6 +103,7 @@ module Solargraph
       # @return [self]
       def simplify_literals
         transform do |t|
+          next t.recreate(new_name: 'NilClass') if t.nil_type?
           next t unless t.literal?
           t.recreate(new_name: t.non_literal_name)
         end
@@ -308,7 +309,7 @@ module Solargraph
           'untyped'
         elsif name == 'Boolean'
           'bool'
-        elsif name.downcase == 'nil'
+        elsif name.downcase == 'nil' || name == 'NilClass'
           'nil'
         elsif name == GENERIC_TAG_NAME
           all_params.first&.name
