@@ -2129,6 +2129,14 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
+  # Tuples deliberately do not give index-specific types for [], #at,
+  # or #fetch (see https://github.com/castwide/solargraph/issues/1196):
+  # once a variable holding a tuple has been reassigned, indexed with a
+  # non-literal, or mutated, there's no reliable way to know which
+  # position is actually being read, so a precise-looking but
+  # potentially wrong answer is worse than the union of all element
+  # types. This applies uniformly regardless of which literal index is
+  # used.
   it 'resolves declared tuple types correctly' do
     source = Solargraph::Source.load_string(%(
       # @type [::Solargraph::Fills::Tuple(String, Integer)]
@@ -2143,16 +2151,15 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String')
+    expect(type.to_s).to eq('String, Integer, nil')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Integer')
+    expect(type.to_s).to eq('String, Integer, nil')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
-    expect(type.to_s).to eq('String, Integer')
+    expect(type.to_s).to eq('String, Integer, nil')
   end
 
   xit 'does not pay attention to method signatures which have been redefind by subclass'
@@ -2171,16 +2178,15 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String')
+    expect(type.to_s).to eq('String, Integer, nil')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Integer')
+    expect(type.to_s).to eq('String, Integer, nil')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
-    expect(type.to_s).to eq('String, Integer')
+    expect(type.to_s).to eq('String, Integer, nil')
   end
 
   it 'understands #fetch for tuples with no default' do
@@ -2197,15 +2203,14 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String')
+    expect(type.to_s).to eq('String, Integer')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Integer')
+    expect(type.to_s).to eq('String, Integer')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    # @todo Ideally this would be 'bot' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer')
   end
 
@@ -2223,15 +2228,14 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, :foo')
+    expect(type.to_s).to eq('String, Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Integer, :foo')
+    expect(type.to_s).to eq('String, Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer, :foo')
   end
 
@@ -2249,17 +2253,14 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    # @todo Ideally this would be just 'String' - RBS isn't sophisticated enough to express this
-    expect(type.to_s).to eq('String, :foo')
+    expect(type.to_s).to eq('String, Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    # @todo Ideally this would be just 'Integer' - RBS isn't sophisticated enough to express this
-    expect(type.to_s).to eq('Integer, :foo')
+    expect(type.to_s).to eq('String, Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer, :foo')
   end
 
@@ -2300,10 +2301,10 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String')
+    expect(type.to_s).to eq('String, Integer, nil')
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('Integer')
+    expect(type.to_s).to eq('String, Integer, nil')
   end
 
   it 'infers array types from single element literal arrays' do

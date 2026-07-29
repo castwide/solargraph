@@ -462,9 +462,16 @@ module Solargraph
               else
                 ComplexType::UNDEFINED
               end
+            elsif context_type.all_params[idx]
+              context_type.all_params[idx]
+            elsif definitions.generic_defaults[generic_name]
+              # Tuples declare later positional generics (e.g. C, D, ...)
+              # as defaults in terms of earlier ones (e.g. C = A | B).
+              # Resolve those defaults against the same context instead of
+              # returning them as unresolved generic placeholders.
+              definitions.generic_defaults[generic_name].resolve_generics(definitions, context_type)
             else
-              # @sg-ignore Need to add nil check here
-              context_type.all_params[idx] || definitions.generic_defaults[generic_name] || ComplexType::UNDEFINED
+              ComplexType::UNDEFINED
             end
           else
             t
