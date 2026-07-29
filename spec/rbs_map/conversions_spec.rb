@@ -142,8 +142,11 @@ describe Solargraph::RbsMap::Conversions do
       end
 
       it 'finds superclass method pin parameter type' do
+        # RBS core's Hash#[] takes its key as the _Key duck-type interface, not
+        # the generic K, so instantiating Hash{Symbol => untyped} does not
+        # substitute the param type - see ruby/rbs core/hash.rbs.
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-                 .uniq).to eq(['Symbol'])
+                 .uniq).to eq(['::Hash::_Key'])
       end
     end
   end
