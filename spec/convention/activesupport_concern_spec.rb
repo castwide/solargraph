@@ -187,11 +187,17 @@ describe Solargraph::Convention::ActiveSupportConcern do
       end
 
       it 'finds superclass method pin parameter type' do
-        # RBS core's Hash#[] takes its key as the _Key duck-type interface, not
-        # the generic K, so instantiating Hash{Symbol => untyped} does not
-        # substitute the param type - see ruby/rbs core/hash.rbs.
+        # RBS core's Hash#[] started taking its key as the _Key duck-type
+        # interface instead of the generic K as of RBS 4.1.0, so instantiating
+        # Hash{Symbol => untyped} no longer substitutes the param type on
+        # newer RBS - see ruby/rbs core/hash.rbs.
+        expected = if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
+                     ['::Hash::_Key']
+                   else
+                     ['Symbol']
+                   end
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-                 .uniq).to eq(['::Hash::_Key'])
+                 .uniq).to eq(expected)
       end
     end
   end
