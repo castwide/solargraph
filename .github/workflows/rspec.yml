@@ -25,14 +25,14 @@ jobs:
         #   It currently 404s ("Unavailable version head for ruby"), failing CI:
         #   https://github.com/castwide/solargraph/actions/runs/25863741955/job/76000137015?pr=1187
         ruby-version: ['3.1', '3.2', '3.3', '3.4', '4.0']
-        rbs-version: ['3.10.0', '4.0.1', '4.0.2', '4.1.0']
+        rbs-version: ['3.10.0', '4.0.3', '4.1.1', '4.1.1.pre.1']
         exclude:
           - ruby-version: '3.1'
-            rbs-version: '4.0.1'
+            rbs-version: '4.0.3'
           - ruby-version: '3.1'
-            rbs-version: '4.0.2'
+            rbs-version: '4.1.1'
           - ruby-version: '3.1'
-            rbs-version: '4.1.0'
+            rbs-version: '4.1.1.pre.1'
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
