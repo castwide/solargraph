@@ -283,6 +283,44 @@ describe Solargraph::ComplexType do
       exp = described_class.parse('Sup & Sub')
       expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
     end
+
+    it 'combines a class and a mix-in as conjuncts' do
+      inf = described_class.parse('String & Comparable')
+      expect(inf.conforms_to?(api_map, described_class.parse('Comparable'), :method_call)).to be(true)
+      expect(inf.conforms_to?(api_map, described_class.parse('Enumerable'), :method_call)).to be(false)
+    end
+
+    it 'lets a value satisfy a class-and-mix-in intersection expectation' do
+      exp = described_class.parse('Comparable & String')
+      expect(described_class.parse('String').conforms_to?(api_map, exp, :method_call)).to be(true)
+      expect(described_class.parse('Integer').conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    context 'with a duck-typed conjunct in the expectation' do
+      let(:source) do
+        Solargraph::Source.load_string(%(
+          class Sup; end
+          class Sub < Sup; end
+          class Unrelated; end
+
+          class Quacker
+            def to_str
+              ''
+            end
+          end
+        ))
+      end
+
+      it 'structurally verifies a duck-typed conjunct alongside a nominal one' do
+        exp = described_class.parse('Object & #to_str')
+        expect(described_class.parse('Quacker').conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'still requires the nominal conjunct even if the duck-typed one matches' do
+        exp = described_class.parse('Comparable & #to_str')
+        expect(described_class.parse('Quacker').conforms_to?(api_map, exp, :method_call)).to be(false)
+      end
+    end
   end
 
   context 'with inheritance relationship in allow_reverse_match mode' do

@@ -89,8 +89,13 @@ module Solargraph
         # only called when expected.is_a?(UniqueType::Intersection)
         # @type [UniqueType::Intersection]
         intersection = expected
+        # Wrap inferred in a ComplexType (rather than calling
+        # UniqueType#conforms_to? directly) so each conjunct check
+        # gets ComplexType#conforms_to?'s special-case handling (e.g.
+        # duck_type? conjuncts), not just UniqueType's.
+        wrapped_inferred = ComplexType.new([inferred])
         intersection.conjuncts.all? do |conjunct|
-          inferred.conforms_to?(api_map, ComplexType.new([conjunct]), situation, rules, variance: variance)
+          wrapped_inferred.conforms_to?(api_map, ComplexType.new([conjunct]), situation, rules, variance: variance)
         end
       end
 
