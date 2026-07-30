@@ -376,21 +376,32 @@ module Solargraph
       ComplexType.new(types)
     end
 
-    # @see https://en.wikipedia.org/wiki/Intersection_type
+    # Flow-sensitive type narrowing: given a type learned from a
+    # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down to
+    # the more specific of each compatible pair between the two
+    # sides. This is a set-refinement over alternatives, not a real
+    # intersection type - it never builds a compound type to
+    # represent unrelated members; if nothing on either side
+    # conforms to the other, the result is UNDEFINED. Contrast with
+    # ComplexType::UniqueType::Intersection, which represents a
+    # single value simultaneously satisfying multiple (possibly
+    # unrelated) types, as in the RBS/YARD `A & B` syntax.
     #
-    # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+    # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+    #
+    # @param narrowing_type [ComplexType, ComplexType::UniqueType, nil]
     # @param api_map [ApiMap]
     # @return [self, ComplexType::UniqueType]
-    def intersect_with intersection_type, api_map
-      return self if intersection_type.nil?
-      return intersection_type if undefined?
+    def narrow_with narrowing_type, api_map
+      return self if narrowing_type.nil?
+      return narrowing_type if undefined?
       types = []
       # try to find common types via conformance
       items.each do |ut|
-        intersection_type.each do |int_type|
-          if int_type.conforms_to?(api_map, ut, :assignment)
-            types << int_type
-          elsif ut.conforms_to?(api_map, int_type, :assignment)
+        narrowing_type.each do |candidate|
+          if candidate.conforms_to?(api_map, ut, :assignment)
+            types << candidate
+          elsif ut.conforms_to?(api_map, candidate, :assignment)
             types << ut
           end
         end
