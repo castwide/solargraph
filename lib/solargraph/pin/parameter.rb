@@ -227,10 +227,17 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
+        # RBS interfaces (e.g., Hash::_Key) describe duck types that
+        # Solargraph can't verify structurally without an explicit
+        # `include`, which core gems don't declare for every class that
+        # happens to satisfy them (e.g., every object responds to
+        # Hash::_Key's #hash and #eql?). Treat an argument as compatible
+        # with an interface-typed parameter rather than rejecting the
+        # overload outright.
         return true if atype.conforms_to?(api_map,
                                           ptype,
                                           :method_call,
-                                          %i[allow_empty_params allow_undefined])
+                                          %i[allow_empty_params allow_undefined allow_unmatched_interface])
         ptype.generic?
       end
 
