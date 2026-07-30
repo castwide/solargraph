@@ -369,6 +369,76 @@ describe 'YARD type specifier list parsing' do
       expect(types.first.tag).to eq('Array<String & Comparable>')
       expect(types.to_rbs).to eq('Array[String & Comparable]')
     end
+
+    # `&` binds tighter than the top-level `,` (union), matching RBS's
+    # documented precedence: "A & B | C is (A & B) | C". Our
+    # single-pass parser doesn't implement precedence via grouping -
+    # it greedily gathers `&`-separated conjuncts until the next `,`
+    # or end of string - but that happens to produce the same result
+    # as real operator precedence for every case reachable through
+    # this tag-string grammar, since there is no way to write a
+    # standalone grouped union in it (see below).
+    context 'with & and , precedence' do
+      it 'binds & tighter than , when & comes first' do
+        types = Solargraph::ComplexType.parse('A & B, C')
+        expect(types.length).to eq(2)
+        expect(types[0].tag).to eq('A & B')
+        expect(types[1].tag).to eq('C')
+      end
+
+      it 'binds & tighter than , when , comes first' do
+        types = Solargraph::ComplexType.parse('A, B & C')
+        expect(types.length).to eq(2)
+        expect(types[0].tag).to eq('A')
+        expect(types[1].tag).to eq('B & C')
+      end
+
+      it 'handles multiple intersections in the same union' do
+        types = Solargraph::ComplexType.parse('A & B, C & D')
+        expect(types.length).to eq(2)
+        expect(types[0].tag).to eq('A & B')
+        expect(types[1].tag).to eq('C & D')
+      end
+
+      it 'handles intersections of different sizes in the same union' do
+        types = Solargraph::ComplexType.parse('A & B & C, D & E')
+        expect(types.length).to eq(2)
+        expect(types[0].conjuncts.map(&:tags)).to eq(%w[A B C])
+        expect(types[1].conjuncts.map(&:tags)).to eq(%w[D E])
+      end
+    end
+
+    context 'with parentheses' do
+      it 'does not confuse a fixed-tuple-parameter name with a grouped union' do
+        # `Array(A, B)` is Solargraph's existing fixed-tuple-parameter
+        # syntax (a tuple `[A, B]`), unrelated to grouping. `&` after
+        # it still means "intersected with", not "and one more tuple
+        # element".
+        types = Solargraph::ComplexType.parse('Array(A, B) & C')
+        expect(types.length).to eq(1)
+        intersection = types.first
+        expect(intersection.conjuncts.map(&:tags)).to eq(['Array(A, B)', 'C'])
+      end
+
+      it 'has no standalone grouping syntax, so a bare union in parens reads as an anonymous tuple' do
+        # Unlike `Array(A, B)`, a bare `(A, B)` isn't preceded by a
+        # type name - Solargraph's tag grammar interprets it as an
+        # anonymous tuple (the same way `(A, B)` reads standalone
+        # elsewhere), not as "the union of A and B, grouped". There is
+        # currently no way to write a grouped union as a YARD/RBS tag
+        # *string* - `(A | B) & C` can only be built by translating
+        # real RBS (see RbsTranslator specs) or constructing
+        # ComplexType::UniqueType::Intersection directly.
+        types = Solargraph::ComplexType.parse('(A, B) & C')
+        expect(types.length).to eq(1)
+        intersection = types.first
+        expect(intersection.conjuncts.length).to eq(2)
+        tuple_conjunct = intersection.conjuncts.first.first
+        expect(tuple_conjunct.name).to eq('')
+        expect(tuple_conjunct.fixed_parameters?).to be(true)
+        expect(tuple_conjunct.subtypes.map(&:tags)).to eq(%w[A B])
+      end
+    end
   end
 
   context 'when given non-sensical types by machine users' do

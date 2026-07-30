@@ -95,7 +95,7 @@ module Solargraph
         # duck_type? conjuncts), not just UniqueType's.
         wrapped_inferred = ComplexType.new([inferred])
         intersection.conjuncts.all? do |conjunct|
-          wrapped_inferred.conforms_to?(api_map, ComplexType.new([conjunct]), situation, rules, variance: variance)
+          wrapped_inferred.conforms_to?(api_map, conjunct, situation, rules, variance: variance)
         end
       end
 

@@ -15,6 +15,7 @@ module Solargraph
     # @param type [RBS::Types::Bases::Base]
     # @return [ComplexType]
     def self.to_complex_type(type)
+      return intersection_complex_type(type) if type.is_a?(RBS::Types::Intersection)
       tag = type_to_tag(type)
       ComplexType.try_parse(tag).force_rooted
     end
@@ -122,6 +123,22 @@ module Solargraph
 
     class << self
       private
+
+      # Builds an Intersection directly from each member's own
+      # translated ComplexType, rather than flattening through
+      # type_to_tag's string-based join. RBS allows a union as one
+      # member of an intersection (e.g. `(A | B) & C`); going through
+      # a joined string would lose that structure (`type_to_tag`
+      # would render the union member as a plain comma list, which
+      # ComplexType.parse would then read back as a top-level union
+      # of the whole expression rather than a nested one).
+      #
+      # @param type [RBS::Types::Intersection]
+      # @return [ComplexType]
+      def intersection_complex_type type
+        conjuncts = type.types.map { |member| RbsTranslator.to_complex_type(member) }
+        ComplexType.new([ComplexType::UniqueType::Intersection.new(conjuncts)]).force_rooted
+      end
 
       # @param type [RBS::Types::Bases::Base]
       # @return [String]

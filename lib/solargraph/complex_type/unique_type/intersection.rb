@@ -19,6 +19,16 @@ module Solargraph
       # where the intersection itself is expected if it satisfies
       # *every* conjunct.
       #
+      # Each conjunct is a full ComplexType, not a plain UniqueType -
+      # the same way UniqueType#subtypes and #key_types already hold
+      # ComplexTypes rather than UniqueTypes. RBS itself allows a
+      # union as one member of an intersection (`(A | B) & C`), so a
+      # conjunct needs to be able to represent more than one
+      # alternative; a single type is just the common case of a
+      # one-item ComplexType. This also means a conjunct can itself be
+      # (or contain) another Intersection, since Intersection is a
+      # UniqueType and ComplexType already holds UniqueTypes.
+      #
       # `A & B` is parsed the same way from plain YARD type tags
       # (`@param`, `@return`, `@type`, etc.) as it is from inline RBS
       # signatures, since both funnel through ComplexType.parse. YARD
@@ -29,23 +39,23 @@ module Solargraph
       # @see https://github.com/ruby/rbs/blob/master/docs/syntax.md#intersection-type
       # @see https://github.com/lsegal/yard/issues/1644
       class Intersection < UniqueType
-        # @return [Array<UniqueType>]
+        # @return [Array<ComplexType>]
         attr_reader :conjuncts
 
-        # @param conjuncts [Array<UniqueType>]
+        # @param conjuncts [Array<ComplexType>]
         def initialize conjuncts
           @conjuncts = conjuncts
-          super(conjuncts.map(&:tag).join(' & '), rooted: true)
+          super(conjuncts.map(&:tags).join(' & '), rooted: true)
         end
 
         # @return [String]
         def tag
-          @tag ||= conjuncts.map(&:tag).join(' & ')
+          @tag ||= conjuncts.map(&:tags).join(' & ')
         end
 
         # @return [String]
         def rooted_tag
-          @rooted_tag ||= conjuncts.map(&:rooted_tag).join(' & ')
+          @rooted_tag ||= conjuncts.map(&:rooted_tags).join(' & ')
         end
 
         # @return [String]
@@ -93,7 +103,10 @@ module Solargraph
         end
 
         # An intersection can be assigned wherever any one of its
-        # conjuncts would be accepted (A & B <: A, A & B <: B).
+        # conjuncts would be accepted (A & B <: A, A & B <: B). Each
+        # conjunct is checked as a full ComplexType, so a conjunct
+        # that's itself a union (from `(A | B) & C`) gets real union
+        # semantics (every member of that union must conform).
         #
         # @param api_map [ApiMap]
         # @param expected [ComplexType, ComplexType::UniqueType]

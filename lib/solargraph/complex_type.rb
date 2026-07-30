@@ -508,7 +508,7 @@ module Solargraph
         subtype_string = String.new
         # conjuncts of an intersection type (`A & B`) seen so far in
         # the segment currently being parsed
-        # @type [Array<ComplexType::UniqueType>]
+        # @type [Array<ComplexType>]
         conjuncts = []
         # @param char [String]
         type_string&.each_char do |char|
@@ -554,7 +554,7 @@ module Solargraph
             raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack.negative?
             next
           elsif char == '&' && top_level?(point_stack, curly_stack, paren_stack)
-            conjuncts.push UniqueType.parse(base.strip, subtype_string.strip)
+            conjuncts.push ComplexType.new([UniqueType.parse(base.strip, subtype_string.strip)])
             base.clear
             subtype_string.clear
             next
@@ -591,14 +591,16 @@ module Solargraph
 
       # Wraps a just-parsed unique type together with any pending
       # intersection conjuncts (types seen so far in this segment,
-      # separated by `&`) into a single UniqueType.
+      # separated by `&`) into a single UniqueType. Each conjunct is
+      # a ComplexType (see UniqueType::Intersection), so the final
+      # parsed type is promoted to a single-item ComplexType too.
       #
-      # @param conjuncts [Array<ComplexType::UniqueType>]
+      # @param conjuncts [Array<ComplexType>]
       # @param final_type [ComplexType::UniqueType]
       # @return [ComplexType::UniqueType]
       def close_intersection conjuncts, final_type
         return final_type if conjuncts.empty?
-        UniqueType::Intersection.new(conjuncts + [final_type])
+        UniqueType::Intersection.new(conjuncts + [ComplexType.new([final_type])])
       end
     end
 
