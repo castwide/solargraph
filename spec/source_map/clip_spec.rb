@@ -2151,15 +2151,15 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('String')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('Integer')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('String, Integer')
   end
 
   xit 'does not pay attention to method signatures which have been redefind by subclass'
@@ -2178,15 +2178,15 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('String')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('Integer')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('String, Integer')
   end
 
   it 'understands #fetch for tuples with no default' do
@@ -2203,11 +2203,11 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer')
+    expect(type.to_s).to eq('String')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer')
+    expect(type.to_s).to eq('Integer')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
@@ -2228,11 +2228,11 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, :foo')
+    expect(type.to_s).to eq('String, :foo')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, :foo')
+    expect(type.to_s).to eq('Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
@@ -2253,11 +2253,11 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, :foo')
+    expect(type.to_s).to eq('String, :foo')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, :foo')
+    expect(type.to_s).to eq('Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
@@ -2301,10 +2301,73 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('String')
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
-    expect(type.to_s).to eq('String, Integer, nil')
+    expect(type.to_s).to eq('Integer')
+  end
+
+  it 'tracks a literal value through reassignment for tuple indexing (#1196)' do
+    source = Solargraph::Source.load_string(%(
+      array = [1, 'two']
+      index = 0
+      b = array[index]
+      b
+      index += 1
+      c = array[index]
+      c
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Integer')
+
+    # Before the reassignment fix, this returned the stale pre-`+=`
+    # answer (`'Integer'`, i.e. array[0]'s type) instead of reflecting
+    # that `index` is now 1 - a wrong, specious answer. It must never
+    # be wrong; since `index`'s type after `+=` widens to plain
+    # Integer (RBS's Integer#+ doesn't preserve literal values), the
+    # safe union of all element types is the correct, precise-as-
+    # possible result here.
+    clip = api_map.clip_at('test.rb', [7, 6])
+    expect(clip.infer.to_s).to eq('Integer, String, nil')
+  end
+
+  it 'safely handles a nil-typed index into a tuple (#1196)' do
+    source = Solargraph::Source.load_string(%(
+      array = [1, 'two']
+      # @type [Integer]
+      index = nil
+      e = array[index]
+      e
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [5, 6])
+    expect(clip.infer.to_s).to eq('Integer, String, nil')
+  end
+
+  it 'does not track a tuple through a mutating call (documented #1196 limitation)' do
+    # Unlike reassignment (tracked, see the spec above), mutating
+    # calls like #unshift are NOT tracked - Solargraph has no way to
+    # know the tuple's positions shifted, so a literal index still
+    # returns array[0]'s *original* element type, which is now wrong
+    # (the actual index-0 value is 'zero', a String). This is a
+    # known, deliberate limitation - see the tuple.rbs top comment
+    # and https://github.com/castwide/solargraph/issues/1196 (scenario
+    # 4). If this spec ever starts failing because the result became
+    # safe/correct, update it - that would mean mutation tracking got
+    # implemented.
+    source = Solargraph::Source.load_string(%(
+      array = [1, 'two']
+      array.unshift 'zero'
+      d = array[0]
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Integer')
   end
 
   it 'infers array types from single element literal arrays' do

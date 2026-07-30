@@ -645,7 +645,14 @@ module Solargraph
       # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure&.path}|#{name}|#{location}"
+        # Include presence (when available) alongside location: a merged
+        # multi-assignment variable pin and its earliest constituent
+        # assignment pin share the same #choose-d (earliest) location, but
+        # differ in presence, so this keeps Chain's recursion guard from
+        # conflating "resolving the merged pin" with "resolving one of its
+        # narrower assignments" and dropping a legitimate recursive lookup.
+        presence_fragment = respond_to?(:presence) ? presence&.inspect : nil
+        @identity ||= "#{closure&.path}|#{name}|#{location}|#{presence_fragment}"
       end
 
       # The namespaces available for resolving the current namespace. Each gate

@@ -2,18 +2,22 @@
 # parameterized Array subtype so its element types are available to
 # inference.
 #
-# @note Positional accessors like `#[]`, `#at`, `#fetch`, and `#first`
-#   are deliberately NOT given index-specific overloads here (e.g., `(0
-#   index) -> A`). Once a variable holding a tuple has been reassigned,
-#   passed through a non-literal index, or mutated (`#unshift`,
-#   `#push`, etc.), Solargraph has no reliable way to know which
-#   position is actually being read - and a specific-looking answer
-#   that happens to be wrong is worse than a correct but imprecise
-#   union of all element types. See
-#   https://github.com/castwide/solargraph/issues/1196.
+# @note Positional accessors like `#[]`, `#at`, and `#fetch` use
+#   literal-indexed overloads (e.g., `(0 index) -> A`) to give a
+#   precise element type when the index resolves to a literal - which
+#   now includes an index tracked through reassignment (e.g. `i = 0;
+#   i += 1; array[i]`). Any index that doesn't resolve to a literal
+#   (a variable of a wider type, a computed value, etc.) falls back
+#   to the safe union of all element types instead of a specific-but-
+#   possibly-wrong answer.
 #
-#   All accessors are therefore inherited from Array, whose single
-#   `Elem` generic resolves to the union of this tuple's element types.
+#   This does NOT track mutation: once a tuple has been passed
+#   through a mutating call (`#unshift`, `#push`, `#shift`, etc.),
+#   Solargraph has no way to know its positions shifted, so a literal
+#   index can again return a wrong (not just imprecise) answer after
+#   such a call. That's a known, deliberately out-of-scope limitation
+#   - see https://github.com/castwide/solargraph/issues/1196 (scenario
+#   4, `array.unshift 'zero'; array[0]`).
 module Solargraph
   module Fills
     class Tuple[unchecked out A,
@@ -26,6 +30,65 @@ module Solargraph
                 unchecked out H = A | B | C | D | E | F | G,
                 unchecked out I = A | B | C | D | E | F | G | H,
                 unchecked out J = A | B | C | D | E | F | G | H | I] < Array[A | B | C | D | E | F | G | H | I | J]
+      def []: (0 index) -> A
+            | (1 index) -> B
+            | (2 index) -> C
+            | (3 index) -> D
+            | (4 index) -> E
+            | (5 index) -> F
+            | (6 index) -> G
+            | (7 index) -> H
+            | (8 index) -> I
+            | (9 index) -> J
+            | (int index) -> (A | B | C | D | E | F | G | H | I | J)?
+
+      def at: (0 index) -> A
+            | (1 index) -> B
+            | (2 index) -> C
+            | (3 index) -> D
+            | (4 index) -> E
+            | (5 index) -> F
+            | (6 index) -> G
+            | (7 index) -> H
+            | (8 index) -> I
+            | (9 index) -> J
+            | (int index) -> (A | B | C | D | E | F | G | H | I | J)?
+
+      def fetch: (0 index) -> A
+               | (1 index) -> B
+               | (2 index) -> C
+               | (3 index) -> D
+               | (4 index) -> E
+               | (5 index) -> F
+               | (6 index) -> G
+               | (7 index) -> H
+               | (8 index) -> I
+               | (9 index) -> J
+               | (int index) -> (A | B | C | D | E | F | G | H | I | J)
+               | [T] (0 index, T default) -> (A | T)
+               | [T] (1 index, T default) -> (B | T)
+               | [T] (2 index, T default) -> (C | T)
+               | [T] (3 index, T default) -> (D | T)
+               | [T] (4 index, T default) -> (E | T)
+               | [T] (5 index, T default) -> (F | T)
+               | [T] (6 index, T default) -> (G | T)
+               | [T] (7 index, T default) -> (H | T)
+               | [T] (8 index, T default) -> (I | T)
+               | [T] (9 index, T default) -> (J | T)
+               | [T] (int index, T default) -> (A | B | C | D | E | F | G | H | I | J | T)
+               | [T] (0 index) { (int index) -> T } -> (A | T)
+               | [T] (1 index) { (int index) -> T } -> (B | T)
+               | [T] (2 index) { (int index) -> T } -> (C | T)
+               | [T] (3 index) { (int index) -> T } -> (D | T)
+               | [T] (4 index) { (int index) -> T } -> (E | T)
+               | [T] (5 index) { (int index) -> T } -> (F | T)
+               | [T] (6 index) { (int index) -> T } -> (G | T)
+               | [T] (7 index) { (int index) -> T } -> (H | T)
+               | [T] (8 index) { (int index) -> T } -> (I | T)
+               | [T] (9 index) { (int index) -> T } -> (J | T)
+               | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F | G | H | I | J | T)
+
+      def first: %a{implicitly-returns-nil} () -> A
     end
   end
 end
