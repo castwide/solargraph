@@ -450,72 +450,7 @@ module Solargraph
         types = []
         key_types = nil
         strings.each do |type_string|
-          point_stack = 0
-          curly_stack = 0
-          paren_stack = 0
-          base = String.new
-          subtype_string = String.new
-          # @param char [String]
-          type_string&.each_char do |char|
-            if char == '='
-              # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
-            elsif char == '<'
-              point_stack += 1
-            elsif char == '>'
-              if subtype_string.end_with?('=') && curly_stack.positive?
-                subtype_string += char
-              elsif base.end_with?('=')
-                raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
-                # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                # @sg-ignore Need to add nil check here
-                types.push UniqueType.parse(base[0..-2].strip, subtype_string)
-                # @todo this should either expand key_type's type
-                #   automatically or complain about not being
-                #   compatible with key_type's type in type checking
-                key_types = types
-                types = []
-                base.clear
-                subtype_string.clear
-                next
-              else
-                raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack.zero?
-                point_stack -= 1
-                subtype_string += char
-              end
-              next
-            elsif char == '{'
-              curly_stack += 1
-            elsif char == '}'
-              curly_stack -= 1
-              subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack.negative?
-              next
-            elsif char == '('
-              paren_stack += 1
-            elsif char == ')'
-              paren_stack -= 1
-              subtype_string += char
-              raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack.negative?
-              next
-            elsif char == ',' && point_stack.zero? && curly_stack.zero? && paren_stack.zero?
-              # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
-              types.push UniqueType.parse(base.strip, subtype_string.strip)
-              base.clear
-              subtype_string.clear
-              next
-            end
-            if point_stack.zero? && curly_stack.zero? && paren_stack.zero?
-              base.concat char
-            else
-              subtype_string.concat char
-            end
-          end
-          if point_stack != 0 || curly_stack != 0 || paren_stack != 0
-            raise ComplexTypeError,
-                  "Unclosed subtype in #{type_string}"
-          end
-          # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
-          types.push UniqueType.parse(base.strip, subtype_string.strip)
+          types, key_types = parse_type_string(type_string, types, key_types)
         end
         unless key_types.nil?
           raise ComplexTypeError, 'Invalid use of key/value parameters' unless partial
@@ -534,6 +469,125 @@ module Solargraph
       rescue ComplexTypeError => e
         Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
+      end
+
+      private
+
+      # Parses a single type string (one comma-separated slot of a
+      # types specifier list) and appends the resulting type(s) to
+      # +types+.
+      #
+      # A top-level `&` (not nested in `<>`, `{}`, or `()`) builds a
+      # ComplexType::UniqueType::Intersection instead of a plain
+      # UniqueType. This applies equally to ordinary YARD type tags
+      # and to RBS-derived tags, since both are parsed here; YARD has
+      # no official intersection syntax yet (see
+      # https://github.com/lsegal/yard/issues/1644), so this is a
+      # Solargraph extension using RBS's `&` convention.
+      #
+      # @param type_string [String, nil]
+      # @param types [Array<ComplexType::UniqueType>]
+      # @param key_types [Array<ComplexType::UniqueType>, nil]
+      # @return [Array(Array<ComplexType::UniqueType>, Array<ComplexType::UniqueType>, nil)]
+      def parse_type_string type_string, types, key_types
+        point_stack = 0
+        curly_stack = 0
+        paren_stack = 0
+        base = String.new
+        subtype_string = String.new
+        # conjuncts of an intersection type (`A & B`) seen so far in
+        # the segment currently being parsed
+        # @type [Array<ComplexType::UniqueType>]
+        conjuncts = []
+        # @param char [String]
+        type_string&.each_char do |char|
+          if char == '='
+            # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
+          elsif char == '<'
+            point_stack += 1
+          elsif char == '>'
+            if subtype_string.end_with?('=') && curly_stack.positive?
+              subtype_string += char
+            elsif base.end_with?('=')
+              raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
+              # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
+              # @sg-ignore Need to add nil check here
+              types.push close_intersection(conjuncts, UniqueType.parse(base[0..-2].strip, subtype_string))
+              # @todo this should either expand key_type's type
+              #   automatically or complain about not being
+              #   compatible with key_type's type in type checking
+              key_types = types
+              types = []
+              conjuncts = []
+              base.clear
+              subtype_string.clear
+              next
+            else
+              raise ComplexTypeError, "Invalid close in type #{type_string}" if point_stack.zero?
+              point_stack -= 1
+              subtype_string += char
+            end
+            next
+          elsif char == '{'
+            curly_stack += 1
+          elsif char == '}'
+            curly_stack -= 1
+            subtype_string += char
+            raise ComplexTypeError, "Invalid close in type #{type_string}" if curly_stack.negative?
+            next
+          elsif char == '('
+            paren_stack += 1
+          elsif char == ')'
+            paren_stack -= 1
+            subtype_string += char
+            raise ComplexTypeError, "Invalid close in type #{type_string}" if paren_stack.negative?
+            next
+          elsif char == '&' && top_level?(point_stack, curly_stack, paren_stack)
+            conjuncts.push UniqueType.parse(base.strip, subtype_string.strip)
+            base.clear
+            subtype_string.clear
+            next
+          elsif char == ',' && top_level?(point_stack, curly_stack, paren_stack)
+            # types.push ComplexType.new([UniqueType.new(base.strip, subtype_string.strip)])
+            types.push close_intersection(conjuncts, UniqueType.parse(base.strip, subtype_string.strip))
+            conjuncts = []
+            base.clear
+            subtype_string.clear
+            next
+          end
+          if top_level?(point_stack, curly_stack, paren_stack)
+            base.concat char
+          else
+            subtype_string.concat char
+          end
+        end
+        if point_stack != 0 || curly_stack != 0 || paren_stack != 0
+          raise ComplexTypeError,
+                "Unclosed subtype in #{type_string}"
+        end
+        # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
+        types.push close_intersection(conjuncts, UniqueType.parse(base.strip, subtype_string.strip))
+        [types, key_types]
+      end
+
+      # @param point_stack [Integer]
+      # @param curly_stack [Integer]
+      # @param paren_stack [Integer]
+      # @return [Boolean]
+      def top_level? point_stack, curly_stack, paren_stack
+        point_stack.zero? && curly_stack.zero? && paren_stack.zero?
+      end
+
+      # Wraps a just-parsed unique type together with any pending
+      # intersection conjuncts (types seen so far in this segment,
+      # separated by `&`) into a single UniqueType.
+      #
+      # @param conjuncts [Array<ComplexType::UniqueType>]
+      # @param final_type [ComplexType::UniqueType]
+      # @return [ComplexType::UniqueType]
+      def close_intersection conjuncts, final_type
+        return final_type if conjuncts.empty?
+        UniqueType::Intersection.new(conjuncts + [final_type])
       end
     end
 

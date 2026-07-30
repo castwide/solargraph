@@ -152,7 +152,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
-          type.types.map { |member| type_to_tag(member) }.join(', ')
+          type.types.map { |member| type_to_tag(member) }.join(' & ')
         when RBS::Types::Proc
           'Proc'
         when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface

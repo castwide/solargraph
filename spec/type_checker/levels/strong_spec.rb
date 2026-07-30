@@ -892,5 +892,50 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    # https://github.com/castwide/solargraph/issues/1229
+    context 'with intersection types' do
+      it 'accepts an intersection-typed argument where any one conjunct is expected' do
+        checker = type_checker(%(
+          class Asana; class Resources; class Project; end; end; end
+          class Mocha; class Mock; end; end
+
+          class Consumer
+            # @param project_obj [Asana::Resources::Project]
+            # @return [void]
+            def project_to_h(project_obj); end
+          end
+
+          class MockFactory
+            # @sg-ignore Mocha::Mock configured with responds_like_instance_of
+            #   duck-types as Asana::Resources::Project at every call site.
+            # @return [Mocha::Mock & Asana::Resources::Project]
+            def make_mock
+              Mocha::Mock.new
+            end
+          end
+
+          Consumer.new.project_to_h(MockFactory.new.make_mock)
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'still rejects a plain conjunct type that does not satisfy the expected type' do
+        checker = type_checker(%(
+          class Asana; class Resources; class Project; end; end; end
+          class Mocha; class Mock; end; end
+
+          class Consumer
+            # @param project_obj [Asana::Resources::Project]
+            # @return [void]
+            def project_to_h(project_obj); end
+          end
+
+          Consumer.new.project_to_h(Mocha::Mock.new)
+      ))
+        expect(checker.problems.map(&:message))
+          .to include('Wrong argument type for Consumer#project_to_h: project_obj expected Asana::Resources::Project, received Mocha::Mock')
+      end
+    end
   end
 end

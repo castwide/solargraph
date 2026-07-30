@@ -635,6 +635,19 @@ describe Solargraph::Pin::Method do
       expect(pin.return_type.to_s).to eq('Boolean')
     end
 
+    it 'sets intersection return types' do
+      # https://github.com/castwide/solargraph/issues/1229
+      source = Solargraph::Source.load_string(%(
+        #: () -> (String & Comparable)
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String & Comparable')
+      expect(pin.return_type.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
+    end
+
     it 'sets required positional parameters' do
       source = Solargraph::Source.load_string(%(
         #: (String) -> bool

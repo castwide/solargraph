@@ -9,6 +9,8 @@ module Solargraph
       include TypeMethods
       include Equality
 
+      autoload :Intersection, 'solargraph/complex_type/unique_type/intersection'
+
       attr_reader :all_params, :subtypes, :key_types
 
       # Create a UniqueType with the specified name and an optional substring.
@@ -262,7 +264,9 @@ module Solargraph
         # match one of their unique types
         expected.any? do |expected_unique_type|
           # :nocov:
-          unless expected_unique_type.instance_of?(UniqueType)
+          unless expected_unique_type.is_a?(UniqueType)
+            # @sg-ignore is_a? doesn't narrow the negated branch as
+            #   precisely as instance_of? did
             raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
           end
           # :nocov:

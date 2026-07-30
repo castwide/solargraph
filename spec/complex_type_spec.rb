@@ -341,6 +341,36 @@ describe 'YARD type specifier list parsing' do
     xit 'understands reference tags'
   end
 
+  # https://github.com/ruby/rbs/blob/master/docs/syntax.md#intersection-type
+  context 'when parsing RBS intersection types' do
+    it 'parses two conjuncts as a single unique type' do
+      types = Solargraph::ComplexType.parse('String & Comparable')
+      expect(types.length).to eq(1)
+      expect(types.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
+      expect(types.first.tag).to eq('String & Comparable')
+      expect(types.to_rbs).to eq('String & Comparable')
+    end
+
+    it 'parses more than two conjuncts' do
+      types = Solargraph::ComplexType.parse('String & Comparable & Enumerable')
+      expect(types.length).to eq(1)
+      expect(types.first.conjuncts.map(&:tag)).to eq(%w[String Comparable Enumerable])
+    end
+
+    it 'distinguishes intersections from unions in the same list' do
+      types = Solargraph::ComplexType.parse('String & Comparable, Integer')
+      expect(types.length).to eq(2)
+      expect(types[0].tag).to eq('String & Comparable')
+      expect(types[1].tag).to eq('Integer')
+    end
+
+    it 'parses intersections nested in subtypes' do
+      types = Solargraph::ComplexType.parse('Array<String & Comparable>')
+      expect(types.first.tag).to eq('Array<String & Comparable>')
+      expect(types.to_rbs).to eq('Array[String & Comparable]')
+    end
+  end
+
   context 'when given non-sensical types by machine users' do
     it 'raises ComplexTypeError for unmatched brackets' do
       expect do

@@ -240,6 +240,51 @@ describe Solargraph::ComplexType do
     end
   end
 
+  # https://github.com/castwide/solargraph/issues/1229
+  context 'with intersection types' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        class Sup; end
+        class Sub < Sup; end
+        class Unrelated; end
+      ))
+    end
+
+    before do
+      api_map.map source
+    end
+
+    it 'lets an intersection satisfy an expectation of any one conjunct (A & B <: A)' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Sub')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+
+    it 'lets an intersection satisfy an expectation of any one conjunct (A & B <: B)' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Unrelated')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+
+    it 'does not let an intersection satisfy an expectation none of its conjuncts meet' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Integer')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'requires every conjunct to be satisfied to conform to an intersection expectation' do
+      inf = described_class.parse('Sub')
+      exp = described_class.parse('Sup & Unrelated')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'conforms to an intersection expectation when every conjunct is satisfied' do
+      inf = described_class.parse('Sub')
+      exp = described_class.parse('Sup & Sub')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+  end
+
   context 'with inheritance relationship in allow_reverse_match mode' do
     let(:api_map) { Solargraph::ApiMap.new }
     let(:sup) { described_class.parse('String') }
