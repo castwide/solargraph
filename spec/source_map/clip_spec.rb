@@ -2159,6 +2159,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
+    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer')
   end
 
@@ -2186,6 +2187,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
+    # @todo Ideally this would be 'nil' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer')
   end
 
@@ -2211,6 +2213,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
+    # @todo Ideally this would be 'bot' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer')
   end
 
@@ -2236,6 +2239,7 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
+    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer, :foo')
   end
 
@@ -2253,14 +2257,17 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [4, 6])
     type = clip.infer
+    # @todo Ideally this would be just 'String' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, :foo')
 
     clip = api_map.clip_at('test.rb', [6, 6])
     type = clip.infer
+    # @todo Ideally this would be just 'Integer' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('Integer, :foo')
 
     clip = api_map.clip_at('test.rb', [8, 6])
     type = clip.infer
+    # @todo Ideally this would be just ':foo' - RBS isn't sophisticated enough to express this
     expect(type.to_s).to eq('String, Integer, :foo')
   end
 
@@ -3348,5 +3355,32 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [11, 8])
     expect(clip.define.map(&:path)).to eq(['Base.foo'])
+  end
+
+  it 'combines types from tuples in completions' do
+    source = Solargraph::Source.load_string(%(
+      # @return [Array(String, Integer)]
+      def foo; end
+
+      foo[0]._
+
+      foo.each do |bar|
+        bar._
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 12])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [4, 13])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+    expect(paths).not_to include('Integer#abs')
+
+    clip = api_map.clip_at('test.rb', [7, 12])
+    paths = clip.complete.pins.map(&:path)
+    expect(paths).to include('String#upcase')
+    expect(paths).to include('Integer#abs')
   end
 end
