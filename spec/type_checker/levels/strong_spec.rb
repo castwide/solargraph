@@ -893,7 +893,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
-    # https://github.com/castwide/solargraph/issues/1229
     context 'with intersection types' do
       it 'accepts an intersection-typed argument where any one conjunct is expected' do
         checker = type_checker(%(

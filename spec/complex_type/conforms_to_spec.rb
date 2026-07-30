@@ -240,7 +240,6 @@ describe Solargraph::ComplexType do
     end
   end
 
-  # https://github.com/castwide/solargraph/issues/1229
   context 'with intersection types' do
     let(:source) do
       Solargraph::Source.load_string(%(
