@@ -2377,6 +2377,28 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
+  it 'widens a tuple to the safe union when a mutating call result is reassigned (#1223)' do
+    # Unlike the bare-statement form above (still an unfixed,
+    # documented limitation), explicitly capturing a
+    # position-shifting mutator's result via reassignment is now
+    # safe: tuple.rbs gives #unshift (and the other calls that can
+    # shift/replace/reorder positions - see the top-of-file @note)
+    # a widened, position-erased `Array[...]` return type instead of
+    # `self`. Combined with this PR's reassignment-tracking fix, that
+    # means `array = array.unshift(x)` falls back to the safe union
+    # instead of preserving the stale Tuple type.
+    source = Solargraph::Source.load_string(%(
+      array = [1, 'two']
+      array = array.unshift('zero')
+      d = array[0]
+      d
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.to_s).to eq('Integer, String, nil')
+  end
+
   it 'drops a reassigned literal from the union once a wider assignment subsumes it (#1223)' do
     # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
     #

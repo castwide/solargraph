@@ -18,6 +18,17 @@
 #   such a call. That's a known, deliberately out-of-scope limitation
 #   - see https://github.com/castwide/solargraph/issues/1196 (scenario
 #   4, `array.unshift 'zero'; array[0]`).
+#
+#   Below, the calls that can shift, replace, or reorder existing
+#   positions (as opposed to `#push`/`#<<`/`#concat`, which only
+#   append past the known arity and can't invalidate an already-known
+#   position) are given a widened, position-erased `Array[...]`
+#   return type instead of the inherited `self`. This only helps the
+#   reassignment idiom (`array = array.unshift(x)` falls back to the
+#   safe union instead of keeping the stale Tuple type) - it does
+#   nothing for the more common bare-statement form
+#   (`array.unshift(x)` with no reassignment), which is exactly what
+#   the scenario 4 example above uses and remains unfixed by this.
 module Solargraph
   module Fills
     class Tuple[unchecked out A,
@@ -89,6 +100,63 @@ module Solargraph
                | [T] (int index) { (int index) -> T } -> (A | B | C | D | E | F | G | H | I | J | T)
 
       def first: %a{implicitly-returns-nil} () -> A
+
+      def unshift: (*(A | B | C | D | E | F | G | H | I | J) objects) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def prepend: (*(A | B | C | D | E | F | G | H | I | J) objects) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def insert: (int index, *(A | B | C | D | E | F | G | H | I | J) objects) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def delete_if: () { ((A | B | C | D | E | F | G | H | I | J) item) -> boolish } -> Array[A | B | C | D | E | F | G | H | I | J]
+                   | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]]
+
+      def keep_if: () { ((A | B | C | D | E | F | G | H | I | J) element) -> boolish } -> Array[A | B | C | D | E | F | G | H | I | J]
+                 | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]]
+
+      def reject!: () { ((A | B | C | D | E | F | G | H | I | J) item) -> boolish } -> Array[A | B | C | D | E | F | G | H | I | J]?
+                 | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]?]
+
+      def select!: () { ((A | B | C | D | E | F | G | H | I | J) element) -> boolish } -> Array[A | B | C | D | E | F | G | H | I | J]?
+                 | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]?]
+
+      def filter!: () { ((A | B | C | D | E | F | G | H | I | J) element) -> boolish } -> Array[A | B | C | D | E | F | G | H | I | J]?
+                 | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]?]
+
+      def compact!: () -> Array[A | B | C | D | E | F | G | H | I | J]?
+
+      def flatten!: (?int? level) -> Array[A | B | C | D | E | F | G | H | I | J]?
+
+      def uniq!: () -> Array[A | B | C | D | E | F | G | H | I | J]?
+               | () { ((A | B | C | D | E | F | G | H | I | J) element) -> Hash::_Key } -> Array[A | B | C | D | E | F | G | H | I | J]?
+
+      def sort!: () -> Array[A | B | C | D | E | F | G | H | I | J]
+               | () { ((A | B | C | D | E | F | G | H | I | J) a, (A | B | C | D | E | F | G | H | I | J) b) -> Comparable::_CompareToZero } -> Array[A | B | C | D | E | F | G | H | I | J]
+               | %a{warning: returning `nil` will always raise at runtime} () { ((A | B | C | D | E | F | G | H | I | J) a, (A | B | C | D | E | F | G | H | I | J) b) -> Comparable::_CompareToZero? } -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def sort_by!: () { ((A | B | C | D | E | F | G | H | I | J) element) -> Comparable::_WithSpaceshipOperator } -> Array[A | B | C | D | E | F | G | H | I | J]
+                  | %a{warning: returning `nil` will always raise at runtime} () { ((A | B | C | D | E | F | G | H | I | J) element) -> Comparable::_WithSpaceshipOperator? } -> Array[A | B | C | D | E | F | G | H | I | J]
+                  | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]]
+
+      def reverse!: () -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def rotate!: (?int count) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def shuffle!: (?random: _Rand) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def replace: (array[A | B | C | D | E | F | G | H | I | J] other_array) -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def fill: ((A | B | C | D | E | F | G | H | I | J) object, ?int? start, ?int? length) -> Array[A | B | C | D | E | F | G | H | I | J]
+              | ((A | B | C | D | E | F | G | H | I | J) object, range[int?] range) -> Array[A | B | C | D | E | F | G | H | I | J]
+              | (?int? start, ?int? length) { (Integer index) -> (A | B | C | D | E | F | G | H | I | J) } -> Array[A | B | C | D | E | F | G | H | I | J]
+              | (range[int?] range) { (Integer index) -> (A | B | C | D | E | F | G | H | I | J) } -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def clear: () -> Array[A | B | C | D | E | F | G | H | I | J]
+
+      def collect!: () { ((A | B | C | D | E | F | G | H | I | J) element) -> (A | B | C | D | E | F | G | H | I | J) } -> Array[A | B | C | D | E | F | G | H | I | J]
+                  | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]]
+
+      def map!: () { ((A | B | C | D | E | F | G | H | I | J) element) -> (A | B | C | D | E | F | G | H | I | J) } -> Array[A | B | C | D | E | F | G | H | I | J]
+              | () -> Enumerator[(A | B | C | D | E | F | G | H | I | J), Array[A | B | C | D | E | F | G | H | I | J]]
     end
   end
 end
