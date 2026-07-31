@@ -124,9 +124,15 @@ module Solargraph
       # Flow-sensitive type narrowing: given a type learned from a
       # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down
       # to the more specific of each compatible pair between the two
-      # sides. This is a set-refinement over alternatives, not a
-      # real intersection type - see
-      # ComplexType::UniqueType::Intersection for that.
+      # sides. When neither side is already known to be a subtype of
+      # the other but one is positively confirmed to be a mix-in
+      # (e.g. a declared class and an unrelated module), both facts
+      # are still true at once, so the pair is combined into an
+      # Intersection rather than discarded. Everything else - two
+      # different concrete classes (impossible; an object has exactly
+      # one class), or either side being a namespace we can't
+      # positively identify - falls back to the original behavior of
+      # dropping the pair.
       #
       # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
       #
@@ -144,12 +150,41 @@ module Solargraph
               types << ut
             elsif candidate.conforms_to?(api_map, ut, :assignment)
               types << candidate
+            elsif mixin_pairing?(api_map, ut, candidate)
+              types << Intersection.new([ComplexType.new([ut]), ComplexType.new([candidate])])
             end
           end
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
         ComplexType.new(types)
       end
+
+      # Whether combining these two into an intersection is safe. Only
+      # true when at least one side is *positively confirmed* to be a
+      # mix-in: any class can pick up any module, so a class-and-module
+      # pairing is always plausible. Everything else - two different
+      # concrete classes, or a namespace we have no pin for (synthetic
+      # names like `Boolean`, generics, literals, duck types, or
+      # simply unresolved) - defaults to false, preserving the
+      # original drop-the-pair behavior.
+      #
+      # @param api_map [ApiMap]
+      # @param declared [ComplexType::UniqueType]
+      # @param candidate [ComplexType::UniqueType]
+      # @return [Boolean]
+      def mixin_pairing? api_map, declared, candidate
+        namespace_kind(api_map, declared) == :module || namespace_kind(api_map, candidate) == :module
+      end
+
+      # @param api_map [ApiMap]
+      # @param unique_type [ComplexType::UniqueType]
+      # @return [Symbol, nil] :class, :module, or nil if unknown
+      def namespace_kind api_map, unique_type
+        # @type [Pin::Namespace, nil]
+        pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
+        pin&.type
+      end
+      private :mixin_pairing?, :namespace_kind
 
       def simplifyable_literal?
         literal? && name != 'nil'

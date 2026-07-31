@@ -441,6 +441,45 @@ describe 'YARD type specifier list parsing' do
     end
   end
 
+  # Redundant-member simplification for plain unions, based on a
+  # specific api_map's class hierarchy - a second example of
+  # api-map-driven type simplification, alongside narrow_with's
+  # subtype/mix-in reduction and (differently) qualify's name
+  # resolution. `Superclass, Subclass` is logically the same set as
+  # `Superclass` alone, since every Subclass instance already is a
+  # Superclass instance - but ComplexType.parse has no api_map to
+  # check that with, and no such simplification happens anywhere else
+  # either (verified: nothing in the codebase does this today).
+  #
+  # Not implemented - out of scope for the PR that added this file.
+  # `simplify_redundant_members` below is a proposed/illustrative
+  # interface, not a settled design; these specs exist so the gap is
+  # tracked rather than silently unknown.
+  context 'when simplifying unions of a known superclass and subclass' do
+    let(:api_map) { Solargraph::ApiMap.new }
+
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        class Sup; end
+        class Sub < Sup; end
+      ))
+    end
+
+    before { api_map.map source }
+
+    it 'drops a redundant subclass when the superclass is already listed' do
+      pending 'no api_map-aware union simplification exists yet'
+      type = described_class.parse('Sup, Sub')
+      expect(type.simplify_redundant_members(api_map).tags).to eq('Sup')
+    end
+
+    it 'drops the redundant subclass regardless of listed order' do
+      pending 'no api_map-aware union simplification exists yet'
+      type = described_class.parse('Sub, Sup')
+      expect(type.simplify_redundant_members(api_map).tags).to eq('Sup')
+    end
+  end
+
   context 'when given non-sensical types by machine users' do
     it 'raises ComplexTypeError for unmatched brackets' do
       expect do
