@@ -184,7 +184,18 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        unless assignment_types.empty?
+          # @type [Array<ComplexType::UniqueType>]
+          items = assignment_types.flat_map(&:items).uniq
+          # Drop a literal item (e.g. `0`) when its non-literal base
+          # type (e.g. `Integer`) is also present in the same union -
+          # a later, wider assignment (`index += 1`) already
+          # subsumes it, so keeping both is redundant and reads as if
+          # the literal value were still reachable.
+          non_literal_names = items.reject(&:literal?).map(&:name)
+          items = items.reject { |item| item.literal? && non_literal_names.include?(item.non_literal_name) }
+          type_from_assignment = ComplexType.new(items)
+        end
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as

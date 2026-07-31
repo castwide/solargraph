@@ -2377,31 +2377,29 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
-  it 'does not narrow a reassigned scalar to just its latest value (pre-existing, documented limitation)' do
+  it 'drops a reassigned literal from the union once a wider assignment subsumes it (#1223)' do
     # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
     #
     #   x = 0
     #   x += 1
-    #   x # => inferred as 0
+    #   x # => inferred as 0 (well, "0, Integer" as of this PR's
+    #        reassignment-tracking fix, before the union was simplified)
     #
-    # This is NOT caused by anything in #1223/#1196 (tuple/literal
-    # element inference): it reproduces identically on master, before
-    # any of that work. A variable pin's type is the union of the
-    # return types of *all* its assignments in scope, not just the
-    # one nearest the reference - so `x`'s pin type is the union of
-    # `0` (from `x = 0`) and `Integer` (from `x += 1`, which correctly
-    # widens away the literal per the #1223 fix - see "tracks a
-    # literal value through reassignment for tuple indexing" above).
-    # `0` is a subtype of `Integer`, so the union isn't unsafe, but it
-    # is redundant and can read as if `0` were still reachable after
-    # the increment. Narrowing a bare variable reference to only the
-    # types reachable from its most recent preceding assignment is
-    # general "sequential assignment" flow narrowing - tracked as a
-    # pre-existing, still-open limitation since PR #863, see the
-    # pending 'replaces type with reassignments' spec above. Fixing it
-    # here is out of scope for #1196; this spec exists so the exact
-    # case Fred raised has a regression test and a documented pointer
-    # to where it's tracked.
+    # A variable pin's type is the union of the return types of *all*
+    # its assignments in scope, not just the one nearest the
+    # reference (narrowing to only the most recent assignment is
+    # general "sequential assignment" flow narrowing - a separate,
+    # still-open, pre-existing limitation since PR #863; see the
+    # pending 'replaces type with reassignments' spec above). But
+    # when one of those assignments' types is a literal (`0`, from
+    # `x = 0`) and another is that literal's own non-literal base
+    # type (`Integer`, from `x += 1`, which correctly widens away the
+    # literal per the #1223 reassignment fix - see "tracks a literal
+    # value through reassignment for tuple indexing" above), the
+    # literal adds no information beyond what the base type already
+    # says - `Integer` alone is precise-as-possible and doesn't
+    # misleadingly suggest `0` is still reachable after the
+    # increment. `probe` now drops such redundant literal items.
     source = Solargraph::Source.load_string(%(
       x = 0
       x += 1
@@ -2410,7 +2408,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
 
     clip = api_map.clip_at('test.rb', [3, 6])
-    expect(clip.infer.to_s).to eq('0, Integer')
+    expect(clip.infer.to_s).to eq('Integer')
   end
 
   it 'does not track a plain array through a mutating call like #push (pre-existing, documented limitation)' do
