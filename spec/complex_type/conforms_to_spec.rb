@@ -283,6 +283,40 @@ describe Solargraph::ComplexType do
       expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
     end
 
+    context 'when both the inferred and expected types are intersections' do
+      # A & B <: C & D iff every conjunct of the expected side is
+      # satisfied by *some* conjunct of the inferred side - not "one
+      # single inferred conjunct satisfies the whole expected type."
+      # Checking a single already-chosen conjunct against the full
+      # expected intersection (rather than letting different inferred
+      # conjuncts cover different expected conjuncts) makes an
+      # intersection fail to conform to an identical copy of itself
+      # whenever its conjuncts don't already relate to each other.
+      it 'conforms to an identical intersection with unrelated conjuncts' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Unrelated')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'conforms to an identical intersection regardless of conjunct order' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Unrelated & Sub')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'still requires every expected conjunct to be covered by some inferred conjunct' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Integer')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+      end
+
+      it 'lets a wider inferred intersection satisfy a narrower expected one' do
+        inf = described_class.parse('Sub & Unrelated & Integer')
+        exp = described_class.parse('Sub & Unrelated')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+    end
+
     it 'combines a class and a mix-in as conjuncts' do
       inf = described_class.parse('String & Comparable')
       expect(inf.conforms_to?(api_map, described_class.parse('Comparable'), :method_call)).to be(true)

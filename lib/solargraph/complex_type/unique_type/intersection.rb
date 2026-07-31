@@ -108,6 +108,17 @@ module Solargraph
         # that's itself a union (from `(A | B) & C`) gets real union
         # semantics (every member of that union must conform).
         #
+        # When expected is *also* an intersection, that simple "any
+        # one conjunct" rule breaks down: a single one of our
+        # conjuncts, checked alone, would have to satisfy every
+        # conjunct expected of it - which fails whenever our conjuncts
+        # don't already relate to each other, even when checking an
+        # intersection against an identical copy of itself. The
+        # correct rule for A & B <: C & D is that every conjunct of
+        # the expected side must be satisfied by *some* conjunct of
+        # this one (not necessarily the same one each time), so that
+        # case is handled separately below.
+        #
         # @param api_map [ApiMap]
         # @param expected [ComplexType, ComplexType::UniqueType]
         # @param situation [:method_call, :assignment, :return_type]
@@ -116,6 +127,14 @@ module Solargraph
         # @return [Boolean]
         def conforms_to? api_map, expected, situation, rules = [],
                          variance: erased_variance(situation)
+          expected_intersection = sole_intersection(expected)
+          if expected_intersection
+            return expected_intersection.conjuncts.all? do |expected_conjunct|
+              conjuncts.any? do |conjunct|
+                conjunct.conforms_to?(api_map, expected_conjunct, situation, rules, variance: variance)
+              end
+            end
+          end
           conjuncts.any? do |conjunct|
             conjunct.conforms_to?(api_map, expected, situation, rules, variance: variance)
           end
@@ -135,6 +154,24 @@ module Solargraph
         # @return [self]
         def erase_parameters
           self
+        end
+
+        private
+
+        # Returns expected itself when it's a bare Intersection, or
+        # its one item when it's a ComplexType consisting of nothing
+        # but a single Intersection. Anything else - including a
+        # union with an intersection as just one of several
+        # alternatives - returns nil, leaving that (rarer, untested)
+        # case on the simpler existing "any conjunct" path rather
+        # than guessing at its semantics here.
+        #
+        # @param expected [ComplexType, ComplexType::UniqueType]
+        # @return [Intersection, nil]
+        def sole_intersection expected
+          return expected if expected.is_a?(Intersection)
+          return expected.first if expected.is_a?(ComplexType) && expected.length == 1 && expected.first.is_a?(Intersection)
+          nil
         end
       end
     end
