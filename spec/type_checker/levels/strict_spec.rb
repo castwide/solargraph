@@ -66,8 +66,11 @@ describe Solargraph::TypeChecker do
         y = [1]
         y.push 'two'
       ))
+      # The restarg's parameter name (`objects`, `obj`, etc.) varies
+      # across core RBS versions, so match on the substance of the
+      # message rather than the exact name.
       expect(checker.problems.map(&:message))
-        .to eq(['Wrong argument type for Array#push: objects expected Integer, received String'])
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received String\z/))
     end
 
     it 'handles compatible interfaces with self types on call' do
