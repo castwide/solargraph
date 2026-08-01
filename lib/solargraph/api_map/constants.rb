@@ -188,12 +188,12 @@ module Solargraph
         end
       end
 
-      # @return [Hash{Array(String, Array<String>) => String, :in_process, nil}]
+      # @return [Hash{Array, String, Array, String => String, :in_process, nil}]
       def cached_resolve
         @cached_resolve ||= {}
       end
 
-      # @return [Hash{Array<String> => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
+      # @return [Hash{Array, String => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
       def cached_collect
         @cached_collect ||= {}
       end
@@ -279,7 +279,6 @@ module Solargraph
         sc_ref = store.get_superclass(fqns)
         if sc_ref
           fqsc = dereference(sc_ref)
-          # @sg-ignore Need to add nil check here
           result.concat inner_get_constants(fqsc, [:public], skip) unless %w[Object BasicObject].include?(fqsc)
         end
         result

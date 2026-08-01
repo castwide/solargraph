@@ -6,8 +6,8 @@ describe Solargraph::YardMap::Mapper do
   end
 
   def pins_with require
-    doc_map = Solargraph::DocMap.new([require], @api_map.workspace, out: $stderr)
-    doc_map.cache_doc_map_gems!($stderr)
+    doc_map = Solargraph::DocMap.new([require], @api_map.workspace, out: nil)
+    doc_map.cache_all!(nil)
     doc_map.pins
   end
 

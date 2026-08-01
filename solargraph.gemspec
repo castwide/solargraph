@@ -44,7 +44,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'ostruct', '~> 0.6'
   s.add_dependency 'parser', '~> 3.0'
   s.add_dependency 'prism', '~> 1.4'
-  s.add_dependency 'rbs', ['>= 3.6.1', '<= 4.0.0.dev.5']
+  s.add_dependency 'rbs', ['>= 3.6.1']
   s.add_dependency 'reverse_markdown', '~> 3.0'
   s.add_dependency 'rubocop', '~> 1.76'
   s.add_dependency 'thor', '~> 1.0'
@@ -71,7 +71,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
   s.add_development_dependency 'undercover', '~> 0.7'
-  s.add_development_dependency 'vernier', '< 2'
   s.add_development_dependency 'webmock', '~> 3.6'
   # work around missing yard dependency needed as of Ruby 3.5
   s.add_development_dependency 'irb', '~> 1.15'

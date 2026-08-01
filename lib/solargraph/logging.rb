@@ -47,8 +47,6 @@ module Solargraph
         new_log_level = LOG_LEVELS[log_level.to_s]
         logger = Logger.new($stderr, level: new_log_level)
 
-        # @sg-ignore Wrong argument type for Logger#formatter=: arg_0
-        #   expected nil, received Logger::_Formatter, nil
         logger.formatter = @@logger.formatter
         logger
       end

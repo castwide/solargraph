@@ -223,9 +223,6 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
-      workspace = Solargraph::Workspace.new(Dir.pwd)
-      gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      workspace.cache_gem(gemspec)
 
       checker = type_checker(%(
         require 'kramdown-parser-gfm'

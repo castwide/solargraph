@@ -6,7 +6,7 @@ describe Solargraph::GemPins do
   let(:pin) { doc_map.pins.find { |pin| pin.path == path } }
 
   before do
-    doc_map.cache_doc_map_gems!(STDERR) # rubocop:disable Style/GlobalStdStream
+    doc_map.cache_all!(STDERR) # rubocop:disable Style/GlobalStdStream
   end
 
   context 'with a combined method pin' do

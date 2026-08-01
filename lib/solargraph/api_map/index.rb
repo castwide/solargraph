@@ -36,6 +36,11 @@ module Solargraph
         @path_pin_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
+      # @return [Hash{String => ComplexType}]
+      def alias_hash
+        @alias_hash ||= {}
+      end
+
       # @generic T
       # @param klass [Class<generic<T>>]
       # @return [Set<generic<T>>]
@@ -133,6 +138,7 @@ module Solargraph
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
         map_overrides
+        pins_by_class(Pin::Reference::TypeAlias).each { |pin| alias_hash[pin.name] = pin.return_type }
         self
       end
 
