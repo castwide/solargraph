@@ -56,7 +56,6 @@ module Solargraph
         ].compact.uniq
         # @param gem_name [String]
         gem_names_to_try.each do |gem_name|
-          # @sg-ignore Unresolved call to == on Boolean
           gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
           # @sg-ignore flow sensitive typing should be able to handle redefinition
           return [gemspec_or_preference(gemspec)] if gemspec
@@ -100,11 +99,9 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name && specish.version == version }
         return to_gem_specification specish if specish
 
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
         # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
         return to_gem_specification specish if specish
@@ -188,7 +185,6 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
-                                                        # @sg-ignore Unresolved constant Gem::StubSpecification
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec

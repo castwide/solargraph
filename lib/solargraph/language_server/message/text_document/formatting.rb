@@ -84,7 +84,6 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')

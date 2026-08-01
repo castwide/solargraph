@@ -248,11 +248,8 @@ module Solargraph
             next if refs.nil?
             # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next if ref.nil? || ref.empty? || visited.include?(ref)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               ancestors << ref
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               queue << ref
             end
           end

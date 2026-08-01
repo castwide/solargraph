@@ -348,9 +348,6 @@ module Solargraph
                             [:class, *path.split('.', 2)]
                           end
 
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::ApiMap#get_method_stack: rooted_tag
-        #   expected String, received Array<String>
         pins = api_map.get_method_stack(ns, meth, scope: scope)
       else
         pins = api_map.get_path_pins path

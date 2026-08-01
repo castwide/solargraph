@@ -39,7 +39,6 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
-          # @sg-ignore Need to add nil check here
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             unless !subs.is_a?(ComplexType) && (subs.length == 2) && !subs[0].is_a?(UniqueType) && !subs[1].is_a?(UniqueType)
@@ -387,7 +386,6 @@ module Solargraph
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
           return self unless generics_to_resolve.include? type_param
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
             # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
@@ -399,7 +397,6 @@ module Solargraph
                                                          resolved_generic_values: resolved_generic_values)
             end
           end
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return resolved_generic_values[type_param] || self
         end
 
