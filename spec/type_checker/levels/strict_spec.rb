@@ -49,6 +49,27 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
+    it 'catches a bad #push argument against an inferred Array element type (#1223)' do
+      # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
+      #
+      #   y = [1]
+      #   y.push 'two'
+      #   y # => inferred as Array<Integer>, silently missing the pushed String
+      #
+      # Inference still can't track the mutation (see the "does not
+      # track a plain array through a mutating call" spec in
+      # clip_spec.rb), but type checking can now catch the bad
+      # argument at the call site itself, since Array#push's restarg
+      # is checked against the receiver's element type instead of
+      # being skipped entirely.
+      checker = type_checker(%(
+        y = [1]
+        y.push 'two'
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for Array#push: objects expected Integer, received String'])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]

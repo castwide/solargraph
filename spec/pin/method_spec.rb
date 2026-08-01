@@ -709,7 +709,10 @@ describe Solargraph::Pin::Method do
       expect(pin.signatures.first.parameters).to be_one
       expect(pin.signatures.first.parameters.first.name).to eq('bar')
       expect(pin.signatures.first.parameters.first.decl).to eq(:restarg)
-      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Array')
+      # `bar` here is the restarg's declared per-element type (RBS's
+      # inline shorthand identifies it by position, not name), now
+      # tracked instead of being erased to a bare `Array`
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Array<bar>')
     end
 
     it 'sets required keyword parameters' do
@@ -754,7 +757,9 @@ describe Solargraph::Pin::Method do
       expect(pin.signatures.first.parameters).to be_one
       expect(pin.signatures.first.parameters.first.name).to eq('bar')
       expect(pin.signatures.first.parameters.first.decl).to eq(:kwrestarg)
-      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Hash{Symbol => Object}')
+      # `bar` here is the kwrestarg's declared per-value type, now
+      # tracked instead of being erased to `Hash{Symbol => Object}`
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Hash{Symbol => bar}')
     end
 
     it 'sets block parameters' do
