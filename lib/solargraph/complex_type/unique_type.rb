@@ -13,6 +13,13 @@ module Solargraph
 
       attr_reader :all_params, :subtypes, :key_types
 
+      # @type [Hash{String => String}]
+      ANONYMOUS_NAME_BY_STARTING_TAG = {
+        '{' => 'Hash',
+        '(' => 'Array',
+        '<' => 'Array'
+      }.freeze
+
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
       # for the type `Array<String>`, the name is `Array` and the substring is
@@ -24,6 +31,11 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         raise ComplexTypeError, "Illegal prefix: #{name}" if name.start_with?(':::')
+        # Anonymous shorthand - `<A>`, `(A)`, `{A=>B}` - omits the
+        # leading type name, defaulting it to Array or Hash. Resolved
+        # before the rooted/can_root_name? check below so an anonymous
+        # `<A>` behaves exactly like the equivalent `Array<A>`.
+        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring[0]) if name.empty? && !substring.empty?
         if name.start_with?('::')
           name = name[2..]
           rooted = true
