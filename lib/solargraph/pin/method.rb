@@ -512,7 +512,9 @@ module Solargraph
         # @param new_signature [Pin::Signature]
         same_type_arity_signatures.reduce([]) do |old_signatures, new_signature|
           next old_signatures + [new_signature] if old_signatures.empty?
-          old_signatures.flat_map do |old_signature|
+
+          merged = false
+          combined = old_signatures.map do |old_signature|
             potential_new_signature = old_signature.combine_with(new_signature)
 
             if potential_new_signature.type_arity == old_signature.type_arity
@@ -525,11 +527,13 @@ module Solargraph
               # based on types, not just arity, allowing for type
               # information describing how methods behave based on
               # their input types)
-              old_signatures - [old_signature] + [potential_new_signature]
+              merged = true
+              potential_new_signature
             else
-              old_signatures + [new_signature]
+              old_signature
             end
           end
+          merged ? combined : old_signatures + [new_signature]
         end
       end
 

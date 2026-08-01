@@ -118,6 +118,16 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type).to be_undefined
   end
 
+  it 'combines many non-mergeable same-type-arity signatures without exponential blowup' do
+    pin = described_class.new(name: 'foo')
+    signatures = (1..8).map { |i| double("signature#{i}", type_arity: ['same']) }
+    signatures.each do |sig|
+      allow(sig).to receive(:combine_with).and_return(double('combined', type_arity: ['different']))
+    end
+    result = pin.send(:combine_same_type_arity_signatures, signatures)
+    expect(result.length).to eq(signatures.length)
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
