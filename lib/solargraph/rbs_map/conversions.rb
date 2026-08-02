@@ -57,22 +57,22 @@ module Solargraph
       def convert_decl_to_pin decl, closure
         case decl
         when RBS::AST::Declarations::Class
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on class #{decl.inspect}")
           end
           class_decl_to_pin decl
         when RBS::AST::Declarations::Interface
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on interface #{decl.inspect}")
           end
           interface_decl_to_pin decl
         when RBS::AST::Declarations::TypeAlias
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure,
-                                     # @sg-ignore flow sensitive typing should support case/when
+                                     # @sg-ignore https://github.com/castwide/solargraph/issues/1241
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           pins.push(
@@ -82,21 +82,21 @@ module Solargraph
             )
           )
         when RBS::AST::Declarations::Module
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure,
-                                     # @sg-ignore flow sensitive typing should support case/when
+                                     # @sg-ignore https://github.com/castwide/solargraph/issues/1241
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on constant #{decl.inspect}")
           end
           constant_decl_to_pin decl
         when RBS::AST::Declarations::ClassAlias
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.new_name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on class alias #{decl.inspect}")
           end
@@ -214,44 +214,44 @@ module Solargraph
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           method_def_to_pin(member, closure, context)
         when RBS::AST::Members::AttrReader
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_reader_to_pin(member, closure, context)
         when RBS::AST::Members::AttrWriter
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_writer_to_pin(member, closure, context)
         when RBS::AST::Members::AttrAccessor
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_accessor_to_pin(member, closure, context)
         when RBS::AST::Members::Include
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           include_to_pin(member, closure)
         when RBS::AST::Members::Prepend
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           prepend_to_pin(member, closure)
         when RBS::AST::Members::Extend
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           alias_to_pin(member, closure)
         when RBS::AST::Members::ClassInstanceVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           civar_to_pin(member, closure)
         when RBS::AST::Members::ClassVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           cvar_to_pin(member, closure)
         when RBS::AST::Members::InstanceVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
           return Context.new(:public)
         when RBS::AST::Members::Private
           return Context.new(:private)
         when RBS::AST::Declarations::Base
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           convert_decl_to_pin(member, closure)
         else
           Solargraph.logger.warn "Skipping member type #{member.class}"

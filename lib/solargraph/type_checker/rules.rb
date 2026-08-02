@@ -80,10 +80,9 @@ module Solargraph
       # flow sensitive typing could handle (161):
       #
       # @todo 30: flow sensitive typing needs to handle attrs
+      # @todo 28: https://github.com/castwide/solargraph/issues/1241
       # @todo 20: flow sensitive typing should be able to handle redefinition
-      # @todo 16: flow sensitive typing should support case/when
       # @todo 12: flow sensitive typing needs to narrow down type with an if is_a? check
-      # @todo 12: flow based typing needs to understand case when class pattern
       # @todo 11: flow sensitive typing needs better handling of ||= on lvars
       # @todo 11: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
