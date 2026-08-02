@@ -226,6 +226,7 @@ module Solargraph
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
+          # @sg-ignore Need a downcast here
           # @type [ComplexType]
           type = data[:qualified]
           if type.undefined?
@@ -340,6 +341,7 @@ module Solargraph
           found = nil
           # @type [Array<Solargraph::Pin::Base>]
           all_found = []
+          # @sg-ignore Need to add nil check here
           until base.links.first.undefined?
             # @sg-ignore Need to add nil check here
             all_found = base.define(api_map, closure_pin, locals)
@@ -353,8 +355,10 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
+              # @sg-ignore Need to add nil check here
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
+              # @sg-ignore Need to add nil check here
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
             end
             @marked_ranges.push rng
@@ -515,6 +519,8 @@ module Solargraph
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
+      return result if par.nil?
+
       # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
@@ -554,13 +560,17 @@ module Solargraph
     def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
       result = []
       kwargs.each_pair do |pname, argchain|
+        # @sg-ignore
         next unless params.key?(pname.to_s)
         # @sg-ignore
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
+        # @sg-ignore
         argtype = argchain.infer(api_map, closure_pin, locals)
+        # @sg-ignore
         argtype = argtype.self_to_type(closure_pin.context)
+        # @sg-ignore
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location,
                                   "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
@@ -633,7 +643,9 @@ module Solargraph
         next unless param_names.include?(param_name)
 
         param_details[param_name] ||= {}
+        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
         param_details[param_name][:tagged] ||= details[:tagged]
+        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
         param_details[param_name][:qualified] ||= details[:qualified]
       end
     end
@@ -698,6 +710,7 @@ module Solargraph
         found = nil
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
+        # @sg-ignore Need to add nil check here
         until base.links.first.undefined?
           all_found = base.define(api_map, closure_pin, locals)
           found = all_found.first
@@ -721,7 +734,7 @@ module Solargraph
         return [] if r.empty?
         r
       end
-      results.first
+      results.first || []
     end
 
     # @param pin [Pin::Method]
@@ -743,6 +756,7 @@ module Solargraph
         if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = parameters.count(&:keyword?)
         else
+          # @sg-ignore Need to add nil check here
           kwargs = convert_hash(unchecked.last.node)
           if parameters.any? { |param| %i[kwarg kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
@@ -755,7 +769,9 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
+                  # @sg-ignore Need to add nil check here
                   last_arg_last_link = arguments.last.links.last
+                  # @sg-ignore Need to add nil check here
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
@@ -780,6 +796,7 @@ module Solargraph
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
+      # @sg-ignore Need to add nil check here
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
         # See https://github.com/castwide/solargraph/issues/418

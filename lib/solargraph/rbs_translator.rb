@@ -12,7 +12,9 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
+    # rubocop:disable Layout/LineLength
     # @param type [RBS::Types::Bases::Bool, RBS::Types::Bases::Void, RBS::Types::Bases::Any, RBS::Types::Bases::Nil, RBS::Types::Bases::Top, RBS::Types::Bases::Bottom, RBS::Types::Bases::Self, RBS::Types::Bases::Instance, RBS::Types::Bases::Class, RBS::Types::Variable, RBS::Types::ClassSingleton, RBS::Types::Interface, RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Tuple, RBS::Types::Record, RBS::Types::Optional, RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc, RBS::Types::Literal]
+    # rubocop:enable Layout/LineLength
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
@@ -128,7 +130,9 @@ module Solargraph
     class << self
       private
 
+      # rubocop:disable Layout/LineLength
       # @param type [RBS::Types::Bases::Bool, RBS::Types::Bases::Void, RBS::Types::Bases::Any, RBS::Types::Bases::Nil, RBS::Types::Bases::Top, RBS::Types::Bases::Bottom, RBS::Types::Bases::Self, RBS::Types::Bases::Instance, RBS::Types::Bases::Class, RBS::Types::Variable, RBS::Types::ClassSingleton, RBS::Types::Interface, RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Tuple, RBS::Types::Record, RBS::Types::Optional, RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc, RBS::Types::Literal]
+      # rubocop:enable Layout/LineLength
       # @return [String]
       def type_to_tag type
         case type
