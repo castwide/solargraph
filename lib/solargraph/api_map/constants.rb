@@ -159,6 +159,7 @@ module Solargraph
             next unless mixin
 
             resolved = resolve(name, mixin)
+            # @sg-ignore Need to add nil check here
             return [resolved, gates[(idx + 1)..]] if resolved
           end
         end

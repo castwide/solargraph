@@ -210,7 +210,6 @@ module Solargraph
           #   so s is typed as possibly nil
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
-            # @sg-ignore Need to add nil check here
             o && !o.empty? ? JSON.parse(o.split("\n").last) : nil
           else
             Solargraph.logger.warn e

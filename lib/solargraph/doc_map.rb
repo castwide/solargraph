@@ -424,7 +424,6 @@ module Solargraph
         #   so s is typed as possibly nil
         if s.success?
           Solargraph.logger.debug "External bundle: #{o}"
-          # @sg-ignore Need to add nil check here
           hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
           hash.flat_map do |name, version|
             Gem::Specification.find_by_name(name, version)

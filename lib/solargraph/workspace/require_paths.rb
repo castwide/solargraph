@@ -81,7 +81,6 @@ module Solargraph
         #   so s is typed as possibly nil
         if s.success?
           begin
-            # @sg-ignore Need to add nil check here
             hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
