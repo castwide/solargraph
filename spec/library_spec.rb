@@ -172,7 +172,7 @@ describe Solargraph::Library, order: :defined do
   it 'diagnoses using all reporters' do
     directory = ''
     config = instance_double(Solargraph::Workspace::Config)
-    allow(config).to receive_messages(plugins: [], required: [], reporters: ['all!'])
+    allow(config).to receive_messages(plugins: [], required: [], reporters: ['all!'], type_checker_rules: {})
     workspace = Solargraph::Workspace.new directory, config
     library = described_class.new workspace
     # keep this from syncing a bunch of bundle gems in background

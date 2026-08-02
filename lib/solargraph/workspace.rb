@@ -130,31 +130,6 @@ module Solargraph
       false
     end
 
-    # True if the workspace has a root Gemfile.
-    #
-    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
-    #
-    def gemfile?
-      directory && File.file?(File.join(directory, 'Gemfile'))
-    end
-
-    # True if the workspace contains at least one gemspec file.
-    #
-    # @return [Boolean]
-    def gemspec?
-      !gemspec_files.empty?
-    end
-
-    # Get an array of all gemspec files in the workspace.
-    #
-    # @return [Array<String>]
-    def gemspec_files
-      return [] if directory.empty? || directory == '*'
-      @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
-        config.allow? gs
-      end
-    end
-
     # @return [String, nil]
     def rbs_collection_path
       @rbs_collection_path ||= read_rbs_collection_path
@@ -196,6 +171,31 @@ module Solargraph
     def directory_or_nil
       return nil if directory.empty? || directory == '*'
       directory
+    end
+
+    # True if the workspace has a root Gemfile.
+    #
+    # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
+    #
+    def gemfile?
+      directory && File.file?(File.join(directory, 'Gemfile'))
+    end
+
+    # True if the workspace contains at least one gemspec file.
+    #
+    # @return [Boolean]
+    def gemspec?
+      !gemspec_files.empty?
+    end
+
+    # Get an array of all gemspec files in the workspace.
+    #
+    # @return [Array<String>]
+    def gemspec_files
+      return [] if directory.empty? || directory == '*'
+      @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
+        config.allow? gs
+      end
     end
 
     private

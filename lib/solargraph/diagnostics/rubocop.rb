@@ -21,8 +21,9 @@ module Solargraph
 
       # @param source [Solargraph::Source]
       # @param _api_map [Solargraph::ApiMap]
+      # @param workspace [Solargraph::Workspace, nil] unused; accepted for interface compatibility with Diagnostics::Base
       # @return [Array<Hash>]
-      def diagnose source, _api_map
+      def diagnose source, _api_map, workspace: nil
         @source = source
         require_rubocop(rubocop_version)
         # @sg-ignore Need to add nil check here

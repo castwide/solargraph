@@ -67,11 +67,6 @@ module Solargraph
       def self.load library
         @stdlib_maps_hash[library] ||= StdlibMap.new(library)
       end
-
-      # @return [Array<String>]
-      def self.possible_stdlibs
-        RBS::Repository.default.gems.keys
-      end
     end
   end
 end

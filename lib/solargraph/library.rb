@@ -425,7 +425,8 @@ module Solargraph
         end
       end
       repargs.each_pair do |reporter, args|
-        result.concat reporter.new(*args.uniq).diagnose(source, api_map)
+        # @sg-ignore Class<Diagnostics::Base> doesn't resolve #new
+        result.concat reporter.new(*args.uniq).diagnose(source, api_map, workspace: workspace)
       end
       result
     end

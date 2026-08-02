@@ -3,7 +3,10 @@
 module Solargraph
   module Diagnostics
     class UpdateErrors < Base
-      def diagnose source, api_map
+      # @param source [Solargraph::Source]
+      # @param api_map [Solargraph::ApiMap]
+      # @param workspace [Solargraph::Workspace, nil] unused; accepted for interface compatibility with Diagnostics::Base
+      def diagnose source, api_map, workspace: nil
         combine_ranges(source.code, source.error_ranges).map do |range|
           { range: range.to_hash,
             severity: Diagnostics::Severities::ERROR,
