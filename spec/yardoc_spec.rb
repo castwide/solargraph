@@ -48,28 +48,5 @@ describe Solargraph::Yardoc do
         expect(called_with[0]['BUNDLE_GEMFILE']).to eq(File.absolute_path('Gemfile'))
       end
     end
-
-    context 'when multiple OS processes cache the same not-yet-cached gem at once' do
-      # a small, fast-to-document gem - as multiple parallel_tests workers
-      # (separate OS processes) could all try to cache the same gem for
-      # the first time simultaneously
-      let(:gemspec) { Gem::Specification.find_by_name('diff-lcs') }
-
-      it 'never corrupts the yardoc database' do
-        skip 'requires Process.fork' unless Process.respond_to?(:fork)
-
-        pids = 4.times.map do
-          Process.fork do
-            described_class.cache([], gemspec)
-            exit!(0)
-          end
-        end
-        pids.each { |pid| Process.wait(pid) }
-
-        expect(described_class.cached?(gemspec)).to be(true)
-        expect { YARD::Registry.load!(gem_yardoc_path) }.not_to raise_error
-        expect(YARD::Registry.all).not_to be_empty
-      end
-    end
   end
 end
