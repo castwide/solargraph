@@ -242,7 +242,7 @@ module Solargraph
       pins
     end
 
-    # @return [Hash{Array(String, String, String) => Array<Pin::Base>}]
+    # @return [Hash{::Array => Array<Pin::Base>}] keyed by [gem name, gem version, RBS cache key]
     def combined_pins_in_memory
       PinCache.all_combined_pins_in_memory[yard_plugins] ||= {}
     end
