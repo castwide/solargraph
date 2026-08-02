@@ -220,6 +220,8 @@ module Solargraph
       # @sg-ignore need boolish support for ? methods
       def in_this_bundle?
         Bundler.definition&.lockfile&.to_s&.start_with?(directory)
+      rescue Bundler::GemfileNotFound
+        false
       end
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
