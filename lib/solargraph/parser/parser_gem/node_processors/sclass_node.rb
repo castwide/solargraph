@@ -17,19 +17,26 @@ module Solargraph
             #   types to "A<T>" if the "A" comes from YARD, with the
             #   rationale that folks tend to be less formal with types in
             #   YARD.
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             if sclass.is_a?(::Parser::AST::Node) && sclass.type == :self
               closure = region.closure
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :casgn
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               if sclass.children[0].nil? && names.last != sclass.children[1].to_s
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 names << sclass.children[1].to_s
               else
+                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 names.push NodeMethods.unpack_name(sclass.children[0]), sclass.children[1].to_s
               end
               name = names.reject(&:empty?).join('::')
               closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location, source: :parser)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :const
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
               also = NodeMethods.unpack_name(sclass)
               names << also if also != region.closure.name
               name = names.reject(&:empty?).join('::')

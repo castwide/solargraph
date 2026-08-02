@@ -49,9 +49,10 @@ module Solargraph
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
+          # @sg-ignore Need to add nil check here
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
-        parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
+        parameters.each_with_index.map { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
       end
 
       # @param api_map [ApiMap]
@@ -75,13 +76,18 @@ module Solargraph
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
             param = parameters[idx]
+            # @sg-ignore Need to add nil check here
             param_type = chain.base.infer(api_map, param, locals)
+            # @sg-ignore Need to add nil check here
             unless arg_type.nil?
+              # @sg-ignore Need to add nil check here
               if arg_type.generic? && param_type.defined?
                 # @sg-ignore Need to add nil check here
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
+                # @sg-ignore Need to add nil check here
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
+                # @sg-ignore Need to add nil check here
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end
