@@ -5,11 +5,10 @@ module Solargraph
     # An individual type signature. A complex type can consist of multiple
     # unique types.
     #
-    class UniqueType
-      include TypeMethods
+    class UniqueType < Type
       include Equality
 
-      attr_reader :all_params, :subtypes, :key_types
+      attr_reader :all_params, :subtypes, :key_types, :name
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -70,6 +69,8 @@ module Solargraph
       # @param rooted [Boolean]
       # @param parameters_type [Symbol, nil]
       def initialize name, key_types = [], subtypes = [], rooted:, parameters_type: nil
+        super()
+
         if parameters_type.nil? && !(key_types.empty? && subtypes.empty?)
           raise 'You must supply parameters_type if you provide parameters'
         end
@@ -100,6 +101,11 @@ module Solargraph
         tag
       end
 
+      # @return [Array<ComplexType>]
+      def value_types
+        @subtypes
+      end
+
       # @return [self]
       def simplify_literals
         transform do |t|
@@ -121,8 +127,9 @@ module Solargraph
 
       # @see https://en.wikipedia.org/wiki/Intersection_type
       #
-      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @param intersection_type [Type, nil]
       # @param api_map [ApiMap]
+      #
       # @return [self, ComplexType]
       def intersect_with intersection_type, api_map
         return self if intersection_type.nil?
@@ -196,6 +203,9 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support .class == .class
           @parameters_type == other.parameters_type
       end
+
+      # @return [Symbol, nil]
+      attr_reader :parameters_type
 
       def == other
         eql?(other)
@@ -381,7 +391,7 @@ module Solargraph
 
       # @param generics_to_resolve [Enumerable<String>]
       # @param context_type [ComplexType, UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
+      # @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME

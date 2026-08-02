@@ -4,7 +4,7 @@ module Solargraph
   module Pin
     class LocalVariable < BaseVariable
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [Type]
       def probe api_map
         if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type

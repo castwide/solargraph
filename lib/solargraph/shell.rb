@@ -43,7 +43,7 @@ module Solargraph
         end
         # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+        warn "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -60,7 +60,7 @@ module Solargraph
         end
         # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
+        warn "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
 
@@ -577,7 +577,7 @@ module Solargraph
       desc
     end
 
-    # @param type [ComplexType, ComplexType::UniqueType]
+    # @param type [Type]
     # @return [void]
     def print_type type
       if options[:rbs]
