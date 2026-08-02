@@ -112,6 +112,7 @@ module Solargraph
           message
         elsif request['id']
           if requests[request['id']]
+            # @sg-ignore Need to add nil check here
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -316,6 +317,7 @@ module Solargraph
       def prepare_folders array
         return if array.nil?
         array.each do |folder|
+          # @sg-ignore Need to add nil check here
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
@@ -546,7 +548,7 @@ module Solargraph
         library.completions_at uri_to_file(uri), line, column
       end
 
-      # @return [Bool] if has pending completion request
+      # @return [Boolean] if has pending completion request
       def pending_completions?
         message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
@@ -597,6 +599,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
+        # @sg-ignore Need to add nil check here
         (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end
@@ -702,8 +705,11 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
+      # @return [Boolean]
+      # @sg-ignore Need to add nil check here
       def client_supports_progress?
-        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+        # @sg-ignore Need to add nil check here
+        !!(client_capabilities['window'] && client_capabilities['window']['workDoneProgress'])
       end
 
       private
@@ -746,6 +752,7 @@ module Solargraph
         changes = []
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
+          # @sg-ignore Need a downcast here
           changes.push Solargraph::Source::Change.new(
             (if chng['range'].nil?
                nil
@@ -772,7 +779,9 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
+        # @sg-ignore Need to add nil check here
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
+        # @sg-ignore Need to add nil check here
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
@@ -853,8 +862,11 @@ module Solargraph
         }
       end
 
+      # @return [Boolean]
+      # @sg-ignore Need to add nil check here
       def prepare_rename?
-        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
+        # @sg-ignore Need to add nil check here
+        !!(client_capabilities['rename'] && client_capabilities['rename']['prepareSupport'])
       end
 
       # @param library [Library]

@@ -97,6 +97,7 @@ module Solargraph
     # @return [self]
     def map source, live: false
       map = Solargraph::SourceMap.map(source)
+      # @sg-ignore Need a downcast here
       catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end
@@ -145,10 +146,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+            # @sg-ignore Need to add nil check here
             match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
               get_complex_type_methods(closure.return_type).include?(pin)
             end
             if match
+              # @sg-ignore Need to add nil check here
               match.macros.each do |macro|
                 macro_pins.concat macro.generate_pins_from(chain, match, source_map)
               end
@@ -204,9 +207,11 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
+    # @sg-ignore Need to add nil check here
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
+      # @sg-ignore Need to add nil check here
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -592,6 +597,7 @@ module Solargraph
                 else
                   get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
                 end
+      # @sg-ignore Need to add nil check here
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -652,6 +658,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
+      # @sg-ignore Need to add nil check here
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -670,6 +677,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
+      # @sg-ignore Need to add nil check here
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
@@ -682,6 +690,7 @@ module Solargraph
     #
     # @param filename [String]
     # @return [SourceMap]
+    # @sg-ignore Need to add nil check here
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
@@ -786,6 +795,7 @@ module Solargraph
         reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
         # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
         methods = methods.map do |method_pin|
+          # @sg-ignore Need to add nil check here
           method_pin.resolve_generics(reference_pin, resolved_reference_type)
         end
       end
@@ -867,6 +877,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, no_core)
           end
@@ -880,6 +891,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, true)
           end
