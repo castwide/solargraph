@@ -6,7 +6,7 @@ describe Solargraph::RbsMap::StdlibMap do
     # @todo Unlike the YardMap stdlib, the RBS version reports the correct
     #   return type for Pathname#Join. Delete or modify this test depending
     #   on how StdLibFills will be handled going forward.
-    rbs_map = Solargraph::RbsMap::StdlibMap.load('pathname')
+    rbs_map = described_class.load('pathname')
     pin = rbs_map.path_pin('Pathname#join')
     expect(pin.signatures.first.return_type.tag).to eq('Pathname')
   end
@@ -25,7 +25,7 @@ describe Solargraph::RbsMap::StdlibMap do
 
   it 'processes RBS class variables' do
     pending 'rbs not in stdlib?'
-    map = Solargraph::RbsMap::StdlibMap.load('rbs')
+    map = described_class.load('rbs')
     store = Solargraph::ApiMap::Store.new(map.pins)
     class_variable_pins = store.pins_by_class(Solargraph::Pin::ClassVariable)
     count_pins = class_variable_pins.select do |pin|
@@ -38,7 +38,7 @@ describe Solargraph::RbsMap::StdlibMap do
 
   it 'processes RBS class instance variables' do
     pending 'rbs not in stdlib?'
-    map = Solargraph::RbsMap::StdlibMap.load('rbs')
+    map = described_class.load('rbs')
     store = Solargraph::ApiMap::Store.new(map.pins)
     instance_variable_pins = store.pins_by_class(Solargraph::Pin::InstanceVariable)
     root_pins = instance_variable_pins.select do |pin|
@@ -50,7 +50,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'processes RBS module aliases' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     yaml_pins = constant_pins.select do |pin|
@@ -63,7 +63,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'pins are marked as coming from RBS parsing' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     pin = constant_pins.first
