@@ -120,6 +120,29 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'catches a bad #<< argument against a fixed-arity generic parameter resolved against the receiver (#1242)' do
+      # Array#<< has a single fixed-arity parameter typed as the
+      # generic `E`. Before this fix, only restarg parameters (like
+      # Array#push's, above) had their generic types resolved against
+      # the receiver's actual element type - fixed-arity params like
+      # this one still typed themselves from the unresolved generic
+      # declaration and never flagged a mismatch.
+      checker = type_checker(%(
+        y = [1]
+        y << 'two'
+      ))
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#<<: \w+ expected Integer, received String\z/))
+    end
+
+    it 'does not flag a #<< argument matching the receiver element type (#1242)' do
+      checker = type_checker(%(
+        y = [1]
+        y << 5
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
