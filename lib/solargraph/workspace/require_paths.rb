@@ -77,8 +77,11 @@ module Solargraph
                'return unless Gem::Specification === spec; ' \
                'puts({name: spec.name, paths: spec.require_paths}.to_json)']
         o, e, s = Open3.capture3(*cmd)
+        # @sg-ignore Solargraph can't resolve which Open3.capture3 overload applies here,
+        #   so s is typed as possibly nil
         if s.success?
           begin
+            # @sg-ignore Need to add nil check here
             hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }

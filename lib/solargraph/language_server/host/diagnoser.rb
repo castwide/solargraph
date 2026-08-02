@@ -63,6 +63,7 @@ module Solargraph
           current = mutex.synchronize { queue.shift }
           return if queue.include?(current)
           begin
+            # @sg-ignore Need a downcast here
             host.diagnose current
           rescue InvalidOffsetError
             # @todo This error can occur when the Source is out of sync with

@@ -16,6 +16,7 @@ module Solargraph
             Logging.logger.warn "[#{e.class}] #{e.message}"
             # @sg-ignore Need to add nil check here
             Logging.logger.warn e.backtrace.join("\n")
+            # @sg-ignore Need a downcast here
             set_result nil
           end
         end

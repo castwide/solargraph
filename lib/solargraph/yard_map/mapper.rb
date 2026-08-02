@@ -95,7 +95,7 @@ module Solargraph
       # @param method_object [YARD::CodeObjects::MethodObject]
       # @return [Array<YARD::CodeObjects::MacroObject>]
       def macros_for_method_object method_object
-        attached_macros_by_method_object[method_object]
+        attached_macros_by_method_object[method_object] || []
       end
     end
   end

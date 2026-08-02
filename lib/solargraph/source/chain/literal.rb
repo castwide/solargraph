@@ -6,7 +6,9 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        attr_reader :word, :value
+        attr_reader :word
+        # @return [BasicObject, nil]
+        attr_reader :value
 
         # @param type [String]
         # @param node [Parser::AST::Node, Object]

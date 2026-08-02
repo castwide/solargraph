@@ -276,7 +276,6 @@ module Solargraph
         end
         decl = if macro_names?
           types = macro_names.flat_map do |mac|
-            # @sg-ignore Need a downcast here
             directive = api_map.named_macro(mac)
             next unless directive
             # @sg-ignore Need a downcast here

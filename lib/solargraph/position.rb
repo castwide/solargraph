@@ -121,6 +121,7 @@ module Solargraph
     # @return [Position]
     def self.normalize object
       return object if object.is_a?(Position)
+      # @sg-ignore Need to add nil check here
       return Position.new(object[0], object[1]) if object.is_a?(Array)
       raise ArgumentError, "Unable to convert #{object.class} to Position"
     end

@@ -112,6 +112,7 @@ module Solargraph
       # as an argument.
       #
       # @return [Cursor, nil]
+      # @sg-ignore Need a downcast here
       def recipient
         @recipient ||= begin
           node = recipient_node
