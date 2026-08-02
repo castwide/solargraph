@@ -97,7 +97,7 @@ module Solargraph
     # @return [self]
     def map source, live: false
       map = Solargraph::SourceMap.map(source)
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end

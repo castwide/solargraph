@@ -420,8 +420,7 @@ module Solargraph
           "require 'bundler'; require 'json'; Dir.chdir('#{workspace.directory}') { puts Bundler.definition.locked_gems.specs.map { |spec| [spec.name, spec.version] }.to_h.to_json }"
         ]
         o, e, s = Open3.capture3(*cmd)
-        # @sg-ignore Solargraph can't resolve which Open3.capture3 overload applies here,
-        #   so s is typed as possibly nil
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
           Solargraph.logger.debug "External bundle: #{o}"
           hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}

@@ -574,11 +574,11 @@ module Solargraph
           block = if overload.method_type.block
                     # @sg-ignore flow sensitive typing needs to handle attrs
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, implicit_nil)
-                    # @sg-ignore Translate to something flow sensitive typing understands
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
                              type_location: type_location, closure: pin)
         end

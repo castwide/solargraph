@@ -98,7 +98,7 @@ module Solargraph
 
       # @return [YARD::CodeObjects::RootObject]
       def root_code_object
-        # @sg-ignore Need a downcast here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
     end

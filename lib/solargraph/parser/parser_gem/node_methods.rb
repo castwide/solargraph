@@ -107,8 +107,7 @@ module Solargraph
         # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node]
         # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
-        # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
-        # `.children[0]` call, which is not recognized as returning a literal value.
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 
@@ -221,7 +220,7 @@ module Solargraph
             node.children[1..].each { |child| result.concat call_nodes_from(child) }
           elsif node.type == :send
             result.push node
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat call_nodes_from(node.children.first)
             # @sg-ignore Need to add nil check here
             node.children[2..].each { |child| result.concat call_nodes_from(child) }
@@ -579,7 +578,7 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 if idx == nodes.length - 1
-                  # @sg-ignore Need to add nil check here
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                   result.concat from_value_position_statement(nodes.last,
                                                               include_explicit_returns: false)
                 end

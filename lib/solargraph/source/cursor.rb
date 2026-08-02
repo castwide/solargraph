@@ -112,7 +112,7 @@ module Solargraph
       # as an argument.
       #
       # @return [Cursor, nil]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def recipient
         @recipient ||= begin
           node = recipient_node

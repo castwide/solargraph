@@ -45,7 +45,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
-      # @sg-ignore Return-value fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
@@ -79,16 +79,16 @@ module Solargraph
             param = parameters[idx]
             # @sg-ignore Need to add nil check here
             param_type = chain.base.infer(api_map, param, locals)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             unless arg_type.nil?
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               if arg_type.generic? && param_type.defined?
                 # @sg-ignore Need to add nil check here
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 # @sg-ignore Need to add nil check here
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end

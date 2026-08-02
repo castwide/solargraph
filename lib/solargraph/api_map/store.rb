@@ -32,7 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore Need to add nil check here
@@ -251,10 +251,10 @@ module Solargraph
 
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             next if refs.nil?
             # @param ref [String]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
@@ -391,9 +391,9 @@ module Solargraph
 
       # @param fq_sub_tag [String]
       # @return [String, nil]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def qualify_and_cache_superclass fq_sub_tag
-        # @sg-ignore Need a downcast here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         cached_qualify_superclass[fq_sub_tag] = uncached_qualify_superclass(fq_sub_tag)
       end
 

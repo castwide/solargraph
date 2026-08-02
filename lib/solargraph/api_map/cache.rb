@@ -62,7 +62,7 @@ module Solargraph
       # @param name [String]
       # @param context [String]
       # @return [String, nil]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def get_qualified_namespace name, context
         @qualified_namespaces["#{name}|#{context}"]
       end
@@ -72,7 +72,7 @@ module Solargraph
       # @param value [String, nil]
       # @return [void]
       def set_qualified_namespace name, context, value
-        # @sg-ignore Need a downcast here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @qualified_namespaces["#{name}|#{context}"] = value
       end
 

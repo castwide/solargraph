@@ -404,7 +404,7 @@ module Solargraph
             parameters: tag.parameters.map do |src|
               # @sg-ignore Need to add nil check here
               name, decl = parse_overload_param(src.first)
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               Pin::Parameter.new(
                 location: location,
                 closure: self,

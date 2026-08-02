@@ -186,8 +186,7 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
-                                                        # @sg-ignore Gem::StubSpecification isn't always resolvable depending on
-                                                        #   which RBS core signatures get installed
+                                                        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
@@ -206,8 +205,7 @@ module Solargraph
             "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts begin; #{command}; end.to_json }"
           ]
           o, e, s = Open3.capture3(*cmd)
-          # @sg-ignore Solargraph can't resolve which Open3.capture3 overload applies here,
-          #   so s is typed as possibly nil
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
             o && !o.empty? ? JSON.parse(o.split("\n").last) : nil

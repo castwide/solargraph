@@ -599,7 +599,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end
@@ -752,7 +752,7 @@ module Solargraph
         changes = []
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
-          # @sg-ignore Need a downcast here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           changes.push Solargraph::Source::Change.new(
             (if chng['range'].nil?
                nil
@@ -779,7 +779,7 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @sg-ignore Need to add nil check here
         # @type [Diff::LCS::Change]

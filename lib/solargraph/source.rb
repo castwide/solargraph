@@ -204,14 +204,14 @@ module Solargraph
     # @param node [AST::Node]
     #
     # @return [String, nil]
-    # @sg-ignore Need a downcast here
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     def comments_for node
       rng = Range.from_node(node)
       # @sg-ignore Need to add nil check here
       stringified_comments[rng.start.line] ||= begin
         # @sg-ignore Need to add nil check here
         buff = associated_comments[rng.start.line]
-        # @sg-ignore Need a downcast here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         buff ? stringify_comment_array(buff) : nil
       end
     end
@@ -261,13 +261,13 @@ module Solargraph
         # @type [Integer, nil]
         last = nil
         comments.each_pair do |num, snip|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if !last || num == last + 1
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             buffer.concat "#{snip.text}\n"
           else
             result[first_not_empty_from(last + 1)] = buffer.clone
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             buffer.replace "#{snip.text}\n"
           end
           last = num

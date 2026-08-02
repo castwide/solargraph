@@ -11,7 +11,7 @@ module Solargraph
       # The base directory where cached YARD documentation and serialized pins are serialized
       #
       # @return [String]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def base_dir
         # The directory is not stored in a variable so it can be overridden
         # in specs.

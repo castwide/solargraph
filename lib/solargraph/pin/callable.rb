@@ -37,7 +37,7 @@ module Solargraph
       # @param other [self]
       #
       # @return [Pin::Signature, nil]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_blocks other
         if block.nil?
           other.block
@@ -145,10 +145,10 @@ module Solargraph
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             param.dup
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             param.resolve_generics_from_context(generics_to_resolve,
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)

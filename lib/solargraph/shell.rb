@@ -380,7 +380,7 @@ module Solargraph
         print_pin(pin)
       end
       references.each do |key, refpin|
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         puts "\n# #{key.to_s.capitalize}:\n\n"
         print_pin(refpin)
       end

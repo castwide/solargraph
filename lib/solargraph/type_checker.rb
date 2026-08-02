@@ -564,17 +564,17 @@ module Solargraph
     def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
       result = []
       kwargs.each_pair do |pname, argchain|
-        # @sg-ignore
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         next unless params.key?(pname.to_s)
         # @sg-ignore
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
-        # @sg-ignore
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         argtype = argchain.infer(api_map, closure_pin, locals)
-        # @sg-ignore
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         argtype = argtype.self_to_type(closure_pin.context)
-        # @sg-ignore
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location,
                                   "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")

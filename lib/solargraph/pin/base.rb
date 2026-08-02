@@ -157,7 +157,7 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
-      # @sg-ignore Need a downcast here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_closure other
         choose_pin_attr_with_same_name(other, :closure)
       end

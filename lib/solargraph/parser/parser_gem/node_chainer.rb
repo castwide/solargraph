@@ -122,7 +122,7 @@ module Solargraph
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL
           elsif n.type == :and
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat generate_links(n.children.last)
           elsif n.type == :or
             # @sg-ignore Need to add nil check here
@@ -144,7 +144,7 @@ module Solargraph
                           end
             result.push Chain::If.new([then_clause, else_clause])
           elsif %i[begin kwbegin].include?(n.type)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
             block_variable_name_node = n.children[0]
@@ -173,9 +173,9 @@ module Solargraph
         # @param node [Parser::AST::Node]
         def hash_is_splatted? node
           return false unless Parser.is_ast_node?(node) && node.type == :hash
-          # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
-          # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if Parser.is_ast_node?(node.children.last.children[0]) && node.children.last.children[0].type == :hash
             return false
           end

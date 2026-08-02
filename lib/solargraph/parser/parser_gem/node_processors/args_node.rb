@@ -13,7 +13,7 @@ module Solargraph
               else
                 node.children.each do |u|
                   loc = get_node_location(u)
-                  # @sg-ignore Need a downcast here
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,

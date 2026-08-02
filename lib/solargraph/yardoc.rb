@@ -34,8 +34,7 @@ module Solargraph
       # @todo set these up to run in parallel
       # @todo Is the chdir argument being used here?
       stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
-      # @sg-ignore Solargraph can't resolve which Open3.capture2e overload applies here,
-      #   so status is typed as possibly nil
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       unless status.success?
         Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
         Solargraph.logger.info stdout_and_stderr_str

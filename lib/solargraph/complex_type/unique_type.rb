@@ -395,7 +395,7 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
-              # @sg-ignore Need a downcast here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               complex_type.resolve_generics_from_context(generics_to_resolve, nil,
                                                          resolved_generic_values: resolved_generic_values)
             end
@@ -419,7 +419,7 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]
