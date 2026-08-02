@@ -13,6 +13,7 @@ module Solargraph
     autoload :Cache,       'solargraph/yard_map/cache'
     autoload :Mapper,      'solargraph/yard_map/mapper'
     autoload :Helpers,     'solargraph/yard_map/helpers'
-    autoload :ToMethod,    'solargraph/yard_map/to_method'
+    autoload :Macro,       'solargraph/yard_map/macro'
+    autoload :Directives,  'solargraph/yard_map/directives'
   end
 end

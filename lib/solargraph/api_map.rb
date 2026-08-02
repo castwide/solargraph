@@ -24,10 +24,24 @@ module Solargraph
     attr_reader :missing_docs
 
     # @param pins [Array<Solargraph::Pin::Base>]
-    def initialize pins: []
+    # @param loose_unions [Boolean] if true, a potential type can be
+    #   inferred if ANY of the UniqueTypes in the base chain's
+    #   ComplexType match it. If false, every single UniqueTypes in
+    #   the base must be ALL able to independently provide this
+    #   type.  The former is useful during completion, but the
+    #   latter is best for typechecking at higher levels.
+    #
+    def initialize pins: [], loose_unions: true
       @source_map_hash = {}
       @cache = Cache.new
+      @loose_unions = loose_unions
       index pins
+    end
+
+    # @param out [StringIO, IO, nil] output stream for logging
+    # @return [void]
+    def self.reset_core out: nil
+      @@core_map = RbsMap::CoreMap.new
     end
 
     #
@@ -37,19 +51,23 @@ module Solargraph
     #
 
     # @param other [Object]
-    def eql?(other)
+    def eql? other
       self.class == other.class &&
+        # @sg-ignore flow sensitive typing needs to handle self.class == other.class
         equality_fields == other.equality_fields
     end
 
     # @param other [Object]
-    def ==(other)
-      self.eql?(other)
+    def == other
+      eql?(other)
     end
 
+    # @return [Integer]
     def hash
       equality_fields.hash
     end
+
+    attr_reader :loose_unions
 
     def to_s
       self.class.to_s
@@ -89,6 +107,7 @@ module Solargraph
     # @return [self]
     def catalog bench
       @source_map_hash = bench.source_map_hash
+      # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
       live_pins = bench.live_map&.all_pins || []
       conventions_environ.clear
@@ -97,33 +116,58 @@ module Solargraph
       end
       unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
       recreate_docmap = @unresolved_requires != unresolved_requires ||
-                     @doc_map&.uncached_yard_gemspecs&.any? ||
-                     @doc_map&.uncached_rbs_collection_gemspecs&.any? ||
-                     @doc_map&.rbs_collection_path != bench.workspace.rbs_collection_path
+                        # @sg-ignore Unresolved call to rbs_collection_path on Solargraph::Workspace, nil
+                        workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
+                        @doc_map.uncached_gemspecs.any?
+
       if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, [], bench.workspace) # @todo Implement gem preferences
+        @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
         @unresolved_requires = @doc_map.unresolved_requires
       end
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins)
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      Solargraph.logger.info 'Cataloging ApiMap started'
+      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @missing_docs = [] # @todo Implement missing docs
+      Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
     end
 
-    # @todo need to model type def statement in chains as a symbol so
-    #   that this overload of 'protected' will typecheck @sg-ignore
-    # @sg-ignore
-    protected def equality_fields
-      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires]
+    # @return [Array<Pin::Base>]
+    def process_macros
+      macro_pins = []
+      Solargraph.logger.debug { "ApiMap#process_macros: processing macros for #{source_maps.size} source maps" }
+      Solargraph.logger.debug { "ApiMap#process_macros: store has #{store.macro_method_name_pins.size} macro method name pins" }
+      Solargraph.logger.debug { "ApiMap#process_macros: named macros: #{store.named_macros.keys.join(', ')}" }
+      source_maps.each do |source_map|
+        method_candidates = source_map.macro_method_candidates(store.macro_method_names)
+        Solargraph.logger.debug { "ApiMap#process_macros: processing source map for #{source_map.filename} with #{method_candidates.size} macro method candidates" }
+        method_candidates.each do |node|
+          closure = source_map.locate_closure_pin(node.location.line, node.location.column)
+          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
+          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+              get_complex_type_methods(closure.return_type).include?(pin)
+            end
+            if match
+              match.macros.each do |macro|
+                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+              end
+              next
+            end
+          end
+        end
+      end
+      macro_pins
     end
 
     # @return [DocMap]
     def doc_map
-      @doc_map ||= DocMap.new([], [])
+      @doc_map ||= DocMap.new([], Workspace.new('.'))
     end
 
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
-      @doc_map&.uncached_gemspecs || []
+      doc_map.uncached_gemspecs || []
     end
 
     # @return [::Array<Gem::Specification>]
@@ -141,9 +185,10 @@ module Solargraph
       @@core_map.pins
     end
 
-    # @param name [String]
-    # @return [YARD::Tags::MacroDirective, nil]
+    # @param name [String, nil]
+    # @return [Solargraph::YardMap::Macro, nil]
     def named_macro name
+      # @sg-ignore Need to add nil check here
       store.named_macros[name]
     end
 
@@ -179,9 +224,11 @@ module Solargraph
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]
+    # @param loose_unions [Boolean] See #initialize
+    #
     # @return [ApiMap]
-    def self.load directory
-      api_map = new
+    def self.load directory, loose_unions: true
+      api_map = new(loose_unions: loose_unions)
       workspace = Solargraph::Workspace.new(directory)
       # api_map.catalog Bench.new(workspace: workspace)
       library = Library.new(workspace)
@@ -190,18 +237,19 @@ module Solargraph
       api_map
     end
 
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
-    def cache_all!(out)
-      @doc_map.cache_all!(out)
+    def cache_all_for_doc_map! out: $stderr, rebuild: false
+      doc_map.cache_all!(out, rebuild: rebuild)
     end
 
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean]
-    # @param out [IO, nil]
+    # @param out [StringIO, IO, nil]
     # @return [void]
-    def cache_gem(gemspec, rebuild: false, out: nil)
-      @doc_map.cache(gemspec, rebuild: rebuild, out: out)
+    def cache_gem gemspec, rebuild: false, out: nil
+      doc_map.cache(gemspec, rebuild: rebuild, out: out)
     end
 
     class << self
@@ -213,17 +261,19 @@ module Solargraph
     #
     #
     # @param directory [String]
-    # @param out [IO] The output stream for messages
+    # @param out [IO, StringIO, nil] The output stream for messages
+    # @param loose_unions [Boolean] See #initialize
+    #
     # @return [ApiMap]
-    def self.load_with_cache directory, out
-      api_map = load(directory)
+    def self.load_with_cache directory, out = $stderr, loose_unions: true
+      api_map = load(directory, loose_unions: loose_unions)
       if api_map.uncached_gemspecs.empty?
         logger.info { "All gems cached for #{directory}" }
         return api_map
       end
 
-      api_map.cache_all!(out)
-      load(directory)
+      api_map.cache_all_for_doc_map!(out: out)
+      load(directory, loose_unions: loose_unions)
     end
 
     # @return [Array<Solargraph::Pin::Base>]
@@ -238,11 +288,10 @@ module Solargraph
       store.pins_by_class(Pin::Keyword)
     end
 
-    # An array of namespace names defined in the ApiMap.
-    #
-    # @return [Set<String>]
-    def namespaces
-      store.namespaces
+    # @param name [String]
+    # @return [ComplexType, nil]
+    def unalias name
+      store.unalias(name)
     end
 
     # True if the namespace exists.
@@ -259,7 +308,7 @@ module Solargraph
     #
     # @param namespace [String] The namespace
     # @param contexts [Array<String>] The contexts
-    # @return [Array<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Constant, Solargraph::Pin::Namespace>]
     def get_constants namespace, *contexts
       namespace ||= ''
       gates = contexts.clone
@@ -310,19 +359,19 @@ module Solargraph
     #
     # @param pin [Pin::Reference]
     # @return [String, nil]
-    def dereference(pin)
+    def dereference pin
       store.constants.dereference(pin)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
-    def get_extends(fqns)
+    # @return [Array<Pin::Reference::Extend>]
+    def get_extends fqns
       store.get_extends(fqns)
     end
 
     # @param fqns [String]
-    # @return [Array<String>]
-    def get_includes(fqns)
+    # @return [Array<Pin::Reference::Include>]
+    def get_includes fqns
       store.get_includes(fqns)
     end
 
@@ -332,29 +381,50 @@ module Solargraph
     # @param namespace [String] A fully qualified namespace
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
-    def get_instance_variable_pins(namespace, scope = :instance)
+    def get_instance_variable_pins namespace, scope = :instance
       result = []
-      used = [namespace]
+      [namespace]
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
+        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
       result
     end
 
-    # @sg-ignore Missing @return tag for Solargraph::ApiMap#visible_pins
-    # @see Solargraph::Parser::FlowSensitiveTyping#visible_pins
-    def visible_pins(*args, **kwargs, &blk)
-      Solargraph::Parser::FlowSensitiveTyping.visible_pins(*args, **kwargs, &blk)
+    # Find a variable pin by name and where it is used.
+    #
+    # Resolves our most specific view of this variable's type by
+    # preferring pins created by flow-sensitive typing when we have
+    # them based on the Closure and Location.
+    #
+    # @param candidates [Array<Pin::BaseVariable>]
+    # @param name [String]
+    # @param closure [Pin::Closure]
+    # @param location [Location]
+    #
+    # @return [Pin::BaseVariable, nil]
+    def var_at_location candidates, name, closure, location
+      # @todo Location can be nil if clips have trouble finding node recipients
+      return unless location
+
+      with_correct_name = candidates.select { |pin| pin.name == name }
+      vars_at_location = with_correct_name.reject do |pin|
+        # visible_at? excludes the starting position, but we want to
+        # include it for this purpose
+        !pin.visible_at?(closure, location) && !pin.starts_at?(location)
+      end
+
+      vars_at_location.inject(&:combine_with)
     end
 
     # Get an array of class variable pins for a namespace.
     #
     # @param namespace [String] A fully qualified namespace
     # @return [Enumerable<Solargraph::Pin::ClassVariable>]
-    def get_class_variable_pins(namespace)
+    def get_class_variable_pins namespace
       prefer_non_nil_variables(store.get_class_variables(namespace))
     end
 
@@ -381,11 +451,6 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
-      if rooted_tag.start_with? 'Array('
-        # Array() are really tuples - use our fill, as the RBS repo
-        # does not give us definitions for it
-        rooted_tag = "Solargraph::Fills::Tuple(#{rooted_tag[6..-2]})"
-      end
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
@@ -421,7 +486,7 @@ module Solargraph
               comments: init_pin.comments,
               closure: init_pin.closure,
               source: init_pin.source,
-              type_location: init_pin.type_location,
+              type_location: init_pin.type_location
             )
             new_pin.parameters = init_pin.parameters.map do |init_param|
               param = init_param.clone
@@ -480,7 +545,7 @@ module Solargraph
       result = Set.new
       complex_type.each do |type|
         if type.duck_type?
-          result.add Pin::DuckMethod.new(name: type.to_s[1..-1], source: :api_map)
+          result.add Pin::DuckMethod.new(name: type.to_s[1..], source: :api_map)
           result.merge get_methods('Object')
         else
           unless type.nil? || type.name == 'void'
@@ -508,14 +573,17 @@ module Solargraph
     # @param name [String] Method name to look up
     # @param scope [Symbol] :instance or :class
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
-    # @param preserve_generics [Boolean]
+    # @param preserve_generics [Boolean] True to preserve any
+    #   unresolved generic parameters, false to erase them
     # @return [Array<Solargraph::Pin::Method>]
-    def get_method_stack rooted_tag, name, scope: :instance, visibility: [:private, :protected, :public], preserve_generics: false
+    def get_method_stack rooted_tag, name, scope: :instance, visibility: %i[private protected public],
+                         preserve_generics: false
       rooted_type = ComplexType.parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first
       methods = if namespace_pin.is_a?(Pin::Constant)
-                  type = namespace_pin.infer(self)
+                  type = namespace_pin.typify(self)
+                  type = namespace_pin.probe(self) unless type.defined?
                   if type.defined?
                     namespace_pin = store.get_path_pins(type.namespace).first
                     get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
@@ -534,7 +602,7 @@ module Solargraph
     # @deprecated Use #get_path_pins instead.
     #
     # @param path [String] The path to find
-    # @return [Enumerable<Solargraph::Pin::Base>]
+    # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
       resolve_method_aliases store.get_path_pins(path)
@@ -543,7 +611,7 @@ module Solargraph
     # Get an array of pins that match the specified path.
     #
     # @param path [String]
-    # @return [Enumerable<Pin::Base>]
+    # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
     end
@@ -633,18 +701,22 @@ module Solargraph
     # @param sup [String] The superclass
     # @param sub [String] The subclass
     # @return [Boolean]
-    def super_and_sub?(sup, sub)
+    def super_and_sub? sup, sub
       sup = ComplexType.try_parse(sup)
       sub = ComplexType.try_parse(sub)
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
+      # @sg-ignore flow-sensitive typing should be able to handle redefinition
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       sup = sup.simplify_literals.to_s
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
       while (sc = store.get_superclass(sc_fqns))
+        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
@@ -661,22 +733,30 @@ module Solargraph
     # @param module_ns [String] The module namespace (no type parameters)
     #
     # @return [Boolean]
-    def type_include?(host_ns, module_ns)
-      store.get_includes(host_ns).map { |inc_tag| inc_tag.parametrized_tag.name }.include?(module_ns)
+    def type_include? host_ns, module_ns
+      store.get_includes(host_ns).map { |inc_tag| inc_tag.type.name }.include?(module_ns)
     end
 
     # @param pins [Enumerable<Pin::Base>]
     # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
-    def resolve_method_aliases pins, visibility = [:public, :private, :protected]
+    def resolve_method_aliases pins, visibility = %i[public private protected]
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
+        # @sg-ignore Need to add nil check here
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact
-      logger.debug { "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}" }
-      GemPins.combine_method_pins_by_path(with_resolved_aliases)
+      logger.debug do
+        "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}"
+      end
+      with_resolved_aliases
+    end
+
+    # @return [Workspace, nil]
+    def workspace
+      doc_map.workspace
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
@@ -690,7 +770,7 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference(fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core)
+    def inner_get_methods_from_reference fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core
       logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
 
       # Ensure the types returned by the methods in the referenced
@@ -712,6 +792,12 @@ module Solargraph
       end
       # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolved_reference_type: #{resolved_reference_type} for type=#{type}: #{methods.map(&:name)}" }
       methods
+    end
+
+    # @param fq_sub_tag [String]
+    # @return [String, nil]
+    def qualify_superclass fq_sub_tag
+      store.qualify_superclass fq_sub_tag
     end
 
     private
@@ -737,11 +823,10 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    # rubocop:disable Metrics/CyclomaticComplexity
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
-      fqns_generic_params = rooted_type.all_params
+      rooted_type.all_params
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
@@ -752,7 +837,9 @@ module Solargraph
       # ensure we start out with any immediate methods in this
       # namespace so we roughly match the same ordering of get_methods
       # and obey the 'deep' instruction
-      direct_convention_methods, convention_methods_by_reference = environ.pins.partition { |p| p.namespace == rooted_tag }
+      direct_convention_methods, convention_methods_by_reference = environ.pins.partition do |p|
+        p.namespace == rooted_tag
+      end
       result.concat direct_convention_methods
 
       if deep && scope == :instance
@@ -764,39 +851,38 @@ module Solargraph
       # Store#get_methods doesn't know about full tags, just
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
-      methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort{ |a, b| a.name <=> b.name }
-      logger.info { "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}" }
+      methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort { |a, b| a.name <=> b.name }
+      logger.info do
+        "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}"
+      end
       result.concat methods
       if deep
         result.concat convention_methods_by_reference
 
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
-            const = get_constants('', *ref.closure.gates).find { |pin| pin.path.end_with? ref.name }
-            if const.is_a?(Pin::Namespace)
-              result.concat inner_get_methods(const.path, scope, visibility, deep, skip, true)
-            elsif const.is_a?(Pin::Constant)
-              type = const.infer(self)
-              result.concat inner_get_methods(type.namespace, scope, visibility, deep, skip, true) if type.defined?
-            else
-              referenced_tag = ref.parametrized_tag
-              next unless referenced_tag.defined?
-              result.concat inner_get_methods_from_reference(referenced_tag.to_s, namespace_pin, rooted_type, scope, visibility, deep, skip, true)
-            end
+            in_tag = dereference(ref)
+            # @sg-ignore Need to add nil check here
+            result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
+                                                           skip, true)
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, no_core)
+            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
+                                                           visibility, true, skip, no_core)
           end
         else
-          logger.info { "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}" }
+          logger.info do
+            "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}"
+          end
           store.get_extends(fqns).reverse.each do |em|
-            fqem = store.constants.dereference(em)
+            fqem = dereference(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope, visibility, true, skip, true)
+            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
+                                                           visibility, true, skip, true)
           end
           unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
@@ -811,17 +897,10 @@ module Solargraph
       end
       result
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
 
     # @return [Hash]
     def path_macros
       @path_macros ||= {}
-    end
-
-    # @param fq_sub_tag [String]
-    # @return [String, nil]
-    def qualify_superclass fq_sub_tag
-      store.qualify_superclass fq_sub_tag
     end
 
     # Get the namespace's type (Class or Module).
@@ -831,7 +910,7 @@ module Solargraph
     def get_namespace_type fqns
       return nil if fqns.nil?
       # @type [Pin::Namespace, nil]
-      pin = store.get_path_pins(fqns).select{|p| p.is_a?(Pin::Namespace)}.first
+      pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
       return nil if pin.nil?
       pin.type
     end
@@ -855,18 +934,21 @@ module Solargraph
 
     include Logging
 
-    private
-
     # @param alias_pin [Pin::MethodAlias]
     # @return [Pin::Method, nil]
-    def resolve_method_alias(alias_pin)
-      ancestors = store.get_ancestors(alias_pin.full_context.tag)
+    def resolve_method_alias alias_pin
+      ancestors = store.get_ancestors(alias_pin.full_context.reduce_class_type.tag)
+      # @type [Pin::Method, nil]
       original = nil
 
       # Search each ancestor for the original method
       ancestors.each do |ancestor_fqns|
         next if ancestor_fqns.nil?
-        ancestor_method_path = "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+        ancestor_method_path = if alias_pin.original == 'new' && alias_pin.scope == :class
+                                 "#{ancestor_fqns}#initialize"
+                               else
+                                 "#{ancestor_fqns}#{alias_pin.scope == :instance ? '#' : '.'}#{alias_pin.original}"
+                               end
 
         # Search for the original method in the ancestor
         original = store.get_path_pins(ancestor_method_path).find do |candidate_pin|
@@ -878,21 +960,29 @@ module Solargraph
             break resolved if resolved
           end
 
-          candidate_pin.is_a?(Pin::Method) && candidate_pin.scope == alias_pin.scope
+          candidate_pin.is_a?(Pin::Method)
         end
 
         break if original
       end
+      if original.nil?
+        # :nocov:
+        Solargraph.assert_or_log(:alias_target_missing) do
+          "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}"
+        end
+        return nil
+        # :nocov:
+      end
 
       # @sg-ignore ignore `received nil` for original
-      create_resolved_alias_pin(alias_pin, original) if original
+      create_resolved_alias_pin(alias_pin, original)
     end
 
     # Fast path for creating resolved alias pins without individual method stack lookups
     # @param alias_pin [Pin::MethodAlias] The alias pin to resolve
     # @param original [Pin::Method] The original method pin that was already found
     # @return [Pin::Method] The resolved method pin
-    def create_resolved_alias_pin(alias_pin, original)
+    def create_resolved_alias_pin alias_pin, original
       # Build the resolved method pin directly (same logic as resolve_method_alias but without lookup)
       args = {
         location: alias_pin.location,
@@ -908,7 +998,7 @@ module Solargraph
         return_type: original.return_type,
         source: :resolve_method_alias
       }
-      resolved_pin = Pin::Method.new **args
+      resolved_pin = Pin::Method.new(**args)
 
       # Clone signatures and parameters
       resolved_pin.signatures.each do |sig|
@@ -930,7 +1020,7 @@ module Solargraph
     # @param rooted_type [ComplexType]
     # @param pins [Enumerable<Pin::Base>]
     # @return [Array<Pin::Base>]
-    def erase_generics(namespace_pin, rooted_type, pins)
+    def erase_generics namespace_pin, rooted_type, pins
       return pins unless should_erase_generics_when_done?(namespace_pin, rooted_type)
 
       logger.debug("Erasing generics on namespace_pin=#{namespace_pin} / rooted_type=#{rooted_type}")
@@ -941,19 +1031,29 @@ module Solargraph
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def should_erase_generics_when_done?(namespace_pin, rooted_type)
+    def should_erase_generics_when_done? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !can_resolve_generics?(namespace_pin, rooted_type)
     end
 
     # @param namespace_pin [Pin::Namespace, Pin::Constant]
-    def has_generics?(namespace_pin)
+    def has_generics? namespace_pin
       namespace_pin.is_a?(Pin::Namespace) && !namespace_pin.generics.empty?
     end
 
     # @param namespace_pin [Pin::Namespace]
     # @param rooted_type [ComplexType]
-    def can_resolve_generics?(namespace_pin, rooted_type)
+    def can_resolve_generics? namespace_pin, rooted_type
       has_generics?(namespace_pin) && !rooted_type.all_params.empty?
+    end
+
+    protected
+
+    # @todo need to model type def statement in chains as a symbol so
+    #   that this overload of 'protected' will typecheck @sg-ignore
+    # @sg-ignore
+    def equality_fields
+      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires, @missing_docs,
+       @loose_unions]
     end
   end
 end

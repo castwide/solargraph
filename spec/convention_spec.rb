@@ -1,5 +1,6 @@
+# frozen_string_literal: true
+
 describe Solargraph::Convention do
-  # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
   it 'newly defined pins are resolved by ApiMap after file changes' do
     filename = 'test.rb'
 
@@ -106,5 +107,4 @@ describe Solargraph::Convention do
 
     described_class.unregister updated_dummy_convention
   end
-  # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
 end

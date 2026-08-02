@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Solargraph::Pin::Parameter do
   it 'detects block parameter return types from @yieldparam tags' do
     api_map = Solargraph::ApiMap.new
@@ -195,9 +197,25 @@ describe Solargraph::Pin::Parameter do
   it 'uses longer comment while combining compatible parameters' do
     loc = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0))
     block = Solargraph::Pin::Block.new(location: loc, name: 'Foo')
-    pin1 = Solargraph::Pin::Parameter.new(closure: block, name: 'bar')
-    pin2 = Solargraph::Pin::Parameter.new(closure: block, name: 'bar', comments: 'a comment')
+    pin1 = described_class.new(closure: block, name: 'bar')
+    pin2 = described_class.new(closure: block, name: 'bar', comments: 'a comment')
     expect(pin1.combine_with(pin2).comments).to eq('a comment')
+  end
+
+  it 'does not combine with local variables in different closures' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @return [Array<String>]
+        def strings; end
+      end
+      example = Example.new
+      str = example.strings.find { |str| str == 'foo' }
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin1, pin2 = api_map.source_map('test.rb').locals.select { |pin| pin.name == 'str' }
+    combo = pin2.combine_with(pin1)
+    expect(combo).to be(pin2)
   end
 
   it 'infers undefined types by default' do
@@ -207,7 +225,7 @@ describe Solargraph::Pin::Parameter do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    pin = api_map.source_map('test.rb').locals.select { |p| p.is_a?(Solargraph::Pin::Parameter) }.first
+    pin = api_map.source_map('test.rb').locals.select { |p| p.is_a?(described_class) }.first
     # expect(pin.infer(api_map)).to be_undefined
     expect(pin.typify(api_map)).to be_undefined
     expect(pin.probe(api_map)).to be_undefined
@@ -367,7 +385,7 @@ describe Solargraph::Pin::Parameter do
     expect(type.tag).to eq('String')
   end
 
-  context 'for instance methods' do
+  context 'when used in an instance methods' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example
@@ -397,7 +415,7 @@ describe Solargraph::Pin::Parameter do
     end
   end
 
-  context 'for class methods' do
+  context 'when used in an class method' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example
@@ -441,7 +459,7 @@ describe Solargraph::Pin::Parameter do
     end
   end
 
-  context 'for singleton methods' do
+  context 'when used in a singleton method' do
     it 'infers types from optarg values' do
       source = Solargraph::Source.load_string(%(
         class Example
@@ -472,6 +490,34 @@ describe Solargraph::Pin::Parameter do
       pin = api_map.source_map('test.rb').locals.first
       type = pin.probe(api_map)
       expect(type.simple_tags).to eq('String')
+    end
+
+    it 'handles a relative type name case' do
+      source = Solargraph::Source.load_string(%(
+        module A
+          module B
+            class Method
+            end
+          end
+        end
+
+        module A
+          module B
+            class C < B::Method
+              # @param alt [Method]
+              # @return [B::Method, nil]
+              def resolve_method alt
+                alt
+              end
+            end
+          end
+        end
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+
+      clip = api_map.clip_at('test.rb', [14, 16])
+      expect(clip.infer.rooted_tags).to eq('::A::B::Method')
     end
   end
 end

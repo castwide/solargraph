@@ -51,6 +51,8 @@ Plug-ins and extensions are available for the following editors:
 
 Solargraph's behavior can be controlled via optional [configuration](https://solargraph.org/guides/configuration) files. The highest priority file is a `.solargraph.yml` file at the root of the project. If not present, any global configuration at `~/.config/solargraph/config.yml` will apply. The path to the global configuration can be overridden with the `SOLARGRAPH_GLOBAL_CONFIG` environment variable.
 
+Use `bundle exec solargraph config` to create a configuration file.
+
 ### Plugins
 
 Solargraph supports [plugins](https://solargraph.org/guides/plugins) that implement their own Solargraph features, such as diagnostics reporters and conventions to provide LSP features and type-checking, e.g. for frameworks which use metaprogramming and/or DSLs.
@@ -132,9 +134,7 @@ See [https://solargraph.org/guides](https://solargraph.org/guides) for more tips
 
 ### Development
 
-To see more logging when typechecking or running specs, set the
-`SOLARGRAPH_LOG` environment variable to `debug` or `info`.  `warn` is
-the default value.
+To see more logging when typechecking or running specs, set the `SOLARGRAPH_LOG` environment variable to `debug` or `info`.  `warn` is the default value.
 
 Code contributions are always appreciated. Feel free to fork the repo and submit pull requests. Check for open issues that could use help. Start new issues to discuss changes that have a major impact on the code or require large time commitments.
 

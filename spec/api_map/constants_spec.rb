@@ -20,6 +20,67 @@ describe Solargraph::ApiMap::Constants do
       expect(resolved).to eq('Foo::Bar')
     end
 
+    it 'resolves constants in includes' do
+      code = %(
+        module A
+          module Parser
+            module C
+              # @return [String]
+              def baz; "abc"; end
+            end
+
+            B = C
+          end
+
+          class Foo
+            include Parser::B
+
+            # @return [String]
+            def bar
+              baz
+            end
+          end
+        end)
+      checker = Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves straightforward mixins' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        module Bar
+          Baz = 'baz'
+        end
+
+        class Foo
+          include Bar
+        end
+      ), 'test.rb')
+
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = described_class.new(store)
+      pin = source_map.first_pin('Foo')
+      resolved = constants.resolve('Baz', pin.gates)
+      expect(resolved).to eq('Bar::Baz')
+    end
+
+    it 'resolves mixin living under same namespace' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        class Foo
+          module Bar
+            Baz = 'baz'
+          end
+
+          include Bar
+        end
+      ), 'test.rb')
+
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = described_class.new(store)
+      pin = source_map.first_pin('Foo')
+      resolved = constants.resolve('Baz', pin.gates)
+      expect(resolved).to eq('Foo::Bar::Baz')
+    end
+
     it 'returns namespaces for nested namespaces' do
       source_map = Solargraph::SourceMap.load_string(%(
         module Foo

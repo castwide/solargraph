@@ -1,3 +1,86 @@
+## 0.60.2 - June 27, 2026
+- Extraneous debug output (#1214)
+- Pin rdoc to ~> 7.0 (#1216)
+
+## 0.60.1 - June 20, 2026
+- Process macro directives from included and extended modules (#1210)
+- Flaky pathname issue (#1211)
+- Check object equality in Pin::Base#nearly? (#1213)
+
+## 0.60.0 - June 15, 2026
+- Add YARD macro support for DSL methods (#1187)
+- YARD macros - More typecheck fixes (#1188)
+- Macro fixes (#1189)
+- Unused macro methods (#1191)
+- Transitive macros (#1203)
+- Allow CTRL-C interruption of profile command + macro debug logs (#1206)
+- Support for Inline RBS (#1173)
+- Make typechecker errors vim quickfix friendly (#1072)
+- Generate RBS (#812)
+
+## 0.59.2 - May 22, 2026
+- Convert RBS implicit nil annotations (#1197)
+- Temporary job stubs (#1200)
+- Limit pin combination to doc maps (#1195)
+- Ignore literal values in type inference (#1201)
+- Fix for clips with flaky node recipients
+
+## 0.59.1 - May 18, 2026
+- Fix signatureHelp bug (#1185)
+- Linting fixes for Ruby 3.1 (#1193)
+- Parameters shadow local variables with same name (#1192)
+
+## 0.59.0 - May 13, 2026
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Pre-release branch 2026-01-12 (#1152)
+- 2026-01-27 dev branch (#1165)
+- Position linting (#1179)
+- Revert YARD and RBS pin caching (#1180)
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Limit default include glob to current directory (#1184) 
+- Require Ruby >= 3.1.0
+- Require RBS >= 3.10.0
+- Stub combine_same_type_arity_signatures (#1186)
+
+## 0.58.3 - March 9, 2026
+- Ignore workspace dependencies in cache processes (#1174)
+
+## 0.58.2 - January 19, 2026
+- Avoid rbs pollution (#1146)
+- Fix 'solargraph pin --references ClassName' private method call (#1150)
+- Improve memory efficiency of Position class (#1054)
+- Raise InvalidOffsetError for offsets > text (#1155)
+
+## 0.58.1 - January 2, 2026
+- Normalize line endings to LF (#1142)
+
+## 0.58.0 - January 1, 2026
+- Faster constant resolution (#1083)
+- [regression] Handle RBS static method aliases (#1094)
+- More type fills and shims (#1005)
+- Fix resolution in blocks in type checker (#890)
+- Annotation fixes for strong typechecking (#1057)
+- Remove dead code (#1077)
+- Fix flakey spec (#1080)
+- Fix bad sexpr generation in op_asgn (#1089)
+- Opt-in for MFA requirement (#730)
+- [regression] Fix resolution issues with namespaces from YARD  (#1097)
+- Improve a pin combination case around selfy types (#1024)
+- Rescue reference errors in hosts (#1105)
+- Relax bundler runtime dependency version constraint to support newer versions (#1125)
+- Remove stale Pathname test (#1135)
+- Enable strong type checking in CI (#928)
+- Stale sg-ignore
+- Use rbs 3.9.5 in tests (#1136)
+- Drop broken 'namespaces' method (#1065)
+- Add ActiveRecord example from RBS (#1074)
+- Keep workspace directories as absolute paths (#1076)
+- Handle bad gem_dir from gemspec object (#1079)
+- Test for absolute require paths (#1137)
+- [regression] Fix resolution of ambiguous argument types (#1098)
+- Remove sg-ignore for String#=~ (#1138)
+- Allow levels to be changed for typechecking rules in .solargraph.yml (#1126)
+
 ## 0.57.0 - September 16, 2025
 - Support ActiveSupport::Concern pattern for class methods (#948)
 - More CI checks (#996)
