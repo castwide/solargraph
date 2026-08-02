@@ -709,7 +709,7 @@ module Solargraph
       # @sg-ignore Need to add nil check here
       def client_supports_progress?
         # @sg-ignore Need to add nil check here
-        !!(client_capabilities['window'] && client_capabilities['window']['workDoneProgress'])
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
       private
@@ -866,7 +866,7 @@ module Solargraph
       # @sg-ignore Need to add nil check here
       def prepare_rename?
         # @sg-ignore Need to add nil check here
-        !!(client_capabilities['rename'] && client_capabilities['rename']['prepareSupport'])
+        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
       # @param library [Library]

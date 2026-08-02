@@ -139,10 +139,10 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore Downcast fix pending in #1245
       def rooted_name type_name
-        # @type [String]
         name = type_name.to_s
-        RBS_TO_CLASS[name] || name
+        RBS_TO_CLASS.fetch(name, name)
       end
 
       # fqns names are implicitly fully qualified - they are relative
@@ -151,13 +151,36 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore Downcast fix pending in #1245
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
         end
-        # @type [String]
         ns = type_name.relative!.to_s
-        RBS_TO_CLASS[ns] || ns
+        RBS_TO_CLASS.fetch(ns, ns)
+      end
+
+      # @param type_name [RBS::TypeName]
+      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
+      # @return [ComplexType::UniqueType]
+      def build_type type_name, type_args = []
+        # we use .absolute? below to tell the type object what to
+        # expect
+        rbs_name = type_name.relative!.to_s
+        base = RBS_TO_CLASS.fetch(rbs_name, rbs_name)
+
+        params = type_args.map { |a| RbsTranslator.to_complex_type(a) }
+        # @todo Tuples are in flux
+        # tuples have their own class and are handled in other_type_to_type
+        if base == 'Hash' && params.length == 2
+          # @sg-ignore Downcast fix pending in #1245
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?,
+                                                                           parameters_type: :hash)
+        else
+          # @sg-ignore Downcast fix pending in #1245
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: type_name.absolute?,
+                                                                             parameters_type: :list)
+        end
       end
 
       # @param decl [RBS::AST::Declarations::Module::Self]
@@ -564,12 +587,96 @@ module Solargraph
       # @param location [RBS::Location, nil]
       # @return [Solargraph::Location, nil]
       def location_decl_to_pin_location(location)
-        return nil if location.nil? || location.name.nil?
+        return nil if location&.name.nil?
 
+        # @sg-ignore Nil check fix pending in #1245
         start_pos = Position.new(location.start_line - 1, location.start_column)
+        # @sg-ignore Nil check fix pending in #1245
         end_pos = Position.new(location.end_line - 1, location.end_column)
         range = Range.new(start_pos, end_pos)
+        # @sg-ignore Nil check fix pending in #1245
         Location.new(location.name.to_s, range)
+      end
+
+      # @param type [RBS::MethodType, RBS::Types::Block]
+      # @param pin [Pin::Method]
+      # @param implicit_nil [Boolean]
+      # @return [Array(Array<Pin::Parameter>, ComplexType)]
+      def parts_of_function type, pin, implicit_nil
+        type_location = pin.type_location
+        if defined?(RBS::Types::UntypedFunction) && type.type.is_a?(RBS::Types::UntypedFunction)
+          return [
+            [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs,
+                                            type_location: type_location)],
+            # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+            method_type_to_type(type, implicit_nil)
+          ]
+        end
+
+        parameters = []
+        arg_num = -1
+        type.type.required_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
+                                                         return_type: other_type_to_type(param.type),
+                                                         source: :rbs, type_location: type_location)
+        end
+        type.type.optional_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :optarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
+                                                         return_type: other_type_to_type(param.type),
+                                                         type_location: type_location,
+                                                         source: :rbs)
+        end
+        if type.type.rest_positionals
+          name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
+          # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+          inner_rest_positional_type = other_type_to_type(type.type.rest_positionals.type)
+          rest_positional_type = ComplexType::UniqueType.new('Array',
+                                                             [],
+                                                             [inner_rest_positional_type],
+                                                             rooted: true, parameters_type: :list)
+          parameters.push Solargraph::Pin::Parameter.new(decl: :restarg, name: name, closure: pin,
+                                                         source: :rbs, type_location: type_location,
+                                                         return_type: rest_positional_type)
+        end
+        type.type.trailing_positionals.each do |param|
+          # @sg-ignore Unresolved call to name
+          name = param.name ? param.name.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :arg, name: name, closure: pin, source: :rbs,
+                                                         type_location: type_location)
+        end
+        type.type.required_keywords.each do |orig, param|
+          # @sg-ignore Unresolved call to to_s
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
+                                                         return_type: other_type_to_type(param.type),
+                                                         source: :rbs, type_location: type_location)
+        end
+        type.type.optional_keywords.each do |orig, param|
+          # @sg-ignore Unresolved call to to_s
+          name = orig ? orig.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwoptarg, name: name, closure: pin,
+                                                         # @sg-ignore RBS generic type understanding issue
+                                                         return_type: other_type_to_type(param.type),
+                                                         type_location: type_location,
+                                                         source: :rbs)
+        end
+        if type.type.rest_keywords
+          name = type.type.rest_keywords.name ? type.type.rest_keywords.name.to_s : "arg_#{arg_num += 1}"
+          parameters.push Solargraph::Pin::Parameter.new(decl: :kwrestarg,
+                                                         name: type.type.rest_keywords.name.to_s, closure: pin,
+                                                         source: :rbs, type_location: type_location)
+        end
+
+        # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+        return_type = method_type_to_type(type, implicit_nil)
+        [parameters, return_type]
       end
 
       # @param type [RBS::MethodType,RBS::Types::Block]

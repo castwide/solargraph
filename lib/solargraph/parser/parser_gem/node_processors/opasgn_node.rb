@@ -21,10 +21,9 @@ module Solargraph
               # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
-              # @sg-ignore Need to add nil check here
-              target_type = target.type
               Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       "Unexpected op_asgn target type: #{target_type}")
+                                       # @sg-ignore Downcast fix pending in #1245
+                                       "Unexpected op_asgn target type: #{target.type}")
             end
           end
 

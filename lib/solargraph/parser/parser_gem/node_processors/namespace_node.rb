@@ -47,12 +47,11 @@ module Solargraph
           def parameters_from_inline_rbs
             source = region.source.code_for(node)
             match = source.match(/[^\n]*?#\s?+\[([^\]]*)/)
-            return unless match
+            return unless match && match[1]
 
-            captured = match[1]
-            return unless captured
-
-            code = captured.strip
+            # @sg-ignore Nil check fix pending in #1245
+            code = match[1].strip
+            # @sg-ignore Nil check fix pending in #1245
             return if code.empty?
 
             "<#{code}>"

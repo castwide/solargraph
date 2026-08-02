@@ -25,13 +25,14 @@ module Solargraph
           # @param node [::Parser::AST::Node]
           def match? node
             return false unless node&.type == :casgn
-            assignment_node = node.children[2]
-            return false if assignment_node.nil?
+            return false if node.children[2].nil?
 
-            data_node = if assignment_node.type == :block
-                          assignment_node.children[0]
+            # @sg-ignore Downcast fix pending in #1245
+            data_node = if node.children[2].type == :block
+                          # @sg-ignore Downcast fix pending in #1245
+                          node.children[2].children[0]
                         else
-                          assignment_node
+                          node.children[2]
                         end
 
             # @sg-ignore Need to add nil check here
@@ -40,9 +41,9 @@ module Solargraph
         end
 
         def class_name
-          namespace_node = node.children[0]
-          if namespace_node
-            Parser::NodeMethods.unpack_name(namespace_node) + "::#{node.children[1]}"
+          if node.children[0]
+            # @sg-ignore Downcast fix pending in #1245
+            Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
           else
             node.children[1].to_s
           end
@@ -53,13 +54,12 @@ module Solargraph
         # @return [Parser::AST::Node]
         # @sg-ignore Need to add nil check here
         def data_node
-          assignment_node = node.children[2]
           # @sg-ignore Need to add nil check here
-          if assignment_node.type == :block
+          if node.children[2].type == :block
             # @sg-ignore Need to add nil check here
-            assignment_node.children[0]
+            node.children[2].children[0]
           else
-            assignment_node
+            node.children[2]
           end
         end
       end

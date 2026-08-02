@@ -9,24 +9,26 @@ module Solargraph
 
           # @return [void]
           def process
-            exception_local = node.children[1] # Exception local variable name
-            if exception_local
-              here = get_node_start_position(exception_local)
+            if node.children[1] # Exception local variable name
+              # @sg-ignore Nil check fix pending in #1245
+              here = get_node_start_position(node.children[1])
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
-              loc = get_node_location(exception_local)
-              exception_classes_node = node.children[0]
-              types = if exception_classes_node.nil?
+              # @sg-ignore Nil check fix pending in #1245
+              loc = get_node_location(node.children[1])
+              types = if node.children[0].nil?
                         ['Exception']
                       else
-                        exception_classes_node.children.map do |child|
+                        # @sg-ignore Nil check fix pending in #1245
+                        node.children[0].children.map do |child|
                           unpack_name(child)
                         end
                       end
               locals.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
-                name: exception_local.children[0].to_s,
+                # @sg-ignore Nil check fix pending in #1245
+                name: node.children[1].children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,
                 source: :parser
