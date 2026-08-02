@@ -804,7 +804,8 @@ module Solargraph
     #
     # @return [Array<Gem::Specification>, nil]
     def resolve_require require_path
-      # @sg-ignore Unresolved call to directory on Solargraph::Workspace, nil
+      raise "Unable to resolve require '#{require_path}' without a workspace" if workspace.nil?
+
       Workspace::Gemspecs.new(workspace.directory).resolve_require require_path
     end
 
