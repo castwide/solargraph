@@ -19,8 +19,9 @@ module Solargraph
               # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
+              target_type = target.type
               Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       "Unexpected op_asgn target type: #{target.type}")
+                                       "Unexpected op_asgn target type: #{target_type}")
             end
           end
 

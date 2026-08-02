@@ -118,8 +118,9 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
-                                       NodeChainer.chain(n.children[1], @filename, n)])
+            or_lhs = NodeChainer.chain(n.children[0], @filename)
+            or_rhs = NodeChainer.chain(n.children[1], @filename, n)
+            result.push Chain::Or.new([or_lhs, or_rhs])
           elsif n.type == :if
             then_clause = if n.children[1]
                             NodeChainer.chain(n.children[1], @filename, n)

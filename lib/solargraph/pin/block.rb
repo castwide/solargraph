@@ -51,7 +51,7 @@ module Solargraph
           yield_type = yield_types.first
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
-        parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
+        parameters.each_with_index.map { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
       end
 
       # @param api_map [ApiMap]

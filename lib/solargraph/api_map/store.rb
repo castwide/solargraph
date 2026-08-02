@@ -127,7 +127,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        index.path_pin_hash[path]
+        index.path_pin_hash[path] || []
       end
 
       # @param fqns [String, nil]
@@ -215,7 +215,7 @@ module Solargraph
           base = ''
           name = fqns
         end
-        fqns_pins_map[[base, name]]
+        fqns_pins_map[[base, name]] || []
       end
 
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
