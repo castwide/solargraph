@@ -187,14 +187,10 @@ module Solargraph
         unless assignment_types.empty?
           # @type [Array<ComplexType::UniqueType>]
           items = assignment_types.flat_map(&:items).uniq
-          # Drop a literal item (e.g. `0`) when its non-literal base
-          # type (e.g. `Integer`) is also present in the same union -
-          # a later, wider assignment (`index += 1`) already
-          # subsumes it, so keeping both is redundant and reads as if
-          # the literal value were still reachable.
-          non_literal_names = items.reject(&:literal?).map(&:name)
-          items = items.reject { |item| item.literal? && non_literal_names.include?(item.non_literal_name) }
-          type_from_assignment = ComplexType.new(items)
+          # A later, wider assignment (e.g. `index += 1`) can leave a
+          # stale literal (e.g. `0`) alongside its own non-literal
+          # base type in the union - drop the redundant literal.
+          type_from_assignment = ComplexType.new(items).without_redundant_literals
         end
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 

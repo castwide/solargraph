@@ -227,11 +227,12 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
-        return true if atype.conforms_to?(api_map,
-                                          ptype,
-                                          :method_call,
-                                          %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        return false unless atype.conforms_to?(api_map,
+                                               ptype,
+                                               :method_call,
+                                               %i[allow_empty_params allow_undefined]) || ptype.generic?
+
+        literal_arg_matches? ptype, atype
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs
@@ -245,6 +246,42 @@ module Solargraph
 
       def generate_complex_type
         nil
+      end
+
+      # #compatible_arg? alone is too permissive for picking *which*
+      # overload to use for return-type inference: it treats any
+      # Integer as "compatible" with a literal-0-typed parameter
+      # (correct for general call-validity checking - you can call
+      # `array[i]` with any Integer `i` - but wrong for overload
+      # *selection*, where it would make the first literal-typed
+      # overload always win over the safe catch-all for any argument
+      # that merely happens to be assignable to it). When this
+      # parameter's type is a literal type, require every possible
+      # value of the argument to also be literal, so a non-literal
+      # (or not-entirely-literal) argument falls through to a less
+      # specific overload instead.
+      #
+      # @param ptype [ComplexType]
+      # @param atype [ComplexType]
+      # @return [Boolean]
+      def literal_arg_matches? ptype, atype
+        return true unless ptype.items.any? { |item| dispatch_literal?(item) }
+
+        atype.items.all?(&:literal?)
+      end
+
+      # nil/true/false are technically "literal" per
+      # ComplexType::UniqueType#literal? (their non_literal_name is
+      # NilClass/TrueClass/FalseClass), but they're singletons, not
+      # dispatch-relevant values the way `0` vs `1` are for tuple
+      # indexing - excluding them keeps ordinary `T?`/nilable params
+      # (extremely common, e.g. String#split's `(Regexp | string |
+      # nil pattern)`) from tripping #literal_arg_matches?.
+      #
+      # @param unique_type [ComplexType::UniqueType]
+      # @return [Boolean]
+      def dispatch_literal? unique_type
+        unique_type.literal? && !unique_type.singleton?
       end
 
       # @return [YARD::Tags::Tag, nil]

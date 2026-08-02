@@ -434,10 +434,15 @@ module Solargraph
     # @param sig [Pin::Signature]
     # @param pin [Pin::Method]
     # @param receiver_type [ComplexType] the type of the object the
-    #   method is being called on, used to resolve the restarg's
-    #   declared type (e.g. `Elem` for `Array#push`) against the
-    #   receiver's actual generic parameters (e.g. `Integer` for an
-    #   `Array<Integer>` receiver)
+    #   method is being called on. Resolving a signature's generics
+    #   (e.g. `Elem`) against the receiver's actual generic
+    #   parameters (e.g. `Integer` for an `Array<Integer>` receiver)
+    #   is a general problem, but this is currently only plumbed
+    #   through to the restarg path below (see #restarg_problems_for)
+    #   - fixed-arity params still get their types from `params`
+    #   (built by #param_details_from_stack), which doesn't resolve
+    #   against the receiver. Generalizing that is tracked as a
+    #   follow-up, not attempted here.
     #
     # @return [Array<Problem>]
     def signature_argument_problems_for location, locals, closure_pin, params, arguments, sig, pin, receiver_type
