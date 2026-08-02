@@ -236,7 +236,7 @@ module Solargraph
         end
 
         # @param type [ComplexType]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @return [ComplexType]
         def with_params type, context
           return type unless type.to_s.include?('$')
@@ -250,7 +250,7 @@ module Solargraph
         end
 
         # @param api_map [ApiMap]
-        # @param context [ComplexType, ComplexType::UniqueType]
+        # @param context [Type]
         # @param block_parameter_types [::Array<ComplexType>]
         # @param locals [::Array<Pin::LocalVariable>]
         # @return [ComplexType, nil]

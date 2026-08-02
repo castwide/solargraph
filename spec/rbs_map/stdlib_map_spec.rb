@@ -50,7 +50,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'processes RBS module aliases' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     yaml_pins = constant_pins.select do |pin|
@@ -63,7 +63,7 @@ describe Solargraph::RbsMap::StdlibMap do
   end
 
   it 'pins are marked as coming from RBS parsing' do
-    map = Solargraph::RbsMap::StdlibMap.load('yaml')
+    map = described_class.load('yaml')
     store = Solargraph::ApiMap::Store.new(map.pins)
     constant_pins = store.get_constants('')
     pin = constant_pins.first
