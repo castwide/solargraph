@@ -10,12 +10,29 @@ describe Solargraph::Diagnostics::RubocopHelpers, order: :defined do
       old_post_reset_hooks = Gem.post_reset_hooks.dup
       Gem.post_reset_hooks.clear
       Gem.paths = { 'GEM_PATH' => [custom_gem_path, *old_gem_path].join(Gem.path_separator) }
+      # Whether our require_rubocop(custom_version) call below actually
+      # swapped in the fixture version, versus being a no-op because
+      # something else in this process (e.g. a `require 'rubocop'` at the
+      # top of another spec file) already loaded the real gem first -
+      # Kernel#require only ever executes a given resolved path once.
       example.run
+      swapped_to_custom_version = defined?(RuboCop) && custom_version == RuboCop::Version::STRING
       old_post_reset_hooks.each(&Gem.post_reset_hooks.method(:<<))
       Gem.paths = { 'GEM_PATH' => old_gem_path.join(Gem.path_separator) }
       # Cleanup loaded classes from custom gem path
       $LOAD_PATH.delete_if { |path| path[custom_gem_path] }
-      Object.send(:remove_const, 'RuboCop')
+      # RuboCop is a process-global constant, not scoped to this example -
+      # other specs/code running later in this same process (formatting,
+      # Library#diagnose, etc.) expect it to stay defined as the real,
+      # bundled version. Only remove/reload it if we actually swapped it
+      # out for the fixture version above; otherwise it's already the
+      # real version (untouched), and remove_const would just leave it
+      # undefined, since re-requiring the same already-loaded path is a
+      # no-op and won't redefine it.
+      if swapped_to_custom_version
+        Object.send(:remove_const, 'RuboCop')
+        described_class.require_rubocop
+      end
     end
 
     let(:custom_version) { '0.0.0' }

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'shellwords'
 
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
@@ -28,7 +29,12 @@ module Solargraph
       end
 
       Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
-      cmd = "yardoc --db #{path} --no-output --plugin solargraph"
+      # Resolve the actual executable instead of relying on a bare
+      # `yardoc` being on PATH - it may only exist inside the current
+      # bundle's own bin directory (e.g. when running outside `bundle
+      # exec`, or in an unbundled environment/subprocess).
+      yardoc_bin = Gem.bin_path('yard', 'yardoc')
+      cmd = "#{Shellwords.escape(yardoc_bin)} --db #{path} --no-output --plugin solargraph"
       yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
       Solargraph.logger.debug { "Running: #{cmd}" }
       # @todo set these up to run in parallel

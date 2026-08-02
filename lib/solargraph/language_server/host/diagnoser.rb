@@ -47,14 +47,15 @@ module Solargraph
         def start
           return unless @stopped
           @fully_stopped = @stopped = false
-          old_thread_id = Thread.current.object_id
           Thread.new do
             until stopped?
-              $stderr.puts "Diagnoser: start tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               tick
-              $stderr.puts "Diagnoser: end tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               sleep 0.1
             end
+          ensure
+            # Guarantee fully_stopped? eventually becomes true even if tick
+            # raised something unexpected, so Host#fully_stop can't hang
+            # forever waiting on a thread that already died.
             @fully_stopped = true
           end
           self
@@ -79,6 +80,12 @@ module Solargraph
             #   but it's quick and easy.
             Logging.logger.warn "Deferring diagnosis due to invalid offset: #{current}"
             mutex.synchronize { queue.push current }
+          rescue StandardError => e
+            # Diagnosing a single file shouldn't be able to permanently
+            # kill the background thread (e.g. a file/directory disappearing
+            # mid-diagnosis, or a reporter misconfiguration) - log it and
+            # keep processing the rest of the queue.
+            Logging.logger.warn "Error diagnosing #{current}: [#{e.class}] #{e.message}"
           end
         end
 

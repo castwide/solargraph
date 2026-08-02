@@ -25,6 +25,7 @@ module Solargraph
           @mutex = Mutex.new
           @resource = ConditionVariable.new
           @stopped = true
+          @fully_stopped = true
         end
 
         # pending handle messages
@@ -37,9 +38,17 @@ module Solargraph
           @stopped
         end
 
+        def fully_stopped?
+          @fully_stopped
+        end
+
         # @return [void]
         def stop
           @stopped = true
+          # Wake up a thread that may be blocked in tick's
+          # @resource.wait with an empty queue, so it can notice
+          # stopped? and exit instead of hanging forever.
+          @mutex.synchronize { @resource.signal }
         end
 
         # @param message [Hash] The message to handle. Will be forwarded to Host#receive
@@ -54,9 +63,11 @@ module Solargraph
         # @return [void]
         def start
           return unless @stopped
-          @stopped = false
+          @fully_stopped = @stopped = false
           Thread.new do
             tick until stopped?
+          ensure
+            @fully_stopped = true
           end
         end
 
@@ -66,7 +77,8 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
-          # @sg-ignore Need to add nil check here
+          return if message.nil?
+
           handler = @host.receive(message)
           handler&.send_response
         end

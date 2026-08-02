@@ -487,7 +487,7 @@ module Solargraph
       end
 
       def fully_stopped?
-        @stopped && diagnoser.fully_stopped?
+        @stopped && diagnoser.fully_stopped? && message_worker.fully_stopped?
       end
 
       # Locate multiple pins that match a completion item. The first match is

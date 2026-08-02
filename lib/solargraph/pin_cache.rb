@@ -216,7 +216,14 @@ module Solargraph
         base = File.dirname(file)
         FileUtils.mkdir_p base unless File.directory?(base)
         ser = Marshal.dump(pins)
-        File.write file, ser, mode: 'wb'
+        # Write to a temp file in the same directory and rename into place
+        # (rename is atomic on the same filesystem) so that concurrent
+        # readers/writers - e.g. multiple parallel_tests worker processes
+        # caching the same gem for the first time - never observe a
+        # partially-written or corrupted cache file.
+        tmp = "#{file}.#{Process.pid}.#{Thread.current.object_id}.tmp"
+        File.write tmp, ser, mode: 'wb'
+        File.rename tmp, file
         logger.debug { "Cache#save: Saved #{pins.length} pins to #{file}" }
       end
 
