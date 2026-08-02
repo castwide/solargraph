@@ -133,6 +133,7 @@ module Solargraph
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+        # @sg-ignore Need to add nil check here
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
         (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end
@@ -203,8 +204,11 @@ module Solargraph
             "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts begin; #{command}; end.to_json }"
           ]
           o, e, s = Open3.capture3(*cmd)
+          # @sg-ignore Solargraph can't resolve which Open3.capture3 overload applies here,
+          #   so s is typed as possibly nil
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
+            # @sg-ignore Need to add nil check here
             o && !o.empty? ? JSON.parse(o.split("\n").last) : nil
           else
             Solargraph.logger.warn e
@@ -343,8 +347,10 @@ module Solargraph
       # @return [Gem::Specification]
       def gemspec_or_preference gemspec
         return gemspec unless preference_map.key?(gemspec.name)
+        # @sg-ignore Need to add nil check here
         return gemspec if gemspec.version == preference_map[gemspec.name].version
 
+        # @sg-ignore Need to add nil check here
         change_gemspec_version gemspec, preference_map[gemspec.name].version
       end
 
