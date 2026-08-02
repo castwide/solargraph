@@ -110,6 +110,7 @@ module Solargraph
 
     # @param path [String]
     # @return [Pin::Base]
+    # @sg-ignore Need to add nil check here
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -124,6 +125,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Method,Pin::Namespace]
+    # @sg-ignore Need a downcast here
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
@@ -131,6 +133,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Closure]
+    # @sg-ignore Need a downcast here
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end
