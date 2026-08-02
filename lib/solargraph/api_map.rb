@@ -118,7 +118,7 @@ module Solargraph
       recreate_docmap = @unresolved_requires != unresolved_requires ||
                         # @sg-ignore Unresolved call to rbs_collection_path on Solargraph::Workspace, nil
                         workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
-                        @doc_map.uncached_gemspecs.any?
+                        @doc_map.any_uncached?
 
       if recreate_docmap
         @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
@@ -168,16 +168,6 @@ module Solargraph
     # @return [::Array<Gem::Specification>]
     def uncached_gemspecs
       doc_map.uncached_gemspecs || []
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_rbs_collection_gemspecs
-      @doc_map.uncached_rbs_collection_gemspecs
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_yard_gemspecs
-      @doc_map.uncached_yard_gemspecs
     end
 
     # @return [Enumerable<Pin::Base>]
@@ -241,7 +231,7 @@ module Solargraph
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
     # @return [void]
     def cache_all_for_doc_map! out: $stderr, rebuild: false
-      doc_map.cache_all!(out, rebuild: rebuild)
+      doc_map.cache_doc_map_gems!(out, rebuild: rebuild)
     end
 
     # @param gemspec [Gem::Specification]
@@ -660,6 +650,7 @@ module Solargraph
     # @param cursor [Source::Cursor]
     # @return [SourceMap::Clip]
     def clip cursor
+      # @sg-ignore Need to add nil check here
       raise FileNotFoundError, "ApiMap did not catalog #{cursor.filename}" unless source_map_hash.key?(cursor.filename)
 
       SourceMap::Clip.new(self, cursor)
@@ -751,10 +742,10 @@ module Solargraph
       logger.debug do
         "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}"
       end
-      with_resolved_aliases
+      GemPins.combine_method_pins_by_path(with_resolved_aliases)
     end
 
-    # @return [Workspace, nil]
+    # @return [Workspace]
     def workspace
       doc_map.workspace
     end
