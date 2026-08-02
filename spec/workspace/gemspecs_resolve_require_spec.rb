@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'benchmark'
 require 'fileutils'
 require 'tmpdir'
 require 'rubygems/commands/install_command'
@@ -8,38 +9,6 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
   subject(:specs) { gemspecs.resolve_require(require) }
 
   let(:gemspecs) { described_class.new(dir_path) }
-
-  def find_or_install gem_name, version
-    Gem::Specification.find_by_name(gem_name, version)
-  rescue Gem::LoadError
-    install_gem(gem_name, version)
-  end
-
-  def add_bundle
-    # write out Gemfile
-    File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
-      source 'https://rubygems.org'
-      gem 'backport'
-    GEMFILE
-    # run bundle install
-    output, status = Solargraph.with_clean_env do
-      Open3.capture2e('bundle install --verbose', chdir: dir_path)
-    end
-    raise "Failure installing bundle: #{output}" unless status.success?
-    # ensure Gemfile.lock exists
-    return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
-    raise "Gemfile.lock not found after bundle install in #{dir_path}"
-  end
-
-  def install_gem gem_name, version
-    Bundler.with_unbundled_env do
-      cmd = Gem::Commands::InstallCommand.new
-      cmd.handle_options [gem_name, '-v', version]
-      cmd.execute
-    rescue Gem::SystemExitException => e
-      raise unless e.exit_code == 0
-    end
-  end
 
   context 'with local bundle' do
     let(:dir_path) { File.realpath(Dir.pwd) }
@@ -91,6 +60,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:materialized_for_installation).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:stub).and_return(false)
       allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: stub_value)
@@ -141,6 +111,52 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
+    describe '#materialize_specs_for_installation' do
+      subject(:materialized) { gemspecs.send(:materialize_specs_for_installation, [specish]) }
+
+      context 'when the object has the modern materialized_for_installation wrapper' do
+        let(:specish) { double(materialized_for_installation: :wrapped) } # rubocop:disable RSpec/VerifiedDoubles
+
+        it 'calls the wrapper' do
+          expect(materialized).to eq([:wrapped])
+        end
+      end
+
+      context 'when materialize_for_installation takes no arguments (older Bundler)' do
+        # a real zero-arg method, not an RSpec double stub, since stubbed
+        # methods always report variadic arity regardless of signature
+        let(:specish) do
+          obj = Object.new
+          def obj.materialize_for_installation
+            :materialized
+          end
+          obj
+        end
+
+        it 'calls it' do
+          expect(materialized).to eq([:materialized])
+        end
+      end
+
+      context 'when materialize_for_installation requires an argument and no wrapper exists' do
+        # simulates a Bundler internal API change (e.g. rubygems/rubygems
+        # commit "Pass locked platforms to materialization instead of
+        # mutating candidates") where the arity no longer matches what a
+        # bare &:materialize_for_installation call provides
+        let(:specish) do
+          obj = Object.new
+          def obj.materialize_for_installation _locked_platforms
+            raise 'should not be called: incompatible arity'
+          end
+          obj
+        end
+
+        it 'skips materialization instead of raising' do
+          expect(materialized).to eq([specish])
+        end
+      end
+    end
+
     context 'with a less usual require mapping' do
       let(:require) { 'diff/lcs' }
 
@@ -185,6 +201,24 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
   context 'with external bundle' do
     let(:dir_path) { File.realpath(Dir.mktmpdir).to_s }
 
+    def add_bundle
+      # write out Gemfile
+      File.write(File.join(dir_path, 'Gemfile'), <<~GEMFILE)
+        source 'https://rubygems.org'
+        gem 'public_suffix'
+      GEMFILE
+
+      # run bundle install
+      output, status = Solargraph.with_clean_env do
+        Open3.capture2e('bundle install --verbose --local || bundle install --verbose', chdir: dir_path)
+      end
+      raise "Failure installing bundle: #{output}" unless status.success?
+
+      # ensure Gemfile.lock exists
+      return if File.exist?(File.join(dir_path, 'Gemfile.lock'))
+      raise "Gemfile.lock not found after bundle install in #{dir_path}"
+    end
+
     context 'with no actual bundle' do
       let(:require) { 'bundler/require' }
 
@@ -194,7 +228,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile and Bundler.require' do
-      before { add_bundle }
+      before do
+        add_bundle
+      end
 
       let(:require) { 'bundler/require' }
 
@@ -203,12 +239,14 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
 
       it 'returns gems' do
-        expect(specs.map(&:name)).to include('backport')
+        expect(specs.map(&:name)).to include('public_suffix')
       end
     end
 
     context 'with Gemfile and deep require into a possibly-core gem' do
-      before { add_bundle }
+      before do
+        add_bundle
+      end
 
       let(:require) { 'bundler/gem_tasks' }
 
@@ -218,7 +256,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile and deep require into a gem' do
-      before { add_bundle }
+      before do
+        add_bundle
+      end
 
       let(:require) { 'rspec/mocks' }
 
@@ -228,7 +268,9 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     end
 
     context 'with Gemfile but an unknown gem' do
-      before { add_bundle }
+      before do
+        add_bundle
+      end
 
       let(:require) { 'unknown_gemlaksdflkdf' }
 
@@ -240,16 +282,32 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
     context 'with a Gemfile and a gem preference' do
       # find_or_install helper doesn't seem to work on older versions
       if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.1.0')
+        def find_or_install gem_name, version
+          Gem::Specification.find_by_name(gem_name, version)
+        rescue Gem::LoadError
+          install_gem(gem_name, version)
+        end
+
+        def install_gem gem_name, version
+          Bundler.with_unbundled_env do
+            cmd = Gem::Commands::InstallCommand.new
+            cmd.handle_options [gem_name, '-v', version]
+            cmd.execute
+          rescue Gem::SystemExitException => e
+            raise unless e.exit_code == 0
+          end
+        end
+
         before do
           add_bundle
-          find_or_install('backport', '1.0.0')
-          Gem::Specification.find_by_name('backport', '= 1.0.0')
+          find_or_install('public_suffix', '1.0.0')
+          Gem::Specification.find_by_name('public_suffix', '= 1.0.0')
         end
 
         let(:preferences) do
           [
             Gem::Specification.new.tap do |spec|
-              spec.name = 'backport'
+              spec.name = 'public_suffix'
               spec.version = '1.0.0'
             end
           ]
@@ -257,17 +315,17 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
         it 'returns the preferred gemspec' do
           gemspecs = described_class.new(dir_path, preferences: preferences)
-          specs = gemspecs.resolve_require('backport')
-          backport = specs.find { |spec| spec.name == 'backport' }
+          specs = gemspecs.resolve_require('public_suffix')
+          public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-          expect(backport.version.to_s).to eq('1.0.0')
+          expect(public_suffix.version.to_s).to eq('1.0.0')
         end
 
         context 'with a gem preference that does not exist' do
           let(:preferences) do
             [
               Gem::Specification.new.tap do |spec|
-                spec.name = 'backport'
+                spec.name = 'public_suffix'
                 spec.version = '99.0.0'
               end
             ]
@@ -275,20 +333,20 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
           it 'returns the gemspec we do have' do
             gemspecs = described_class.new(dir_path, preferences: preferences)
-            specs = gemspecs.resolve_require('backport')
-            backport = specs.find { |spec| spec.name == 'backport' }
+            specs = gemspecs.resolve_require('public_suffix')
+            public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-            expect(backport.version.to_s).to eq('1.2.0')
+            expect(public_suffix.version.to_s).to eq('3.1.1')
           end
         end
 
         context 'with a gem preference already set to the version we use' do
-          let(:version) { Gem::Specification.find_by_name('backport').version.to_s }
+          let(:version) { Gem::Specification.find_by_name('public_suffix').version.to_s }
 
           let(:preferences) do
             [
               Gem::Specification.new.tap do |spec|
-                spec.name = 'backport'
+                spec.name = 'public_suffix'
                 spec.version = version
               end
             ]
@@ -296,10 +354,10 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
           it 'returns the gemspec we do have' do
             gemspecs = described_class.new(dir_path, preferences: preferences)
-            specs = gemspecs.resolve_require('backport')
-            backport = specs.find { |spec| spec.name == 'backport' }
+            specs = gemspecs.resolve_require('public_suffix')
+            public_suffix = specs.find { |spec| spec.name == 'public_suffix' }
 
-            expect(backport.version.to_s).to eq(version)
+            expect(public_suffix.version.to_s).to eq(version)
           end
         end
       end

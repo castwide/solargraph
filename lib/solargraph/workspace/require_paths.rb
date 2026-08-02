@@ -13,7 +13,7 @@ module Solargraph
       attr_reader :directory, :config
 
       # @param directory [String, nil]
-      # @param config [Config, nil]
+      # @param config [Config]
       def initialize directory, config
         @directory = directory
         @config = config

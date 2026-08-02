@@ -9,7 +9,7 @@ describe Solargraph::RbsMap do
   end
 
   it 'fails if it does not find data from gemspec' do
-    spec = Gem::Specification.find_by_name('backport')
+    spec = Gem::Specification.find_by_name('rspec-time-guard')
     rbs_map = described_class.from_gemspec(spec, nil, nil)
     expect(rbs_map).not_to be_resolved
   end

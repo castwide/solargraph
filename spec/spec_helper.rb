@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require 'parallel_tests'
 require 'bundler/setup'
 require 'webmock/rspec'
+require 'rspec_time_guard'
 WebMock.disable_net_connect!(allow_localhost: true)
 unless ENV['SIMPLECOV_DISABLED']
   # set up lcov reporting for undercover
@@ -23,17 +25,43 @@ unless ENV['SIMPLECOV_DISABLED']
     enable_coverage(:branch) if ENV['SOLARGRAPH_BRANCH_COVERAGE']
   end
 end
+PROJECT_DIRECTORY = File.expand_path('..', __dir__)
+
+module ::RuboCop
+  class Runner
+    def run
+      raise 'this should always be mocked'
+    end
+  end
+end
+
 RSpec.configure do |c|
   # Allow use of --only-failures with rspec, handy for local development
   c.example_status_persistence_file_path = 'rspec-examples.txt'
+  c.before(:suite) do
+    files = c.files_to_run
+    banner = "PID (#{Process.pid}) #{files.count} files to run:"
+    puts [banner, *files].join("\n\t")
+  end
+end
+RspecTimeGuard.setup
+RspecTimeGuard.configure do |config|
+  config.global_time_limit_seconds = 300
+  config.continue_on_timeout = false
 end
 require 'solargraph'
-# execute any logging blocks to make sure they don't blow up
-Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
-# ...but still suppress logger output in specs (if possible)
-if Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
+
+# Suppress logger output in specs (if possible)
+def set_logging
+  # execute any logging blocks to make sure they don't blow up
+  Solargraph::Logging.logger.sev_threshold = Logger::DEBUG
+  # ...but still suppress logger output in specs (if possible)
+  return unless Solargraph::Logging.logger.respond_to?(:reopen) && !ENV.key?('SOLARGRAPH_LOG')
   Solargraph::Logging.logger.reopen(File::NULL)
+  warn 'Logging set to null'
 end
+
+set_logging
 
 # @param name [String]
 # @param value [String]

@@ -770,10 +770,12 @@ describe Solargraph::ApiMap do
 
   it 'resolves aliases for YARD methods' do
     dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
-    yard_pins = Dir.chdir dir do
-      YARD::Registry.load([File.join(dir, 'attr.rb')], true)
-      mapper = Solargraph::YardMap::Mapper.new(YARD::Registry.all)
-      mapper.map
+    yard_pins = Solargraph::CHDIR_MUTEX.synchronize do
+      Dir.chdir dir do
+        YARD::Registry.load([File.join(dir, 'attr.rb')], true)
+        mapper = Solargraph::YardMap::Mapper.new(YARD::Registry.all)
+        mapper.map
+      end
     end
     source_pins = Solargraph::SourceMap.load_string(%(
       class Foo

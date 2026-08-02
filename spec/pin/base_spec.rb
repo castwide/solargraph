@@ -52,8 +52,14 @@ describe Solargraph::Pin::Base do
   end
 
   it 'deals well with known closure combination issue' do
-    Solargraph::Shell.new.uncache('yard')
-    api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+    # if this fails you might not have an rbs collection installed
+    api_map = Solargraph::ApiMap.load ''
+
+    spec = Gem::Specification.find_by_name('yard')
+    api_map.cache_gem(spec)
+
+    bench = Solargraph::Bench.new(external_requires: ['yard'])
+    api_map.catalog bench
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     expect(pins.length).to eq(1)
     parser_method_pin = pins.first
@@ -76,15 +82,15 @@ describe Solargraph::Pin::Base do
   describe '#macro_names' do
     it 'returns names' do
       pin = described_class.new(name: 'Example', comments: "@macro addcomment\n@macro returnself")
-      expect(pin.macro_names).to eq(['addcomment', 'returnself'])
+      expect(pin.macro_names).to eq(%w[addcomment returnself])
     end
   end
 
   describe '#nearly?' do
     it 'avoids recursion when two pins have the same closure' do
-      pin1 = Solargraph::Pin::Base.new(name: 'foo')
+      pin1 = described_class.new(name: 'foo')
       pin1.closure = pin1
-      pin2 = Solargraph::Pin::Base.new(name: 'foo', closure: pin1)
+      pin2 = described_class.new(name: 'foo', closure: pin1)
       expect { pin1.nearly?(pin2) }.not_to raise_error
     end
   end

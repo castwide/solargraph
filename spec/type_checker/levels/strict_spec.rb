@@ -105,8 +105,13 @@ describe Solargraph::TypeChecker do
         require 'kramdown-parser-gfm'
         Kramdown::Parser::GFM.undefined_call
       ), 'test.rb')
-      api_map = Solargraph::ApiMap.load '.'
-      api_map.catalog Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
+
+      api_map = Solargraph::ApiMap.new
+      specs = api_map.resolve_require('kramdown-parser-gfm')
+      specs.each { |spec| api_map.cache_gem(spec) }
+      bench = Solargraph::Bench.new(source_maps: [source_map], external_requires: ['kramdown-parser-gfm'])
+      api_map.catalog bench
+
       checker = described_class.new('test.rb', api_map: api_map, level: :strict)
       expect(checker.problems).to be_empty
     end
@@ -826,8 +831,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'uses nil? to refine type' do
-      pending 'nil? support in flow sensitive typing'
-
       checker = type_checker(%(
         # @sg-ignore
         # @type [String, nil]
@@ -838,7 +841,7 @@ describe Solargraph::TypeChecker do
           foo.downcase
         end
       ))
-      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase'])
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase on nil'])
     end
 
     it 'refines types on is_a? and && to downcast and avoid false positives' do

@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  regression:
+  rails_and_rspec_typechecking:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,9 +47,52 @@ jobs:
       run: bundle exec solargraph typecheck --level strong
       # @todo Temporary, expect to revert in 0.60
       continue-on-error: true
+  rails_and_rspec_specs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rails"' > .Gemfile
+        echo 'gem "solargraph-rspec"' >> .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Install gem types
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        time bundle exec solargraph gems core stdlib default
     - name: Ensure specs still run
-      run: bundle exec rake spec
-  rails:
+      run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
+
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
+        bundle exec rake full_spec
+  rails_typechecking:
     runs-on: ubuntu-latest
 
     steps:
@@ -60,7 +103,7 @@ jobs:
         ruby-version: 3.4 # keep same as typecheck.yml
         # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
         rubygems: latest
-        bundler-cache: false
+        bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -82,9 +125,51 @@ jobs:
       run: bundle exec solargraph typecheck --level strong
       # @todo Temporary, expect to revert in 0.60
       continue-on-error: true
+  rails_specs:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4
+        rubygems: latest
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rails"' > .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+    - name: Install gem types
+      run: |
+        bundle exec rbs collection update
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
     - name: Ensure specs still run
-      run: bundle exec rake spec
-  rspec:
+      run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
+
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
+        bundle exec rake full_spec
+  rspec_typechecking:
     runs-on: ubuntu-latest
 
     steps:
@@ -93,7 +178,7 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4 # keep same as typecheck.yml
-        bundler-cache: false
+        bundler-cache: true
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -115,9 +200,53 @@ jobs:
       run: bundle exec solargraph typecheck --level strong
       # @todo Temporary, expect to revert in 0.60
       continue-on-error: true
-    - name: Ensure specs still run
-      run: bundle exec rake spec
+  rspec_specs:
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4 # keep same as typecheck.yml
+        bundler-cache: true
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: yq
+        version: 1.0
+    - name: Install gems
+      run: |
+        echo 'gem "solargraph-rspec"' >> .Gemfile
+        bundle install
+        bundle update --pre rbs
+    - name: Configure to use plugins
+      run: |
+        bundle exec solargraph config
+        yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Install gem types
+      run: |
+        set -x
+
+        bundle exec rbs collection update
+
+        rspec_gems=$(bundle exec ruby -r 'solargraph-rspec' -e 'puts Solargraph::Rspec::Gems.gem_names.join(" ")' 2>/dev/null | tail -n1)
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib $rspec_gems diff-lcs addressable ast rexml crack hashdiff rspec-support bigdecimal public_suffix
+    - name: Ensure specs still run
+      run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
+
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
+        bundle exec rake full_spec
   run_solargraph_rspec_specs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
     runs-on: ubuntu-latest
@@ -140,14 +269,14 @@ jobs:
       with:
         ruby-version: 3.4
         rubygems: latest
-        bundler-cache: false
+        bundler-cache: true
     - name: Install gems
       run: |
         set -x
 
         cd ../solargraph-rspec
         echo "gem 'solargraph', path: '../solargraph'" >> Gemfile
-        bundle config path ${{ env.BUNDLE_PATH }}
+        bundle config set path ${{ env.BUNDLE_PATH }}
         bundle install --jobs 4 --retry 3
         bundle exec appraisal install
         # @todo some kind of appraisal/bundle conflict?
@@ -177,7 +306,21 @@ jobs:
         bundle exec appraisal solargraph gems $rspec_gems
     - name: Run specs
       run: |
+        # Speed up some of the bundle installs we run inside the tests
+        # as well when we're testing different solargraph usage
+        # scenarios. This is already set in the local bundle config by
+        # the setup-ruby action.
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
         cd ../solargraph-rspec
+
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
+        # avoid trying to do this in parallel during the specs
+        bundle exec solargraph gems core stdlib
         bundle exec appraisal rspec --format progress
 
   run_solargraph_rails_specs:
@@ -204,34 +347,50 @@ jobs:
         MATRIX_RAILS_VERSION: "7.0"
     - name: Install gems
       run: |
-       set -x
-       BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
-       export BUNDLE_PATH
-       cd ../solargraph-rails
-       echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
-       bundle install
-       bundle update --pre rbs
-       RAILS_DIR="$(pwd)/spec/rails7"
-       export RAILS_DIR
-       cd ${RAILS_DIR}
-       bundle install
-       bundle exec --gemfile ../../Gemfile rbs --version
-       bundle exec --gemfile ../../Gemfile rbs collection install
-       cd ../../
-       # bundle exec rbs collection init
-       # bundle exec rbs collection install
+        set -x
+        # Share caches to speed up bundle install
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        cd ../solargraph-rails
+        echo "gem 'solargraph', path: '${GITHUB_WORKSPACE:?}'" >> Gemfile
+        bundle install
+        bundle update --pre rbs
+      env:
+        MATRIX_RAILS_VERSION: "7.0"
+        MATRIX_RAILS_MAJOR_VERSION: '7'
+    - name: Install gem types
+      run: |
+        cd ../solargraph-rails
+
+        RAILS_DIR="$(pwd)/spec/rails7"
+        export RAILS_DIR
+        cd ${RAILS_DIR}
+        bundle install
+        bundle exec --gemfile ../../Gemfile rbs --version
+        bundle exec --gemfile ../../Gemfile rbs collection install
+        cd ../../
+        # bundle exec rbs collection init
+        # bundle exec rbs collection install
       env:
         MATRIX_RAILS_VERSION: "7.0"
         MATRIX_RAILS_MAJOR_VERSION: '7'
     - name: Run specs
       run: |
-        BUNDLE_PATH="${GITHUB_WORKSPACE:?}/vendor/bundle"
-        export BUNDLE_PATH
+        # Share caches to speed up bundle install
+        #
+        # See
+        # https://github.com/ruby/setup-ruby?tab=readme-ov-file#caching-bundle-install-automatically
+        bundle config set path $PWD/vendor/bundle
         cd ../solargraph-rails
         bundle exec solargraph --version
         bundle info solargraph
         bundle info rbs
         bundle info yard
+
+        SIMPLECOV_DISABLED=true
+        export SIMPLECOV_DISABLED
+
         ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
         MATRIX_RAILS_VERSION: "7.0"
