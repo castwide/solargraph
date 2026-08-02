@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'shellwords'
+require 'fileutils'
 
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
@@ -28,22 +29,37 @@ module Solargraph
         return path
       end
 
-      Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
-      # Resolve the actual executable instead of relying on a bare
-      # `yardoc` being on PATH - it may only exist inside the current
-      # bundle's own bin directory (e.g. when running outside `bundle
-      # exec`, or in an unbundled environment/subprocess).
-      yardoc_bin = Gem.bin_path('yard', 'yardoc')
-      cmd = "#{Shellwords.escape(yardoc_bin)} --db #{path} --no-output --plugin solargraph"
-      yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
-      Solargraph.logger.debug { "Running: #{cmd}" }
-      # @todo set these up to run in parallel
-      # @todo Is the chdir argument being used here?
-      # @sg-ignore Unrecognized keyword argument chdir to Open3.capture2e
-      stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
-      unless status.success?
-        Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
-        Solargraph.logger.info stdout_and_stderr_str
+      # The `yardoc` command below builds a whole directory of files (the
+      # .yardoc database) at `path`. Without coordination, two OS processes
+      # - e.g. multiple parallel_tests workers, each caching the same
+      # not-yet-cached gem for the first time - could both see "not cached"
+      # above and run `yardoc --db path` concurrently, corrupting each
+      # other's output. A per-gem file lock ensures only one process
+      # builds it; the rest wait, then reuse what the first one built.
+      # @sg-ignore FileUtils.mkdir_p accepts a String, despite what the RBS signature says
+      FileUtils.mkdir_p File.dirname(path)
+      lock_path = "#{path}.lock"
+      File.open(lock_path, File::CREAT | File::RDWR) do |lock_file|
+        lock_file.flock(File::LOCK_EX)
+        next if cached?(gemspec)
+
+        Solargraph.logger.info "Caching yardoc for #{gemspec.name} #{gemspec.version}"
+        # Resolve the actual executable instead of relying on a bare
+        # `yardoc` being on PATH - it may only exist inside the current
+        # bundle's own bin directory (e.g. when running outside `bundle
+        # exec`, or in an unbundled environment/subprocess).
+        yardoc_bin = Gem.bin_path('yard', 'yardoc')
+        cmd = "#{Shellwords.escape(yardoc_bin)} --db #{path} --no-output --plugin solargraph"
+        yard_plugins.each { |plugin| cmd << " --plugin #{plugin}" }
+        Solargraph.logger.debug { "Running: #{cmd}" }
+        # @todo set these up to run in parallel
+        # @todo Is the chdir argument being used here?
+        stdout_and_stderr_str, status = Open3.capture2e(current_bundle_env_tweaks, cmd, chdir: gemspec.gem_dir)
+        # @sg-ignore Open3.capture2e's second return value is a Process::Status
+        unless status.success?
+          Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{gemspec.gem_dir}" }
+          Solargraph.logger.info stdout_and_stderr_str
+        end
       end
       path
     end
