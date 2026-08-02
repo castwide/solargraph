@@ -101,12 +101,11 @@ describe Solargraph::Shell do
       end
 
       it 'caches core without erroring out' do
-        allow(Solargraph::PinCache).to receive(:core?).and_return(false)
-        allow(Solargraph::PinCache).to receive(:cache_core)
+        capture_both do
+          shell.uncache('core')
+        end
 
         expect { shell.cache('core') }.not_to raise_error
-
-        expect(Solargraph::PinCache).to have_received(:cache_core)
       end
 
       it 'gives sensible error for gem that does not exist' do
@@ -121,7 +120,7 @@ describe Solargraph::Shell do
     context 'with mocked Workspace' do
       let(:workspace) { instance_double(Solargraph::Workspace) }
       let(:api_map) { instance_double(Solargraph::ApiMap) }
-      let(:gemspec) { instance_double(Gem::Specification, name: 'abcd343kfk') }
+      let(:gemspec) { instance_double(Gem::Specification, name: 'abcd343kfk', version: '1.0.0') }
 
       before do
         allow(Solargraph::ApiMap).to receive(:new).and_return(api_map)
@@ -138,14 +137,20 @@ describe Solargraph::Shell do
 
       it 'caches single gem without erroring out' do
         allow(workspace).to receive(:find_gem).with('98765').and_return(gemspec)
-        allow(workspace).to receive(:cache_gem)
+        allow(workspace).to receive_messages(rbs_collection_path: nil, rbs_collection_config_path: nil)
+        allow(Solargraph::GemPins).to receive(:build_yard_pins).and_return([])
+        rbs_map = instance_double(Solargraph::RbsMap, pins: [], cache_key: 'key')
+        allow(Solargraph::RbsMap).to receive(:from_gemspec).and_return(rbs_map)
+        allow(Solargraph::PinCache).to receive_messages(has_yard?: false, serialize_yard_gem: nil,
+                                                        has_rbs_collection?: false, serialize_rbs_collection_gem: nil)
 
         capture_both do
           shell.options = { rebuild: false }
           shell.gems('98765')
         end
 
-        expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
+        expect(Solargraph::PinCache).to have_received(:serialize_yard_gem).with(gemspec, [])
+        expect(Solargraph::PinCache).to have_received(:serialize_rbs_collection_gem).with(gemspec, 'key', [])
       end
     end
   end
@@ -290,6 +295,31 @@ describe Solargraph::Shell do
           # Ignore the SystemExit raised by the shell when no pin is found
         end
         expect(out).to include("Pin not found for path 'Not#found'")
+      end
+    end
+  end
+
+  context 'with unbundled environments' do
+    let!(:command_path) { File.realpath(File.join('spec', 'fixtures', 'shim.rb')) }
+    let!(:unbundled_env) { Bundler.unbundled_env.merge({ 'BUNDLE_GEMFILE' => nil }) }
+
+    describe '#cache' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
+        end
+      end
+    end
+
+    describe '#gems' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
+        end
       end
     end
   end

@@ -172,7 +172,7 @@ module Solargraph
       # @return [Hash{String => Array, Hash, Integer}]
       def default_config
         {
-          'include' => ['Rakefile', 'Gemfile', '*.gemspec', '**/*.rb'],
+          'include' => ['Rakefile', 'Gemfile', '*.gemspec', './**/*.rb'],
           'exclude' => ['spec/**/*', 'test/**/*', 'vendor/**/*', '.bundle/**/*'],
           'require' => [],
           'domains' => [],

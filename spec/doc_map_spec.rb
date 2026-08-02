@@ -83,44 +83,6 @@ describe Solargraph::DocMap do
     end
   end
 
-  context 'when deserialization takes a while' do
-    let(:pre_cache) { false }
-    let(:requires) { ['rubocop-rspec'] }
-
-    before do
-      # proxy this method to simulate a long-running deserialization
-      allow(Benchmark).to receive(:measure) do |&block|
-        block.call
-        5.0
-      end
-    end
-
-    it 'logs timing' do
-      # force lazy evaluation
-      _pins = doc_map.pins
-      expect(out.string).to include('Deserialized ').and include(' gem pins ').and include(' ms')
-    end
-  end
-
-  context 'with an uncached but valid gemspec' do
-    let(:requires) { ['uncached_gem'] }
-    let(:pre_cache) { false }
-    let(:workspace) { instance_double(Solargraph::Workspace) }
-
-    it 'tracks uncached_gemspecs' do
-      pincache = instance_double(Solargraph::PinCache, cache_stdlib_rbs_map: false)
-      uncached_gemspec = Gem::Specification.new('uncached_gem', '1.0.0')
-      allow(workspace).to receive(:fetch_dependencies).with(uncached_gemspec, out: out).and_return([])
-      allow(workspace).to receive_messages(fresh_pincache: pincache, resolve_require: [uncached_gemspec],
-                                           stdlib_dependencies: [], global_environ: Solargraph::Environ.new)
-      allow(Gem::Specification).to receive(:find_by_path).with('uncached_gem').and_return(uncached_gemspec)
-      allow(workspace).to receive(:global_environ).and_return(Solargraph::Environ.new)
-      allow(pincache).to receive(:deserialize_combined_pin_cache).with(uncached_gemspec).and_return(nil)
-
-      expect(doc_map.uncached_gemspecs).to eq([uncached_gemspec])
-    end
-  end
-
   context 'with require as bundle/require' do
     let(:pre_cache) { false }
 

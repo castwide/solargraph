@@ -241,8 +241,6 @@ module Solargraph
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
 
-        # @sg-ignore Wrong argument type for Array#include?: object
-        #   expected Boolean, received Proc
         return true if results.any? { |r| [true, false].include?(r) }
         return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min

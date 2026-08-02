@@ -40,7 +40,7 @@ module Solargraph
         end
         # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        warn "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
+        $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
 
@@ -57,7 +57,7 @@ module Solargraph
         end
         # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        warn "Solargraph is listening on stdio PID=#{Process.pid}"
+        $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
 
@@ -106,8 +106,22 @@ module Solargraph
     # @param gem [String]
     # @param version [String, nil]
     def cache gem, version = nil
-      gems(gem + (version ? "=#{version}" : ''))
-      # '
+      gemspec = Gem::Specification.find_by_name(gem, version)
+
+      if options[:rebuild] || !PinCache.has_yard?(gemspec)
+        pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+        PinCache.serialize_yard_gem(gemspec, pins)
+      end
+
+      workspace = Solargraph::Workspace.new(Dir.pwd)
+      rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+      if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+        # cache pins even if result is zero, so we don't retry building pins
+        pins = rbs_map.pins || []
+        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+      end
+    rescue Gem::MissingSpecError
+      warn "Gem '#{gem}' not found"
     end
 
     desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
@@ -120,24 +134,19 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
-      workspace = Solargraph::Workspace.new(Dir.pwd)
-
       gems.each do |gem|
         if gem == 'core'
-          PinCache.uncache_core(out: $stdout)
+          PinCache.uncache_core
           next
         end
 
         if gem == 'stdlib'
-          PinCache.uncache_stdlib(out: $stdout)
+          PinCache.uncache_stdlib
           next
         end
 
-        spec = workspace.find_gem(gem)
-        raise Thor::InvocationError, "Gem '#{gem}' not found" if spec.nil?
-
-        # @sg-ignore flow sensitive typing needs to handle 'raise if'
-        workspace.uncache_gem(spec, out: $stdout)
+        spec = Gem::Specification.find_by_name(gem)
+        PinCache.uncache_gem(spec, out: $stdout)
       end
     end
 
@@ -159,40 +168,23 @@ module Solargraph
         The 'core' argument can be used to cache the type
         documentation for the core Ruby libraries.
 
-        The literal 'stdlib' argument will cache all standard
-        libraries available.
-
-        'bundler/require' as a gem name will cache all auto-required
-        gems.
-
-        'default' will cache all gems used by Solargraph absent
-        specific requires in the files being looked at.
-
         If the library is already cached, it will be rebuilt if the
         --rebuild option is set.
 
         Cached documentation is stored in #{PinCache.base_dir}, which
         can be stored between CI runs.
     )
-    option :workspace, type: :boolean, desc: 'Rebuild all accessible gems, not just those used', default: false
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
     def gems *names
-      # print time with ms
       api_map = Solargraph::ApiMap.new
-      workspace = api_map.workspace
+      workspace = Solargraph::Workspace.new('.')
 
       if names.empty?
-        if options[:workspace]
-          workspace.cache_all_for_workspace!($stdout, rebuild: options[:rebuild])
-        else
-          api_map.cache_all_for_doc_map!(out: $stdout, rebuild: options[:rebuild])
-        end
+        api_map.cache_all_for_doc_map!(out: $stdout, rebuild: options[:rebuild])
       else
         # run in parallel with a thread pool
-
-        # create thread pool
         pool_size = Concurrent.processor_count # roughly your CPU count
         pool = Concurrent::FixedThreadPool.new(pool_size)
         warn("Caching these gems with #{pool_size} workers: #{names}")
@@ -200,7 +192,28 @@ module Solargraph
         # Using 'names' as queue, run!
         futures = names.map do |name|
           Concurrent::Promises.future_on(pool, name) do |_x|
-            cache_library(workspace, name)
+            if name == 'core'
+              # @sg-ignore cache_core and core? are dynamically defined
+              PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
+              next
+            end
+
+            gemspec = workspace.find_gem(*name.split('='))
+            if gemspec.nil?
+              warn "Gem '#{name}' not found"
+            else
+              if options[:rebuild] || !PinCache.has_yard?(gemspec)
+                pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+                PinCache.serialize_yard_gem(gemspec, pins)
+              end
+
+              rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+              if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+                # cache pins even if result is zero, so we don't retry building pins
+                pins = rbs_map.pins || []
+                PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+              end
+            end
           rescue Gem::MissingSpecError
             warn "Gem '#{name}' not found"
           rescue Gem::Requirement::BadRequirementError => e
@@ -396,7 +409,10 @@ module Solargraph
       begin
         require 'vernier'
       rescue LoadError
-        warn 'vernier gem not found. Install with: gem install vernier'
+        $stderr.puts 'vernier gem not found. Please install this dependency:'
+        $stderr.puts
+        $stderr.puts "  gem 'vernier', '>1.0', '<2'"
+
         return
       end
 
@@ -486,43 +502,6 @@ module Solargraph
     end
 
     private
-
-    # @param name [String]
-    # @param [Workspace] workspace
-    #
-    # @return [void]
-    def cache_library workspace, name
-      if name == 'core'
-        PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
-        return
-      end
-
-      if name == 'stdlib'
-        workspace.cache_all_stdlibs(out: $stdout, rebuild: options[:rebuild])
-        return
-      end
-
-      if name == 'default'
-        doc_map = Solargraph::DocMap.new([], workspace)
-        doc_map.cache_doc_map_gems! $stdout
-        return
-      end
-
-      if name == 'bundler/require'
-        gemspecs = workspace.resolve_require(name)
-        gemspecs&.each do |gs|
-          workspace.cache_gem(gs, rebuild: options[:rebuild], out: $stdout)
-        end
-        return
-      end
-
-      gemspec = workspace.find_gem(*name.split('='))
-      if gemspec.nil?
-        warn "Gem '#{name}' not found"
-      else
-        workspace.cache_gem(gemspec, rebuild: options[:rebuild], out: $stdout)
-      end
-    end
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
