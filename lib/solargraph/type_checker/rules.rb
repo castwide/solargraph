@@ -69,50 +69,54 @@ module Solargraph
       #
       # @todo 4: Missed nil violation
       #
-      # pending code fixes (277):
+      # As of #1240/#1245 (code-change extraction from the strong-level
+      # typecheck cleanup): counts below are a full recount via `grep`
+      # over lib/**/*.rb, not a manual estimate.
       #
-      # @todo 281: Need to add nil check here
-      # @todo 22: Translate to something flow sensitive typing understands
-      # @todo 3: Need a downcast here
+      # pending code fixes (583):
       #
-      # flow sensitive typing could handle (96):
+      # @todo 465: Need to add nil check here
+      # @todo 39: Need a downcast here
+      # @todo 29: Nil check fix pending in #1245
+      # @todo 28: Translate to something flow sensitive typing understands
+      # @todo 13: Downcast fix pending in #1245
+      # @todo 6: Return-value fix pending in #1245
+      # @todo 3: Dead code (shadowed by second definition below); removal pending in #1245
       #
-      # @todo 36: flow sensitive typing needs to handle attrs
-      # @todo 29: flow sensitive typing should be able to handle redefinition
-      # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
-      # @todo 13: Need to validate config
+      # flow sensitive typing could handle (162):
+      #
+      # @todo 30: flow sensitive typing needs to handle attrs
+      # @todo 19: flow sensitive typing should be able to handle redefinition
+      # @todo 16: flow sensitive typing should support case/when
+      # @todo 14: flow sensitive typing needs to narrow down type with an if is_a? check
+      # @todo 12: flow based typing needs to understand case when class pattern
+      # @todo 11: flow sensitive typing needs better handling of ||= on lvars
+      # @todo 10: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 6: need boolish support for ? methods
-      # @todo 6: flow sensitive typing needs better handling of ||= on lvars
-      # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-      # @todo 5: flow sensitive typing needs to handle 'raise if'
-      # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
-      # @todo 4: nil? support in flow sensitive typing
-      # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
-      # @todo 2: downcast output of Enumerable#select
-      # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
+      # @todo 5: need boolish support for ? methods
+      # @todo 4: flow sensitive typing ought to be able to handle 'when ClassName'
+      # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
-      # @todo 2: Need to look at Tuple#include? handling
-      # @todo 2: Should better support meaning of '&' in RBS
-      # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: Need to handle duck-typed method calls on union types
+      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
+      # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
-      # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
-      # @todo 1: flow sensitive typing not smart enough to handle this case
-      # @todo 1: flow sensitive typing needs to handle if foo = bar
-      # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
-      # @todo 1: flow sensitive typing should support case/when
       # @todo 1: flow sensitive typing should support ivars
+      # @todo 1: Need to be able to resolve generics based on a
       # @todo 1: Need to support this in flow sensitive typing
-      # @todo 1: flow sensitive typing needs to handle self.class == other.class
-      # @todo 1: flow sensitive typing needs to remove literal with
-      # @todo 1: flow sensitive typing needs to understand reassignment
+      # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
       # @todo 1: flow sensitive typing should be able to identify more blocks that always return
-      # @todo 1: should warn on nil dereference below
-      # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
-      # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: flow sensitive typing not smart enough to handle this case
+      # @todo 1: flow sensitive typing needs to handle self.class == other.class
+      # @todo 1: flow-sensitive typing should be able to handle redefinition
+      # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
+      # @todo 1: Should better support meaning of '&' in RBS
+      # @todo 1: flow sensitive typing needs to handle constants
+      # @todo 1: downcast output of Enumerable#select
+      # @todo 1: flow sensitive typing needs to handle while
+      # @todo 1: flow sensitive typing needs to remove literal with
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end
