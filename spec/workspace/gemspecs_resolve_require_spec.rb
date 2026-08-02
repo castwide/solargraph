@@ -60,6 +60,7 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       allow(bundler_stub_spec).to receive(:respond_to?).with(:name).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:version).and_return(true)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:gem_dir).and_return(false)
+      allow(bundler_stub_spec).to receive(:respond_to?).with(:materialized_for_installation).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:materialize_for_installation).and_return(false)
       allow(bundler_stub_spec).to receive(:respond_to?).with(:stub).and_return(false)
       allow(bundler_stub_spec).to receive_messages(name: 'solargraph', stub: stub_value)
@@ -107,6 +108,52 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
 
       it 'resolves to the right known gem' do
         expect(specs.map(&:name)).to eq(['solargraph'])
+      end
+    end
+
+    describe '#materialize_specs_for_installation' do
+      subject(:materialized) { gemspecs.send(:materialize_specs_for_installation, [specish]) }
+
+      context 'when the object has the modern materialized_for_installation wrapper' do
+        let(:specish) { double(materialized_for_installation: :wrapped) } # rubocop:disable RSpec/VerifiedDoubles
+
+        it 'calls the wrapper' do
+          expect(materialized).to eq([:wrapped])
+        end
+      end
+
+      context 'when materialize_for_installation takes no arguments (older Bundler)' do
+        # a real zero-arg method, not an RSpec double stub, since stubbed
+        # methods always report variadic arity regardless of signature
+        let(:specish) do
+          obj = Object.new
+          def obj.materialize_for_installation
+            :materialized
+          end
+          obj
+        end
+
+        it 'calls it' do
+          expect(materialized).to eq([:materialized])
+        end
+      end
+
+      context 'when materialize_for_installation requires an argument and no wrapper exists' do
+        # simulates a Bundler internal API change (e.g. rubygems/rubygems
+        # commit "Pass locked platforms to materialization instead of
+        # mutating candidates") where the arity no longer matches what a
+        # bare &:materialize_for_installation call provides
+        let(:specish) do
+          obj = Object.new
+          def obj.materialize_for_installation _locked_platforms
+            raise 'should not be called: incompatible arity'
+          end
+          obj
+        end
+
+        it 'skips materialization instead of raising' do
+          expect(materialized).to eq([specish])
+        end
       end
     end
 

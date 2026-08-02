@@ -222,13 +222,34 @@ module Solargraph
         Bundler.definition&.lockfile&.to_s&.start_with?(directory)
       end
 
+      # Bundler::LazySpecification#materialize_for_installation is an
+      # internal, undocumented Bundler API (no changelog entry, no
+      # deprecation path) whose arity has changed across Bundler versions
+      # without warning: some releases take no arguments, some require a
+      # locked_platforms argument, and some only expose the safer
+      # materialized_for_installation wrapper (which defaults that
+      # argument). Guard against all three shapes rather than assuming any
+      # one signature, so an unexpected/future Bundler version is skipped
+      # instead of raising.
+      #
+      # @param specish_objects [Array<Object>]
+      # @return [Array<Object>]
+      def materialize_specs_for_installation specish_objects
+        first = specish_objects.first
+        if first.respond_to?(:materialized_for_installation)
+          specish_objects.map(&:materialized_for_installation)
+        elsif first.respond_to?(:materialize_for_installation) && first.method(:materialize_for_installation).arity.zero?
+          specish_objects.map(&:materialize_for_installation)
+        else
+          specish_objects
+        end
+      end
+
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
       def all_gemspecs_from_this_bundle
         # Find only the gems bundler is now using
         specish_objects = Bundler.definition.locked_gems.specs
-        if specish_objects.first.respond_to?(:materialize_for_installation)
-          specish_objects = specish_objects.map(&:materialize_for_installation)
-        end
+        specish_objects = materialize_specs_for_installation(specish_objects)
         specish_objects.map do |specish|
           if specish.respond_to?(:name) && specish.respond_to?(:version) && specish.respond_to?(:gem_dir)
             # duck type is good enough for outside uses!
@@ -320,8 +341,14 @@ module Solargraph
           begin
             logger.info 'Fetching gemspecs required from external bundle'
 
+            # See materialize_specs_for_installation for why this checks
+            # both the modern wrapper and the arity of the older method
+            # instead of assuming a signature for Bundler's internal API.
             command = 'specish_objects = Bundler.definition.locked_gems&.specs; ' \
-                      'if specish_objects.first.respond_to?(:materialize_for_installation);' \
+                      'first = specish_objects.first; ' \
+                      'if first.respond_to?(:materialized_for_installation);' \
+                      'specish_objects = specish_objects.map(&:materialized_for_installation);' \
+                      'elsif first.respond_to?(:materialize_for_installation) && first.method(:materialize_for_installation).arity.zero?;' \
                       'specish_objects = specish_objects.map(&:materialize_for_installation);' \
                       'end;' \
                       'specish_objects.map { |specish| [specish.name, specish.version] }'
