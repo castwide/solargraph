@@ -45,13 +45,17 @@ describe Protocol, order: :defined do
   around do |testobj|
     raise "Requests not finished #{testobj} - #{@protocol.host.pending_requests.inspect}" unless @protocol.host.pending_requests.empty?
     temp_dir = Dir.mktmpdir
-    Dir.chdir temp_dir
+    # The background diagnoser thread may be running RuboCop diagnostics
+    # concurrently, which also chdirs (under the same mutex) to read
+    # config files - without sharing that mutex here, this chdir can
+    # raise "conflicting chdir during another chdir block".
+    Solargraph::CHDIR_MUTEX.synchronize { Dir.chdir temp_dir }
     Solargraph.with_clean_env do
       testobj.run
     end
     raise "Requests not finished - #{@protocol.host.send(:requests).inspect}" unless @protocol.host.pending_requests.empty?
   ensure
-    Dir.chdir PROJECT_DIRECTORY
+    Solargraph::CHDIR_MUTEX.synchronize { Dir.chdir PROJECT_DIRECTORY }
     FileUtils.remove_entry(temp_dir)
   end
 
