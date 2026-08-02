@@ -157,6 +157,7 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
+      # @sg-ignore Need a downcast here
       def combine_closure other
         choose_pin_attr_with_same_name(other, :closure)
       end
@@ -539,6 +540,7 @@ module Solargraph
         @macros ||= collect_macros
       end
 
+      # @return [Array<String>]
       def macro_names
         parse_comments unless @macro_names
         @macro_names ||= collect_macro_names
@@ -757,6 +759,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
+          # @sg-ignore Need to add nil check here
           return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
@@ -768,6 +771,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
+          # @sg-ignore Need to add nil check here
           return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true
@@ -793,6 +797,7 @@ module Solargraph
         end
       end
 
+      # @return [Array<String>]
       def collect_macro_names
         "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
       end
