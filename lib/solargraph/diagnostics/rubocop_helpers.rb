@@ -23,6 +23,7 @@ module Solargraph
         rescue Gem::MissingSpecVersionError => e
           # @type [Array<Gem::Specification>]
           specs = e.specs
+          # @sg-ignore Need a downcast here
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
