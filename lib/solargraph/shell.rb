@@ -193,8 +193,8 @@ module Solargraph
         futures = names.map do |name|
           Concurrent::Promises.future_on(pool, name) do |_x|
             if name == 'core'
-              # @sg-ignore cache_core and core? are dynamically defined
-              PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
+              PinCache.uncache_core if options[:rebuild]
+              Solargraph::RbsMap::CoreMap.new.pins(out: $stdout)
               next
             end
 

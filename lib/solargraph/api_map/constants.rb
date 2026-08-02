@@ -188,12 +188,12 @@ module Solargraph
         end
       end
 
-      # @return [Hash{Array(String, Array<String>) => String, :in_process, nil}]
+      # @return [Hash{Array, String, Array, String => String, :in_process, nil}]
       def cached_resolve
         @cached_resolve ||= {}
       end
 
-      # @return [Hash{Array<String> => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
+      # @return [Hash{Array, String => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
       def cached_collect
         @cached_collect ||= {}
       end

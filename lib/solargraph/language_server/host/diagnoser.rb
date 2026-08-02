@@ -50,9 +50,9 @@ module Solargraph
           old_thread_id = Thread.current.object_id
           Thread.new do
             until stopped?
-              STDERR.puts "Diagnoser: start tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
+              $stderr.puts "Diagnoser: start tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               tick
-              STDERR.puts "Diagnoser: end tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
+              $stderr.puts "Diagnoser: end tick in thread #{old_thread_id}, current thread #{Thread.current.object_id}"
               sleep 0.1
             end
             @fully_stopped = true

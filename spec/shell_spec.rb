@@ -125,6 +125,7 @@ describe Solargraph::Shell do
       before do
         allow(Solargraph::ApiMap).to receive(:new).and_return(api_map)
         allow(api_map).to receive(:workspace).and_return(workspace)
+        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
       end
 
       it 'caches all without erroring out' do

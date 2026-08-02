@@ -28,11 +28,6 @@ describe Solargraph::GemPins do
   end
 
   context 'with a YARD-only pin' do
-    before :context do
-      # run these on same runner so we don't cache rake in parallel;
-      # seems like we still have a race condition in pin caching
-    end
-
     let(:requires) { ['rake'] }
     let(:path) { 'Rake::Task#prerequisites' }
 
