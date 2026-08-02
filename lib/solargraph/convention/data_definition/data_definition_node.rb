@@ -30,6 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
+            # @sg-ignore Need to add nil check here
             data_definition_node?(node.children[1])
           end
 
@@ -41,6 +42,7 @@ module Solargraph
             return false unless data_node.is_a?(::Parser::AST::Node)
             return false unless data_node&.type == :send
             return false unless data_node.children[0]&.type == :const
+            # @sg-ignore Need to add nil check here
             return false unless data_node.children[0].children[1] == :Data
             return false unless data_node.children[1] == :define
 

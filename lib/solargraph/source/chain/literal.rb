@@ -6,7 +6,9 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        attr_reader :word, :value
+        attr_reader :word
+        # @return [BasicObject, nil]
+        attr_reader :value
 
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
@@ -17,15 +19,15 @@ module Solargraph
           #   tuples as long as literal values are intransitive.
 
           # if node.is_a?(::Parser::AST::Node)
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   # sg-ignore (would be needed): flow sensitive typing needs to narrow down type with an if is_a? check
           #   if node.type == :true
           #     @value = true
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   # sg-ignore (would be needed): flow sensitive typing needs to narrow down type with an if is_a? check
           #   elsif node.type == :false
           #     @value = false
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #   # sg-ignore (would be needed): flow sensitive typing needs to narrow down type with an if is_a? check
           #   elsif %i[int sym].include?(node.type)
-          #     # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+          #     # sg-ignore (would be needed): flow sensitive typing needs to narrow down type with an if is_a? check
           #     @value = node.children.first
           #   end
           # end

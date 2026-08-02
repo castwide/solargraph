@@ -75,6 +75,7 @@ module Solargraph
             ]
 
             %w[except only].each do |arg|
+              # @sg-ignore Need to add nil check here
               cops = cop_list(config[arg])
               args += ["--#{arg}", cops] if cops
             end
@@ -84,7 +85,6 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
@@ -125,6 +125,7 @@ module Solargraph
                      else
                        {
                          line: original.lines.length - 1,
+                         # @sg-ignore Need to add nil check here
                          character: original.lines.last.length
                        }
                      end

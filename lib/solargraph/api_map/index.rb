@@ -131,14 +131,17 @@ module Solargraph
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
+           # @sg-ignore Need to add nil check here
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
+           # @sg-ignore Need to add nil check here
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
+           # @sg-ignore Need to add nil check here
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
@@ -173,13 +176,10 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
+          # @sg-ignore Need to add nil check here
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-              # @sg-ignore Wrong argument type for
-              #   YARD::Docstring#delete_tags: name expected String,
-              #   received String, Symbol - delete_tags is ok with a
-              #   _ToS, but we should fix anyway
               pin.docstring.delete_tags tag
               new_pin&.docstring&.delete_tags tag
             end

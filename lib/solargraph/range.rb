@@ -46,11 +46,11 @@ module Solargraph
     # @return [Boolean]
     def contain? position
       position = Position.normalize(position)
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       return false if position.line < start.line || position.line > ending.line
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       return false if position.line == start.line && position.character < start.character
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       return false if position.line == ending.line && position.character > ending.character
       true
     end
@@ -58,11 +58,11 @@ module Solargraph
     # True if the range contains the specified position and the position does not precede it.
     #
     # @param position [Position, Array(Integer, Integer)]
-    # @sg-ignore flow sensitive typing should be able to handle redefinition
+    # @sg-ignore https://github.com/castwide/solargraph/issues/1250
     # @return [Boolean]
     def include? position
       position = Position.normalize(position)
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       contain?(position) && !(position.line == start.line && position.character == start.character)
     end
 

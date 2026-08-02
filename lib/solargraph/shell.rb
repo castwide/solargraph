@@ -295,7 +295,7 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure do
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1250
         api_map.pins.each do |pin|
           puts pin_description(pin) if options[:verbose]
           pin.typify api_map
@@ -348,9 +348,6 @@ module Solargraph
                             [:class, *path.split('.', 2)]
                           end
 
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::ApiMap#get_method_stack: rooted_tag
-        #   expected String, received Array<String>
         pins = api_map.get_method_stack(ns, meth, scope: scope)
       else
         pins = api_map.get_path_pins path
@@ -383,6 +380,7 @@ module Solargraph
         print_pin(pin)
       end
       references.each do |key, refpin|
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         puts "\n# #{key.to_s.capitalize}:\n\n"
         print_pin(refpin)
       end
@@ -525,6 +523,7 @@ module Solargraph
     desc 'rbs', 'Generate RBS definitions'
     option :filename, type: :string, alias: :f, desc: 'Generated file name', default: 'sig.rbs'
     option :inference, type: :boolean, desc: 'Enhance definitions with type inference', default: true
+    # @return [void]
     def rbs
       api_map = Solargraph::ApiMap.load('.')
       pins = api_map.source_maps.flat_map(&:pins)
@@ -534,7 +533,9 @@ module Solargraph
         store.method_pins.each do |pin|
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
+          # @sg-ignore Need to add nil check here
           type = pin.probe(api_map) if type.undefined?
+          # @sg-ignore Need to add nil check here
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
           pin.instance_variable_set(:@return_type, type)
         end
@@ -550,6 +551,7 @@ module Solargraph
           rel_dir = File.join('sig', options[:filename])
           puts "Writing #{rel_dir}..."
           target = File.join(work_dir, rel_dir)
+          # @sg-ignore Need a downcast here
           FileUtils.mkdir_p(File.join(work_dir, 'sig'))
           `sord #{target} --rbs --no-regenerate`
         end

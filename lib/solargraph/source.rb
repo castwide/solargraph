@@ -74,6 +74,7 @@ module Solargraph
     # @param line [Integer]
     # @param column [Integer]
     # @return [AST::Node]
+    # @sg-ignore Need to add nil check here
     def node_at line, column
       tree_at(line, column).first
     end
@@ -203,12 +204,14 @@ module Solargraph
     # @param node [AST::Node]
     #
     # @return [String, nil]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     def comments_for node
       rng = Range.from_node(node)
       # @sg-ignore Need to add nil check here
       stringified_comments[rng.start.line] ||= begin
         # @sg-ignore Need to add nil check here
         buff = associated_comments[rng.start.line]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         buff ? stringify_comment_array(buff) : nil
       end
     end
@@ -258,10 +261,13 @@ module Solargraph
         # @type [Integer, nil]
         last = nil
         comments.each_pair do |num, snip|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if !last || num == last + 1
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             buffer.concat "#{snip.text}\n"
           else
             result[first_not_empty_from(last + 1)] = buffer.clone
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             buffer.replace "#{snip.text}\n"
           end
           last = num
@@ -277,6 +283,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
+      # @sg-ignore Need to add nil check here
       cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor
@@ -319,7 +326,7 @@ module Solargraph
           ctxt.concat p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           skip = here if skip.nil? || here < skip
           ctxt.concat p[skip..]
         end

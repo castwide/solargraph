@@ -62,6 +62,7 @@ module Solargraph
       register :forward_args, ParserGem::NodeProcessors::ArgsNode
       register :block,        ParserGem::NodeProcessors::BlockNode
       register :or_asgn,      ParserGem::NodeProcessors::OrasgnNode
+      # @sg-ignore Need a downcast here
       register :op_asgn,      ParserGem::NodeProcessors::OpasgnNode
       register :sym,          ParserGem::NodeProcessors::SymNode
       register :until,        ParserGem::NodeProcessors::UntilNode

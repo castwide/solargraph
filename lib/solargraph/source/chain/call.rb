@@ -55,7 +55,7 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           binder = binder.without_nil if nullable?
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|

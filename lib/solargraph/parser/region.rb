@@ -43,7 +43,7 @@ module Solargraph
       # @return [Pin::Namespace, nil]
       def namespace_pin
         ns = closure
-        # @sg-ignore flow sensitive typing needs to handle while
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         ns = ns.closure while ns && !ns.is_a?(Pin::Namespace)
         ns
       end

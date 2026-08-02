@@ -57,47 +57,46 @@ module Solargraph
       def convert_decl_to_pin decl, closure
         case decl
         when RBS::AST::Declarations::Class
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on class #{decl.inspect}")
           end
           class_decl_to_pin decl
         when RBS::AST::Declarations::Interface
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on interface #{decl.inspect}")
           end
           interface_decl_to_pin decl
         when RBS::AST::Declarations::TypeAlias
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure,
-                                     # @sg-ignore flow sensitive typing should support case/when
+                                     # @sg-ignore https://github.com/castwide/solargraph/issues/1241
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           pins.push(
-            # @sg-ignore Wrong argument type for Solargraph::Pin::Reference::TypeAlias.new: return_type expected Solargraph::ComplexType, received Solargraph::ComplexType::UniqueType, Solargraph::ComplexType
             Solargraph::Pin::Reference::TypeAlias.new(
               # @sg-ignore Unresolved calls to name, type, type_location; return_type type mismatch
               name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: RbsTranslator.to_complex_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
         when RBS::AST::Declarations::Module
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure,
-                                     # @sg-ignore flow sensitive typing should support case/when
+                                     # @sg-ignore https://github.com/castwide/solargraph/issues/1241
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
           module_decl_to_pin decl
         when RBS::AST::Declarations::Constant
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on constant #{decl.inspect}")
           end
           constant_decl_to_pin decl
         when RBS::AST::Declarations::ClassAlias
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           unless closure.name == '' || decl.new_name.absolute?
             Solargraph.assert_or_log(:rbs_closure, "Ignoring closure #{closure.inspect} on class alias #{decl.inspect}")
           end
@@ -140,6 +139,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -151,6 +151,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
@@ -172,9 +173,11 @@ module Solargraph
         # @todo Tuples are in flux
         # tuples have their own class and are handled in other_type_to_type
         if base == 'Hash' && params.length == 2
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?,
                                                                            parameters_type: :hash)
         else
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: type_name.absolute?,
                                                                              parameters_type: :list)
         end
@@ -211,44 +214,44 @@ module Solargraph
       def convert_member_to_pin member, closure, context
         case member
         when RBS::AST::Members::MethodDefinition
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           method_def_to_pin(member, closure, context)
         when RBS::AST::Members::AttrReader
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_reader_to_pin(member, closure, context)
         when RBS::AST::Members::AttrWriter
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_writer_to_pin(member, closure, context)
         when RBS::AST::Members::AttrAccessor
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           attr_accessor_to_pin(member, closure, context)
         when RBS::AST::Members::Include
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           include_to_pin(member, closure)
         when RBS::AST::Members::Prepend
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           prepend_to_pin(member, closure)
         when RBS::AST::Members::Extend
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           extend_to_pin(member, closure)
         when RBS::AST::Members::Alias
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           alias_to_pin(member, closure)
         when RBS::AST::Members::ClassInstanceVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           civar_to_pin(member, closure)
         when RBS::AST::Members::ClassVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           cvar_to_pin(member, closure)
         when RBS::AST::Members::InstanceVariable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           ivar_to_pin(member, closure)
         when RBS::AST::Members::Public
           return Context.new(:public)
         when RBS::AST::Members::Private
           return Context.new(:private)
         when RBS::AST::Declarations::Base
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           convert_decl_to_pin(member, closure)
         else
           Solargraph.logger.warn "Skipping member type #{member.class}"
@@ -275,6 +278,7 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           if param.default_type
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1249
             complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
             generic_defaults[param.name.to_s] = complex_type
           end
@@ -563,14 +567,18 @@ module Solargraph
         implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil') || false
         # rubocop:enable Style/SafeNavigationChainLength        # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
+          # @sg-ignore Need a downcast here
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)
           block = if overload.method_type.block
+                    # @sg-ignore https://github.com/castwide/solargraph/issues/1249
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, implicit_nil)
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
                              type_location: type_location, closure: pin)
         end
@@ -581,9 +589,12 @@ module Solargraph
       def location_decl_to_pin_location(location)
         return nil if location&.name.nil?
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         start_pos = Position.new(location.start_line - 1, location.start_column)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         end_pos = Position.new(location.end_line - 1, location.end_column)
         range = Range.new(start_pos, end_pos)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         Location.new(location.name.to_s, range)
       end
 
@@ -597,6 +608,7 @@ module Solargraph
           return [
             [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs,
                                             type_location: type_location)],
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             method_type_to_type(type, implicit_nil)
           ]
         end
@@ -622,6 +634,7 @@ module Solargraph
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           inner_rest_positional_type = other_type_to_type(type.type.rest_positionals.type)
           rest_positional_type = ComplexType::UniqueType.new('Array',
                                                              [],
@@ -661,6 +674,7 @@ module Solargraph
                                                          source: :rbs, type_location: type_location)
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         return_type = method_type_to_type(type, implicit_nil)
         [parameters, return_type]
       end
@@ -865,7 +879,8 @@ module Solargraph
       #
       # This method will convert type aliases to concrete types.
       #
-      # @param type [RBS::MethodType]
+      # @param type [RBS::MethodType, RBS::Types::Block]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType]
       def extract_method_type_return_type type, implicit_nil
           tag = RbsTranslator.to_complex_type(type.type.return_type)

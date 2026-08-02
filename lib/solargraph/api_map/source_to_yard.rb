@@ -36,20 +36,17 @@ module Solargraph
           if pin.type == :class
             # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ClassObject.new(root_code_object, pin.path) do |obj|
-              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
-              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             end
           else
             # @param obj [YARD::CodeObjects::RootObject]
             code_object_map[pin.path] ||= YARD::CodeObjects::ModuleObject.new(root_code_object, pin.path) do |obj|
-              # @sg-ignore flow sensitive typing needs to handle attrs
               next if pin.location.nil? || pin.location.filename.nil?
-              # @sg-ignore flow sensitive typing needs to handle attrs
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             end
           end
+          # @sg-ignore Need to add nil check here
           code_object_map[pin.path].docstring = pin.docstring
           store.get_includes(pin.path).each do |ref|
             include_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)
@@ -77,9 +74,7 @@ module Solargraph
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
             code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope
           ) do |obj|
-            # @sg-ignore flow sensitive typing needs to handle attrs
             next if pin.location.nil? || pin.location.filename.nil?
-            # @sg-ignore flow sensitive typing needs to handle attrs
             obj.add_file pin.location.filename, pin.location.range.start.line
           end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
@@ -103,6 +98,7 @@ module Solargraph
 
       # @return [YARD::CodeObjects::RootObject]
       def root_code_object
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
     end

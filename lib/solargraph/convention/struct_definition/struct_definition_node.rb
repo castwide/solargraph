@@ -30,6 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
+            # @sg-ignore Need to add nil check here
             struct_definition_node?(node.children[1])
           end
 
@@ -41,6 +42,7 @@ module Solargraph
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
             return false unless struct_node.children[0]&.type == :const
+            # @sg-ignore Need to add nil check here
             return false unless struct_node.children[0].children[1] == :Struct
             return false unless struct_node.children[1] == :new
 
@@ -68,16 +70,20 @@ module Solargraph
 
         def keyword_init?
           keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
+            # @sg-ignore Need to add nil check here
             struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
+              # @sg-ignore Need to add nil check here
               struct_def_param.children[0].children[0].children[0] == :keyword_init
           end
 
           return false if keyword_init_param.nil?
 
+          # @sg-ignore Need to add nil check here
           keyword_init_param.children[0].children[1].type == :true
         end
 
         # @return [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         def body_node
           node.children[2]
         end
@@ -88,6 +94,7 @@ module Solargraph
         attr_reader :node
 
         # @return [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         def struct_node
           node.children[1]
         end

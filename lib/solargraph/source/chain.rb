@@ -129,7 +129,9 @@ module Solargraph
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
         end
+        # @sg-ignore Need to add nil check here
         links.last.last_context = working_pin
+        # @sg-ignore Need to add nil check here
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -167,6 +169,7 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
+        # @sg-ignore Need to add nil check here
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type)
         logger.debug do

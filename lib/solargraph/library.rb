@@ -85,6 +85,7 @@ module Solargraph
     # @return [Boolean] True if the specified file was detached
     def detach filename
       return false if @current.nil? || @current.filename != filename
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       attach nil
       true
     end
@@ -259,7 +260,9 @@ module Solargraph
                 (workspace.sources + (@current ? [@current] : []))
               end
       files.uniq(&:filename).each do |source|
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         found = source.references(pin.name)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         found.select! do |loc|
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)&.first
           referenced&.path == pin.path
@@ -267,22 +270,25 @@ module Solargraph
         if pin.path == 'Class#new'
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           if caller.defined?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
               other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             found.clear
           end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           found.map! do |loc|
-            # @sg-ignore Unresolved call to []
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         result.concat(found.sort do |a, b|
           a.range.start.line <=> b.range.start.line
         end)
@@ -416,15 +422,16 @@ module Solargraph
         else
           args = line.split(':').map(&:strip)
           name = args.shift
+          # @sg-ignore Need to add nil check here
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
-          # @sg-ignore Hash errors
           repargs[reporter] ||= []
           # @sg-ignore Hash errors
           repargs[reporter].concat args
         end
       end
       repargs.each_pair do |reporter, args|
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         result.concat reporter.new(*args.uniq).diagnose(source, api_map)
       end
       result
@@ -439,11 +446,11 @@ module Solargraph
 
     # @return [Bench]
     def bench
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       Bench.new(
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
-        # @sg-ignore OK if @current.filename is nil
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -478,6 +485,7 @@ module Solargraph
     end
 
     # @return [SourceMap, Boolean]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def next_map
       return false if mapped?
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
@@ -485,7 +493,6 @@ module Solargraph
         Logging.logger.debug "Mapping #{src.filename}"
         # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename]
       else
         false
@@ -612,6 +619,7 @@ module Solargraph
         Thread.new do
           report_cache_progress spec.name, pending
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else
