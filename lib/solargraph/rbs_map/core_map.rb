@@ -15,7 +15,7 @@ module Solargraph
 
       def initialize; end
 
-      # @param out [IO, nil] output stream for logging
+      # @param out [StringIO, IO, nil] output stream for logging
       # @return [Enumerable<Pin::Base>]
       def pins out: $stderr
         return @pins if @pins

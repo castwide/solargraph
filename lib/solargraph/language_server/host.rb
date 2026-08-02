@@ -468,8 +468,26 @@ module Solargraph
         notify_observers
       end
 
+      # @return [void]
+      def fully_stop
+        stop
+        # try for two minutes, raise if not fully stopped by then
+        start_time = Time.now
+        until fully_stopped?
+          if Time.now - start_time > 240
+            raise 'Host did not fully stop within 240 seconds.'
+          end
+          logger.info 'Waiting for host to fully stop...'
+          sleep 0.1
+        end
+      end
+
       def stopped?
         @stopped
+      end
+
+      def fully_stopped?
+        @stopped && diagnoser.fully_stopped?
       end
 
       # Locate multiple pins that match a completion item. The first match is

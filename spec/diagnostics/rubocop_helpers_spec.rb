@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Diagnostics::RubocopHelpers do
+describe Solargraph::Diagnostics::RubocopHelpers, order: :defined do
   context 'with custom version' do
     around do |example|
       old_gem_path = Gem.paths.path

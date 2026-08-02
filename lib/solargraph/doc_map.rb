@@ -3,6 +3,7 @@
 require 'pathname'
 require 'benchmark'
 require 'open3'
+require 'concurrent-ruby'
 
 module Solargraph
   # A collection of pins generated from required gems.
@@ -60,26 +61,6 @@ module Solargraph
       @out = out
     end
 
-    # @param out [IO, StringIO, nil]
-    # @return [void]
-    # @param [Boolean] rebuild
-    def cache_all! out, rebuild: false
-      # if we log at debug level:
-      if logger.info?
-        gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
-        logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
-      end
-      logger.debug { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
-      logger.debug { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
-      load_serialized_gem_pins
-      uncached_gemspecs.each do |gemspec|
-        cache(gemspec, rebuild: rebuild, out: out)
-      end
-      load_serialized_gem_pins
-      @uncached_rbs_collection_gemspecs = []
-      @uncached_yard_gemspecs = []
-    end
-
     # @param gemspec [Gem::Specification]
     # @param out [IO, StringIO, nil]
     # @return [void]
@@ -101,6 +82,46 @@ module Solargraph
       PinCache.serialize_rbs_collection_gem(gemspec, rbs_version_cache_key, pins)
       logger.info { "Cached #{pins.length} RBS collection pins for gem #{gemspec.name} #{gemspec.version} with cache_key #{rbs_version_cache_key.inspect}" unless pins.empty? }
     end
+
+    # @param out [IO, StringIO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_doc_map_gems! out, rebuild: false
+      if logger.info?
+        gem_desc = uncached_gemspecs.map { |gemspec| "#{gemspec.name}:#{gemspec.version}" }.join(', ')
+        logger.info "Caching pins for gems: #{gem_desc}" unless uncached_gemspecs.empty?
+      end
+      logger.debug { "Caching for YARD: #{uncached_yard_gemspecs.map(&:name)}" }
+      logger.debug { "Caching for RBS collection: #{uncached_rbs_collection_gemspecs.map(&:name)}" }
+      load_serialized_gem_pins
+
+      pool_size = Concurrent.processor_count # roughly your CPU count
+      pool = Concurrent::FixedThreadPool.new(pool_size)
+      time = Benchmark.measure do
+        # Using 'names' as queue, run!
+        futures = uncached_gemspecs.map do |spec|
+          Concurrent::Promises.future_on(pool, spec) do
+            cache(spec, rebuild: rebuild, out: out)
+          end
+        end
+
+        Concurrent::Promises.zip(*futures).value!
+        pool.shutdown
+        pool.wait_for_termination
+      end
+      milliseconds = (time.real * 1000).round
+      if (milliseconds > 500) && uncached_gemspecs.any? && out
+        out.puts "Built #{uncached_gemspecs.length} gems in #{milliseconds} ms in #{pool_size} threads"
+      end
+
+      load_serialized_gem_pins
+      @uncached_rbs_collection_gemspecs = []
+      @uncached_yard_gemspecs = []
+    end
+    # @param out [IO, StringIO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    alias cache_all! cache_doc_map_gems!
 
     # @param gemspec [Gem::Specification]
     # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
@@ -129,34 +150,33 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_yard_gems_in_memory
       @all_yard_gems_in_memory ||= {}
     end
 
-    # @return [Hash{String => Hash{Array(String, String) => Array<Pin::Base>}}] stored by RBS collection path
+    # @return [Hash{String => Hash{Array, String, String => Array<Pin::Base>}}] stored by RBS collection path
     def self.all_rbs_collection_gems_in_memory
       @all_rbs_collection_gems_in_memory ||= {}
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
     def yard_pins_in_memory
       self.class.all_yard_gems_in_memory
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
     def rbs_collection_pins_in_memory
-      # @sg-ignore rbs_collection_path is String | nil but used as hash key
       self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
     end
 
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_combined_pins_in_memory
       @all_combined_pins_in_memory ||= {}
     end
 
     # @todo this should also include an index by the hash of the RBS collection
-    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
     def combined_pins_in_memory
       self.class.all_combined_pins_in_memory
     end

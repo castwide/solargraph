@@ -33,6 +33,7 @@ module Solargraph
     # @param gates [Array<String>]
     #
     # @return [ComplexType]
+    # @param [Array<String>] gates
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
@@ -434,6 +435,7 @@ module Solargraph
       #   Chain::Call needs to know the decl type (:arg, :optarg,
       #   :kwarg, etc) of the arguments given, instead of just having
       #   an array of Chains as the arguments.
+      # @param [Boolean] partial
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType, Array<ComplexType::UniqueType>}]
         @cache ||= {}

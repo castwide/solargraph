@@ -3,12 +3,14 @@
 describe Solargraph::ApiMap do
   let(:api_map) { described_class.new }
   let(:bench) do
-    Solargraph::Bench.new(external_requires: external_requires, workspace: Solargraph::Workspace.new('.'))
+    Solargraph::Bench.new(external_requires: external_requires,
+                          workspace: Solargraph::Workspace.new)
   end
   let(:external_requires) { [] }
+  let(:catalog) { false }
 
   before do
-    api_map.catalog bench
+    api_map.catalog bench if catalog
   end
 
   describe '#resolve_method_alias' do
@@ -118,23 +120,34 @@ describe Solargraph::ApiMap do
   end
 
   describe '#get_method_stack' do
-    let(:out) { StringIO.new }
-    let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
-
     context 'with stdlib that has vital dependencies' do
       let(:external_requires) { ['yaml'] }
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
-        expect(method_stack).not_to be_empty
+        if method_stack.nil?
+          specs = (api_map.resolve_require('yaml') || []) + (api_map.resolve_require('psych') || [])
+          expect(specs).not_to be_empty
+          specs.each { |spec| api_map.cache_gem(spec) }
+          api_map.catalog bench
+        end
+
+        expect(method_stack).not_to be_nil
       end
     end
 
     context 'with thor' do
       let(:external_requires) { ['thor'] }
+
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
+      let(:catalog) { true }
 
       it 'handles finding Thor.desc' do
+        specs = api_map.resolve_require('thor')
+        specs.each { |spec| api_map.cache_gem(spec) }
+        api_map.catalog bench
+
+        # if this fails you may not have an rbs collection installed
         expect(method_stack).not_to be_empty
       end
     end

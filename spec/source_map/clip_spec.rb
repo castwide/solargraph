@@ -2590,7 +2590,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
-    expect(clip.infer.to_s).to eq('Symbol, Integer')
+    expect(clip.infer.to_s).to eq('123, :foo')
   end
 
   it 'replaces type with alternate reassignments' do

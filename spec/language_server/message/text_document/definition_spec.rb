@@ -25,6 +25,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
                          }
                        }
                      })
+      # keep this from syncing a bunch of bundle gems in background
+      library = host.library_for(file_uri)
+      allow(library).to receive(:cacheable_specs).and_return([])
       message.process
       expect(message.result.first[:uri]).to eq(other_uri)
     end
@@ -48,6 +51,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
                                       }
                                     }
                                   })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(file_uri)
+    allow(library).to receive(:cacheable_specs).and_return([])
     message.process
     expect(message.result.first[:uri]).to eq(other_uri)
   end
@@ -58,12 +64,11 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     host.prepare(path)
     sleep 0.1 until host.libraries.all?(&:mapped?)
     host.catalog
+    file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib', 'other.rb'))
     message = described_class.new(host, {
                                     'params' => {
                                       'textDocument' => {
-                                        'uri' => Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(
-                                                                                                      path, 'lib', 'other.rb'
-                                                                                                    ))
+                                        'uri' => file_uri
                                       },
                                       'position' => {
                                         'line' => 0,
@@ -71,6 +76,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
                                       }
                                     }
                                   })
+    # keep this from syncing a bunch of bundle gems in background
+    library = host.library_for(file_uri)
+    allow(library).to receive(:cacheable_specs).and_return([])
     message.process
     expect(message.result.first[:uri]).to eq(Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib',
                                                                                                           'thing.rb')))

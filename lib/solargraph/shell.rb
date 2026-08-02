@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'benchmark'
+require 'concurrent-ruby'
 require 'thor'
 require 'yard'
 require 'yaml'
@@ -177,46 +178,56 @@ module Solargraph
     # @param names [Array<String>]
     # @return [void]
     def gems *names
-      # print time with ms
+      api_map = Solargraph::ApiMap.new
       workspace = Solargraph::Workspace.new('.')
 
       if names.empty?
-        Gem::Specification.to_a.each { |spec| do_cache spec, rebuild: options[:rebuild] }
-        $stderr.puts "Documentation cached for all #{Gem::Specification.count} gems."
+        api_map.cache_all_for_doc_map!(out: $stdout, rebuild: options[:rebuild])
       else
-        warn("Caching these gems: #{names}")
-        names.each do |name|
-          if name == 'core'
-            # @sg-ignore cache_core and core? are dynamically defined
-            PinCache.cache_core(out: $stdout) if !PinCache.core? || options[:rebuild]
-            next
-          end
+        # run in parallel with a thread pool
+        pool_size = Concurrent.processor_count # roughly your CPU count
+        pool = Concurrent::FixedThreadPool.new(pool_size)
+        warn("Caching these gems with #{pool_size} workers: #{names}")
 
-          gemspec = workspace.find_gem(*name.split('='))
-          if gemspec.nil?
+        # Using 'names' as queue, run!
+        futures = names.map do |name|
+          Concurrent::Promises.future_on(pool, name) do |_x|
+            if name == 'core'
+              PinCache.uncache_core if options[:rebuild]
+              Solargraph::RbsMap::CoreMap.new.pins(out: $stdout)
+              next
+            end
+
+            gemspec = workspace.find_gem(*name.split('='))
+            if gemspec.nil?
+              warn "Gem '#{name}' not found"
+            else
+              if options[:rebuild] || !PinCache.has_yard?(gemspec)
+                pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
+                PinCache.serialize_yard_gem(gemspec, pins)
+              end
+
+              rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
+              if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
+                # cache pins even if result is zero, so we don't retry building pins
+                pins = rbs_map.pins || []
+                PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
+              end
+            end
+          rescue Gem::MissingSpecError
             warn "Gem '#{name}' not found"
-          else
-            if options[:rebuild] || !PinCache.has_yard?(gemspec)
-              pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
-              PinCache.serialize_yard_gem(gemspec, pins)
-            end
-
-            workspace = Solargraph::Workspace.new(Dir.pwd)
-            rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
-            if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
-              # cache pins even if result is zero, so we don't retry building pins
-              pins = rbs_map.pins || []
-              PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
-            end
+          rescue Gem::Requirement::BadRequirementError => e
+            warn "Gem '#{name}' failed while loading"
+            warn e.message
+            # @sg-ignore Need to add nil check here
+            warn e.backtrace.join("\n")
           end
-        rescue Gem::MissingSpecError
-          warn "Gem '#{name}' not found"
-        rescue Gem::Requirement::BadRequirementError => e
-          warn "Gem '#{name}' failed while loading"
-          warn e.message
-          # @sg-ignore Need to add nil check here
-          warn e.backtrace.join("\n")
         end
+
+        Concurrent::Promises.zip(*futures).value! # raises if any failed
+        pool.shutdown
+        pool.wait_for_termination
+
         warn "Documentation cached for #{names.count} gems."
       end
     end
@@ -527,28 +538,6 @@ module Solargraph
         puts pin.to_rbs
       else
         puts pin.inspect
-      end
-    end
-
-    # @param gemspec [Gem::Specification, nil]
-    # @param rebuild [Boolean]
-    # @return [void]
-    def do_cache gemspec, rebuild: false
-      if gemspec.nil?
-        warn "Gem '#{gemspec&.name}' not found"
-      else
-        if rebuild || !PinCache.has_yard?(gemspec)
-          pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
-          PinCache.serialize_yard_gem(gemspec, pins)
-        end
-
-        workspace = Solargraph::Workspace.new(Dir.pwd)
-        rbs_map = RbsMap.from_gemspec(gemspec, workspace.rbs_collection_path, workspace.rbs_collection_config_path)
-        if rebuild || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
-          # cache pins even if result is zero, so we don't retry building pins
-          pins = rbs_map.pins || []
-          PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, pins)
-        end
       end
     end
   end
