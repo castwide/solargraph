@@ -186,6 +186,8 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
+                                                        # @sg-ignore Gem::StubSpecification isn't always resolvable depending on
+                                                        #   which RBS core signatures get installed
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
