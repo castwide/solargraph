@@ -55,11 +55,15 @@ describe Solargraph::Pin::Base do
     # if this fails you might not have an rbs collection installed
     api_map = Solargraph::ApiMap.load ''
 
-    spec = Gem::Specification.find_by_name('yard')
-    api_map.cache_gem(spec)
-
-    bench = Solargraph::Bench.new(external_requires: ['yard'])
+    bench = Solargraph::Bench.new(workspace: api_map.workspace, external_requires: ['yard'])
+    # cache_gem is a no-op for a gem the ApiMap's DocMap doesn't know it
+    # needs yet, so catalog (which tells DocMap about external_requires)
+    # has to run before caching, and again afterward to pick up the
+    # newly-cached pins.
     api_map.catalog bench
+    api_map.cache_all_for_doc_map!
+    api_map.catalog bench
+
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     expect(pins.length).to eq(1)
     parser_method_pin = pins.first
