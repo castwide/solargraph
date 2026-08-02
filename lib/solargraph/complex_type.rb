@@ -57,6 +57,7 @@ module Solargraph
     end
 
     # @return [UniqueType]
+    # @sg-ignore Need to add nil check here
     def first
       @items.first
     end
@@ -133,6 +134,7 @@ module Solargraph
 
     # @param index [Integer]
     # @return [UniqueType]
+    # @sg-ignore Need to add nil check here
     def [] index
       @items[index]
     end
@@ -298,6 +300,8 @@ module Solargraph
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
+    # @param named_types [Hash{String => ComplexType::UniqueType}]
+    # @return [ComplexType]
     def expand named_types
       ComplexType.new(map { |ut| ut.expand(named_types) })
     end
@@ -329,7 +333,9 @@ module Solargraph
     end
 
     # @return [Array<ComplexType>]
+    # @sg-ignore Need to add nil check here
     def all_params
+      # @sg-ignore Need to add nil check here
       @items.first.all_params || []
     end
 
@@ -354,6 +360,7 @@ module Solargraph
     def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
+      # @sg-ignore Need to add nil check here
       @items.first.erased_version_of?(other.items.first)
     end
 
