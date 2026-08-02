@@ -515,6 +515,8 @@ module Solargraph
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
+      return result if par.nil?
+
       # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
@@ -721,7 +723,7 @@ module Solargraph
         return [] if r.empty?
         r
       end
-      results.first
+      results.first || []
     end
 
     # @param pin [Pin::Method]

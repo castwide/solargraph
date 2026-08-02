@@ -703,7 +703,7 @@ module Solargraph
       end
 
       def client_supports_progress?
-        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+        !!(client_capabilities['window'] && client_capabilities['window']['workDoneProgress'])
       end
 
       private
@@ -854,7 +854,7 @@ module Solargraph
       end
 
       def prepare_rename?
-        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
+        !!(client_capabilities['rename'] && client_capabilities['rename']['prepareSupport'])
       end
 
       # @param library [Library]

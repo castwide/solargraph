@@ -46,9 +46,12 @@ module Solargraph
           def parameters_from_inline_rbs
             source = region.source.code_for(node)
             match = source.match(/[^\n]*?#\s?+\[([^\]]*)/)
-            return unless match && match[1]
+            return unless match
 
-            code = match[1].strip
+            captured = match[1]
+            return unless captured
+
+            code = captured.strip
             return if code.empty?
 
             "<#{code}>"
