@@ -57,12 +57,12 @@ module Solargraph
         # @param gem_name [String]
         gem_names_to_try.each do |gem_name|
           gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           return [gemspec_or_preference(gemspec)] if gemspec
 
           begin
             gemspec = Gem::Specification.find_by_name(gem_name)
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1250
             return [gemspec_or_preference(gemspec)] if gemspec
           rescue Gem::MissingSpecError
             logger.debug do
@@ -78,7 +78,7 @@ module Solargraph
             # @sg-ignore Translate to something flow sensitive typing understands
             spec&.files&.any? { |gemspec_file| file == gemspec_file }
           end
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           return [gemspec_or_preference(gemspec)] if gemspec
         end
 

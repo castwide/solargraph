@@ -79,10 +79,10 @@ module Solargraph
       #
       # flow sensitive typing could handle (161):
       #
-      # @todo 30: flow sensitive typing needs to handle attrs
+      # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
-      # @todo 20: flow sensitive typing should be able to handle redefinition
-      # @todo 12: flow sensitive typing needs to narrow down type with an if is_a? check
+      # @todo 20: https://github.com/castwide/solargraph/issues/1250
+      # @todo 12: https://github.com/castwide/solargraph/issues/1251
       # @todo 11: flow sensitive typing needs better handling of ||= on lvars
       # @todo 11: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
@@ -103,7 +103,6 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle self.class == other.class
-      # @todo 1: flow-sensitive typing should be able to handle redefinition
       # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 1: Should better support meaning of '&' in RBS
       # @todo 1: flow sensitive typing needs to handle constants

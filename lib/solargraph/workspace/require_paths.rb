@@ -84,7 +84,7 @@ module Solargraph
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
           rescue StandardError => e
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1250
             Solargraph.logger.warn "Error reading #{gemspec_file_path}: [#{e.class}] #{e.message}"
             []
           end

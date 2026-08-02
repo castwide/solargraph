@@ -310,10 +310,10 @@ module Solargraph
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
         else
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
       end

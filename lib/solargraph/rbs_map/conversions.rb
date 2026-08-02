@@ -278,7 +278,7 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           if param.default_type
-            # @sg-ignore flow sensitive typing needs to handle attrs
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1249
             complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
             generic_defaults[param.name.to_s] = complex_type
           end
@@ -572,7 +572,7 @@ module Solargraph
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)
           block = if overload.method_type.block
-                    # @sg-ignore flow sensitive typing needs to handle attrs
+                    # @sg-ignore https://github.com/castwide/solargraph/issues/1249
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, implicit_nil)
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,

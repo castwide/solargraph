@@ -715,11 +715,11 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
-      # @sg-ignore flow-sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       sup = sup.simplify_literals.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1250
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub

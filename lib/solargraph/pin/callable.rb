@@ -124,7 +124,7 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 

@@ -93,7 +93,7 @@ module Solargraph
       parameters = to_parameter_pins(method_type, closure, parameter_names)
       return_type = to_complex_type(method_type.type.return_type)
       block = if method_type.block
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         block_parameters = to_parameter_pins(method_type.block, closure)
         block_return_type = to_complex_type(method_type.block.type.return_type)
         Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)

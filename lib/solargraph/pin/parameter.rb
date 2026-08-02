@@ -63,7 +63,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         decl == :kwrestarg || (assignment && %i[HASH hash].include?(assignment.type))
       end
 
@@ -181,7 +181,7 @@ module Solargraph
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           if @return_type.undefined?
             case decl
             when :restarg
@@ -234,7 +234,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?

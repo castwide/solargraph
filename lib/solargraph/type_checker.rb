@@ -679,7 +679,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
@@ -700,7 +700,7 @@ module Solargraph
       raise 'No assignment found' if pin.assignment.nil?
 
       chain = Solargraph::Parser.chain(pin.assignment, filename)
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       rng = Solargraph::Range.from_node(pin.assignment)
       # @sg-ignore Need to add nil check here
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
@@ -841,13 +841,13 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1250
         if %i[kwarg kwoptarg kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1250
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1250
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else

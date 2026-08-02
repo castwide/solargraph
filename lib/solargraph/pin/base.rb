@@ -453,7 +453,7 @@ module Solargraph
       # @return [String, nil]
       def filename
         return nil if location.nil?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         location.filename
       end
 
@@ -491,7 +491,7 @@ module Solargraph
         instance_of?(other.class) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
