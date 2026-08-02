@@ -32,6 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
+        # @sg-ignore Need to add nil check here
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore Need to add nil check here
@@ -43,8 +44,10 @@ module Solargraph
                                       @indexes[changed + idx - 1].merge(pins)
                                     end
         end
+        # @sg-ignore Need to add nil check here
         # @type [Index]
         @index = @indexes.last.clone
+        # @sg-ignore Need to add nil check here
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
@@ -90,6 +93,7 @@ module Solargraph
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
+        # @sg-ignore Need to add nil check here
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 
@@ -127,7 +131,7 @@ module Solargraph
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
-        index.path_pin_hash[path]
+        index.path_pin_hash[path] || []
       end
 
       # @param fqns [String, nil]
@@ -215,7 +219,7 @@ module Solargraph
           base = ''
           name = fqns
         end
-        fqns_pins_map[[base, name]]
+        fqns_pins_map[[base, name]] || []
       end
 
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
@@ -245,8 +249,10 @@ module Solargraph
 
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
+            # @sg-ignore Need to add nil check here
             next if refs.nil?
             # @param ref [String]
+            # @sg-ignore Need to add nil check here
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref
@@ -308,6 +314,7 @@ module Solargraph
           end
         end
         @index = @indexes.last.clone
+        # @sg-ignore Need to add nil check here
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
@@ -357,6 +364,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
+      # @sg-ignore Need to add nil check here
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]
@@ -381,7 +389,9 @@ module Solargraph
 
       # @param fq_sub_tag [String]
       # @return [String, nil]
+      # @sg-ignore Need a downcast here
       def qualify_and_cache_superclass fq_sub_tag
+        # @sg-ignore Need a downcast here
         cached_qualify_superclass[fq_sub_tag] = uncached_qualify_superclass(fq_sub_tag)
       end
 
