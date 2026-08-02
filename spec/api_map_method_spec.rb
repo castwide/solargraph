@@ -125,6 +125,10 @@ describe Solargraph::ApiMap do
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
+        # catalog first so doc_map registers 'yaml' as required before we
+        # try to cache it - cache_gem is a no-op for gems doc_map doesn't
+        # yet know it needs
+        api_map.catalog bench
         specs = api_map.resolve_require('yaml')
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench
@@ -138,6 +142,10 @@ describe Solargraph::ApiMap do
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
 
       it 'handles finding Thor.desc' do
+        # catalog first so doc_map registers 'thor' as required before we
+        # try to cache it - cache_gem is a no-op for gems doc_map doesn't
+        # yet know it needs
+        api_map.catalog bench
         specs = api_map.resolve_require('thor')
         specs.each { |spec| api_map.cache_gem(spec) }
         api_map.catalog bench

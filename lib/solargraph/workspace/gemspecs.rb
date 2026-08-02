@@ -342,12 +342,12 @@ module Solargraph
         @preference_map ||= preferences.to_h { |gemspec| [gemspec.name, gemspec] }
       end
 
-      # @param gemspec [Gem::Specification]
+      # @param gemspec [Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification]
       #
       # @return [Gem::Specification]
       def gemspec_or_preference gemspec
-        return gemspec unless preference_map.key?(gemspec.name)
-        return gemspec if gemspec.version == preference_map[gemspec.name].version
+        return to_gem_specification(gemspec) unless preference_map.key?(gemspec.name)
+        return to_gem_specification(gemspec) if gemspec.version == preference_map[gemspec.name].version
 
         change_gemspec_version gemspec, preference_map[gemspec.name].version
       end
