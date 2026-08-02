@@ -743,7 +743,7 @@ module Solargraph
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
@@ -752,7 +752,7 @@ module Solargraph
       # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard

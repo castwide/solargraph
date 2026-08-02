@@ -67,43 +67,25 @@ module Solargraph
       #
       # False negatives:
       #
-      # @todo 4: Missed nil violation
+      # @todo 3: Missed nil violation
       #
-      # As of #1240/#1245 (code-change extraction from the strong-level
-      # typecheck cleanup): counts below are a full recount via `grep`
-      # over lib/**/*.rb, not a manual estimate.
+      # pending code fixes (605):
       #
-      # 79 ignores previously counted below were reclassified into a new
-      # "resolved once #1223 merges" bucket: PR #1223 restores tuple/literal
-      # element-type inference that was disabled wholesale by #1201 (to fix
-      # specious inference reported in #1196). That disabling is the root
-      # cause of a broad swath of downstream nil-check/downcast/overload-
-      # resolution gaps, not just tuple indexing. Confirmed empirically by
-      # test-merging #1223's branch on top of this one and diffing
-      # `solargraph typecheck --level strong` output before/after (line
-      # numbers stripped to avoid false positives from line-count shifts);
-      # every line flagged "Unneeded @ sg-ignore comment" in that diff is
-      # listed below.
-      #
-      # pending code fixes (519):
-      #
-      # @todo 428: Need to add nil check here
-      # @todo 29: Nil check fix pending in #1245
+      # @todo 433: Need to add nil check here
+      # @todo 79: https://github.com/castwide/solargraph/pull/1223
+      # @todo 50: https://github.com/castwide/solargraph/pull/1245
       # @todo 26: Translate to something flow sensitive typing understands
-      # @todo 15: Need a downcast here
-      # @todo 13: Downcast fix pending in #1245
-      # @todo 5: Return-value fix pending in #1245
-      # @todo 3: Dead code (shadowed by second definition below); removal pending in #1245
+      # @todo 17: Need a downcast here
       #
-      # flow sensitive typing could handle (158):
+      # flow sensitive typing could handle (161):
       #
       # @todo 30: flow sensitive typing needs to handle attrs
-      # @todo 19: flow sensitive typing should be able to handle redefinition
+      # @todo 20: flow sensitive typing should be able to handle redefinition
       # @todo 16: flow sensitive typing should support case/when
-      # @todo 12: flow based typing needs to understand case when class pattern
       # @todo 12: flow sensitive typing needs to narrow down type with an if is_a? check
+      # @todo 12: flow based typing needs to understand case when class pattern
       # @todo 11: flow sensitive typing needs better handling of ||= on lvars
-      # @todo 10: Need to validate config
+      # @todo 11: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 5: need boolish support for ? methods
       # @todo 4: flow sensitive typing ought to be able to handle 'when ClassName'
@@ -113,6 +95,7 @@ module Solargraph
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
+      # @todo 2: downcast output of Enumerable#select
       # @todo 1: flow sensitive typing should support ivars
       # @todo 1: Need to be able to resolve generics based on a
       # @todo 1: Need to support this in flow sensitive typing
@@ -125,24 +108,8 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 1: Should better support meaning of '&' in RBS
       # @todo 1: flow sensitive typing needs to handle constants
-      # @todo 1: downcast output of Enumerable#select
       # @todo 1: Need to handle duck-typed method calls on union types
       # @todo 1: flow sensitive typing needs to remove literal with
-      #
-      # resolved once #1223 merges (79) - was previously counted above as:
-      #
-      # @todo 37: Need to add nil check here
-      # @todo 24: Need a downcast here
-      # @todo 4: Solargraph can't resolve which Open3.capture3 overload applies here, ...
-      # @todo 4: (bare @ sg-ignore, no reason given)
-      # @todo 2: Translate to something flow sensitive typing understands
-      # @todo 2: flow sensitive typing needs to narrow down type with an if is_a? check
-      # @todo 1: Solargraph can't resolve which Open3.capture2e overload applies here, ...
-      # @todo 1: Return-value fix pending in #1245
-      # @todo 1: Need to handle duck-typed method calls on union types
-      # @todo 1: Gem::StubSpecification isn't always resolvable depending on ...
-      # @todo 1: flow sensitive typing needs to handle while
-      # @todo 1: "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the ...
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end

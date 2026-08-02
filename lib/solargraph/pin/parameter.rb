@@ -282,7 +282,7 @@ module Solargraph
             found = p
             break
           end
-          # @sg-ignore Nil check fix pending in #1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end

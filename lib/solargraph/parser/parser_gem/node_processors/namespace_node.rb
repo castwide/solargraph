@@ -49,9 +49,9 @@ module Solargraph
             match = source.match(/[^\n]*?#\s?+\[([^\]]*)/)
             return unless match && match[1]
 
-            # @sg-ignore Nil check fix pending in #1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             code = match[1].strip
-            # @sg-ignore Nil check fix pending in #1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return if code.empty?
 
             "<#{code}>"

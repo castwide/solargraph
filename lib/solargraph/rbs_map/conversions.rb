@@ -139,7 +139,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore Downcast fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -151,7 +151,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore Downcast fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
@@ -173,11 +173,11 @@ module Solargraph
         # @todo Tuples are in flux
         # tuples have their own class and are handled in other_type_to_type
         if base == 'Hash' && params.length == 2
-          # @sg-ignore Downcast fix pending in #1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: type_name.absolute?,
                                                                            parameters_type: :hash)
         else
-          # @sg-ignore Downcast fix pending in #1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: type_name.absolute?,
                                                                              parameters_type: :list)
         end
@@ -589,12 +589,12 @@ module Solargraph
       def location_decl_to_pin_location(location)
         return nil if location&.name.nil?
 
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         start_pos = Position.new(location.start_line - 1, location.start_column)
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         end_pos = Position.new(location.end_line - 1, location.end_column)
         range = Range.new(start_pos, end_pos)
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         Location.new(location.name.to_s, range)
       end
 
@@ -608,7 +608,7 @@ module Solargraph
           return [
             [Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: pin, source: :rbs,
                                             type_location: type_location)],
-            # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             method_type_to_type(type, implicit_nil)
           ]
         end
@@ -634,7 +634,7 @@ module Solargraph
         end
         if type.type.rest_positionals
           name = type.type.rest_positionals.name ? type.type.rest_positionals.name.to_s : "arg_#{arg_num += 1}"
-          # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           inner_rest_positional_type = other_type_to_type(type.type.rest_positionals.type)
           rest_positional_type = ComplexType::UniqueType.new('Array',
                                                              [],
@@ -674,7 +674,7 @@ module Solargraph
                                                          source: :rbs, type_location: type_location)
         end
 
-        # @sg-ignore Dead code (shadowed by second definition below); removal pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         return_type = method_type_to_type(type, implicit_nil)
         [parameters, return_type]
       end

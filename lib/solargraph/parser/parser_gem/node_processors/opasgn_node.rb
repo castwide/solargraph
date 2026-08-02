@@ -22,7 +22,7 @@ module Solargraph
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       # @sg-ignore Downcast fix pending in #1245
+                                       # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                                        "Unexpected op_asgn target type: #{target.type}")
             end
           end

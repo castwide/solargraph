@@ -485,7 +485,7 @@ module Solargraph
     end
 
     # @return [SourceMap, Boolean]
-    # @sg-ignore Return-value fix pending in #1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def next_map
       return false if mapped?
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }

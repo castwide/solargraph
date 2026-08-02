@@ -130,7 +130,7 @@ module Solargraph
 
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
-      # @sg-ignore Return-value fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def get_path_pins path
         index.path_pin_hash[path]
       end
@@ -210,7 +210,7 @@ module Solargraph
 
       # @param fqns [String, nil]
       # @return [Array<Solargraph::Pin::Namespace>]
-      # @sg-ignore Return-value fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def fqns_pins fqns
         return [] if fqns.nil?
         if fqns.include?('::')

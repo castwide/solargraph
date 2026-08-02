@@ -520,13 +520,13 @@ module Solargraph
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
       # @type [Solargraph::Source::Chain]
-      # @sg-ignore Nil check fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       argchain = kwargs[par.name.to_sym]
-      # @sg-ignore Nil check fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
         result.concat kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
       elsif argchain
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         data = params[par.name]
         if data.nil?
           # @todo Some level (strong, I guess) should require the param here
@@ -540,14 +540,14 @@ module Solargraph
             # @todo Unresolved call to defined?
             if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
               result.push Problem.new(location,
-                                      # @sg-ignore Nil check fix pending in #1245
+                                      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                                       "Wrong argument type for #{pin.path}: #{par.name} expected #{ptype}, received #{argtype}")
             end
           end
         end
-      # @sg-ignore Nil check fix pending in #1245
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       elsif par.decl == :kwarg
-        # @sg-ignore Nil check fix pending in #1245
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         result.push Problem.new(location, "Call to #{pin.path} is missing keyword argument #{par.name}")
       end
       result
@@ -732,7 +732,7 @@ module Solargraph
     # @param arguments [Array<Source::Chain>]
     # @param location [Location]
     # @return [Array<Problem>]
-    # @sg-ignore Return-value fix pending in #1245
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def arity_problems_for pin, arguments, location
       results = pin.signatures.map do |sig|
         r = parameterized_arity_problems_for(pin, sig.parameters, arguments, location)
