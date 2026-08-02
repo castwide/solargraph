@@ -2284,7 +2284,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'uses types to determine overload to match' do
-    pending 'Overload resolution by argument type currently unions signatures instead of narrowing; needs investigation'
+    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
     source = Solargraph::Source.load_string(%(
       # @generic A
       # @generic B
@@ -2314,7 +2314,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'uses types to determine overload of [] to match' do
-    pending 'Overload resolution by argument type currently unions signatures instead of narrowing; needs investigation'
+    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
     source = Solargraph::Source.load_string(%(
       # @generic A
       # @generic B
