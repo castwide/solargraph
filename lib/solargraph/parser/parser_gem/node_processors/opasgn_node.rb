@@ -13,8 +13,10 @@ module Solargraph
             operator = node.children[1]
             argument = node.children[2]
             if target.type == :send
+              # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
             elsif target.type.to_s.end_with?('vasgn')
+              # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
@@ -55,7 +57,7 @@ module Solargraph
                                     [callee,
                                      asgn_method,
                                      node.updated(:send, [call, operator, argument])])
-            NodeProcessor.process(new_send, region, pins, locals)
+            NodeProcessor.process(new_send, region, pins, locals, ivars)
           end
 
           # @param asgn [Parser::AST::Node] the target of the assignment
@@ -86,8 +88,8 @@ module Solargraph
               argument
             ]
             send_node = node.updated(:send, send_children)
-            new_asgn = node.updated(asgn.type, [variable_name,  send_node])
-            NodeProcessor.process(new_asgn, region, pins, locals)
+            new_asgn = node.updated(asgn.type, [variable_name, send_node])
+            NodeProcessor.process(new_asgn, region, pins, locals, ivars)
           end
         end
       end

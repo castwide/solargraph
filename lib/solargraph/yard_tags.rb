@@ -14,7 +14,7 @@ module Solargraph
 end
 
 # Define a @type tag for documenting variables
-YARD::Tags::Library.define_tag("Type", :type, :with_types_and_name)
+YARD::Tags::Library.define_tag('Type', :type, :with_types_and_name)
 
 # Define an @!override directive for overriding method tags
-YARD::Tags::Library.define_directive("override", :with_name, Solargraph::DomainDirective)
+YARD::Tags::Library.define_directive('override', :with_name, Solargraph::DomainDirective)

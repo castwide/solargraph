@@ -17,7 +17,7 @@ module Solargraph
         'warning' => Severities::WARNING,
         'error' => Severities::ERROR,
         'fatal' => Severities::ERROR
-      }
+      }.freeze
 
       # @param source [Solargraph::Source]
       # @param _api_map [Solargraph::ApiMap]
@@ -25,6 +25,7 @@ module Solargraph
       def diagnose source, _api_map
         @source = source
         require_rubocop(rubocop_version)
+        # @sg-ignore Need to add nil check here
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)
@@ -32,7 +33,7 @@ module Solargraph
         # a time - it uses 'chdir' to read config files with ERB,
         # which can conflict with other chdirs.
         result = Solargraph::CHDIR_MUTEX.synchronize do
-          redirect_stdout{ runner.run(paths) }
+          redirect_stdout { runner.run(paths) }
         end
 
         return [] if result.empty?
@@ -76,7 +77,7 @@ module Solargraph
           severity: SEVERITIES[off['severity']],
           source: 'rubocop',
           code: off['cop_name'],
-          message: off['message'].gsub(/^#{off['cop_name']}\:/, '')
+          message: off['message'].gsub(/^#{off['cop_name']}:/, '')
         }
       end
 
@@ -95,22 +96,22 @@ module Solargraph
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_ending_position off
-        if off['location']['start_line'] != off['location']['last_line']
-          Position.new(off['location']['start_line'], 0)
-        else
+        if off['location']['start_line'] == off['location']['last_line']
           start_line = off['location']['start_line'] - 1
           # @type [Integer]
           last_column = off['location']['last_column']
           line = @source.code.lines[start_line]
           col_off = if line.nil? || line.empty?
-            1
-          else
-            0
-          end
+                      1
+                    else
+                      0
+                    end
 
           Position.new(
             start_line, last_column - col_off
           )
+        else
+          Position.new(off['location']['start_line'], 0)
         end
       end
     end

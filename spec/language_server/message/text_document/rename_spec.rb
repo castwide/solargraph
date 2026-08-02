@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
-  it "renames a symbol" do
+  it 'renames a symbol' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open('file:///file.rb', %(
@@ -10,25 +10,25 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       foo = Foo.new
     ), 1)
     sleep 0.01 until host.libraries.all?(&:mapped?)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => 'file:///file.rb'
-        },
-        'position' => {
-          'line' => 1,
-          'character' => 12
-        },
-        'newName' => 'Bar'
-      }
-    })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => 'file:///file.rb'
+                                     },
+                                     'position' => {
+                                       'line' => 1,
+                                       'character' => 12
+                                     },
+                                     'newName' => 'Bar'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes]['file:///file.rb'].length).to eq(2)
   end
 
-  it "renames an argument symbol from method signature" do
+  it 'renames an argument symbol from method signature' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open('file:///file.rb', %(
@@ -40,25 +40,25 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
     	end
 
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => 'file:///file.rb'
-        },
-        'position' => {
-          'line' => 2,
-          'character' => 14
-        },
-        'newName' => 'baz'
-      }
-    })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => 'file:///file.rb'
+                                     },
+                                     'position' => {
+                                       'line' => 2,
+                                       'character' => 14
+                                     },
+                                     'newName' => 'baz'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes]['file:///file.rb'].length).to eq(3)
   end
 
-  it "renames an argument symbol from method body" do
+  it 'renames an argument symbol from method body' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open('file:///file.rb', %(
@@ -69,25 +69,25 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
     	end
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => 'file:///file.rb'
-        },
-        'position' => {
-          'line' => 3,
-          'character' => 6
-        },
-        'newName' => 'baz'
-      }
-    })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => 'file:///file.rb'
+                                     },
+                                     'position' => {
+                                       'line' => 3,
+                                       'character' => 6
+                                     },
+                                     'newName' => 'baz'
+                                   }
+                                 })
     rename.process
     expect(rename.result[:changes]['file:///file.rb'].length).to eq(3)
   end
 
-  it "renames namespace symbol with proper range" do
+  it 'renames namespace symbol with proper range' do
     host = Solargraph::LanguageServer::Host.new
     host.start
     host.open('file:///file.rb', %(
@@ -96,20 +96,20 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
       obj = Namespace::ExampleClass.new
     ), 1)
-    rename = Solargraph::LanguageServer::Message::TextDocument::Rename.new(host, {
-      'id' => 1,
-      'method' => 'textDocument/rename',
-      'params' => {
-        'textDocument' => {
-          'uri' => 'file:///file.rb'
-        },
-        'position' => {
-          'line' => 2,
-          'character' => 12
-        },
-        'newName' => 'Nameplace'
-      }
-    })
+    rename = described_class.new(host, {
+                                   'id' => 1,
+                                   'method' => 'textDocument/rename',
+                                   'params' => {
+                                     'textDocument' => {
+                                       'uri' => 'file:///file.rb'
+                                     },
+                                     'position' => {
+                                       'line' => 2,
+                                       'character' => 12
+                                     },
+                                     'newName' => 'Nameplace'
+                                   }
+                                 })
     rename.process
     changes = rename.result[:changes]['file:///file.rb']
     expect(changes.length).to eq(3)

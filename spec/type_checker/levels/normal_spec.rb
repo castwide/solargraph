@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::TypeChecker do
-  context 'normal level' do
-    def type_checker(code)
+  context 'when checking at normal level' do
+    def type_checker code
       Solargraph::TypeChecker.load_string(code, 'test.rb', :normal)
     end
 
@@ -201,7 +203,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports unresolved return tags' do
+    it 'reports unresolved type tags' do
       checker = type_checker(%(
         # @type [UnknownClass]
         x = unknown_method
@@ -221,9 +223,6 @@ describe Solargraph::TypeChecker do
       # @todo This test uses kramdown-parser-gfm because it's a gem dependency known to
       #   lack typed methods. A better test wouldn't depend on the state of
       #   vendored code.
-      gemspec = Gem::Specification.find_by_name('kramdown-parser-gfm')
-      yard_pins = Solargraph::GemPins.build_yard_pins([], gemspec)
-      Solargraph::PinCache.serialize_yard_gem(gemspec, yard_pins)
 
       checker = type_checker(%(
         require 'kramdown-parser-gfm'
@@ -609,7 +608,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies block passes in arguments' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         class Foo
           def map(&block)
             block.call(100)
@@ -624,7 +623,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies args and block passes' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         class Foo
           def map(x, &block)
             block.call(x)
@@ -639,14 +638,14 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies extra block passes in chained calls' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         ''.to_s(&:nil?)
       ), 'test.rb')
       expect(checker.problems).to be_empty
     end
 
     it 'verifies extra block variables in calls with args' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         def foo(bar); end
         foo(1, &block)
       ), 'test.rb')
@@ -654,7 +653,7 @@ describe Solargraph::TypeChecker do
     end
 
     it 'verifies splats passed to arguments' do
-      checker = Solargraph::TypeChecker.load_string(%(
+      checker = described_class.load_string(%(
         def foo(bar, baz); end
         foo(*splat)
       ), 'test.rb')

@@ -2,7 +2,7 @@
 sources:
   - type: local
     name: shims
-    path: sig/shims
+    path: rbs/shims
 
   - type: git
     name: ruby/gem_rbs_collection

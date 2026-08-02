@@ -1,0 +1,11 @@
+module Diff
+end
+
+module Diff::LCS
+  def self.LCS: (Array[String], Array[String]) -> Array[String]
+              | (String, String) -> Array[String]
+  def self.diff: (Array[String], Array[String]) -> Array[Array[String]]
+              | (String, String) -> Array[Array[Diff::LCS::Change]]
+
+  def self.patch!: (Array[String], Array[String]) -> String
+end

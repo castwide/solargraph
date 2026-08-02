@@ -27,7 +27,6 @@ module Solargraph
       end
 
       # @param text [String]
-      # @sg-ignore https://github.com/lsegal/yard/pull/1615
       # @return [String]
       def htmlify text
         # @type [String]
@@ -50,7 +49,7 @@ module Solargraph
 
     # @param directory [String]
     def initialize directory = VIEWS_PATH
-      directory = VIEWS_PATH if directory.nil? or !File.directory?(directory)
+      directory = VIEWS_PATH if directory.nil? || !File.directory?(directory)
       directories = [directory]
       directories.push VIEWS_PATH if directory != VIEWS_PATH
       # @type [Proc]

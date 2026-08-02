@@ -56,7 +56,7 @@ module Solargraph
         # @return [void]
         def tick
           return if queue.empty? || host.synchronizing?
-          if !host.options['diagnostics']
+          unless host.options['diagnostics']
             mutex.synchronize { queue.clear }
             return
           end
