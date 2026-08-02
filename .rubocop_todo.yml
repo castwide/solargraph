@@ -66,6 +66,10 @@ Lint/UnderscorePrefixedVariableName:
   Exclude:
     - 'lib/solargraph/library.rb'
 
+Lint/UnreachableCode:
+  Exclude:
+    - 'lib/solargraph/type.rb'
+
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowUnusedKeywordArguments, IgnoreEmptyMethods, IgnoreNotImplementedMethods, NotImplementedExceptions.
 # NotImplementedExceptions: NotImplementedError
