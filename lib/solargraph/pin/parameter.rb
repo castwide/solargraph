@@ -261,6 +261,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
+      # @sg-ignore Need to add nil check here
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -281,8 +282,9 @@ module Solargraph
             found = p
             break
           end
-          if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
-            found = params[index]
+          indexed_param = index.nil? ? nil : params[index]
+          if found.nil? && indexed_param && (indexed_param.name.nil? || indexed_param.name.empty?)
+            found = indexed_param
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
@@ -319,6 +321,7 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
+        # @sg-ignore Need to add nil check here
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else

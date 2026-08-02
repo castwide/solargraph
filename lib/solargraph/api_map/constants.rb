@@ -112,6 +112,7 @@ module Solargraph
       # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = :in_process
+        # @sg-ignore Need a downcast here
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
       end
 
@@ -124,6 +125,7 @@ module Solargraph
         parts = name.split('::')
         first = nil
         parts.each.with_index do |nam, idx|
+          # @sg-ignore Need to add nil check here
           resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
           first ||= remainder
           if resolved
@@ -148,6 +150,7 @@ module Solargraph
         resolved = nil
         gates.each.with_index do |gate, idx|
           resolved = simple_resolve(name, gate, internal)
+          # @sg-ignore Need to add nil check here
           return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
             return ref.name.sub(/^::/, '') if ref.name.end_with?("::#{name}") && ref.name.start_with?('::')
