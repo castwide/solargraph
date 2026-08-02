@@ -82,7 +82,7 @@ module Solargraph
       # test-merging #1223's branch on top of this one and diffing
       # `solargraph typecheck --level strong` output before/after (line
       # numbers stripped to avoid false positives from line-count shifts);
-      # every line flagged "Unneeded @sg-ignore comment" in that diff is
+      # every line flagged "Unneeded @ sg-ignore comment" in that diff is
       # listed below.
       #
       # pending code fixes (519):
@@ -134,7 +134,7 @@ module Solargraph
       # @todo 37: Need to add nil check here
       # @todo 24: Need a downcast here
       # @todo 4: Solargraph can't resolve which Open3.capture3 overload applies here, ...
-      # @todo 4: (bare @sg-ignore, no reason given)
+      # @todo 4: (bare @ sg-ignore, no reason given)
       # @todo 2: Translate to something flow sensitive typing understands
       # @todo 2: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 1: Solargraph can't resolve which Open3.capture2e overload applies here, ...
