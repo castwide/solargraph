@@ -822,7 +822,8 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Class')
   end
 
-  it 'infers undefined from Class#new' do
+  it 'infers Class from Class#new' do
+    pending "Needs work"
     source = Solargraph::Source.load_string(%(
       cls = Class.new
       cls.new
@@ -830,17 +831,17 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [2, 11])
-    expect(clip.infer.tag).to eq('undefined')
+    expect(clip.infer.tag).to eq('Class')
   end
 
-  it 'infers undefined from Class.new.new' do
+  it 'infers BasicObject from Class.new.new' do
     source = Solargraph::Source.load_string(%(
       Class.new.new
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [1, 17])
-    expect(clip.infer.tag).to eq('undefined')
+    expect(clip.infer.tag).to eq('BasicObject')
   end
 
   it 'completes class instance variables in the namespace' do

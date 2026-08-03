@@ -743,5 +743,10 @@ describe 'YARD type specifier list parsing' do
       atype = Solargraph::ComplexType.parse(':foo')
       expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
+
+    it 'converts generic parameters to Typdef::Type' do
+      complex_type = Solargraph::ComplexType.parse("Hash<generic<GenericTypeParam>, self>")
+      expect(complex_type.to_typedef_types.map(&:to_s)).to eq(['Hash[generic<GenericTypeParam>, self]'])
+    end
   end
 end

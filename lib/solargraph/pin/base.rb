@@ -33,6 +33,8 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
+      attr_reader :expansions
+
       def presence_certain?
         true
       end
@@ -47,7 +49,7 @@ module Solargraph
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
-                     docstring: nil, directives: nil, combine_priority: nil
+                     docstring: nil, directives: nil, combine_priority: nil, expansions: {}
         @location = location
         @type_location = type_location
         @closure = closure
@@ -60,9 +62,23 @@ module Solargraph
         @combine_priority = combine_priority
         # @type [ComplexType, ComplexType::UniqueType, nil]
         @binder = nil
+        @expansions = expansions
 
         assert_source_provided
         assert_location_provided
+      end
+
+      def typedef_path
+        Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
+      end
+
+      # @return [Typedef::Typeset]
+      def typedef_typeset
+        return_type.to_typedef_typeset
+      end
+
+      def expansions
+        @expansions ||= {}
       end
 
       # @return [void]
@@ -708,6 +724,18 @@ module Solargraph
           " at #{type_location.inspect})"
         else
           " at (#{location.inspect} and #{type_location.inspect})"
+        end
+      end
+
+      def generics
+        @generics ||= []
+      end
+
+      def typedef_generics
+        @typedef_generics ||= if generics.empty?
+          docstring.tags(:generic).map(&:name)
+        else
+          generics
         end
       end
 
