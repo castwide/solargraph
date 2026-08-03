@@ -195,7 +195,7 @@ module Solargraph
     # @return [Array<Pin::Base>]
     attr_writer :convention_pins
 
-    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}] # rubocop:disable YARD/CollectionStyle
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)

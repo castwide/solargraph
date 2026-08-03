@@ -150,33 +150,33 @@ module Solargraph
       @unresolved_requires ||= required_gems_map.select { |_, gemspecs| gemspecs.nil? }.keys
     end
 
-    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_yard_gems_in_memory
       @all_yard_gems_in_memory ||= {}
     end
 
-    # @return [Hash{String => Hash{Array, String, String => Array<Pin::Base>}}] stored by RBS collection path
+    # @return [Hash{String => Hash{Array(String, String) => Array<Pin::Base>}}] stored by RBS collection path
     def self.all_rbs_collection_gems_in_memory
       @all_rbs_collection_gems_in_memory ||= {}
     end
 
-    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def yard_pins_in_memory
       self.class.all_yard_gems_in_memory
     end
 
-    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def rbs_collection_pins_in_memory
       self.class.all_rbs_collection_gems_in_memory[rbs_collection_path] ||= {}
     end
 
-    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def self.all_combined_pins_in_memory
       @all_combined_pins_in_memory ||= {}
     end
 
     # @todo this should also include an index by the hash of the RBS collection
-    # @return [Hash{Array, String, String => Array<Pin::Base>}] Indexed by gemspec name and version
+    # @return [Hash{Array(String, String) => Array<Pin::Base>}] Indexed by gemspec name and version
     def combined_pins_in_memory
       self.class.all_combined_pins_in_memory
     end

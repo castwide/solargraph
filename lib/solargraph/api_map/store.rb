@@ -317,9 +317,9 @@ module Solargraph
         true
       end
 
-      # @return [Hash{::Array, String, String => ::Array<Pin::Namespace>}]
+      # @return [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
       def fqns_pins_map
-        # @param h [Hash{::Array, String, String => ::Array<Pin::Namespace>}]
+        # @param h [Hash{::Array(String, String) => ::Array<Pin::Namespace>}]
         # @param base [String]
         # @param name [String]
         @fqns_pins_map ||= Hash.new do |h, (base, name)|
