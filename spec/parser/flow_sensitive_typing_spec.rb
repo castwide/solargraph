@@ -1102,6 +1102,50 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'narrows a plain ||= assignment on an lvar to eliminate nil' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @param repr [Repro, nil]
+      # @return [void]
+      def verify_repro(repr)
+        repr ||= Repro.new
+        repr
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+
+    pending('flow sensitive typing needs better handling of ||= on lvars')
+
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows a ||= assignment on a keyword param to eliminate nil, with no nested nil check' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          baz ||= true
+          baz
+        end
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [7, 10])
+
+    pending('flow sensitive typing needs better handling of ||= on lvars')
+
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
   it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
