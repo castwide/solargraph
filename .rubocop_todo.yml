@@ -418,14 +418,6 @@ Style/SuperArguments:
     - 'lib/solargraph/pin/method.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
-YARD/CollectionStyle:
-  Exclude:
-    - 'lib/solargraph/api_map/constants.rb'
-    - 'lib/solargraph/api_map/store.rb'
-    - 'lib/solargraph/doc_map.rb'
-    - 'lib/solargraph/source_map.rb'
-
-# This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStylePrototypeName.
 # SupportedStylesPrototypeName: before, after
 YARD/MismatchName:
