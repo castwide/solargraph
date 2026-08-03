@@ -660,6 +660,61 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'uses .nil? in a raise if() in a method to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a raise if() to refine a type used as a call argument' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          accepts_boolean(baz)
+        end
+
+        # @param b [::Boolean]
+        # @return [void]
+        def accepts_boolean(b); end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 27])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a raise if() to refine a type used as a call receiver' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          baz.length
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 12])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
   it 'uses .nil? in a return if() in a block to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo

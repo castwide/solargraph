@@ -462,7 +462,15 @@ module Solargraph
       # @param clause_node [Parser::AST::Node, nil]
       def always_leaves_compound_statement? clause_node
         # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
-        %i[return raise next redo retry].include?(clause_node&.type)
+        return true if %i[return next redo retry].include?(clause_node&.type)
+        return false if clause_node.nil?
+        return false unless clause_node.type == :send
+
+        # Unlike return/next/redo/retry, `raise` and `fail` are plain
+        # method calls to the parser - `raise 'msg'` parses as
+        # s(:send, nil, :raise, s(:str, "msg")), not a dedicated node
+        # type - so they need to be recognized by shape instead of type.
+        clause_node.children[0].nil? && %i[raise fail].include?(clause_node.children[1])
       end
 
       attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
