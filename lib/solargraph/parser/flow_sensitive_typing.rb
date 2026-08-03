@@ -446,6 +446,11 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., ::Baz parses as s(:const, s(:cbase), :Baz) - the
+        # leading :cbase marks root-namespace resolution and isn't
+        # itself a :const node, so it needs to be recognized here
+        # rather than falling into the generic recursive case below.
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name

@@ -94,6 +94,64 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'uses is_a? in a simple if() to refine types on a root-scoped (::-prefixed) class' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      module Foo
+        class Repro < ReproBase; end
+      end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        if repr.is_a?(::Foo::Repro)
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Foo::Repro')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'uses is_a? with a ::-prefixed class combined via && in a guard clause to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @param repr [ReproBase]
+      # @return [void]
+      def verify_repro(repr)
+        return unless repr.is_a?(::Repro) && repr.respond_to?(:foo)
+        repr
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? with a ::-prefixed class in an elsif to refine types in the branch body' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        if repr.is_a?(Repro1)
+          repr
+        elsif repr.is_a?(::Repro2) && repr.respond_to?(:foo)
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Repro2')
+  end
+
   it 'uses is_a? in a simple unless statement to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
