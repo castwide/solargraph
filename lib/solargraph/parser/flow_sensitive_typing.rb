@@ -190,6 +190,59 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # @param case_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_case case_node
+        return if case_node.type != :case
+
+        #
+        # See if we can narrow the subject's type inside each 'when'
+        # branch based on the classes tested for in that branch
+        #
+        # [3] pry(main)> Parser::CurrentRuby.parse("case a; when B; c; end")
+        # => s(:case,
+        #   s(:send, nil, :a),
+        #   s(:when,
+        #     s(:const, nil, :B),
+        #     s(:send, nil, :c)), nil)
+        # [4] pry(main)>
+        subject_node = case_node.children[0]
+        return if subject_node.nil?
+        # @sg-ignore Need to add nil check here
+        return unless %i[lvar ivar].include?(subject_node.type)
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        variable_name = parse_variable(subject_node)
+        return if variable_name.nil?
+
+        # @sg-ignore Need to add nil check here
+        subject_position = Range.from_node(subject_node).start
+        pin = find_var(variable_name, subject_position)
+        return unless pin
+
+        # @sg-ignore Need to add nil check here
+        when_nodes = case_node.children[1..].compact.select { |child| child.type == :when }
+        # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+        when_nodes.each do |when_node|
+          *value_nodes, body_node = when_node.children
+          next if body_node.nil?
+
+          type_names = value_nodes.map { |value_node| type_name(value_node) }
+          # Only narrow if every value in this 'when' clause is a
+          # simple constant reference - a splat, range, regexp, etc.
+          # isn't a type we can express as a downcast.
+          next if type_names.any?(&:nil?)
+
+          before_body_loc = body_node.location.expression.adjust(begin_pos: -1)
+          before_body_pos = Position.new(before_body_loc.line, before_body_loc.column)
+          presence = Range.new(before_body_pos, get_node_end_position(body_node))
+
+          facts = { pin => [{ type: ComplexType.parse(*type_names) }] }
+          process_facts(facts, [presence])
+        end
+      end
+
       class << self
         include Logging
       end

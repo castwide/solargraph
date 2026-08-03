@@ -221,6 +221,96 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'narrows a case/when subject to the matched class inside each branch' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1
+          repr
+        when Repro2
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Repro1')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.to_s).to eq('Repro2')
+
+    clip = api_map.clip_at('test.rb', [12, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'narrows a case/when subject to a union when a when clause has multiple values' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      class Repro3 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1, Repro2
+          repr
+        when Repro3
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Repro1, Repro2')
+  end
+
+  it 'narrows a case/when subject to the matched class for an ivar subject' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Foo
+        # @param repr [ReproBase]
+        def initialize(repr)
+          @repr = repr
+        end
+
+        # @return [void]
+        def verify
+          case @repr
+          when Repro1
+            @repr
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [13, 12])
+    expect(clip.infer.to_s).to eq('Repro1')
+  end
+
+  it 'does not narrow a case/when subject when a when clause value is not a simple constant' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1, some_dynamic_value
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
   it 'uses is_a? in a "break unless" statement in an .each block to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
