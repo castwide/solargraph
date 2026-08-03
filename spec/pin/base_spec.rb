@@ -73,6 +73,18 @@ describe Solargraph::Pin::Base do
     end
   end
 
+  describe '#realize' do
+    it 'roots an already-defined but unrooted return type' do
+      api_map = Solargraph::ApiMap.new
+      pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [String]')
+      expect(pin.return_type).to be_defined
+      expect(pin.return_type.all_rooted?).to be(false)
+      realized = pin.realize(api_map)
+      expect(realized.return_type.all_rooted?).to be(true)
+      expect(realized.return_type.rooted_tags).to eq('::String')
+    end
+  end
+
   describe '#macro_names' do
     it 'returns names' do
       pin = described_class.new(name: 'Example', comments: "@macro addcomment\n@macro returnself")

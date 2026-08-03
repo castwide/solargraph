@@ -192,6 +192,7 @@ module Solargraph
 
               new_pin.docstring.add_tag(tag)
               redefine_return_type new_pin, tag
+              new_pin.comments = "#{new_pin.docstring.to_raw}\n"
               new_pin.reset_generated!
             end
           end

@@ -10,7 +10,7 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
-      attr_writer :signatures
+      attr_writer :signatures, :comments
 
       # @return [Parser::AST::Node]
       attr_reader :node
@@ -98,7 +98,7 @@ module Solargraph
         end
         block&.reset_generated!
         @signatures&.each(&:reset_generated!)
-        nil
+        @documentation = nil
       end
 
       def all_rooted?
