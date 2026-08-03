@@ -848,7 +848,7 @@ module Solargraph
     def all_sg_ignore_lines
       source.associated_comments.select do |_line, text|
         # @sg-ignore Need to add nil check here
-        text.include?('@sg-ignore')
+        text.any? { |t| t.include?('@sg-ignore') }
       end.keys.to_set
     end
 
