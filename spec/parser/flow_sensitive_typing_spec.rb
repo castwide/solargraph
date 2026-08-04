@@ -1116,9 +1116,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 8])
-
-    pending('flow sensitive typing needs better handling of ||= on lvars')
-
     expect(clip.infer.to_s).to eq('Repro')
   end
 
@@ -1140,9 +1137,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
     clip = api_map.clip_at('test.rb', [7, 10])
-
-    pending('flow sensitive typing needs better handling of ||= on lvars')
-
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 

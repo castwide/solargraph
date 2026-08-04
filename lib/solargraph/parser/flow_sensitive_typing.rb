@@ -243,6 +243,42 @@ module Solargraph
         end
       end
 
+      # @param or_asgn_node [Parser::AST::Node]
+      # @param presence [Range]
+      #
+      # @return [void]
+      def process_or_asgn or_asgn_node, presence
+        return if or_asgn_node.type != :or_asgn
+
+        #
+        # 'x ||= value' only actually assigns when x is falsy (nil or
+        # false), so if x was already truthy, it keeps whatever
+        # non-nil type it already had. Narrow the existing pin by
+        # excluding nil, scoped to the rest of the enclosing closure.
+        #
+        # [3] pry(main)> Parser::CurrentRuby.parse("x ||= 1")
+        # => s(:or_asgn,
+        #   s(:lvasgn, :x),
+        #   s(:int, 1))
+        # [4] pry(main)>
+        lhs = or_asgn_node.children[0]
+        # @sg-ignore Need to add nil check here
+        return unless %i[lvasgn ivasgn].include?(lhs.type)
+
+        # @sg-ignore Need to add nil check here
+        variable_name = lhs.children[0].to_s
+        # @sg-ignore Need to add nil check here
+        return if variable_name.empty?
+
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(or_asgn_node).start
+        pin = find_var(variable_name, position)
+        return unless pin
+
+        facts = { pin => [{ not_type: ComplexType::NIL }] }
+        process_facts(facts, [presence])
+      end
+
       class << self
         include Logging
       end
