@@ -1103,4 +1103,23 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [19, 26])
     expect(clip.infer.rooted_tags).to eq('::String')
   end
+
+  it 'uses is_a? with a fully-qualified type name to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def verify_repro(x)
+        if x.is_a?(::Integer)
+          x
+        else
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Object')
+  end
 end

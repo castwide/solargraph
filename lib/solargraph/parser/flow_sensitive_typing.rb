@@ -264,26 +264,24 @@ module Solargraph
       #   'location'], or nil if `node` doesn't have this shape.
       def parse_receiver_chain node
         return unless node.is_a?(::Parser::AST::Node)
-        # @sg-ignore Need to add nil check here
         return [node.children[0].to_s] if %i[lvar ivar].include?(node.type)
-        # @sg-ignore Need to add nil check here
         return unless node.type == :send
-        # no arguments
-        # @sg-ignore Need to add nil check here
-        return unless node.children[2..].empty?
+        # no arguments -- children[2..] is only nil (rather than [])
+        # if the start index is out of bounds, which can't happen here
+        return unless (node.children[2..] || []).empty?
 
-        # @sg-ignore Need to add nil check here
         method_name = node.children[1]
-        # @sg-ignore Need to add nil check here
         return unless method_name.is_a?(Symbol)
 
-        # @sg-ignore Need to add nil check here
         receiver = node.children[0]
         # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
         # 'foo' could be a local variable or a 0-arg method on self
-        # @sg-ignore Need to add nil check here
         return [method_name.to_s] if receiver.nil?
 
+        # @sg-ignore a :send node's receiver (children[0]) is nil or an
+        #   AST::Node, never any of the other types children[] can hold
+        #   for other node shapes (e.g. Symbol, Array) -- and
+        #   parse_receiver_chain re-checks node.is_a?(...) itself anyway
         base = parse_receiver_chain(receiver)
         return unless base
 
@@ -305,7 +303,10 @@ module Solargraph
         call_receiver = call_node.children[0]
         call_arg = type_name(call_node.children[2])
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children is typed as a broad union (it can hold
+        #   nested arrays/symbols for other node shapes), but
+        #   parse_receiver_chain re-checks node.is_a?(::Parser::AST::Node)
+        #   itself and safely returns nil for anything else
         chain_words = parse_receiver_chain(call_receiver)
         return unless chain_words
 
@@ -519,7 +520,9 @@ module Solargraph
         chain_words = parse_receiver_chain(node)
         return if chain_words.nil? || chain_words.length < 2
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node is nil only for a node without
+        #   source location info, which doesn't happen for real parsed
+        #   nodes reaching here (same as isa_position/nilp_position above)
         position = Range.from_node(node).start
 
         pin = chain_pin(chain_words, node, position)
@@ -551,6 +554,9 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name
