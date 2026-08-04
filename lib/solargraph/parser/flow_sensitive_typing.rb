@@ -262,16 +262,18 @@ module Solargraph
         #   s(:int, 1))
         # [4] pry(main)>
         lhs = or_asgn_node.children[0]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
         return unless %i[lvasgn ivasgn].include?(lhs.type)
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
         variable_name = lhs.children[0].to_s
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
         return if variable_name.empty?
 
-        # @sg-ignore Need to add nil check here
-        position = Range.from_node(or_asgn_node).start
+        range = Range.from_node(or_asgn_node)
+        return if range.nil?
+
+        position = range.start
         pin = find_var(variable_name, position)
         return unless pin
 
