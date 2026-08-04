@@ -95,7 +95,7 @@ module Solargraph
 
       # @return [String]
       def type_arity_decl
-        arity_decl + return_type.items.count.to_s
+        arity_decl + return_type.tags
       end
 
       def arg?
