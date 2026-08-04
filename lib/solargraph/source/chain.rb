@@ -137,9 +137,13 @@ module Solargraph
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
         end
-        links.last.last_context = working_pin
-        # @sg-ignore Need to add nil check here
-        links.last.resolve(api_map, working_pin, locals, receiver_path)
+        # links is never empty -- the constructor pads an empty links
+        # array with UNDEFINED_CALL -- but Array#last is typed nilable.
+        last_link = links.last
+        return [] if last_link.nil?
+
+        last_link.last_context = working_pin
+        last_link.resolve(api_map, working_pin, locals, receiver_path)
       end
 
       # @param api_map [ApiMap]
