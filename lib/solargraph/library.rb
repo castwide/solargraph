@@ -576,14 +576,8 @@ module Solargraph
       return unless source
       # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
       return unless @current == source || workspace.has_file?(source.filename)
-      if source_map_hash.key?(source.filename)
-        new_map = Solargraph::SourceMap.map(source)
-        # @sg-ignore OK if source.filename is nil
-        source_map_hash[source.filename] = new_map
-      else
-        # @sg-ignore OK if source.filename is nil
-        source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
-      end
+      # @sg-ignore OK if source.filename is nil
+      source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
     end
 
     # @return [Set<Gem::Specification>]

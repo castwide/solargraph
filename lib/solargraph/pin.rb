@@ -38,6 +38,7 @@ module Solargraph
     autoload :Until,            'solargraph/pin/until'
     autoload :While,            'solargraph/pin/while'
     autoload :Callable,         'solargraph/pin/callable'
+    autoload :FactoryParameter, 'solargraph/pin/factory_parameter'
     autoload :CompoundStatement,
              'solargraph/pin/compound_statement'
 
