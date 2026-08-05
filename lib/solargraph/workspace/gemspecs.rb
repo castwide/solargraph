@@ -45,7 +45,7 @@ module Solargraph
 
         # Determine gem name based on the require path
         file = "lib/#{require}.rb"
-        spec_with_path = Gem::Specification.find_by_path(file)
+        spec_with_path = Gem::Specification.find_by_path(require)
 
         all_gemspecs = all_gemspecs_from_bundle
 
