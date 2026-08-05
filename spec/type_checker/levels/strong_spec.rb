@@ -925,5 +925,35 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves Hash#fetch return type on Hash{Symbol => Class<X>} without leaking a generic placeholder' do
+      # https://github.com/castwide/solargraph/issues/1227
+      #
+      # As of RBS 4.1.0, Hash#fetch's single-argument overload takes
+      # its key as the ::Hash::_Key duck-type interface instead of the
+      # generic K (see ruby/rbs core/hash.rbs). Solargraph couldn't
+      # prove a Symbol argument satisfies that interface, so it fell
+      # back to merging the return types of all of Hash#fetch's
+      # overloads (including the unresolved block-form's `generic<X>`)
+      # instead of picking the single-argument overload.
+      checker = type_checker(%(
+        class Foo; end
+
+        class Holder
+          # @return [Hash{Symbol => Class<Foo>}]
+          def registry
+            { x: Foo }
+          end
+
+          # @return [Foo]
+          def use_it
+            # @type [Class<Foo>]
+            clazz = registry.fetch(:x)
+            clazz.new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end
