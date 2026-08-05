@@ -13,7 +13,7 @@ module Solargraph
           @location = location
         end
 
-        def resolve api_map, name_pin, locals
+        def resolve api_map, name_pin, locals, _receiver_path = nil
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
           end

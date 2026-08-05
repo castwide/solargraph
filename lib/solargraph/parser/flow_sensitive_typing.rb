@@ -250,13 +250,49 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+        process_call_chain(expression_node, true_ranges, false_ranges)
+      end
+
+      # Recognizes receivers of the form 'foo', '@foo', 'foo.bar', or
+      # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
+      # calls/variable references rooted in a local variable, instance
+      # variable, or (for a bare call, e.g. 'foo' referring to a 0-arg
+      # method on self) an as-yet-unresolved name.
+      #
+      # @param node [Parser::AST::Node, nil]
+      # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
+      #   'location'], or nil if `node` doesn't have this shape.
+      def parse_receiver_chain node
+        return unless node.is_a?(::Parser::AST::Node)
+        return [node.children[0].to_s] if %i[lvar ivar].include?(node.type)
+        return unless node.type == :send
+        # no arguments -- children[2..] is only nil (rather than [])
+        # if the start index is out of bounds, which can't happen here
+        return unless (node.children[2..] || []).empty?
+
+        method_name = node.children[1]
+        return unless method_name.is_a?(Symbol)
+
+        receiver = node.children[0]
+        # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
+        # 'foo' could be a local variable or a 0-arg method on self
+        return [method_name.to_s] if receiver.nil?
+
+        # @sg-ignore a :send node's receiver (children[0]) is nil or an
+        #   AST::Node, never any of the other types children[] can hold
+        #   for other node shapes (e.g. Symbol, Array) -- and
+        #   parse_receiver_chain re-checks node.is_a?(...) itself anyway
+        base = parse_receiver_chain(receiver)
+        return unless base
+
+        base + [method_name.to_s]
       end
 
       # @param call_node [Parser::AST::Node]
       # @param method_name [Symbol]
-      # @return [Array(String, String), nil] Tuple of rgument to
-      #   function, then receiver of function if it's a variable,
-      #   otherwise nil if no simple variable receiver
+      # @return [Array(String, ::Array<String>), nil] Tuple of argument to
+      #   function, then dotted-word chain for the receiver, otherwise nil
+      #   if the receiver isn't a simple chain (see #parse_receiver_chain)
       def parse_call call_node, method_name
         return unless call_node&.type == :send && call_node.children[1] == method_name
         # Check if conditional node follows this pattern:
@@ -267,28 +303,24 @@ module Solargraph
         call_receiver = call_node.children[0]
         call_arg = type_name(call_node.children[2])
 
-        # check if call_receiver looks like this:
-        #  s(:send, nil, :foo)
-        # and set variable_name to :foo
-        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          variable_name = call_receiver.children[1].to_s
-        end
-        # or like this:
-        # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
-        return unless variable_name
+        # @sg-ignore node.children is typed as a broad union (it can hold
+        #   nested arrays/symbols for other node shapes), but
+        #   parse_receiver_chain re-checks node.is_a?(::Parser::AST::Node)
+        #   itself and safely returns nil for anything else
+        chain_words = parse_receiver_chain(call_receiver)
+        return unless chain_words
 
-        [call_arg, variable_name]
+        [call_arg, chain_words]
       end
 
       # @param isa_node [Parser::AST::Node]
-      # @return [Array(String, String), nil]
+      # @return [Array(String, ::Array<String>), nil]
       def parse_isa isa_node
-        call_type_name, variable_name = parse_call(isa_node, :is_a?)
+        call_type_name, chain_words = parse_call(isa_node, :is_a?)
 
         return unless call_type_name
 
-        [call_type_name, variable_name]
+        [call_type_name, chain_words]
       end
 
       # @param variable_name [String]
@@ -307,18 +339,52 @@ module Solargraph
         end
       end
 
+      # Finds (for a single tracked local/instance variable) or builds
+      # (for a chain of simple calls off of one, e.g. ['pin', 'location'])
+      # the pin flow-sensitive-typing facts should be recorded against.
+      #
+      # A synthesized pin's type is computed lazily, from `node` itself,
+      # by Pin::BaseVariable#probe the same way a real local variable's
+      # type is computed from its assignment node -- since `node` is the
+      # receiver expression at *this*, necessarily earlier, guard site,
+      # re-inferring it can never see the narrowing facts this same pin
+      # is about to be asked to carry.
+      #
+      # @param chain_words [::Array<String>]
+      # @param node [Parser::AST::Node] the receiver expression, e.g. the
+      #   node for 'pin.location'
+      # @param position [Position]
+      # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
+      def chain_pin chain_words, node, position
+        # @sg-ignore chain_words is never empty - callers already checked
+        return find_var(chain_words.first, position) if chain_words.length == 1
+
+        # @sg-ignore chain_words is never empty - callers already checked
+        root_pin = find_var(chain_words.first, position)
+        return unless root_pin
+
+        Pin::LocalVariable.new(
+          location: Location.from_node(node),
+          closure: root_pin.closure,
+          name: chain_words.join('.'),
+          assignment: node,
+          source: :flow_sensitive_typing
+        )
+      end
+
       # @param isa_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       # @param false_presences [Array<Range>]
       #
       # @return [void]
       def process_isa isa_node, true_presences, false_presences
-        isa_type_name, variable_name = parse_isa(isa_node)
-        return if variable_name.nil? || variable_name.empty?
+        isa_type_name, chain_words = parse_isa(isa_node)
+        return if chain_words.nil? || chain_words.empty?
         # @sg-ignore Need to add nil check here
         isa_position = Range.from_node(isa_node).start
 
-        pin = find_var(variable_name, isa_position)
+        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        pin = chain_pin(chain_words, isa_node.children[0], isa_position)
         return unless pin
 
         # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
@@ -335,7 +401,7 @@ module Solargraph
       end
 
       # @param nilp_node [Parser::AST::Node]
-      # @return [Array(String, String), nil]
+      # @return [Array(String, ::Array<String>), nil]
       def parse_nilp nilp_node
         parse_call(nilp_node, :nil?)
       end
@@ -346,8 +412,8 @@ module Solargraph
       #
       # @return [void]
       def process_nilp nilp_node, true_presences, false_presences
-        nilp_arg, variable_name = parse_nilp(nilp_node)
-        return if variable_name.nil? || variable_name.empty?
+        nilp_arg, chain_words = parse_nilp(nilp_node)
+        return if chain_words.nil? || chain_words.empty?
         # if .nil? got an argument, move on, this isn't the situation
         # we're looking for and typechecking will cover any invalid
         # ones
@@ -355,7 +421,8 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         nilp_position = Range.from_node(nilp_node).start
 
-        pin = find_var(variable_name, nilp_position)
+        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        pin = chain_pin(chain_words, nilp_node.children[0], nilp_position)
         return unless pin
 
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
@@ -433,6 +500,47 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
+      # Handles a bare truthy check on a call chain, e.g. 'pin.location'
+      # in 'return nil unless pin.location'. Bare references to a single
+      # local/instance variable are handled by #process_variable instead;
+      # this only fires once there's an explicit receiver (chain_words
+      # has more than one word).
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_call_chain node, true_presences, false_presences
+        return unless node.type == :send
+        # already handled (with inverted true/false semantics) by
+        # process_nilp/process_bang
+        return if %i[nil? !].include?(node.children[1])
+
+        chain_words = parse_receiver_chain(node)
+        return if chain_words.nil? || chain_words.length < 2
+
+        # @sg-ignore Range.from_node is nil only for a node without
+        #   source location info, which doesn't happen for real parsed
+        #   nodes reaching here (same as isa_position/nilp_position above)
+        position = Range.from_node(node).start
+
+        pin = chain_pin(chain_words, node, position)
+        return unless pin
+
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { not_type: ComplexType::NIL }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { type: ComplexType.parse('nil, false') }
+        process_facts(if_false, false_presences)
+      end
+
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
@@ -446,6 +554,9 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name
