@@ -146,4 +146,21 @@ describe Solargraph::DocMap do
       Solargraph::Convention.unregister dummy_convention
     end
   end
+
+  describe '#combined_pins_in_memory' do
+    let(:pre_cache) { false }
+
+    it 'is shared across DocMap instances rather than memoized per instance' do
+      map1 = described_class.new([], workspace, out: nil)
+      map2 = described_class.new([], workspace, out: nil)
+      key = ['some-gem', Gem::Version.new('1.0.0')]
+      pins = [instance_double(Solargraph::Pin::Base)]
+
+      map1.combined_pins_in_memory[key] = pins
+
+      expect(map2.combined_pins_in_memory[key]).to equal(pins)
+    ensure
+      map1.combined_pins_in_memory.delete(key)
+    end
+  end
 end

@@ -497,4 +497,8 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  it 'accepts a word with no location, for external callers that omit it' do
+    expect { described_class.new('foo') }.not_to raise_error
+  end
 end
