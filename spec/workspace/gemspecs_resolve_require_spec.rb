@@ -153,6 +153,31 @@ describe Solargraph::Workspace::Gemspecs, '#resolve_require' do
       end
     end
 
+    context 'with a require path that does not textually match the gem name' do
+      # e.g. activesupport ships as 'active_support' - neither
+      # require.tr('/', '-') nor require.split('/').first can guess
+      # 'activesupport' from 'active_support', so this can only be
+      # resolved via Gem::Specification.find_by_path, and only if the
+      # require path itself (not "lib/#{require}.rb") is passed to it
+      let(:require) { 'active_support' }
+      let(:mismatched_spec) { instance_double(Gem::Specification, name: 'activesupport', files: []) }
+
+      before do
+        allow(Gem::Specification).to receive(:find_by_path).and_call_original
+        allow(Gem::Specification).to receive(:find_by_path).with(require).and_return(mismatched_spec)
+        allow(gemspecs).to receive(:all_gemspecs_from_bundle).and_return([mismatched_spec])
+      end
+
+      it 'resolves to the right known gem' do
+        expect(specs.map(&:name)).to eq(['activesupport'])
+      end
+
+      it 'passes the require path directly to find_by_path, not prefixed with lib/' do
+        specs
+        expect(Gem::Specification).to have_received(:find_by_path).with(require)
+      end
+    end
+
     context 'with Bundler.require' do
       let(:require) { 'bundler/require' }
 
