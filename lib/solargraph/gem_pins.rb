@@ -11,6 +11,17 @@ module Solargraph
       include Logging
     end
 
+    # @param pins [Array<Pin::Base>]
+    # @return [Array<Pin::Base>]
+    def self.combine_method_pins_by_path pins
+      method_pins, alias_pins = pins.partition { |pin| pin.instance_of?(Pin::Method) }
+      by_path = method_pins.group_by(&:path)
+      by_path.transform_values! do |pins|
+        GemPins.combine_method_pins(*pins)
+      end
+      by_path.values + alias_pins
+    end
+
     # @param pins [Array<Pin::Method>]
     # @return [Pin::Method, nil]
     def self.combine_method_pins(*pins)
@@ -32,36 +43,37 @@ module Solargraph
       out
     end
 
-    # @param yard_plugins [Array<String>] The names of YARD plugins to use.
-    # @param gemspec [Gem::Specification]
-    # @return [Array<Pin::Base>]
-    def self.build_yard_pins yard_plugins, gemspec
-      Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
-      return [] unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
-      YardMap::Mapper.new(yardoc, gemspec).map
-    end
-
-    # @param yard_pins [Array<Pin::Base>]
-    # @param rbs_pins [Array<Pin::Base>]
+    # @param yard_pins [Array<Pin::Method>]
+    # @param rbs_pins [Array<Pin::Method>]
     #
-    # @return [Array<Pin::Base>]
+    # @return [Array<Pin::Method>]
     def self.combine yard_pins, rbs_pins
       in_yard = Set.new
-      rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
+      rbs_store = Solargraph::ApiMap::Store.new(rbs_pins)
       combined = yard_pins.map do |yard_pin|
         in_yard.add yard_pin.path
-        rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
-        next yard_pin unless rbs_pin && yard_pin.instance_of?(Pin::Method)
+        rbs_pin = rbs_store.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+
+        next yard_pin unless rbs_pin && yard_pin.is_a?(Pin::Method)
 
         unless rbs_pin
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
-          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
+          logger.debug do
+            "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})"
+          end
           next yard_pin
         end
 
+        # at this point both yard_pins and rbs_pins are methods or
+        # method aliases.  if not plain methods, prefer the YARD one
+        next yard_pin if rbs_pin.class != Pin::Method
+
+        next rbs_pin if yard_pin.class != Pin::Method
+
+        # both are method pins
         out = combine_method_pins(rbs_pin, yard_pin)
-        logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
+        logger.debug do
+          "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}"
+        end
         out
       end
       in_rbs_only = rbs_pins.select do |pin|

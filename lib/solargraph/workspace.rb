@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'yaml'
 
 module Solargraph
   # A workspace consists of the files in a project's directory and the
@@ -9,6 +10,8 @@ module Solargraph
   # in an associated Library or ApiMap.
   #
   class Workspace
+    include Logging
+
     autoload :Config, 'solargraph/workspace/config'
     autoload :Gemspecs, 'solargraph/workspace/gemspecs'
     autoload :RequirePaths, 'solargraph/workspace/require_paths'
@@ -16,11 +19,8 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
-    # @return [Array<String>]
-    attr_reader :gemnames
-    alias source_gems gemnames
-
-    # @param directory [String] TODO: Remove '' and '*' special cases
+    # @todo Remove '' and '*' special cases
+    # @param directory [String]
     # @param config [Config, nil]
     # @param server [Hash]
     def initialize directory = '', config = nil, server = {}
@@ -34,7 +34,6 @@ module Solargraph
       @config = config
       @server = server
       load_sources
-      @gemnames = []
       require_plugins
     end
 
@@ -51,6 +50,69 @@ module Solargraph
       @config ||= Solargraph::Workspace::Config.new(directory)
     end
 
+    # @param stdlib_name [String]
+    #
+    # @return [Array<String>]
+    def stdlib_dependencies stdlib_name
+      gemspecs.stdlib_dependencies(stdlib_name)
+    end
+
+    # @param out [IO, nil] output stream for logging
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Gem::Specification>]
+    def fetch_dependencies gemspec, out: $stderr
+      gemspecs.fetch_dependencies(gemspec, out: out)
+    end
+
+    # @param require [String] The string sent to 'require' in the code to resolve, e.g. 'rails', 'bundler/require'
+    #
+    # @return [Array<Gem::Specification>, nil]
+    def resolve_require require
+      gemspecs.resolve_require(require)
+    end
+
+    # @return [Solargraph::PinCache]
+    def pin_cache
+      @pin_cache ||= fresh_pincache
+    end
+
+    # @return [Environ]
+    def global_environ
+      # empty docmap, since the result needs to work in any possible
+      # context here
+      @global_environ ||= Convention.for_global(DocMap.new([], self, out: nil))
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    #
+    # @return [void]
+    def cache_gem gemspec, out: nil, rebuild: false
+      pin_cache.cache_gem(gemspec: gemspec, out: out, rebuild: rebuild)
+    end
+
+    # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+    # @param out [StringIO, IO, nil] output stream for logging
+    #
+    # @return [void]
+    def uncache_gem gemspec, out: nil
+      pin_cache.uncache_gem(gemspec, out: out)
+    end
+
+    # @return [Solargraph::PinCache]
+    def fresh_pincache
+      PinCache.new(rbs_collection_path: rbs_collection_path,
+                   rbs_collection_config_path: rbs_collection_config_path,
+                   yard_plugins: yard_plugins,
+                   directory: directory)
+    end
+
+    # @return [Array<String>]
+    def yard_plugins
+      @yard_plugins ||= global_environ.yard_plugins.sort.uniq
+    end
+
     # @param level [Symbol]
     # @return [TypeChecker::Rules]
     def rules level
@@ -64,6 +126,7 @@ module Solargraph
     # @param sources [Array<Solargraph::Source>]
     # @return [Boolean] True if the source was added to the workspace
     def merge *sources
+      # @sg-ignore Need to add nil check here
       unless directory == '*' || sources.all? { |source| source_hash.key?(source.filename) }
         # Reload the config to determine if a new source should be included
         @config = Solargraph::Workspace::Config.new(directory)
@@ -128,48 +191,6 @@ module Solargraph
       false
     end
 
-    # @return [String, nil]
-    def rbs_collection_path
-      @rbs_collection_path ||= read_rbs_collection_path
-    end
-
-    # @return [String, nil]
-    def rbs_collection_config_path
-      @rbs_collection_config_path ||= unless directory.empty? || directory == '*'
-                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
-                                        yaml_file if File.file?(yaml_file)
-                                      end
-    end
-
-    # @param name [String]
-    # @param version [String, nil]
-    # @param out [IO, nil]
-    #
-    # @return [Gem::Specification, nil]
-    def find_gem name, version = nil, out: nil
-      Gem::Specification.find_by_name(name, version)
-    end
-
-    # Synchronize the workspace from the provided updater.
-    #
-    # @param updater [Source::Updater]
-    # @return [void]
-    def synchronize! updater
-      source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
-    end
-
-    # @sg-ignore return type could not be inferred
-    # @return [String]
-    def command_path
-      server['commandPath'] || 'solargraph'
-    end
-
-    # @return [String, nil]
-    def directory_or_nil
-      return nil if directory.empty? || directory == '*'
-      directory
-    end
-
     # True if the workspace has a root Gemfile.
     #
     # @todo Handle projects with custom Bundler/Gemfile setups (see DocMap#gemspecs_required_from_bundler)
@@ -193,6 +214,81 @@ module Solargraph
       @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
         config.allow? gs
       end
+    end
+
+    # @return [String, nil]
+    def rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
+    end
+
+    # @return [String, nil]
+    def rbs_collection_config_path
+      @rbs_collection_config_path ||= unless directory.empty? || directory == '*'
+                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
+                                        yaml_file if File.file?(yaml_file)
+                                      end
+    end
+
+    # @param name [String]
+    # @param version [String, nil]
+    # @param out [IO, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem name, version = nil, out: nil
+      gemspecs.find_gem(name, version, out: out)
+    end
+
+    # @return [Array<Gem::Specification>]
+    def all_gemspecs_from_bundle
+      gemspecs.all_gemspecs_from_bundle
+    end
+
+    # @param out [StringIO, IO, nil] output stream for logging
+    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
+    # @return [void]
+    def cache_all_for_workspace! out, rebuild: false
+      PinCache.cache_core(out: out) unless PinCache.core? && !rebuild
+
+      gem_specs = all_gemspecs_from_bundle
+      # try any possible standard libraries, but be quiet about it
+      stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
+      specs = (gem_specs + stdlib_specs)
+      specs.each do |spec|
+        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+      end
+      out&.puts "Documentation cached for all #{specs.length} gems."
+
+      # do this after so that we prefer stdlib requires from gems,
+      # which are likely to be newer and have more pins
+      pin_cache.cache_all_stdlibs(out: out, rebuild: rebuild)
+
+      out&.puts 'Documentation cached for core, standard library and gems.'
+    end
+
+    # Synchronize the workspace from the provided updater.
+    #
+    # @param updater [Source::Updater]
+    # @return [void]
+    def synchronize! updater
+      source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
+    end
+
+    # @sg-ignore return type could not be inferred
+    # @return [String]
+    # @sg-ignore Need to validate config
+    def command_path
+      server['commandPath'] || 'solargraph'
+    end
+
+    # @return [String, nil]
+    def directory_or_nil
+      return nil if directory.empty? || directory == '*'
+      directory
+    end
+
+    # @return [Solargraph::Workspace::Gemspecs]
+    def gemspecs
+      @gemspecs ||= Solargraph::Workspace::Gemspecs.new(directory_or_nil)
     end
 
     private
