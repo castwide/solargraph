@@ -154,6 +154,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to be_empty
     end
 
+    it 'still flags nil leaking through a self-returning call after an earlier &.' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [String]
+          def process(x)
+            x&.to_s.itself
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to be_empty
+    end
+
+    it 'does not flag a call after &. whose result on NilClass is a fixed non-nil type' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [Integer]
+          def process(x)
+            x&.to_s.to_i
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'is able to probe type over an assignment' do
       checker = type_checker(%(
         # @return [String]
