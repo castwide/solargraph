@@ -275,6 +275,51 @@ describe Solargraph::ComplexType do
       expect(inf.conforms_to?(api_map, exp, :method_call, [:allow_unmatched_interface])).to be(true)
       expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
     end
+
+    it 'rejects a same-named method with the wrong return type' do
+      # https://github.com/castwide/solargraph/issues/1267
+      #
+      # The structural check only confirms a `to_ary` method exists; it
+      # doesn't verify it actually returns an Array.
+      pending 'structural interface conformance does not yet check method return types (issue #1267)'
+      source = Solargraph::Source.load_string(%(
+        class BadToAry
+          # @return [String]
+          def to_ary
+            'not an array'
+          end
+        end
+      ))
+      api_map.map source
+      exp = described_class.parse('_ToAry')
+      inf = described_class.parse('BadToAry')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a same-named method with the wrong arity' do
+      # https://github.com/castwide/solargraph/issues/1267
+      #
+      # The structural check only confirms an `eql?` method exists; it
+      # doesn't verify it accepts the argument Hash::_Key#eql? requires.
+      pending 'structural interface conformance does not yet check method parameters (issue #1267)'
+      source = Solargraph::Source.load_string(%(
+        class BadKey
+          def eql?
+            true
+          end
+
+          def hash
+            1
+          end
+        end
+      ))
+      api_map.map source
+      exp = described_class.parse('Hash::_Key')
+      inf = described_class.parse('BadKey')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
   end
 
   context 'with inheritance relationship in allow_reverse_match mode' do
