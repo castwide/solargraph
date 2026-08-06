@@ -190,6 +190,97 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # @param case_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_case case_node
+        return if case_node.type != :case
+
+        #
+        # See if we can narrow the subject's type inside each 'when'
+        # branch based on the classes tested for in that branch
+        #
+        # [3] pry(main)> Parser::CurrentRuby.parse("case a; when B; c; end")
+        # => s(:case,
+        #   s(:send, nil, :a),
+        #   s(:when,
+        #     s(:const, nil, :B),
+        #     s(:send, nil, :c)), nil)
+        # [4] pry(main)>
+        subject_node = case_node.children[0]
+        return if subject_node.nil?
+        # @sg-ignore Need to add nil check here
+        return unless %i[lvar ivar].include?(subject_node.type)
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        variable_name = parse_variable(subject_node)
+        return if variable_name.nil?
+
+        # @sg-ignore Need to add nil check here
+        subject_position = Range.from_node(subject_node).start
+        pin = find_var(variable_name, subject_position)
+        return unless pin
+
+        # @sg-ignore Need to add nil check here
+        when_nodes = case_node.children[1..].compact.select { |child| child.type == :when }
+        # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+        when_nodes.each do |when_node|
+          *value_nodes, body_node = when_node.children
+          next if body_node.nil?
+
+          type_names = value_nodes.map { |value_node| type_name(value_node) }
+          # Only narrow if every value in this 'when' clause is a
+          # simple constant reference - a splat, range, regexp, etc.
+          # isn't a type we can express as a downcast.
+          next if type_names.any?(&:nil?)
+
+          before_body_loc = body_node.location.expression.adjust(begin_pos: -1)
+          before_body_pos = Position.new(before_body_loc.line, before_body_loc.column)
+          presence = Range.new(before_body_pos, get_node_end_position(body_node))
+
+          facts = { pin => [{ type: ComplexType.parse(*type_names) }] }
+          process_facts(facts, [presence])
+        end
+      end
+
+      # @param or_asgn_node [Parser::AST::Node]
+      # @param presence [Range]
+      #
+      # @return [void]
+      def process_or_asgn or_asgn_node, presence
+        return if or_asgn_node.type != :or_asgn
+
+        #
+        # 'x ||= value' only actually assigns when x is falsy (nil or
+        # false), so if x was already truthy, it keeps whatever
+        # non-nil type it already had. Narrow the existing pin by
+        # excluding nil, scoped to the rest of the enclosing closure.
+        #
+        # [3] pry(main)> Parser::CurrentRuby.parse("x ||= 1")
+        # => s(:or_asgn,
+        #   s(:lvasgn, :x),
+        #   s(:int, 1))
+        # [4] pry(main)>
+        lhs = or_asgn_node.children[0]
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
+        return unless %i[lvasgn ivasgn].include?(lhs.type)
+
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
+        variable_name = lhs.children[0].to_s
+        # @sg-ignore Parser::AST::Node#children is declared to return a bare Array, losing its element type here
+        return if variable_name.empty?
+
+        range = Range.from_node(or_asgn_node)
+        return if range.nil?
+
+        position = range.start
+        pin = find_var(variable_name, position)
+        return unless pin
+
+        facts = { pin => [{ not_type: ComplexType::NIL }] }
+        process_facts(facts, [presence])
+      end
+
       class << self
         include Logging
       end
@@ -446,6 +537,11 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., ::Baz parses as s(:const, s(:cbase), :Baz) - the
+        # leading :cbase marks root-namespace resolution and isn't
+        # itself a :const node, so it needs to be recognized here
+        # rather than falling into the generic recursive case below.
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name
@@ -457,12 +553,6 @@ module Solargraph
       # @sg-ignore need boolish support for ? methods
       def always_breaks? clause_node
         clause_node&.type == :break
-      end
-
-      # @param clause_node [Parser::AST::Node, nil]
-      def always_leaves_compound_statement? clause_node
-        # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
-        %i[return raise next redo retry].include?(clause_node&.type)
       end
 
       attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin

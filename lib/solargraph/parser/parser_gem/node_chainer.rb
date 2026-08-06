@@ -107,9 +107,13 @@ module Solargraph
             # s(:or_asgn,
             #   s(:ivasgn, :@bar),
             #   s(:int, 123))
+            or_asgn_rhs_node = n.children[1] # s(:int, 123)
             lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
-            rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
-            or_link = Chain::Or.new([lhs_chain, rhs_chain])
+            # @sg-ignore Need to add nil check here
+            rhs_chain = NodeChainer.chain or_asgn_rhs_node
+            # @sg-ignore Need to add nil check here
+            or_asgn_rhs_never_returns = always_leaves_compound_statement?(or_asgn_rhs_node)
+            or_link = Chain::Or.new([lhs_chain, rhs_chain], rhs_never_returns: or_asgn_rhs_never_returns)
             # this is just for a call chain, so we don't need to record the assignment
             result.push(or_link)
           elsif %i[class module def defs].include?(n.type)
@@ -118,8 +122,14 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
-                                       NodeChainer.chain(n.children[1], @filename, n)])
+            or_rhs_node = n.children[1]
+            # @sg-ignore Need to add nil check here
+            or_lhs_chain = NodeChainer.chain(n.children[0], @filename)
+            # @sg-ignore Need to add nil check here
+            or_rhs_chain = NodeChainer.chain(or_rhs_node, @filename, n)
+            # @sg-ignore Need to add nil check here
+            or_rhs_never_returns = always_leaves_compound_statement?(or_rhs_node)
+            result.push Chain::Or.new([or_lhs_chain, or_rhs_chain], rhs_never_returns: or_rhs_never_returns)
           elsif n.type == :if
             then_clause = if n.children[1]
                             NodeChainer.chain(n.children[1], @filename, n)
