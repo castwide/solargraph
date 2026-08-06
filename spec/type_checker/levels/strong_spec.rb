@@ -935,6 +935,54 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message))
           .to include('Wrong argument type for Consumer#project_to_h: project_obj expected Asana::Resources::Project, received Mocha::Mock')
       end
+
+      it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
+        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 - ' \
+                '#fetch on Hash{K1=>V1} & Hash{K2=>V2} leaks an unresolved generic<X> ' \
+                'and returns the same wrong type regardless of which key is passed'
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+            # @return [void]
+            def process(period)
+              # @type [Float]
+              index = period.fetch("Index")
+
+              # @type [Array<Hash{"Name" => String}>]
+              triggers = period.fetch("Triggers")
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
+        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
+                'method-call resolution does not walk the conjuncts of an intersection-typed receiver'
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          Factory.new.make.foo
+          Factory.new.make.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
     end
   end
 end
