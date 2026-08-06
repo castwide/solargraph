@@ -45,7 +45,7 @@ module Solargraph
               initialize_method_pin.parameters.push(
                 Pin::Parameter.new(
                   name: attribute_name,
-                  decl: struct_definition_node.keyword_init? ? :kwarg : :arg,
+                  decl: struct_definition_node.keyword_init? ? :kwoptarg : :arg,
                   location: get_node_location(attribute_node),
                   closure: initialize_method_pin,
                   source: :struct_definition

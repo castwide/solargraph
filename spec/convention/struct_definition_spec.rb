@@ -23,6 +23,19 @@ describe Solargraph::Convention::StructDefinition do
       expect(param_baz.return_type.tag).to eql('Integer')
     end
 
+    it 'treats keyword args as optional, since Ruby defaults omitted members to nil' do
+      source = Solargraph::SourceMap.load_string(%(
+        # @param bar [String]
+        # @param baz [Integer]
+        Foo = Struct.new(:bar, :baz, keyword_init: true)
+      ), 'test.rb')
+
+      # @type [Array<Solargraph::Pin::Parameter>]
+      params = source.pins.find { |p| p.path == 'Foo#initialize' }.parameters
+
+      expect(params.map(&:decl)).to eql(%i[kwoptarg kwoptarg])
+    end
+
     it 'sets closure to method on assignment operator parameters' do
       source = Solargraph::SourceMap.load_string(%(
         # @param bar [String]
@@ -147,6 +160,20 @@ describe Solargraph::Convention::StructDefinition do
         Foo = Struct.new(:bar, :baz)
       ))
       expect { checker.problems }.not_to raise_error
+    end
+
+    it 'does not report a missing keyword argument when a keyword_init member is omitted' do
+      checker = type_checker(%(
+        class Watch < Struct.new(:name, :time, keyword_init: true); end
+
+        class Caller
+          # @return [Watch]
+          def go
+            Watch.new(name: 'foo')
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include(a_string_matching(/Missing keyword argument/))
     end
   end
 end
