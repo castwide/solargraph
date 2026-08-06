@@ -199,8 +199,11 @@ module Solargraph
         @splat
       end
 
+      # @sg-ignore return type could not be inferred
+      # @return [Boolean]
       def nullable?
-        links.any?(&:nullable?)
+        # @sg-ignore Need to add nil check here
+        links.last.nullable?
       end
 
       include Logging

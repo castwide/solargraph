@@ -128,6 +128,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'does not leak nil from an earlier &. into an unrelated later call in the same chain' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [Boolean]
+          def process(x)
+            x&.to_s == '1'
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'still flags a chain ending in a safe navigation call as nullable' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [String]
+          def process(x)
+            x&.to_s
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to be_empty
+    end
+
     it 'is able to probe type over an assignment' do
       checker = type_checker(%(
         # @return [String]
