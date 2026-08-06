@@ -64,7 +64,14 @@ module Solargraph
             [stack.first].compact
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          pins = pin_groups.flatten.uniq(&:path)
+          # Different union members can resolve to pins that share a
+          # path (e.g. the same generic method looked up against
+          # `Box<Integer>` and `Box<String>`) but that have already
+          # been resolved to different return types for their
+          # respective context. Dedup on both so we don't silently
+          # drop every member but the first.
+          # @param p [Pin::Base]
+          pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.tag] }
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
