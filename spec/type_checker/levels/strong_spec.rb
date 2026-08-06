@@ -966,9 +966,18 @@ describe Solargraph::TypeChecker do
       end
 
       it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
-        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 - ' \
-                '#fetch on Hash{K1=>V1} & Hash{K2=>V2} leaks an unresolved generic<X> ' \
-                'and returns the same wrong type regardless of which key is passed'
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
+        # #fetch on Hash{K1=>V1} & Hash{K2=>V2} leaks an unresolved generic<X> and
+        # returns the same wrong type regardless of which key is passed.
+        #
+        # Confirmed (by running this same repro against a branch with #1266
+        # merged) that this is two separate bugs layered together: #1266 fixes
+        # the generic<X> leak, but the call still resolves through the *first*
+        # conjunct's #fetch signature regardless of which key was passed - see
+        # the sibling 'ignores which conjunct is fetched from' spec below, which
+        # isolates that second bug. So landing #1266 alone will not flip this
+        # spec to passing; it needs its own per-conjunct dispatch fix too.
+        pending 'blocked on #1266, plus a separate first-conjunct-only dispatch bug'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
@@ -986,9 +995,14 @@ describe Solargraph::TypeChecker do
       end
 
       it 'ignores which conjunct is fetched from and always resolves via the first conjunct (#1231)' do
-        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 - ' \
-                'swapping the conjunct order flips which (still wrong) type both fetches ' \
-                'report, showing dispatch always uses the first conjunct rather than the key'
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
+        # swapping the conjunct order flips which (still wrong) type both fetches
+        # report, showing dispatch always uses the first conjunct rather than the
+        # key. This bug survives #1266 (confirmed by running this repro against a
+        # branch with #1266 merged: the generic<X> leak is gone, but the
+        # first-conjunct-only behavior is unchanged) - it needs its own
+        # per-conjunct dispatch fix, independent of #1266.
+        pending 'first-conjunct-only dispatch, independent of #1266'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]
@@ -1020,8 +1034,16 @@ describe Solargraph::TypeChecker do
       end
 
       it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
-        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
-                'method-call resolution does not walk the conjuncts of an intersection-typed receiver'
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 -
+        # method-call resolution does not walk the conjuncts of an
+        # intersection-typed receiver. Confirmed independent of #1266: running
+        # this repro against a branch with #1266 merged reproduces identically -
+        # #1266's interface-conformance fix doesn't touch Chain::Call#resolve's
+        # method-stack lookup (lib/solargraph/source/chain/call.rb:61-64), which
+        # only takes the first unique type's method stack and never walks the
+        # other conjuncts of an Intersection. Needs its own fix regardless of
+        # #1266's fate.
+        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1074,9 +1096,10 @@ describe Solargraph::TypeChecker do
       end
 
       it 'fails to resolve a conjunct method on an intersection-typed local variable, not just a call chain (#1231)' do
-        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
-                'the gap is in resolving methods on any intersection-typed value, not specific ' \
-                'to method-return-value call chains'
+        # Same root cause and #1266-independence as the sibling spec above; the
+        # gap is in resolving methods on any intersection-typed value, not
+        # specific to method-return-value call chains.
+        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1099,8 +1122,10 @@ describe Solargraph::TypeChecker do
       end
 
       it 'fails to resolve conjunct methods on a three-way intersection' do
-        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
-                'method-call resolution does not walk conjuncts, regardless of how many there are'
+        # Same root cause and #1266-independence as the sibling specs above;
+        # method-call resolution does not walk conjuncts, regardless of how
+        # many there are.
+        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
         checker = type_checker(%(
           class A
             # @return [void]
