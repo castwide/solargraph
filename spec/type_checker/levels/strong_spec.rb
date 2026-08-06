@@ -922,6 +922,48 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'always dispatches a same-class generic method through the first union member, not #1231-specific' do
+      # Not an intersection-types bug at all: a *union* of two Hash
+      # instantiations shows the identical "always the first one, regardless
+      # of order or argument" dispatch bug that the same-class intersection
+      # specs below track. Confirmed on unmodified castwide/solargraph
+      # master (8fda63384, no & or | involved) with a minimal @generic
+      # class (no Hash, no literal keys, no #1266 dependency):
+      #
+      #   # @generic T
+      #   class Box
+      #     # @return [generic<T>]
+      #     def get; end
+      #   end
+      #
+      #   # @param b [Box<Integer>, Box<String>]
+      #   b.get  # infers Integer
+      #   # @param b [Box<String>, Box<Integer>]
+      #   b.get  # infers String - order picked the type, not the call
+      #
+      # Root cause: Call#inferred_pins resolves the class's generic
+      # parameter against `self_type = name_pin.binder` - the *whole*
+      # union/intersection type - rather than per-member, so it binds
+      # against whichever member it structurally matches first.
+      #
+      # Filing this as its own issue/PR against master, independent of
+      # #1231 and #1266, so the Hash intersection specs below inherit the
+      # fix whichever order the PRs land in rather than stacking one PR on
+      # top of another.
+      pending 'Call#inferred_pins binds a generic against the first union/intersection member only'
+      checker = type_checker(%(
+        class Repro
+          # @param period [Hash{"Index" => Float}, Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+          # @return [void]
+          def process(period)
+            # @type [Float]
+            index = period.fetch("Index")
+          end
+        end
+    ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     context 'with intersection types' do
       it 'accepts an intersection-typed argument where any one conjunct is expected' do
         checker = type_checker(%(
