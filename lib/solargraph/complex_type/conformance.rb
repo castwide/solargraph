@@ -41,7 +41,7 @@ module Solargraph
           # :nocov:
         end
 
-        return true if ignore_interface?
+        return true if ignore_unmatchable_interface?
         return true if conforms_via_reverse_match?
 
         downcast_inferred = inferred.downcast_to_literal_if_possible
@@ -86,9 +86,14 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      def ignore_interface?
-        (expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)) ||
-          (inferred.interface? && rules.include?(:allow_unmatched_interface))
+      # An interface-typed expectation is verified structurally in
+      # #erased_type_conforms?. There's no equivalent structural check when
+      # the *inferred* type is itself an abstract interface (e.g., a method
+      # returns `_ToAry`), since Solargraph doesn't know which concrete type
+      # will show up at runtime, so :allow_unmatched_interface remains a
+      # blanket escape hatch for that direction only.
+      def ignore_unmatchable_interface?
+        inferred.interface? && rules.include?(:allow_unmatched_interface)
       end
 
       def can_strip_expected_parameters?
@@ -104,6 +109,8 @@ module Solargraph
       end
 
       def erased_type_conforms?
+        return true if expected.interface? && interface_conforms?
+
         case variance
         when :invariant
           return false unless inferred.name == expected.name
@@ -125,6 +132,43 @@ module Solargraph
           # :nocov:
         end
         true
+      end
+
+      # Whether `inferred` satisfies the `expected` RBS interface (e.g.
+      # `Hash::_Key`, `_ToAry`). Prefers real duck-type verification —
+      # `inferred` conforms if its method stack has every method the
+      # interface itself declares (methods it inherits from `Object` are
+      # ignored, since practically everything provides those) — and only
+      # falls back to the blanket :allow_unmatched_interface rule when no
+      # verdict could be reached, e.g. the interface pin isn't in the
+      # ApiMap.
+      #
+      # @return [Boolean]
+      def interface_conforms?
+        verdict = structural_interface_verdict
+        return verdict unless verdict.nil?
+
+        rules.include?(:allow_unmatched_interface)
+      end
+
+      # The methods `expected` declares directly on itself, excluding ones
+      # inherited from `Object` and other ancestors.
+      #
+      # @return [Array<Pin::Method>]
+      def required_interface_methods
+        api_map.get_methods(expected.name, scope: :instance)
+               .select { |pin| pin.closure&.path == expected.name }
+      end
+
+      # @return [Boolean, nil] true or false if `expected`'s directly
+      #   declared methods could be checked against `inferred`'s method
+      #   stack, or nil if no verdict could be reached (e.g., the interface
+      #   has no pin, or declares no methods of its own)
+      def structural_interface_verdict
+        required = required_interface_methods
+        return nil if required.empty?
+
+        required.all? { |pin| !api_map.get_method_stack(inferred.name, pin.name, scope: :instance).empty? }
       end
 
       def key_types_conform?
