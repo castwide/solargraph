@@ -899,7 +899,16 @@ describe Solargraph::TypeChecker do
       # reproduces identically for a single, non-intersected generic Hash - the
       # intersection is not the trigger, so the fix for #1231 should not be expected
       # to resolve this on its own.
-      pending 'pre-existing Hash#fetch generic-parameter leak, unrelated to intersection types'
+      #
+      # Root cause: Pin::Parameter#compatible_arg? rejects Hash#fetch's exact-arity
+      # `(key: Hash::_Key) -> V` overload because Hash::_Key (an ad-hoc RBS
+      # interface) is checked nominally, not structurally, against the String
+      # argument - so it falls through to the pin's raw combined signature type,
+      # which still carries the unresolved generic X from the other overloads.
+      # Blocked on https://github.com/castwide/solargraph/pull/1266 (structurally
+      # verify RBS interface-typed expectations), which already fixes this on a
+      # different branch but isn't on master or this branch yet.
+      pending 'blocked on #1266 (structural RBS interface-typed expectation checks)'
       checker = type_checker(%(
         class Repro
           # @param period [Hash{"Index" => Float}]
