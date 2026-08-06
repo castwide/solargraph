@@ -1035,15 +1035,10 @@ describe Solargraph::TypeChecker do
 
       it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 -
-        # method-call resolution does not walk the conjuncts of an
-        # intersection-typed receiver. Confirmed independent of #1266: running
-        # this repro against a branch with #1266 merged reproduces identically -
-        # #1266's interface-conformance fix doesn't touch Chain::Call#resolve's
-        # method-stack lookup (lib/solargraph/source/chain/call.rb:61-64), which
-        # only takes the first unique type's method stack and never walks the
-        # other conjuncts of an Intersection. Needs its own fix regardless of
-        # #1266's fate.
-        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
+        # method-call resolution used to only try the first conjunct's method
+        # stack, per unique type, and required every one of them to define the
+        # method the way a real union would. Fixed in Call#method_stack_pins by
+        # giving Intersection conjuncts "any one is enough" semantics instead.
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1095,11 +1090,9 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'fails to resolve a conjunct method on an intersection-typed local variable, not just a call chain (#1231)' do
-        # Same root cause and #1266-independence as the sibling spec above; the
-        # gap is in resolving methods on any intersection-typed value, not
-        # specific to method-return-value call chains.
-        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
+      it 'resolves a conjunct method on an intersection-typed local variable, not just a call chain (#1231)' do
+        # Same fix as the sibling spec above applies to any intersection-typed
+        # value, not just method-return-value call chains.
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1121,11 +1114,9 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'fails to resolve conjunct methods on a three-way intersection' do
-        # Same root cause and #1266-independence as the sibling specs above;
-        # method-call resolution does not walk conjuncts, regardless of how
-        # many there are.
-        pending 'method-call resolution does not walk intersection conjuncts (unrelated to #1266)'
+      it 'resolves conjunct methods on a three-way intersection' do
+        # Same fix as the sibling specs above; each conjunct is checked
+        # independently regardless of how many there are.
         checker = type_checker(%(
           class A
             # @return [void]
