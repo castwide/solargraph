@@ -73,6 +73,22 @@ describe Solargraph::TypeChecker do
         .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received String\z/))
     end
 
+    it 'does not report a bogus problem for a restarg typed as RBS `untyped` (#1223)' do
+      # Reported at https://github.com/castwide/solargraph/pull/1223#issuecomment-5198820509 -
+      # BasicObject#instance_exec is declared `(*untyped, **untyped)`, so its
+      # restarg has no per-element type to check arguments against.
+      # #restarg_problems_for used to unwrap that down to a
+      # ComplexType with zero items, which #undefined? failed to
+      # recognize (ComplexType#method_missing only delegates to
+      # #items.first, so it returns nil - not true - when #items is
+      # empty), so the empty type fell through to the error message
+      # instead of being skipped, rendering as "expected , received".
+      checker = type_checker(%(
+        1.instance_exec(2) { }
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]

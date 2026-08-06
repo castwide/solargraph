@@ -550,7 +550,18 @@ module Solargraph
       # must conform to.
       # @sg-ignore pin.closure is a Pin::Namespace for a top-level method pin
       wrapped_ptype = par.return_type.resolve_generics(pin.closure, receiver_type)
-      ptype = ComplexType.new(wrapped_ptype.items.flat_map(&:subtypes).flat_map(&:items))
+      subtypes = wrapped_ptype.items.flat_map(&:subtypes)
+      # RbsTranslator#to_restarg_return_type falls back to a bare,
+      # unparameterized Array (no subtypes) when the RBS element type
+      # is untyped (e.g. `(*untyped)`) - there's no per-element type
+      # to check arguments against in that case. A ComplexType built
+      # from an empty item list isn't caught by the ptype.undefined?
+      # check below (ComplexType#method_missing only delegates to
+      # #items.first, so #undefined? comes back nil, not true, when
+      # #items is empty) so it has to be handled explicitly here.
+      return errors if subtypes.empty?
+
+      ptype = ComplexType.new(subtypes.flat_map(&:items))
       # @sg-ignore pin.closure is a Pin::Namespace for a top-level method pin
       ptype = ptype.qualify(api_map, *pin.closure.gates).self_to_type(par.context)
       return errors if ptype.nil? || ptype.undefined?
