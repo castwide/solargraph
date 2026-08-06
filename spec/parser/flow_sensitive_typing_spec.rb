@@ -863,6 +863,26 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::String')
   end
 
+  it 'uses .nil? in a raise if() with a multi-statement branch to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String, nil]
+        # @return [void]
+        def bar(baz: nil)
+          if baz.nil?
+            valid = %w[a b c]
+            raise "baz required. Valid: \#{valid.inspect}"
+          end
+          baz.length
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 12])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
   it 'uses .nil? in a return if() in a block to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
