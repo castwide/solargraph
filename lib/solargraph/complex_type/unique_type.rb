@@ -9,7 +9,16 @@ module Solargraph
       include TypeMethods
       include Equality
 
+      autoload :Intersection, 'solargraph/complex_type/unique_type/intersection'
+
       attr_reader :all_params, :subtypes, :key_types
+
+      # @type [Hash{String => String}]
+      ANONYMOUS_NAME_BY_STARTING_TAG = {
+        '{' => 'Hash',
+        '(' => 'Array',
+        '<' => 'Array'
+      }.freeze
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -22,6 +31,11 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         raise ComplexTypeError, "Illegal prefix: #{name}" if name.start_with?(':::')
+        # Anonymous shorthand - `<A>`, `(A)`, `{A=>B}` - omits the
+        # leading type name, defaulting it to Array or Hash. Resolved
+        # before the rooted/can_root_name? check below so an anonymous
+        # `<A>` behaves exactly like the equivalent `Array<A>`.
+        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring[0]) if name.empty? && !substring.empty?
         if name.start_with?('::')
           name = name[2..]
           rooted = true
@@ -119,28 +133,70 @@ module Solargraph
         ComplexType.new(types)
       end
 
-      # @see https://en.wikipedia.org/wiki/Intersection_type
+      # Flow-sensitive type narrowing: given a type learned from a
+      # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down
+      # to the more specific of each compatible pair between the two
+      # sides. When neither side is already known to be a subtype of
+      # the other but one is positively confirmed to be a mix-in
+      # (e.g. a declared class and an unrelated module), both facts
+      # are still true at once, so the pair is combined into an
+      # Intersection rather than discarded. Everything else - two
+      # different concrete classes (impossible; an object has exactly
+      # one class), or either side being a namespace we can't
+      # positively identify - falls back to the original behavior of
+      # dropping the pair.
       #
-      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+      #
+      # @param narrowing_type [ComplexType, ComplexType::UniqueType, nil]
       # @param api_map [ApiMap]
       # @return [self, ComplexType]
-      def intersect_with intersection_type, api_map
-        return self if intersection_type.nil?
-        return intersection_type if undefined?
+      def narrow_with narrowing_type, api_map
+        return self if narrowing_type.nil?
+        return narrowing_type if undefined?
         types = []
         # try to find common types via conformance
         items.each do |ut|
-          intersection_type.each do |int_type|
-            if ut.conforms_to?(api_map, int_type, :assignment)
+          narrowing_type.each do |candidate|
+            if ut.conforms_to?(api_map, candidate, :assignment)
               types << ut
-            elsif int_type.conforms_to?(api_map, ut, :assignment)
-              types << int_type
+            elsif candidate.conforms_to?(api_map, ut, :assignment)
+              types << candidate
+            elsif mixin_pairing?(api_map, ut, candidate)
+              types << Intersection.new([ComplexType.new([ut]), ComplexType.new([candidate])])
             end
           end
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
         ComplexType.new(types)
       end
+
+      # Whether combining these two into an intersection is safe. Only
+      # true when at least one side is *positively confirmed* to be a
+      # mix-in: any class can pick up any module, so a class-and-module
+      # pairing is always plausible. Everything else - two different
+      # concrete classes, or a namespace we have no pin for (synthetic
+      # names like `Boolean`, generics, literals, duck types, or
+      # simply unresolved) - defaults to false, preserving the
+      # original drop-the-pair behavior.
+      #
+      # @param api_map [ApiMap]
+      # @param declared [ComplexType::UniqueType]
+      # @param candidate [ComplexType::UniqueType]
+      # @return [Boolean]
+      def mixin_pairing? api_map, declared, candidate
+        namespace_kind(api_map, declared) == :module || namespace_kind(api_map, candidate) == :module
+      end
+
+      # @param api_map [ApiMap]
+      # @param unique_type [ComplexType::UniqueType]
+      # @return [Symbol, nil] :class, :module, or nil if unknown
+      def namespace_kind api_map, unique_type
+        # @type [Pin::Namespace, nil]
+        pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
+        pin&.type
+      end
+      private :mixin_pairing?, :namespace_kind
 
       def simplifyable_literal?
         literal? && name != 'nil'
@@ -262,7 +318,9 @@ module Solargraph
         # match one of their unique types
         expected.any? do |expected_unique_type|
           # :nocov:
-          unless expected_unique_type.instance_of?(UniqueType)
+          unless expected_unique_type.is_a?(UniqueType)
+            # @sg-ignore is_a? doesn't narrow the negated branch as
+            #   precisely as instance_of? did
             raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
           end
           # :nocov:

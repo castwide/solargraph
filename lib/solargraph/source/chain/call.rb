@@ -57,19 +57,63 @@ module Solargraph
 
           # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
-          pin_groups = binder.each_unique_type.map do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
-          end
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          pins = pin_groups.flatten.uniq(&:path)
+          pins = method_pins_for_binder(binder, api_map)
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
 
         private
+
+        # Resolves the pins for calling `word` on every top-level
+        # alternative of a (possibly union) binder type. Each
+        # alternative must define the method unless
+        # api_map.loose_unions allows duck-typed leniency.
+        #
+        # @param binder_type [ComplexType, ComplexType::UniqueType]
+        # @param api_map [ApiMap]
+        # @return [::Array<Pin::Base>]
+        def method_pins_for_binder binder_type, api_map
+          top_level_types = binder_type.is_a?(ComplexType) ? binder_type.to_a : [binder_type]
+          pin_groups = top_level_types.map { |unique_type| method_stack_pins(unique_type, api_map) }
+          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:nil?)
+          # Different alternatives can resolve to pins that share a
+          # path (e.g. the same generic method looked up against
+          # `Box<Integer>` and `Box<String>`) but that have already
+          # been resolved to different return types for their
+          # respective context - dedup on both so a real union
+          # doesn't silently lose every alternative but the first.
+          # @param p [Pin::Base]
+          pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.tag] }
+        end
+
+        # Resolves the method stack's first pin for a single
+        # top-level unique type. An Intersection conjunct only needs
+        # *one* of its conjuncts to define the method (A & B <: A,
+        # A & B <: B) - the opposite of a union, where every
+        # alternative needs it - so it recurses through
+        # #method_pins_for_binder per conjunct (a conjunct is a full
+        # ComplexType, since RBS allows e.g. `(A | B) & C`) and
+        # accepts whichever conjuncts resolve.
+        #
+        # @param unique_type [ComplexType::UniqueType]
+        # @param api_map [ApiMap]
+        # @return [::Array<Pin::Base>, nil] nil when unresolved
+        def method_stack_pins unique_type, api_map
+          if unique_type.is_a?(ComplexType::UniqueType::Intersection)
+            resolved = unique_type.conjuncts.filter_map do |conjunct|
+              pins = method_pins_for_binder(conjunct, api_map)
+              pins.empty? ? nil : pins
+            end
+            return nil if resolved.empty?
+            # @param p [Pin::Base]
+            resolved.flatten.uniq { |p| [p.path, p.return_type.tag] }
+          else
+            ns_tag = unique_type.namespace == '' ? '' : unique_type.namespace_type.tag
+            stack = api_map.get_method_stack(ns_tag, word, scope: unique_type.scope)
+            return nil if stack.first.nil?
+            [stack.first]
+          end
+        end
 
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]

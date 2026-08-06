@@ -645,6 +645,100 @@ describe Solargraph::Pin::Method do
       expect(pin.return_type.to_s).to eq('Boolean')
     end
 
+    it 'sets intersection return types' do
+      source = Solargraph::Source.load_string(%(
+        #: () -> (String & Comparable)
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect(pin.return_type.to_s).to eq('String & Comparable')
+      expect(pin.return_type.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
+    end
+
+    # RBS allows a union as one member of an intersection - `&` and
+    # `|` nest freely in either direction, unlike the YARD/tag-string
+    # grammar (see complex_type_spec.rb "with parentheses"), so these
+    # go through RbsTranslator directly instead of round-tripping
+    # through a tag string.
+    context 'with a union nested inside an intersection' do
+      it 'preserves a union as the first conjunct' do
+        source = Solargraph::Source.load_string(%(
+          #: () -> ((String | Integer) & Comparable)
+          def foo; end
+        ))
+        api_map = Solargraph::ApiMap.new
+        api_map.map source
+        pin = api_map.get_path_pins('#foo').first
+        intersection = pin.return_type.first
+        expect(intersection).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
+        expect(intersection.conjuncts.length).to eq(2)
+        expect(intersection.conjuncts.first.length).to eq(2)
+        expect(intersection.conjuncts.first.tags).to eq('String, Integer')
+        expect(intersection.to_rbs).to eq('(::String | ::Integer) & ::Comparable')
+      end
+
+      it 'preserves a union as the second conjunct' do
+        source = Solargraph::Source.load_string(%(
+          #: () -> (Comparable & (String | Integer))
+          def foo; end
+        ))
+        api_map = Solargraph::ApiMap.new
+        api_map.map source
+        pin = api_map.get_path_pins('#foo').first
+        intersection = pin.return_type.first
+        expect(intersection.conjuncts.last.length).to eq(2)
+        expect(intersection.to_rbs).to eq('::Comparable & (::String | ::Integer)')
+      end
+
+      it 'flattens a nested intersection into the same conjunct list' do
+        source = Solargraph::Source.load_string(%(
+          #: () -> (String & (Comparable & Enumerable))
+          def foo; end
+        ))
+        api_map = Solargraph::ApiMap.new
+        api_map.map source
+        pin = api_map.get_path_pins('#foo').first
+        intersection = pin.return_type.first
+        expect(intersection.to_rbs).to eq('::String & ::Comparable & ::Enumerable')
+      end
+
+      it 'is not round-trippable through the tag string, unlike to_rbs' do
+        # The object model built directly by RbsTranslator is
+        # correct (verified above), but there is no way to express a
+        # grouped union as a plain tag *string* (see
+        # complex_type_spec.rb). Re-parsing the informal `tag`/`to_s`
+        # output therefore does not reproduce the same structure -
+        # this is a known, documented limitation, not a silent
+        # inconsistency. `to_rbs` uses real RBS grouping syntax and
+        # does round-trip correctly.
+        source = Solargraph::Source.load_string(%(
+          #: () -> ((String | Integer) & Comparable)
+          def foo; end
+        ))
+        api_map = Solargraph::ApiMap.new
+        api_map.map source
+        pin = api_map.get_path_pins('#foo').first
+        original = pin.return_type
+        expect(original.tag).to eq('String, Integer & Comparable')
+
+        reparsed = Solargraph::ComplexType.parse(original.tag)
+        expect(reparsed.length).to eq(2)
+        expect(reparsed[0].tag).to eq('String')
+        expect(reparsed[1].tag).to eq('Integer & Comparable')
+
+        # to_rbs, by contrast, produces real RBS syntax and round-trips
+        # correctly through RBS's own parser (not Solargraph's tag parser,
+        # which speaks a different dialect and doesn't understand `|` or
+        # bare grouping parens).
+        rbs_type = RBS::Parser.parse_type(original.to_rbs)
+        reparsed_via_rbs = Solargraph::RbsTranslator.to_complex_type(rbs_type)
+        expect(reparsed_via_rbs.length).to eq(1)
+        expect(reparsed_via_rbs.first.conjuncts.map(&:tags)).to eq(['String, Integer', 'Comparable'])
+      end
+    end
+
     it 'sets required positional parameters' do
       source = Solargraph::Source.load_string(%(
         #: (String) -> bool

@@ -240,6 +240,122 @@ describe Solargraph::ComplexType do
     end
   end
 
+  context 'with intersection types' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        class Sup; end
+        class Sub < Sup; end
+        class Unrelated; end
+      ))
+    end
+
+    before do
+      api_map.map source
+    end
+
+    it 'lets an intersection satisfy an expectation of any one conjunct (A & B <: A)' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Sub')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+
+    it 'lets an intersection satisfy an expectation of any one conjunct (A & B <: B)' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Unrelated')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+
+    it 'does not let an intersection satisfy an expectation none of its conjuncts meet' do
+      inf = described_class.parse('Sub & Unrelated')
+      exp = described_class.parse('Integer')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'requires every conjunct to be satisfied to conform to an intersection expectation' do
+      inf = described_class.parse('Sub')
+      exp = described_class.parse('Sup & Unrelated')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'conforms to an intersection expectation when every conjunct is satisfied' do
+      inf = described_class.parse('Sub')
+      exp = described_class.parse('Sup & Sub')
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+    end
+
+    context 'when both the inferred and expected types are intersections' do
+      # A & B <: C & D iff every conjunct of the expected side is
+      # satisfied by *some* conjunct of the inferred side - not "one
+      # single inferred conjunct satisfies the whole expected type."
+      # Checking a single already-chosen conjunct against the full
+      # expected intersection (rather than letting different inferred
+      # conjuncts cover different expected conjuncts) makes an
+      # intersection fail to conform to an identical copy of itself
+      # whenever its conjuncts don't already relate to each other.
+      it 'conforms to an identical intersection with unrelated conjuncts' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Unrelated')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'conforms to an identical intersection regardless of conjunct order' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Unrelated & Sub')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'still requires every expected conjunct to be covered by some inferred conjunct' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Integer')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+      end
+
+      it 'lets a wider inferred intersection satisfy a narrower expected one' do
+        inf = described_class.parse('Sub & Unrelated & Integer')
+        exp = described_class.parse('Sub & Unrelated')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+    end
+
+    it 'combines a class and a mix-in as conjuncts' do
+      inf = described_class.parse('String & Comparable')
+      expect(inf.conforms_to?(api_map, described_class.parse('Comparable'), :method_call)).to be(true)
+      expect(inf.conforms_to?(api_map, described_class.parse('Enumerable'), :method_call)).to be(false)
+    end
+
+    it 'lets a value satisfy a class-and-mix-in intersection expectation' do
+      exp = described_class.parse('Comparable & String')
+      expect(described_class.parse('String').conforms_to?(api_map, exp, :method_call)).to be(true)
+      expect(described_class.parse('Integer').conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    context 'with a duck-typed conjunct in the expectation' do
+      let(:source) do
+        Solargraph::Source.load_string(%(
+          class Sup; end
+          class Sub < Sup; end
+          class Unrelated; end
+
+          class Quacker
+            def to_str
+              ''
+            end
+          end
+        ))
+      end
+
+      it 'structurally verifies a duck-typed conjunct alongside a nominal one' do
+        exp = described_class.parse('Object & #to_str')
+        expect(described_class.parse('Quacker').conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'still requires the nominal conjunct even if the duck-typed one matches' do
+        exp = described_class.parse('Comparable & #to_str')
+        expect(described_class.parse('Quacker').conforms_to?(api_map, exp, :method_call)).to be(false)
+      end
+    end
+  end
+
   context 'with inheritance relationship in allow_reverse_match mode' do
     let(:api_map) { Solargraph::ApiMap.new }
     let(:sup) { described_class.parse('String') }

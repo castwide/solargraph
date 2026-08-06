@@ -31,46 +31,48 @@ module Solargraph
       #   Example: If a return type is 'Float | Integer | nil' and the
       #   exclude_return_type is 'Integer', the resulting return
       #   type will be 'Float | nil' because Integer is excluded.
-      # @param intersection_return_type [ComplexType, nil] Ensure each unique
+      # @param narrowed_return_type [ComplexType, nil] Ensure each unique
       #   return type is compatible with at least one element of this
       #   complex type.  If a ComplexType used as a return type is an
-      #   union type - we can return any of these - these are
-      #   intersection types - everything we return needs to meet at least
-      #   one of these unique types.
+      #   union type - we can return any of these - this is a
+      #   flow-sensitive narrowing (e.g. from an `is_a?` guard), not a
+      #   real intersection type (see
+      #   ComplexType::UniqueType::Intersection for that) - everything
+      #   we return needs to meet at least one of these unique types.
       #
       #   Example: If a return type is 'Numeric | nil' and the
-      #   intersection_return_type is 'Float | nil', the resulting return
+      #   narrowed_return_type is 'Float | nil', the resulting return
       #   type will be 'Float | nil' because Float is compatible
       #   with Numeric and nil is compatible with nil.
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
-      # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
+      # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
       # @param presence [Range, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
-                     intersection_return_type: nil, exclude_return_type: nil,
+                     narrowed_return_type: nil, exclude_return_type: nil,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
         @return_type = return_type
-        @intersection_return_type = intersection_return_type
+        @narrowed_return_type = narrowed_return_type
         @exclude_return_type = exclude_return_type
         @presence = presence
       end
 
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
-      # @param intersection_return_type [ComplexType, nil]
+      # @param narrowed_return_type [ComplexType, nil]
       # @param source [::Symbol]
       #
       # @return [self]
-      def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
+      def downcast presence:, exclude_return_type: nil, narrowed_return_type: nil,
                    source: self.source
         result = dup
         result.exclude_return_type = exclude_return_type
-        result.intersection_return_type = intersection_return_type
+        result.narrowed_return_type = narrowed_return_type
         result.source = source
         result.presence = presence
         result.reset_generated!
@@ -93,7 +95,7 @@ module Solargraph
                                   assignments: new_assignments,
                                   mass_assignment: combine_mass_assignment(other),
                                   return_type: combine_return_type(other),
-                                  intersection_return_type: combine_types(other, :intersection_return_type),
+                                  narrowed_return_type: combine_types(other, :narrowed_return_type),
                                   exclude_return_type: combine_types(other, :exclude_return_type),
                                   presence: combine_presence(other)
                                 })
@@ -123,7 +125,7 @@ module Solargraph
 
       def inner_desc
         super + ", presence=#{presence.inspect}, assignments=#{assignments}, " \
-                "intersection_return_type=#{intersection_return_type&.rooted_tags.inspect}, " \
+                "narrowed_return_type=#{narrowed_return_type&.rooted_tags.inspect}, " \
                 "exclude_return_type=#{exclude_return_type&.rooted_tags.inspect}"
       end
 
@@ -214,7 +216,7 @@ module Solargraph
 
       # @return [ComplexType, nil]
       def return_type
-        generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
+        generate_complex_type || @return_type || narrowed_return_type || ComplexType::UNDEFINED
       end
 
       def typify api_map
@@ -225,7 +227,7 @@ module Solargraph
 
       # @sg-ignore need boolish support for ? methods
       def presence_certain?
-        exclude_return_type || intersection_return_type
+        exclude_return_type || narrowed_return_type
       end
 
       # @param other_loc [Location]
@@ -288,7 +290,7 @@ module Solargraph
 
       protected
 
-      attr_accessor :exclude_return_type, :intersection_return_type
+      attr_accessor :exclude_return_type, :narrowed_return_type
 
       # @return [Range]
       attr_writer :presence
@@ -302,8 +304,8 @@ module Solargraph
       def adjust_type api_map, raw_return_type
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
-        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions.intersect_with qualified_intersection, api_map
+        qualified_narrowing = narrowed_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        minus_exclusions.narrow_with qualified_narrowing, api_map
       end
 
       # See if this variable is visible within 'viewing_closure'

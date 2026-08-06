@@ -41,6 +41,12 @@ module Solargraph
           # :nocov:
         end
 
+        # An expectation of `A & B` can only be satisfied by
+        # something that conforms to every conjunct (A & B <: A and
+        # A & B <: B, so satisfying the intersection requires
+        # satisfying both).
+        return conforms_to_intersection_expectation? if expected.is_a?(UniqueType::Intersection)
+
         return true if ignore_interface?
         return true if conforms_via_reverse_match?
 
@@ -77,6 +83,21 @@ module Solargraph
       end
 
       private
+
+      # @return [Boolean]
+      def conforms_to_intersection_expectation?
+        # only called when expected.is_a?(UniqueType::Intersection)
+        # @type [UniqueType::Intersection]
+        intersection = expected
+        # Wrap inferred in a ComplexType (rather than calling
+        # UniqueType#conforms_to? directly) so each conjunct check
+        # gets ComplexType#conforms_to?'s special-case handling (e.g.
+        # duck_type? conjuncts), not just UniqueType's.
+        wrapped_inferred = ComplexType.new([inferred])
+        intersection.conjuncts.all? do |conjunct|
+          wrapped_inferred.conforms_to?(api_map, conjunct, situation, rules, variance: variance)
+        end
+      end
 
       def only_inferred_parameters?
         !expected.parameters? && inferred.parameters?

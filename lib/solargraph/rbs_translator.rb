@@ -12,11 +12,47 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
+    # Translates an RBS type into a ComplexType.
+    #
+    # Every RBS node that can *contain* another type - intersections,
+    # unions, optionals, tuples, and generic type arguments - is built
+    # directly as a ComplexType/UniqueType object graph by recursing
+    # through this method, rather than by rendering a tag string and
+    # re-parsing it. A joined string can't represent grouping that
+    # Solargraph's own tag grammar has no syntax for (e.g. a union
+    # nested inside an intersection, `(A | B) & C`), so round-tripping
+    # through one silently produces the wrong structure. Only leaf
+    # types that can't contain a nested type (literals, `bool`, `nil`,
+    # `void`, generic type variables, `self`/`instance`, `Proc`, etc.)
+    # go through the tag-string fallback in type_to_tag.
+    #
     # @param type [RBS::Types::Bases::Base]
     # @return [ComplexType]
     def self.to_complex_type(type)
-      tag = type_to_tag(type)
-      ComplexType.try_parse(tag).force_rooted
+      case type
+      when RBS::Types::Intersection
+        intersection_complex_type(type)
+      when RBS::Types::Optional
+        optional_complex_type(type)
+      when RBS::Types::Union
+        union_complex_type(type)
+      when RBS::Types::Tuple
+        tuple_complex_type(type)
+      when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
+        # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
+        # @todo ensure these get resolved after processing all aliases
+        # @todo handle recursive aliases
+        #
+        # `Interface` represents a mix-in module which can be considered a
+        # subtype of a consumer of it
+        ComplexType.new([build_unique_type(type.name, type.args)]).force_rooted
+      when RBS::Types::ClassSingleton
+        # e.g., singleton(String)
+        ComplexType.new([build_unique_type(type.name)]).force_rooted
+      else
+        tag = type_to_tag(type)
+        ComplexType.try_parse(tag).force_rooted
+      end
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -123,20 +159,45 @@ module Solargraph
     class << self
       private
 
+      # @param type [RBS::Types::Intersection]
+      # @return [ComplexType]
+      def intersection_complex_type type
+        conjuncts = type.types.map { |member| RbsTranslator.to_complex_type(member) }
+        ComplexType.new([ComplexType::UniqueType::Intersection.new(conjuncts)]).force_rooted
+      end
+
+      # @param type [RBS::Types::Optional]
+      # @return [ComplexType]
+      def optional_complex_type type
+        inner = RbsTranslator.to_complex_type(type.type)
+        ComplexType.new(inner.items + [ComplexType::UniqueType::NIL]).force_rooted
+      end
+
+      # @param type [RBS::Types::Union]
+      # @return [ComplexType]
+      def union_complex_type type
+        ComplexType.new(type.types.flat_map { |t| RbsTranslator.to_complex_type(t).items }).force_rooted
+      end
+
+      # @param type [RBS::Types::Tuple]
+      # @return [ComplexType]
+      def tuple_complex_type type
+        subtypes = type.types.map { |t| RbsTranslator.to_complex_type(t) }
+        ComplexType.new([ComplexType::UniqueType.new('Array', [], subtypes, rooted: true, parameters_type: :fixed)]).force_rooted
+      end
+
+      # Renders a leaf RBS type (one that can't contain another type)
+      # as a tag string. Composite/recursive types are handled
+      # directly in to_complex_type instead - see its comment.
+      #
       # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def type_to_tag type
         case type
-        when RBS::Types::Optional
-          "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
-        when RBS::Types::Tuple
-          "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
           type.literal.inspect
-        when RBS::Types::Union
-          type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
           'Hash'
@@ -151,22 +212,8 @@ module Solargraph
         when RBS::Types::Bases::Top
           # `Top` is the most super superclass
           'BasicObject'
-        when RBS::Types::Intersection
-          type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
           'Proc'
-        when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
-          # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
-          # @todo ensure these get resolved after processing all aliases
-          # @todo handle recursive aliases
-          #
-          # `Interface represents a mix-in module which can be considered a
-          # subtype of a consumer of it
-          #
-          type_tag(type.name, type.args)
-        when RBS::Types::ClassSingleton
-          # e.g., singleton(String)
-          type_tag(type.name)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'
@@ -177,28 +224,6 @@ module Solargraph
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
-        end
-      end
-
-      # @param type_name [RBS::TypeName]
-      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [String]
-      def type_tag(type_name, type_args = [])
-        build_type(type_name, type_args).tags
-      end
-
-      # @param type_name [RBS::TypeName]
-      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [ComplexType::UniqueType]
-      def build_type(type_name, type_args = [])
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |a| type_to_tag(a) }.map do |t|
-          ComplexType.try_parse(t)
-        end
-        if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
-        else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
         end
       end
     end
