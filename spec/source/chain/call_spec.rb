@@ -389,6 +389,37 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('undefined')
   end
 
+  it 'denies calls on a two-class union when loose union mode is off and only one class defines the method' do
+    # The nilable spec above exercises this same "every union member must
+    # define the method, unless loose_unions" rule, but only via
+    # nullable?/without_nil stripping nil out first - it never actually
+    # tests the general two-real-class case. Found while checking whether
+    # the Call#resolve fix for intersections (A & B <: A, A & B <: B)
+    # regressed real union semantics (A, B calls require both) - it
+    # doesn't (this reproduces identically on unmodified HEAD, before that
+    # fix), but this specific shape was never covered.
+    pending 'strict union mode does not deny a call when only one of two plain classes defines it'
+    source = Solargraph::Source.load_string(%(
+      class A
+        # @return [void]
+        def foo; end
+      end
+
+      class B
+      end
+
+      # @type [A, B]
+      x = make
+      x.foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new(loose_unions: false)
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 8))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('undefined')
+  end
+
   it 'preserves unions in value position in Hash' do
     source = Solargraph::Source.load_string(%(
       # @param params [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
