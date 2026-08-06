@@ -81,7 +81,13 @@ describe Solargraph::ComplexType do
   end
 
   it 'handles singleton types compared against their literals' do
-    pending 'side of effect of inference changes'
+    # https://github.com/castwide/solargraph/issues/1196
+    #
+    # `nil` doesn't yet simplify to `NilClass` the way other literals
+    # simplify to their class name. Fixed by
+    # https://github.com/castwide/solargraph/pull/1223 (stacked:
+    # https://github.com/apiology/solargraph/pull/40).
+    pending 'nil does not yet simplify to NilClass (issue #1196, fixed by PR #1223)'
     exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
     inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
     match = inf.conforms_to?(api_map, exp, :method_call)
@@ -237,6 +243,88 @@ describe Solargraph::ComplexType do
     it 'validates inheritance the other way' do
       match = sup.conforms_to?(api_map, sub, :method_call, [:allow_reverse_match])
       expect(match).to be(true)
+    end
+  end
+
+  context 'with RBS interface types' do
+    it 'structurally validates a type that satisfies the interface, without any rule' do
+      exp = described_class.parse('Hash::_Key')
+      inf = described_class.parse('Symbol')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'structurally invalidates a type that does not satisfy the interface, even with allow_unmatched_interface' do
+      exp = described_class.parse('_ToAry')
+      inf = described_class.parse('Integer')
+      match = inf.conforms_to?(api_map, exp, :method_call, [:allow_unmatched_interface])
+      expect(match).to be(false)
+    end
+
+    it 'rejects a type that does not satisfy the interface when the rule is absent' do
+      exp = described_class.parse('_ToAry')
+      inf = described_class.parse('Integer')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'validates a type that satisfies the interface via a core fill include' do
+      exp = described_class.parse('_ToAry')
+      inf = described_class.parse('Array')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'falls back to allow_unmatched_interface when the interface pin cannot be found' do
+      exp = described_class::UniqueType.new('_NoSuchInterface', rooted: true)
+      inf = described_class.parse('Integer')
+      expect(inf.conforms_to?(api_map, exp, :method_call, [:allow_unmatched_interface])).to be(true)
+      expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+    end
+
+    it 'rejects a same-named method with the wrong return type' do
+      # https://github.com/castwide/solargraph/issues/1267
+      #
+      # The structural check only confirms a `to_ary` method exists; it
+      # doesn't verify it actually returns an Array.
+      pending 'structural interface conformance does not yet check method return types (issue #1267)'
+      source = Solargraph::Source.load_string(%(
+        class BadToAry
+          # @return [String]
+          def to_ary
+            'not an array'
+          end
+        end
+      ))
+      api_map.map source
+      exp = described_class.parse('_ToAry')
+      inf = described_class.parse('BadToAry')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a same-named method with the wrong arity' do
+      # https://github.com/castwide/solargraph/issues/1267
+      #
+      # The structural check only confirms an `eql?` method exists; it
+      # doesn't verify it accepts the argument Hash::_Key#eql? requires.
+      pending 'structural interface conformance does not yet check method parameters (issue #1267)'
+      source = Solargraph::Source.load_string(%(
+        class BadKey
+          def eql?
+            true
+          end
+
+          def hash
+            1
+          end
+        end
+      ))
+      api_map.map source
+      exp = described_class.parse('Hash::_Key')
+      inf = described_class.parse('BadKey')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
     end
   end
 

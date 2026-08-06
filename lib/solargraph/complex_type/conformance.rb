@@ -41,7 +41,9 @@ module Solargraph
           # :nocov:
         end
 
-        return true if ignore_interface?
+        interface_verdict = interface_bypass_verdict
+        return interface_verdict unless interface_verdict.nil?
+
         return true if conforms_via_reverse_match?
 
         downcast_inferred = inferred.downcast_to_literal_if_possible
@@ -86,9 +88,34 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      def ignore_interface?
-        (expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)) ||
-          (inferred.interface? && rules.include?(:allow_unmatched_interface))
+      # Resolves interface-typed conformance before any parameter/subtype
+      # comparisons run, the same way the old blanket
+      # :allow_unmatched_interface bypass did. That's deliberate: RBS
+      # interfaces can have their own type parameters (e.g. `_Each[Elem]`),
+      # and this doesn't verify those (see
+      # https://github.com/castwide/solargraph/issues/1267), so once the
+      # interface question is settled, comparing `expected`'s subtypes
+      # against `inferred`'s would either be meaningless or wrong.
+      #
+      # There's no structural check when the *inferred* type is itself an
+      # abstract interface (e.g., a method returns `_ToAry`), since
+      # Solargraph doesn't know which concrete type will show up at
+      # runtime, so :allow_unmatched_interface remains a blanket escape
+      # hatch for that direction.
+      #
+      # @return [Boolean, nil] true/false if the interface question
+      #   settles conformance outright, nil if there's no interface
+      #   involved (or no verdict could be reached and no fallback rule
+      #   applies), meaning normal conformance checking should proceed
+      def interface_bypass_verdict
+        return true if inferred.interface? && rules.include?(:allow_unmatched_interface)
+        return nil unless expected.interface?
+
+        verdict = structural_interface_verdict
+        return verdict unless verdict.nil?
+        return true if rules.include?(:allow_unmatched_interface)
+
+        nil
       end
 
       def can_strip_expected_parameters?
@@ -125,6 +152,26 @@ module Solargraph
           # :nocov:
         end
         true
+      end
+
+      # The methods `expected` declares directly on itself, excluding ones
+      # inherited from `Object` and other ancestors.
+      #
+      # @return [Array<Pin::Method>]
+      def required_interface_methods
+        api_map.get_methods(expected.name, scope: :instance)
+               .select { |pin| pin.closure&.path == expected.name }
+      end
+
+      # @return [Boolean, nil] true or false if `expected`'s directly
+      #   declared methods could be checked against `inferred`'s method
+      #   stack, or nil if no verdict could be reached (e.g., the interface
+      #   has no pin, or declares no methods of its own)
+      def structural_interface_verdict
+        required = required_interface_methods
+        return nil if required.empty?
+
+        required.all? { |pin| !api_map.get_method_stack(inferred.name, pin.name, scope: :instance).empty? }
       end
 
       def key_types_conform?
