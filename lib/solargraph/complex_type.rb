@@ -189,8 +189,19 @@ module Solargraph
 
     # @return [ComplexType]
     def downcast_to_literal_if_possible
-      return self
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
+    end
+
+    # Drop a literal item (e.g. `0`) when its non-literal base type
+    # (e.g. `Integer`) is also present in the same union - a wider
+    # type already subsumes it, so keeping both is redundant and
+    # reads as if the literal value were still specifically reachable.
+    #
+    # @return [ComplexType]
+    def without_redundant_literals
+      non_literal_names = items.reject(&:literal?).map(&:name)
+      new_items = items.reject { |item| item.literal? && non_literal_names.include?(item.non_literal_name) }
+      ComplexType.new(new_items)
     end
 
     # @return [String]

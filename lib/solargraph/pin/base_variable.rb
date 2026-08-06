@@ -164,8 +164,16 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
+            # Exclude the pin(s) this exact assignment belongs to from the
+            # candidates available to resolve its own RHS - a self-reference
+            # (e.g. `a = a`, or `index += 1` desugared to `index = index +
+            # 1`) must resolve against the variable's *other* assignments,
+            # not against the not-yet-computed value being derived here.
+            self_excluded_locals = clip.locals.reject do |candidate|
+              candidate.respond_to?(:assignments) && candidate.assignments.include?(parent_node)
+            end
             # @sg-ignore Need to add nil check here
-            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = chain.infer(api_map, closure, self_excluded_locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -176,7 +184,14 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        unless assignment_types.empty?
+          # @type [Array<ComplexType::UniqueType>]
+          items = assignment_types.flat_map(&:items).uniq
+          # A later, wider assignment (e.g. `index += 1`) can leave a
+          # stale literal (e.g. `0`) alongside its own non-literal
+          # base type in the union - drop the redundant literal.
+          type_from_assignment = ComplexType.new(items).without_redundant_literals
+        end
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as

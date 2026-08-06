@@ -329,9 +329,9 @@ describe Solargraph::Pin::Method do
     api_map.map source
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
-    expect(type.rooted_tags).to eq('::Integer, nil')
-    expect(type.to_rbs).to eq('(::Integer | nil)')
-    expect(type.simple_tags).to eq('Integer, nil')
+    expect(type.rooted_tags).to eq('1, nil')
+    expect(type.to_rbs).to eq('(1 | nil)')
+    expect(type.simple_tags).to eq('Integer, NilClass')
   end
 
   it 'infers from chains' do
@@ -363,6 +363,38 @@ describe Solargraph::Pin::Method do
     pin = api_map.get_path_pins('Foo#bar').first
     type = pin.probe(api_map)
     expect(type.simple_tags).to eq('Integer')
+  end
+
+  it 'infers from literal array dereference' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          arr = ['a', 'b']
+          arr[0]
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('String, nil')
+  end
+
+  it 'infers from multiple-assignment chains' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          a, b = ['a', 'b']
+          b
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    type = pin.probe(api_map)
+    expect(type.to_s).to eq('String')
   end
 
   it 'typifies from super methods' do
@@ -687,7 +719,10 @@ describe Solargraph::Pin::Method do
       expect(pin.signatures.first.parameters).to be_one
       expect(pin.signatures.first.parameters.first.name).to eq('bar')
       expect(pin.signatures.first.parameters.first.decl).to eq(:restarg)
-      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Array')
+      # `bar` here is the restarg's declared per-element type (RBS's
+      # inline shorthand identifies it by position, not name), now
+      # tracked instead of being erased to a bare `Array`
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Array<bar>')
     end
 
     it 'sets required keyword parameters' do
@@ -732,7 +767,9 @@ describe Solargraph::Pin::Method do
       expect(pin.signatures.first.parameters).to be_one
       expect(pin.signatures.first.parameters.first.name).to eq('bar')
       expect(pin.signatures.first.parameters.first.decl).to eq(:kwrestarg)
-      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Hash{Symbol => Object}')
+      # `bar` here is the kwrestarg's declared per-value type, now
+      # tracked instead of being erased to `Hash{Symbol => Object}`
+      expect(pin.signatures.first.parameters.first.return_type.to_s).to eq('Hash{Symbol => bar}')
     end
 
     it 'sets block parameters' do
