@@ -76,7 +76,14 @@ module Solargraph
           top_level_types = binder_type.is_a?(ComplexType) ? binder_type.to_a : [binder_type]
           pin_groups = top_level_types.map { |unique_type| method_stack_pins(unique_type, api_map) }
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:nil?)
-          pin_groups.compact.flatten.uniq(&:path)
+          # Different alternatives can resolve to pins that share a
+          # path (e.g. the same generic method looked up against
+          # `Box<Integer>` and `Box<String>`) but that have already
+          # been resolved to different return types for their
+          # respective context - dedup on both so a real union
+          # doesn't silently lose every alternative but the first.
+          # @param p [Pin::Base]
+          pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.tag] }
         end
 
         # Resolves the method stack's first pin for a single
@@ -98,7 +105,8 @@ module Solargraph
               pins.empty? ? nil : pins
             end
             return nil if resolved.empty?
-            resolved.flatten.uniq(&:path)
+            # @param p [Pin::Base]
+            resolved.flatten.uniq { |p| [p.path, p.return_type.tag] }
           else
             ns_tag = unique_type.namespace == '' ? '' : unique_type.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: unique_type.scope)

@@ -1009,17 +1009,34 @@ describe Solargraph::TypeChecker do
 
       it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
-        # #fetch on Hash{K1=>V1} & Hash{K2=>V2} leaks an unresolved generic<X> and
-        # returns the same wrong type regardless of which key is passed.
+        # #fetch on Hash{K1=>V1} & Hash{K2=>V2} used to always resolve through
+        # the *first* conjunct's #fetch signature regardless of which key was
+        # passed. Root cause (shared with castwide/solargraph#1272): both
+        # conjuncts resolve to a pin with the same path (Hash#fetch) but
+        # different, already-correctly-resolved return types, and dedup was
+        # keying on path alone - fixed here the same way
+        # castwide/solargraph#1273 fixed it for real unions, applied to
+        # Call#method_stack_pins's Intersection branch too.
         #
-        # Confirmed (by running this same repro against a branch with #1266
-        # merged) that this is two separate bugs layered together: #1266 fixes
-        # the generic<X> leak, but the call still resolves through the *first*
-        # conjunct's #fetch signature regardless of which key was passed - see
-        # the sibling 'ignores which conjunct is fetched from' spec below, which
-        # isolates that second bug. So landing #1266 alone will not flip this
-        # spec to passing; it needs its own per-conjunct dispatch fix too.
-        pending 'blocked on #1266, plus a separate first-conjunct-only dispatch bug'
+        # That makes dispatch order-independent and sound (both conjuncts'
+        # possible return types show up), but not yet *precise*: it's a union
+        # of every conjunct's result rather than narrowing to the one whose
+        # key actually matches. True per-key narrowing needs the literal key
+        # ("Index" vs "Triggers") to survive Pin::Parameter#typify, but
+        # UniqueType#qualify widens every literal type to its base class
+        # (String) via UniqueType#non_literal_name - tried gating that behind
+        # a corrected #literal? check (the existing check is unconditionally
+        # disabled by #1201, for an unrelated array/tuple-inference reason),
+        # but qualify's widening turns out to be load-bearing for other
+        # cases (RBS's `NilClass#to_s: () -> ''`, true/false -> Boolean
+        # consolidation) that use the exact same code path - see reverted
+        # attempt in this branch's history. A real fix needs qualify/transform
+        # to distinguish a Hash's key_types from a general return-type
+        # position, which they can't currently do.
+        #
+        # Still blocked on #1266 too: the generic<X> leak is layered on top
+        # of the union.
+        pending 'blocked on #1266, plus qualify erasing literal Hash keys needed for precise per-key dispatch'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
@@ -1036,15 +1053,16 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'ignores which conjunct is fetched from and always resolves via the first conjunct (#1231)' do
+      it 'resolves the same (still imprecise) union regardless of conjunct order (#1231)' do
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
-        # swapping the conjunct order flips which (still wrong) type both fetches
-        # report, showing dispatch always uses the first conjunct rather than the
-        # key. This bug survives #1266 (confirmed by running this repro against a
-        # branch with #1266 merged: the generic<X> leak is gone, but the
-        # first-conjunct-only behavior is unchanged) - it needs its own
-        # per-conjunct dispatch fix, independent of #1266.
-        pending 'first-conjunct-only dispatch, independent of #1266'
+        # this used to demonstrate order-*dependence*: swapping the conjunct
+        # order flipped which (wrong) type both fetches reported. The
+        # dedup-key fix described in the sibling spec above makes this
+        # order-independent now - same union of both conjuncts' return types
+        # either way. Still pending for the same two reasons as that spec:
+        # the #1266-blocked generic<X> leak, and imprecise
+        # union-instead-of-narrowed-to-one-conjunct dispatch.
+        pending 'blocked on #1266, plus qualify erasing literal Hash keys needed for precise per-key dispatch'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]
