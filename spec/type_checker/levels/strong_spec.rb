@@ -893,6 +893,26 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'leaks an unresolved generic<X> from Hash#fetch even with no intersection involved' do
+      # Not #1231-specific: https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
+      # reported this against an intersection of two Hash instantiations, but it
+      # reproduces identically for a single, non-intersected generic Hash - the
+      # intersection is not the trigger, so the fix for #1231 should not be expected
+      # to resolve this on its own.
+      pending 'pre-existing Hash#fetch generic-parameter leak, unrelated to intersection types'
+      checker = type_checker(%(
+        class Repro
+          # @param period [Hash{"Index" => Float}]
+          # @return [void]
+          def process(period)
+            # @type [Float]
+            index = period.fetch("Index")
+          end
+        end
+    ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     context 'with intersection types' do
       it 'accepts an intersection-typed argument where any one conjunct is expected' do
         checker = type_checker(%(
@@ -956,6 +976,40 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
+      it 'ignores which conjunct is fetched from and always resolves via the first conjunct (#1231)' do
+        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 - ' \
+                'swapping the conjunct order flips which (still wrong) type both fetches ' \
+                'report, showing dispatch always uses the first conjunct rather than the key'
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]
+            # @return [void]
+            def process(period)
+              # @type [Array<Hash{"Name" => String}>]
+              triggers = period.fetch("Triggers")
+
+              # @type [Float]
+              index = period.fetch("Index")
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a non-generic method shared by both conjuncts of a same-class intersection' do
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+            # @return [void]
+            def process(period)
+              # @type [Integer]
+              n = period.size
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
       it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
         pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
                 'method-call resolution does not walk the conjuncts of an intersection-typed receiver'
@@ -980,6 +1034,91 @@ describe Solargraph::TypeChecker do
 
           Factory.new.make.foo
           Factory.new.make.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a call to a method inherited from a common ancestor of both conjuncts' do
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          # @type [String]
+          s = Factory.new.make.to_s
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'fails to resolve a conjunct method on an intersection-typed local variable, not just a call chain (#1231)' do
+        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
+                'the gap is in resolving methods on any intersection-typed value, not specific ' \
+                'to method-return-value call chains'
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          # @sg-ignore A.new duck-types as A & B for this repro
+          # @type [A & B]
+          value = A.new
+
+          value.foo
+          value.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'fails to resolve conjunct methods on a three-way intersection' do
+        pending 'https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 - ' \
+                'method-call resolution does not walk conjuncts, regardless of how many there are'
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class C
+            # @return [void]
+            def baz; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B & C for this repro
+            # @return [A & B & C]
+            def make
+              A.new
+            end
+          end
+
+          Factory.new.make.foo
+          Factory.new.make.bar
+          Factory.new.make.baz
       ))
         expect(checker.problems.map(&:message)).to be_empty
       end
