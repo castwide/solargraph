@@ -280,6 +280,31 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'infers generic return types from @generic tag when method also takes an unused block param' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize; end
+        def foo_method; 1; end
+      end
+
+      class Repro
+        # @generic T
+        # @param clazz [Class<generic<T>>]
+        # @return [generic<T>]
+        def create_object(clazz, &unused)
+          clazz.new
+        end
+      end
+
+      Repro.new.create_object(Foo)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(15, 20))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Foo')
+  end
+
   it 'infers generic return types from block from yield being a return node' do
     pending('deeper inference support')
 
