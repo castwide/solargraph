@@ -629,7 +629,7 @@ module Solargraph
         Thread.new do
           report_cache_progress spec.name, pending
           kwargs = {}
-          kwargs[:chdir] = workspace.directory.to_s if workspace.directory && !workspace.directory.empty?
+          kwargs[:chdir] = workspace.directory_or_nil if workspace.directory_or_nil
           _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s,
                                     **kwargs)
           if s.success?
@@ -648,7 +648,7 @@ module Solargraph
 
     # @return [Array<Gem::Specification>]
     def cacheable_specs
-      cacheable = api_map.uncached_gemspecs +
+      cacheable = api_map.uncached_gemspecs -
                   queued_gemspec_cache -
                   cache_errors.to_a
       return cacheable unless cacheable.empty?

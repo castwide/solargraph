@@ -254,7 +254,7 @@ module Solargraph
       stdlib_specs = pin_cache.possible_stdlibs.map { |stdlib| find_gem(stdlib, out: nil) }.compact
       specs = (gem_specs + stdlib_specs)
       specs.each do |spec|
-        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec)
+        pin_cache.cache_gem(gemspec: spec, rebuild: rebuild, out: out) unless pin_cache.cached?(spec) && !rebuild
       end
       out&.puts "Documentation cached for all #{specs.length} gems."
 

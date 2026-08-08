@@ -166,7 +166,7 @@ module Solargraph
         type = build_type(decl.name, decl.args)
         generic_values = type.all_params.map(&:rooted_tags)
         include_pin = Solargraph::Pin::Reference::Include.new(
-          name: type.name,
+          name: type.rooted_name, # reference pins use rooted names
           type_location: location_decl_to_pin_location(decl.location),
           generic_values: generic_values,
           closure: closure,
