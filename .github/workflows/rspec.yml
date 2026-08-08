@@ -40,6 +40,15 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
+        # Without this pin, ruby/setup-ruby uses whatever bundler ships
+        # with each matrix Ruby version individually, rather than one
+        # consistent version across the matrix. Confirmed by removing
+        # it: stdlib/default-gem resolution changed enough that
+        # Workspace::Gemspecs#resolve_require('yaml') started returning
+        # nil, failing spec/api_map_method_spec.rb's YAML test across
+        # most of the matrix. Keep this in sync with Gemfile.lock's
+        # BUNDLED WITH version, and with the same pin below.
+        bundler: 2.5.23
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     #  /home/runner/.rubies/ruby-head/lib/ruby/gems/3.5.0+2/gems/rbs-3.9.4/lib/rbs.rb:11:
@@ -67,7 +76,15 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.4'
+        # See the matching pin in the rspec matrix job above for why
+        # this is needed - keep both in sync with Gemfile.lock's
+        # BUNDLED WITH version.
+        bundler: 2.5.23
         bundler-cache: true
+    - name: Install gems
+      run: |
+        bundle _2.5.23_ install
+        bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: bundle exec rbs collection update
     - name: Run tests
