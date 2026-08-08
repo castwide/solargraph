@@ -14,7 +14,7 @@ module Solargraph
         # @return [String]
         attr_reader :word
 
-        # @return [Location]
+        # @return [Location, nil]
         attr_reader :location
 
         # @return [::Array<Chain>]

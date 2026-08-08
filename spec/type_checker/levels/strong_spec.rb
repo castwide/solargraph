@@ -6,6 +6,39 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'requires strict return tags for attributes when nil is involved' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [String, nil]
+          def initialize(bar = nil)
+            @bar = bar
+          end
+
+          # The tag is [String] but @bar can be nil per the constructor
+          #
+          # @return [String]
+          attr_reader :bar
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'does not flag attributes whose declared type already allows nil' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [String, nil]
+          def initialize(bar = nil)
+            @bar = bar
+          end
+
+          # @return [String, nil]
+          attr_reader :bar
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'requires strict return tags when nil is involved and used second in a ternary' do
       checker = type_checker(%(
         class Foo
