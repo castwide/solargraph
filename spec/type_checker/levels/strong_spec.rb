@@ -1018,25 +1018,40 @@ describe Solargraph::TypeChecker do
         # castwide/solargraph#1273 fixed it for real unions, applied to
         # Call#method_stack_pins's Intersection branch too.
         #
-        # That makes dispatch order-independent and sound (both conjuncts'
-        # possible return types show up), but not yet *precise*: it's a union
-        # of every conjunct's result rather than narrowing to the one whose
-        # key actually matches. True per-key narrowing needs the literal key
-        # ("Index" vs "Triggers") to survive Pin::Parameter#typify, but
-        # UniqueType#qualify widens every literal type to its base class
-        # (String) via UniqueType#non_literal_name - tried gating that behind
-        # a corrected #literal? check (the existing check is unconditionally
-        # disabled by #1201, for an unrelated array/tuple-inference reason),
-        # but qualify's widening turns out to be load-bearing for other
-        # cases (RBS's `NilClass#to_s: () -> ''`, true/false -> Boolean
-        # consolidation) that use the exact same code path - see reverted
-        # attempt in this branch's history. A real fix needs qualify/transform
-        # to distinguish a Hash's key_types from a general return-type
-        # position, which they can't currently do.
+        # That made dispatch order-independent and sound (both conjuncts'
+        # possible return types show up), but not yet *precise*: it returned
+        # a union of every conjunct's result rather than narrowing to the one
+        # whose key actually matches. RBS's own `Hash#fetch: (_Key key) -> V`
+        # can't do this itself - `_Key` is a structural hash/eql? interface,
+        # not literally `K`, so the key argument is never connected to the
+        # return type by ordinary overload resolution. Call#method_stack_pins
+        # now detects any `_Key`-shaped parameter on a conjunct's method
+        # (generalizing past #fetch/#[] to #dig, #delete, etc. for free) and,
+        # when every conjunct yields a positive verdict for or against the
+        # call's own literal argument, keeps only the matching conjunct(s) -
+        # conservatively falling back to today's full union whenever even one
+        # conjunct can't be verified one way or the other.
         #
-        # Still blocked on #1266 too: the generic<X> leak is layered on top
-        # of the union.
-        pending 'blocked on #1266, plus qualify erasing literal Hash keys needed for precise per-key dispatch'
+        # Still pending on two independent prerequisites neither present on
+        # this branch:
+        #
+        # - castwide/solargraph#1223 (restores literal type inference) -
+        #   without it, the literal "Index"/"Triggers" key_types get widened
+        #   to plain String before the narrowing above ever sees them.
+        #   Verified directly: with just this branch's own commits, the
+        #   union already loses the literal keys (`Hash{String => String}`),
+        #   independent of anything else.
+        # - castwide/solargraph#1266 (structurally verifies RBS
+        #   interface-typed expectations) - needed only on RBS >= 4.1.x,
+        #   where `Hash#fetch`'s exact-arity overload gets nominally (not
+        #   structurally) rejected against `Hash::_Key` and falls through to
+        #   an unresolved `generic<X>`. Confirmed this branch alone is clean
+        #   on RBS 3.10.x but leaks `generic<X>` on RBS 4.1.x without #1266.
+        #
+        # Neither is specific to intersections or to this fix - both are
+        # independent, already-scoped PRs that just happen to be
+        # prerequisites for this spec to observe the fix above working.
+        pending 'needs castwide/solargraph#1223 and, on RBS >= 4.1.x, castwide/solargraph#1266'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
@@ -1053,16 +1068,17 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'resolves the same (still imprecise) union regardless of conjunct order (#1231)' do
+      it 'dispatches generic methods per-conjunct regardless of conjunct order (#1231)' do
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
         # this used to demonstrate order-*dependence*: swapping the conjunct
         # order flipped which (wrong) type both fetches reported. The
         # dedup-key fix described in the sibling spec above makes this
-        # order-independent now - same union of both conjuncts' return types
-        # either way. Still pending for the same two reasons as that spec:
-        # the #1266-blocked generic<X> leak, and imprecise
-        # union-instead-of-narrowed-to-one-conjunct dispatch.
-        pending 'blocked on #1266, plus qualify erasing literal Hash keys needed for precise per-key dispatch'
+        # order-independent now - same per-key-narrowed result either way,
+        # dispatched via the same literal-key matching described there.
+        # Pending for the same two independent, already-scoped prerequisites
+        # as that spec: castwide/solargraph#1223 and, on RBS >= 4.1.x,
+        # castwide/solargraph#1266.
+        pending 'needs castwide/solargraph#1223 and, on RBS >= 4.1.x, castwide/solargraph#1266'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]

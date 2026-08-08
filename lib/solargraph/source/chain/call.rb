@@ -100,7 +100,7 @@ module Solargraph
         # @return [::Array<Pin::Base>, nil] nil when unresolved
         def method_stack_pins unique_type, api_map
           if unique_type.is_a?(ComplexType::UniqueType::Intersection)
-            resolved = unique_type.conjuncts.filter_map do |conjunct|
+            resolved = key_verified_conjuncts(unique_type.conjuncts, api_map).filter_map do |conjunct|
               pins = method_pins_for_binder(conjunct, api_map)
               pins.empty? ? nil : pins
             end
@@ -112,6 +112,99 @@ module Solargraph
             stack = api_map.get_method_stack(ns_tag, word, scope: unique_type.scope)
             return nil if stack.first.nil?
             [stack.first]
+          end
+        end
+
+        # Narrows a same-class-generic intersection's conjuncts to
+        # whichever ones we can positively verify match this call's own
+        # literal argument against a `_Key`-shaped parameter (e.g.
+        # `Hash#fetch: (Hash::_Key key) -> V`, `Hash#[]`), e.g. resolving
+        # `(Hash{"Index" => Float} & Hash{"Triggers" => Array<...>})#fetch("Index")`
+        # to just the "Index" conjunct instead of a union of both.
+        #
+        # RBS's own `_Key`-shaped signatures can't do this narrowing
+        # themselves - `_Key` is a structural hash/eql? interface, not
+        # literally `K`, so the key argument's type is never connected to
+        # the return type by ordinary overload resolution. This has to be
+        # done here, ahead of generic resolution, by matching the call's
+        # own literal argument directly against each conjunct's own
+        # `key_types` - which generalizes to any `_Key`-shaped method
+        # (`#fetch`, `#[]`, `#dig`, `#delete`, ...) without naming them.
+        #
+        # Conservative by construction: a conjunct is only ever narrowed
+        # away when *every* conjunct produced a positive verdict (matched
+        # or didn't). If we can't determine a verdict for even one
+        # conjunct - its method isn't `_Key`-shaped there, the argument
+        # isn't a literal, or it has no literal `key_types` to compare
+        # against - we don't have enough evidence to safely exclude
+        # anything, so every conjunct passes through unfiltered, same as
+        # before this method existed.
+        #
+        # @param conjuncts [::Array<ComplexType>]
+        # @param api_map [ApiMap]
+        # @return [::Array<ComplexType>]
+        def key_verified_conjuncts conjuncts, api_map
+          return conjuncts if arguments.empty?
+
+          verdicts = conjuncts.map { |c| conjunct_key_verdict(c, api_map) }
+          return conjuncts if verdicts.any?(&:nil?)
+
+          matching = conjuncts.zip(verdicts).select { |(_c, matched)| matched }.map(&:first)
+          matching.empty? ? conjuncts : matching
+        end
+
+        # Whether this conjunct's own literal `key_types` positively match
+        # the call's own literal argument at the `_Key`-typed parameter's
+        # position, or nil if that can't be determined (no `_Key`-shaped
+        # parameter here, non-literal argument, or no literal `key_types`
+        # to compare against).
+        #
+        # @param conjunct [ComplexType]
+        # @param api_map [ApiMap]
+        # @return [Boolean, nil]
+        def conjunct_key_verdict conjunct, api_map
+          verdicts = conjunct.items.map { |unique_type| unique_type_key_verdict(unique_type, api_map) }
+          return nil if verdicts.any?(&:nil?)
+
+          verdicts.all?
+        end
+
+        # @param unique_type [ComplexType::UniqueType]
+        # @param api_map [ApiMap]
+        # @return [Boolean, nil]
+        def unique_type_key_verdict unique_type, api_map
+          return nil unless unique_type.literal_keyed?
+
+          ns_tag = unique_type.namespace == '' ? '' : unique_type.namespace_type.tag
+          pin = api_map.get_method_stack(ns_tag, word, scope: unique_type.scope).first
+          return nil if pin.nil?
+
+          index = pin.signatures.filter_map { |s| s.key_param_index(unique_type.namespace, api_map) }.first
+          return nil if index.nil? || index >= arguments.length
+
+          key_tag = literal_node_tag(arguments[index]&.node)
+          return nil if key_tag.nil?
+
+          unique_type.key_type_tag?(key_tag)
+        end
+
+        # The literal tag (e.g. `"Index"`, `:index`, `1`) a `UniqueType`
+        # built from this argument node's literal value would have, or nil
+        # if the node isn't a literal Hash-key-shaped value.
+        #
+        # @param node [Parser::AST::Node, Object]
+        # @return [String, nil]
+        def literal_node_tag node
+          return nil unless Parser.is_ast_node?(node)
+
+          # @sg-ignore Translate to something flow sensitive typing understands
+          case node.type
+          # @sg-ignore Translate to something flow sensitive typing understands
+          when :str then node.children.first.inspect
+          # @sg-ignore Translate to something flow sensitive typing understands
+          when :sym then ":#{node.children.first}"
+          # @sg-ignore Translate to something flow sensitive typing understands
+          when :int then node.children.first.to_s
           end
         end
 

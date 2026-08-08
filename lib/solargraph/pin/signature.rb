@@ -59,6 +59,20 @@ module Solargraph
         logger.debug { "Signature#typify(self=#{self}) => #{out}" }
         out
       end
+
+      # The index of the first parameter typed exactly
+      # `<namespace>::_Key` - the position RBS uses to mark "this
+      # parameter is a lookup key for this class's own K" (e.g.
+      # `Hash#fetch: (Hash::_Key key) -> V`) - or nil if none of this
+      # signature's parameters have that shape.
+      #
+      # @param namespace [String]
+      # @param api_map [ApiMap]
+      # @return [Integer, nil]
+      def key_param_index namespace, api_map
+        key_tag = "#{namespace}::_Key"
+        parameters.find_index { |p| p.typify(api_map).tag == key_tag }
+      end
     end
   end
 end
