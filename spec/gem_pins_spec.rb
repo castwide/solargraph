@@ -26,6 +26,15 @@ describe Solargraph::GemPins do
     end
   end
 
+  context 'with a known-bad YARD pin' do
+    let(:path) { 'ENV' }
+    let(:requires) { ['pp'] }
+
+    it 'excludes the pin that misdeclares ENV as a Class' do
+      expect(doc_map.pins.select { |pin| pin.path == path }).to be_empty
+    end
+  end
+
   context 'with a YARD-only pin' do
     let(:requires) { ['rake'] }
     let(:path) { 'Rake::Task#prerequisites' }

@@ -32,6 +32,12 @@ module Solargraph
       out
     end
 
+    # `pp`'s `class << ENV ... end` (to add `pretty_print`) makes YARD
+    # misdeclare ENV as a Class, contradicting RBS's correct ENVClass instance type.
+    KNOWN_BAD_YARD_PINS = {
+      'pp' => ['ENV']
+    }.freeze
+
     # @param yard_plugins [Array<String>] The names of YARD plugins to use.
     # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>]
@@ -39,7 +45,10 @@ module Solargraph
       Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
       return [] unless Yardoc.cached?(gemspec)
       yardoc = Yardoc.load!(gemspec)
-      YardMap::Mapper.new(yardoc, gemspec).map
+      pins = YardMap::Mapper.new(yardoc, gemspec).map
+      bad_paths = KNOWN_BAD_YARD_PINS[gemspec.name]
+      return pins unless bad_paths
+      pins.reject { |pin| bad_paths.include?(pin.path) }
     end
 
     # @param yard_pins [Array<Pin::Base>]
