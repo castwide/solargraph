@@ -905,10 +905,21 @@ describe Solargraph::TypeChecker do
       # interface) is checked nominally, not structurally, against the String
       # argument - so it falls through to the pin's raw combined signature type,
       # which still carries the unresolved generic X from the other overloads.
-      # Blocked on https://github.com/castwide/solargraph/pull/1266 (structurally
-      # verify RBS interface-typed expectations), which already fixes this on a
-      # different branch but isn't on master or this branch yet.
-      pending 'blocked on #1266 (structural RBS interface-typed expectation checks)'
+      #
+      # https://github.com/castwide/solargraph/pull/1266 (structurally verify
+      # RBS interface-typed expectations) fixes this, but isn't merged into
+      # this branch. CI's full matrix showed this only actually leaks on
+      # RBS >= 4.1.0 - `rspec (3.1, 3.10.0)` unexpectedly passed here (an
+      # RSpec "pending example fixed" failure, since a bare `pending` assumed
+      # it leaked on every RBS version). Matches the same RBS 4.1.0 cutover
+      # already tracked in spec/rbs_map/conversions_spec.rb,
+      # spec/convention/activesupport_concern_spec.rb, and the mirror image
+      # of this same version-aware pattern applied on branch 2026-08-04
+      # (which does have #1266) in commit ac4eb27c5.
+      require 'rbs'
+      if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
+        pending 'blocked on #1266 (structural RBS interface-typed expectation checks), not yet merged into this branch'
+      end
       checker = type_checker(%(
         class Repro
           # @param period [Hash{"Index" => Float}]
