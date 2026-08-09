@@ -95,7 +95,7 @@ describe Solargraph::YardMap::Mapper do
   it 'adjusts YARD namespaces that conflict with core constants' do
     gemspec = Gem::Specification.find_by_name('pp')
     code_objects = Solargraph::Yardoc.load!(gemspec)
-    mapper = Solargraph::YardMap::Mapper.new(code_objects)
+    mapper = described_class.new(code_objects)
     pins = mapper.map
     expect(pins.map(&:path)).to include('RBS::Unnamed::ENVClass#pretty_print')
   end

@@ -11,7 +11,7 @@ module Solargraph
       # @param spec [Gem::Specification, nil]
       def initialize code_objects, spec = nil
         @code_objects = code_objects
-        @macro_code_objects = code_objects.select { |co| co.is_a?(YARD::CodeObjects::MacroObject) }
+        @macro_code_objects = code_objects.grep(YARD::CodeObjects::MacroObject)
         @spec = spec
         # @type [Array<Solargraph::Pin::Base>]
         @pins = []
@@ -112,8 +112,8 @@ module Solargraph
       # @return [Pin::Namespace]
       def namespace_with_bug_fix code_object
         core_pin = core_store.get_path_pins(code_object.path)
-                              .find { |pin| pin.is_a?(Pin::Constant) }
-        nspin = if core_pin
+                             .find { |pin| pin.is_a?(Pin::Constant) }
+        if core_pin
           location = Helpers.object_location(code_object, @spec)
           Solargraph.logger.warn "Adjusting YARD pin that conflicts with RBS core (#{code_object.inspect} #{location.inspect})"
           Pin::Namespace.new(name: core_pin.return_type.namespace, location: location, source: :yard_map_hack)
