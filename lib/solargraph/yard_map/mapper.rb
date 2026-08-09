@@ -32,13 +32,17 @@ module Solargraph
 
       private
 
+      def core_store
+        @core_store ||= ApiMap::Store.new(RbsMap::CoreMap.new.pins)
+      end
+
       # @param code_object [YARD::CodeObjects::Base]
       # @return [Array<Pin::Base>]
       def generate_pins code_object
         result = []
         case code_object
         when YARD::CodeObjects::NamespaceObject
-          nspin = ToNamespace.make(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
+          nspin = namespace_with_bug_fix(code_object)
           @namespace_pins[code_object.path] = nspin
           result.push nspin
           if code_object.is_a?(YARD::CodeObjects::ClassObject) && !code_object.superclass.nil?
@@ -72,6 +76,8 @@ module Solargraph
             # @todo Check the visibility of <Class>.new
             result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec)
             result.push ToMethod.make(code_object, 'initialize', :instance, :private, closure, @spec)
+          elsif closure&.source == :yard_map_hack
+            result.push ToMethod.make(code_object, nil, :instance, nil, closure, @spec)
           else
             result.push ToMethod.make(code_object, nil, nil, nil, closure, @spec)
           end
@@ -96,6 +102,24 @@ module Solargraph
       # @return [Array<YARD::CodeObjects::MacroObject>]
       def macros_for_method_object method_object
         attached_macros_by_method_object[method_object]
+      end
+
+      # Handle a bug in YARD where code that opens a constant's singleton class
+      # (e.g., `class << ENV`) creates a pin that incorrectly overrides the
+      # original constant's value.
+      #
+      # @param code_object [YARD::CodeObjects::NamespaceObject]
+      # @return [Pin::Namespace]
+      def namespace_with_bug_fix code_object
+        core_pin = core_store.get_path_pins(code_object.path)
+                              .find { |pin| pin.is_a?(Pin::Constant) }
+        nspin = if core_pin
+          location = Helpers.object_location(code_object, @spec)
+          Solargraph.logger.warn "Adjusting YARD pin that conflicts with RBS core (#{code_object.inspect} #{location.inspect})"
+          Pin::Namespace.new(name: core_pin.return_type.namespace, location: location, source: :yard_map_hack)
+        else
+          ToNamespace.make(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
+        end
       end
     end
   end
