@@ -66,6 +66,32 @@ module Solargraph
       # `Hash#fetch: (Hash::_Key key) -> V`) - or nil if none of this
       # signature's parameters have that shape.
       #
+      # This matches by the interface's literal name, so it only
+      # recognizes RBS's own `Hash::_Key` - a user-defined generic
+      # class using the same "marker interface for a lookup key"
+      # pattern under a different name/namespace won't be detected.
+      #
+      # TODO once castwide/solargraph#1266 (structurally verify RBS
+      # interface-typed expectations) lands - it lands with
+      # ApiMap#get_own_methods (a namespace's directly-declared
+      # methods, excluding inherited ones), extracted from
+      # Conformance#required_interface_methods for exactly this reuse.
+      # Replace the literal name comparison below with a structural
+      # one: a parameter is key-shaped if its type is an interface
+      # whose own declared method names equal
+      # `Hash::_Key`'s (`hash`/`eql?`), regardless of the interface's
+      # actual name -
+      # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
+      #
+      #   def key_param_index namespace, api_map
+      #     key_interface_methods = api_map.get_own_methods("#{namespace}::_Key").map(&:name).to_set
+      #     parameters.find_index do |p|
+      #       type = p.typify(api_map)
+      #       next false unless type.interface?
+      #       api_map.get_own_methods(type.tag).map(&:name).to_set == key_interface_methods
+      #     end
+      #   end
+      #
       # @param namespace [String]
       # @param api_map [ApiMap]
       # @return [Integer, nil]
