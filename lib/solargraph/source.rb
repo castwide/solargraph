@@ -204,15 +204,13 @@ module Solargraph
     # @param node [AST::Node]
     #
     # @return [String, nil]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     def comments_for node
       rng = Range.from_node(node)
       # @sg-ignore Need to add nil check here
       stringified_comments[rng.start.line] ||= begin
         # @sg-ignore Need to add nil check here
         buff = associated_comments[rng.start.line]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
-        buff ? stringify_comment_array(buff) : nil
+        stringify_comment_array(buff)
       end
     end
 
@@ -252,23 +250,22 @@ module Solargraph
 
     # Get a hash of comments grouped by the line numbers of the associated code.
     #
-    # @return [Hash{Integer => String, nil}]
+    # @return [Hash{Integer => Array<String>}]
     def associated_comments
       @associated_comments ||= begin
-        # @type [Hash{Integer => String}]
+        # @type [Hash{Integer => Array<String>}]
         result = {}
-        buffer = String.new('')
+        buffer = []
         # @type [Integer, nil]
         last = nil
+        # @param num [Integer]
+        # @param snip [Solargraph::Parser::Snippet]
         comments.each_pair do |num, snip|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if !last || num == last + 1
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
-            buffer.concat "#{snip.text}\n"
+            buffer.push "#{snip.text}\n"
           else
             result[first_not_empty_from(last + 1)] = buffer.clone
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
-            buffer.replace "#{snip.text}\n"
+            buffer.replace ["#{snip.text}\n"]
           end
           last = num
         end
@@ -312,27 +309,32 @@ module Solargraph
 
     # Get a string representation of an array of comments.
     #
-    # @param comments [String]
+    # @param comments [Array<String>, nil]
     # @return [String]
     def stringify_comment_array comments
-      ctxt = String.new('')
+      ctxt = []
       started = false
       skip = nil
-      comments.lines.each do |l|
+      # @param l [String]
+      comments&.each do |l|
+        if l =~ /^#-\R/
+          ctxt.clear
+          next
+        end
         # Trim the comment and minimum leading whitespace
         p = l.force_encoding('UTF-8').encode('UTF-8', invalid: :replace, replace: '?').gsub(/^#+/, '')
         if p.strip.empty?
           next unless started
-          ctxt.concat p
+          ctxt.push p
         else
           here = p.index(/[^ \t]/)
           # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           skip = here if skip.nil? || here < skip
-          ctxt.concat p[skip..]
+          ctxt.push p[skip..]
         end
         started = true
       end
-      ctxt
+      ctxt.join('')
     end
 
     # A hash of line numbers and their associated comments.
@@ -398,6 +400,7 @@ module Solargraph
       # @sg-ignore Need to add nil check here
       return unless here.contain?(position)
       stack.unshift node
+      # @param c [Parser::AST::Node]
       node.children.each do |c|
         next unless Parser.is_ast_node?(c)
         next if c.loc.expression.nil?
@@ -412,7 +415,7 @@ module Solargraph
       @changes ||= []
     end
 
-    # @return [String]
+    # @return [String, nil]
     attr_writer :filename
 
     # @return [Integer]
@@ -479,10 +482,11 @@ module Solargraph
       @repaired
     end
 
-    # @return [Boolean]
+    # @return [Boolean, nil]
     attr_writer :parsed
 
-    # @return [Hash{Integer => String}
+    # @return [Hash{Integer => Solargraph::Parser::Snippet}]
+    # @sg-ignore flow sensitive typing doesn't track tuple destructuring assignment
     attr_writer :comments
 
     # @return [Boolean]

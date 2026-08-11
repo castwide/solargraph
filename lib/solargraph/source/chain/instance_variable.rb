@@ -23,8 +23,7 @@ module Solargraph
 
         private
 
-        # @todo: Missed nil violation
-        # @return [Location]
+        # @return [Location, nil]
         attr_reader :location
       end
     end

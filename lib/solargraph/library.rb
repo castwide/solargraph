@@ -612,8 +612,12 @@ module Solargraph
         queued_gemspec_cache.push(spec)
         return if pending - queued_gemspec_cache.length < 1
 
-        catalog
-        sync_catalog
+        # Try the next cacheable gemspec. This method is always called
+        # from inside sync_catalog's mutex (either directly or via this
+        # same recursive call), so recursing through sync_catalog here
+        # would try to re-lock a mutex this thread already holds and
+        # deadlock (https://github.com/castwide/solargraph/issues/1111).
+        cache_next_gemspec
       else
         logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do

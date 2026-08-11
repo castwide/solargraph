@@ -135,6 +135,8 @@ module Solargraph
       def process_comment_directives
         return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
+        # @param line [Integer]
+        # @param comments [Array<String>]
         @source.associated_comments.each do |line, comments|
           src_pos = if line
                       Position.new(line,
@@ -144,9 +146,8 @@ module Solargraph
                         code_lines.length, 0
                       )
                     end
-          # @sg-ignore Need to add nil check here
-          com_pos = Position.new(line + 1 - comments.lines.length, 0)
-          process_comment(src_pos, com_pos, comments)
+          com_pos = Position.new(line + 1 - comments.length, 0)
+          process_comment(src_pos, com_pos, comments.join(''))
         end
       rescue StandardError => e
         raise e.class, "Error processing comment directives in #{@filename}: #{e.message}"
