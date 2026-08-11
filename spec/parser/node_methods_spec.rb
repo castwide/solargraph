@@ -192,6 +192,54 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq([:str])
   end
 
+  it 'uses the body value for a method with an ensure clause' do
+    node = parse(%(
+      begin
+        'hello'
+      ensure
+        nil
+      end
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq([:str])
+  end
+
+  it 'includes explicit returns from an ensure clause' do
+    node = parse(%(
+      begin
+        'hello'
+      ensure
+        return 'goodbye' if foo
+      end
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq(%i[str str])
+  end
+
+  it 'uses the body value for a method-level ensure clause with no begin/end' do
+    def_node = parse(%(
+      def foo
+        'hello'
+      ensure
+        nil
+      end
+    ))
+    rets = described_class.returns_from_method_body(def_node.children[2])
+    expect(rets.map(&:type)).to eq([:str])
+  end
+
+  it 'includes explicit returns from a method-level ensure clause with no begin/end' do
+    def_node = parse(%(
+      def foo
+        'hello'
+      ensure
+        return 1 if bar
+      end
+    ))
+    rets = described_class.returns_from_method_body(def_node.children[2])
+    expect(rets.map(&:type)).to eq(%i[str int])
+  end
+
   it 'returns nested return blocks' do
     node = parse(%(
       if foo
