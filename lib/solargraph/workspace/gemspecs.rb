@@ -186,6 +186,7 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
+                                                        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
