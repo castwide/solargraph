@@ -255,6 +255,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'resolves calls to a duck type param\'s own declared method' do
+      checker = type_checker(%(
+        class Foo
+          # @param baz [#read_body]
+          # @return [void]
+          def bar(baz)
+            baz.read_body
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'reports mismatched duck types' do
       checker = type_checker(%(
         class Foo
