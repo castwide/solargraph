@@ -939,6 +939,19 @@ describe Solargraph::TypeChecker do
                                                     ])
     end
 
+    it 'resolves a self-referential reassignment against the pre-assignment type' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String]
+          # @return [Integer]
+          def foo(x)
+            x = x.length
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar

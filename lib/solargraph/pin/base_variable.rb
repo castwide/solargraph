@@ -301,6 +301,7 @@ module Solargraph
         location.filename == other_loc.filename &&
           # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
+          !within_own_assignment?(other_loc) &&
           visible_in_closure?(other_closure)
       end
 
@@ -312,6 +313,36 @@ module Solargraph
       attr_writer :presence
 
       private
+
+      # True if `other_loc` falls inside the source range of one of this
+      # pin's own assignment value nodes - i.e., `other_loc` is
+      # resolving a reference that occurs *while* one of this
+      # variable's own assignments is still being evaluated, such as
+      # the receiver `x` in a self-referential reassignment (`x =
+      # x.length`, or `index += 1` desugared to `index = index + 1`).
+      # That reference must resolve against this variable's *other*
+      # assignments, not against the not-yet-assigned value being
+      # derived here, even though `other_loc` otherwise falls within
+      # this pin's presence.
+      #
+      # @param other_loc [Location]
+      # @return [Boolean]
+      def within_own_assignment? other_loc
+        return false unless location&.filename == other_loc.filename
+
+        assignments.any? do |assignment_node|
+          next false unless assignment_node.respond_to?(:loc)
+
+          rng = Range.from_node(assignment_node)
+          next false if rng.nil?
+
+          # The position immediately at/after the assignment node's own
+          # end is where its new value becomes visible - only exclude
+          # positions strictly *inside* the node (i.e. still being
+          # evaluated), not that boundary itself.
+          rng.contain?(other_loc.range.start) && other_loc.range.start != rng.ending
+        end
+      end
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
