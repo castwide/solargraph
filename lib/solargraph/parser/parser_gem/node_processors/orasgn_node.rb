@@ -8,7 +8,9 @@ module Solargraph
           # @return [void]
           def process
             new_node = node.updated(node.children[0].type, node.children[0].children + [node.children[1]])
-            NodeProcessor.process(new_node, region, pins, locals, ivars)
+            # `x ||= y` only assigns when x is falsy/undefined, so
+            # it's never a guaranteed override of x's prior type
+            NodeProcessor.process(new_node, region.update(conditional: true), pins, locals, ivars)
           end
         end
       end

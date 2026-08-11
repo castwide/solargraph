@@ -14,7 +14,7 @@ module Solargraph
               node: node,
               source: :parser
             )
-            process_children
+            process_children region.update(conditional: true)
           end
         end
       end

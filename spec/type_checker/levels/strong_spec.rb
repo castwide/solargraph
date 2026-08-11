@@ -882,6 +882,63 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'updates a parameter type after reassignment to a different non-literal type' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          position = PositionNormalizer.normalize(position)
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not treat a parameter reassignment inside a block as guaranteed to have run' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          [1].each { position = PositionNormalizer.normalize(position) }
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([
+                                                      '#describe return type could not be inferred',
+                                                      'Unresolved call to line on Position, Array(Integer, Integer)'
+                                                    ])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar

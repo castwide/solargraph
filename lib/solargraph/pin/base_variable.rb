@@ -14,6 +14,16 @@ module Solargraph
       # @return [Range, nil]
       attr_reader :presence
 
+      # True if this pin's assignment(s) are guaranteed to have
+      # executed at (and after) its presence's start position, as
+      # opposed to being inside a conditional branch or loop that may
+      # not run. Used to decide whether a reassignment's type may
+      # safely override a variable's previously declared/inferred
+      # type instead of merely being unioned with it.
+      #
+      # @return [Boolean]
+      attr_reader :definite
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -45,10 +55,12 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param definite [Boolean]
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
+                     definite: true,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -58,6 +70,7 @@ module Solargraph
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
         @presence = presence
+        @definite = definite
       end
 
       # @param presence [Range]
@@ -95,7 +108,12 @@ module Solargraph
                                   return_type: combine_return_type(other),
                                   intersection_return_type: combine_types(other, :intersection_return_type),
                                   exclude_return_type: combine_types(other, :exclude_return_type),
-                                  presence: combine_presence(other)
+                                  presence: combine_presence(other),
+                                  # if either side had an assignment guaranteed to
+                                  # have executed, that assignment's type is
+                                  # eligible to override (not just be unioned
+                                  # with) the variable's other possible types
+                                  definite: definite || other.definite
                                 })
         super(other, new_attrs)
       end

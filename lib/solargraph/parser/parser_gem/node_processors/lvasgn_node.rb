@@ -19,6 +19,7 @@ module Solargraph
               assignment: node.children[1],
               comments: comments_for(node),
               presence: presence,
+              definite: !region.conditional,
               source: :parser
             )
             process_children
