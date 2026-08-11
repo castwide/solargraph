@@ -443,6 +443,13 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
+        # Method/signature-scoped generics (e.g. a `@generic T` on the
+        # method itself) aren't resolved against a receiver's type
+        # params -- they're bound per call site via
+        # resolve_generics_from_context. Leave them unresolved here
+        # rather than mistaking the method's own generics for the
+        # namespace's and erasing them to undefined.
+        return self if definitions.is_a?(Pin::Callable)
         return self if definitions.nil? || definitions.generics.empty?
 
         transform(name) do |t|

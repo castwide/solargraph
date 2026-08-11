@@ -589,6 +589,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'ignores unresolved method-scoped generics returned from a bare yield' do
+      checker = type_checker(%(
+        class Repro
+          # @generic T
+          # @yieldreturn [generic<T>]
+          # @return [generic<T>]
+          def call
+            yield
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'ignores generic resolution failures with only one arg' do
       checker = type_checker(%(
         # @generic T
