@@ -159,8 +159,7 @@ module Solargraph
       #
       # @return [Array<Pin::Method>]
       def required_interface_methods
-        api_map.get_methods(expected.name, scope: :instance)
-               .select { |pin| pin.closure&.path == expected.name }
+        api_map.get_own_methods(expected.name)
       end
 
       # @return [Boolean, nil] true or false if `expected`'s directly
