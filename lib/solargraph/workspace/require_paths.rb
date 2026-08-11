@@ -80,6 +80,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
           begin
+            # @sg-ignore o.split("\n") is non-empty here because !o.empty?
             hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }

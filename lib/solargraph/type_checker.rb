@@ -12,6 +12,7 @@ module Solargraph
     include Parser::NodeMethods
 
     # @return [String]
+    # @sg-ignore Need to add nil check here
     attr_reader :filename
 
     # @return [Rules]

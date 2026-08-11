@@ -7,6 +7,7 @@ module Solargraph
       attr_reader :decl
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       attr_reader :asgn_code
 
       # allow this to be set to the method after the method itself has

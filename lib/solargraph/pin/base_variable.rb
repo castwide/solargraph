@@ -63,7 +63,7 @@ module Solargraph
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
       # @param intersection_return_type [ComplexType, nil]
-      # @param source [::Symbol]
+      # @param source [::Symbol, nil]
       #
       # @return [self]
       def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
@@ -291,6 +291,7 @@ module Solargraph
       attr_accessor :exclude_return_type, :intersection_return_type
 
       # @return [Range]
+      # @sg-ignore Need to add nil check here
       attr_writer :presence
 
       private

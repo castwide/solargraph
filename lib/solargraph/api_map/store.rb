@@ -284,12 +284,12 @@ module Solargraph
         index.alias_hash[name]
       end
 
-      # @return [Array<String>]
+      # @return [Set<String>]
       def macro_method_names
         index.macro_method_names
       end
 
-      # @return [Hash{String => Array<Pin::Method>}]
+      # @return [Hash{String => Set<Pin::Method>}]
       def macro_method_name_pins
         index.macro_method_name_pins
       end

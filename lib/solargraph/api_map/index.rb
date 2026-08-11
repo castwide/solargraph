@@ -5,10 +5,10 @@ module Solargraph
     class Index
       include Logging
 
-      # @return [Array<String>]
+      # @return [Set<String>]
       attr_reader :macro_method_names
 
-      # @return [Hash{String => Array<Pin::Method>}]
+      # @return [Hash{String => Set<Pin::Method>}]
       attr_reader :macro_method_name_pins
 
       # @param pins [Array<Pin::Base>]

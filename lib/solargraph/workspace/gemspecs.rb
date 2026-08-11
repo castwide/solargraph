@@ -186,7 +186,6 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
-                                                        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
@@ -208,6 +207,7 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
+            # @sg-ignore o.split("\n") is non-empty here because !o.empty?
             o && !o.empty? ? JSON.parse(o.split("\n").last) : nil
           else
             Solargraph.logger.warn e

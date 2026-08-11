@@ -14,6 +14,8 @@ module Solargraph
       # does not assert like super, as a namespace without a closure
       # may be the root level namespace, or it may not yet be
       # qualified
+      # @return [Solargraph::Pin::Closure, nil]
+      # @sg-ignore flow sensitive typing needs better handling of reassignment in #initialize
       attr_reader :closure
 
       # @param type [::Symbol] :class or :module

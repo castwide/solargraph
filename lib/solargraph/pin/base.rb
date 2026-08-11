@@ -23,9 +23,10 @@ module Solargraph
       attr_reader :name
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       attr_reader :path
 
-      # @return [::Symbol]
+      # @return [::Symbol, nil]
       attr_accessor :source
 
       # @type [::Numeric, nil] A priority for determining if pins should be combined or not
@@ -42,7 +43,7 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String, nil]
-      # @param source [Symbol, nil]
+      # @param source [::Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority

@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class Callable < Closure
       # @return [Signature]
+      # @sg-ignore Need to add nil check here
       attr_reader :block
 
       attr_accessor :parameters

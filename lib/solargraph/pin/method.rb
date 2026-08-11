@@ -13,6 +13,7 @@ module Solargraph
       attr_writer :signatures
 
       # @return [Parser::AST::Node]
+      # @sg-ignore Need to add nil check here
       attr_reader :node
 
       # @param visibility [::Symbol] :public, :protected, or :private
@@ -460,7 +461,9 @@ module Solargraph
 
       protected
 
-      attr_writer :block, :signature_help, :documentation, :return_type
+      attr_writer :block, :signature_help, :documentation
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+      attr_writer :return_type
 
       # @return [Boolean]
       # @sg-ignore Need to add nil check here

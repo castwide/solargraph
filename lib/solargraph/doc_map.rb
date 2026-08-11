@@ -423,6 +423,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
           Solargraph.logger.debug "External bundle: #{o}"
+          # @sg-ignore o.split("\n") is non-empty here because !o.empty?
           hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
           hash.flat_map do |name, version|
             Gem::Specification.find_by_name(name, version)

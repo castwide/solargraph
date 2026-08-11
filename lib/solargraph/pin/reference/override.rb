@@ -17,7 +17,7 @@ module Solargraph
         # @param location [Location, nil]
         # @param name [String]
         # @param tags [::Array<YARD::Tags::Tag>]
-        # @param delete [::Array<Symbol>]
+        # @param delete [::Array<::Symbol>]
         # @param splat [Hash]
         def initialize location, name, tags, delete = [], **splat
           super(location: location, name: name, **splat)
@@ -27,7 +27,7 @@ module Solargraph
 
         # @param name [String]
         # @param tags [::Array<String>]
-        # @param delete [::Array<Symbol>]
+        # @param delete [::Array<::Symbol>]
         # @param splat [Hash]
         # @return [Solargraph::Pin::Reference::Override]
         def self.method_return name, *tags, delete: [], **splat

@@ -6,9 +6,11 @@ module Solargraph
       include Breakable
 
       # @return [Parser::AST::Node]
+      # @sg-ignore Need to add nil check here
       attr_reader :receiver
 
       # @return [Parser::AST::Node]
+      # @sg-ignore Need to add nil check here
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
