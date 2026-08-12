@@ -363,8 +363,6 @@ describe Solargraph::Source::Chain do
   end
 
   it 'infers instance variables from sequential assignments' do
-    pending('sequential assignment support')
-
     source = Solargraph::Source.load_string(%(
       def foo
         @foo = nil

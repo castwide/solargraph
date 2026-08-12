@@ -2381,8 +2381,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'replaces nil with reassignments' do
-    pending 'sequential assignment support'
-
     source = Solargraph::Source.load_string(%(
       bar = nil
       bar
@@ -2398,8 +2396,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'replaces type with reassignments' do
-    pending 'sequential assignment support'
-
     source = Solargraph::Source.load_string(%(
       bar = 'a'
       bar

@@ -939,6 +939,34 @@ describe Solargraph::TypeChecker do
                                                     ])
     end
 
+    it 'updates a local variable type after reassignment to a different literal type' do
+      checker = type_checker(%(
+        # @return [void]
+        def run
+          local = 5
+          local = 'hello'
+          local.upcase
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'updates an instance variable type after reassignment in the same method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def run
+            @ivar = 5
+            @ivar = 'hello'
+            @ivar.upcase
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'resolves a self-referential reassignment against the pre-assignment type' do
       checker = type_checker(%(
         class Repro
