@@ -925,5 +925,37 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves a repeated core-method call on a var reassigned mid-method after a reopened-class call' do
+      # https://github.com/castwide/solargraph/pull/1288#issuecomment-5273022388
+      #
+      # Not currently known to be reachable on master: it depends on
+      # flow-sensitive-typing pin combination behavior that only exists
+      # once certain in-flight branches land (as of this writing,
+      # https://github.com/castwide/solargraph/pull/1258 and
+      # https://github.com/castwide/solargraph/pull/1282 - verified
+      # neither reproduces it alone, only the two combined). Kept here
+      # as a standing regression guard so that whatever combination of
+      # future changes reintroduces the failure mode gets caught,
+      # regardless of merge order.
+      checker = type_checker(%(
+        class String
+          # @return [String]
+          def depunctuate
+            self
+          end
+        end
+
+        # @param str [String]
+        # @param other [String]
+        # @return [String]
+        def go(str, other)
+          str = str.gsub(other.depunctuate, other)
+          str = str.gsub(other, other)
+          str.gsub(other, other)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end

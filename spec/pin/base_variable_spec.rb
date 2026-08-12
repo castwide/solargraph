@@ -12,6 +12,37 @@ describe Solargraph::Pin::BaseVariable do
     expect(pin1).not_to eq(pin2)
   end
 
+  it 'treats combine_with results with the same location but different presence as unequal' do
+    # combine_with results choose the earliest assignment's #location,
+    # so two combine_with results over a different number of
+    # assignments to the same variable can share #location while
+    # covering different #presence ranges. Pin::Base#== only compared
+    # location, not presence, so these looked equal to any caller
+    # keying off of #== (e.g. Array#include?, used by Chain's inference
+    # recursion guard) even though they represent different sets of
+    # possible values for the variable.
+    source = Solargraph::Source.load_string(%(
+      def go(str)
+        str = str.gsub('a', 'b')
+        str = str.gsub('c', 'd')
+        str
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    smap = api_map.source_map('test.rb')
+    param = smap.locals.find { |p| p.name == 'str' && p.is_a?(Solargraph::Pin::Parameter) }
+    first_assignment = smap.locals.find { |p| p.name == 'str' && p.location.range.start.line == 2 }
+    second_assignment = smap.locals.find { |p| p.name == 'str' && p.location.range.start.line == 3 }
+
+    combined_through_first = param.combine_with(first_assignment)
+    combined_through_second = combined_through_first.combine_with(second_assignment)
+
+    expect(combined_through_first.location).to eq(combined_through_second.location)
+    expect(combined_through_first.presence).not_to eq(combined_through_second.presence)
+    expect(combined_through_first).not_to eq(combined_through_second)
+  end
+
   it 'infers types from variable assignments with unparenthesized parameters' do
     source = Solargraph::Source.load_string(%(
       class Container
