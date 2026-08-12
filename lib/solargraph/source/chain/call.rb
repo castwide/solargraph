@@ -97,25 +97,12 @@ module Solargraph
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               next unless ol.arity_matches?(arguments, with_block?)
-              match = true
 
+              positional_arguments, keyword_argument = split_keyword_argument(arguments, ol)
               atypes = []
-              arguments.each_with_index do |arg, idx|
-                param = ol.parameters[idx]
-                if param.nil?
-                  match = ol.parameters.any?(&:restarg?)
-                  break
-                end
-                arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                        closure: name_pin.closure,
-                                                        gates: name_pin.gates,
-                                                        source: :chain)
-                atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
-                unless param.compatible_arg?(atype, api_map) || param.restarg?
-                  match = false
-                  break
-                end
-              end
+              match = positional_arguments_match?(positional_arguments, ol, api_map, name_pin, locals, atypes)
+              match &&= keyword_argument_matches?(keyword_argument, ol, api_map, name_pin, locals) if match
+
               if match
                 if ol.block && with_block?
                   block_atypes = ol.block.parameters.map(&:return_type)
@@ -184,6 +171,65 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # A trailing keyword-arguments hash doesn't line up positionally
+        # with the method's declared parameters, so it's split off to be
+        # matched separately against the keyword/kwrest parameters
+        # instead of the positional ones.
+        #
+        # @param arguments [::Array<Chain>]
+        # @param overload [Pin::Signature]
+        # @return [::Array(::Array<Chain>, Chain, nil)]
+        def split_keyword_argument arguments, overload
+          keyword_params = overload.parameters.select { |param| param.keyword? || param.kwrestarg? }
+          last_argument = arguments.last
+          if !keyword_params.empty? && last_argument.is_a?(Chain) && last_argument.links.last.is_a?(Chain::Hash)
+            [arguments[0..-2], last_argument]
+          else
+            [arguments, nil]
+          end
+        end
+
+        # @param positional_arguments [::Array<Chain>]
+        # @param overload [Pin::Signature]
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @param atypes [::Array<ComplexType>] populated with the inferred type of each positional argument
+        # @return [Boolean]
+        def positional_arguments_match? positional_arguments, overload, api_map, name_pin, locals, atypes
+          positional_params = overload.parameters.reject { |param| param.keyword? || param.kwrestarg? }
+          positional_arguments.each_with_index do |arg, idx|
+            param = positional_params[idx]
+            return positional_params.any?(&:restarg?) if param.nil?
+
+            arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                    closure: name_pin.closure,
+                                                    gates: name_pin.gates,
+                                                    source: :chain)
+            atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+            return false unless param.compatible_arg?(atype, api_map) || param.restarg?
+          end
+          true
+        end
+
+        # @param keyword_argument [Chain, nil]
+        # @param overload [Pin::Signature]
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::LocalVariable>]
+        # @return [Boolean]
+        def keyword_argument_matches? keyword_argument, overload, api_map, name_pin, locals
+          return true if keyword_argument.nil?
+
+          kw_arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                     closure: name_pin.closure,
+                                                     gates: name_pin.gates,
+                                                     source: :chain)
+          kw_atype = keyword_argument.infer(api_map, kw_arg_name_pin, locals)
+          keyword_params = overload.parameters.select { |param| param.keyword? || param.kwrestarg? }
+          keyword_params.any? { |param| param.compatible_arg?(kw_atype, api_map) }
         end
 
         # @param docstring [YARD::Docstring]
