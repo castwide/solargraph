@@ -136,6 +136,27 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    # https://github.com/castwide/solargraph/pull/1281#issuecomment-5270350329
+    context 'with a type alias that references a name declared only in RBS core' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type wrapped_path = ::path
+
+          class Foo
+            def bar: (wrapped_path src) -> void
+          end
+        RBS
+      end
+
+      it 'expands the alias instead of falling back to a self-referential nominal tag' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::_ToStr, ::_ToPath')
+      end
+    end
+
     # https://github.com/castwide/solargraph/issues/1255
     context 'with a recursive type alias' do
       subject(:parameter) { method_pin.signatures.first.parameters.first }

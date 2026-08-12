@@ -55,11 +55,48 @@ module Solargraph
         end
         # Register all type aliases up front so alias expansion in
         # RbsTranslator doesn't depend on declaration order.
-        environment.type_alias_decls.each_value do |entry|
+        core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
           # @sg-ignore Wrong argument type for Hash#[]=: value expected RBS::AST::Declarations::TypeAlias, received generic<D>
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+      end
+
+      # `loader` intentionally omits RBS core (`core_root: nil`) for
+      # every non-core RbsMap, so a library's pins don't re-declare
+      # what RbsMap::CoreMap already provides. But some stdlib type
+      # aliases reference a name declared in core -- e.g. fileutils.rbs's
+      # `type path = ::path` points at core's own `path` alias in
+      # builtin.rbs. With core absent from the environment,
+      # RBS::Environment#resolve_type_names can't find that target and
+      # silently rebinds the reference back onto the alias's own name
+      # instead of raising, producing a spurious self-referential alias
+      # (`FileUtils::path` "expanding to" `FileUtils::path`). Resolve
+      # type alias names against a copy of the environment that does
+      # include core, so those cross-namespace references bind
+      # correctly; pin generation still uses the core-less environment
+      # above to avoid duplicating core's pins.
+      #
+      # @param loader [RBS::EnvironmentLoader]
+      # @param fallback [RBS::Environment] the already-resolved, core-less
+      #   environment to use if a core-aware one can't be built
+      # @return [RBS::Environment]
+      def core_aware_environment loader, fallback:
+        return fallback unless loader.core_root.nil?
+
+        core_loader = RBS::EnvironmentLoader.new(repository: loader.repository)
+        loader.libs.each { |lib| core_loader.add(library: lib.name, version: lib.version) }
+        loader.dirs.each { |dir| core_loader.add(path: dir) }
+        RBS::Environment.from_loader(core_loader).resolve_type_names
+      rescue RBS::DuplicatedDeclarationError => e
+        # A declaration in `loader` (e.g. a local RBS shim) collides
+        # with something in RBS core itself. Fall back to the
+        # core-less resolution for type aliases; cross-namespace
+        # references into core won't expand in this case, but we
+        # still get a nominal tag rather than failing to load the
+        # library's pins at all.
+        logger.debug { "Could not build a core-aware environment for #{loader.libs}: #{e.message}" }
+        fallback
       end
 
       # @param decl [RBS::AST::Declarations::Base]
