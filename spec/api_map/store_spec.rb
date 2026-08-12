@@ -49,6 +49,50 @@ describe Solargraph::ApiMap::Store do
     expect(store.get_path_pins('Bar')).to eq([bar_pin])
   end
 
+  describe '#get_methods' do
+    it 'combines pins for the same method path from different sources' do
+      plain_impl = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def bar; end
+        end
+      ), 'plain.rb')
+      override = Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+      ), 'override.rb')
+      store = described_class.new(plain_impl.pins + override.pins)
+      pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'bar' }
+      expect(pins.length).to eq(1)
+      expect(pins.first.return_type.tag).to eq('String')
+    end
+
+    it 'does not combine a method alias with a regular method sharing its path' do
+      # Combining an alias pin with a non-alias pin at the same path
+      # previously produced a `:combined` pin that couldn't be
+      # resolved back to its original target, raising under
+      # SOLARGRAPH_ASSERTS=on.
+      regular = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def bar; end
+        end
+      ), 'regular.rb')
+      aliased = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def baz; end
+          alias bar baz
+        end
+      ), 'aliased.rb')
+      store = described_class.new(regular.pins + aliased.pins)
+      pins = []
+      expect { pins = store.get_methods('Foo', scope: :instance) }.not_to raise_error
+      bar_pins = pins.select { |p| p.name == 'bar' }
+      expect(bar_pins.length).to eq(2)
+      expect(bar_pins).to include(an_instance_of(Solargraph::Pin::MethodAlias))
+    end
+  end
+
   # @todo This will become #get_superclass
   describe '#get_superclass' do
     it 'returns simple superclasses' do

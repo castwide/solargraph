@@ -452,7 +452,7 @@ module Solargraph
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      namespace_pin = namespace_pin_for_generics(fqns)
       cached = cache.get_methods(rooted_tag, scope, visibility, deep)
       return cached.clone unless cached.nil?
       # @type [Array<Solargraph::Pin::Method>]
@@ -783,9 +783,10 @@ module Solargraph
       # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
       methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
       if namespace_pin && !resolved_reference_type.all_params.empty?
-        reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
+        reference_pin = namespace_pin_for_generics(resolved_reference_type.name)
         # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
         methods = methods.map do |method_pin|
+          # @sg-ignore Need to add nil check here
           method_pin.resolve_generics(reference_pin, resolved_reference_type)
         end
       end
@@ -811,6 +812,21 @@ module Solargraph
       @store ||= Store.new
     end
 
+    # Get the namespace pin that should be used to resolve generic type
+    # parameters for a fully qualified namespace. Multiple pins can
+    # exist for the same namespace (e.g., a gem's own class definition
+    # plus a `@!parse` stub in a different file that adds `@generic`
+    # tags); the one that actually declares the generics must be used,
+    # regardless of load order.
+    #
+    # @param fqns [String]
+    # @return [Pin::Namespace, nil]
+    def namespace_pin_for_generics fqns
+      # @type [Array<Pin::Namespace>]
+      candidates = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }
+      candidates.find { |p| !p.generics.empty? } || candidates.first
+    end
+
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache
 
@@ -826,7 +842,7 @@ module Solargraph
       rooted_type = ComplexType.parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
       rooted_type.all_params
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      namespace_pin = namespace_pin_for_generics(fqns)
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
@@ -867,6 +883,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, no_core)
           end
@@ -880,6 +897,7 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
+            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, true)
           end

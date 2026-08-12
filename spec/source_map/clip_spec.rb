@@ -1917,6 +1917,54 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('undefined')
   end
 
+  it 'binds generics through a cross-file @!parse stub that adds @generic to an existing class' do
+    # The plain implementation (e.g., as it would be defined in a gem) is
+    # unaware of any generics. It's mapped first, simulating a gem's pins
+    # being loaded before the workspace's.
+    plain_impl = Solargraph::SourceMap.load_string(%(
+      module Widgetbox
+        class Collection
+          def self.make
+            new
+          end
+
+          def last
+            nil
+          end
+        end
+
+        class Widget
+          # @return [String, nil]
+          def resource_subtype; end
+        end
+      end
+    ), 'widgetbox.rb')
+    # A `@!parse` stub in a separate file adds `@generic T` to the existing
+    # class and overrides the return types of its methods.
+    parse_stub = Solargraph::SourceMap.load_string(%(
+      # @!parse
+      #   module Widgetbox
+      #     # @generic T
+      #     class Collection
+      #       class << self
+      #         # @return [Widgetbox::Collection<Widgetbox::Widget>]
+      #         def make; end
+      #       end
+      #       # @return [generic<T>]
+      #       def last; end
+      #     end
+      #   end
+    ), 'annotations.rb')
+    caller_source = Solargraph::Source.load_string(%(
+      Widgetbox::Collection.make.last.resource_subtype
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.catalog Solargraph::Bench.new(source_maps: [plain_impl, parse_stub, Solargraph::SourceMap.map(caller_source)])
+    clip = api_map.clip_at('test.rb', [1, 40])
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
   it 'uses simple return value of block to infer return value of Enumerable#map' do
     source = Solargraph::Source.load_string(%(
       a = ['a'].map { 123 }
