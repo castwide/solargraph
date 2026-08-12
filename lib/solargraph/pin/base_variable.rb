@@ -14,13 +14,6 @@ module Solargraph
       # @return [Range, nil]
       attr_reader :presence
 
-      # True if this pin's assignment(s) are guaranteed to have
-      # executed at (and after) its presence's start position, as
-      # opposed to being inside a conditional branch or loop that may
-      # not run. Used to decide whether a reassignment's type may
-      # safely override a variable's previously declared/inferred
-      # type instead of merely being unioned with it.
-      #
       # @return [Boolean]
       attr_reader :definite
 
@@ -55,7 +48,13 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
-      # @param definite [Boolean]
+      # @param definite [Boolean] True if this pin's assignment(s) are
+      #   guaranteed to have executed at (and after) its presence's
+      #   start position, as opposed to being inside a conditional
+      #   branch or loop that may not run. Used to decide whether a
+      #   reassignment's type may safely override a variable's
+      #   previously declared/inferred type instead of merely being
+      #   unioned with it.
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
