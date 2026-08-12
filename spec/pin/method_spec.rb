@@ -760,4 +760,10 @@ describe Solargraph::Pin::Method do
       expect { pin.signatures }.not_to raise_error
     end
   end
+
+  it 'typifies a DuckMethod pin with no closure without raising' do
+    api_map = Solargraph::ApiMap.new
+    pin = Solargraph::Pin::DuckMethod.new(name: 'to_s', source: :api_map)
+    expect { pin.typify(api_map) }.not_to raise_error
+  end
 end
