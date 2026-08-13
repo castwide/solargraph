@@ -1018,6 +1018,47 @@ describe Solargraph::TypeChecker do
           .to include('Wrong argument type for Consumer#project_to_h: project_obj expected Asana::Resources::Project, received Mocha::Mock')
       end
 
+      it 'accepts an intersection-typed argument where the duck-typed conjunct is expected (#1231)' do
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5280196737 -
+        # ComplexType#duck_types_match? used to check the duck-typed
+        # expectation against ComplexType#namespace/#scope, which for an
+        # Intersection just delegates to its *first* conjunct
+        # (Intersection#namespace/#scope). That rejected an intersection
+        # whenever the duck-typed conjunct wasn't the first one, even
+        # though duck-typed subtyping only needs *some* conjunct to
+        # satisfy it - the same "any one conjunct" rule
+        # Intersection#conforms_to? already applies elsewhere. Fixed by
+        # checking each conjunct instead of just the first.
+        checker = type_checker(%(
+          # @param callback [#quack]
+          # @return [void]
+          def notify(callback); end
+
+          # @param x [String & #quack]
+          # @return [void]
+          def relay(x)
+            notify(x)
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'still rejects an intersection-typed argument when no conjunct satisfies the duck-typed expectation' do
+        checker = type_checker(%(
+          # @param callback [#quack]
+          # @return [void]
+          def notify(callback); end
+
+          # @param x [String & Integer]
+          # @return [void]
+          def relay(x)
+            notify(x)
+          end
+      ))
+        expect(checker.problems.map(&:message))
+          .to include('Wrong argument type for #notify: callback expected #quack, received String & Integer')
+      end
+
       it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
         # #fetch on Hash{K1=>V1} & Hash{K2=>V2} used to always resolve through

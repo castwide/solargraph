@@ -251,10 +251,36 @@ module Solargraph
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
-        # @sg-ignore Need to add nil check here
-        return false if api_map.get_method_stack(inferred.namespace, quack, scope: inferred.scope).empty?
+        return false unless inferred.all? { |inf| unique_type_quacks?(api_map, quack, inf) }
       end
       true
+    end
+
+    # Intersection#namespace/#scope only report the first conjunct,
+    # which loses the "any one conjunct satisfies" semantics an
+    # intersection needs against a duck-typed expectation - e.g. a
+    # mock stubbed to satisfy an interface, typed `SomeMockClass &
+    # #some_method`, has to be checked against every conjunct rather
+    # than the first one. A conjunct is itself a full ComplexType (RBS
+    # allows a union as one member of an intersection), so a union
+    # conjunct only counts as satisfying the duck type if every one of
+    # its own alternatives does.
+    #
+    # @param api_map [ApiMap]
+    # @param quack [String, nil]
+    # @param unique_type [ComplexType::UniqueType]
+    # @return [Boolean]
+    def unique_type_quacks? api_map, quack, unique_type
+      if unique_type.is_a?(UniqueType::Intersection)
+        return unique_type.conjuncts.any? do |conjunct|
+          conjunct.all? { |ut| unique_type_quacks?(api_map, quack, ut) }
+        end
+      end
+      # A duck-typed conjunct only vouches for the one method its own
+      # tag names - it has no namespace to look other methods up on.
+      return unique_type.to_s[1..] == quack if unique_type.duck_type?
+      # @sg-ignore Need to add nil check here
+      !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
     end
 
     # @return [String]
