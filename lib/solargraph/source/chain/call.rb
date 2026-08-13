@@ -223,13 +223,28 @@ module Solargraph
         def keyword_argument_matches? keyword_argument, overload, api_map, name_pin, locals
           return true if keyword_argument.nil?
 
+          # @type [::Hash{::Symbol => Chain}]
+          kwargs = convert_hash(keyword_argument.node)
+          keyword_params = overload.parameters.select { |param| param.keyword? || param.kwrestarg? }
+          named_params = keyword_params.reject(&:kwrestarg?)
+          kwrestarg = keyword_params.find(&:kwrestarg?)
+
           kw_arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
                                                      closure: name_pin.closure,
                                                      gates: name_pin.gates,
                                                      source: :chain)
-          kw_atype = keyword_argument.infer(api_map, kw_arg_name_pin, locals)
-          keyword_params = overload.parameters.select { |param| param.keyword? || param.kwrestarg? }
-          keyword_params.any? { |param| param.compatible_arg?(kw_atype, api_map) }
+          kwargs.each_pair do |key, value_chain|
+            param = named_params.find { |p| p.name.to_sym == key }
+            if param.nil?
+              return false if kwrestarg.nil?
+              next
+            end
+            # @sg-ignore flow sensitive typing needs to infer Hash#each_pair block param types from a local @type tag
+            atype = value_chain.infer(api_map, kw_arg_name_pin, locals)
+            # @sg-ignore flow sensitive typing needs to infer Hash#each_pair block param types from a local @type tag
+            return false unless param.compatible_arg?(atype, api_map)
+          end
+          named_params.none? { |param| param.decl == :kwarg && !kwargs.key?(param.name.to_sym) }
         end
 
         # @param docstring [YARD::Docstring]
