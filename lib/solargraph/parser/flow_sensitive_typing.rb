@@ -82,6 +82,8 @@ module Solargraph
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
+        process_eq(node, true_presences, false_presences)
+        process_neq(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -331,6 +333,117 @@ module Solargraph
         if_false = {}
         if_false[pin] ||= []
         if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
+        process_facts(if_false, false_presences)
+      end
+
+      # @param node [Parser::AST::Node, nil]
+      # @return [String, nil] YARD/RBS-style literal type tag (e.g., ':foo', '"foo"', '1', 'true')
+      def literal_type_name node
+        case node&.type
+        when :sym
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          ":#{node.children[0]}"
+        when :str
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          node.children[0].inspect
+        when :int
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          node.children[0].to_s
+        when :true # rubocop:disable Lint/BooleanSymbol -- Parser::AST::Node#type for `true` literal
+          'true'
+        when :false # rubocop:disable Lint/BooleanSymbol -- Parser::AST::Node#type for `false` literal
+          'false'
+        end
+      end
+
+      # @param op_node [Parser::AST::Node]
+      # @param method_name [Symbol]
+      # @return [Array(String, String), nil] Tuple of literal type name
+      #   the variable is being compared against, then the variable name
+      def parse_literal_comparison op_node, method_name
+        return unless op_node&.type == :send && op_node.children[1] == method_name
+
+        receiver = op_node.children[0]
+        arg = op_node.children[2]
+
+        # variable on the left, literal on the right: `foo == :bar`
+        if %i[lvar ivar].include?(receiver&.type)
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          literal_type = literal_type_name(arg)
+          return unless literal_type
+
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          [literal_type, receiver.children[0].to_s]
+        # literal on the left, variable on the right: `:bar == foo`
+        elsif %i[lvar ivar].include?(arg&.type)
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          literal_type = literal_type_name(receiver)
+          return unless literal_type
+
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          [literal_type, arg.children[0].to_s]
+        end
+      end
+
+      # @param eq_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_eq eq_node, true_presences, false_presences
+        literal_type_name, variable_name = parse_literal_comparison(eq_node, :==)
+        return if variable_name.nil? || variable_name.empty?
+
+        literal_type = ComplexType.try_parse(literal_type_name)
+        return if literal_type.undefined?
+
+        # @sg-ignore Need to add nil check here
+        eq_position = Range.from_node(eq_node).start
+
+        pin = find_var(variable_name, eq_position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { type: literal_type }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { not_type: literal_type }
+        process_facts(if_false, false_presences)
+      end
+
+      # @param neq_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_neq neq_node, true_presences, false_presences
+        literal_type_name, variable_name = parse_literal_comparison(neq_node, :!=)
+        return if variable_name.nil? || variable_name.empty?
+
+        literal_type = ComplexType.try_parse(literal_type_name)
+        return if literal_type.undefined?
+
+        # @sg-ignore Need to add nil check here
+        neq_position = Range.from_node(neq_node).start
+
+        pin = find_var(variable_name, neq_position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { not_type: literal_type }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { type: literal_type }
         process_facts(if_false, false_presences)
       end
 

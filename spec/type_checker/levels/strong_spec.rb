@@ -612,6 +612,19 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'narrows a literal-equality guard against a literal union member' do
+      checker = type_checker(%(
+        # @param sections [Array<String>, :not_specified]
+        # @return [void]
+        def not_equal_guard(sections)
+          if sections != :not_specified
+            sections.each { |s| puts s }
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on adding nil to types via return value' do
       checker = type_checker(%(
         # @param bar [Integer]

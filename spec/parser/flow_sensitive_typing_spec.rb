@@ -1025,4 +1025,61 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'uses != against a literal symbol to refine types out of a union' do
+    source = Solargraph::Source.load_string(%(
+      # @param sections [Array<String>, :not_specified]
+      def verify_repro(sections)
+        if sections != :not_specified
+          sections
+        else
+          sections
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.to_s).to eq('Array<String>')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Symbol')
+  end
+
+  it 'uses == against a literal symbol to refine types down to a member of a union' do
+    source = Solargraph::Source.load_string(%(
+      # @param sections [Array<String>, :not_specified]
+      def verify_repro(sections)
+        if sections == :not_specified
+          sections
+        else
+          sections
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.to_s).to eq('Symbol')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Array<String>')
+  end
+
+  it 'uses unless with == against a literal symbol to refine types out of a union' do
+    source = Solargraph::Source.load_string(%(
+      # @param sections [Array<String>, :not_specified]
+      def verify_repro(sections)
+        unless sections == :not_specified
+          sections
+        else
+          sections
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.to_s).to eq('Array<String>')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Symbol')
+  end
 end
