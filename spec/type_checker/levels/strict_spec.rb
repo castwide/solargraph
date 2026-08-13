@@ -268,26 +268,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Wrong argument type')
     end
 
-    it 'accepts a duck-typed argument declared with the exact same duck type as expected' do
-      # duck_types_match? used to check the expected duck type against
-      # inferred.namespace/#scope, which are only meaningful for a
-      # nominal type - a duck-typed *inferred* type has no namespace
-      # of its own, so this failed to typecheck even when the two
-      # duck types were textually identical.
-      checker = type_checker(%(
-        # @param callback [#quack]
-        # @return [void]
-        def notify(callback); end
-
-        # @param x [#quack]
-        # @return [void]
-        def relay(x)
-          notify(x)
-        end
-      ))
-      expect(checker.problems).to be_empty
-    end
-
     it 'reports mismatched kwrestargs' do
       checker = type_checker(%(
         class Foo

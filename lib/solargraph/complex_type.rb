@@ -251,7 +251,15 @@ module Solargraph
       expected.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..]
-        return false unless inferred.all? { |inf| unique_type_quacks?(api_map, quack, inf) }
+        return false if quack.nil?
+        unique_type = inferred.to_a.first
+        return false if unique_type.nil?
+        quacks = if unique_type.is_a?(UniqueType::Intersection)
+                   intersection_conjunct_quacks?(api_map, quack, unique_type)
+                 else
+                   !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
+                 end
+        return false unless quacks
       end
       true
     end
@@ -267,19 +275,18 @@ module Solargraph
     # its own alternatives does.
     #
     # @param api_map [ApiMap]
-    # @param quack [String, nil]
+    # @param quack [String]
     # @param unique_type [ComplexType::UniqueType]
     # @return [Boolean]
-    def unique_type_quacks? api_map, quack, unique_type
+    def intersection_conjunct_quacks? api_map, quack, unique_type
       if unique_type.is_a?(UniqueType::Intersection)
         return unique_type.conjuncts.any? do |conjunct|
-          conjunct.all? { |ut| unique_type_quacks?(api_map, quack, ut) }
+          conjunct.all? { |ut| intersection_conjunct_quacks?(api_map, quack, ut) }
         end
       end
       # A duck-typed conjunct only vouches for the one method its own
       # tag names - it has no namespace to look other methods up on.
       return unique_type.to_s[1..] == quack if unique_type.duck_type?
-      return false if quack.nil?
       !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
     end
 
