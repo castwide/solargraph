@@ -372,7 +372,19 @@ module Solargraph
       return self if exclude_types.nil?
 
       types = items - exclude_types.items
-      types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+      if types.empty?
+        # An exclusion built from more than one excluded type can
+        # result from combining independently-derived flow-sensitive
+        # facts (e.g., a `x.nil? || x.is_a?(Foo)` guard) that together
+        # happen to cover every member of the declared type. That's a
+        # sign of unreachable/defensive code, not a real type error -
+        # treat it as a no-op instead of collapsing to undefined, which
+        # would otherwise make legitimate calls in that dead code look
+        # unresolved.
+        return self if exclude_types.items.length > 1
+
+        types = [ComplexType::UniqueType::UNDEFINED]
+      end
       ComplexType.new(types)
     end
 
