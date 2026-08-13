@@ -373,22 +373,13 @@ module Solargraph
 
       types = items - exclude_types.items
       if types.empty?
-        # An exclusion built from more than one excluded type can
-        # result from combining independently-derived flow-sensitive
-        # facts (e.g., a `x.nil? || x.is_a?(Foo)` guard) that together
-        # happen to cover every member of the declared type. That's a
-        # sign of unreachable/defensive code, not a real type error -
-        # treat it as a no-op instead of collapsing to undefined, which
-        # would otherwise make legitimate calls in that dead code look
-        # unresolved.
-        #
-        # @todo Once #1277 lands (RBS bottom type), this could tag
-        #   `bot` instead of `undefined` for any exhausted exclusion,
-        #   not just the multi-source case, and this branch could go
-        #   away.
-        return self if exclude_types.items.length > 1
-
-        types = [ComplexType::UniqueType::UNDEFINED]
+        # An exhausted exclusion (e.g., a `x.nil? || x.is_a?(Foo)`
+        # guard that together covers every member of the declared
+        # type) means the code past this point is unreachable, not a
+        # real type error. Tag it `bot` - a subtype of every type -
+        # instead of `undefined`, so calls made on it downstream are
+        # treated as vacuously valid rather than flagged unresolved.
+        types = [ComplexType::UniqueType::BOT]
       end
       ComplexType.new(types)
     end

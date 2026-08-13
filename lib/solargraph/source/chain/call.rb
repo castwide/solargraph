@@ -59,9 +59,23 @@ module Solargraph
           binder = binder.without_nil if nullable?
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+            if context.bot?
+              # bot is a subtype of every type, so any method call on a
+              # bot-typed receiver is vacuously valid - the code is
+              # unreachable, so there's no real pin to resolve against,
+              # but flagging it as "unresolved" would be a false
+              # positive. A DuckMethod pin (same one used for `#read`-
+              # style duck typing) gives downstream resolution a real
+              # Pin::Method to work with - explicit: false skips arity
+              # checking - while its return type stays bot, so bot
+              # keeps propagating through the rest of the chain instead
+              # of being treated as a real value.
+              [Pin::DuckMethod.new(name: word, source: :chain, explicit: false, return_type: ComplexType::BOT)]
+            else
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              [stack.first].compact
+            end
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
