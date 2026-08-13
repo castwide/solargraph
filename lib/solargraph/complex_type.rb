@@ -381,6 +381,11 @@ module Solargraph
         # treat it as a no-op instead of collapsing to undefined, which
         # would otherwise make legitimate calls in that dead code look
         # unresolved.
+        #
+        # @todo Once #1277 lands (RBS bottom type), this could tag
+        #   `bot` instead of `undefined` for any exhausted exclusion,
+        #   not just the multi-source case, and this branch could go
+        #   away.
         return self if exclude_types.items.length > 1
 
         types = [ComplexType::UniqueType::UNDEFINED]
