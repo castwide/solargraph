@@ -996,6 +996,17 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'infers a Boolean return from !!(x.nil? || x < n) on a nilable param' do
+      checker = type_checker(%(
+        # @param val [Integer, nil]
+        # @return [Boolean]
+        def check?(val)
+          !!(val.nil? || val < 5)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'uses cast type instead of defined type' do
       checker = type_checker(%(
         # frozen_string_literal: true
