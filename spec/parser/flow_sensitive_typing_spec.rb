@@ -314,6 +314,22 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
+  it 'keeps a definite reassignment visible inside a subsequent if-guard' do
+    source = Solargraph::Source.load_string(%(
+      def m
+        x = nil
+        x = 1
+        if x
+          y = x * 2
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 14])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
+
   it 'skips is_a? without a receiver' do
     source = Solargraph::Source.load_string(%(
     if is_a? Object

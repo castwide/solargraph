@@ -298,13 +298,30 @@ module Solargraph
       #   return type could not be inferred
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
-        if variable_name.start_with?('@')
+        pins = variable_name.start_with?('@') ? ivars : locals
+        # Prefer the pin whose presence starts latest - i.e., the
+        # most recent assignment reaching this position - rather
+        # than the first-declared pin for this name. Multiple pins
+        # can match (e.g. a variable's original declaration and a
+        # later reassignment both have presences that include this
+        # position), and picking the wrong one here would narrow the
+        # stale, superseded pin instead of the current one.
+        #
+        # Exclude pins whose own assignment is still being evaluated
+        # at this position (e.g. the receiver inside its own RHS,
+        # such as `baz ||= begin ... end`) - that pin's value isn't
+        # available yet, so its presence including this position
+        # would otherwise make it a false match ahead of the pin it's
+        # about to supersede.
+        matches = pins.select do |pin|
+          next false unless pin.name == variable_name
           # @sg-ignore flow sensitive typing needs to handle attrs
-          ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
-        else
-          # @sg-ignore flow sensitive typing needs to handle attrs
-          locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
+          next false unless !pin.presence || pin.presence.include?(position)
+
+          other_loc = Location.new(pin.location&.filename, Range.new(position, position))
+          !pin.within_own_assignment?(other_loc)
         end
+        matches.max_by { |pin| pin.presence&.start || Position.new(0, 0) }
       end
 
       # @param isa_node [Parser::AST::Node]

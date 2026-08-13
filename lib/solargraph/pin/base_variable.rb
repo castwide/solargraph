@@ -318,7 +318,7 @@ module Solargraph
       # @return [Range]
       attr_writer :presence
 
-      private
+      public
 
       # True if `other_loc` falls inside the source range of one of this
       # pin's own assignment value nodes - i.e., `other_loc` is
@@ -349,6 +349,8 @@ module Solargraph
           rng.contain?(other_loc.range.start) && other_loc.range.start != rng.ending
         end
       end
+
+      private
 
       # True if `other`'s assignment(s) should supersede ours
       # instead of merely being unioned with them: `other` reassigns
