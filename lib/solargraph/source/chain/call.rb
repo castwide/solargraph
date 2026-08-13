@@ -69,8 +69,13 @@ module Solargraph
               # Pin::Method to work with - explicit: false skips arity
               # checking - while its return type stays bot, so bot
               # keeps propagating through the rest of the chain instead
-              # of being treated as a real value.
-              [Pin::DuckMethod.new(name: word, source: :chain, explicit: false, return_type: ComplexType::BOT)]
+              # of being treated as a real value. closure is threaded
+              # through from name_pin since DuckMethod pins have no
+              # location of their own to derive one from - without
+              # it, Pin::Base#closure raises under strict assertions
+              # the first time anything downstream reads it.
+              [Pin::DuckMethod.new(name: word, source: :chain, explicit: false, return_type: ComplexType::BOT,
+                                   closure: name_pin.closure)]
             else
               ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
               stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
