@@ -253,6 +253,11 @@ module Solargraph
       # @param variance [:invariant, :covariant, :contravariant]
       def conforms_to? api_map, expected, situation, rules = [],
                        variance: erased_variance(situation)
+        # bot is a subtype of every type - not a leniency knob like
+        # :allow_undefined, but a type-theoretic fact (e.g., the return
+        # type of `raise` or `abort`)
+        return true if bot?
+
         return true if undefined? && rules.include?(:allow_undefined)
 
         # @todo teach this to validate duck types as inferred type
@@ -559,7 +564,7 @@ module Solargraph
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined? || t.literal?
+          next t if t.duck_type? || t.void? || t.undefined? || t.literal? || t.bot?
           open = t.rooted? ? [''] : gates
           fqns = api_map.qualify(t.non_literal_name, *open)
           if fqns.nil?

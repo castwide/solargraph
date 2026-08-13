@@ -36,7 +36,7 @@ module Solargraph
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
-        next t if %w[nil void undefined].include?(t.name)
+        next t if %w[nil void undefined bot].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
         api_map.unalias(t.name) || t.qualify(api_map, *gates)
       end
