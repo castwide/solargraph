@@ -279,7 +279,7 @@ module Solargraph
       # A duck-typed conjunct only vouches for the one method its own
       # tag names - it has no namespace to look other methods up on.
       return unique_type.to_s[1..] == quack if unique_type.duck_type?
-      # @sg-ignore Need to add nil check here
+      return false if quack.nil?
       !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
     end
 
