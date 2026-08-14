@@ -707,6 +707,30 @@ describe Solargraph::TypeChecker do
       end
     end
 
+    it 'resolves a generic type variable against a union @param type' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def must_nilable(arg)
+          raise if arg.nil?
+
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_nilable(arg) = must_nilable(arg).length
+      ))
+      # The remaining "Declared return type generic<A> does not match
+      # inferred type generic<A>, nil for #must_nilable" problem is
+      # caused by #1276 (`raise` does not narrow the type), which is
+      # independent of the generic resolution behavior under test here.
+      messages = checker.problems.map(&:message)
+      expect(messages).not_to include('#via_nilable return type could not be inferred')
+      expect(messages).not_to include('Unresolved call to length on String, nil')
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar

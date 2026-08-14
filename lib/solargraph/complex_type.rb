@@ -51,7 +51,7 @@ module Solargraph
       return self unless generic?
 
       ComplexType.new(@items.map do |i|
-        i.resolve_generics_from_context(generics_to_resolve, context_type,
+        i.resolve_generics_from_context(generics_to_resolve, generic_item_context_type(i, context_type),
                                         resolved_generic_values: resolved_generic_values)
       end)
     end
@@ -547,6 +547,29 @@ module Solargraph
     BOT = ComplexType.parse('bot')
 
     private
+
+    # When this type is itself a union (e.g. `generic<A>, nil`) being
+    # matched against a union context type (e.g. `String, nil`), a
+    # generic member should only be bound against the parts of the
+    # context union not already accounted for by this type's other,
+    # concrete (non-generic) members. Otherwise `generic<A>` in
+    # `generic<A>, nil` would bind to the entire `String, nil` context
+    # instead of just `String`.
+    #
+    # @param item [UniqueType] A member of @items
+    # @param context_type [ComplexType, UniqueType, nil]
+    # @return [ComplexType, UniqueType, nil]
+    def generic_item_context_type item, context_type
+      return context_type unless item.generic? && context_type.is_a?(ComplexType) && @items.length > 1
+
+      concrete_items = @items.reject(&:generic?)
+      return context_type if concrete_items.empty?
+
+      remaining_items = context_type.items.reject { |ct| concrete_items.any? { |ci| ci.name == ct.name } }
+      return context_type if remaining_items.empty?
+
+      ComplexType.new(remaining_items)
+    end
 
     # @todo This is a quick and dirty hack that forces `self` keywords
     #   to reference an instance of their class and never the class itself.
