@@ -75,6 +75,7 @@ module Solargraph
 
       # @return [Pin::Closure, nil]
       def closure
+        @closure ||= derive_closure_from_compound_statement
         unless @closure
           Solargraph.assert_or_log(:closure,
                                    "Closure not set on #{self.class} #{name.inspect} from #{source.inspect}")
@@ -730,6 +731,25 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # Fallback for pins with no directly-assigned @closure: walk the
+      # CompoundStatement parent chain (present only on
+      # CompoundStatement-family pins - Closure, While, Until, etc.)
+      # until an ancestor is_a?(Closure). Every pin built through
+      # Region-threaded node processors already gets an explicit
+      # closure:, so this only matters for a pin constructed purely
+      # from a compound_statement chain with no closure: override.
+      #
+      # @return [Pin::Closure, nil]
+      def derive_closure_from_compound_statement
+        return nil unless is_a?(CompoundStatement)
+
+        # @sg-ignore flow sensitive typing doesn't narrow self past an is_a? guard
+        cs = compound_statement
+        # @sg-ignore flow sensitive typing doesn't narrow self past an is_a? guard
+        cs = cs.compound_statement while cs && !cs.is_a?(Closure)
+        cs
+      end
 
       # @return [void]
       def parse_comments

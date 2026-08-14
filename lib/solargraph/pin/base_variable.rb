@@ -17,8 +17,13 @@ module Solargraph
       # @return [Boolean]
       attr_reader :definite
 
-      # @return [Range, nil]
-      attr_reader :conditional_override_boundary
+      # The CompoundStatement pin this variable's (re)assignment was
+      # made within - i.e. Region#compound_statement at the point of
+      # assignment. Used by #definite_reaches? to decide whether a
+      # non-definite assignment still dominates a given reference.
+      #
+      # @return [Pin::CompoundStatement, nil]
+      attr_reader :compound_statement
 
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
@@ -58,20 +63,18 @@ module Solargraph
       #   reassignment's type may safely override a variable's
       #   previously declared/inferred type instead of merely being
       #   unioned with it.
-      # @param conditional_override_boundary [Range, nil] When
-      #   `definite` is false because this assignment is inside a
-      #   conditional branch or loop, the source range of that
-      #   construct's body - i.e., the extent within which this
-      #   assignment, though not globally guaranteed, is still
-      #   guaranteed to dominate any reference. A reference at a
-      #   position inside this range may still treat the assignment
-      #   as an override rather than merely unioning it with earlier
-      #   possible types.
+      # @param compound_statement [Pin::CompoundStatement, nil] The
+      #   CompoundStatement this variable's (re)assignment was made
+      #   within. When `definite` is false, a reference whose location
+      #   falls within this pin's own range may still treat the
+      #   assignment as an override rather than merely unioning it
+      #   with earlier possible types - see #definite_reaches?.
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     definite: true, conditional_override_boundary: nil,
+                     definite: true,
+                     compound_statement: nil,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -82,7 +85,7 @@ module Solargraph
         @exclude_return_type = exclude_return_type
         @presence = presence
         @definite = definite
-        @conditional_override_boundary = conditional_override_boundary
+        @compound_statement = compound_statement
       end
 
       # @param presence [Range]
@@ -112,7 +115,7 @@ module Solargraph
       # @param location [Location, nil] The position being resolved,
       #   if known - used to decide whether a not-globally-definite
       #   `other` should still override us because the position falls
-      #   within `other`'s conditional_override_boundary.
+      #   within `other`'s compound_statement.
       def combine_with other, attrs = {}, location: nil
         new_assignments = combine_assignments(other, location)
         new_attrs = attrs.merge({
@@ -387,7 +390,7 @@ module Solargraph
       # @param other [self]
       # @param location [Location, nil] The position being resolved,
       #   if known - lets a conditional `other` still override us when
-      #   `location` falls inside `other`'s conditional_override_boundary.
+      #   `location` falls within `other`'s compound_statement.
       # @return [Boolean]
       def override_assignments? other, location = nil
         (other.definite || other.definite_reaches?(location)) && other.closure == closure &&
@@ -398,18 +401,24 @@ module Solargraph
 
       # True if this pin's assignment, though not globally definite,
       # is still guaranteed to dominate `location` - i.e., `location`
-      # falls inside the conditional construct's body that this
-      # assignment was made in, so no earlier branch exit could have
-      # skipped it by the time `location` is reached.
+      # falls within the CompoundStatement body (an if/while/until/
+      # rescue/&&/||/||= branch) this assignment was made in, so no
+      # earlier branch exit could have skipped it by the time
+      # `location` is reached. A nested CompoundStatement's location
+      # is always a subrange of its parent's, so this single
+      # containment check already accounts for arbitrarily nested
+      # branches without walking the compound_statement chain further.
       #
       # @param location [Location, nil]
       # @return [Boolean]
       def definite_reaches? location
-        boundary = conditional_override_boundary
-        return false unless location && boundary
+        cs = compound_statement
+        return false unless location && cs&.location&.range
 
-        location.filename == self.location&.filename &&
-          boundary.contain?(location.range.start)
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        cs.location.filename == location.filename &&
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          cs.location.range.contain?(location.range.start)
       end
 
       private

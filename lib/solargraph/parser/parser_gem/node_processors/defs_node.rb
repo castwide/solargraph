@@ -22,6 +22,7 @@ module Solargraph
             pins.push Solargraph::Pin::Method.new(
               location: loc,
               closure: closure,
+              compound_statement: region.compound_statement,
               name: node.children[1].to_s,
               comments: comments_for(node),
               scope: :class,
@@ -29,7 +30,7 @@ module Solargraph
               node: node,
               source: :parser
             )
-            process_children region.update(closure: pins.last, scope: :class)
+            process_children region.update(closure: pins.last, scope: :class, compound_statement: pins.last, conditional: false)
           end
         end
       end

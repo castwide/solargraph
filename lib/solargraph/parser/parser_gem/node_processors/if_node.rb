@@ -17,6 +17,7 @@ module Solargraph
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(condition_node),
                 closure: region.closure,
+                compound_statement: region.compound_statement,
                 node: condition_node,
                 source: :parser
               )
@@ -24,26 +25,32 @@ module Solargraph
             end
             then_node = node.children[1]
             if then_node
-              pins.push Solargraph::Pin::CompoundStatement.new(
+              # @sg-ignore Need to add nil check here
+              then_cs = Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(then_node),
                 closure: region.closure,
+                compound_statement: region.compound_statement,
                 node: then_node,
                 source: :parser
               )
+              pins.push then_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(then_node, region.update(conditional_boundary: Range.from_node(then_node)), pins, locals, ivars)
+              NodeProcessor.process(then_node, region.update(compound_statement: then_cs, conditional: true), pins, locals, ivars)
             end
 
             else_node = node.children[2]
             if else_node
-              pins.push Solargraph::Pin::CompoundStatement.new(
+              # @sg-ignore Need to add nil check here
+              else_cs = Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(else_node),
                 closure: region.closure,
+                compound_statement: region.compound_statement,
                 node: else_node,
                 source: :parser
               )
+              pins.push else_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(else_node, region.update(conditional_boundary: Range.from_node(else_node)), pins, locals, ivars)
+              NodeProcessor.process(else_node, region.update(compound_statement: else_cs, conditional: true), pins, locals, ivars)
             end
 
             true

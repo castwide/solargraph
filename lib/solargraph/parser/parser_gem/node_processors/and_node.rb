@@ -12,7 +12,15 @@ module Solargraph
             # any assignment there isn't guaranteed to have executed
             lhs, rhs = node.children
             NodeProcessor.process(lhs, region, pins, locals, ivars)
-            NodeProcessor.process(rhs, region.update(conditional_boundary: Range.from_node(rhs)), pins, locals, ivars)
+            # not pushed onto `pins` - see resbody_node.rb for why
+            rhs_cs = Solargraph::Pin::CompoundStatement.new(
+              location: get_node_location(rhs),
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              node: rhs,
+              source: :parser
+            )
+            NodeProcessor.process(rhs, region.update(compound_statement: rhs_cs, conditional: true), pins, locals, ivars)
 
             FlowSensitiveTyping.new(locals,
                                     ivars,

@@ -956,6 +956,23 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'does not let a loop-body reassignment override a reference textually before it' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def loop_reassign(str, num, flag)
+          local = num
+          while flag
+            local.abs
+            local = str
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'updates a local variable type after reassignment to a different literal type' do
       checker = type_checker(%(
         # @return [void]
