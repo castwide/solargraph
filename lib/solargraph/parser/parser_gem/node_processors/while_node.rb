@@ -21,12 +21,13 @@ module Solargraph
               location: location,
               closure: region.closure,
               compound_statement: region.compound_statement,
+              conditional: true,
               node: node,
               comments: comments_for(node),
               source: :parser
             )
             pins.push while_pin
-            process_children region.update(compound_statement: while_pin, conditional: true)
+            process_children region.update(compound_statement: while_pin)
           end
         end
       end

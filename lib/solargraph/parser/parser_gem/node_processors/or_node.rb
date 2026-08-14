@@ -17,10 +17,11 @@ module Solargraph
               location: get_node_location(rhs),
               closure: region.closure,
               compound_statement: region.compound_statement,
+              conditional: true,
               node: rhs,
               source: :parser
             )
-            NodeProcessor.process(rhs, region.update(compound_statement: rhs_cs, conditional: true), pins, locals, ivars)
+            NodeProcessor.process(rhs, region.update(compound_statement: rhs_cs), pins, locals, ivars)
 
             FlowSensitiveTyping.new(locals,
                                     ivars,

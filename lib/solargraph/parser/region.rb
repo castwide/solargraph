@@ -32,36 +32,21 @@ module Solargraph
       # @return [Pin::CompoundStatement]
       attr_reader :compound_statement
 
-      # True if the current position may be skipped, or run zero or
-      # multiple times, at runtime - e.g. inside an if/while/until/
-      # rescue/&&/||/||= body, or inside a block body (which, despite
-      # its Block pin being a Closure like Method/Namespace, may run
-      # zero or many times depending on the method it's passed to,
-      # unlike a method/namespace body which always runs exactly once
-      # when reached). Not derivable from `compound_statement.is_a?
-      # (Closure)` alone for that reason - Block is the case where
-      # "is a Closure" and "unconditionally executes" diverge.
-      #
-      # @return [Boolean]
-      attr_reader :conditional
-
       # @param source [Source]
       # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
       # @param lvars [Array<Symbol>]
       # @param compound_statement [Pin::CompoundStatement, nil]
-      # @param conditional [Boolean]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
                      scope: nil, visibility: :public, lvars: [],
-                     compound_statement: nil, conditional: false
+                     compound_statement: nil
         @source = source
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @compound_statement = compound_statement || @closure
         @scope = scope
         @visibility = visibility
         @lvars = lvars
-        @conditional = conditional
       end
 
       # @return [String, nil]
@@ -84,18 +69,16 @@ module Solargraph
       # @param visibility [Symbol, nil]
       # @param lvars [Array<Symbol>, nil]
       # @param compound_statement [Pin::CompoundStatement, nil]
-      # @param conditional [Boolean, nil]
       # @return [Region]
       def update closure: nil, scope: nil, visibility: nil, lvars: nil,
-                 compound_statement: nil, conditional: nil
+                 compound_statement: nil
         Region.new(
           source: source,
           closure: closure || self.closure,
           scope: scope || self.scope,
           visibility: visibility || self.visibility,
           lvars: lvars || self.lvars,
-          compound_statement: compound_statement || self.compound_statement,
-          conditional: conditional.nil? ? self.conditional : conditional
+          compound_statement: compound_statement || self.compound_statement
         )
       end
 

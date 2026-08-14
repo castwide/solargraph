@@ -30,12 +30,13 @@ module Solargraph
                 location: get_node_location(then_node),
                 closure: region.closure,
                 compound_statement: region.compound_statement,
+                conditional: true,
                 node: then_node,
                 source: :parser
               )
               pins.push then_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(then_node, region.update(compound_statement: then_cs, conditional: true), pins, locals, ivars)
+              NodeProcessor.process(then_node, region.update(compound_statement: then_cs), pins, locals, ivars)
             end
 
             else_node = node.children[2]
@@ -45,12 +46,13 @@ module Solargraph
                 location: get_node_location(else_node),
                 closure: region.closure,
                 compound_statement: region.compound_statement,
+                conditional: true,
                 node: else_node,
                 source: :parser
               )
               pins.push else_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(else_node, region.update(compound_statement: else_cs, conditional: true), pins, locals, ivars)
+              NodeProcessor.process(else_node, region.update(compound_statement: else_cs), pins, locals, ivars)
             end
 
             true

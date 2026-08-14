@@ -37,7 +37,7 @@ module Solargraph
                 source: :parser
               )
             end
-            process_children region.update(closure: nspin, visibility: :public, compound_statement: nspin, conditional: false)
+            process_children region.update(closure: nspin, visibility: :public, compound_statement: nspin)
           end
 
           private

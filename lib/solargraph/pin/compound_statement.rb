@@ -53,20 +53,37 @@ module Solargraph
       # @return [Pin::CompoundStatement, nil]
       attr_reader :compound_statement
 
+      # True if this construct's body may be skipped, or run zero or
+      # multiple times, at runtime - e.g. an if/while/until/rescue/&&/
+      # ||/||= body, or a block body (which, despite being a Closure
+      # like Method/Namespace, may run zero or many times depending on
+      # the method it's passed to, unlike a method/namespace body,
+      # which always runs exactly once when reached). Defaults false -
+      # true only where a node processor explicitly marks a construct
+      # as conditionally executed.
+      #
+      # @return [Boolean]
+      attr_reader :conditional
+
       # @param node [Parser::AST::Node, nil]
       # @param compound_statement [Pin::CompoundStatement, nil]
+      # @param conditional [Boolean]
       # @param [Hash{Symbol => Object}] splat
-      def initialize node: nil, compound_statement: nil, **splat
+      def initialize node: nil, compound_statement: nil, conditional: false, **splat
         super(**splat)
         @node = node
         @compound_statement = compound_statement
+        @conditional = conditional
       end
 
       # @param other [self]
       # @param attrs [Hash{Symbol => Object}]
       # @return [self]
       def combine_with other, attrs = {}
-        new_attrs = { compound_statement: combine_compound_statement(other) }.merge(attrs)
+        new_attrs = {
+          compound_statement: combine_compound_statement(other),
+          conditional: choose(other, :conditional)
+        }.merge(attrs)
         super(other, new_attrs)
       end
 

@@ -16,10 +16,11 @@ module Solargraph
               location: get_node_location(node),
               closure: region.closure,
               compound_statement: region.compound_statement,
+              conditional: true,
               node: node,
               source: :parser
             )
-            NodeProcessor.process(new_node, region.update(compound_statement: asgn_cs, conditional: true), pins, locals, ivars)
+            NodeProcessor.process(new_node, region.update(compound_statement: asgn_cs), pins, locals, ivars)
           end
         end
       end

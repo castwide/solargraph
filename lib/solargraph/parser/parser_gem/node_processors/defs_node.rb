@@ -30,7 +30,7 @@ module Solargraph
               node: node,
               source: :parser
             )
-            process_children region.update(closure: pins.last, scope: :class, compound_statement: pins.last, conditional: false)
+            process_children region.update(closure: pins.last, scope: :class, compound_statement: pins.last)
           end
         end
       end

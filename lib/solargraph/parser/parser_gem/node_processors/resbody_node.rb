@@ -39,11 +39,12 @@ module Solargraph
               location: node.children[2] ? get_node_location(node.children[2]) : nil,
               closure: region.closure,
               compound_statement: region.compound_statement,
+              conditional: true,
               node: node.children[2],
               source: :parser
             )
             # @sg-ignore Need to add nil check here
-            NodeProcessor.process(node.children[2], region.update(compound_statement: rescue_body_cs, conditional: true), pins, locals, ivars)
+            NodeProcessor.process(node.children[2], region.update(compound_statement: rescue_body_cs), pins, locals, ivars)
           end
         end
       end

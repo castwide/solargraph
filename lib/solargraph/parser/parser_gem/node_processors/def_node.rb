@@ -52,7 +52,7 @@ module Solargraph
             else
               pins.push methpin
             end
-            process_children region.update(closure: methpin, scope: methpin.scope, compound_statement: methpin, conditional: false)
+            process_children region.update(closure: methpin, scope: methpin.scope, compound_statement: methpin)
           end
         end
       end
