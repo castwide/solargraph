@@ -603,6 +603,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'resolves Class<generic<T>>#new to generic<T> inside the generic method body' do
+      checker = type_checker(%(
+        class Repro
+          # @generic T
+          # @param clazz [Class<generic<T>>]
+          # @return [generic<T>]
+          def create_object(clazz)
+            clazz.new
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'ignores generic resolution failures with only one arg' do
       checker = type_checker(%(
         # @generic T
