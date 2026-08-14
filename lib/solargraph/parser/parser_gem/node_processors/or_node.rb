@@ -12,7 +12,7 @@ module Solargraph
             # any assignment there isn't guaranteed to have executed
             lhs, rhs = node.children
             NodeProcessor.process(lhs, region, pins, locals, ivars)
-            NodeProcessor.process(rhs, region.update(conditional: true), pins, locals, ivars)
+            NodeProcessor.process(rhs, region.update(conditional_boundary: Range.from_node(rhs)), pins, locals, ivars)
 
             FlowSensitiveTyping.new(locals,
                                     ivars,

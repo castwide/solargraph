@@ -30,7 +30,7 @@ module Solargraph
         super || closure&.type_location
       end
 
-      def combine_with other, attrs = {}
+      def combine_with other, attrs = {}, location: nil
         # Parameters can only be combined with local variables in the same closure
         return self unless other.closure == closure
 
@@ -45,7 +45,7 @@ module Solargraph
                         asgn_code: asgn_code
                       }
                     end
-        super(other, new_attrs.merge(attrs))
+        super(other, new_attrs.merge(attrs), location: location)
       end
 
       def combine_return_type other

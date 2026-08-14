@@ -21,27 +21,31 @@ module Solargraph
       # @return [Array<Symbol>]
       attr_reader :lvars
 
-      # True if the current position may be skipped at runtime (e.g.,
-      # inside an if/while/until body), meaning an assignment made
-      # here isn't guaranteed to have executed at a later position.
+      # The source range of the nearest enclosing construct that may
+      # be skipped at runtime (e.g., an if/while/until body), meaning
+      # an assignment made at the current position isn't guaranteed
+      # to have executed at a later position - except at a position
+      # that itself falls within this same range, where the
+      # assignment is still guaranteed to dominate. nil if the
+      # current position isn't inside any such construct.
       #
-      # @return [Boolean]
-      attr_reader :conditional
+      # @return [Range, nil]
+      attr_reader :conditional_boundary
 
       # @param source [Source]
       # @param closure [Pin::Closure, nil]
       # @param scope [Symbol, nil]
       # @param visibility [Symbol]
       # @param lvars [Array<Symbol>]
-      # @param conditional [Boolean]
+      # @param conditional_boundary [Range, nil]
       def initialize source: Solargraph::Source.load_string(''), closure: nil,
-                     scope: nil, visibility: :public, lvars: [], conditional: false
+                     scope: nil, visibility: :public, lvars: [], conditional_boundary: nil
         @source = source
         @closure = closure || Pin::Namespace.new(name: '', location: source.location, source: :parser)
         @scope = scope
         @visibility = visibility
         @lvars = lvars
-        @conditional = conditional
+        @conditional_boundary = conditional_boundary
       end
 
       # @return [String, nil]
@@ -63,16 +67,16 @@ module Solargraph
       # @param scope [Symbol, nil]
       # @param visibility [Symbol, nil]
       # @param lvars [Array<Symbol>, nil]
-      # @param conditional [Boolean, nil]
+      # @param conditional_boundary [Range, nil]
       # @return [Region]
-      def update closure: nil, scope: nil, visibility: nil, lvars: nil, conditional: nil
+      def update closure: nil, scope: nil, visibility: nil, lvars: nil, conditional_boundary: nil
         Region.new(
           source: source,
           closure: closure || self.closure,
           scope: scope || self.scope,
           visibility: visibility || self.visibility,
           lvars: lvars || self.lvars,
-          conditional: conditional.nil? ? self.conditional : conditional
+          conditional_boundary: conditional_boundary || self.conditional_boundary
         )
       end
 

@@ -939,6 +939,23 @@ describe Solargraph::TypeChecker do
                                                     ])
     end
 
+    it 'still treats a conditional reassignment as guaranteed to have run for a use site inside the same branch' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def conditional_reassign(str, num, flag)
+          local = num
+          if flag
+            local = str
+            local.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'updates a local variable type after reassignment to a different literal type' do
       checker = type_checker(%(
         # @return [void]

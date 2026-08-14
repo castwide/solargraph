@@ -17,6 +17,9 @@ module Solargraph
       # @return [Boolean]
       attr_reader :definite
 
+      # @return [Range, nil]
+      attr_reader :conditional_override_boundary
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -55,11 +58,20 @@ module Solargraph
       #   reassignment's type may safely override a variable's
       #   previously declared/inferred type instead of merely being
       #   unioned with it.
+      # @param conditional_override_boundary [Range, nil] When
+      #   `definite` is false because this assignment is inside a
+      #   conditional branch or loop, the source range of that
+      #   construct's body - i.e., the extent within which this
+      #   assignment, though not globally guaranteed, is still
+      #   guaranteed to dominate any reference. A reference at a
+      #   position inside this range may still treat the assignment
+      #   as an override rather than merely unioning it with earlier
+      #   possible types.
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
-                     definite: true,
+                     definite: true, conditional_override_boundary: nil,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -70,6 +82,7 @@ module Solargraph
         @exclude_return_type = exclude_return_type
         @presence = presence
         @definite = definite
+        @conditional_override_boundary = conditional_override_boundary
       end
 
       # @param presence [Range]
@@ -94,8 +107,14 @@ module Solargraph
         super
       end
 
-      def combine_with other, attrs = {}
-        new_assignments = combine_assignments(other)
+      # @param other [self]
+      # @param attrs [Hash]
+      # @param location [Location, nil] The position being resolved,
+      #   if known - used to decide whether a not-globally-definite
+      #   `other` should still override us because the position falls
+      #   within `other`'s conditional_override_boundary.
+      def combine_with other, attrs = {}, location: nil
+        new_assignments = combine_assignments(other, location)
         new_attrs = attrs.merge({
                                   # default values don't exist in RBS parameters; it just
                                   # tells you if the arg is optional or not.  Prefer a
@@ -106,7 +125,7 @@ module Solargraph
                                   # skip this - the constructor prepends `assignment:` to
                                   # `assignments:` unconditionally, which would re-introduce
                                   # the dropped node.
-                                  assignment: override_assignments?(other) ? nil : choose(other, :assignment),
+                                  assignment: override_assignments?(other, location) ? nil : choose(other, :assignment),
                                   assignments: new_assignments,
                                   mass_assignment: combine_mass_assignment(other),
                                   return_type: combine_return_type(other),
@@ -138,9 +157,11 @@ module Solargraph
 
       # @param other [self]
       #
+      # @param other [self]
+      # @param location [Location, nil]
       # @return [::Array<Parser::AST::Node>]
-      def combine_assignments other
-        return other.assignments.dup if override_assignments?(other)
+      def combine_assignments other, location = nil
+        return other.assignments.dup if override_assignments?(other, location)
 
         (other.assignments + assignments).uniq
       end
@@ -364,11 +385,34 @@ module Solargraph
       # leave nothing to resolve against.
       #
       # @param other [self]
+      # @param location [Location, nil] The position being resolved,
+      #   if known - lets a conditional `other` still override us when
+      #   `location` falls inside `other`'s conditional_override_boundary.
       # @return [Boolean]
-      def override_assignments? other
-        other.definite && other.closure == closure &&
+      def override_assignments? other, location = nil
+        (other.definite || other.definite_reaches?(location)) && other.closure == closure &&
           other.assignments.none? { |node| references_name?(node) }
       end
+
+      public
+
+      # True if this pin's assignment, though not globally definite,
+      # is still guaranteed to dominate `location` - i.e., `location`
+      # falls inside the conditional construct's body that this
+      # assignment was made in, so no earlier branch exit could have
+      # skipped it by the time `location` is reached.
+      #
+      # @param location [Location, nil]
+      # @return [Boolean]
+      def definite_reaches? location
+        boundary = conditional_override_boundary
+        return false unless location && boundary
+
+        location.filename == self.location&.filename &&
+          boundary.contain?(location.range.start)
+      end
+
+      private
 
       # @param node [Parser::AST::Node, nil]
       # @return [Boolean]

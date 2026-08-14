@@ -31,7 +31,7 @@ module Solargraph
             # a block's body may execute zero or multiple times (e.g.
             # Enumerable#each), so an assignment inside it is never
             # guaranteed to have executed
-            process_children region.update(closure: block_pin, conditional: true)
+            process_children region.update(closure: block_pin, conditional_boundary: Range.from_node(node))
           end
 
           private
