@@ -19,7 +19,7 @@ module Solargraph
               node: node,
               source: :parser
             )
-            NodeProcessor.process(new_node, region.update(conditional_boundary: Range.from_node(node), compound_statement: asgn_cs), pins, locals, ivars)
+            NodeProcessor.process(new_node, region.update(compound_statement: asgn_cs, conditional: true), pins, locals, ivars)
           end
         end
       end

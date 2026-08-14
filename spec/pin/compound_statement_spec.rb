@@ -74,4 +74,28 @@ describe Solargraph::Pin::CompoundStatement do
 
     expect(bare_pin.closure).to eq(method_pin)
   end
+
+  describe '#combine_with' do
+    let(:earlier_location) { Solargraph::Location.new('test.rb', Solargraph::Range.from_to(1, 0, 3, 0)) }
+    let(:later_location) { Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 0, 7, 0)) }
+
+    it 'prefers the compound_statement with the earlier location' do
+      earlier_cs = described_class.new(location: earlier_location, source: :parser)
+      later_cs = described_class.new(location: later_location, source: :parser)
+      pin1 = described_class.new(location: earlier_location, compound_statement: earlier_cs, source: :parser)
+      pin2 = described_class.new(location: later_location, compound_statement: later_cs, source: :parser)
+
+      expect(pin1.combine_with(pin2).compound_statement).to eq(earlier_cs)
+      expect(pin2.combine_with(pin1).compound_statement).to eq(earlier_cs)
+    end
+
+    it 'prefers a non-nil compound_statement over a nil one' do
+      cs = described_class.new(location: earlier_location, source: :parser)
+      pin1 = described_class.new(location: earlier_location, compound_statement: nil, source: :parser)
+      pin2 = described_class.new(location: earlier_location, compound_statement: cs, source: :parser)
+
+      expect(pin1.combine_with(pin2).compound_statement).to eq(cs)
+      expect(pin2.combine_with(pin1).compound_statement).to eq(cs)
+    end
+  end
 end

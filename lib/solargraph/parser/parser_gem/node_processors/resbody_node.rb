@@ -43,7 +43,7 @@ module Solargraph
               source: :parser
             )
             # @sg-ignore Need to add nil check here
-            NodeProcessor.process(node.children[2], region.update(conditional_boundary: Range.from_node(node.children[2]), compound_statement: rescue_body_cs), pins, locals, ivars)
+            NodeProcessor.process(node.children[2], region.update(compound_statement: rescue_body_cs, conditional: true), pins, locals, ivars)
           end
         end
       end

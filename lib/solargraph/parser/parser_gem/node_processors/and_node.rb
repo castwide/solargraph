@@ -20,7 +20,7 @@ module Solargraph
               node: rhs,
               source: :parser
             )
-            NodeProcessor.process(rhs, region.update(conditional_boundary: Range.from_node(rhs), compound_statement: rhs_cs), pins, locals, ivars)
+            NodeProcessor.process(rhs, region.update(compound_statement: rhs_cs, conditional: true), pins, locals, ivars)
 
             FlowSensitiveTyping.new(locals,
                                     ivars,

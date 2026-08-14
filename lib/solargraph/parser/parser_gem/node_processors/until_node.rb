@@ -22,7 +22,7 @@ module Solargraph
               source: :parser
             )
             pins.push until_pin
-            process_children region.update(conditional_boundary: Range.from_node(node), compound_statement: until_pin)
+            process_children region.update(compound_statement: until_pin, conditional: true)
           end
         end
       end

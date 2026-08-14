@@ -19,8 +19,7 @@ module Solargraph
               assignment: node.children[1],
               comments: comments_for(node),
               presence: presence,
-              definite: region.conditional_boundary.nil?,
-              conditional_override_boundary: region.conditional_boundary,
+              definite: !region.conditional,
               compound_statement: region.compound_statement,
               source: :parser
             )

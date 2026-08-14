@@ -35,7 +35,7 @@ module Solargraph
               )
               pins.push then_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(then_node, region.update(conditional_boundary: Range.from_node(then_node), compound_statement: then_cs), pins, locals, ivars)
+              NodeProcessor.process(then_node, region.update(compound_statement: then_cs, conditional: true), pins, locals, ivars)
             end
 
             else_node = node.children[2]
@@ -50,7 +50,7 @@ module Solargraph
               )
               pins.push else_cs
               # @sg-ignore Need to add nil check here
-              NodeProcessor.process(else_node, region.update(conditional_boundary: Range.from_node(else_node), compound_statement: else_cs), pins, locals, ivars)
+              NodeProcessor.process(else_node, region.update(compound_statement: else_cs, conditional: true), pins, locals, ivars)
             end
 
             true
