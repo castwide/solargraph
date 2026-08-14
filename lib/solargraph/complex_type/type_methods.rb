@@ -144,10 +144,6 @@ module Solargraph
         @namespace ||= lambda do
           return 'Object' if duck_type?
           return 'NilClass' if nil_type?
-          # A bare Class/Module type parameter of `generic<...>` is an
-          # unresolved generic placeholder, not a real namespace, so treat
-          # it the same as a bare Class/Module with no type parameter.
-          return name if %w[Class Module].include?(name) && !subtypes.empty? && subtypes.first&.generic?
           %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end
@@ -156,7 +152,7 @@ module Solargraph
       def namespace_type
         return ComplexType.parse('::Object') if duck_type?
         return ComplexType.parse('::NilClass') if nil_type?
-        return subtypes.first if %w[Class Module].include?(name) && !subtypes.empty? && !subtypes.first&.generic?
+        return subtypes.first if %w[Class Module].include?(name) && !subtypes.empty?
         self
       end
 
@@ -203,7 +199,7 @@ module Solargraph
       # @return [::Symbol] :class or :instance
       def scope
         @scope ||= :instance if duck_type? || nil_type?
-        @scope ||= %w[Class Module].include?(name) && !subtypes.empty? && !subtypes.first&.generic? ? :class : :instance
+        @scope ||= %w[Class Module].include?(name) && !subtypes.empty? ? :class : :instance
       end
 
       # @param other [Object]

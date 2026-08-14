@@ -470,16 +470,7 @@ module Solargraph
         result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
       else
         result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
-        # Synthesizing Class#new from #initialize only makes sense when
-        # rooted_tag names a concrete class/module (e.g., 'Foo' or
-        # 'Class<Foo>') whose own #initialize can be looked up. When
-        # rooted_tag is 'Class' itself (bare, 'Class<Class>', or
-        # parameterized by an unresolved generic like
-        # 'Class<generic<T>>'), there's no concrete #initialize to find,
-        # and calling get_method_stack(rooted_tag, 'initialize') here would
-        # just recurse back into this same 'Class#new' pin forever.
-        unless %w[Class Class<Class>].include?(rooted_tag) ||
-               (rooted_type.name == 'Class' && rooted_type.subtypes.any?(&:generic?))
+        unless %w[Class Class<Class>].include?(rooted_tag)
           result.map! do |pin|
             next pin unless pin.path == 'Class#new'
             init_pin = get_method_stack(rooted_tag, 'initialize').first
