@@ -21,6 +21,7 @@ module Solargraph
               presence: presence,
               definite: region.conditional_boundary.nil?,
               conditional_override_boundary: region.conditional_boundary,
+              compound_statement: region.compound_statement,
               source: :parser
             )
             process_children

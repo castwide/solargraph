@@ -20,6 +20,16 @@ module Solargraph
       # @return [Range, nil]
       attr_reader :conditional_override_boundary
 
+      # The CompoundStatement pin this variable's (re)assignment was
+      # made within - i.e. Region#compound_statement at the point of
+      # assignment. Not yet consulted by any override logic (that's
+      # conditional_override_boundary's job today); threaded through
+      # now so a future chain-walk-based override check has the data
+      # already flowing.
+      #
+      # @return [Pin::CompoundStatement, nil]
+      attr_reader :compound_statement
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -67,11 +77,15 @@ module Solargraph
       #   position inside this range may still treat the assignment
       #   as an override rather than merely unioning it with earlier
       #   possible types.
+      # @param compound_statement [Pin::CompoundStatement, nil] The
+      #   CompoundStatement this variable's (re)assignment was made
+      #   within.
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
                      definite: true, conditional_override_boundary: nil,
+                     compound_statement: nil,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -83,6 +97,7 @@ module Solargraph
         @presence = presence
         @definite = definite
         @conditional_override_boundary = conditional_override_boundary
+        @compound_statement = compound_statement
       end
 
       # @param presence [Range]

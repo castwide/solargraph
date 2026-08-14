@@ -17,14 +17,16 @@ module Solargraph
             # while statement doesn't create a closure - e.g.,
             # variables created inside can be seen from outside as
             # well
-            pins.push Solargraph::Pin::While.new(
+            while_pin = Solargraph::Pin::While.new(
               location: location,
               closure: region.closure,
+              compound_statement: region.compound_statement,
               node: node,
               comments: comments_for(node),
               source: :parser
             )
-            process_children region.update(conditional_boundary: Range.from_node(node))
+            pins.push while_pin
+            process_children region.update(conditional_boundary: Range.from_node(node), compound_statement: while_pin)
           end
         end
       end
