@@ -154,10 +154,10 @@ module Solargraph
         end
 
         # Whether this conjunct's own literal `key_types` positively match
-        # the call's own literal argument at the `_Key`-typed parameter's
-        # position, or nil if that can't be determined (no `_Key`-shaped
-        # parameter here, non-literal argument, or no literal `key_types`
-        # to compare against).
+        # the call's own literal argument at the key parameter's position
+        # (see Pin::Signature#key_param_index), or nil if that can't be
+        # determined (no key-shaped parameter here, non-literal argument,
+        # or no literal `key_types` to compare against).
         #
         # @param conjunct [ComplexType]
         # @param api_map [ApiMap]
@@ -179,7 +179,8 @@ module Solargraph
           pin = api_map.get_method_stack(ns_tag, word, scope: unique_type.scope).first
           return nil if pin.nil?
 
-          index = pin.signatures.filter_map { |s| s.key_param_index(unique_type.namespace, api_map) }.first
+          key_tags = unique_type.key_types.map(&:tag)
+          index = pin.signatures.filter_map { |s| s.key_param_index(unique_type.namespace, api_map, key_tags) }.first
           return nil if index.nil? || index >= arguments.length
 
           key_tag = literal_node_tag(arguments[index]&.node)

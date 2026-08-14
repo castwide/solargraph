@@ -60,14 +60,24 @@ module Solargraph
         out
       end
 
-      # The index of the first parameter typed exactly
-      # `<namespace>::_Key` - the position RBS uses to mark "this
-      # parameter is a lookup key for this class's own K" (e.g.
-      # `Hash#fetch: (Hash::_Key key) -> V`) - or nil if none of this
-      # signature's parameters have that shape.
+      # The index of the first parameter acting as a lookup key for
+      # this class's own `K` (e.g. `Hash#fetch`'s first parameter), or
+      # nil if none of this signature's parameters have that shape.
       #
-      # This matches by the interface's literal name, so it only
-      # recognizes RBS's own `Hash::_Key` - a user-defined generic
+      # Two shapes are recognized, because RBS's own `core/hash.rbs`
+      # changed how it declares them in 4.1.0:
+      #
+      # - RBS >= 4.1.0 declares `def fetch: (_Key key) -> V` (also
+      #   `#[]`, `#dig`, `#delete`), so the parameter is typed exactly
+      #   `<namespace>::_Key`.
+      # - RBS < 4.1.0 declares `def fetch: (K arg0) -> V`, so the
+      #   parameter is typed as the class's own generic `K`, which by
+      #   this point has already been resolved against the receiver -
+      #   for a literal-keyed receiver that makes it the literal key
+      #   type itself, which is what `key_types` matches against.
+      #
+      # The `_Key` shape matches by the interface's literal name, so it
+      # only recognizes RBS's own `Hash::_Key` - a user-defined generic
       # class using the same "marker interface for a lookup key"
       # pattern under a different name/namespace won't be detected.
       #
@@ -76,28 +86,35 @@ module Solargraph
       # ApiMap#get_own_methods (a namespace's directly-declared
       # methods, excluding inherited ones), extracted from
       # Conformance#required_interface_methods for exactly this reuse.
-      # Replace the literal name comparison below with a structural
-      # one: a parameter is key-shaped if its type is an interface
-      # whose own declared method names equal
-      # `Hash::_Key`'s (`hash`/`eql?`), regardless of the interface's
-      # actual name -
+      # Replace the `_Key` name comparison below with a structural one:
+      # a parameter is key-shaped if its type is an interface whose own
+      # declared method names equal `Hash::_Key`'s (`hash`/`eql?`),
+      # regardless of the interface's actual name -
       # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
       #
-      #   def key_param_index namespace, api_map
-      #     key_interface_methods = api_map.get_own_methods("#{namespace}::_Key").map(&:name).to_set
-      #     parameters.find_index do |p|
-      #       type = p.typify(api_map)
-      #       next false unless type.interface?
-      #       api_map.get_own_methods(type.tag).map(&:name).to_set == key_interface_methods
-      #     end
+      #   key_interface_methods = api_map.get_own_methods("#{namespace}::_Key").map(&:name).to_set
+      #   index = parameters.find_index do |p|
+      #     type = p.typify(api_map)
+      #     next false unless type.interface?
+      #     api_map.get_own_methods(type.tag).map(&:name).to_set == key_interface_methods
       #   end
+      #
+      # That only replaces the first branch - the `key_tags` fallback is
+      # still needed for RBS < 4.1, which has no interface there at all.
       #
       # @param namespace [String]
       # @param api_map [ApiMap]
+      # @param key_tags [::Array<String>] the receiver's own resolved
+      #   `key_types` tags, used to recognize the pre-4.1 `K`-typed
+      #   shape. Empty disables that fallback.
       # @return [Integer, nil]
-      def key_param_index namespace, api_map
+      def key_param_index namespace, api_map, key_tags = []
         key_tag = "#{namespace}::_Key"
-        parameters.find_index { |p| p.typify(api_map).tag == key_tag }
+        index = parameters.find_index { |p| p.typify(api_map).tag == key_tag }
+        return index unless index.nil?
+        return nil if key_tags.empty?
+
+        parameters.find_index { |p| key_tags.include?(p.typify(api_map).tag) }
       end
     end
   end
