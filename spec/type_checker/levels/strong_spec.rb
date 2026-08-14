@@ -731,6 +731,80 @@ describe Solargraph::TypeChecker do
       expect(messages).not_to include('Unresolved call to length on String, nil')
     end
 
+    # NOTE: this scenario doesn't distinguish fixed from unfixed
+    # behavior - a union return type of the exact same shape as the
+    # union @param type flattens/dedupes an incorrectly-too-wide
+    # binding back down to the right answer by coincidence (the union
+    # already contains 'nil' as a sibling member either way). It's
+    # included as a no-regression check for union return types, not as
+    # a regression test for #1298 itself.
+    it 'resolves a generic type variable when both the @param and @return types are the same union' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>, nil]
+        def maybe(arg)
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [String, nil]
+        def via(arg) = maybe(arg)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type with more than two members' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil, Symbol]
+        # @return [generic<A>]
+        def must_not_nil_or_symbol(arg)
+          raise if arg.nil? || arg.is_a?(Symbol)
+
+          arg
+        end
+
+        # @param arg [String, nil, Symbol]
+        # @return [Integer]
+        def via_triple(arg) = must_not_nil_or_symbol(arg).length
+      ))
+      # As with the two-member case above, the remaining "Declared
+      # return type...does not match inferred type" problem is #1276
+      # (`raise` does not narrow the type), independent of this test.
+      messages = checker.problems.map(&:message)
+      expect(messages).not_to include('#via_triple return type could not be inferred')
+      expect(messages).not_to include('Unresolved call to length on String, nil, Symbol')
+    end
+
+    it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer1(arg)
+          raise if arg.nil?
+
+          arg
+        end
+
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer2(arg) = layer1(arg)
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_layers(arg) = layer2(arg).length
+      ))
+      # As above, any "Declared return type...does not match inferred
+      # type" problems here are #1276 (`raise` does not narrow the
+      # type), independent of this test.
+      messages = checker.problems.map(&:message)
+      expect(messages).not_to include('#via_layers return type could not be inferred')
+      expect(messages).not_to include('Unresolved call to length on String, nil')
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar

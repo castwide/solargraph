@@ -533,6 +533,59 @@ describe 'YARD type specifier list parsing' do
           end
         end
       end
+
+      # Exercises ComplexType#resolve_generics_from_context directly
+      # (as opposed to UniqueType#resolve_generics_from_context above)
+      # against union types with more than one member, per
+      # https://github.com/castwide/solargraph/issues/1298
+      #
+      # Note: the resolved_generic_values assertion below must compare
+      # with #to_s, not #tag - ComplexType#tag delegates to the first
+      # union member only (via method_missing), so a binding that's
+      # incorrectly the *entire* multi-member context union - the
+      # #1298 bug - can still report the right #tag while silently
+      # carrying the rest of the union along. #to_s renders every
+      # member and catches that.
+      UNION_COMPLEX_TYPE_GENERIC_TESTS = [
+        # tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map
+        # Discriminating: fails pre-fix with A bound to 'String, nil' (the whole context) instead of 'String'.
+        ['generic<A>, nil', 'String, nil', {}, %w[A], 'String, nil', { 'A' => 'String' }],
+        # Discriminating: fails pre-fix with A bound to 'String, nil, Symbol' instead of 'String'.
+        ['generic<A>, nil, Symbol', 'String, nil, Symbol', {}, %w[A], 'String, nil, Symbol', { 'A' => 'String' }],
+        # Non-discriminating (passes either way): context has only one member, so there's
+        # nothing to subtract - included as a no-regression check for the single-member-context shape.
+        ['generic<A>, nil', 'String', {}, %w[A], 'String, nil', { 'A' => 'String' }],
+        # Non-discriminating: the nested generic<A> is resolved against context.subtypes, and
+        # ComplexType#method_missing's delegation to the first union member already narrows this
+        # correctly with or without the fix. Included to confirm the fix doesn't disturb it.
+        ['Array<generic<A>>, nil', 'Array<String>, nil', {}, %w[A], 'Array<String>, nil', { 'A' => 'String' }],
+        # Non-discriminating, same reason as the Array case above, but for Hash key/value generics.
+        ['Hash{generic<K> => generic<V>}, nil', 'Hash{String => Integer}, nil', {}, %w[K V],
+         'Hash{String => Integer}, nil', { 'K' => 'String', 'V' => 'Integer' }],
+        # Non-discriminating: an already-resolved value is never overwritten by context,
+        # with or without the fix. Included as a no-regression check.
+        ['generic<A>, nil', 'String, nil', { 'A' => 'Integer' }, %w[A], 'Integer, nil', { 'A' => 'Integer' }],
+        # Known limitation, unchanged by this fix: with no concrete union member to
+        # subtract, there's no positional information to tell which generic should
+        # bind to which context member, so both end up bound to the entire context union.
+        ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], 'String, Integer',
+         { 'A' => 'String, Integer', 'B' => 'String, Integer' }]
+      ].freeze
+
+      UNION_COMPLEX_TYPE_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map|
+        context "when resolving union #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
+          let(:complex_type) { Solargraph::ComplexType.parse(tag) }
+          let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
+
+          it "resolves to #{expected_to_s} with updated map #{expected_output_map}" do
+            resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
+            resolved_type = complex_type.resolve_generics_from_context(generics_to_resolve, context_type,
+                                                                       resolved_generic_values: resolved_generic_values)
+            expect(resolved_type.to_s).to eq(expected_to_s)
+            expect(resolved_generic_values.transform_values(&:to_s)).to eq(expected_output_map)
+          end
+        end
+      end
     end
   end
 
