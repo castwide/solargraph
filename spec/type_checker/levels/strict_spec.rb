@@ -89,6 +89,37 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'does not leak an unresolved generic from a literal-keyed Hash#fetch (#1223)' do
+      # Reported at https://github.com/castwide/solargraph/pull/1223#issuecomment-5296594623 -
+      # on RBS 4.0.x, a single-argument Hash#fetch call resolved K to the
+      # receiver's literal key type (e.g. "Index" from a
+      # `Hash{"Index" => Float}` @param tag), giving Hash#fetch a single
+      # candidate overload with no non-literal sibling to fall back to.
+      # The overload-selection gate that requires an exact-literal match
+      # (added to make tuple's literal-indexed overloads win over its
+      # safe catch-all) rejected that candidate outright, since the
+      # call's plain string argument isn't itself literal-typed - so no
+      # overload matched at all, and inference fell back to the union of
+      # every overload's declared return type instead of the one real
+      # match.
+      checker = type_checker(%(
+        class ReproLeak
+          # @param period [Hash{"Index" => Float}]
+          # @return [Float]
+          def literal_key(period)
+            period.fetch('Index')
+          end
+
+          # @param period [Hash{String => Float}]
+          # @return [Float]
+          def class_key(period)
+            period.fetch('Index')
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]

@@ -93,76 +93,89 @@ module Solargraph
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
-            # @sg-ignore flow sensitive typing should handle is_a? and next
-            # @param ol [Pin::Signature]
-            sorted_overloads.each do |ol|
-              next unless ol.arity_matches?(arguments, with_block?)
-              match = true
-
-              atypes = []
-              arguments.each_with_index do |arg, idx|
-                param = ol.parameters[idx]
-                if param.nil?
-                  match = ol.parameters.any?(&:restarg?)
-                  break
-                end
-                arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
-                                                        closure: name_pin.closure,
-                                                        gates: name_pin.gates,
-                                                        source: :chain)
-                atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
-                unless param.compatible_arg?(atype, api_map) || param.restarg?
-                  match = false
-                  break
-                end
-              end
-              if match
-                if ol.block && with_block?
-                  block_atypes = ol.block.parameters.map(&:return_type)
-                  # @todo Need to add nil check here
-                  blocktype = if block.links.map(&:class) == [BlockSymbol]
-                                # like the bar in foo(&:bar)
-                                block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
-                              else
-                                block_call_type(api_map, name_pin, locals)
-                              end
-                end
-                new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil,
-                                                                                    blocktype)
-                # @todo It shouldn't be necessary to choose either generics or macros
-                new_return_type = if new_signature_pin.return_type.defined?
-                  new_signature_pin.return_type
-                else
-                  named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
-                  p.typify(api_map).expand(named_types)
-                end
-                self_type = if head?
-                              # If we're at the head of the chain, we called a
-                              # method somewhere that marked itself as returning
-                              # self.  Given we didn't invoke this on an object,
-                              # this must be a method in this same class - so we
-                              # use our own self type
-                              name_pin.context
-                            else
-                              # if we're past the head in the chain, whatever the
-                              # type of the lhs side is what 'self' will be in its
-                              # declaration - we can't just use the type of the
-                              # method pin, as this might be a subclass of the
-                              # place where the method is defined
-                              name_pin.binder
-                            end
-                # This same logic applies to the YARD work done by
-                # 'with_params()'.
-                #
-                # qualify(), however, happens in the namespace where
-                # the docs were written - from the method pin.
-                # @todo Need to add nil check here
-                if new_return_type.defined?
-                  type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates)
-                end
-                type ||= ComplexType::UNDEFINED
-              end
+            # Two passes: first require an exact-literal match on any
+            # literal-typed overload parameter (so a real sibling
+            # catch-all, e.g. tuple's non-literal fallback, wins over a
+            # literal overload for a non-literal argument). If nothing
+            # matches at all, retry without that requirement - a
+            # literal-typed parameter with no non-literal sibling
+            # overload (e.g. Hash#fetch's key resolved to a literal
+            # from the receiver's declared type) would otherwise reject
+            # every candidate and fall through to the union of all
+            # overloads' return types instead of the one real match.
+            [true, false].each do |require_literal|
               break if type.defined?
+              # @sg-ignore flow sensitive typing should handle is_a? and next
+              # @param ol [Pin::Signature]
+              sorted_overloads.each do |ol|
+                next unless ol.arity_matches?(arguments, with_block?)
+                match = true
+
+                atypes = []
+                arguments.each_with_index do |arg, idx|
+                  param = ol.parameters[idx]
+                  if param.nil?
+                    match = ol.parameters.any?(&:restarg?)
+                    break
+                  end
+                  arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                          closure: name_pin.closure,
+                                                          gates: name_pin.gates,
+                                                          source: :chain)
+                  atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+                  unless param.compatible_arg?(atype, api_map, require_literal: require_literal) || param.restarg?
+                    match = false
+                    break
+                  end
+                end
+                if match
+                  if ol.block && with_block?
+                    block_atypes = ol.block.parameters.map(&:return_type)
+                    # @todo Need to add nil check here
+                    blocktype = if block.links.map(&:class) == [BlockSymbol]
+                                  # like the bar in foo(&:bar)
+                                  block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
+                                else
+                                  block_call_type(api_map, name_pin, locals)
+                                end
+                  end
+                  new_signature_pin = ol.resolve_generics_from_context_until_complete(ol.generics, atypes, nil, nil,
+                                                                                      blocktype)
+                  # @todo It shouldn't be necessary to choose either generics or macros
+                  new_return_type = if new_signature_pin.return_type.defined?
+                                      new_signature_pin.return_type
+                                    else
+                                      named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
+                                      p.typify(api_map).expand(named_types)
+                                    end
+                  self_type = if head?
+                                # If we're at the head of the chain, we called a
+                                # method somewhere that marked itself as returning
+                                # self.  Given we didn't invoke this on an object,
+                                # this must be a method in this same class - so we
+                                # use our own self type
+                                name_pin.context
+                              else
+                                # if we're past the head in the chain, whatever the
+                                # type of the lhs side is what 'self' will be in its
+                                # declaration - we can't just use the type of the
+                                # method pin, as this might be a subclass of the
+                                # place where the method is defined
+                                name_pin.binder
+                              end
+                  # This same logic applies to the YARD work done by
+                  # 'with_params()'.
+                  #
+                  # qualify(), however, happens in the namespace where
+                  # the docs were written - from the method pin.
+                  # @todo Need to add nil check here
+                  if new_return_type.defined?
+                    type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *p.gates)
+                  end
+                  type ||= ComplexType::UNDEFINED
+                end
+                break if type.defined?
+              end
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
