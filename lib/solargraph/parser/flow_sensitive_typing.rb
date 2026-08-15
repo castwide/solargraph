@@ -9,11 +9,30 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param restricted_names [Array<String>, nil] If given, only
+      #   assert facts about variables with these names, ignoring any
+      #   other variable the analyzed condition happens to mention.
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
+                     restricted_names: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @restricted_names = restricted_names
+      end
+
+      # Assert the facts implied by a condition being true/false over
+      # the given ranges.  Public so that a differently-configured
+      # instance (see #initialize's restricted_names) can be handed a
+      # condition to analyze.
+      #
+      # @param conditional_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_condition conditional_node, true_ranges, false_ranges
+        process_expression(conditional_node, true_ranges, false_ranges)
       end
 
       # @param and_node [Parser::AST::Node]
@@ -153,6 +172,11 @@ module Solargraph
         end
 
         process_expression(conditional_node, true_ranges, false_ranges)
+
+        # @sg-ignore the ast gem tags AST::Node#children as a bare
+        #   [Array], so `if_node.children[0]` infers as `Array, nil`
+        #   here - same gap the process_expression call above hits
+        process_guarded_reassignment(if_node, conditional_node, then_clause, else_clause)
       end
 
       # @param while_node [Parser::AST::Node]
@@ -198,6 +222,83 @@ module Solargraph
 
       private
 
+      # The standard default-argument idiom reassigns a variable in
+      # the branch where the guard on that same variable fired:
+      #
+      #   tasks = ['a'] if tasks.nil?
+      #   tasks.each { ... }
+      #
+      # At a use site *after* the conditional, the two incoming paths
+      # are (a) the guard fired and the clause assigned a new value,
+      # and (b) the guard did not fire, leaving the original value -
+      # which the condition tells us something about.  Path (a) is
+      # already handled: the assignment's pin is unioned in.  Path (b)
+      # is what's asserted here - the opposite branch's facts from the
+      # condition hold over the rest of the enclosing compound
+      # statement.
+      #
+      # The facts are restricted to the variables the clause
+      # definitely reassigns.  Without that restriction a condition
+      # like `x.nil? || y.nil?` would wrongly narrow `y` after the
+      # conditional, since the clause only replaced `x`'s value.
+      #
+      # @param if_node [Parser::AST::Node]
+      # @param conditional_node [Parser::AST::Node]
+      # @param then_clause [Parser::AST::Node, nil]
+      # @param else_clause [Parser::AST::Node, nil]
+      #
+      # @return [void]
+      def process_guarded_reassignment if_node, conditional_node, then_clause, else_clause
+        compound_statement_node = enclosing_compound_statement_pin&.node
+        return if compound_statement_node.nil?
+
+        rest_of_compound_statement = Range.new(get_node_end_position(if_node),
+                                               get_node_end_position(compound_statement_node))
+
+        # the then clause ran only when the condition was true, so the
+        # path that preserved the original value is the false one -
+        # and vice versa for the else clause
+        assert_after_guard(conditional_node, definitely_assigned_names(then_clause),
+                           [], [rest_of_compound_statement])
+        assert_after_guard(conditional_node, definitely_assigned_names(else_clause),
+                           [rest_of_compound_statement], [])
+      end
+
+      # @param conditional_node [Parser::AST::Node]
+      # @param names [Array<String>]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def assert_after_guard conditional_node, names, true_ranges, false_ranges
+        return if names.empty?
+
+        FlowSensitiveTyping.new(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
+                                restricted_names: names)
+                           .process_condition(conditional_node, true_ranges, false_ranges)
+      end
+
+      # Names of the variables this clause assigns on every path
+      # through it.  Only unconditional, plain assignments count -
+      # anything inside a nested conditional or loop may not run, and
+      # `||=`/`+=`-style assignments keep the previous value in play.
+      #
+      # @param clause_node [Parser::AST::Node, nil]
+      #
+      # @return [Array<String>]
+      def definitely_assigned_names clause_node
+        return [] if clause_node.nil?
+
+        case clause_node.type
+        when :lvasgn, :ivasgn
+          [clause_node.children[0].to_s]
+        when :begin, :kwbegin
+          clause_node.children.flat_map { |child| definitely_assigned_names(child) }
+        else
+          []
+        end
+      end
+
       # @param pin [Pin::BaseVariable]
       # @param presence [Range]
       # @param downcast_type [ComplexType, nil]
@@ -205,6 +306,8 @@ module Solargraph
       #
       # @return [void]
       def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
+        return if restricted_names && !restricted_names.include?(pin.name)
+
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
@@ -482,7 +585,8 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin,
+                  :restricted_names
     end
   end
 end

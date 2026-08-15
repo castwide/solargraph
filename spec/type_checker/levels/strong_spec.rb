@@ -956,6 +956,114 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'narrows a nil-guarded default after the modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default after a non-modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if tasks.nil?
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an unless modifier' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] unless tasks
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an else clause' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if !tasks.nil?
+            puts 'have tasks'
+          else
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows only the reassigned variable when an or-condition guards it' do
+      checker = type_checker(%(
+        # @param xs [Array<String>, nil]
+        # @param ys [Array<String>, nil]
+        # @return [void]
+        def or_guard(xs, ys)
+          xs = ['a'] if xs.nil? || ys.nil?
+          xs.each { |t| puts t }
+          ys.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guard tests something other than the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def unrelated_guard(tasks, flag)
+          tasks = ['a'] if flag
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the nil guard does not reassign the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def no_reassignment(tasks)
+          puts 'hi' if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guarded assignment is itself conditional' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def nested_conditional_assign(tasks, flag)
+          if tasks.nil?
+            tasks = ['a'] if flag
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
     it 'does not let a loop-body reassignment override a reference textually before it' do
       checker = type_checker(%(
         # @param str [String]
