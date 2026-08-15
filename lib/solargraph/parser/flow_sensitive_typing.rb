@@ -173,9 +173,7 @@ module Solargraph
 
         process_expression(conditional_node, true_ranges, false_ranges)
 
-        # @sg-ignore the ast gem tags AST::Node#children as a bare
-        #   [Array], so `if_node.children[0]` infers as `Array, nil`
-        #   here - same gap the process_expression call above hits
+        # @sg-ignore Need to add nil check here
         process_guarded_reassignment(if_node, conditional_node, then_clause, else_clause)
       end
 
