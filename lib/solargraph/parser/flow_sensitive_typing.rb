@@ -80,6 +80,7 @@ module Solargraph
         return unless node.type == :send
 
         process_isa(node, true_presences, false_presences)
+        process_respond_to(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
         process_eq(node, true_presences, false_presences)
@@ -307,6 +308,46 @@ module Solargraph
           # @sg-ignore flow sensitive typing needs to handle attrs
           locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
+      end
+
+      # A true `x.respond_to?(:m)` proves x satisfies the duck type
+      # `#m` on the guarded path; ComplexType#intersect_with handles
+      # conformance against x's existing type (keeping union arms that
+      # provide the method, or the bare duck type for opaque
+      # receivers). A false respond_to? is not a sound class-level
+      # exclusion (duck conformance isn't class membership), so no
+      # false-path fact is asserted.
+      #
+      # @param rt_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param _false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_respond_to rt_node, true_presences, _false_presences
+        return unless rt_node.type == :send && rt_node.children[1] == :respond_to?
+
+        # only a literal-symbol first argument is usable; the optional
+        # include_all second argument doesn't change the positive fact
+        arg = rt_node.children[2]
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        return unless arg&.type == :sym
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        method_sym = arg.children[0]
+
+        receiver = rt_node.children[0]
+        return unless %i[lvar ivar].include?(receiver&.type)
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        variable_name = receiver.children[0].to_s
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(rt_node).start
+        pin = find_var(variable_name, position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = { pin => [{ type: ComplexType.parse("##{method_sym}") }] }
+        process_facts(if_true, true_presences)
       end
 
       # @param isa_node [Parser::AST::Node]
