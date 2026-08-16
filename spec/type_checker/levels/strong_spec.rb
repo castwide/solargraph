@@ -1074,6 +1074,40 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to reject! on nil'])
     end
 
+    it 'accumulates every fact an or-guard asserts about the same value' do
+      checker = type_checker(%(
+        # @param name [String, Integer, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.is_a?(Integer)
+          a
+        end
+
+        # @param name [String, Integer, nil]
+        # @return [String, Integer, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default behind an or-guard with three operands' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.empty? || a == 'x'
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'applies a modifier-if guard after the variable was reassigned' do
       checker = type_checker(%(
         # @param name [String]

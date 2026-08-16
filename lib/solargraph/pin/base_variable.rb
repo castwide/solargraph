@@ -118,6 +118,12 @@ module Solargraph
       #   within `other`'s compound_statement.
       def combine_with other, attrs = {}, location: nil
         superseded = override_assignments?(other, location)
+        # Facts expire only when a *different* assignment overwrote the
+        # value they describe.  Two flow-sensitive downcasts of the same
+        # assignment - e.g. the one per operand that `a.nil? ||
+        # a.empty? || a == 'x'` produces - are additional facts about
+        # one value, and must accumulate rather than replace each other.
+        facts_superseded = superseded && !same_assignment_sites?(other)
         new_assignments = combine_assignments(other, location)
         new_attrs = attrs.merge({
                                   # default values don't exist in RBS parameters; it just
@@ -137,12 +143,12 @@ module Solargraph
                                   # when that value is definitely overwritten, so when
                                   # `other`'s assignment supersedes ours, keep only the
                                   # facts asserted about the new value.
-                                  intersection_return_type: if superseded
+                                  intersection_return_type: if facts_superseded
                                                               other.intersection_return_type
                                                             else
                                                               combine_types(other, :intersection_return_type)
                                                             end,
-                                  exclude_return_type: if superseded
+                                  exclude_return_type: if facts_superseded
                                                          other.exclude_return_type
                                                        else
                                                          combine_types(other, :exclude_return_type)
@@ -164,6 +170,22 @@ module Solargraph
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
         mass_assignment || other.mass_assignment
+      end
+
+      # True when `other`'s assignments are the very same ones as ours,
+      # identified by source position.  Structural node equality is not
+      # usable here - two textually identical assignments on different
+      # lines compare equal, and telling those apart is the whole point.
+      #
+      # @param other [self]
+      # @return [Boolean]
+      def same_assignment_sites? other
+        assignment_sites == other.assignment_sites
+      end
+
+      # @return [::Array<Solargraph::Range, nil>]
+      def assignment_sites
+        assignments.map { |node| Solargraph::Range.from_node(node) }
       end
 
       # @return [Parser::AST::Node, nil]
