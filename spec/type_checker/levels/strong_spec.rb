@@ -299,6 +299,29 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Missing @return tag')
     end
 
+    it 'strips nil from an or-expression fallback in a conditional branch' do
+      checker = type_checker(%(
+        class Container
+          # @param m [Module, nil]
+          # @param expected [Module]
+          # @return [Boolean]
+          def check(m, expected)
+            if m.nil?
+              fallback
+            else
+              m <= expected || fallback
+            end
+          end
+
+          # @return [Boolean]
+          def fallback
+            true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'calls out keyword issues even when required arg count matches' do
       checker = type_checker(%(
         # @param a [String]
