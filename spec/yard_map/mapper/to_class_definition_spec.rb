@@ -1,0 +1,188 @@
+# frozen_string_literal: true
+
+describe Solargraph::YardMap::Mapper::ToClassDefinition do
+  around do |example|
+    YARD::Registry.clear
+    example.run
+    YARD::Registry.clear
+  end
+
+  # Maps a source string the way a gem's yardoc would arrive: YARD parses it,
+  # and the Mapper converts the resulting code objects into pins.
+  #
+  # @param code [String]
+  # @return [Array<Solargraph::Pin::Base>]
+  def map code
+    YARD.parse_string(code)
+    Solargraph::YardMap::Mapper.new(YARD::Registry.all).map
+  end
+
+  # @param pins [Array<Solargraph::Pin::Base>]
+  # @param path [String]
+  # @return [Array<Solargraph::Pin::Base>]
+  def pins_at pins, path
+    pins.select { |pin| pin.path == path }
+  end
+
+  it 'indexes the class defined by a Class.new block' do
+    pins = map(<<~RUBY)
+      Foo = Class.new(StandardError) do
+        def bar; end
+      end
+    RUBY
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Namespace])
+    expect(pins_at(pins, 'Foo#bar').map(&:class)).to eq([Solargraph::Pin::Method])
+  end
+
+  it 'emits a superclass reference instead of a constant pin' do
+    pins = map(<<~RUBY)
+      Foo = Class.new(StandardError) do
+        def bar; end
+      end
+    RUBY
+    expect(pins).not_to include(an_instance_of(Solargraph::Pin::Constant))
+    superclass = pins.grep(Solargraph::Pin::Reference::Superclass).first
+    expect(superclass.name).to eq('StandardError')
+    expect(superclass.closure.path).to eq('Foo')
+  end
+
+  it 'keeps YARD tags written inside the block' do
+    pins = map(<<~RUBY)
+      Foo = Class.new(StandardError) do
+        # @return [Integer]
+        def bar; end
+      end
+    RUBY
+    expect(pins_at(pins, 'Foo#bar').first.return_type.to_s).to eq('Integer')
+  end
+
+  it 'gives the class the documentation written on the constant' do
+    pins = map(<<~RUBY)
+      # An erroneous condition.
+      Foo = Class.new(StandardError)
+    RUBY
+    expect(pins_at(pins, 'Foo').first.comments).to include('An erroneous condition.')
+  end
+
+  it 'resolves a superclass named relative to the enclosing namespace' do
+    pins = map(<<~RUBY)
+      module Errors
+        class Base < StandardError; end
+        Specific = Class.new(Base)
+      end
+    RUBY
+    api_map = Solargraph::ApiMap.new(pins: pins)
+    expect(api_map.super_and_sub?('Errors::Base', 'Errors::Specific')).to be(true)
+    expect(api_map.super_and_sub?('StandardError', 'Errors::Specific')).to be(true)
+  end
+
+  it 'finds methods from the block through the api map' do
+    pins = map(<<~RUBY)
+      module Errors
+        Specific = Class.new(StandardError) do
+          attr_accessor :retry_after_seconds
+        end
+      end
+    RUBY
+    api_map = Solargraph::ApiMap.new(pins: pins)
+    stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
+    expect(stack.map(&:path)).to eq(['Errors::Specific#retry_after_seconds'])
+  end
+
+  it 'handles Class.new with a superclass and no block' do
+    pins = map('Foo = Class.new(StandardError)')
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Namespace])
+    expect(pins.grep(Solargraph::Pin::Reference::Superclass).map(&:name)).to eq(['StandardError'])
+  end
+
+  it 'handles Class.new with no superclass and no block' do
+    pins = map('Foo = Class.new')
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Namespace])
+    expect(pins.grep(Solargraph::Pin::Reference::Superclass)).to be_empty
+  end
+
+  it 'handles Class.new with no superclass and a block' do
+    pins = map(<<~RUBY)
+      Foo = Class.new do
+        def bar; end
+      end
+    RUBY
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Namespace])
+    expect(pins_at(pins, 'Foo#bar')).not_to be_empty
+  end
+
+  it 'leaves a conditional Class.new as a constant' do
+    pins = map('Foo = (Class.new(StandardError) if RUBY_VERSION)')
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Constant])
+  end
+
+  it 'leaves Class.new used as an ordinary value as a constant' do
+    pins = map('Foo = Class.new(StandardError).new')
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Constant])
+  end
+
+  it 'leaves an unrelated constant alone' do
+    pins = map("Foo = 'a string'")
+    expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Constant])
+  end
+
+  it 'falls back to a constant pin when the value cannot be parsed' do
+    code_object = YARD::CodeObjects::ConstantObject.new(YARD::Registry.root, :Foo) do |obj|
+      obj.value = 'Class.new(StandardError) do'
+    end
+    pins = Solargraph::YardMap::Mapper.new([code_object]).map
+    expect(pins.map(&:class)).to eq([Solargraph::Pin::Constant])
+    expect(pins.first.name).to eq('Foo')
+  end
+
+  it 'emits no parser nodes' do
+    pins = map(<<~RUBY)
+      module Errors
+        Specific = Class.new(StandardError) do
+          attr_accessor :retry_after_seconds
+
+          def initialize(retry_after_seconds)
+            @retry_after_seconds = retry_after_seconds
+          end
+        end
+      end
+    RUBY
+    expect(nodes_reachable_from(pins)).to be_empty
+  end
+
+  it 'gives every emitted pin the location of the constant' do
+    pins = map(<<~RUBY)
+      Foo = Class.new(StandardError) do
+        def bar; end
+      end
+    RUBY
+    expected = Solargraph::YardMap::Mapper::ToConstant.make(YARD::Registry.at('Foo')).location
+    expect(pins.map(&:location).compact.uniq).to eq([expected])
+  end
+
+  # Nodes hold a reference to the buffer they were parsed from, which both
+  # bloats the marshalled gem cache and makes inference reach for a source map
+  # that does not exist.
+  #
+  # @param object [Object]
+  # @param seen [Set]
+  # @return [Array<String>]
+  def nodes_reachable_from object, seen = Set.new
+    return [] unless seen.add?(object.object_id)
+
+    case object
+    when Parser::AST::Node, Parser::Source::Buffer, Parser::Source::Map, YARD::Docstring
+      [object.class.to_s]
+    when Array
+      object.flat_map { |item| nodes_reachable_from(item, seen) }
+    when Hash
+      object.each_value.flat_map { |value| nodes_reachable_from(value, seen) }
+    when String, Symbol, Numeric, nil, true, false
+      []
+    else
+      object.instance_variables.flat_map do |ivar|
+        nodes_reachable_from(object.instance_variable_get(ivar), seen)
+      end
+    end
+  end
+end

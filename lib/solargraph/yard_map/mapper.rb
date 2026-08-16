@@ -6,6 +6,7 @@ module Solargraph
       autoload :ToMethod, 'solargraph/yard_map/mapper/to_method'
       autoload :ToNamespace, 'solargraph/yard_map/mapper/to_namespace'
       autoload :ToConstant, 'solargraph/yard_map/mapper/to_constant'
+      autoload :ToClassDefinition, 'solargraph/yard_map/mapper/to_class_definition'
 
       # @param code_objects [Array<YARD::CodeObjects::Base>]
       # @param spec [Gem::Specification, nil]
@@ -76,8 +77,17 @@ module Solargraph
             result.push ToMethod.make(code_object, nil, nil, nil, closure, @spec)
           end
         when YARD::CodeObjects::ConstantObject
-          closure = @namespace_pins[code_object.namespace]
-          result.push ToConstant.make(code_object, closure, @spec)
+          # `Foo = Class.new(Bar) do ... end` defines a class that YARD only
+          # records as a constant. Emit the class it defines instead of the
+          # constant -- emitting both would leave two pins competing at the
+          # same path.
+          class_pins = ToClassDefinition.make(code_object, @spec)
+          if class_pins
+            result.concat class_pins
+          else
+            closure = @namespace_pins[code_object.namespace]
+            result.push ToConstant.make(code_object, closure, @spec)
+          end
         end
         result
       end
