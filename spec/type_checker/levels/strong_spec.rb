@@ -956,6 +956,85 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'applies a modifier-if guard after the variable was reassigned' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = lookup(name)
+          return got.length if got
+
+          got = lookup(name)
+          got.length if got
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'applies a modifier-if guard after a reassignment whose block shadows the name' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = candidates.find { |got| got == name }
+          return got.length if got
+
+          got = candidates.find { |got| got != name }
+          got.length if got
+        end
+
+        # @return [Array<String>]
+        def candidates; []; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'keeps a guard fact in force until the variable is reassigned' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = lookup(name)
+          return got.length if got
+
+          got.length
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Unresolved call to length on nil, Boolean'])
+    end
+
+    it 'does not apply a guard fact past a reassignment that only runs in a branch' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @param flag [Boolean]
+        # @return [Integer, nil]
+        def find(name, flag)
+          got = lookup(name)
+          return got.length if got
+
+          if flag
+            got = lookup(name)
+          end
+          got.length
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Unresolved call to length on nil, Boolean'])
+    end
+
     it 'narrows a nil-guarded default after the modifier if' do
       checker = type_checker(%(
         # @param tasks [Array<String>, nil]

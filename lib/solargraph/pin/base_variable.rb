@@ -117,6 +117,7 @@ module Solargraph
       #   `other` should still override us because the position falls
       #   within `other`'s compound_statement.
       def combine_with other, attrs = {}, location: nil
+        superseded = override_assignments?(other, location)
         new_assignments = combine_assignments(other, location)
         new_attrs = attrs.merge({
                                   # default values don't exist in RBS parameters; it just
@@ -128,12 +129,24 @@ module Solargraph
                                   # skip this - the constructor prepends `assignment:` to
                                   # `assignments:` unconditionally, which would re-introduce
                                   # the dropped node.
-                                  assignment: override_assignments?(other, location) ? nil : choose(other, :assignment),
+                                  assignment: superseded ? nil : choose(other, :assignment),
                                   assignments: new_assignments,
                                   mass_assignment: combine_mass_assignment(other),
                                   return_type: combine_return_type(other),
-                                  intersection_return_type: combine_types(other, :intersection_return_type),
-                                  exclude_return_type: combine_types(other, :exclude_return_type),
+                                  # Narrowing recorded against the old value expires
+                                  # when that value is definitely overwritten, so when
+                                  # `other`'s assignment supersedes ours, keep only the
+                                  # facts asserted about the new value.
+                                  intersection_return_type: if superseded
+                                                              other.intersection_return_type
+                                                            else
+                                                              combine_types(other, :intersection_return_type)
+                                                            end,
+                                  exclude_return_type: if superseded
+                                                         other.exclude_return_type
+                                                       else
+                                                         combine_types(other, :exclude_return_type)
+                                                       end,
                                   presence: combine_presence(other),
                                   # if either side had an assignment guaranteed to
                                   # have executed, that assignment's type is
@@ -431,8 +444,29 @@ module Solargraph
         # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
         return true if %i[lvar ivar].include?(node.type) && node.children[0].to_s == name
 
+        # A block parameter of the same name shadows us for the whole
+        # block, so any mention inside the body is the parameter, not
+        # this variable.  The receiver (children[0]) is evaluated
+        # outside the block, so it still counts.
+        # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
+        return references_name?(node.children[0]) if shadowed_by_block_parameter?(node)
+
         # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
         node.children.any? { |child| references_name?(child) }
+      end
+
+      # @param node [::AST::Node]
+      # @return [Boolean]
+      def shadowed_by_block_parameter? node
+        return false unless node.type == :block
+
+        args = node.children[1]
+        return false unless args.is_a?(::AST::Node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `args` past the guard above
+        args.children.any? do |arg|
+          arg.is_a?(::AST::Node) && arg.children[0].to_s == name
+        end
       end
 
       # @param api_map [ApiMap]
