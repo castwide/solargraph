@@ -956,6 +956,67 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'narrows a variable assigned in the if condition' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer]
+        def limit_of(name)
+          if (md = name.match(/\\[(.*)\\]/))
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a variable assigned in the right side of an && condition' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [Integer]
+        def limit_of(name)
+          if !name.nil? && (md = name.match(/\\[(.*)\\]/))
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not narrow a variable assigned in the left side of an || condition' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @param fallback [Boolean]
+        # @return [Integer]
+        def limit_of(name, fallback)
+          if (md = name.match(/\\[(.*)\\]/)) || fallback
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to []'])
+    end
+
+    it 'treats a variable assigned in the if condition as falsy in the else clause' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer]
+        def limit_of(name)
+          if (md = name.match(/\\[(.*)\\]/))
+            0
+          else
+            md[1].to_i
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to [] on nil, Boolean'])
+    end
+
     it 'uses a branch-local reassignment at a use site later in the same branch' do
       checker = type_checker(%(
         # @param items [Array<String>, nil]

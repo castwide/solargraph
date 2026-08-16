@@ -350,7 +350,60 @@ module Solargraph
         process_calls(expression_node, true_ranges, false_ranges)
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
+        process_parentheses(expression_node, true_ranges, false_ranges)
+        process_assignment(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+      end
+
+      # `(foo)` parses as a one-child :begin wrapping the expression,
+      # which is how an assignment used as a condition normally shows
+      # up: `if (md = foo.match(...))`.  A multi-statement :begin
+      # takes its truthiness from the last statement, which isn't
+      # worth handling here.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_parentheses node, true_ranges, false_ranges
+        return unless node.type == :begin && node.children.length == 1
+
+        child = node.children[0]
+        return unless child.is_a?(::Parser::AST::Node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `child` past the guard above
+        process_expression(child, true_ranges, false_ranges)
+      end
+
+      # An assignment used as a condition - `if (md = foo.match(...))`
+      # - evaluates to the value assigned, so the branches tell us the
+      # same thing about the variable that a bare reference to it
+      # would.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_assignment node, true_presences, false_presences
+        return unless %i[lvasgn ivasgn].include?(node.type)
+
+        variable_name = node.children[0]&.to_s
+        return if variable_name.nil? || variable_name.empty?
+
+        # look the variable up at the end of its own assignment, where
+        # the new value has become visible
+        pin = find_var(variable_name, get_node_end_position(node))
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = { pin => [{ not_type: ComplexType::NIL }] }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = { pin => [{ type: ComplexType.parse('nil, false') }] }
+        process_facts(if_false, false_presences)
       end
 
       # @param call_node [Parser::AST::Node]
