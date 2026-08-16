@@ -925,5 +925,46 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'rebinds self to the new class in Class.new blocks' do
+      checker = type_checker(%(
+        # @return [void]
+        def make_class
+          Class.new do
+            define_method(:foo) { nil }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
+
+    it 'keeps the rebound self in blocks nested inside Class.new blocks' do
+      checker = type_checker(%(
+        # @param names [Array<Symbol>]
+        # @return [void]
+        def make_class(names)
+          Class.new do
+            names.each { |m| define_method(m) { nil } }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
+
+    it 'keeps the rebound self in blocks nested inside class_eval blocks' do
+      checker = type_checker(%(
+        # @param names [Array<Symbol>]
+        # @return [void]
+        def decorate(names)
+          String.class_eval do
+            names.each { |m| define_method(m) { nil } }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
   end
 end

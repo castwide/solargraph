@@ -28,12 +28,22 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [void]
       def rebind api_map
-        @rebind ||= maybe_rebind(api_map)
+        @rebind ||= begin
+          # An enclosing block's rebind (e.g. a class_eval receiver)
+          # also applies to this block unless overridden here
+          enclosing = closure
+          enclosing.rebind(api_map) if enclosing.is_a?(Block)
+          maybe_rebind(api_map)
+        end
       end
 
       def binder
-        out = @rebind if @rebind&.defined?
-        out ||= super
+        return @rebind if @rebind&.defined?
+
+        enclosing = closure
+        return enclosing.binder if enclosing.is_a?(Block)
+
+        super
       end
 
       def context
