@@ -152,7 +152,7 @@ module Solargraph
                                   # have executed, that assignment's type is
                                   # eligible to override (not just be unioned
                                   # with) the variable's other possible types
-                                  definite: definite || other.definite
+                                  definite: definite || other.definite || superseded
                                 })
         super(other, new_attrs)
       end

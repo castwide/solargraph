@@ -956,6 +956,60 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'uses a branch-local reassignment at a use site later in the same branch' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @return [void]
+        def clean(items)
+          if items.nil?
+            items = fetch_items
+            items.reject! { |i| i.empty? }
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not use a reassignment made in a nested branch that may not run' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def clean(items, flag)
+          if items.nil?
+            if flag
+              items = fetch_items
+            end
+            items.reject! { |i| i.empty? }
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to reject! on nil'])
+    end
+
+    it 'does not use a branch-local reassignment at a use site before it' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @return [void]
+        def clean(items)
+          if items.nil?
+            items.reject! { |i| i.empty? }
+            items = fetch_items
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to reject! on nil'])
+    end
+
     it 'applies a modifier-if guard after the variable was reassigned' do
       checker = type_checker(%(
         # @param name [String]
