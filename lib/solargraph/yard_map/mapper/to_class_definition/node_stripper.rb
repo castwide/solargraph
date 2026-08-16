@@ -18,11 +18,6 @@ module Solargraph
         # body. They still carry whatever YARD tags the gem wrote, which is the
         # only typing YARD-sourced pins have anyway.
         class NodeStripper
-          # Instance variables that hold parser nodes, by the pin types that
-          # define them: methods and blocks (`@node`), blocks (`@receiver`) and
-          # variables (`@assignments`, `@mass_assignment`).
-          NODE_IVARS = %i[@node @receiver @assignments @mass_assignment].freeze
-
           # @param location [Location] the location to give every copied pin
           # @param source [::Symbol] the provenance to record on every copied pin
           def initialize location, source: :yardoc
@@ -41,8 +36,7 @@ module Solargraph
             copy = pin.dup
             @stripped[pin] = copy
             relocate copy
-            clear_nodes copy
-            rewire copy
+            scrub_ivars copy
             copy
           end
 
@@ -65,56 +59,53 @@ module Solargraph
             pin.instance_variable_set(:@source, source)
           end
 
-          # @param pin [Pin::Base]
-          # @return [void]
-          def clear_nodes pin
-            NODE_IVARS.each do |name|
-              next unless pin.instance_variable_defined?(name)
-
-              empty = pin.instance_variable_get(name).is_a?(::Array) ? [].freeze : nil
-              pin.instance_variable_set(name, empty)
-            end
-            # A memoized YARD::Docstring links back to the code object it was
-            # parsed against, and marshalling one drags the entire YARD
-            # registry along with it. Pins regenerate it from #comments.
-            pin.instance_variable_set(:@docstring, nil)
-          end
-
-          # Pins reference each other -- a method's parameters point back at the
-          # method -- so every reachable pin has to be replaced with its copy,
-          # or a stripped pin still holds a node through its neighbor.
+          # Every instance variable is examined by the type of what it holds
+          # rather than by name, because naming the ivars to clear only works
+          # until a pin grows another one -- `Pin::Method#compound_statement`
+          # arrived after this class was written and slipped straight through a
+          # name-based list.
+          #
+          # Pins reference each other (a method's parameters point back at the
+          # method, a pin's closure chain runs through its compound statements),
+          # so every reachable pin is replaced by its copy; leaving one in place
+          # would keep a node alive through a neighbor.
           #
           # @param pin [Pin::Base]
           # @return [void]
-          def rewire pin
-            pin.instance_variable_set(:@closure, strip(pin.closure)) unless pin.closure.nil?
-            strip_pin_ivar pin, :@block
-            strip_pin_list pin, :@parameters
-            strip_pin_list pin, :@signatures
+          def scrub_ivars pin
+            pin.instance_variables.each do |name|
+              value = pin.instance_variable_get(name)
+              scrubbed = scrub(name, value)
+              pin.instance_variable_set(name, scrubbed) unless scrubbed.equal?(value)
+            end
+            # A memoized YARD::Docstring links back to the code object it was
+            # parsed against, and marshalling one drags the entire YARD registry
+            # along with it. Pins regenerate it from #comments.
+            pin.instance_variable_set(:@docstring, nil)
           end
 
-          # @param pin [Pin::Base]
-          # @param name [Symbol]
-          # @return [void]
-          def strip_pin_ivar pin, name
-            value = pin.instance_variable_get(name) if pin.instance_variable_defined?(name)
-            pin.instance_variable_set(name, strip(value)) if value.is_a?(Pin::Base)
+          # @param name [::Symbol]
+          # @param value [Object]
+          # @return [Object]
+          def scrub name, value
+            case value
+            when ::Parser::AST::Node, ::YARD::Docstring then nil
+            when Pin::Base then strip(value)
+            when ::Array then scrub_array(name, value)
+            else value
+            end
           end
 
-          # @param pin [Pin::Base]
-          # @param name [Symbol]
-          # @return [void]
-          def strip_pin_list pin, name
-            value = pin.instance_variable_get(name) if pin.instance_variable_defined?(name)
-            return unless value.is_a?(::Array)
+          # @param name [::Symbol]
+          # @param value [::Array<::Object>]
+          # @return [Object]
+          def scrub_array name, value
+            return value.map { |item| item.is_a?(Pin::Base) ? strip(item) : item } if value.any?(Pin::Base)
+            return value unless value.any?(::Parser::AST::Node)
 
-            pin.instance_variable_set(name, strip_all(value))
-          end
-
-          # @param pins [::Array<Pin::Base>]
-          # @return [::Array<Pin::Base, nil>]
-          def strip_all pins
-            pins.map { |item| strip(item) }
+            # `@mass_assignment` is a (node, index) pair rather than a list of
+            # nodes, so emptying it would leave a malformed pair behind.
+            name == :@mass_assignment ? nil : [].freeze
           end
         end
       end

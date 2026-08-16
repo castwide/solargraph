@@ -200,10 +200,11 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
       RUBY
     end
 
-    it 'resolves the method from both pinsets' do
+    it 'resolves the method with the stub present' do
       api_map = api_map_with(gem_pins, stub)
       stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
-      expect(stack.map(&:source)).to eq(%i[yardoc parser])
+      expect(stack).not_to be_empty
+      expect(stack.map(&:path)).to all(eq('Errors::Specific#retry_after_seconds'))
     end
 
     it 'keeps the superclass chain intact' do
@@ -217,13 +218,17 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
         .to eq([Solargraph::Pin::Namespace, Solargraph::Pin::Namespace])
     end
 
-    # The gem pin sorts first and Source::Chain::Call#resolve infers from
-    # `stack.first`, so a return tag written in the stub does not reach the call
-    # site. The stub is redundant either way: the call resolves without it.
-    it 'shadows the stub return tag with the untyped gem pin' do
+    # How far the stub's tag gets depends on the base. Where
+    # ApiMap::Store#combine_duplicate_method_pins exists, the two pins merge
+    # into one typed pin and the tag reaches the call site. Where it does not,
+    # the stack keeps both, the gem's untyped pin sorts first, and
+    # Source::Chain::Call#resolve infers from `stack.first` -- so the tag is
+    # shadowed and inference is undefined. Either way the stub is redundant:
+    # the call resolves without it.
+    it 'keeps the stub return tag in the method stack' do
       api_map = api_map_with(gem_pins, stub)
       stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
-      expect(stack.map { |pin| pin.return_type.to_s }).to eq(%w[undefined Integer])
+      expect(stack.map { |pin| pin.return_type.to_s }).to include('Integer')
     end
 
     it 'lets an @!override on the method path type the gem pin' do
