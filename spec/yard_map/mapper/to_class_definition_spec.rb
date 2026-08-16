@@ -160,6 +160,82 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
     expect(pins.map(&:location).compact.uniq).to eq([expected])
   end
 
+  # A codebase that documented one of these constants by hand keeps its
+  # `@!parse` stub in the workspace pinset while the gem now contributes real
+  # pins at the same path. Catalog order is core, gem, conventions, workspace,
+  # so the gem's pins come first.
+  #
+  # @param gem_pins [Array<Solargraph::Pin::Base>]
+  # @param workspace_code [String]
+  # @return [Solargraph::ApiMap]
+  def api_map_with gem_pins, workspace_code
+    workspace = Solargraph::SourceMap.map(Solargraph::Source.load_string(workspace_code, 'stub.rb'))
+    api_map = Solargraph::ApiMap.new
+    core = Solargraph::ApiMap.class_variable_get(:@@core_map).pins
+    api_map.send(:store).update(core, gem_pins, [], workspace.pins, [])
+    api_map.send(:cache).clear
+    api_map
+  end
+
+  context 'with a hand-written @!parse stub at the same path' do
+    let(:gem_pins) do
+      map(<<~RUBY)
+        module Errors
+          Specific = Class.new(StandardError) do
+            attr_accessor :retry_after_seconds
+          end
+        end
+      RUBY
+    end
+
+    let(:stub) do
+      <<~RUBY
+        # @!parse
+        #   module Errors
+        #     class Specific < ::StandardError
+        #       # @return [Integer]
+        #       attr_accessor :retry_after_seconds
+        #     end
+        #   end
+      RUBY
+    end
+
+    it 'resolves the method from both pinsets' do
+      api_map = api_map_with(gem_pins, stub)
+      stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
+      expect(stack.map(&:source)).to eq(%i[yardoc parser])
+    end
+
+    it 'keeps the superclass chain intact' do
+      api_map = api_map_with(gem_pins, stub)
+      expect(api_map.super_and_sub?('StandardError', 'Errors::Specific')).to be(true)
+    end
+
+    it 'holds two namespace pins and no constant pin at the path' do
+      api_map = api_map_with(gem_pins, stub)
+      expect(api_map.get_path_pins('Errors::Specific').map(&:class))
+        .to eq([Solargraph::Pin::Namespace, Solargraph::Pin::Namespace])
+    end
+
+    # The gem pin sorts first and Source::Chain::Call#resolve infers from
+    # `stack.first`, so a return tag written in the stub does not reach the call
+    # site. The stub is redundant either way: the call resolves without it.
+    it 'shadows the stub return tag with the untyped gem pin' do
+      api_map = api_map_with(gem_pins, stub)
+      stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
+      expect(stack.map { |pin| pin.return_type.to_s }).to eq(%w[undefined Integer])
+    end
+
+    it 'lets an @!override on the method path type the gem pin' do
+      api_map = api_map_with(gem_pins, <<~RUBY)
+        # @!override Errors::Specific#retry_after_seconds
+        #   @return [Integer]
+      RUBY
+      stack = api_map.get_method_stack('Errors::Specific', 'retry_after_seconds')
+      expect(stack.map { |pin| pin.return_type.to_s }).to eq(['Integer'])
+    end
+  end
+
   # Nodes hold a reference to the buffer they were parsed from, which both
   # bloats the marshalled gem cache and makes inference reach for a source map
   # that does not exist.
