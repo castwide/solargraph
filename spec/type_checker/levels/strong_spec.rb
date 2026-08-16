@@ -1108,6 +1108,65 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'narrows a nil-guarded default behind an or-guard with four operands' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.empty? || a == 'x' || a == 'y'
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    # Soundness controls for the or-guard narrowing above. `¬(x || y)` implies
+    # every operand is false, so the guard's false path may narrow any variable
+    # it tests - but the guard's TRUE path only reassigns `a`, so nothing may be
+    # concluded about a second variable the guard happens to mention.
+    it 'does not narrow a second variable an or-guard tests but never reassigns' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          b = lookup(name)
+          a = 'd' if a.nil? || b.nil?
+          b
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include(a_string_matching(/Declared return type ::String does not match/))
+    end
+
+    it 'does not narrow when the or-guard never tests the variable at all' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @param flag [Boolean]
+        # @return [String]
+        def f(name, flag)
+          a = lookup(name)
+          a = 'd' if flag || name.nil?
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include(a_string_matching(/Declared return type ::String does not match/))
+    end
+
     it 'applies a modifier-if guard after the variable was reassigned' do
       checker = type_checker(%(
         # @param name [String]
