@@ -116,9 +116,9 @@ module Solargraph
         # key parameter, so
         # `(Hash{"Index" => Float} & Hash{"Triggers" => Array<...>})#fetch("Index")`
         # resolves to the "Index" conjunct rather than a union of both.
-        # RBS can't do this itself - `Hash#fetch: (_Key key) -> V` types
-        # the key as a structural hash/eql? interface, not `K`, so
-        # overload resolution never connects it to the return type.
+        # Overload resolution can't do this on its own: it runs per
+        # conjunct, and both conjuncts produce a pin with the same path,
+        # so nothing downstream knows which one the argument selected.
         #
         # A conjunct is only narrowed away when *every* conjunct yields a
         # positive verdict (matched or didn't); if even one is

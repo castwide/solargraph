@@ -893,33 +893,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
-    it 'leaks an unresolved generic<X> from Hash#fetch even with no intersection involved' do
+    it 'resolves Hash#fetch on a literal-keyed Hash with no intersection involved' do
       # Not #1231-specific: https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
       # reported this against an intersection of two Hash instantiations, but it
-      # reproduces identically for a single, non-intersected generic Hash - the
-      # intersection is not the trigger, so the fix for #1231 should not be expected
-      # to resolve this on its own.
+      # reproduced identically for a single, non-intersected generic Hash.
       #
-      # Root cause: Pin::Parameter#compatible_arg? rejects Hash#fetch's exact-arity
-      # `(key: Hash::_Key) -> V` overload because Hash::_Key (an ad-hoc RBS
-      # interface) is checked nominally, not structurally, against the String
-      # argument - so it falls through to the pin's raw combined signature type,
-      # which still carries the unresolved generic X from the other overloads.
-      #
-      # https://github.com/castwide/solargraph/pull/1266 (structurally verify
-      # RBS interface-typed expectations) fixes this, but isn't merged into
-      # this branch. CI's full matrix showed this only actually leaks on
-      # RBS >= 4.1.0 - `rspec (3.1, 3.10.0)` unexpectedly passed here (an
-      # RSpec "pending example fixed" failure, since a bare `pending` assumed
-      # it leaked on every RBS version). Matches the same RBS 4.1.0 cutover
-      # already tracked in spec/rbs_map/conversions_spec.rb,
-      # spec/convention/activesupport_concern_spec.rb, and the mirror image
-      # of this same version-aware pattern applied on branch 2026-08-04
-      # (which does have #1266) in commit ac4eb27c5.
-      require 'rbs'
-      if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
-        pending 'blocked on #1266 (structural RBS interface-typed expectation checks), not yet merged into this branch'
-      end
+      # On RBS >= 4.1.0, Pin::Parameter#compatible_arg? rejected Hash#fetch's
+      # exact-arity `(key: Hash::_Key) -> V` overload, because Hash::_Key is
+      # checked nominally rather than structurally against the String argument,
+      # and fell through to the pin's raw combined signature type, which still
+      # carries an unresolved generic X from the other overloads. RbsTranslator
+      # now stubs Hash::_Key back to K (see RBS_INTERFACE_TO_GENERIC), so the
+      # nominal check succeeds and no interface is left to resolve structurally.
       checker = type_checker(%(
         class Repro
           # @param period [Hash{"Index" => Float}]
@@ -1057,11 +1042,9 @@ describe Solargraph::TypeChecker do
         # Both conjuncts resolve to a pin with the same path (Hash#fetch)
         # but different, already-resolved return types, so dispatch keys on
         # path *and* return type, then narrows to the conjunct whose key
-        # matches the call's literal argument. RBS's own
-        # `Hash#fetch: (_Key key) -> V` can't narrow that itself - `_Key` is
-        # a structural hash/eql? interface, not literally `K`, so the key
-        # argument is never connected to the return type by ordinary
-        # overload resolution -
+        # matches the call's literal argument. Overload resolution can't
+        # do that on its own, since it runs per conjunct and both
+        # conjuncts yield a pin with the same path -
         # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
         #
         # castwide/solargraph#1223 is a prerequisite: without it the literal
