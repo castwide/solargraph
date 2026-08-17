@@ -989,5 +989,97 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to skip_check?')
     end
+
+    it 'resolves top-level methods from an ordinary instance method body' do
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        class Report
+          # @return [String]
+          def call_helper
+            helper.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves top-level methods in a class_eval block body' do
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        class Report; end
+
+        Report.class_eval do
+          helper.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'prefers a method on the binder over a top-level method of the same name' do
+      checker = type_checker(%(
+        # @return [String]
+        def label
+          'top'
+        end
+
+        class Report
+          # @return [Integer]
+          def label
+            42
+          end
+
+          # @return [Integer]
+          def from_binder
+            label.abs
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'prefers a local variable over a top-level method of the same name' do
+      checker = type_checker(%(
+        # @return [Integer]
+        def label
+          42
+        end
+
+        class Report
+          # @return [String]
+          def from_local
+            label = 'shadow'
+            label.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not resolve a top-level method called with an explicit receiver' do
+      # Top-level defs are private instance methods of Object at runtime, so
+      # 'str'.helper raises NoMethodError. Receiverless resolution must not
+      # make them reachable through a receiver.
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        # @return [Integer]
+        def explicit_receiver
+          'str'.helper
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(match(/could not be inferred/))
+      expect(checker.problems.map(&:message)).not_to include(match(/does not match inferred/))
+    end
   end
 end
