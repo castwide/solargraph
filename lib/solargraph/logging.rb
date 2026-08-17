@@ -16,8 +16,8 @@ module Solargraph
               LOG_LEVELS.fetch(configured_level)
             else
               if configured_level
-                warn "Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - " \
-                     "valid values are #{LOG_LEVELS.keys}"
+                $stderr.puts "Invalid value for SOLARGRAPH_LOG: #{configured_level.inspect} - " \
+                             "valid values are #{LOG_LEVELS.keys}"
               end
               DEFAULT_LOG_LEVEL
             end

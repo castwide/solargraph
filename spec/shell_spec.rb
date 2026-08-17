@@ -113,6 +113,22 @@ describe Solargraph::Shell do
         expect(output).to include("Gem 'nonexistentgem' not found")
       end
 
+      it 'complains even with Ruby warnings disabled, as under bin/solargraph' do
+        # bin/solargraph sets $VERBOSE = nil, which turns Kernel#warn into a
+        # no-op - a warn-based message would never reach the user.
+        old_verbose = $VERBOSE
+        $VERBOSE = nil
+        begin
+          output = capture_both do
+            shell.gems('nonexistentgem')
+          end
+        ensure
+          $VERBOSE = old_verbose
+        end
+
+        expect(output).to include("Gem 'nonexistentgem' not found")
+      end
+
       it 'caches core without erroring out' do
         capture_both do
           shell.uncache('core')

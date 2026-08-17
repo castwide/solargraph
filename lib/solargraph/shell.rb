@@ -122,7 +122,7 @@ module Solargraph
         PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, rbs_map.pins)
       end
     rescue Gem::MissingSpecError
-      warn "Gem '#{gem}' not found"
+      $stderr.puts "Gem '#{gem}' not found"
     end
 
     desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
@@ -186,7 +186,7 @@ module Solargraph
         Gem::Specification.to_a.each { |spec| do_cache spec, rebuild: options[:rebuild] }
         $stderr.puts "Documentation cached for all #{Gem::Specification.count} gems."
       else
-        warn("Caching these gems: #{names}")
+        $stderr.puts("Caching these gems: #{names}")
         names.each do |name|
           if name == 'core'
             # @sg-ignore cache_core and core? are dynamically defined
@@ -196,7 +196,7 @@ module Solargraph
 
           gemspec = workspace.find_gem(*name.split('='))
           if gemspec.nil?
-            warn "Gem '#{name}' not found"
+            $stderr.puts "Gem '#{name}' not found"
           else
             if options[:rebuild] || !PinCache.has_yard?(gemspec)
               pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
@@ -212,14 +212,14 @@ module Solargraph
             end
           end
         rescue Gem::MissingSpecError
-          warn "Gem '#{name}' not found"
+          $stderr.puts "Gem '#{name}' not found"
         rescue Gem::Requirement::BadRequirementError => e
-          warn "Gem '#{name}' failed while loading"
-          warn e.message
+          $stderr.puts "Gem '#{name}' failed while loading"
+          $stderr.puts e.message
           # @sg-ignore Need to add nil check here
-          warn e.backtrace.join("\n")
+          $stderr.puts e.backtrace.join("\n")
         end
-        warn "Documentation cached for #{names.count} gems."
+        $stderr.puts "Documentation cached for #{names.count} gems."
       end
     end
 
@@ -303,13 +303,13 @@ module Solargraph
         rescue StandardError => e
           # @todo to add nil check here
           # @todo should warn on nil dereference below
-          warn "Error testing #{pin_description(pin)} #{if pin.location
+          $stderr.puts "Error testing #{pin_description(pin)} #{if pin.location
                                                           "at #{pin.location.filename}:#{pin.location.range.start.line + 1}"
                                                         end}"
-          warn "[#{e.class}]: #{e.message}"
+          $stderr.puts "[#{e.class}]: #{e.message}"
           # @todo Need to add nil check here
           # @todo flow sensitive typing should be able to handle redefinition
-          warn e.backtrace.join("\n")
+          $stderr.puts e.backtrace.join("\n")
           exit 1
         end
       end
@@ -616,7 +616,7 @@ module Solargraph
     # @return [void]
     def do_cache gemspec, rebuild: false
       if gemspec.nil?
-        warn "Gem '#{gemspec&.name}' not found"
+        $stderr.puts "Gem '#{gemspec&.name}' not found"
       else
         if rebuild || !PinCache.has_yard?(gemspec)
           pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
