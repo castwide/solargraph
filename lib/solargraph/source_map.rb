@@ -221,9 +221,11 @@ module Solargraph
       position = Position.new(line, character)
       found = nil
       pins.each do |pin|
-        # @todo Attribute pins should not be treated like closures, but
-        #   there's probably a better way to handle it
-        next if pin.is_a?(Pin::Method) && pin.attribute?
+        # Method pins synthesized from a class-body statement - attributes,
+        # aliases, delegations - cover that statement's range but have no
+        # body of their own, so treating them as closures would make the
+        # declaring statement resolve in the wrong scope.
+        next if pin.is_a?(Pin::Method) && pin.body_less?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
           # @sg-ignore Need to add nil check here

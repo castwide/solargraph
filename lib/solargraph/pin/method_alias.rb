@@ -7,6 +7,10 @@ module Solargraph
     # methods from included modules.
     #
     class MethodAlias < Method
+      # @return [Boolean]
+      def body_less?
+        true
+      end
       # @return [::Symbol]
       attr_reader :scope
 
