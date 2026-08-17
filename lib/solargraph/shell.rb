@@ -340,28 +340,29 @@ module Solargraph
     # @return [void]
     def pin path
       api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
-      is_method = path.include?('#') || path.include?('.')
-      if is_method && options[:stack]
-        scope, ns, meth = if path.include? '#'
-                            [:instance, *path.split('#', 2)]
-                          else
-                            [:class, *path.split('.', 2)]
-                          end
-
-        # @sg-ignore Wrong argument type for
-        #   Solargraph::ApiMap#get_method_stack: rooted_tag
-        #   expected String, received Array<String>
-        pins = api_map.get_method_stack(ns, meth, scope: scope)
-      else
-        pins = api_map.get_path_pins path
-      end
+      pins = if options[:stack] && path.match?(/[#.]/)
+               method_stack_for_path(api_map, path)
+             else
+               api_map.get_path_pins path
+             end
       # @type [Hash{Symbol => Pin::Base}]
       references = {}
       pin = pins.first
+      if pin.nil?
+        # $stderr.puts instead of Kernel#warn: bin/solargraph disables Ruby
+        # warnings ($VERBOSE = nil), which also silences Kernel#warn, so
+        # warn-based CLI messages never reach the user.
+        fallback = options[:stack] ? nil : method_stack_for_path(api_map, path).first
+        if fallback.nil?
+          $stderr.puts "Pin not found for path '#{path}'"
+          exit 1
+        else
+          $stderr.puts "Pin not found for path '#{path}'; showing '#{fallback.path}' (found via ancestry)"
+          pins = [fallback]
+          pin = fallback
+        end
+      end
       case pin
-      when nil
-        warn "Pin not found for path '#{path}'"
-        exit 1
       when Pin::Namespace
         if options[:references]
           # @sg-ignore Need to add nil check here
@@ -585,6 +586,19 @@ module Solargraph
       else
         puts type.rooted_tag
       end
+    end
+
+    # Resolve a method path through the receiver's ancestry, for suggesting
+    # (e.g.) 'Comparable#between?' when 'Integer#between?' has no pin of its
+    # own.
+    #
+    # @param api_map [Solargraph::ApiMap]
+    # @param path [String]
+    # @return [Array<Solargraph::Pin::Method>]
+    def method_stack_for_path api_map, path
+      ns, meth = path.split(/[#.]/, 2)
+      return [] if meth.nil?
+      api_map.get_method_stack(ns, meth, scope: path.include?('#') ? :instance : :class)
     end
 
     # @param pin [Solargraph::Pin::Base]

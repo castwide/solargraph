@@ -271,10 +271,13 @@ describe Solargraph::Shell do
     end
 
     context 'with no pin' do
-      it 'prints error' do
+      before do
         allow(api_map).to receive(:get_path_pins).with('Not#found').and_return([])
+        allow(api_map).to receive(:get_method_stack).with('Not', 'found', scope: :instance).and_return([])
         allow(Solargraph::Pin::Method).to receive(:===).with(nil).and_return(false)
+      end
 
+      it 'prints error' do
         out = capture_both do
           shell.options = {}
           shell.pin('Not#found')
@@ -282,6 +285,46 @@ describe Solargraph::Shell do
           # Ignore the SystemExit raised by the shell when no pin is found
         end
         expect(out).to include("Pin not found for path 'Not#found'")
+      end
+
+      it 'prints the error even with Ruby warnings disabled, as under bin/solargraph' do
+        # bin/solargraph sets $VERBOSE = nil, which turns Kernel#warn into a
+        # no-op - a warn-based message would never reach the user.
+        old_verbose = $VERBOSE
+        $VERBOSE = nil
+        begin
+          out = capture_both do
+            shell.options = {}
+            shell.pin('Not#found')
+          rescue SystemExit
+            # Ignore the SystemExit raised by the shell when no pin is found
+          end
+        ensure
+          $VERBOSE = old_verbose
+        end
+        expect(out).to include("Pin not found for path 'Not#found'")
+      end
+    end
+
+    context 'with no exact pin but an ancestry match' do
+      let(:between_pin) do
+        instance_double(Solargraph::Pin::Method, path: 'Comparable#between?')
+      end
+
+      before do
+        allow(api_map).to receive(:get_path_pins).with('Integer#between?').and_return([])
+        allow(api_map).to receive(:get_method_stack)
+          .with('Integer', 'between?', scope: :instance).and_return([between_pin])
+        allow(between_pin).to receive(:inspect).and_return('between? pin inspect')
+      end
+
+      it 'notes the fallback and prints the ancestor pin' do
+        out = capture_both do
+          shell.options = {}
+          shell.pin('Integer#between?')
+        end
+        expect(out).to include("showing 'Comparable#between?' (found via ancestry)")
+        expect(out).to include('between? pin inspect')
       end
     end
   end
