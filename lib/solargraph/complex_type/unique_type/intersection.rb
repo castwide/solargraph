@@ -149,12 +149,20 @@ module Solargraph
         # Applies the transformation to each conjunct independently
         # and rebuilds the intersection from the results.
         #
-        # @param new_name [String, nil]
+        # new_name is not passed down to the conjuncts. An
+        # intersection's own `name` is the synthetic `"A & B"` string
+        # built in #initialize, not a namespace; giving that to each
+        # conjunct renames `Hash{"a" => Float}` to
+        # `Hash{"a" => Float} & Hash{"b" => Float}{"a" => Float}`,
+        # which no longer parses. Each conjunct keeps its own name,
+        # which is the only rename that means anything here.
+        #
+        # @param _new_name [String, nil] ignored - see above
         # @yieldparam t [UniqueType]
         # @yieldreturn [UniqueType]
         # @return [self]
-        def transform new_name = nil, &transform_type
-          Intersection.new(conjuncts.map { |conjunct| conjunct.transform(new_name, &transform_type) })
+        def transform _new_name = nil, &transform_type
+          Intersection.new(conjuncts.map { |conjunct| conjunct.transform(&transform_type) })
         end
 
         # @return [self]

@@ -364,6 +364,14 @@ describe 'YARD type specifier list parsing' do
 
   # https://github.com/ruby/rbs/blob/master/docs/syntax.md#intersection-type
   context 'when parsing RBS intersection types' do
+    # The four-way record intersection from plate-spinner's
+    # AppleHealthSource#detail, which used to crash a whole typecheck run.
+    let(:intersection_tag) do
+      'Hash{"qty" => Float} & Hash{"expected" => Float} & ' \
+        'Hash{"original_expected" => Float} & Hash{"expected_adjusted" => Boolean}'
+    end
+    let(:detail_tag) { "Hash{Symbol => #{intersection_tag}, nil}" }
+
     it 'parses two conjuncts as a single unique type' do
       types = Solargraph::ComplexType.parse('String & Comparable')
       expect(types.length).to eq(1)
@@ -383,6 +391,43 @@ describe 'YARD type specifier list parsing' do
       expect(types.length).to eq(2)
       expect(types[0].tag).to eq('String & Comparable')
       expect(types[1].tag).to eq('Integer')
+    end
+
+    it 'parses a record type in a value position' do
+      types = Solargraph::ComplexType.parse('Hash{Symbol => Hash{"qty" => Float}}')
+      expect(types.first.tag).to eq('Hash{Symbol => Hash{"qty" => Float}}')
+    end
+
+    it 'parses two record types joined by &' do
+      types = Solargraph::ComplexType.parse('Hash{"qty" => Float} & Hash{"expected" => Float}')
+      expect(types.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
+      expect(types.first.conjuncts.map(&:tag)).to eq(['Hash{"qty" => Float}', 'Hash{"expected" => Float}'])
+    end
+
+    it 'parses a four-way record intersection with a trailing nil union member' do
+      types = Solargraph::ComplexType.parse(detail_tag)
+      expect(types.first.tag).to eq(detail_tag)
+      expect(types.first.subtypes.map(&:tag)).to eq([intersection_tag, 'nil'])
+    end
+
+    # Regression: resolve_generics calls transform(name), and an
+    # Intersection's `name` is the synthetic "A & B" string. Forwarding
+    # it renamed every conjunct to the whole intersection, producing a
+    # tag that no longer parses and raising ComplexTypeError out of
+    # ApiMap#get_method_stack.
+    it 'keeps each conjunct name when transformed with the intersection name' do
+      intersection = Solargraph::ComplexType.parse(intersection_tag).first
+      transformed = intersection.transform(intersection.name) { |t| t }
+      expect(transformed.tag).to eq(intersection_tag)
+      expect { Solargraph::ComplexType.parse(transformed.tag) }.not_to raise_error
+    end
+
+    it 'resolves generics on a record intersection without mangling it' do
+      api_map = Solargraph::ApiMap.new
+      hash_pin = api_map.get_path_pins('Hash').first
+      type = Solargraph::ComplexType.parse(intersection_tag).first
+      resolved = type.resolve_generics(hash_pin, Solargraph::ComplexType.parse('Hash{Symbol => String}'))
+      expect { Solargraph::ComplexType.parse(resolved.tag) }.not_to raise_error
     end
 
     it 'parses intersections nested in subtypes' do
