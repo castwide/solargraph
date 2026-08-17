@@ -5,6 +5,9 @@ module Solargraph
   #
   class ComplexType
     GENERIC_TAG_NAME = 'generic'
+
+    # the quote characters that open and close a string literal type
+    QUOTE_CHARACTERS = ['"', "'"].freeze
     # @!parse
     #   include TypeMethods
     include Equality
@@ -541,7 +544,7 @@ module Solargraph
               # inside a string literal every character is content, so
               # separators and brackets carry no syntactic meaning
               quote = nil if char == quote
-            elsif char == '"' || char == "'"
+            elsif QUOTE_CHARACTERS.include?(char)
               quote = char
             elsif char == '='
               # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
