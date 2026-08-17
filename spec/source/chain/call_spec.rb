@@ -334,8 +334,42 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # @todo It would be more accurate to return `Enumerator<Array<Integer>>` here
-    expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
+    # Array#each's enumerator overload is `() -> ::Enumerator[Elem, self]`, so
+    # `self` resolves to the Array<Integer> arm that supplied the pin rather
+    # than to the whole String, Array<Integer> union.
+    expect(type.tag).to eq('Enumerator<Integer, Array<Integer>>')
+  end
+
+  it 'resolves an RBS self return type to the union arm that supplied the method' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, Symbol]
+      name = string_or_symbol
+      name.to_sym
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # String#to_sym is `-> Symbol`; Symbol#to_sym is `-> self`, which narrows
+    # to Symbol rather than expanding to the String, Symbol receiver.
+    expect(type.tag).to eq('Symbol')
+  end
+
+  it 'resolves a shared self-returning method separately for each union arm' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, Symbol]
+      name = string_or_symbol
+      name.itself
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Kernel#itself is `-> self` and is the same pin for both arms, so the
+    # result is the union of each arm's own self type.
+    expect(type.rooted_tags).to eq('::String, ::Symbol')
   end
 
   it 'allows calls off of nilable objects by default' do

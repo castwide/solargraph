@@ -55,18 +55,31 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
-          pin_groups = binder.each_unique_type.map do |context|
+          # Resolve each arm of a union receiver against that arm alone. A
+          # method whose declared return type is `self` must resolve to the
+          # arm that supplied the method pin, not to the entire union - e.g.
+          # for a String, Symbol receiver, Symbol#to_sym (RBS `-> self`) is
+          # Symbol, not String, Symbol.
+          # @type [::Array<Pin::Base>]
+          resolved = []
+          unresolved_arm = false
+          binder.each_unique_type do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+            pin = stack.first
+            if pin.nil?
+              unresolved_arm = true
+              next
+            end
+            resolved.concat inferred_pins([pin], api_map, name_pin, locals, context)
           end
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          pins = pin_groups.flatten.uniq(&:path)
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin, locals)
+          return [] if unresolved_arm && !api_map.loose_unions
+          return [] if resolved.empty?
+          # Different arms can resolve to the same pin path (a method
+          # inherited from a shared ancestor); dedup on the resolved return
+          # type too, so a real union doesn't lose every arm but the first.
+          resolved.uniq { |pin| [pin.path, pin.return_type.tag] }
         end
 
         private
@@ -75,8 +88,13 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
+        # @param self_binder [ComplexType, ComplexType::UniqueType, nil] The
+        #   type that `self` refers to in the resolved pins' declarations. For a
+        #   union receiver this is the single arm which supplied `pins`, not the
+        #   whole union.
         # @return [::Array<Pin::Base>]
-        def inferred_pins pins, api_map, name_pin, locals
+        def inferred_pins pins, api_map, name_pin, locals, self_binder = nil
+          self_binder ||= name_pin.binder
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
             overloads = p.signatures
@@ -131,11 +149,11 @@ module Solargraph
                                                                                     blocktype)
                 # @todo It shouldn't be necessary to choose either generics or macros
                 new_return_type = if new_signature_pin.return_type.defined?
-                  new_signature_pin.return_type
-                else
-                  named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
-                  p.typify(api_map).expand(named_types)
-                end
+                                    new_signature_pin.return_type
+                                  else
+                                    named_types = p.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
+                                    p.typify(api_map).expand(named_types)
+                                  end
                 self_type = if head?
                               # If we're at the head of the chain, we called a
                               # method somewhere that marked itself as returning
@@ -149,7 +167,7 @@ module Solargraph
                               # declaration - we can't just use the type of the
                               # method pin, as this might be a subclass of the
                               # place where the method is defined
-                              name_pin.binder
+                              self_binder
                             end
                 # This same logic applies to the YARD work done by
                 # 'with_params()'.
@@ -179,7 +197,7 @@ module Solargraph
               # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
               # @sg-ignore Need to add nil check here
-              selfy = pin.return_type.self_to_type(name_pin.binder)
+              selfy = pin.return_type.self_to_type(self_binder)
               # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
