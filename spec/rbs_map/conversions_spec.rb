@@ -74,6 +74,28 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a module function' do
+      let(:rbs) do
+        <<~RBS
+          module Foo
+            def self?.bar: () -> String
+          end
+        RBS
+      end
+
+      it 'makes the instance copy private' do
+        pin = api_map.get_method_stack('Foo', 'bar', scope: :instance).first
+        expect(pin).not_to be_nil
+        expect(pin.visibility).to eq(:private)
+      end
+
+      it 'leaves the singleton copy public' do
+        pin = api_map.get_method_stack('Foo', 'bar', scope: :class).first
+        expect(pin).not_to be_nil
+        expect(pin.visibility).to eq(:public)
+      end
+    end
+
     context 'with untyped response' do
       subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
 
