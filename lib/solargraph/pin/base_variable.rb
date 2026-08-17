@@ -172,6 +172,33 @@ module Solargraph
         types
       end
 
+      # Locate where inference broke for this variable's assignment: the
+      # first link of the assigned expression's chain whose type resolved
+      # undefined. Diagnostic-only; returns nil when the assignment infers
+      # cleanly (or there is no assignment to walk).
+      #
+      # @param api_map [ApiMap]
+      # @return [Source::Chain::LinkResolution, nil]
+      def probe_blame api_map
+        return nil if closure.nil?
+
+        assignments.each do |parent_node|
+          value_position_nodes_only(parent_node).each do |node|
+            next if node.nil? || node.type == :NIL || node.type == :nil
+            rng = Range.from_node(node)
+            next if rng.nil?
+            # @sg-ignore Need to add nil check here
+            clip = api_map.clip_at(location.filename, rng.ending)
+            chain = Parser.chain(node, nil, nil)
+            # @sg-ignore closure nil-guarded at method entry; return-guard
+            #   narrowing not tracked - https://github.com/castwide/solargraph/issues/1254
+            failure = chain.first_undefined_link(api_map, closure, clip.locals)
+            return failure unless failure.nil?
+          end
+        end
+        nil
+      end
+
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map

@@ -136,7 +136,8 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
+      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred: ' \
+                                                     '`round` could not be resolved on Integer, nil',
                                                      'Unresolved call to round on Integer, nil'])
     end
 

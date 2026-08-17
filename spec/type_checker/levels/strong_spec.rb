@@ -215,7 +215,8 @@ describe Solargraph::TypeChecker do
           baz.upcase # ERROR: Unresolved call to upcase on String, nil
         end
       ))
-      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
+      expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred: ' \
+                                                     '`upcase` could not be resolved on String, nil',
                                                      'Unresolved call to upcase on String, nil'])
     end
 
@@ -828,7 +829,8 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
+      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred: ' \
+                                                     '`round` could not be resolved on Integer, nil',
                                                      'Unresolved call to round on Integer, nil'])
     end
 
@@ -924,6 +926,214 @@ describe Solargraph::TypeChecker do
       # expect 'sub' to be treated as 'Subclass' inside the block, and
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
+    end
+
+    # Message matrix for inference-failure blame: one spec per common failure
+    # shape, each asserting the complete rendered message. Each shape is given
+    # first without a @type tag on the assigned local - the form most code is
+    # written in - and then with one.
+
+    it 'blames the return expression when the local has no @type tag' do
+      checker = type_checker(%(
+        class Report
+          # @return [Array<String>]
+          def rows
+            ys = fetch.to_a.compact
+            ys
+          end
+
+          # @return [Rows::Unknown]
+          def fetch
+            fetch
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Report#rows return type could not be inferred: could not determine the return type of `fetch` on Report'
+      )
+    end
+
+    it 'blames a mid-chain method whose declared return type cannot resolve' do
+      checker = type_checker(%(
+        class Report
+          # @return [Array<String>]
+          def rows
+            # @type [Array<String>]
+            ys = fetch.to_a.compact
+            ys
+          end
+
+          # @return [Rows::Unknown]
+          def fetch
+            fetch
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Variable type could not be inferred for ys: could not determine the return type of `fetch` on Report'
+      )
+    end
+
+    it 'emits no variable message for an untagged local whose expression fails' do
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            v = 'a'.no_such.upcase
+            v
+            nil
+          end
+        end
+      ))
+      # Without a declared tag there is no variable-validation message at all;
+      # the failure is silent rather than mis-blamed.
+      expect(checker.problems.map(&:message)).to all(satisfy { |m| !m.include?('could not be inferred for v') })
+    end
+
+    it 'reports a diagnostic for a nonexistent method called on an untagged local' do
+      pending 'A plain typo passes the typechecker: call_problems suppresses the ' \
+              'unresolved-call report when the walk\'s `found` pin is an internal method ' \
+              'whose type is undefined, and with no declared tag there is no ' \
+              'variable-validation path to fire instead, so nothing is reported. The ' \
+              'boundary is not yet mapped - the six-call chain in the spec below ' \
+              '(xs.first.to_s.no_such.upcase.size, also untagged) does report ' \
+              '"Unresolved call to no_such on String", so something about the receiver ' \
+              'decides it, and that difference is unexplained.'
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            v = 'a'.no_such.upcase
+            v
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(a_string_including('no_such'))
+    end
+
+    it 'blames a mid-chain call that matches no method' do
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            # @type [String]
+            v = 'a'.no_such.upcase
+            v
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Variable type could not be inferred for v: `no_such` could not be resolved on String'
+      )
+    end
+
+    it 'leaves an already-correct unresolved-call message alone without a @type tag' do
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            # @type [Array<String>]
+            xs = []
+            n = xs.first.to_s.no_such.upcase.size
+            n
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to no_such on String')
+    end
+
+    it 'blames the failing call in a longer chain off a typed local' do
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            # @type [Array<String>]
+            xs = []
+            # @type [Integer]
+            n = xs.first.to_s.no_such.upcase.size
+            n
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Variable type could not be inferred for n: `no_such` could not be resolved on String'
+      )
+    end
+
+    it 'blames a misspelled method in a return expression with no @type tag' do
+      checker = type_checker(%(
+        class Report
+          # @return [Integer]
+          def run
+            names.lenght
+          end
+
+          # @return [Array<String>]
+          def names
+            ['a']
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Report#run return type could not be inferred: `lenght` could not be resolved on Array<String>'
+      )
+    end
+
+    it 'reports nothing once the misspelled method name is corrected' do
+      checker = type_checker(%(
+        class Report
+          # @return [Integer]
+          def run
+            names.length
+          end
+
+          # @return [Array<String>]
+          def names
+            ['a']
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'blames a misspelled method assigned to a tagged local' do
+      checker = type_checker(%(
+        class Report
+          # @return [void]
+          def run
+            # @type [Integer]
+            n = names.lenght
+            n
+            nil
+          end
+
+          # @return [Array<String>]
+          def names
+            ['a']
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(
+        'Variable type could not be inferred for n: `lenght` could not be resolved on Array<String>'
+      )
+    end
+
+    it 'leaves the message unchanged when only the final call fails' do
+      checker = type_checker(%(
+        class NoBlame
+          # @return [void]
+          def run
+            'a'.upcase.no_such_method
+            nil
+          end
+        end
+      ))
+      msg = checker.problems.map(&:message).find { |m| m.include?('no_such_method') }
+      expect(msg).to eq('Unresolved call to no_such_method on String')
     end
   end
 end

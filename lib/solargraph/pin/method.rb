@@ -452,6 +452,37 @@ module Solargraph
         api_map.get_method_stack(method_namespace, method_name, scope: scope).reject { |pin| pin.path == path }
       end
 
+      # Locate where inference broke for this method's return value: the
+      # first failing link among its return-node chains. A failing
+      # bare-variable return delegates to that variable's own assignment,
+      # since the real failure is usually there. Diagnostic-only; nil when
+      # nothing failed or there is nothing to walk.
+      #
+      # @param api_map [ApiMap]
+      # @return [Source::Chain::LinkResolution, nil]
+      def probe_blame api_map
+        return nil if node.nil? || method_body_node.nil? || location.nil?
+        returns_from_method_body(method_body_node).each do |n|
+          next if n.nil? || %i[NIL nil].include?(n.type)
+          rng = Range.from_node(n)
+          next unless rng
+          # @sg-ignore location nil-guarded at method entry; return-guard
+          #   narrowing not tracked - https://github.com/castwide/solargraph/issues/1254
+          clip = api_map.clip_at(location.filename, rng.ending)
+          # @sg-ignore see above
+          chain = Solargraph::Parser.chain(n, location.filename)
+          failure = chain.first_undefined_link(api_map, self, clip.locals)
+          next if failure.nil?
+          if chain.links.one?
+            local = clip.locals.find { |l| l.is_a?(BaseVariable) && l.name == failure.link.word }
+            deeper = local&.probe_blame(api_map)
+            failure = deeper unless deeper.nil?
+          end
+          return failure
+        end
+        nil
+      end
+
       protected
 
       attr_writer :block, :signature_help, :documentation, :return_type
