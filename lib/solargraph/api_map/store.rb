@@ -304,12 +304,20 @@ module Solargraph
       # non-alias pin breaks #resolve_method_alias under
       # SOLARGRAPH_ASSERTS=on.
       #
+      # DelegatedMethod pins are skipped for the same reason, but they
+      # raise outright rather than degrade: Pin::Base#combine_with rebuilds
+      # the merged pin with self.class.new(**new_attrs) carrying only
+      # generic pin attributes, and DelegatedMethod#initialize requires
+      # exactly one of :method / :receiver. Each pin's delegation target is
+      # per-pin state that a merged pin has no way to represent, so both
+      # are kept.
+      #
       # @param pins [Array<Pin::Method>]
       # @return [Array<Pin::Method>]
       def combine_duplicate_method_pins pins
         result = []
         pins.group_by(&:path).each_value do |group|
-          if group.length == 1 || group.any? { |pin| pin.is_a?(Pin::MethodAlias) }
+          if group.length == 1 || group.any? { |pin| pin.is_a?(Pin::MethodAlias) || pin.is_a?(Pin::DelegatedMethod) }
             result.concat(group)
           else
             # @sg-ignore group is never empty here (group_by never yields an empty group)

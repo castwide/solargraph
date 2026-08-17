@@ -92,6 +92,27 @@ describe Solargraph::ApiMap::Store do
       expect(bar_pins).to include(an_instance_of(Solargraph::Pin::MethodAlias))
     end
 
+    it 'does not combine two delegated methods sharing a path' do
+      # Pin::Base#combine_with rebuilds the merged pin with
+      # self.class.new(**new_attrs), and new_attrs carries only generic pin
+      # attributes. Pin::DelegatedMethod#initialize requires exactly one of
+      # :method / :receiver, so combining two of them raises
+      # `either :method or :receiver is required (ArgumentError)`.
+      # castwide/solargraph#1311 mints these pins for def_delegators, which
+      # makes duplicate-path groups routine.
+      closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
+      delegated = lambda do |receiver_name|
+        chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new(receiver_name, nil)])
+        Solargraph::Pin::DelegatedMethod.new(closure: closure, scope: :instance, name: 'bar', receiver: chain)
+      end
+      store = described_class.new([closure, delegated.call('one'), delegated.call('two')])
+      pins = []
+      expect { pins = store.get_methods('Foo', scope: :instance) }.not_to raise_error
+      bar_pins = pins.select { |p| p.name == 'bar' }
+      expect(bar_pins.length).to eq(2)
+      expect(bar_pins).to all(be_an_instance_of(Solargraph::Pin::DelegatedMethod))
+    end
+
     it 'combines many same-path pins without timing out' do
       # Store#get_methods must combine many real same-path pins
       # quickly, not hang or blow up combinatorially.
