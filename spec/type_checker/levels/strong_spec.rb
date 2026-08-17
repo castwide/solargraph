@@ -999,6 +999,51 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'takes the @!method tag for a delegation whose receiver does not resolve' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Context
+        end
+
+        class Holder
+          extend Forwardable
+
+          # @return [Context]
+          def context
+            Context.new
+          end
+
+          # @!method label
+          #   @return [String]
+          def_delegators :context, :label
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports the receiver, not the delegation, when neither declares a type' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [String]
+          def label; 'x'; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def records
+            @records
+          end
+
+          def_delegators :records, :label
+        end
+      ), ['forwardable'])
+      expect(checker.problems.map(&:message)).to contain_exactly('Missing @return tag for Holder#records')
+    end
+
     it 'resolves a delegated method given an alias' do
       checker = type_checker_with_gems(%(
         require 'forwardable'
