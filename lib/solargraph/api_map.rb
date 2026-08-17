@@ -851,6 +851,18 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort { |a, b| a.name <=> b.name }
+      if fqns == 'Object' && scope == :instance && visibility.include?(:private)
+        # Methods defined at the top level are private instance methods
+        # of Object at runtime, but are stored under the root namespace,
+        # which is not otherwise part of Object's ancestry. Only requests
+        # that admit private methods see them, which is how a receiverless
+        # call reaches them but 'str'.top_level_helper does not.
+        root_reqstr = "|#{scope}|#{visibility.sort}|#{deep}"
+        unless skip.include?(root_reqstr)
+          skip.add root_reqstr
+          methods += store.get_methods('', scope: :instance, visibility: visibility).sort { |a, b| a.name <=> b.name }
+        end
+      end
       logger.info do
         "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}"
       end

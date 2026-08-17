@@ -60,35 +60,36 @@ module Solargraph
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+            visibility = visibility_for(api_map, context, name_pin)
+            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope, visibility: visibility)
             [stack.first].compact
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
-          pins = top_level_pins(api_map) if pins.empty? && head?
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
         end
 
         private
 
-        # Methods defined at the top level are private instance methods
-        # of Object, so a receiverless call reaches them whatever self
-        # is - including from an instance method, and inside a block
-        # whose self has been rebound. Only the binder's namespace is
-        # searched above, which misses them unless the binder happens to
-        # be the root namespace itself.
-        #
-        # Looking up '' reuses the root-context lookup ApiMap#get_methods
-        # already implements for that namespace (root instance and class
-        # methods plus Kernel), so this adds no new resolution rule.
-        # Restricted to head? - i.e. no explicit receiver - because these
-        # methods are private: 'foo'.top_level_helper raises NoMethodError.
+        # Which visibilities a call at this position can reach. A
+        # receiverless call - head? - reaches private and protected
+        # methods whatever self is. A call with an explicit receiver
+        # only reaches them from inside the receiver's own namespace or
+        # a subclass of it, mirroring ApiMap#get_complex_type_methods.
         #
         # @param api_map [ApiMap]
-        # @return [::Array<Pin::Base>]
-        def top_level_pins api_map
-          [api_map.get_method_stack('', word, scope: :instance).first].compact
+        # @param context [ComplexType::UniqueType] the receiver's type
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Symbol>]
+        def visibility_for api_map, context, name_pin
+          return %i[private protected public] if head?
+
+          from = name_pin.context.namespace
+          to = context.namespace
+          return %i[private protected public] if to == from || api_map.super_and_sub?(to, from)
+
+          [:public]
         end
 
         # @param pins [::Enumerable<Pin::Base>]
