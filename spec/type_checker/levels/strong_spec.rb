@@ -966,5 +966,28 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
     end
+
+    it 'resolves top-level methods inside blocks whose self was rebound' do
+      checker = type_checker(%(
+        # @param type [Class]
+        # @return [Boolean]
+        def skip_check?(type)
+          !type.is_a?(Class)
+        end
+
+        # @param mock_sym [Symbol]
+        # @param type [Class]
+        # @return [void]
+        def define_mock(mock_sym, type)
+          Object.define_method(mock_sym.to_s) do
+            [1].each do |_i|
+              skip_check?(type)
+            end
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to skip_check?')
+    end
   end
 end
