@@ -134,17 +134,11 @@ module Solargraph
       end
 
       # Flow-sensitive type narrowing: given a type learned from a
-      # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down
-      # to the more specific of each compatible pair between the two
-      # sides. When neither side is already known to be a subtype of
-      # the other but one is positively confirmed to be a mix-in
-      # (e.g. a declared class and an unrelated module), both facts
-      # are still true at once, so the pair is combined into an
-      # Intersection rather than discarded. Everything else - two
-      # different concrete classes (impossible; an object has exactly
-      # one class), or either side being a namespace we can't
-      # positively identify - falls back to the original behavior of
-      # dropping the pair.
+      # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down to
+      # the more specific of each compatible pair. When neither side
+      # subtypes the other but one is confirmed to be a mix-in, both
+      # facts hold at once, so the pair becomes an Intersection; any
+      # other pair is dropped (see #mixin_pairing?).
       #
       # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
       #
@@ -171,15 +165,9 @@ module Solargraph
         ComplexType.new(types)
       end
 
-      # Whether combining these two into an intersection is safe. Only
-      # true when at least one side is *positively confirmed* to be a
-      # mix-in: any class can pick up any module, so a class-and-module
-      # pairing is always plausible. Everything else - two different
-      # concrete classes, or a namespace we have no pin for (synthetic
-      # names like `Boolean`, generics, literals, duck types, or
-      # simply unresolved) - defaults to false, preserving the
-      # original drop-the-pair behavior.
+      # Whether combining these two into an intersection is safe.
       #
+      # @see ComplexType#mixin_pairing?
       # @param api_map [ApiMap]
       # @param declared [ComplexType::UniqueType]
       # @param candidate [ComplexType::UniqueType]
@@ -337,11 +325,7 @@ module Solargraph
         # match one of their unique types
         expected.any? do |expected_unique_type|
           # :nocov:
-          unless expected_unique_type.is_a?(UniqueType)
-            # @sg-ignore is_a? doesn't narrow the negated branch as
-            #   precisely as instance_of? did
-            raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
-          end
+          raise "Expected type must be a UniqueType in #{expected.inspect}" unless expected_unique_type.is_a?(UniqueType)
           # :nocov:
           conformance = Conformance.new(api_map, self, expected_unique_type, situation,
                                         rules, variance: variance)

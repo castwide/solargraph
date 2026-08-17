@@ -1019,16 +1019,10 @@ describe Solargraph::TypeChecker do
       end
 
       it 'accepts an intersection-typed argument where the duck-typed conjunct is expected (#1231)' do
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5280196737 -
-        # ComplexType#duck_types_match? used to check the duck-typed
-        # expectation against ComplexType#namespace/#scope, which for an
-        # Intersection just delegates to its *first* conjunct
-        # (Intersection#namespace/#scope). That rejected an intersection
-        # whenever the duck-typed conjunct wasn't the first one, even
-        # though duck-typed subtyping only needs *some* conjunct to
-        # satisfy it - the same "any one conjunct" rule
-        # Intersection#conforms_to? already applies elsewhere. Fixed by
-        # checking each conjunct instead of just the first.
+        # Duck-typed subtyping needs *some* conjunct to satisfy it, not
+        # specifically the first one that Intersection#namespace/#scope
+        # delegate to -
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5280196737
         checker = type_checker(%(
           # @param callback [#quack]
           # @return [void]
@@ -1060,45 +1054,19 @@ describe Solargraph::TypeChecker do
       end
 
       it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
-        # #fetch on Hash{K1=>V1} & Hash{K2=>V2} used to always resolve through
-        # the *first* conjunct's #fetch signature regardless of which key was
-        # passed. Root cause (shared with castwide/solargraph#1272): both
-        # conjuncts resolve to a pin with the same path (Hash#fetch) but
-        # different, already-correctly-resolved return types, and dedup was
-        # keying on path alone - fixed here the same way
-        # castwide/solargraph#1273 fixed it for real unions, applied to
-        # Call#method_stack_pins's Intersection branch too.
+        # Both conjuncts resolve to a pin with the same path (Hash#fetch)
+        # but different, already-resolved return types, so dispatch keys on
+        # path *and* return type, then narrows to the conjunct whose key
+        # matches the call's literal argument. RBS's own
+        # `Hash#fetch: (_Key key) -> V` can't narrow that itself - `_Key` is
+        # a structural hash/eql? interface, not literally `K`, so the key
+        # argument is never connected to the return type by ordinary
+        # overload resolution -
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
         #
-        # That made dispatch order-independent and sound (both conjuncts'
-        # possible return types show up), but not yet *precise*: it returned
-        # a union of every conjunct's result rather than narrowing to the one
-        # whose key actually matches. RBS's own `Hash#fetch: (_Key key) -> V`
-        # can't do this itself - `_Key` is a structural hash/eql? interface,
-        # not literally `K`, so the key argument is never connected to the
-        # return type by ordinary overload resolution. Call#method_stack_pins
-        # now detects any `_Key`-shaped parameter on a conjunct's method
-        # (generalizing past #fetch/#[] to #dig, #delete, etc. for free) and,
-        # when every conjunct yields a positive verdict for or against the
-        # call's own literal argument, keeps only the matching conjunct(s) -
-        # conservatively falling back to today's full union whenever even one
-        # conjunct can't be verified one way or the other.
-        #
-        # Key-parameter detection has to handle two shapes, because RBS's
-        # own core/hash.rbs changed in 4.1.0: `(_Key key)` from 4.1.0 on,
-        # `(K arg0)` before it. Pin::Signature#key_param_index recognizes
-        # both - see its comment. Without the pre-4.1 shape this spec
-        # passes on RBS >= 4.1 and fails on 3.10.x/4.0.x, which is what
-        # apiology/solargraph#49 CI was reporting before that was fixed.
-        #
-        # Still pending on this branch alone: castwide/solargraph#1223
-        # (restores literal type inference). Without it the literal
-        # "Index"/"Triggers" key_types get widened to plain String before
-        # the narrowing above ever sees them - verified directly, with just
-        # this branch's own commits the union already loses the literal keys
-        # (`Hash{String => String}`), independent of anything else. #1223 is
-        # an independent, already-scoped PR that just happens to be a
-        # prerequisite for this spec to observe the fix above working.
+        # castwide/solargraph#1223 is a prerequisite: without it the literal
+        # "Index"/"Triggers" key_types widen to plain String before the
+        # narrowing can see them.
         pending 'needs castwide/solargraph#1223'
         checker = type_checker(%(
           class Repro
@@ -1117,14 +1085,9 @@ describe Solargraph::TypeChecker do
       end
 
       it 'dispatches generic methods per-conjunct regardless of conjunct order (#1231)' do
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909 -
-        # this used to demonstrate order-*dependence*: swapping the conjunct
-        # order flipped which (wrong) type both fetches reported. The
-        # dedup-key fix described in the sibling spec above makes this
-        # order-independent now - same per-key-narrowed result either way,
-        # dispatched via the same literal-key matching described there.
-        # Pending on this branch alone for the same independent,
-        # already-scoped prerequisite as that spec: castwide/solargraph#1223.
+        # The conjunct order of the sibling spec above, reversed: the same
+        # per-key narrowing applies either way, with the same
+        # castwide/solargraph#1223 prerequisite.
         pending 'needs castwide/solargraph#1223'
         checker = type_checker(%(
           class Repro
@@ -1143,18 +1106,12 @@ describe Solargraph::TypeChecker do
       end
 
       it 'dispatches generic methods per-conjunct for symbol keys (#1231)' do
-        # Symbol keys take a different path to the same bug than the string
-        # keys above: symbols already infer as literal types, so per-overload
-        # matching correctly rejects the non-matching conjunct - but a pin
-        # whose overloads all fail to match is not dropped, it just falls
-        # through to its declared return type, so the union survives anyway.
-        # Only key_verified_conjuncts can actually remove a conjunct. Before
-        # Pin::Signature#key_param_index learned RBS < 4.1's `(K arg0)`
-        # shape, this reported the union plus an unresolved generic<X> plus
-        # three spurious "Wrong argument type for Hash#fetch: arg0 expected
-        # :Index, received :Triggers" errors on RBS 3.10.x/4.0.x - the arg
-        # check was resolving against the conjunct that narrowing should
-        # have dropped.
+        # Symbol keys reach the same union by a different route than the
+        # string keys above: symbols already infer as literal types, so
+        # per-overload matching rejects the non-matching conjunct - but a
+        # pin whose overloads all fail to match falls through to its
+        # declared return type rather than being dropped, so only
+        # Call#key_verified_conjuncts can actually remove a conjunct.
         pending 'needs castwide/solargraph#1223'
         checker = type_checker(%(
           class Repro
@@ -1187,11 +1144,10 @@ describe Solargraph::TypeChecker do
       end
 
       it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119 -
-        # method-call resolution used to only try the first conjunct's method
-        # stack, per unique type, and required every one of them to define the
-        # method the way a real union would. Fixed in Call#method_stack_pins by
-        # giving Intersection conjuncts "any one is enough" semantics instead.
+        # Method lookup gives an intersection's conjuncts "any one is
+        # enough" semantics (A & B <: A, A & B <: B), unlike a union, where
+        # every alternative has to define the method -
+        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119
         checker = type_checker(%(
           class A
             # @return [void]

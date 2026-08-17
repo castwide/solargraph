@@ -411,17 +411,11 @@ module Solargraph
 
     # Flow-sensitive type narrowing: given a type learned from a
     # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down to
-    # the more specific of each compatible pair between the two
-    # sides. When neither side is already known to be a subtype of
-    # the other but one is positively confirmed to be a mix-in (e.g.
-    # a declared class and an unrelated module), both facts are still
-    # true at once, so the pair is combined into a
-    # ComplexType::UniqueType::Intersection rather than discarded.
-    # Everything else - two different concrete classes (impossible;
-    # an object has exactly one class), or either side being a
-    # namespace we can't positively identify - falls back to the
-    # original behavior of dropping the pair; only if every pair is
-    # either dropped or empty does the result fall back to UNDEFINED.
+    # the more specific of each compatible pair. When neither side
+    # subtypes the other but one is confirmed to be a mix-in, both
+    # facts hold at once, so the pair becomes an Intersection; any
+    # other pair is dropped (see #mixin_pairing?). UNDEFINED results
+    # only when every pair is dropped or empty.
     #
     # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
     #
@@ -473,11 +467,8 @@ module Solargraph
     # pairing is always plausible. Everything else - two different
     # concrete classes (impossible; an object has exactly one class),
     # or a namespace we have no pin for (synthetic names like
-    # `Boolean`, generics, literals, duck types, or simply unresolved)
-    # - defaults to false, preserving the original drop-the-pair
-    # behavior. This is deliberately conservative: it only recognizes
-    # the specific case it was added for rather than guessing about
-    # everything narrow_with might be asked to combine.
+    # `Boolean`, generics, literals, duck types, or unresolved) -
+    # is false, so narrow_with drops the pair.
     #
     # @param api_map [ApiMap]
     # @param declared [ComplexType::UniqueType]
@@ -715,10 +706,9 @@ module Solargraph
       # or a standalone `[...]` grouping with no leading name, used to
       # override the default order of operations (e.g. `[Foo | Bar] &
       # Baz`, where `[...]` is the only way to mark where the union
-      # ends). A bracket group's content is parsed the same way any
-      # other parameter substring is - recursively, via
-      # ComplexType.parse - and its result substituted directly, since
-      # it can itself be a multi-item union (or an intersection).
+      # ends). A bracket group's content is parsed recursively via
+      # ComplexType.parse and substituted directly, since it can
+      # itself be a union or an intersection.
       #
       # @param base [String]
       # @param subtype_string [String]
@@ -748,23 +738,17 @@ module Solargraph
       end
 
       # Collapses the disjuncts of a union type (`A | B`) seen so far
-      # in the segment currently being parsed into a single value to
-      # push into the enclosing types/subtypes list - a bare type when
-      # there was only one (the common case, `|` never used), or a
-      # real multi-item ComplexType union otherwise. This is also
-      # exactly what a top-level `,` in an already-implicit-union
-      # context (Array<...>, Set<...>, hash key/value lists, the
-      # top-level types list itself) reduces to, since each of those
-      # contexts flattens every comma-separated type into one union
-      # regardless of how it's grouped here - so `,` and `|` land on
-      # the same result there, matching RBS's own tag design.
+      # into a single value to push into the enclosing types/subtypes
+      # list - a bare type when `|` was never used, a multi-item
+      # ComplexType union otherwise. A top-level `,` in an
+      # already-implicit-union context (Array<...>, hash key/value
+      # lists, the top-level types list) reduces to the same thing,
+      # since those contexts flatten commas into one union anyway.
       #
       # @param disjuncts [Array<ComplexType, ComplexType::UniqueType>]
       # @return [ComplexType::UniqueType, ComplexType]
-      # @sg-ignore #first is only nil for an empty array, and this is
-      #   never called with one
       def close_disjunction disjuncts
-        return disjuncts.first if disjuncts.length == 1
+        return disjuncts.fetch(0) if disjuncts.length == 1
         ComplexType.new(disjuncts)
       end
     end

@@ -933,8 +933,7 @@ describe 'YARD type specifier list parsing' do
       selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
       type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
       # the anonymous `(...)` tuple defaults its name to Array (see
-      # "anonymous shorthand" specs below), so it renders with that
-      # name now instead of bare parentheses
+      # "anonymous shorthand" specs below)
       expect(type.tag).to eq('Array<Array(String, Symbol, Foo)>')
       expect(type.to_rbs).to eq('Array[[String, Symbol, Foo]]')
     end

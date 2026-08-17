@@ -390,14 +390,11 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'denies calls on a two-class union when loose union mode is off and only one class defines the method' do
-    # The nilable spec above exercises this same "every union member must
+    # The nilable spec above covers the same "every union member must
     # define the method, unless loose_unions" rule, but only via
-    # nullable?/without_nil stripping nil out first - it never actually
-    # tests the general two-real-class case. Found while checking whether
-    # the Call#resolve fix for intersections (A & B <: A, A & B <: B)
-    # regressed real union semantics (A, B calls require both) - it
-    # doesn't (this reproduces identically on unmodified HEAD, before that
-    # fix), but this specific shape was never covered.
+    # nullable?/without_nil stripping nil out first, not the general
+    # two-real-class case. This is a pre-existing gap, unrelated to
+    # intersections: it reproduces identically on unmodified master.
     pending 'strict union mode does not deny a call when only one of two plain classes defines it'
     source = Solargraph::Source.load_string(%(
       class A

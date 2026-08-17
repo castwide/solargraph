@@ -76,24 +76,20 @@ module Solargraph
           top_level_types = binder_type.is_a?(ComplexType) ? binder_type.to_a : [binder_type]
           pin_groups = top_level_types.map { |unique_type| method_stack_pins(unique_type, api_map) }
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:nil?)
-          # Different alternatives can resolve to pins that share a
-          # path (e.g. the same generic method looked up against
-          # `Box<Integer>` and `Box<String>`) but that have already
-          # been resolved to different return types for their
-          # respective context - dedup on both so a real union
-          # doesn't silently lose every alternative but the first.
+          # Alternatives can share a pin path (e.g. the same generic
+          # method against `Box<Integer>` and `Box<String>`) while
+          # already resolving to different return types, so dedup on
+          # both rather than losing every alternative but the first.
           # @param p [Pin::Base]
           pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.tag] }
         end
 
-        # Resolves the method stack's first pin for a single
-        # top-level unique type. An Intersection conjunct only needs
-        # *one* of its conjuncts to define the method (A & B <: A,
-        # A & B <: B) - the opposite of a union, where every
-        # alternative needs it - so it recurses through
-        # #method_pins_for_binder per conjunct (a conjunct is a full
-        # ComplexType, since RBS allows e.g. `(A | B) & C`) and
-        # accepts whichever conjuncts resolve.
+        # Resolves the method stack's first pin for a single top-level
+        # unique type. An Intersection needs only *one* of its conjuncts
+        # to define the method (A & B <: A, A & B <: B) - the opposite of
+        # a union - so it recurses per conjunct and accepts whichever
+        # ones resolve. A conjunct is a full ComplexType, since RBS
+        # allows e.g. `(A | B) & C`.
         #
         # @param unique_type [ComplexType::UniqueType]
         # @param api_map [ApiMap]
@@ -115,30 +111,18 @@ module Solargraph
           end
         end
 
-        # Narrows a same-class-generic intersection's conjuncts to
-        # whichever ones we can positively verify match this call's own
-        # literal argument against a `_Key`-shaped parameter (e.g.
-        # `Hash#fetch: (Hash::_Key key) -> V`, `Hash#[]`), e.g. resolving
+        # Narrows an intersection's conjuncts to the ones whose own
+        # `key_types` match this call's literal argument at a Hash-like
+        # key parameter, so
         # `(Hash{"Index" => Float} & Hash{"Triggers" => Array<...>})#fetch("Index")`
-        # to just the "Index" conjunct instead of a union of both.
+        # resolves to the "Index" conjunct rather than a union of both.
+        # RBS can't do this itself - `Hash#fetch: (_Key key) -> V` types
+        # the key as a structural hash/eql? interface, not `K`, so
+        # overload resolution never connects it to the return type.
         #
-        # RBS's own `_Key`-shaped signatures can't do this narrowing
-        # themselves - `_Key` is a structural hash/eql? interface, not
-        # literally `K`, so the key argument's type is never connected to
-        # the return type by ordinary overload resolution. This has to be
-        # done here, ahead of generic resolution, by matching the call's
-        # own literal argument directly against each conjunct's own
-        # `key_types` - which generalizes to any `_Key`-shaped method
-        # (`#fetch`, `#[]`, `#dig`, `#delete`, ...) without naming them.
-        #
-        # Conservative by construction: a conjunct is only ever narrowed
-        # away when *every* conjunct produced a positive verdict (matched
-        # or didn't). If we can't determine a verdict for even one
-        # conjunct - its method isn't `_Key`-shaped there, the argument
-        # isn't a literal, or it has no literal `key_types` to compare
-        # against - we don't have enough evidence to safely exclude
-        # anything, so every conjunct passes through unfiltered, same as
-        # before this method existed.
+        # A conjunct is only narrowed away when *every* conjunct yields a
+        # positive verdict (matched or didn't); if even one is
+        # undeterminable, every conjunct passes through unfiltered.
         #
         # @param conjuncts [::Array<ComplexType>]
         # @param api_map [ApiMap]
@@ -155,7 +139,7 @@ module Solargraph
 
         # Whether this conjunct's own literal `key_types` positively match
         # the call's own literal argument at the key parameter's position
-        # (see Pin::Signature#key_param_index), or nil if that can't be
+        # (see Pin::Signature#hash_key_param_index), or nil if that can't be
         # determined (no key-shaped parameter here, non-literal argument,
         # or no literal `key_types` to compare against).
         #
@@ -180,7 +164,7 @@ module Solargraph
           return nil if pin.nil?
 
           key_tags = unique_type.key_types.map(&:tag)
-          index = pin.signatures.filter_map { |s| s.key_param_index(unique_type.namespace, api_map, key_tags) }.first
+          index = pin.signatures.filter_map { |s| s.hash_key_param_index(unique_type.namespace, api_map, key_tags) }.first
           return nil if index.nil? || index >= arguments.length
 
           key_tag = literal_node_tag(arguments[index]&.node)
