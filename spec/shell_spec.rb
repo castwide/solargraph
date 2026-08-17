@@ -295,7 +295,7 @@ describe Solargraph::Shell do
 
       it 'prints error' do
         out = capture_both do
-          shell.options = {}
+          shell.options = { resolve: true }
           shell.pin('Not#found')
         rescue SystemExit
           # Ignore the SystemExit raised by the shell when no pin is found
@@ -310,7 +310,7 @@ describe Solargraph::Shell do
         $VERBOSE = nil
         begin
           out = capture_both do
-            shell.options = {}
+            shell.options = { resolve: true }
             shell.pin('Not#found')
           rescue SystemExit
             # Ignore the SystemExit raised by the shell when no pin is found
@@ -322,25 +322,54 @@ describe Solargraph::Shell do
       end
     end
 
-    context 'with no exact pin but an ancestry match' do
-      let(:between_pin) do
-        instance_double(Solargraph::Pin::Method, path: 'Comparable#between?')
+    context 'when the path names no pin of its own' do
+      let(:mixin_pin) do
+        instance_double(Solargraph::Pin::Method, path: 'Mixin#helper')
       end
 
       before do
-        allow(api_map).to receive(:get_path_pins).with('Integer#between?').and_return([])
+        allow(api_map).to receive(:get_path_pins).with('Child#helper').and_return([])
         allow(api_map).to receive(:get_method_stack)
-          .with('Integer', 'between?', scope: :instance).and_return([between_pin])
-        allow(between_pin).to receive(:inspect).and_return('between? pin inspect')
+          .with('Child', 'helper', scope: :instance).and_return([mixin_pin])
+        allow(mixin_pin).to receive(:inspect).and_return('helper pin inspect')
       end
 
-      it 'notes the fallback and prints the ancestor pin' do
+      it 'describes the inherited definition by default, printing nothing else' do
         out = capture_both do
-          shell.options = {}
-          shell.pin('Integer#between?')
+          shell.options = { resolve: true }
+          shell.pin('Child#helper')
         end
-        expect(out).to include("showing 'Comparable#between?' (found via ancestry)")
-        expect(out).to include('between? pin inspect')
+        # Just the pin: resolution is the documented default, not an event
+        # worth annotating.
+        expect(out).to eq("helper pin inspect\n")
+      end
+
+      it 'describes only the exact path with --no-resolve' do
+        out = capture_both do
+          shell.options = { resolve: false }
+          shell.pin('Child#helper')
+        rescue SystemExit
+          # Ignore the SystemExit raised by the shell when no pin is found
+        end
+        expect(out).to include("Pin not found for path 'Child#helper'")
+        expect(out).not_to include('helper pin inspect')
+        expect(api_map).not_to have_received(:get_method_stack)
+      end
+    end
+
+    context 'when the path names a pin of its own' do
+      it 'describes it without consulting method lookup' do
+        allow(to_s_pin).to receive(:inspect).and_return('pin inspect result')
+        allow(api_map).to receive(:get_method_stack)
+
+        out = capture_both do
+          shell.options = { resolve: true }
+          shell.pin('String#to_s')
+        end
+
+        # Byte-identical to the pre-resolution output for an exact hit.
+        expect(out).to eq("pin inspect result\n")
+        expect(api_map).not_to have_received(:get_method_stack)
       end
     end
   end

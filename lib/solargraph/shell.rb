@@ -336,6 +336,9 @@ module Solargraph
                    default: false
     option :stack, type: :boolean, desc: 'Show entire stack of a method pin by including definitions in superclasses',
                    default: false
+    option :resolve, type: :boolean, default: true,
+                     desc: 'Follow Ruby method lookup when the path names no pin of its own, describing the ' \
+                           'definition a call would reach; --no-resolve describes only the exact path'
     # @param path [String] The path to the method pin, e.g. 'Class#method' or 'Class.method'
     # @return [void]
     def pin path
@@ -349,17 +352,18 @@ module Solargraph
       references = {}
       pin = pins.first
       if pin.nil?
-        # $stderr.puts instead of Kernel#warn: bin/solargraph disables Ruby
-        # warnings ($VERBOSE = nil), which also silences Kernel#warn, so
-        # warn-based CLI messages never reach the user.
-        fallback = options[:stack] ? nil : method_stack_for_path(api_map, path).first
-        if fallback.nil?
+        # --stack already walks the ancestry, so resolution applies only to
+        # the single-pin default.
+        resolved = options[:stack] || !options[:resolve] ? nil : method_stack_for_path(api_map, path).first
+        if resolved.nil?
+          # $stderr.puts instead of Kernel#warn: bin/solargraph disables Ruby
+          # warnings ($VERBOSE = nil), which also silences Kernel#warn, so
+          # warn-based CLI messages never reach the user.
           $stderr.puts "Pin not found for path '#{path}'"
           exit 1
         else
-          $stderr.puts "Pin not found for path '#{path}'; showing '#{fallback.path}' (found via ancestry)"
-          pins = [fallback]
-          pin = fallback
+          pins = [resolved]
+          pin = resolved
         end
       end
       case pin
