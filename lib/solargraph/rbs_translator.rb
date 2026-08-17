@@ -12,16 +12,30 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
+    # From 4.1.0, RBS types Hash's own key lookups (`#[]`, `#fetch`,
+    # `#dig`, `#delete`) as the structural interface `Hash::_Key` -
+    # anything answering `hash`/`eql?` - rather than the class's own
+    # `K`, which is how it declared them before. Solargraph resolves
+    # interfaces by name rather than structurally, so the well-known
+    # name is stubbed to the type parameter it stands in for, the same
+    # way `bool`/`string`/`int` are stubbed above.
+    #
+    # This is a stand-in, not a translation: it reads as `K`, which is
+    # narrower than the `hash`/`eql?` that RBS actually accepts.
+    #
+    # @type [Hash{String => String}]
+    RBS_INTERFACE_TO_GENERIC = {
+      'Hash::_Key' => 'K'
+    }.freeze
+
     # Translates an RBS type into a ComplexType.
     #
     # Every RBS node that can *contain* another type - intersections,
     # unions, optionals, tuples, and generic type arguments - is built
     # directly as a ComplexType/UniqueType object graph by recursing
-    # through this method, rather than by rendering a tag string and
-    # re-parsing it. A joined string can't represent grouping that
-    # Solargraph's own tag grammar has no syntax for (e.g. a union
-    # nested inside an intersection, `(A | B) & C`), so round-tripping
-    # through one silently produces the wrong structure. Only leaf
+    # through this method, continuing the move away from tag strings
+    # begun in castwide/solargraph#870 so that `rooted?` is carried
+    # through unchanged rather than re-derived by a parse. Only leaf
     # types that can't contain a nested type (literals, `bool`, `nil`,
     # `void`, generic type variables, `self`/`instance`, `Proc`, etc.)
     # go through the tag-string fallback in type_to_tag.
@@ -130,14 +144,20 @@ module Solargraph
       Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: :rbs, type_location: closure.location, closure: closure)
     end
 
+    # Builds a named type (with its generic arguments, if any) directly
+    # as an object rather than via a tag string, so `rooted?` survives -
+    # see castwide/solargraph#870.
+    #
     # @param type_name [RBS::TypeName]
     # @param type_args [Enumerable<RBS::Types::Bases::Base>]
     # @return [ComplexType::UniqueType]
     def self.build_unique_type(type_name, type_args = [])
-      base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-      params = type_args.map do |a|
-        RbsTranslator.to_complex_type(a)
-      end
+      name = type_name.relative!.to_s
+      generic = RBS_INTERFACE_TO_GENERIC[name]
+      return ComplexType.parse("#{ComplexType::GENERIC_TAG_NAME}<#{generic}>").first if generic
+
+      base = RBS_TO_YARD_TYPE[name] || name
+      params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
       if base == 'Hash' && params.length == 2
         ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
       else

@@ -60,31 +60,22 @@ module Solargraph
         out
       end
 
-      # The index of the first parameter acting as a Hash-like lookup
-      # key for this class's own `K` (e.g. `Hash#fetch`'s first
-      # parameter), or nil if no parameter has that shape.
+      # The index of the first parameter typed as the receiver's own
+      # key (e.g. `Hash#fetch`'s first parameter), or nil if none is.
       #
-      # RBS's `core/hash.rbs` declares that parameter two ways, so both
-      # are recognized: `(_Key key)` from RBS 4.1.0 on (matched by the
-      # interface's literal name, so only RBS's own `Hash::_Key`), and
-      # `(K arg0)` before it, where `K` has already been resolved
-      # against the receiver - for a literal-keyed receiver that makes
-      # it the literal key type `key_tags` matches against.
+      # The parameter is declared `K`, which by this point has been
+      # resolved against the receiver - for a literal-keyed receiver
+      # that makes it the literal key type `key_tags` matches against.
+      # RBS >= 4.1 declares it as the structural interface `Hash::_Key`
+      # instead; RbsTranslator stubs that back to `K` on the way in
+      # (see RBS_INTERFACE_TO_GENERIC), so only this one shape is left
+      # to recognize here.
       #
-      # @todo Match `_Key` structurally rather than by name once
-      #   castwide/solargraph#1266 lands with ApiMap#get_own_methods -
-      #   https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
-      #
-      # @param namespace [String]
       # @param api_map [ApiMap]
       # @param key_tags [::Array<String>] the receiver's own resolved
-      #   `key_types` tags, used to recognize the pre-4.1 `K`-typed
-      #   shape. Empty disables that fallback.
+      #   `key_types` tags. Empty means there is nothing to match.
       # @return [Integer, nil]
-      def hash_key_param_index namespace, api_map, key_tags = []
-        key_tag = "#{namespace}::_Key"
-        index = parameters.find_index { |p| p.typify(api_map).tag == key_tag }
-        return index unless index.nil?
+      def hash_key_param_index api_map, key_tags
         return nil if key_tags.empty?
 
         parameters.find_index { |p| key_tags.include?(p.typify(api_map).tag) }

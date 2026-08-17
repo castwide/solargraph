@@ -178,7 +178,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param unique_type [ComplexType::UniqueType]
-      # @return [Symbol, nil] :class, :module, or nil if unknown
+      # @return [:class, :module, nil] nil when the namespace has no pin
       def namespace_kind api_map, unique_type
         # @type [Pin::Namespace, nil]
         pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }

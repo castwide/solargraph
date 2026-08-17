@@ -164,7 +164,7 @@ module Solargraph
           return nil if pin.nil?
 
           key_tags = unique_type.key_types.map(&:tag)
-          index = pin.signatures.filter_map { |s| s.hash_key_param_index(unique_type.namespace, api_map, key_tags) }.first
+          index = pin.signatures.filter_map { |s| s.hash_key_param_index(api_map, key_tags) }.first
           return nil if index.nil? || index >= arguments.length
 
           key_tag = literal_node_tag(arguments[index]&.node)

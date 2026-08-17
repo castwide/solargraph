@@ -285,6 +285,27 @@ describe 'YARD type specifier list parsing' do
       expect(type.to_s).to eq('String')
     end
 
+    # A string literal is opaque: the characters that separate or
+    # group types everywhere else are just content inside one.
+    ['"a,b"', '"a|b"', '"a&b"', '"a<b>"', '"[]"', "'a,b'"].each do |tag|
+      it "treats #{tag} as one literal, not a separator" do
+        type = Solargraph::ComplexType.parse(tag)
+        expect(type.length).to eq(1)
+        expect(type.tag).to eq(tag)
+        expect(type.first.name).to eq(tag)
+      end
+    end
+
+    it 'keeps a string literal whole inside a hash key' do
+      type = Solargraph::ComplexType.parse('Hash{"a,b" => Float}')
+      expect(type.tag).to eq('Hash{"a,b" => Float}')
+      expect(type.to_rbs).to eq('Hash["a,b", Float]')
+    end
+
+    it 'raises on an unclosed string literal' do
+      expect { Solargraph::ComplexType.parse('"abc') }.to raise_error(Solargraph::ComplexTypeError)
+    end
+
     it 'understands literal symbols' do
       type = Solargraph::ComplexType.parse(':foo')
       expect(type.tag).to eq(':foo')
@@ -510,6 +531,35 @@ describe 'YARD type specifier list parsing' do
 
       it 'raises on an unclosed bracket' do
         expect { Solargraph::ComplexType.parse('[Foo | Bar & Baz') }.to raise_error(Solargraph::ComplexTypeError)
+      end
+
+      # `&` binds tighter than the `,`/`|` of a union, so a grouped
+      # conjunct has to keep its brackets when rendered back to a tag -
+      # otherwise `[Foo | Bar] & Baz` renders as `Foo, Bar & Baz` and
+      # parses back as `Foo | (Bar & Baz)`.
+      [
+        '[Foo | Bar] & Baz',
+        'Foo & [Bar | Baz]',
+        'Hash{[Foo | Bar] & Baz => Qux}',
+        '[Foo | Bar] & [Baz | Qux]'
+      ].each do |tag|
+        it "round-trips #{tag} through its tag" do
+          original = Solargraph::ComplexType.parse(tag)
+          reparsed = Solargraph::ComplexType.parse(original.tag)
+          expect(reparsed.tag).to eq(original.tag)
+          expect(reparsed.to_rbs).to eq(original.to_rbs)
+        end
+      end
+
+      it 'brackets a grouped conjunct when generating a tag' do
+        types = Solargraph::ComplexType.parse('[Foo | Bar] & Baz')
+        expect(types.tag).to eq('[Foo, Bar] & Baz')
+        expect(types.to_rbs).to eq('(Foo | Bar) & Baz')
+      end
+
+      it 'leaves a single-type conjunct unbracketed' do
+        types = Solargraph::ComplexType.parse('Foo & Baz')
+        expect(types.tag).to eq('Foo & Baz')
       end
     end
 

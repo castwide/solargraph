@@ -32,17 +32,17 @@ module Solargraph
         # @param conjuncts [Array<ComplexType>]
         def initialize conjuncts
           @conjuncts = conjuncts
-          super(conjuncts.map(&:tags).join(' & '), rooted: true)
+          super(intersection_tag(:tags), rooted: true)
         end
 
         # @return [String]
         def tag
-          @tag ||= conjuncts.map(&:tags).join(' & ')
+          @tag ||= intersection_tag(:tags)
         end
 
         # @return [String]
         def rooted_tag
-          @rooted_tag ||= conjuncts.map(&:rooted_tags).join(' & ')
+          @rooted_tag ||= intersection_tag(:rooted_tags)
         end
 
         # @return [String]
@@ -138,6 +138,21 @@ module Solargraph
         end
 
         private
+
+        # Renders the conjuncts as a tag, bracketing any conjunct that
+        # holds more than one type. `&` binds tighter than the `,`/`|`
+        # of a union, so without the brackets `[A | B] & C` would
+        # render as `A, B & C` and parse back as `A | (B & C)` - a
+        # different type.
+        #
+        # @param tags_method [:tags, :rooted_tags]
+        # @return [String]
+        def intersection_tag tags_method
+          conjuncts.map do |conjunct|
+            tags = conjunct.send(tags_method)
+            conjunct.items.length > 1 ? "[#{tags}]" : tags
+          end.join(' & ')
+        end
 
         # Returns expected itself when it's a bare Intersection, or
         # its one item when it's a ComplexType consisting of nothing

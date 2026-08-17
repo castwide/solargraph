@@ -26,6 +26,22 @@ describe Solargraph::RbsTranslator do
     described_class.to_complex_type(RBS::Parser.parse_type(rbs_string))
   end
 
+  context 'with RBS 4.1+ structural key interfaces' do
+    it 'stubs Hash::_Key in as the class\'s own K' do
+      expect(translate('Hash::_Key').tag).to eq('generic<K>')
+    end
+
+    it 'leaves an unqualified _Key alone' do
+      # the stub is keyed on the well-known qualified name, so an
+      # unrelated interface that happens to be called _Key is untouched
+      expect(translate('_Key').tag).to eq('_Key')
+    end
+
+    it 'leaves other interfaces alone' do
+      expect(translate('Enumerable::_Each').tag).to eq('Enumerable::_Each')
+    end
+  end
+
   context 'when translating at the top level (already correct)' do
     it 'builds a real intersection from a union conjunct' do
       type = translate('(Integer | String) & Comparable')
