@@ -312,7 +312,10 @@ module Solargraph
         elsif name.downcase == 'nil'
           'nil'
         elsif name == GENERIC_TAG_NAME
-          all_params.first&.name
+          # A generic with no parameter would otherwise render nil, which
+          # callers interpolate into signatures as an empty string
+          # ("def foo: () -> ")
+          all_params.first&.name || 'untyped'
         elsif %w[Class Module].include?(name)
           rbs_name
         elsif %w[Tuple Array].include?(name) && fixed_parameters?
