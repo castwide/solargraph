@@ -1220,6 +1220,21 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'leaves the declared type in place when instance_of? has no static class name' do
+    source = Solargraph::Source.load_string(%(
+      # @param arg [String]
+      # @param other [Object]
+      def convert(arg, other)
+        if arg.instance_of?(other.class)
+          arg
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.to_s).to eq('String')
+  end
+
   it 'does not narrow a different variable than the one guarded' do
     source = Solargraph::Source.load_string(%(
       # @param arg [Object]

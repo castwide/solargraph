@@ -410,7 +410,7 @@ module Solargraph
       # @return [void]
       def process_instance_of node, true_presences, _false_presences
         instance_of_type_name, variable_name = parse_call(node, :instance_of?)
-        return if variable_name.nil? || variable_name.empty?
+        return if instance_of_type_name.nil? || variable_name.nil? || variable_name.empty?
 
         # @sg-ignore Need to add nil check here
         position = Range.from_node(node).start
