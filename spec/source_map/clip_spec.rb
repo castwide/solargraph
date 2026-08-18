@@ -3107,4 +3107,20 @@ describe Solargraph::SourceMap::Clip do
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
   end
+
+  it 'binds a generic through an intersection param at the call site' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param clazz [Class<generic<T>> & #new]
+      # @return [generic<T>]
+      def make(clazz)
+        raise
+      end
+      make(String)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.tag).to eq('String')
+  end
 end

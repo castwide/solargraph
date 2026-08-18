@@ -1239,6 +1239,50 @@ describe Solargraph::TypeChecker do
       ))
         expect(checker.problems.map(&:message)).to be_empty
       end
+
+      # Passes with and without the conjunct resolution: an unbound
+      # generic return is accepted leniently, so this is a
+      # no-regression check. The mismatch spec below is the
+      # discriminating one.
+      it 'binds a generic declared only inside an intersection @param' do
+        checker = type_checker(%(
+          class Factory
+            # @generic T
+            # @param clazz [Class<generic<T>> & #new]
+            # @return [Class<generic<T>>]
+            def echo(clazz)
+              clazz
+            end
+
+            # @return [Class<String>]
+            def use
+              echo(String)
+            end
+          end
+        ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'reports a mismatch against the generic bound through the intersection' do
+        checker = type_checker(%(
+          class Factory
+            # @generic T
+            # @param clazz [Class<generic<T>> & #new]
+            # @return [Class<generic<T>>]
+            def echo(clazz)
+              clazz
+            end
+
+            # @return [Class<Integer>]
+            def use
+              echo(String)
+            end
+          end
+        ))
+        expect(checker.problems.map(&:message))
+          .to eq(['Declared return type ::Class<::Integer> does not match inferred type ::Class<::String> ' \
+                  'for Factory#use'])
+      end
     end
   end
 end

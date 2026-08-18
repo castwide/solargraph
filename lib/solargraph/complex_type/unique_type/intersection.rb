@@ -121,6 +121,29 @@ module Solargraph
           end
         end
 
+        # Every conjunct describes the same value, so each is resolved
+        # against the same context type, and a generic bound by one
+        # conjunct is visible to the rest through the shared
+        # resolved_generic_values hash. UniqueType's implementation
+        # looks for generics in #subtypes and #key_types, which an
+        # intersection does not use - its type parameters live inside
+        # the conjuncts - so `Class<generic<T>> & #new` never bound T.
+        #
+        # Conjuncts resolve left to right, so a generic that only
+        # becomes bindable through a later conjunct stays unresolved in
+        # an earlier one's output.
+        #
+        # @param generics_to_resolve [Enumerable<String>]
+        # @param context_type [ComplexType, UniqueType, nil]
+        # @param resolved_generic_values [Hash{String => ComplexType, UniqueType}]
+        # @return [Intersection]
+        def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
+          Intersection.new(conjuncts.map do |conjunct|
+            conjunct.resolve_generics_from_context(generics_to_resolve, context_type,
+                                                   resolved_generic_values: resolved_generic_values)
+          end)
+        end
+
         # Applies the transformation to each conjunct independently
         # and rebuilds the intersection from the results.
         #

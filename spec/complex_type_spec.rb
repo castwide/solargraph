@@ -802,7 +802,11 @@ describe 'YARD type specifier list parsing' do
         ['generic<A>', 'Array<String>', { 'A' => 'String' }, 'String', { 'A' => 'String' }],
         ['generic<A>', 'Array<generic<B>>', { 'B' => 'Integer' }, 'Array<Integer>',
          { 'B' => 'Integer', 'A' => 'Array<Integer>' }],
-        ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', { 'A' => 'String' }]
+        ['Array<generic<A>>', 'Array<String>', {}, 'Array<String>', { 'A' => 'String' }],
+        ['Class<generic<A>> & #new', 'Class<String>', {}, 'Class<String> & #new', { 'A' => 'String' }],
+        ['#each & Array<generic<A>>', 'Array<String>', {}, '#each & Array<String>', { 'A' => 'String' }],
+        ['Class<generic<A>> & #new', 'Class<String>', { 'A' => 'Integer' }, 'Class<Integer> & #new',
+         { 'A' => 'Integer' }]
       ].freeze
 
       UNIQUE_METHOD_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map|
