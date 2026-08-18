@@ -95,7 +95,11 @@ module Solargraph
         # references into core won't expand in this case, but we
         # still get a nominal tag rather than failing to load the
         # library's pins at all.
-        logger.debug { "Could not build a core-aware environment for #{loader.libs}: #{e.message}" }
+        logger.warn do
+          "Could not build a core-aware environment for #{loader.libs}: #{e.message}. " \
+            'Type aliases referencing names declared in RBS core will not be expanded ' \
+            'for these libraries, and will be typed by their alias name instead.'
+        end
         fallback
       end
 
@@ -330,7 +334,6 @@ module Solargraph
         if decl.super_class
           type = build_type(decl.super_class.name, decl.super_class.args)
           generic_values = type.all_params.map(&:to_s)
-          decl.super_class.name.to_s
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
@@ -624,7 +627,6 @@ module Solargraph
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin, implicit_nil
         [
-          # @sg-ignore Wrong argument type for to_parameter_pins: method_type expected RBS::MethodType, received RBS::MethodType, RBS::Types::Block
           RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names, type_alias_decls: type_alias_decls),
           extract_method_type_return_type(type, implicit_nil).force_rooted
         ]

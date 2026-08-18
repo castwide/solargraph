@@ -38,7 +38,7 @@ module Solargraph
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
     end
 
-    # @param method_type [RBS::MethodType]
+    # @param method_type [RBS::MethodType, RBS::Types::Block]
     # @param closure [Pin::Closure]
     # @param parameter_names [Array<String>]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
@@ -103,7 +103,8 @@ module Solargraph
       # @sg-ignore Wrong argument type for to_complex_type: type expected RBS::Types::Bases::Base, received union of concrete subtypes
       return_type = to_complex_type(method_type.type.return_type, type_alias_decls: type_alias_decls)
       block = if method_type.block
-                # @sg-ignore Wrong argument type for to_parameter_pins: method_type expected RBS::MethodType, received RBS::MethodType, RBS::Types::Block
+                # @sg-ignore The `if method_type.block` guard above doesn't narrow nil out of this
+                #   second `method_type.block` call: https://github.com/castwide/solargraph/issues/1249
                 block_parameters = to_parameter_pins(method_type.block, closure, type_alias_decls: type_alias_decls)
                 block_return_type = to_complex_type(method_type.block.type.return_type, type_alias_decls: type_alias_decls)
                 Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
