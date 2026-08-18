@@ -372,6 +372,57 @@ describe Solargraph::Source::Chain::Call do
     expect(type.rooted_tags).to eq('::String, ::Symbol')
   end
 
+  it 'resolves a YARD @return [self] to the union arm that supplied the method' do
+    source = Solargraph::Source.load_string(%(
+      class Alpha
+        # @return [Symbol]
+        def to_thing; end
+      end
+
+      class Beta
+        # @return [self]
+        def to_thing; end
+      end
+
+      # @type [Alpha, Beta]
+      thing = alpha_or_beta
+      thing.to_thing
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(13, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # `self` in a YARD @return tag reaches the same resolution as an RBS `self`
+    # return type, so Beta#to_thing narrows to Beta instead of expanding to the
+    # whole Alpha, Beta receiver.
+    expect(type.rooted_tags).to eq('::Symbol, ::Beta')
+  end
+
+  it 'distributes a YARD self nested in a generic across union arms' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [Array<self>]
+        def many; end
+      end
+
+      class Alpha < Base; end
+      class Beta < Base; end
+
+      # @type [Alpha, Beta]
+      thing = alpha_or_beta
+      thing.many
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Base#many is one pin shared by both arms, so `self` inside the generic
+    # resolves once per arm rather than collapsing to Array<Alpha, Beta>.
+    expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>')
+  end
+
   it 'allows calls off of nilable objects by default' do
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]
