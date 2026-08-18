@@ -626,12 +626,10 @@ module Solargraph
       end
 
       UNDEFINED = UniqueType.new('undefined', rooted: false)
-      # @note Equal (`==`) to ComplexType::BOT.first - rooted: true
-      #   matches how ComplexType.parse('bot') constructs it, unlike
-      #   UNDEFINED's rooted: false. Getting this wrong keeps #bot?/
-      #   #tag/#to_s working (they don't read @rooted) but silently
-      #   breaks #== and anything relying on it (Array#uniq, Array#-,
-      #   Set membership, pin dedup).
+      # #eql? and #hash read the raw @rooted ivar, while #rooted?
+      # reports true for any lowercase name regardless of it. rooted:
+      # true is therefore required for BOT to compare equal to - and
+      # hash alongside - ComplexType::BOT.first.
       BOT = UniqueType.new('bot', rooted: true)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
       TRUE = UniqueType.new('true', rooted: true)
