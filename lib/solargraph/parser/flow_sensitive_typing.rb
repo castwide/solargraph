@@ -5,6 +5,12 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
+      # `kind_of?` is an alias of `is_a?`, with the same semantics on
+      # both paths: a true result proves class membership, and a false
+      # result rules out the class and every subclass of it. Both are
+      # handled by #parse_isa.
+      ISA_METHOD_NAMES = %i[is_a? kind_of?].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
@@ -288,11 +294,13 @@ module Solargraph
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
       def parse_isa isa_node
-        call_type_name, variable_name = parse_call(isa_node, :is_a?)
+        ISA_METHOD_NAMES.each do |method_name|
+          call_type_name, variable_name = parse_call(isa_node, method_name)
 
-        return unless call_type_name
+          return [call_type_name, variable_name] if call_type_name
+        end
 
-        [call_type_name, variable_name]
+        nil
       end
 
       # @param variable_name [String]

@@ -1234,4 +1234,67 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [5, 10])
     expect(clip.infer.to_s).to eq('Object')
   end
+
+  it 'uses kind_of? in a simple if() to refine types like is_a?' do
+    source = Solargraph::Source.load_string(%(
+      # @param arg [String, Integer]
+      def convert(arg)
+        if arg.kind_of?(String)
+          arg
+        else
+          arg
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
+  it 'uses kind_of? in a modifier-unless guard clause to refine the fall-through' do
+    source = Solargraph::Source.load_string(%(
+      # @param arg [Object]
+      def convert(arg)
+        return arg unless arg.kind_of? String
+
+        arg
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'keeps the guarded arm on the false path of instance_of?, unlike is_a?' do
+    # a Repro value declared as ReproBase fails instance_of?(ReproBase)
+    # while still being a ReproBase, so the false path cannot exclude
+    # the ReproBase arm the way is_a? can
+    isa_source = %(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @param repr [ReproBase, String]
+      def verify_repro(repr)
+        if repr.%s(ReproBase)
+          repr
+        else
+          repr
+        end
+      end
+  )
+
+    source = Solargraph::Source.load_string(format(isa_source, 'instance_of?'), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('ReproBase')
+    expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('ReproBase, String')
+
+    %w[is_a? kind_of?].each do |method_name|
+      source = Solargraph::Source.load_string(format(isa_source, method_name), 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('ReproBase')
+      expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('String')
+    end
+  end
 end
