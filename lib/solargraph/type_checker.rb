@@ -706,7 +706,7 @@ module Solargraph
     def blame_description blame
       # The parser produced an undefined placeholder rather than a named
       # link, so there is no name to report - say nothing rather than
-      # guessing. (Numbered block parameters land here; see #NNNN.)
+      # guessing. (Numbered block parameters land here.)
       return nil if blame.link.word == '<undefined>'
 
       receiver = blame.receiver_type&.defined? ? " on #{blame.receiver_type}" : ''
