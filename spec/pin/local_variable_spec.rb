@@ -192,4 +192,79 @@ describe Solargraph::Pin::LocalVariable do
       expect(i.visible_at?(each_block_pin, location)).to be true
     end
   end
+
+  describe 'assignment inside a block' do
+    # @param code [String]
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [String]
+    def infer_at code, line, column
+      source = Solargraph::Source.load_string(code, 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      api_map.clip_at('test.rb', [line, column]).infer.to_s
+    end
+
+    it 'unions the outer value with the value assigned in the block' do
+      # the block may run zero times, so the pre-block nil survives
+      expect(infer_at(%(
+        def foo
+          x = nil
+          [1].each do |_i|
+            x = ['a']
+          end
+          x
+        end
+      ), 6, 10)).to eq('nil, Array')
+    end
+
+    it 'reaches an outer local through nested blocks' do
+      expect(infer_at(%(
+        def foo
+          x = nil
+          [1].each do |_i|
+            [2].each do |_j|
+              x = ['a']
+            end
+          end
+          x
+        end
+      ), 8, 10)).to eq('nil, Array')
+    end
+
+    it 'keeps a block parameter of the same name block-local' do
+      expect(infer_at(%(
+        def foo
+          x = 'str'
+          [1].each do |x|
+            x = 2
+          end
+          x
+        end
+      ), 6, 10)).to eq('String')
+    end
+
+    it 'keeps a name first assigned inside the block out of the outer scope' do
+      expect(infer_at(%(
+        def foo
+          [1].each do |_i|
+            y = 2
+          end
+          y
+        end
+      ), 5, 10)).to eq('undefined')
+    end
+
+    it 'does not union an assignment that only follows the block' do
+      expect(infer_at(%(
+        def foo
+          [1].each do |_i|
+            w = 'str'
+          end
+          w = 5
+          w
+        end
+      ), 6, 10)).to eq('Integer')
+    end
+  end
 end
