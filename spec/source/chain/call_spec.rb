@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+# Contributes a fixed set of pins to every source map, standing in for
+# the pins a resolved `require` brings in from a gem or the stdlib.
+# Specs assign #pins, register it, and unregister it again afterwards.
+class RbsPinConvention < Solargraph::Convention::Base
+  class << self
+    # @return [Array<Solargraph::Pin::Base>]
+    attr_accessor :pins
+  end
+
+  self.pins = []
+
+  # @param _source_map [Solargraph::SourceMap]
+  # @return [Solargraph::Environ]
+  def local _source_map
+    Solargraph::Environ.new(pins: self.class.pins)
+  end
+end
+
 describe Solargraph::Source::Chain::Call do
   it 'recognizes core methods that return subtypes' do
     api_map = Solargraph::ApiMap.new
@@ -498,7 +516,10 @@ describe Solargraph::Source::Chain::Call do
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
 
-  context 'with an RBS-declared generic block-form overload accepting a kwrest parameter' do
+  # Serves an RBS file's pins through the public Convention extension
+  # point, standing in for the pins a resolved `require` contributes via
+  # DocMap, so these specs exercise calls into a gem/stdlib method.
+  shared_context 'with a Box declared in RBS' do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
@@ -510,15 +531,6 @@ describe Solargraph::Source::Chain::Call do
 
     attr_reader :temp_dir
 
-    let(:rbs) do
-      <<~RBS
-        class Box
-          def self.start: (Integer val, ?String opt1, ?String opt2) -> Box
-                         | [T] (Integer val, ?String opt1, ?String opt2, **untyped opts) { (Integer v) -> T } -> T
-        end
-      RBS
-    end
-
     let(:conversions) do
       loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
       loader.add(path: Pathname(temp_dir))
@@ -527,23 +539,37 @@ describe Solargraph::Source::Chain::Call do
 
     before do
       File.write(File.join(temp_dir, 'box.rbs'), rbs)
+      RbsPinConvention.pins = conversions.pins
+      Solargraph::Convention.register RbsPinConvention
     end
 
-    # Simulates a gem/stdlib method (loaded via `convention_pins`, the
-    # same mechanism DocMap uses for a resolved `require`) being called
-    # with a keyword argument that should bind to the overload's kwrest
-    # parameter, not the next positional parameter.
-    #
+    after do
+      Solargraph::Convention.unregister RbsPinConvention
+      RbsPinConvention.pins = []
+    end
+
     # @param code [String]
+    # @param position [Array(Integer, Integer)]
     # @return [Solargraph::ComplexType]
-    # @param [Object] position
     def infer_at code, position
       api_map = Solargraph::ApiMap.new
       source = Solargraph::Source.load_string(code, 'test.rb')
       source_map = Solargraph::SourceMap.map(source)
-      source_map.send(:convention_pins=, conversions.pins)
       api_map.catalog(Solargraph::Bench.new(source_maps: [source_map], live_map: source_map))
       api_map.clip_at('test.rb', position).infer
+    end
+  end
+
+  context 'with an RBS-declared generic block-form overload accepting a kwrest parameter' do
+    include_context 'with a Box declared in RBS'
+
+    let(:rbs) do
+      <<~RBS
+        class Box
+          def self.start: (Integer val, ?String opt1, ?String opt2) -> Box
+                         | [T] (Integer val, ?String opt1, ?String opt2, **untyped opts) { (Integer v) -> T } -> T
+        end
+      RBS
     end
 
     it 'matches a trailing keyword argument to a kwrest parameter instead of the next positional parameter' do
@@ -566,15 +592,7 @@ describe Solargraph::Source::Chain::Call do
   end
 
   context 'with overloads that differ only in which keyword(s) they accept' do
-    around do |example|
-      require 'tmpdir'
-      Dir.mktmpdir('rspec-solargraph-') do |dir|
-        @temp_dir = dir
-        example.run
-      end
-    end
-
-    attr_reader :temp_dir
+    include_context 'with a Box declared in RBS'
 
     let(:rbs) do
       <<~RBS
@@ -583,28 +601,6 @@ describe Solargraph::Source::Chain::Call do
                        | (library: String, ?resolve_dependencies: untyped) -> String
         end
       RBS
-    end
-
-    let(:conversions) do
-      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
-      loader.add(path: Pathname(temp_dir))
-      Solargraph::RbsMap::Conversions.new(loader: loader)
-    end
-
-    before do
-      File.write(File.join(temp_dir, 'box.rbs'), rbs)
-    end
-
-    # @param code [String]
-    # @param position [Array(Integer, Integer)]
-    # @return [Solargraph::ComplexType]
-    def infer_at code, position
-      api_map = Solargraph::ApiMap.new
-      source = Solargraph::Source.load_string(code, 'test.rb')
-      source_map = Solargraph::SourceMap.map(source)
-      source_map.send(:convention_pins=, conversions.pins)
-      api_map.catalog(Solargraph::Bench.new(source_maps: [source_map], live_map: source_map))
-      api_map.clip_at('test.rb', position).infer
     end
 
     it 'matches a call by the keyword it actually passes, not an earlier overload with an untyped keyword param' do
