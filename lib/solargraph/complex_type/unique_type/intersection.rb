@@ -100,6 +100,13 @@ module Solargraph
         # *some* conjunct of this one, not necessarily the same one each
         # time - handled separately below.
         #
+        # A union on the expected side is tried one alternative at a
+        # time first, so that an intersection buried in a union is
+        # still compared as an intersection. Checking the conjuncts
+        # against the whole union instead asks a single conjunct to
+        # carry the match on its own, which `A & false` cannot do
+        # against a union that contains `A & false` itself.
+        #
         # @param api_map [ApiMap]
         # @param expected [ComplexType, ComplexType::UniqueType]
         # @param situation [:method_call, :assignment, :return_type]
@@ -108,6 +115,8 @@ module Solargraph
         # @return [Boolean]
         def conforms_to? api_map, expected, situation, rules = [],
                          variance: erased_variance(situation)
+          return true if any_union_alternative_conforms?(api_map, expected, situation, rules, variance)
+
           expected_intersection = sole_intersection(expected)
           if expected_intersection
             return expected_intersection.conjuncts.all? do |expected_conjunct|
@@ -179,12 +188,28 @@ module Solargraph
 
         # Returns expected itself when it's a bare Intersection, or
         # its one item when it's a ComplexType consisting of nothing
-        # but a single Intersection. Anything else - including a
-        # union with an intersection as just one of several
-        # alternatives - returns nil, leaving that (rarer, untested)
-        # case on the simpler existing "any conjunct" path rather
-        # than guessing at its semantics here.
+        # but a single Intersection. A union with an intersection as
+        # one of several alternatives returns nil; #conforms_to? has
+        # already tried each alternative on its own by then, so what
+        # reaches here is the fallback "any conjunct" path.
         #
+        # True when expected is a union and this intersection conforms
+        # to one of its alternatives taken on its own.
+        #
+        # @param api_map [ApiMap]
+        # @param expected [ComplexType, ComplexType::UniqueType]
+        # @param situation [:method_call, :assignment, :return_type]
+        # @param rules [Array<Symbol>]
+        # @param variance [:invariant, :covariant, :contravariant]
+        # @return [Boolean]
+        def any_union_alternative_conforms? api_map, expected, situation, rules, variance
+          return false unless expected.is_a?(ComplexType) && expected.length > 1
+
+          expected.items.any? do |item|
+            conforms_to?(api_map, ComplexType.new([item]), situation, rules, variance: variance)
+          end
+        end
+
         # @param expected [ComplexType, ComplexType::UniqueType]
         # @return [Intersection, nil]
         def sole_intersection expected

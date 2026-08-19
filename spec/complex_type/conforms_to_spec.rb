@@ -315,6 +315,23 @@ describe Solargraph::ComplexType do
         exp = described_class.parse('Sub & Unrelated')
         expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
       end
+
+      it 'conforms to a union that offers the same intersection as one alternative' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Integer', 'Sub & Unrelated', 'nil')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(true)
+      end
+
+      it 'conforms to itself when it is a union of intersections' do
+        type = described_class.parse('Sub & Unrelated', 'Sub & Integer', 'nil')
+        expect(type.conforms_to?(api_map, type, :assignment)).to be(true)
+      end
+
+      it 'still rejects a union whose alternatives no conjunct combination covers' do
+        inf = described_class.parse('Sub & Unrelated')
+        exp = described_class.parse('Sub & Integer', 'Float')
+        expect(inf.conforms_to?(api_map, exp, :method_call)).to be(false)
+      end
     end
 
     it 'combines a class and a mix-in as conjuncts' do
