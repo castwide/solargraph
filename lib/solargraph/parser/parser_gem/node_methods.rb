@@ -203,7 +203,7 @@ module Solargraph
         def call_nodes_from node
           return [] unless node.is_a?(::Parser::AST::Node)
           result = []
-          if node.type == :block
+          if %i[block numblock].include?(node.type)
             result.push node
             if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
               # @sg-ignore Need to add nil check here
@@ -444,7 +444,7 @@ module Solargraph
             FIRST_TWO_CHILDREN = [:rescue].freeze
             COMPOUND_STATEMENTS = %i[begin kwbegin].freeze
             SKIPPABLE = %i[def defs class sclass module].freeze
-            FUNCTION_VALUE = [:block].freeze
+            FUNCTION_VALUE = %i[block numblock].freeze
             CASE_STATEMENT = [:case].freeze
 
             # @param node [AST::Node] a method body compound statement
@@ -534,7 +534,7 @@ module Solargraph
               result = []
               nodes = parent.children.select { |n| n.is_a?(AST::Node) }
               nodes.each_with_index do |node, idx|
-                if node.type == :block
+                if FUNCTION_VALUE.include?(node.type)
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 elsif node.type == :rescue
                   # body statements
@@ -614,7 +614,7 @@ module Solargraph
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes(node.children)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                elsif node.type == :block
+                elsif FUNCTION_VALUE.include?(node.type)
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check

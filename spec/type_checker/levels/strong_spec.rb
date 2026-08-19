@@ -925,5 +925,51 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'infers the return type of a call with a numbered block parameter' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @param x [String]
+        # @return [Boolean]
+        def numbered(xs, x)
+          xs.any? { x.include?(_1) }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'infers the return type of a call with an explicit block parameter' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @param x [String]
+        # @return [Boolean]
+        def explicit(xs, x)
+          xs.any? { |s| x.include?(s) }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'treats a numbered block as a block instead of a blockless call' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @return [Array<String>]
+        def numbered_map(xs)
+          xs.map { _1.upcase }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'infers the type of a numbered block parameter' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @return [Array<String>]
+        def numbered_map(xs)
+          xs.map { _1.no_such_method }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to no_such_method on String')
+    end
   end
 end

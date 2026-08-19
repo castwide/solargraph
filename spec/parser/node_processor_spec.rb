@@ -79,4 +79,15 @@ describe Solargraph::Parser::NodeProcessor do
 
     expect(map.pins.last.type.to_s).to eq('Array<String>')
   end
+
+  it 'creates block pins with synthesized parameters for numbered blocks' do
+    map = Solargraph::SourceMap.load_string(%(
+      [1, 2].each { _2 }
+    ), 'test.rb')
+
+    block = map.pins.find { |pin| pin.is_a?(Solargraph::Pin::Block) }
+    expect(block).not_to be_nil
+    expect(block.parameters.map(&:name)).to eq(%w[_1 _2])
+    expect(map.locals.map(&:name)).to include('_1', '_2')
+  end
 end
