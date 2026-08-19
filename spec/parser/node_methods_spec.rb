@@ -240,6 +240,34 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[str int])
   end
 
+  it 'uses the body and rescue values for a method with both a rescue and an ensure clause' do
+    def_node = parse(%(
+      def foo
+        'hello'
+      rescue StandardError
+        'goodbye'
+      ensure
+        nil
+      end
+    ))
+    rets = described_class.returns_from_method_body(def_node.children[2])
+    expect(rets.map(&:type)).to eq(%i[str str])
+  end
+
+  it 'includes explicit returns from an ensure clause alongside a rescue clause' do
+    def_node = parse(%(
+      def foo
+        'hello'
+      rescue StandardError
+        'goodbye'
+      ensure
+        return 1 if bar
+      end
+    ))
+    rets = described_class.returns_from_method_body(def_node.children[2])
+    expect(rets.map(&:type)).to eq(%i[str str int])
+  end
+
   it 'returns nested return blocks' do
     node = parse(%(
       if foo
