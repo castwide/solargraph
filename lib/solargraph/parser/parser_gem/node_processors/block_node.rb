@@ -85,6 +85,13 @@ module Solargraph
           # block from having one: in `xs.map { it.map { it.upcase } }` each
           # `it` belongs to the block it appears in.
           #
+          # This diverges from Ruby for an enclosing block with an explicit
+          # parameter named `it`. In `xs.map { |it| ys.map { it } }` Ruby
+          # reads the inner `it` as the outer parameter; this gives the
+          # inner block its own. Treating a block parameter as a shadow
+          # instead would break every nested implicit `it`, which is the
+          # far more common shape.
+          #
           # @return [Boolean]
           def shadowed_it_local?
             loc = get_node_location(node)
