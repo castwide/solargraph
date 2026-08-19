@@ -186,6 +186,11 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
+                                                        # Do not remove on a local "Unneeded @sg-ignore"
+                                                        # verdict. Whether this constant resolves varies by
+                                                        # Ruby patch release, and CI runs a newer one than
+                                                        # most worktrees. It has been removed and restored
+                                                        # twice on local verdicts alone.
                                                         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
