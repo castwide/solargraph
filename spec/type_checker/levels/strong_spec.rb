@@ -1050,5 +1050,30 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems).to be_empty
     end
+
+    it 'infers String from a backtick command' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def bar
+            `echo hi`.strip
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'infers String from an interpolated backtick command' do
+      checker = type_checker(%q(
+        class Foo
+          # @return [String]
+          def bar
+            cmd = 'echo hi'
+            `#{cmd}`.strip
+          end
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end

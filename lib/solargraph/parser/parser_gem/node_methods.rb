@@ -42,7 +42,7 @@ module Solargraph
         # @return [String, nil]
         def infer_literal_node_type node
           return nil unless node.is_a?(AST::Node)
-          if %i[str dstr].include?(node.type)
+          if %i[str dstr xstr].include?(node.type)
             return '::String'
           elsif node.type == :array
             return '::Array'
