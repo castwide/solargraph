@@ -971,5 +971,84 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to include('Unresolved call to no_such_method on String')
     end
+
+    it 'infers the type of an implicit `it` block parameter' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @return [Array<String>]
+        def it_map(xs)
+          xs.map { it.upcase }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'catches a return tag that disagrees with an `it` block' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @return [Array<Integer>]
+        def it_mismatch(xs)
+          xs.map { it }
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include('Declared return type ::Array<::Integer> does not match inferred type ::Array<::String> for #it_mismatch')
+    end
+
+    it 'catches a return tag that disagrees with an explicit block parameter' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @return [Array<Integer>]
+        def ex_mismatch(xs)
+          xs.map { |s| s }
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include('Declared return type ::Array<::Integer> does not match inferred type ::Array<::String> for #ex_mismatch')
+    end
+
+    it 'accepts `it` used as an argument' do
+      checker = type_checker(%(
+        # @param xs [Array<String>]
+        # @param x [String]
+        # @return [Boolean]
+        def with_it(xs, x)
+          xs.any? { x.include?(it) }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'lets a local variable named `it` take precedence over the implicit parameter' do
+      checker = type_checker(%(
+        # @return [Array<Integer>]
+        def shadowed
+          it = 5
+          ['a'].map { it }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'gives a nested block its own parameter alongside an outer `it`' do
+      checker = type_checker(%(
+        # @param xs [Array<Array<String>>]
+        # @return [Array<Array<String>>]
+        def nested(xs)
+          xs.map { it.map { |s| s.upcase } }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not invent a parameter for a block that takes none' do
+      checker = type_checker(%(
+        # @return [Array<Integer>]
+        def plain
+          [1].map { 5 }
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
   end
 end
