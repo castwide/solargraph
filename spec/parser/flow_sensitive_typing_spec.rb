@@ -766,6 +766,86 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 
+  it 'uses .nil? in an until condition to refine types in the loop body' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          until baz.nil?
+            baz
+            break
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    # the body may run zero times and may break, so nothing is
+    # asserted once the loop is over
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'uses .nil? in an until condition to refine types in a loop body which reassigns the variable' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @param other [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil, other: nil)
+          baz
+          until baz.nil?
+            baz
+            baz = other
+          end
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+
+    clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
+  it 'does not use a post-condition until to refine types in the loop body' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          begin
+            baz
+          end until baz.nil?
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    # the body runs once before the condition is ever evaluated
+    clip = api_map.clip_at('test.rb', [6, 12])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+  end
+
   it 'uses .nil? in a return if() in an until to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
