@@ -238,6 +238,17 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
+      # A merged multi-assignment variable pin and its earliest constituent
+      # assignment pin share the same #choose-d (earliest) location but differ
+      # in presence, so discriminating on it keeps Chain's recursion guard from
+      # conflating "resolving the merged pin" with "resolving one of its
+      # narrower assignments" and dropping a legitimate recursive lookup.
+      #
+      # @return [String, nil]
+      def identity_discriminator
+        presence&.inspect
+      end
+
       # @sg-ignore need boolish support for ? methods
       def presence_certain?
         exclude_return_type || intersection_return_type

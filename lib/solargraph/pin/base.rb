@@ -642,17 +642,18 @@ module Solargraph
         result
       end
 
+      # Distinguishes pins that share a #location but cover different things.
+      # Nil for pins with no such distinction to make.
+      #
+      # @return [String, nil]
+      def identity_discriminator
+        nil
+      end
+
       # @deprecated
       # @return [String]
       def identity
-        # Include presence (when available) alongside location: a merged
-        # multi-assignment variable pin and its earliest constituent
-        # assignment pin share the same #choose-d (earliest) location, but
-        # differ in presence, so this keeps Chain's recursion guard from
-        # conflating "resolving the merged pin" with "resolving one of its
-        # narrower assignments" and dropping a legitimate recursive lookup.
-        presence_fragment = respond_to?(:presence) ? presence&.inspect : nil
-        @identity ||= "#{closure&.path}|#{name}|#{location}|#{presence_fragment}"
+        @identity ||= "#{closure&.path}|#{name}|#{location}|#{identity_discriminator}"
       end
 
       # The namespaces available for resolving the current namespace. Each gate
