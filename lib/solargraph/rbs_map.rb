@@ -157,6 +157,19 @@ module Solargraph
       @resolved
     end
 
+    # A standalone substitute for this gem's PinCache-combined pins
+    # (PinCache#deserialize_combined_pin_cache), for a caller that needs
+    # something before that combined cache has been built. Base RbsMap
+    # has none to offer, since a combined cache is a merge of this map's
+    # pins with separately-cached YARD pins and dropping the YARD half
+    # isn't safe in general. RbsMap::StdlibMap overrides this because its
+    # own pins need no such merge.
+    #
+    # @return [Array<Pin::Base>, nil]
+    def fallback_pins
+      nil
+    end
+
     # @return [RBS::Repository]
     def repository
       @repository ||= RBS::Repository.new(no_stdlib: false).tap do |repo|

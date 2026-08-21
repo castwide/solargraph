@@ -112,7 +112,23 @@ module Solargraph
     def deserialize_combined_pin_cache gemspec
       rbs_version_cache_key = lookup_rbs_version_cache_key(gemspec)
 
-      load_combined_gem(gemspec, rbs_version_cache_key)
+      combined = load_combined_gem(gemspec, rbs_version_cache_key)
+      return combined if combined
+
+      # No combined cache entry exists yet for this gemspec - only
+      # `solargraph gems` writes one. See RbsMap#fallback_pins for which
+      # gems can supply a standalone substitute in the meantime.
+      #
+      # Deliberately not written to combined_pins_in_memory: that is
+      # process-wide and keyed only by name and version, so a
+      # provisional set stored there would go on being served after the
+      # build that supersedes it.
+      rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
+      fallback = rbs_map.fallback_pins
+      return nil unless fallback
+
+      logger.debug { "Using #{gemspec.name}:#{gemspec.version}'s fallback RBS pins (no combined cache entry yet)" }
+      fallback
     end
 
     # @param gemspec [Gem::Specification, Bundler::LazySpecification]
