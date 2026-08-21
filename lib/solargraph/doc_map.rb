@@ -166,10 +166,14 @@ module Solargraph
       serialized_pins.length
       time = Benchmark.measure do
         gemspecs.each do |gemspec|
-          # only deserializes already-cached gems
           gemspec_pins = pin_cache.deserialize_combined_pin_cache gemspec
           if gemspec_pins
+            # deserialize_combined_pin_cache may have answered with a
+            # fallback - RbsMap#fallback_pins - before the real combined
+            # cache exists, so confirm that's not what happened rather
+            # than inferring "cached" from "got pins back".
             serialized_pins.concat gemspec_pins
+            uncached_gemspecs << gemspec unless pin_cache.cached?(gemspec)
           else
             uncached_gemspecs << gemspec
           end
