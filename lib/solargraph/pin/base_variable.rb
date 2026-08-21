@@ -19,7 +19,7 @@ module Solargraph
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
-      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, Integer, Boolean), nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -52,7 +52,7 @@ module Solargraph
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
-        # @type [nil, ::Array(Parser::AST::Node, Integer)]
+        # @type [nil, ::Array(Parser::AST::Node, Integer, Boolean)]
         @mass_assignment = mass_assignment
         @return_type = return_type
         @intersection_return_type = intersection_return_type
@@ -102,7 +102,7 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(AST::Node, Integer), nil]
+      # @return [Array(AST::Node, Integer, Boolean), nil]
       def combine_mass_assignment other
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
@@ -183,19 +183,42 @@ module Solargraph
         #   well so that we can do better flow sensitive typing with
         #   multiple assignments
         unless @mass_assignment.nil?
-          mass_node, index = @mass_assignment
+          mass_node, index, splat = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
-          types.map! do |type|
-            if type.tuple?
-              type.all_params[index]
-            elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
-              type.all_params.first
+          if splat
+            # A splat target (`*args`) captures every remaining
+            # element of the right-hand side, not just one position -
+            # take the source array's full parameter union rather
+            # than a single indexed/first parameter.
+            types = types.flat_map do |type|
+              if type.tuple? || ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+                type.all_params
+              else
+                []
+              end
             end
-          end.compact!
+          else
+            types.map! do |type|
+              if type.tuple?
+                type.all_params[index]
+              elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+                type.all_params.first
+              end
+            end.compact!
+          end
 
           return ComplexType::UNDEFINED if types.empty?
 
-          return adjust_type api_map, ComplexType.new(types.uniq).qualify(api_map, *gates)
+          element_type = ComplexType.new(types.uniq)
+          # A splat target (`*args`) captures the rest of the
+          # right-hand side as an array of the element type, not the
+          # element type itself.
+          if splat
+            rest_type = ComplexType::UniqueType.new('Array', [], [element_type], rooted: true, parameters_type: :list)
+            return adjust_type api_map, ComplexType.new([rest_type]).qualify(api_map, *gates)
+          end
+
+          return adjust_type api_map, element_type.qualify(api_map, *gates)
         end
 
         ComplexType::UNDEFINED

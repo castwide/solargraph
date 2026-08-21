@@ -33,11 +33,26 @@ module Solargraph
             process_children
 
             lhs_arr.each_with_index do |lhs, i|
-              location = get_node_location(lhs)
-              pin = if lhs.type == :lvasgn
+              # A splat entry (e.g. `*args`) wraps the actual
+              # assignment target - `s(:splat, s(:lvasgn, :args))` -
+              # and the splat node's own location (which includes
+              # the leading `*`) never matches the location of the
+              # pin created for the inner assignment target. Unwrap
+              # it so the pin lookup below finds the right pin, and
+              # remember that this entry captures the "rest" of the
+              # right-hand side as an array rather than a single
+              # element.
+              splat = lhs.type == :splat
+              target = splat ? lhs.children[0] : lhs
+              # An anonymous splat (`a, * = arr`) has no assignment
+              # target to bind a type to.
+              next if target.nil?
+
+              location = get_node_location(target)
+              pin = if target.type == :lvasgn
                       # lvasgn is a local variable
                       locals.find { |l| l.location == location }
-                    elsif lhs.type == :ivasgn
+                    elsif target.type == :ivasgn
                       # ivasgn is an instance variable assignment
                       ivars.find { |iv| iv.location == location }
                     else
@@ -47,11 +62,11 @@ module Solargraph
               #   when a non-existant method is called on 'l'
               if pin.nil?
                 Solargraph.logger.debug do
-                  "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, lhs.type = #{lhs.type}"
+                  "Could not find local for masgn= value in location #{location.inspect} in #{lhs_arr} - masgn = #{masgn}, target.type = #{target.type}"
                 end
                 next
               end
-              pin.mass_assignment = [mass_rhs, i]
+              pin.mass_assignment = [mass_rhs, i, splat]
             end
           end
         end

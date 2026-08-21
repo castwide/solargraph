@@ -47,6 +47,44 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
+  it 'infers a splat target in a multiple assignment as an array' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param mutator [Array<Symbol, BasicObject>]
+        # @return [void]
+        def call(mutator)
+          command, *args = mutator
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    locals = api_map.source_map('test.rb').locals
+    command_pin = locals.find { |l| l.name == 'command' }
+    args_pin = locals.find { |l| l.name == 'args' }
+    expect(command_pin.probe(api_map).tag).to eq('Symbol')
+    expect(args_pin.probe(api_map).tag).to eq('Array<Symbol, BasicObject>')
+  end
+
+  it 'leaves a plain (non-splat) multiple assignment unaffected by splat handling' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param pair [Array<Integer, String>]
+        # @return [void]
+        def call(pair)
+          a, b = pair
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    locals = api_map.source_map('test.rb').locals
+    a_pin = locals.find { |l| l.name == 'a' }
+    b_pin = locals.find { |l| l.name == 'b' }
+    expect(a_pin.probe(api_map).tag).to eq('Integer')
+    expect(b_pin.probe(api_map).tag).to eq('Integer')
+  end
+
   it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
