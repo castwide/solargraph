@@ -1,3 +1,16 @@
+## 0.60.3 - August 5, 2026
+- Pin rdoc to ~> 7.0 (#1216)
+- (tag: v0.60.2) Release 0.60.2 (rdoc fix)
+- Fix stale Hash::_Key expectations from upstream RBS core drift (#1224)
+- Bump overcommit to ~> 0.71.0 (#1221)
+- Resolve remote constants (#1234)
+- Fix exponential blowup in Pin::Method#combine_same_type_arity_signatures (#1238)
+- Respect #- yard comment-block separator (#1218)
+- Typecheck attribute return tags against their backing ivar's type (#1219)
+- Fix recursive-mutex deadlock in Library#sync_catalog (#1220)
+- Fix Gemspecs#in_this_bundle? crash when no Gemfile is discoverable (#1225)
+- Remove duplicate dead methods in RbsMap::Conversions (#1253)
+
 ## 0.60.2 - June 27, 2026
 - Extraneous debug output (#1214)
 - Pin rdoc to ~> 7.0 (#1216)
