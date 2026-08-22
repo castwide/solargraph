@@ -3113,10 +3113,10 @@ describe Solargraph::SourceMap::Clip do
       # @generic T
       # @param clazz [Class<generic<T>> & #new]
       # @return [generic<T>]
-      def make(clazz)
+      def construct_it(clazz)
         raise
       end
-      make(String)
+      construct_it(String)
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
