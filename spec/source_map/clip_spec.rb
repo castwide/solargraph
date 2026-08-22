@@ -3121,6 +3121,24 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 8])
-    expect(clip.infer.tag).to eq('String')
+
+    make_pin = api_map.get_methods('Object').find { |p| p.name == 'make' }
+    warn "DEBUG RUBY_VERSION=#{RUBY_VERSION} RUBY_PLATFORM=#{RUBY_PLATFORM} RUBY_ENGINE=#{RUBY_ENGINE}"
+    warn "DEBUG make_pin=#{make_pin.inspect}"
+    warn "DEBUG make_pin.generics=#{make_pin&.generics.inspect}" if make_pin.respond_to?(:generics)
+    warn "DEBUG make_pin.parameters=#{make_pin&.parameters&.map { |p| [p.name, p.decl, p.asgn_code].inspect }.inspect}" if make_pin
+    warn "DEBUG make_pin.return_type=#{make_pin&.return_type.inspect}" if make_pin
+    warn "DEBUG cursor.chain=#{clip.send(:cursor).chain.inspect}"
+    warn "DEBUG cursor.chain.links=#{clip.send(:cursor).chain.links.map(&:class).inspect}"
+    define_result = clip.send(:cursor).chain.define(api_map, clip.send(:closure), clip.locals)
+    warn "DEBUG chain.define=#{define_result.inspect}"
+    infer_result = clip.infer
+    warn "DEBUG clip.infer=#{infer_result.inspect}"
+    warn "DEBUG clip.infer.tag=#{infer_result.tag.inspect}"
+    warn "DEBUG clip.infer.class=#{infer_result.class}"
+
+    expect(clip.infer.tag).to eq('String'),
+                              "DEBUG: make_pin=#{make_pin.inspect}, chain.define=#{define_result.inspect}, " \
+                              "clip.infer=#{infer_result.inspect}"
   end
 end
