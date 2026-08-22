@@ -220,6 +220,12 @@ module Solargraph
       # @sg-ignore need boolish support for ? methods
       def in_this_bundle?
         Bundler.definition&.lockfile&.to_s&.start_with?(directory)
+      rescue Bundler::GemfileNotFound
+        # Solargraph itself isn't running under a discoverable Gemfile
+        # (e.g. installed and invoked as a standalone gem), so it can't
+        # be "this bundle" - fall back to treating the workspace as an
+        # external bundle.
+        false
       end
 
       # @return [Array<Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification>]
