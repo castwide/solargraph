@@ -13,10 +13,6 @@ module Solargraph
           @location = location
         end
 
-        # @sg-ignore Declared return type
-        #   ::Array<::Solargraph::Pin::Base> does not match inferred
-        #   type ::Array<::Solargraph::Pin::BaseVariable, ::NilClass>
-        #   for Solargraph::Source::Chain::InstanceVariable#resolve
         def resolve api_map, name_pin, locals
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word
@@ -27,8 +23,7 @@ module Solargraph
 
         private
 
-        # @todo: Missed nil violation
-        # @return [Location]
+        # @return [Location, nil]
         attr_reader :location
       end
     end
