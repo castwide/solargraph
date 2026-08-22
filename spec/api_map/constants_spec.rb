@@ -94,6 +94,33 @@ describe Solargraph::ApiMap::Constants do
       resolved = constants.resolve('Foo::Bar::Baz')
       expect(resolved).to eq('Foo::Bar::Baz')
     end
+
+    it 'resolves remote constants' do
+      source_map = Solargraph::SourceMap.load_string(%(
+        module Module1
+          class Foo
+          end
+        end
+
+        module Module2
+          include Module1
+          Thing = Foo
+        end
+
+        module Module3
+          include Module2
+        end
+
+        module Module4
+          include Module3
+          x = Thing.new
+        end
+      ), 'test.rb')
+      store = Solargraph::ApiMap::Store.new(source_map.pins)
+      constants = described_class.new(store)
+      constant = constants.resolve('Thing', 'Module4')
+      expect(constant).to eq('Module2::Thing')
+    end
   end
 
   describe '#dereference' do
