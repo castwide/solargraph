@@ -1035,6 +1035,22 @@ describe 'YARD type specifier list parsing' do
       expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
 
+    it 'recognizes a union of intersections conforms with itself' do
+      # Regression test: when an inferred union has a member that is
+      # itself an intersection (e.g. `Class<Foo> & false`), comparing
+      # the union to itself must not fall back to asking that single
+      # conjunct to satisfy the whole union on its own - `false` can't
+      # conform to `Class<Foo> & nil, Class<Foo> & false, nil` by
+      # itself, even though the union as a whole conforms to itself.
+      # This depends on
+      # Intersection#any_union_alternative_conforms? trying each
+      # union alternative individually before falling back to the
+      # "every conjunct must satisfy the whole union" comparison.
+      api_map = Solargraph::ApiMap.new
+      type = Solargraph::ComplexType.parse('Class<Foo> & nil, Class<Foo> & false, nil')
+      expect(type.conforms_to?(api_map, type, :method_call)).to be(true)
+    end
+
     it 'recognizes a literal conforms with its type' do
       pending 'Maybe feasible'
       api_map = Solargraph::ApiMap.new
