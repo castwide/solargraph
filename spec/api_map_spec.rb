@@ -415,6 +415,74 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name)).to include('@foo')
   end
 
+  it 'gets instance variables assigned by a single includer of the queried module' do
+    source = Solargraph::Source.load_string(%(
+      module Loggable
+        def log_message
+          @logger
+        end
+      end
+      class Widget
+        include Loggable
+        def initialize
+          @logger = Logger.new($stdout)
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_instance_variable_pins('Loggable')
+    expect(pins.map(&:name)).to include('@logger')
+  end
+
+  it 'gets instance variables through a transitive includer' do
+    source = Solargraph::Source.load_string(%(
+      module Loggable
+        def log_message
+          @logger
+        end
+      end
+      module LoggableWidget
+        include Loggable
+      end
+      class Widget
+        include LoggableWidget
+        def initialize
+          @logger = Logger.new($stdout)
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_instance_variable_pins('Loggable')
+    expect(pins.map(&:name)).to include('@logger')
+  end
+
+  it 'excludes instance variables that conflicting includers assign with different types' do
+    source = Solargraph::Source.load_string(%(
+      module Loggable
+        def log_message
+          @logger
+        end
+      end
+      class WidgetA
+        include Loggable
+        def initialize
+          # @return [Logger]
+          @logger = Logger.new($stdout)
+        end
+      end
+      class WidgetB
+        include Loggable
+        def initialize
+          # @return [String]
+          @logger = 'not a logger'
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_instance_variable_pins('Loggable')
+    expect(pins.map(&:name)).not_to include('@logger')
+  end
+
   it 'gets methods from extended modules' do
     source = Solargraph::Source.load_string(%(
       module Mixin

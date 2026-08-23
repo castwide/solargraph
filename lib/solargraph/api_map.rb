@@ -382,8 +382,27 @@ module Solargraph
     # @param scope [Symbol] :instance or :class
     # @return [Array<Solargraph::Pin::InstanceVariable>]
     def get_instance_variable_pins namespace, scope = :instance
+      result = own_instance_variable_pins(namespace, scope)
+
+      includer_fqns_list = store.get_includers(namespace)
+      unless includer_fqns_list.empty?
+        per_includer = includer_fqns_list.map { |includer_fqns| own_instance_variable_pins(includer_fqns, scope) }
+        result.concat merge_includer_instance_variable_pins(per_includer)
+      end
+
+      result
+    end
+
+    # Instance variable pins assigned directly in namespace or inherited
+    # through its superclass chain - not through any module it includes.
+    # Shared by #get_instance_variable_pins for both the queried namespace
+    # and each of its includers.
+    #
+    # @param namespace [String] A fully qualified namespace
+    # @param scope [Symbol] :instance or :class
+    # @return [Array<Solargraph::Pin::InstanceVariable>]
+    def own_instance_variable_pins namespace, scope
       result = []
-      [namespace]
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
@@ -393,6 +412,28 @@ module Solargraph
       end
       result
     end
+    private :own_instance_variable_pins
+
+    # Only accept includer-sourced ivar pins for a name when every includer
+    # that assigns it agrees on the type. If two includers assign the same
+    # ivar name with conflicting types, a module method reading that ivar
+    # could be looking at either one, so exclude the name entirely rather
+    # than pick a includer's pin arbitrarily.
+    #
+    # @param per_includer [Array<Array<Solargraph::Pin::InstanceVariable>>]
+    # @return [Array<Solargraph::Pin::InstanceVariable>]
+    def merge_includer_instance_variable_pins per_includer
+      # @type [Hash{String => Array<Solargraph::Pin::InstanceVariable>}]
+      pins_by_name = per_includer.flatten.group_by(&:name)
+      # @type [Array<Solargraph::Pin::InstanceVariable>]
+      result = []
+      pins_by_name.each_value do |pins|
+        types = pins.map { |pin| pin.probe(self).tag }.uniq
+        result.concat(pins) if types.length <= 1
+      end
+      result
+    end
+    private :merge_includer_instance_variable_pins
 
     # Find a variable pin by name and where it is used.
     #

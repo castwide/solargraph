@@ -32,6 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
+        @includer_map = nil
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore Need to add nil check here
@@ -110,6 +111,15 @@ module Solargraph
       # @return [Array<Pin::Reference::Include>]
       def get_includes fqns
         include_references[fqns] || []
+      end
+
+      # Fully qualified namespaces that include the given module, directly
+      # or transitively (an includer of an includer of `fqns` is included).
+      #
+      # @param fqns [String]
+      # @return [Array<String>]
+      def get_includers fqns
+        includer_map[fqns] || []
       end
 
       # @param fqns [String]
@@ -314,6 +324,7 @@ module Solargraph
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
+        @includer_map = nil
         true
       end
 
@@ -368,6 +379,57 @@ module Solargraph
       # @return [Enumerable<Pin::InstanceVariable>]
       def all_instance_variables
         index.pins_by_class(Pin::InstanceVariable)
+      end
+
+      # Inverts the forward include_references index (includer fqns -> its
+      # included module refs) into module fqns -> includer fqns, closed
+      # transitively so a module included by another included module still
+      # resolves back to the original includer.
+      #
+      # @return [Hash{String => Array<String>}]
+      def includer_map
+        @includer_map ||= begin
+          direct = Hash.new { |h, k| h[k] = [] }
+          # Snapshot the keys before iterating: include_references is a
+          # Hash.new{...} that inserts an empty array for any missing key
+          # it's read with, and #constants.dereference below can read other
+          # keys of this same hash as a side effect (resolving an ancestor
+          # chain, via #get_includes' own `include_references[fqns]`) -
+          # #each_key would iterate the live hash and raise "can't add a
+          # new key into hash during iteration" the moment that happens.
+          # rubocop:disable Style/HashEachMethods -- see comment above
+          include_references.keys.each do |includer_fqns|
+            include_references.fetch(includer_fqns, []).each do |ref|
+              module_fqns = constants.dereference(ref)
+              next unless module_fqns
+              direct[module_fqns] << includer_fqns
+            end
+          end
+          # rubocop:enable Style/HashEachMethods
+
+          Hash.new { |h, k| h[k] = [] }.tap do |result|
+            direct.each_key { |module_fqns| result[module_fqns] = transitive_includers(module_fqns, direct) }
+          end
+        end
+      end
+
+      # @param module_fqns [String]
+      # @param direct [Hash{String => Array<String>}]
+      # @return [Array<String>]
+      def transitive_includers module_fqns, direct
+        visited = Set.new
+        # #fetch instead of #[] - direct is a Hash.new{...} that would
+        # otherwise insert an empty array for any fqns queried here that
+        # has no includers of its own, mutating the hash #includer_map is
+        # still iterating over above.
+        queue = direct.fetch(module_fqns, []).dup
+        until queue.empty?
+          current = queue.shift
+          next if visited.include?(current)
+          visited.add(current)
+          queue.concat(direct.fetch(current, []))
+        end
+        visited.to_a
       end
 
       # @param fqns [String]
