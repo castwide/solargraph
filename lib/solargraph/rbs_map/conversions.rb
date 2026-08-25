@@ -140,9 +140,13 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore tool-limitation:hash-fetch-default-generic-leak -
+      #   Hash#fetch(key, default) leaks a spurious generic<X> member
+      #   into the declared return type even though RBS_TO_CLASS is a
+      #   plain Hash{String => String}. No upstream issue filed yet.
       def rooted_name type_name
         name = type_name.to_s
-        RBS_TO_CLASS[name] || name
+        RBS_TO_CLASS.fetch(name, name)
       end
 
       # fqns names are implicitly fully qualified - they are relative
@@ -151,12 +155,13 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore tool-limitation:hash-fetch-default-generic-leak
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
         end
         ns = type_name.relative!.to_s
-        RBS_TO_CLASS[ns] || ns
+        RBS_TO_CLASS.fetch(ns, ns)
       end
 
       # @param decl [RBS::AST::Declarations::Module::Self]

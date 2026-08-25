@@ -182,9 +182,15 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
+        # @sg-ignore tool-limitation:boolish - a bare && chain's return
+        #   type isn't inferred as Boolean without an explicit cast. No
+        #   upstream issue filed yet.
         def splatted_hash? node
-          child = node.children[0]
-          !!(child.is_a?(::Parser::AST::Node) && child.type == :kwsplat)
+          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper -
+          #   is_ast_node? wraps an is_a? check internally, and
+          #   flow-sensitive typing does not narrow through a predicate
+          #   method that way, so .type below is unresolved.
+          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
         end
 
         # @param node [Parser::AST::Node]

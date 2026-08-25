@@ -23,10 +23,15 @@ module Solargraph
         rescue Gem::MissingSpecVersionError => e
           # @type [Array<Gem::Specification>]
           specs = e.specs
-          found_versions = specs.map { |s| s.version.version }.join(', ')
           raise InvalidRubocopVersionError,
-                "could not find '#{e.name}' (#{e.requirement}) - " \
-                "did find: [#{found_versions}]"
+                "could not find '#{e.name}' (#{e.requirement}) - " +
+                # @sg-ignore Gem::Specification#version resolves to
+                #   String here instead of Gem::Version, so the second
+                #   #version call is unresolved - "Unresolved call to
+                #   version on String". Likely an RBS stdlib gap for
+                #   Gem::Specification, not traced further. No upstream
+                #   issue filed yet.
+                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
       end
