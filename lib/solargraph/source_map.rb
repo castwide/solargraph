@@ -225,7 +225,7 @@ module Solargraph
         # aliases, delegations - cover that statement's range but have no
         # body of their own, so treating them as closures would make the
         # declaring statement resolve in the wrong scope.
-        next if pin.is_a?(Pin::Method) && pin.body_less?
+        next if pin.is_a?(Pin::Method) && !pin.has_body?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
           # @sg-ignore Need to add nil check here

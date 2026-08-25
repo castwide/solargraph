@@ -40,7 +40,7 @@ module Solargraph
                 process_private_constant
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
-              elsif %i[def_delegator def_delegators].include?(method_name) && forwardable_extended?
+              elsif %i[def_delegator def_delegators].include?(method_name) && extends_forwardable?
                 process_def_delegators
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
@@ -61,7 +61,7 @@ module Solargraph
           # what makes def_delegator and def_delegators available there.
           #
           # @return [Boolean]
-          def forwardable_extended?
+          def extends_forwardable?
             pins.any? do |pin|
               pin.is_a?(Pin::Reference::Extend) &&
                 pin.closure == region.closure &&
@@ -76,10 +76,15 @@ module Solargraph
           def symbol_word subject
             return nil unless subject.is_a?(::Parser::AST::Node)
 
-            # @sg-ignore is_a? guard above is not narrowed through a return
+            # @sg-ignore is_a? guard above narrows subject to a
+            # workspace-local type but not to an external gem-sourced
+            # type like Parser::AST::Node - "Unresolved call to type on
+            # Object" without this. No upstream issue filed yet.
             return nil unless %i[sym str].include?(subject.type)
 
-            # @sg-ignore is_a? guard above is not narrowed through a return
+            # @sg-ignore Same is_a?-vs-external-type narrowing gap as
+            # above - "Unresolved call to children on Object" without
+            # this. No upstream issue filed yet.
             subject.children.first.to_s
           end
 

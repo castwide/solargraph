@@ -6,9 +6,11 @@ module Solargraph
     # allows aliasing a method from a different closure (class/module etc).
     class DelegatedMethod < Pin::Method
       # @return [Boolean]
-      def body_less?
-        true
+      # rubocop:disable Naming/PredicatePrefix
+      def has_body?
+        false
       end
+      # rubocop:enable Naming/PredicatePrefix
 
       # A DelegatedMethod can be constructed with either a :resolved_method
       # pin, or a :receiver_chain. When a :receiver_chain is supplied, it

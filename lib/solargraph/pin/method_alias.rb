@@ -8,9 +8,11 @@ module Solargraph
     #
     class MethodAlias < Method
       # @return [Boolean]
-      def body_less?
-        true
+      # rubocop:disable Naming/PredicatePrefix
+      def has_body?
+        false
       end
+      # rubocop:enable Naming/PredicatePrefix
       # @return [::Symbol]
       attr_reader :scope
 

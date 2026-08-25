@@ -141,11 +141,9 @@ module Solargraph
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
-      # A def_delegators whose receiver doesn't resolve statically - one
-      # reaching a method_missing dispatcher, say - has no declaration site a
-      # @return tag could be written at. The type belongs to the delegation
-      # target, and where that can't be found the @!method directive written
-      # above the def_delegators supplies it instead.
+      # A DelegatedMethod whose receiver doesn't resolve statically has no
+      # declaration site for a @return tag - the @!method directive above
+      # the def_delegators call supplies the type instead.
       return [] if pin.is_a?(Pin::DelegatedMethod) && !pin.resolvable?(api_map)
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.gates)
