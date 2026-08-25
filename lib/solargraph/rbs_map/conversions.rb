@@ -759,11 +759,13 @@ module Solargraph
       # This method will convert type aliases to concrete types.
       #
       # @param type [RBS::MethodType]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType]
       def extract_method_type_return_type type, implicit_nil
-          tag = RbsTranslator.to_complex_type(type.type.return_type)
-          return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
-          tag
+        return_type = RbsTranslator.to_complex_type(type.type.return_type)
+        return ComplexType.new(return_type.items + [ComplexType::UniqueType::NIL]) if return_type && implicit_nil
+
+        return_type
       end
 
       # @param type_name [RBS::TypeName]

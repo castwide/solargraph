@@ -93,6 +93,26 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    context 'with an implicitly-returns-nil annotation' do
+      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: %a{implicitly-returns-nil} () -> ::String
+          end
+        RBS
+      end
+
+      it 'adds nil to the declared return type' do
+        expect(method_pin.return_type.tags).to eq('String, nil')
+      end
+
+      it 'keeps the declared return type rooted' do
+        expect(method_pin.return_type.rooted_tags).to eq('::String, nil')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
