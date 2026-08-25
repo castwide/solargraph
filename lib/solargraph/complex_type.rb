@@ -50,9 +50,10 @@ module Solargraph
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
 
-      ComplexType.new(@items.map do |i|
-        i.resolve_generics_from_context(generics_to_resolve, generic_item_context_type(i, context_type),
-                                        resolved_generic_values: resolved_generic_values)
+      ComplexType.new(@items.map do |unique_type|
+        unique_type.resolve_generics_from_context(generics_to_resolve,
+                                                  destructure_context_type(unique_type, context_type),
+                                                  resolved_generic_values: resolved_generic_values)
       end)
     end
 
@@ -556,11 +557,11 @@ module Solargraph
     # `generic<A>, nil` would bind to the entire `String, nil` context
     # instead of just `String`.
     #
-    # @param item [UniqueType] A member of @items
+    # @param unique_type [UniqueType] A member of @items
     # @param context_type [ComplexType, UniqueType, nil]
     # @return [ComplexType, UniqueType, nil]
-    def generic_item_context_type item, context_type
-      return context_type unless item.generic? && context_type.is_a?(ComplexType) && @items.length > 1
+    def destructure_context_type unique_type, context_type
+      return context_type unless unique_type.generic? && context_type.is_a?(ComplexType) && @items.length > 1
 
       concrete_items = @items.reject(&:generic?)
       return context_type if concrete_items.empty?

@@ -569,7 +569,17 @@ describe 'YARD type specifier list parsing' do
         # subtract, there's no positional information to tell which generic should
         # bind to which context member, so both end up bound to the entire context union.
         ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], 'String, Integer',
-         { 'A' => 'String, Integer', 'B' => 'String, Integer' }]
+         { 'A' => 'String, Integer', 'B' => 'String, Integer' }],
+        # Discriminating: the concrete union member (nil) is matched against context
+        # by name, not position, so the fix works even when the context lists its
+        # members in a different order than self does.
+        ['generic<A>, nil', 'nil, String', {}, %w[A], 'String, nil', { 'A' => 'String' }],
+        # Known limitation: a duplicated concrete member in the context (nil, nil)
+        # matches and removes both context members, leaving nothing to subtract, so
+        # this falls back to the full (deduplicated) context union rather than a
+        # meaningful remainder. Included as a no-regression check for this shape,
+        # not as evidence the shape is handled well.
+        ['generic<A>, nil', 'nil, nil', {}, %w[A], 'nil', { 'A' => 'nil' }]
       ].freeze
 
       UNION_COMPLEX_TYPE_GENERIC_TESTS.each do |tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map|
