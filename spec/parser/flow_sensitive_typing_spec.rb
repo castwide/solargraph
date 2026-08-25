@@ -1250,7 +1250,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Object')
   end
 
-  it 'uses kind_of? in a simple if() to refine types like is_a?' do
+  it 'uses kind_of? in a simple if() to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param arg [String, Integer]
       def convert(arg)
