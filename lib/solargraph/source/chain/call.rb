@@ -182,13 +182,13 @@ module Solargraph
         def literal_node_tag node
           return nil unless Parser.is_ast_node?(node)
 
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
           case node.type
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
           when :str then node.children.first.inspect
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
           when :sym then ":#{node.children.first}"
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
           when :int then node.children.first.to_s
           end
         end
