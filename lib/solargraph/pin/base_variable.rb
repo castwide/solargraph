@@ -324,7 +324,7 @@ module Solargraph
       # (a user-defined class that includes it, Hash, Range, etc).
       #
       # @param api_map [ApiMap]
-      # @param type [ComplexType::UniqueType]
+      # @param type [ComplexType]
       # @return [Boolean]
       def splattable? api_map, type
         return true if ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
