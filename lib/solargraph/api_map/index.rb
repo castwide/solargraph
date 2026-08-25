@@ -193,8 +193,17 @@ module Solargraph
               pin.docstring.add_tag(tag)
               new_pin&.docstring&.add_tag(tag)
             end
-            reset_overridden_signatures pin
-            reset_overridden_signatures new_pin
+            # pin.reset_generated! always runs (matches prior behavior) so
+            # non-overload tags (e.g. @param) still re-typify against the
+            # updated docstring. The @signatures/@overloads ivars are only
+            # cleared in addition when the override carries @overload tags
+            # -- see #reset_overridden_signatures.
+            pin.reset_generated!
+            new_pin&.reset_generated!
+            if ovr.tags.any? { |tag| tag.tag_name == 'overload' }
+              reset_overridden_signatures pin
+              reset_overridden_signatures new_pin
+            end
             ovr.tags.each do |tag|
               redefine_return_type pin, tag
               redefine_return_type new_pin, tag
@@ -203,7 +212,7 @@ module Solargraph
         end
       end
 
-      # Invalidate any signatures/overloads Pin::Method may already have
+      # Clear any signatures/overloads Pin::Method may already have
       # memoized for +pin+, so the next read rebuilds them from the
       # docstring as it now stands (after `map_overrides` finished mutating
       # it). Clears the ivars directly rather than via
@@ -211,12 +220,17 @@ module Solargraph
       # assigned explicitly elsewhere (e.g. #transform_types,
       # #combine_with) that have nothing to do with override application.
       #
+      # Only called when the override carries @overload tags: rebuilding
+      # #signatures from scratch also rebuilds it from the pin's bare
+      # #parameters (Pin::Method#signatures_from_yard), which is empty or
+      # stale for many RBS/combined pins and would silently drop argument
+      # checking for overrides that only touch a single return type.
+      #
       # @param pin [Pin::Method, nil]
       # @return [void]
       def reset_overridden_signatures pin
         return unless pin
 
-        pin.reset_generated!
         pin.instance_variable_set(:@signatures, nil)
         pin.instance_variable_set(:@overloads, nil)
       end
