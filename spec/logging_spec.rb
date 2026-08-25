@@ -12,4 +12,16 @@ describe Solargraph::Logging do
     Solargraph::Logging.logger.reopen STDERR
     expect(msg).to include('WARN')
   end
+
+  it 'caches the custom logger for an overridden log_level' do
+    klass = Class.new do
+      include Solargraph::Logging
+
+      def log_level
+        :debug
+      end
+    end
+    instance = klass.new
+    expect(instance.send(:logger)).to equal(instance.send(:logger))
+  end
 end
