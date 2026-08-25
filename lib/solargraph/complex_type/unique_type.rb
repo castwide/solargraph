@@ -211,12 +211,14 @@ module Solargraph
       end
 
       # Whether any of this type's key_types has the given literal tag
-      # (e.g. `'"Index"'`, `':foo'`, `'1'`).
+      # (e.g. `'"Index"'`, `':foo'`, `'1'`). A key_type is itself a
+      # ComplexType, so a union key (`Hash{"A" | "B" => V}`) has more
+      # than one item to check - `kt.tag` alone only sees the first.
       #
       # @param tag [String]
       # @return [Boolean]
       def key_type_tag? tag
-        key_types.any? { |kt| kt.tag == tag }
+        key_types.any? { |kt| kt.items.any? { |item| item.tag == tag } }
       end
 
       # @return [self]
