@@ -143,14 +143,12 @@ module Solargraph
                                         resolved_generic_values: {}
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
-          # Even when we have no argument type to bind a generic
-          # *from* at this level (arg_types is nil, e.g. a yielded
-          # block's own parameter list), a method-level generic used
-          # here may already have been bound from context elsewhere
-          # (e.g. the enclosing method call's own arguments) and
-          # recorded in resolved_generic_values. Still route through
-          # resolve_generics_from_context so that value gets applied,
-          # rather than leaving the parameter as an unresolved generic.
+          # arg_types[i] may be nil (e.g. a yielded block's own
+          # parameter list has no argument type to bind from), but a
+          # method-level generic can already be bound in
+          # resolved_generic_values from elsewhere (the enclosing
+          # call's own arguments) - resolve_generics_from_context
+          # still applies that binding.
           param.resolve_generics_from_context(generics_to_resolve,
                                               arg_types&.[](i),
                                               resolved_generic_values: resolved_generic_values)
