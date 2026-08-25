@@ -66,6 +66,34 @@ describe Solargraph::Pin::BaseVariable do
     expect(args_pin.probe(api_map).tag).to eq('Array<Symbol, BasicObject>')
   end
 
+  it 'infers a splat target from a user-defined class that includes Enumerable' do
+    source = Solargraph::Source.load_string(%(
+      # @generic Elem
+      class MyBag
+        include Enumerable
+
+        # @yieldparam [generic<Elem>]
+        # @return [void]
+        def each; end
+      end
+
+      class Repro
+        # @param bag [MyBag<String>]
+        # @return [void]
+        def call(bag)
+          first, *rest = bag
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    locals = api_map.source_map('test.rb').locals
+    first_pin = locals.find { |l| l.name == 'first' }
+    rest_pin = locals.find { |l| l.name == 'rest' }
+    expect(first_pin.probe(api_map).tag).to eq('String')
+    expect(rest_pin.probe(api_map).tag).to eq('Array<String>')
+  end
+
   it 'leaves a plain (non-splat) multiple assignment unaffected by splat handling' do
     source = Solargraph::Source.load_string(%(
       class Repro

@@ -191,7 +191,7 @@ module Solargraph
             # take the source array's full parameter union rather
             # than a single indexed/first parameter.
             types = types.flat_map do |type|
-              if type.tuple? || ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              if type.tuple? || splattable?(api_map, type)
                 type.all_params
               else
                 []
@@ -201,7 +201,7 @@ module Solargraph
             types.map! do |type|
               if type.tuple?
                 type.all_params[index]
-              elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              elsif splattable?(api_map, type)
                 type.all_params.first
               end
             end.compact!
@@ -317,6 +317,21 @@ module Solargraph
       attr_writer :presence
 
       private
+
+      # True for a type whose elements can be destructured by a splat
+      # or positional multiple-assignment target - Array/Set/Enumerable
+      # by name, or any type that structurally conforms to Enumerable
+      # (a user-defined class that includes it, Hash, Range, etc).
+      #
+      # @param api_map [ApiMap]
+      # @param type [ComplexType::UniqueType]
+      # @return [Boolean]
+      def splattable? api_map, type
+        return true if ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+
+        enumerable = ComplexType.parse('::Enumerable').qualify(api_map)
+        type.qualify(api_map).conforms_to?(api_map, enumerable, :assignment)
+      end
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
