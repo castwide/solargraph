@@ -133,59 +133,6 @@ module Solargraph
         ComplexType.new(types)
       end
 
-      # Flow-sensitive type narrowing: given a type learned from a
-      # runtime guard (e.g. `x.is_a?(Foo)`), refines this type down to
-      # the more specific of each compatible pair. When neither side
-      # subtypes the other but one is confirmed to be a mix-in, both
-      # facts hold at once, so the pair becomes an Intersection; any
-      # other pair is dropped (see #mixin_pairing?).
-      #
-      # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
-      #
-      # @param narrowing_type [ComplexType, ComplexType::UniqueType, nil]
-      # @param api_map [ApiMap]
-      # @return [self, ComplexType]
-      def narrow_with narrowing_type, api_map
-        return self if narrowing_type.nil?
-        return narrowing_type if undefined?
-        types = []
-        # try to find common types via conformance
-        items.each do |ut|
-          narrowing_type.each do |candidate|
-            if ut.conforms_to?(api_map, candidate, :assignment)
-              types << ut
-            elsif candidate.conforms_to?(api_map, ut, :assignment)
-              types << candidate
-            elsif mixin_pairing?(api_map, ut, candidate)
-              types << Intersection.new([ComplexType.new([ut]), ComplexType.new([candidate])])
-            end
-          end
-        end
-        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-        ComplexType.new(types)
-      end
-
-      # Whether combining these two into an intersection is safe.
-      #
-      # @see ComplexType#mixin_pairing?
-      # @param api_map [ApiMap]
-      # @param declared [ComplexType::UniqueType]
-      # @param candidate [ComplexType::UniqueType]
-      # @return [Boolean]
-      def mixin_pairing? api_map, declared, candidate
-        namespace_kind(api_map, declared) == :module || namespace_kind(api_map, candidate) == :module
-      end
-
-      # @param api_map [ApiMap]
-      # @param unique_type [ComplexType::UniqueType]
-      # @return [:class, :module, nil] nil when the namespace has no pin
-      def namespace_kind api_map, unique_type
-        # @type [Pin::Namespace, nil]
-        pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
-        pin&.type
-      end
-      private :mixin_pairing?, :namespace_kind
-
       def simplifyable_literal?
         literal? && name != 'nil'
       end
