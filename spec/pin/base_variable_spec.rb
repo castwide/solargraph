@@ -94,7 +94,13 @@ describe Solargraph::Pin::BaseVariable do
     expect(rest_pin.probe(api_map).tag).to eq('Array<String>')
   end
 
-  it 'leaves a plain (non-splat) multiple assignment unaffected by splat handling' do
+  it 'gives every non-splat target the full element union of a non-tuple Array' do
+    # Array<Integer, String> (no tuple parens) declares a union of
+    # possible element types, not a positional tuple, so every
+    # position - a and b alike - can hold either member. Note: #tag
+    # delegates to the first union member only, so a multi-member
+    # union must be asserted with #to_s instead, or a regression that
+    # collapses the union to its first member would still pass here.
     source = Solargraph::Source.load_string(%(
       class Repro
         # @param pair [Array<Integer, String>]
@@ -109,8 +115,8 @@ describe Solargraph::Pin::BaseVariable do
     locals = api_map.source_map('test.rb').locals
     a_pin = locals.find { |l| l.name == 'a' }
     b_pin = locals.find { |l| l.name == 'b' }
-    expect(a_pin.probe(api_map).tag).to eq('Integer')
-    expect(b_pin.probe(api_map).tag).to eq('Integer')
+    expect(a_pin.probe(api_map).to_s).to eq('Integer, String')
+    expect(b_pin.probe(api_map).to_s).to eq('Integer, String')
   end
 
   it "understands proc kwarg parameters aren't affected by @type" do

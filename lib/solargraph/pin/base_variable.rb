@@ -184,7 +184,15 @@ module Solargraph
         #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index, splat = @mass_assignment
+          # @sg-ignore Solargraph confuses mass_node's type with the
+          #   @mass_assignment tuple once the else branch below is
+          #   restructured as a flat_map - "Wrong argument type for
+          #   Solargraph::Pin::BaseVariable#return_types_from_node:
+          #   parent_node expected Parser::AST::Node, received
+          #   Parser::AST::Node, Integer, Boolean". No upstream issue
+          #   filed yet.
           types = return_types_from_node(mass_node, api_map)
+          # rubocop:disable Style/ConditionalAssignment
           if splat
             # A splat target (`*args`) captures every remaining
             # element of the right-hand side, not just one position -
@@ -198,14 +206,23 @@ module Solargraph
               end
             end
           else
-            types.map! do |type|
+            types = types.flat_map do |type|
               if type.tuple?
-                type.all_params[index]
+                # A true tuple's positions are heterogeneous, so only
+                # the position actually being assigned applies here.
+                [type.all_params[index]].compact
               elsif splattable?(api_map, type)
-                type.all_params.first
+                # A non-tuple Array-like type (e.g. Array<Integer,
+                # String>) declares a union of possible element types,
+                # not a positional tuple - every position can hold any
+                # member of that union, so the whole union applies.
+                type.all_params
+              else
+                []
               end
-            end.compact!
+            end
           end
+          # rubocop:enable Style/ConditionalAssignment
 
           return ComplexType::UNDEFINED if types.empty?
 
