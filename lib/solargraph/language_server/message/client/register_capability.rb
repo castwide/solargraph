@@ -5,9 +5,7 @@ module Solargraph
     module Message
       module Client
         class RegisterCapability < Solargraph::LanguageServer::Message::Base
-          def process
-            
-          end
+          def process; end
         end
       end
     end

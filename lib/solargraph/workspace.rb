@@ -10,6 +10,7 @@ module Solargraph
   #
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
+    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
     autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]
@@ -52,7 +53,7 @@ module Solargraph
 
     # @param level [Symbol]
     # @return [TypeChecker::Rules]
-    def rules(level)
+    def rules level
       @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
     end
 
@@ -70,10 +71,11 @@ module Solargraph
 
       includes_any = false
       sources.each do |source|
-        if directory == "*" || config.calculated.include?(source.filename)
-          source_hash[source.filename] = source
-          includes_any = true
-        end
+        next unless directory == '*' || config.calculated.include?(source.filename)
+
+        # @sg-ignore Wrong argument type for Hash#[]=: arg0 expected String, received String, nil
+        source_hash[source.filename] = source
+        includes_any = true
       end
 
       includes_any
@@ -121,24 +123,31 @@ module Solargraph
     def would_require? path
       require_paths.each do |rp|
         full = File.join rp, path
-        return true if File.file?(full) || File.file?(full << ".rb")
+        return true if File.file?(full) || File.file?(full << '.rb')
       end
       false
     end
 
     # @return [String, nil]
     def rbs_collection_path
-      @gem_rbs_collection ||= read_rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
     end
 
     # @return [String, nil]
     def rbs_collection_config_path
-      @rbs_collection_config_path ||= begin
-        unless directory.empty? || directory == '*'
-          yaml_file = File.join(directory, 'rbs_collection.yaml')
-          yaml_file if File.file?(yaml_file)
-        end
-      end
+      @rbs_collection_config_path ||= unless directory.empty? || directory == '*'
+                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
+                                        yaml_file if File.file?(yaml_file)
+                                      end
+    end
+
+    # @param name [String]
+    # @param version [String, nil]
+    # @param out [IO, nil]
+    #
+    # @return [Gem::Specification, nil]
+    def find_gem name, version = nil, out: nil
+      Gem::Specification.find_by_name(name, version)
     end
 
     # Synchronize the workspace from the provided updater.
@@ -149,6 +158,7 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
+    # @sg-ignore return type could not be inferred
     # @return [String]
     def command_path
       server['commandPath'] || 'solargraph'
@@ -168,6 +178,23 @@ module Solargraph
       directory && File.file?(File.join(directory, 'Gemfile'))
     end
 
+    # True if the workspace contains at least one gemspec file.
+    #
+    # @return [Boolean]
+    def gemspec?
+      !gemspec_files.empty?
+    end
+
+    # Get an array of all gemspec files in the workspace.
+    #
+    # @return [Array<String>]
+    def gemspec_files
+      return [] if directory.empty? || directory == '*'
+      @gemspec_files ||= Dir[File.join(directory, '**/*.gemspec')].select do |gs|
+        config.allow? gs
+      end
+    end
+
     private
 
     # The language server configuration (or an empty hash if the workspace was
@@ -184,27 +211,22 @@ module Solargraph
     # @return [void]
     def load_sources
       source_hash.clear
-      unless directory.empty? || directory == '*'
-        size = config.calculated.length
-        raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files > 0 and size > config.max_files
-        config.calculated.each do |filename|
-          begin
-            source_hash[filename] = Solargraph::Source.load(filename)
-          rescue Errno::ENOENT => e
-            Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
-          end
-        end
+      return if directory.empty? || directory == '*'
+      size = config.calculated.length
+      raise WorkspaceTooLargeError, "The workspace is too large to index (#{size} files, #{config.max_files} max)" if config.max_files.positive? && size > config.max_files
+      config.calculated.each do |filename|
+        source_hash[filename] = Solargraph::Source.load(filename)
+      rescue Errno::ENOENT => e
+        Solargraph.logger.warn("Error loading #{filename}: [#{e.class}] #{e.message}")
       end
     end
 
     # @return [void]
     def require_plugins
       config.plugins.each do |plugin|
-        begin
-          require plugin
-        rescue LoadError
-          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
-        end
+        require plugin
+      rescue LoadError
+        Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
       end
     end
 

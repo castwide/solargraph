@@ -1,3 +1,72 @@
+## 0.60.3 - August 5, 2026
+- Pin rdoc to ~> 7.0 (#1216)
+- (tag: v0.60.2) Release 0.60.2 (rdoc fix)
+- Fix stale Hash::_Key expectations from upstream RBS core drift (#1224)
+- Bump overcommit to ~> 0.71.0 (#1221)
+- Resolve remote constants (#1234)
+- Fix exponential blowup in Pin::Method#combine_same_type_arity_signatures (#1238)
+- Respect #- yard comment-block separator (#1218)
+- Typecheck attribute return tags against their backing ivar's type (#1219)
+- Fix recursive-mutex deadlock in Library#sync_catalog (#1220)
+- Fix Gemspecs#in_this_bundle? crash when no Gemfile is discoverable (#1225)
+- Remove duplicate dead methods in RbsMap::Conversions (#1253)
+
+## 0.60.2 - June 27, 2026
+- Extraneous debug output (#1214)
+- Pin rdoc to ~> 7.0 (#1216)
+
+## 0.60.1 - June 20, 2026
+- Process macro directives from included and extended modules (#1210)
+- Flaky pathname issue (#1211)
+- Check object equality in Pin::Base#nearly? (#1213)
+
+## 0.60.0 - June 15, 2026
+- Add YARD macro support for DSL methods (#1187)
+- YARD macros - More typecheck fixes (#1188)
+- Macro fixes (#1189)
+- Unused macro methods (#1191)
+- Transitive macros (#1203)
+- Allow CTRL-C interruption of profile command + macro debug logs (#1206)
+- Support for Inline RBS (#1173)
+- Make typechecker errors vim quickfix friendly (#1072)
+- Generate RBS (#812)
+
+## 0.59.2 - May 22, 2026
+- Convert RBS implicit nil annotations (#1197)
+- Temporary job stubs (#1200)
+- Limit pin combination to doc maps (#1195)
+- Ignore literal values in type inference (#1201)
+- Fix for clips with flaky node recipients
+
+## 0.59.1 - May 18, 2026
+- Fix signatureHelp bug (#1185)
+- Linting fixes for Ruby 3.1 (#1193)
+- Parameters shadow local variables with same name (#1192)
+
+## 0.59.0 - May 13, 2026
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Pre-release branch 2026-01-12 (#1152)
+- 2026-01-27 dev branch (#1165)
+- Position linting (#1179)
+- Revert YARD and RBS pin caching (#1180)
+- Ensure pathname is required for rbs in shell caching processes (#1183)
+- Limit default include glob to current directory (#1184) 
+- Require Ruby >= 3.1.0
+- Require RBS >= 3.10.0
+- Stub combine_same_type_arity_signatures (#1186)
+
+## 0.58.3 - March 9, 2026
+- Ignore workspace dependencies in cache processes (#1174)
+
+## 0.58.2 - January 19, 2026
+- Avoid rbs pollution (#1146)
+- Fix 'solargraph pin --references ClassName' private method call (#1150)
+- Improve memory efficiency of Position class (#1054)
+- Raise InvalidOffsetError for offsets > text (#1155)
+
+## 0.58.1 - January 2, 2026
+- Normalize line endings to LF (#1142)
+
 ## 0.58.0 - January 1, 2026
 - Faster constant resolution (#1083)
 - [regression] Handle RBS static method aliases (#1094)

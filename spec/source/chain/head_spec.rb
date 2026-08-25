@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 describe Solargraph::Source::Chain::Head do
-  it "returns self pins" do
-    head = Solargraph::Source::Chain::Head.new('self')
+  it 'returns self pins' do
+    head = described_class.new('self')
     npin = Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Foo'))
     ipin = head.resolve(nil, npin, []).first
     expect(ipin.return_type.namespace).to eq('Foo')

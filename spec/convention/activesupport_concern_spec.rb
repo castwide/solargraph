@@ -101,7 +101,7 @@ describe Solargraph::Convention::ActiveSupportConcern do
     # create a temporary directory with the scope of the spec
     around do |example|
       require 'tmpdir'
-      Dir.mktmpdir("rspec-solargraph-") do |dir|
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
         @temp_dir = dir
         example.run
       end
@@ -149,13 +149,13 @@ describe Solargraph::Convention::ActiveSupportConcern do
         RBS
       end
 
-      it { should_not be_empty }
+      it { is_expected.not_to be_empty }
 
-      it "has one item" do
+      it 'has one item' do
         expect(method_pins.size).to eq(1)
       end
 
-      it "is a Pin::Method" do
+      it 'is a Pin::Method' do
         expect(method_pins.first).to be_a(Solargraph::Pin::Method)
       end
     end
@@ -187,8 +187,17 @@ describe Solargraph::Convention::ActiveSupportConcern do
       end
 
       it 'finds superclass method pin parameter type' do
+        # RBS core's Hash#[] started taking its key as the _Key duck-type
+        # interface instead of the generic K as of RBS 4.1.0, so instantiating
+        # Hash{Symbol => untyped} no longer substitutes the param type on
+        # newer RBS - see ruby/rbs core/hash.rbs.
+        expected = if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
+                     ['::Hash::_Key']
+                   else
+                     ['Symbol']
+                   end
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-                 .uniq).to eq(['Symbol'])
+                 .uniq).to eq(expected)
       end
     end
   end

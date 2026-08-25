@@ -4,7 +4,7 @@ describe Solargraph::ApiMap::Store do
   it 'indexes multiple pinsets' do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
     bar_pin = Solargraph::Pin::Namespace.new(name: 'Bar')
-    store = Solargraph::ApiMap::Store.new([foo_pin], [bar_pin])
+    store = described_class.new([foo_pin], [bar_pin])
 
     expect(store.get_path_pins('Foo')).to eq([foo_pin])
     expect(store.get_path_pins('Bar')).to eq([bar_pin])
@@ -13,7 +13,7 @@ describe Solargraph::ApiMap::Store do
   it 'indexes empty pinsets' do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
 
-    store = Solargraph::ApiMap::Store.new([], [foo_pin])
+    store = described_class.new([], [foo_pin])
     expect(store.get_path_pins('Foo')).to eq([foo_pin])
   end
 
@@ -21,7 +21,7 @@ describe Solargraph::ApiMap::Store do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
     bar_pin = Solargraph::Pin::Namespace.new(name: 'Bar')
     baz_pin = Solargraph::Pin::Namespace.new(name: 'Baz')
-    store = Solargraph::ApiMap::Store.new([foo_pin], [bar_pin])
+    store = described_class.new([foo_pin], [bar_pin])
     store.update([foo_pin], [baz_pin])
 
     expect(store.get_path_pins('Foo')).to eq([foo_pin])
@@ -32,7 +32,7 @@ describe Solargraph::ApiMap::Store do
   it 'updates new pinsets' do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
     bar_pin = Solargraph::Pin::Namespace.new(name: 'Bar')
-    store = Solargraph::ApiMap::Store.new([foo_pin])
+    store = described_class.new([foo_pin])
     store.update([foo_pin], [bar_pin])
 
     expect(store.get_path_pins('Foo')).to eq([foo_pin])
@@ -42,7 +42,7 @@ describe Solargraph::ApiMap::Store do
   it 'updates empty stores' do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
     bar_pin = Solargraph::Pin::Namespace.new(name: 'Bar')
-    store = Solargraph::ApiMap::Store.new
+    store = described_class.new
     store.update([foo_pin, bar_pin])
 
     expect(store.get_path_pins('Foo')).to eq([foo_pin])
@@ -56,20 +56,20 @@ describe Solargraph::ApiMap::Store do
         class Foo; end
         class Bar < Foo; end
       ), 'test.rb')
-      store = Solargraph::ApiMap::Store.new(map.pins)
+      store = described_class.new(map.pins)
       ref = store.get_superclass('Bar')
       expect(ref.name).to eq('Foo')
     end
 
     it 'returns Boolean superclass' do
-      store = Solargraph::ApiMap::Store.new
+      store = described_class.new
       ref = store.get_superclass('TrueClass')
       expect(ref.name).to eq('Boolean')
     end
 
     it 'maps core Errno classes' do
       map = Solargraph::RbsMap::CoreMap.new
-      store = Solargraph::ApiMap::Store.new(map.pins)
+      store = described_class.new(map.pins)
       Errno.constants.each do |const|
         pin = store.get_path_pins("Errno::#{const}").first
         expect(pin).to be_a(Solargraph::Pin::Namespace)

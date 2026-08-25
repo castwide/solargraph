@@ -10,13 +10,15 @@ describe Solargraph::Shell do
 
   before do
     File.open(File.join(temp_dir, 'Gemfile'), 'w') do |file|
-        file.puts "source 'https://rubygems.org'"
-        file.puts "gem 'solargraph', path: #{File.expand_path('..', __dir__)}"
+      file.puts "source 'https://rubygems.org'"
+      file.puts "gem 'solargraph', path: '#{File.expand_path('..', __dir__)}'"
     end
-    output, status = Open3.capture2e("bundle install", chdir: temp_dir)
+    output, status = Open3.capture2e('bundle install', chdir: temp_dir)
     raise "Failure installing bundle: #{output}" unless status.success?
   end
 
+  # @type cmd [Array<String>]
+  # @return [String]
   def bundle_exec(*cmd)
     # run the command in the temporary directory with bundle exec
     output, status = Open3.capture2e("bundle exec #{cmd.join(' ')}", chdir: temp_dir)
@@ -29,20 +31,118 @@ describe Solargraph::Shell do
     FileUtils.rm_rf(temp_dir)
   end
 
-  describe "--version" do
-    it "returns a version when run" do
-      output = bundle_exec("solargraph", "--version")
+  describe '--version' do
+    let(:output) { bundle_exec('solargraph', '--version') }
 
+    it 'returns output' do
       expect(output).not_to be_empty
+    end
+
+    it 'returns a version when run' do
       expect(output).to eq("#{Solargraph::VERSION}\n")
     end
   end
 
-  describe "uncache" do
-    it "uncaches without erroring out" do
-      output = bundle_exec("solargraph", "uncache", "solargraph")
+  describe 'uncache' do
+    it 'uncaches without erroring out' do
+      output = capture_stdout do
+        shell.uncache('backport')
+      end
 
       expect(output).to include('Clearing pin cache in')
+    end
+
+    it 'uncaches stdlib without erroring out' do
+      expect { shell.uncache('stdlib') }.not_to raise_error
+    end
+
+    it 'uncaches core without erroring out' do
+      expect { shell.uncache('core') }.not_to raise_error
+    end
+  end
+
+  describe 'scan' do
+    context 'with mocked dependencies' do
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
+
+      before do
+        allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
+      end
+
+      it 'scans without erroring out' do
+        allow(api_map).to receive(:pins).and_return([])
+        output = capture_stdout do
+          shell.options = { directory: 'spec/fixtures/workspace' }
+          shell.scan
+        end
+
+        expect(output).to include('Scanned ').and include(' seconds.')
+      end
+    end
+  end
+
+  describe 'typecheck' do
+    context 'with mocked dependencies' do
+      let(:type_checker) { instance_double(Solargraph::TypeChecker) }
+      let(:api_map) { instance_double(Solargraph::ApiMap) }
+
+      before do
+        allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
+        allow(Solargraph::TypeChecker).to receive(:new).and_return(type_checker)
+        allow(type_checker).to receive(:problems).and_return([])
+      end
+
+      it 'typechecks without erroring out' do
+        output = capture_stdout do
+          shell.options = { level: 'normal', directory: '.' }
+          shell.typecheck('Gemfile')
+        end
+
+        expect(output).to include('Typecheck finished in')
+      end
+    end
+  end
+
+  describe 'gems' do
+    context 'without mocked ApiMap' do
+      it 'complains when gem does not exist' do
+        output = capture_both do
+          shell.gems('nonexistentgem')
+        end
+
+        expect(output).to include("Gem 'nonexistentgem' not found")
+      end
+
+      it 'caches core without erroring out' do
+        capture_both do
+          shell.uncache('core')
+        end
+
+        expect { shell.cache('core') }.not_to raise_error
+      end
+
+      it 'gives sensible error for gem that does not exist' do
+        output = capture_both do
+          shell.gems('solargraph123')
+        end
+
+        expect(output).to include("Gem 'solargraph123' not found")
+      end
+    end
+  end
+
+  describe 'cache' do
+    it 'caches a stdlib gem without erroring out' do
+      expect { shell.cache('stringio') }.not_to raise_error
+    end
+
+    context 'when gem does not exist' do
+      subject(:call) { shell.cache('nonexistentgem8675309') }
+
+      it 'gives a good error message' do
+        # capture stderr output
+        expect { call }.to output(/not found/).to_stderr
+      end
     end
   end
 
@@ -57,7 +157,37 @@ describe Solargraph::Shell do
     end
   end
 
-  describe 'pin' do
+  describe 'pin on a class' do
+    let(:api_map) { instance_double(Solargraph::ApiMap) }
+    let(:string_pin) { instance_double(Solargraph::Pin::Namespace, name: 'String') }
+
+    before do
+      allow(Solargraph::ApiMap).to receive(:load_with_cache).and_return(api_map)
+      allow(Solargraph::Pin::Namespace).to receive(:===).with(string_pin).and_return(true)
+      allow(string_pin).to receive(:return_type).and_return(Solargraph::ComplexType.parse('String'))
+      allow(api_map).to receive(:get_path_pins).with('String').and_return([string_pin])
+    end
+
+    context 'with --references option' do
+      let(:object_pin) { instance_double(Solargraph::Pin::Namespace, name: 'Object') }
+
+      before do
+        allow(Solargraph::Pin::Namespace).to receive(:===).with(object_pin).and_return(true)
+        allow(api_map).to receive(:qualify_superclass).with('String').and_return('Object')
+        allow(api_map).to receive(:get_path_pins).with('Object').and_return([object_pin])
+      end
+
+      it 'prints a pin with info' do
+        out = capture_both do
+          shell.options = { references: true }
+          shell.pin('String')
+        end
+        expect(out).to include('# Superclass:')
+      end
+    end
+  end
+
+  describe 'pin on a method' do
     let(:api_map) { instance_double(Solargraph::ApiMap) }
     let(:to_s_pin) { instance_double(Solargraph::Pin::Method, return_type: Solargraph::ComplexType.parse('String')) }
 
@@ -154,5 +284,82 @@ describe Solargraph::Shell do
         expect(out).to include("Pin not found for path 'Not#found'")
       end
     end
+  end
+
+  context 'with unbundled environments' do
+    let!(:command_path) { File.realpath(File.join('spec', 'fixtures', 'shim.rb')) }
+    let!(:unbundled_env) { Bundler.unbundled_env.merge({ 'BUNDLE_GEMFILE' => nil }) }
+
+    describe '#cache' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'cache', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
+        end
+      end
+    end
+
+    describe '#gems' do
+      it 'succeeds' do
+        Dir.mktmpdir do |tmpdir|
+          File.write(File.join(tmpdir, 'test.rb'), 'foo')
+          _o, e, s = Open3.capture3(unbundled_env, 'ruby', command_path, 'gems', 'rspec', chdir: tmpdir)
+          expect(s).to be_success, "expected success, got error with message #{e.inspect}"
+        end
+      end
+    end
+
+  describe 'rbs' do
+    let(:api_map) { instance_double(Solargraph::ApiMap) }
+
+    before do
+      allow(shell).to receive(:`)
+      allow(Solargraph::ApiMap).to receive(:load).and_return(api_map)
+      allow(api_map).to receive(:source_maps).and_return(source_maps)
+    end
+
+    context 'without inference' do
+      let(:source_maps) { [] }
+
+      it 'invokes sord' do
+        capture_both do
+          shell.options = { filename: 'foo.rbs' }
+          shell.rbs
+        end
+        expect(shell)
+          .to have_received(:`)
+          .with("sord #{Dir.pwd}/sig/foo.rbs --rbs --no-regenerate")
+      end
+    end
+
+    context 'with inference' do
+      let(:source_maps) { [source_map] }
+      let(:source_map) { instance_double(Solargraph::SourceMap) }
+      let(:pin) do
+        instance_double(Solargraph::Pin::Method,
+                        namespace: 'My::Namespace', path: 'My::Namespace#foo',
+                        visibility: :public,
+                        parameters: [],
+                        scope: :instance,
+                        location: nil,
+                        name: 'foo',
+                        class: Solargraph::Pin::Method,
+                        return_type: Solargraph::ComplexType::UNDEFINED)
+      end
+
+      it 'infers unknown types on pins' do
+        allow(source_map).to receive(:pins).and_return([pin])
+        allow(pin).to receive_messages(typify: Solargraph::ComplexType.parse('String'),
+                                       docstring: YARD::Docstring.new(''), macros: [])
+        allow(pin).to receive(:code_object).and_return(nil)
+        capture_both do
+          shell.options = { filename: 'foo.rbs', inference: true }
+          shell.rbs
+        end
+        expect(pin).to have_received(:typify)
+      end
+    end
+  end
   end
 end

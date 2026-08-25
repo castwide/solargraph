@@ -21,27 +21,31 @@ module Solargraph
       #   - pinsets[0] = core Ruby pins
       #   - pinsets[1] = documentation/gem pins
       #   - pinsets[2] = convention pins
-      #   - pinsets[3] = workspace source pins
+      #   - pinsets[3] = workspace source pins (aka. "iced_pins")
       #   - pinsets[4] = currently open file pins
       # @return [Boolean] True if the index was updated
-      def update *pinsets
-        return catalog(pinsets) if pinsets.length != @pinsets.length
+      def update *pinsets, &block
+        return catalog(pinsets, &block) if pinsets.length != @pinsets.length
 
         changed = pinsets.find_index.with_index { |pinset, idx| @pinsets[idx] != pinset }
         return false unless changed
 
         # @todo Fix this map
         @fqns_pins_map = nil
-        return catalog(pinsets) if changed == 0
+        return catalog(pinsets) if changed.zero?
 
+        # @sg-ignore Need to add nil check here
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
-            @indexes[changed + idx - 1]
-          else
-            @indexes[changed + idx - 1].merge(pins)
-          end
+                                      @indexes[changed + idx - 1]
+                                    else
+                                      @indexes[changed + idx - 1].merge(pins)
+                                    end
         end
+        # @type [Index]
+        @index = @indexes.last.clone
+        @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true
@@ -59,10 +63,10 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
-        namespace_children(fqns).select { |pin|
-          # @sg-ignore flow-sensitive typing not smart enough to handle this case
+        namespace_children(fqns).select do |pin|
+          # @sg-ignore flow sensitive typing not smart enough to handle this case
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
-        }
+        end
       end
 
       # @param fqns [String]
@@ -70,18 +74,18 @@ module Solargraph
       # @param visibility [Array<Symbol>]
       # @return [Enumerable<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        all_pins = namespace_children(fqns).select do |pin|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
+        namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
-        GemPins.combine_method_pins_by_path(all_pins)
       end
 
-      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN, source: :solargraph)
-      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN, source: :solargraph)
+      BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN,
+                                                              source: :solargraph)
+      OBJECT_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Object', closure: Pin::ROOT_PIN,
+                                                             source: :solargraph)
 
-      # @param fqns [String]
-      # @return [Pin::Reference::Superclass]
+      # @param fqns [String, nil]
+      # @return [Pin::Reference::Superclass, nil]
       def get_superclass fqns
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
@@ -126,20 +130,20 @@ module Solargraph
         index.path_pin_hash[path]
       end
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @param scope [Symbol] :class or :instance
       # @return [Enumerable<Solargraph::Pin::Base>]
-      def get_instance_variables(fqns, scope = :instance)
-        all_instance_variables.select { |pin|
+      def get_instance_variables fqns, scope = :instance
+        all_instance_variables.select do |pin|
           pin.binder.namespace == fqns && pin.binder.scope == scope
-        }
+        end
       end
 
       # @param fqns [String]
       #
       # @return [Enumerable<Solargraph::Pin::ClassVariable>]
-      def get_class_variables(fqns)
-        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable)}
+      def get_class_variables fqns
+        namespace_children(fqns).select { |pin| pin.is_a?(Pin::ClassVariable) }
       end
 
       # @return [Enumerable<Solargraph::Pin::Base>]
@@ -149,7 +153,7 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Boolean]
-      def namespace_exists?(fqns)
+      def namespace_exists? fqns
         fqns_pins(fqns).any?
       end
 
@@ -165,7 +169,7 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Array<String>]
-      def domains(fqns)
+      def domains fqns
         result = []
         fqns_pins(fqns).each do |nspin|
           result.concat nspin.domains
@@ -173,12 +177,12 @@ module Solargraph
         result
       end
 
-      # @return [Hash{String => YARD::Tags::MacroDirective}]
+      # @return [Hash{String => YardMap::Macro}]
       def named_macros
         @named_macros ||= begin
           result = {}
           pins.each do |pin|
-            pin.macros.select{|m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
+            pin.macros.select { |m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
               next if macro.tag.name.nil? || macro.tag.name.empty?
               result[macro.tag.name] = macro
             end
@@ -199,7 +203,7 @@ module Solargraph
         index.pins_by_class klass
       end
 
-      # @param fqns [String]
+      # @param fqns [String, nil]
       # @return [Array<Solargraph::Pin::Namespace>]
       def fqns_pins fqns
         return [] if fqns.nil?
@@ -217,7 +221,7 @@ module Solargraph
       # Get all ancestors (superclasses, includes, prepends, extends) for a namespace
       # @param fqns [String] The fully qualified namespace
       # @return [Array<String>] Array of ancestor namespaces including the original
-      def get_ancestors(fqns)
+      def get_ancestors fqns
         return [] if fqns.nil? || fqns.empty?
 
         ancestors = [fqns]
@@ -244,8 +248,11 @@ module Solargraph
             next if refs.nil?
             # @param ref [String]
             refs.map(&:type).map(&:to_s).each do |ref|
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next if ref.nil? || ref.empty? || visited.include?(ref)
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               ancestors << ref
+              # @sg-ignore flow sensitive typing should be able to handle redefinition
               queue << ref
             end
           end
@@ -257,7 +264,7 @@ module Solargraph
       # @param fqns [String]
       #
       # @return [Array<Solargraph::Pin::Reference>]
-      def get_ancestor_references(fqns)
+      def get_ancestor_references fqns
         (get_prepends(fqns) + get_includes(fqns) + [get_superclass(fqns)]).compact
       end
 
@@ -266,17 +273,33 @@ module Solargraph
         @constants ||= Constants.new(self)
       end
 
+      # @param name [String]
+      # @return [ComplexType, nil]
+      def unalias name
+        index.alias_hash[name]
+      end
+
+      # @return [Array<String>]
+      def macro_method_names
+        index.macro_method_names
+      end
+
+      # @return [Hash{String => Array<Pin::Method>}]
+      def macro_method_name_pins
+        index.macro_method_name_pins
+      end
+
       private
 
       # @return [Index]
       def index
-        @indexes.last
+        @index ||= Index.new
       end
 
       # @param pinsets [Array<Array<Pin::Base>>]
       #
-      # @return [void]
-      def catalog pinsets
+      # @return [true]
+      def catalog pinsets, &block
         @pinsets = pinsets
         # @type [Array<Index>]
         @indexes = []
@@ -287,6 +310,8 @@ module Solargraph
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))
           end
         end
+        @index = @indexes.last.clone
+        @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true
@@ -308,7 +333,7 @@ module Solargraph
         index.pins_by_class(Pin::Symbol)
       end
 
-      # @return [Hash{String => Array<String>}]
+      # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         index.superclass_references
       end
@@ -347,7 +372,7 @@ module Solargraph
 
       # @param fqns [String]
       # @return [Pin::Reference::Superclass, nil]
-      def try_special_superclasses(fqns)
+      def try_special_superclasses fqns
         return OBJECT_SUPERCLASS_PIN if fqns == 'Boolean'
         return OBJECT_SUPERCLASS_PIN if !%w[BasicObject Object].include?(fqns) && namespace_exists?(fqns)
 
