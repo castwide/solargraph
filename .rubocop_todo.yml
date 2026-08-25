@@ -85,6 +85,7 @@ Metrics/AbcSize:
   Exclude:
     - 'lib/solargraph/api_map/source_to_yard.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
+    - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/source/source_chainer.rb'
     - 'lib/solargraph/source_map/clip.rb'
     - 'lib/solargraph/source_map/mapper.rb'
@@ -93,6 +94,8 @@ Metrics/AbcSize:
 # AllowedMethods: refine
 Metrics/BlockLength:
   Max: 61
+  Exclude:
+    - 'lib/solargraph/source/chain/call.rb'
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
@@ -133,6 +136,7 @@ Metrics/ParameterLists:
 Metrics/PerceivedComplexity:
   Exclude:
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
+    - 'lib/solargraph/source/chain/call.rb'
     - 'lib/solargraph/type_checker.rb'
 
 Naming/AccessorMethodName:
