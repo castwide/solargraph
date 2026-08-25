@@ -183,22 +183,45 @@ module Solargraph
               pin.docstring.delete_tags tag
               new_pin&.docstring&.delete_tags tag
             end
+            # Add every tag from this override to the docstring before
+            # invalidating cached signatures below. Pin::Method#signatures
+            # rebuilds all @overload tags on the docstring at once, so
+            # invalidating mid-loop (after only some tags were added) would
+            # freeze the signature set against a partially-applied
+            # docstring and silently drop the remaining @overload tags.
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
+              new_pin&.docstring&.add_tag(tag)
+            end
+            reset_overridden_signatures pin
+            reset_overridden_signatures new_pin
+            ovr.tags.each do |tag|
               redefine_return_type pin, tag
-              pin.reset_generated!
-
-              next unless new_pin
-
-              new_pin.docstring.add_tag(tag)
               redefine_return_type new_pin, tag
-              new_pin.reset_generated!
             end
           end
         end
       end
 
-      # @param pin [Pin::Method]
+      # Invalidate any signatures/overloads Pin::Method may already have
+      # memoized for +pin+, so the next read rebuilds them from the
+      # docstring as it now stands (after `map_overrides` finished mutating
+      # it). Clears the ivars directly rather than via
+      # Pin::Method#reset_generated!, which also clobbers signatures
+      # assigned explicitly elsewhere (e.g. #transform_types,
+      # #combine_with) that have nothing to do with override application.
+      #
+      # @param pin [Pin::Method, nil]
+      # @return [void]
+      def reset_overridden_signatures pin
+        return unless pin
+
+        pin.reset_generated!
+        pin.instance_variable_set(:@signatures, nil)
+        pin.instance_variable_set(:@overloads, nil)
+      end
+
+      # @param pin [Pin::Method, nil]
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
