@@ -36,20 +36,29 @@ module Solargraph
 
           # Blocks written with implicit parameters carry no args node for
           # ArgsNode to work from, so their parameter pins are synthesized
-          # here instead.
+          # here instead. A numblock is a regular block that has no args
+          # node - it stores its highest numbered parameter where an
+          # ordinary block stores that node instead (see
+          # #numbered_parameter_count).
           #
           # @param block_pin [Pin::Block]
           # @return [void]
           def add_implicit_parameters block_pin
             if node.type == :numblock
-              numbered_parameter_count.times { |idx| add_parameter block_pin, "_#{idx + 1}" }
+              numbered_parameter_count.times { |idx| add_implicit_parameter block_pin, "_#{idx + 1}" }
             elsif implicit_it_parameter?
-              add_parameter block_pin, 'it'
+              add_implicit_parameter block_pin, 'it'
             end
           end
 
           # A numblock stores the highest numbered parameter its body uses
-          # (2 for `_2`) where an ordinary block stores its args node.
+          # (2 for `_2`) where an ordinary block stores its args node, e.g.
+          # `[1, 2].each { _1 + _2 }` parses as:
+          #
+          #   s(:numblock,
+          #     s(:send, s(:array, s(:int, 1), s(:int, 2)), :each),
+          #     2,
+          #     s(:send, s(:lvar, :_1), :+, s(:lvar, :_2)))
           #
           # @sg-ignore flow sensitive typing does not narrow the return value through the is_a? guard
           # @return [Integer]
@@ -74,7 +83,11 @@ module Solargraph
           def implicit_it_parameter?
             args = node.children[1]
             return false unless Parser.is_ast_node?(args)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper -
+            #   flow-sensitive typing only recognizes a literal is_a? call
+            #   on the guarded variable, not one wrapped in a helper
+            #   predicate method like Parser.is_ast_node? above. No
+            #   upstream issue filed yet.
             return false unless args.type == :args && args.children.empty?
             return false if shadowed_it_local?
             references_it?(node.children[2])
@@ -109,14 +122,15 @@ module Solargraph
           # @return [Boolean]
           def references_it? subject
             return false unless Parser.is_ast_node?(subject)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper -
+            #   same Parser.is_ast_node? gap as in #implicit_it_parameter?
             return true if subject.type == :lvar && subject.children[0] == :it
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
             children = if %i[block numblock].include?(subject.type)
-                         # @sg-ignore Translate to something flow sensitive typing understands
+                         # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
                          subject.children[0..1]
                        else
-                         # @sg-ignore Translate to something flow sensitive typing understands
+                         # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
                          subject.children
                        end
             children.any? { |child| references_it?(child) }
@@ -125,7 +139,7 @@ module Solargraph
           # @param block_pin [Pin::Block]
           # @param name [String]
           # @return [void]
-          def add_parameter block_pin, name
+          def add_implicit_parameter block_pin, name
             locals.push Solargraph::Pin::Parameter.new(
               location: block_pin.location,
               closure: block_pin,
