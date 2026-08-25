@@ -466,10 +466,9 @@ module Solargraph
           next if n.nil? || %i[NIL nil].include?(n.type)
           rng = Range.from_node(n)
           next unless rng
-          # @sg-ignore location nil-guarded at method entry; return-guard
-          #   narrowing not tracked - https://github.com/castwide/solargraph/issues/1254
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1254
           clip = api_map.clip_at(location.filename, rng.ending)
-          # @sg-ignore see above
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1254
           chain = Solargraph::Parser.chain(n, location.filename)
           failure = chain.first_undefined_link(api_map, self, clip.locals)
           next if failure.nil?

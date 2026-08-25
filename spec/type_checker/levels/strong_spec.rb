@@ -991,14 +991,17 @@ describe Solargraph::TypeChecker do
     end
 
     it 'reports a diagnostic for a nonexistent method called on an untagged local' do
-      pending 'A plain typo passes the typechecker: call_problems suppresses the ' \
-              'unresolved-call report when the walk\'s `found` pin is an internal method ' \
-              'whose type is undefined, and with no declared tag there is no ' \
-              'variable-validation path to fire instead, so nothing is reported. The ' \
-              'boundary is not yet mapped - the six-call chain in the spec below ' \
-              '(xs.first.to_s.no_such.upcase.size, also untagged) does report ' \
-              '"Unresolved call to no_such on String", so something about the receiver ' \
-              'decides it, and that difference is unexplained.'
+      # A plain typo passes the typechecker: call_problems suppresses the
+      # unresolved-call report when the walk's `found` pin is an internal
+      # method whose type is undefined, and with no declared tag there is
+      # no variable-validation path to fire instead, so nothing is
+      # reported. The boundary is not yet mapped - the six-call chain in
+      # the spec below (xs.first.to_s.no_such.upcase.size, also untagged)
+      # does report "Unresolved call to no_such on String", so something
+      # about the receiver decides it, and that difference is unexplained.
+      pending <<~REASON
+        A plain typo passes the typechecker; see the comment above.
+      REASON
       checker = type_checker(%(
         class Report
           # @return [void]

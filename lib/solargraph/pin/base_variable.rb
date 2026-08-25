@@ -187,12 +187,10 @@ module Solargraph
             next if node.nil? || node.type == :NIL || node.type == :nil
             rng = Range.from_node(node)
             next if rng.nil?
-            # @sg-ignore location nil-guarded at method entry; return-guard
-            #   narrowing not tracked - https://github.com/castwide/solargraph/issues/1254
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1254
             clip = api_map.clip_at(location.filename, rng.ending)
             chain = Parser.chain(node, nil, nil)
-            # @sg-ignore closure nil-guarded at method entry; return-guard
-            #   narrowing not tracked - https://github.com/castwide/solargraph/issues/1254
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1254
             failure = chain.first_undefined_link(api_map, closure, clip.locals)
             return failure unless failure.nil?
           end
