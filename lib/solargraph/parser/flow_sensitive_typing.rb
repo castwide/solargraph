@@ -15,11 +15,16 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param closure [Solargraph::Pin::Closure, nil] Closure the
+      #   guarded code lives in. Needed to synthesize a pin for an
+      #   instance variable that has no assignment anywhere in scope
+      #   (see #process_instance_variable_defined).
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure = nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -88,6 +93,7 @@ module Solargraph
         process_isa(node, true_presences, false_presences)
         process_respond_to(node, true_presences, false_presences)
         process_instance_of(node, true_presences, false_presences)
+        process_instance_variable_defined(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
         process_eq(node, true_presences, false_presences)
@@ -423,6 +429,74 @@ module Solargraph
         process_facts(if_true, true_presences)
       end
 
+      # A true `instance_variable_defined?(:@ivar)` proves `@ivar` has
+      # been given some value, even when nothing in this closure's own
+      # lexical scope ever assigns it (e.g. a mixin reading an ivar
+      # the including class is expected to set). There is no existing
+      # pin to narrow in that case - #find_var has nothing to find -
+      # so a new pin is synthesized instead, one per guarded presence
+      # range, typed as a generic non-nil `Object` and scoped to that
+      # range the same way .downcast scopes a narrowed copy of a real
+      # pin. Once it exists, #process_respond_to and friends narrow it
+      # further via #find_var the same way they narrow any other
+      # variable - and outside the guarded presence, #find_var still
+      # finds nothing, so an unguarded read of the ivar elsewhere is
+      # still correctly reported as unresolved.
+      #
+      # The false path is left alone: `instance_variable_defined?`
+      # returning false only means no assignment has happened yet, not
+      # that one can never happen, so there is no fact to assert on
+      # the guarded-false branch.
+      #
+      # Ruby also returns true for an ivar explicitly set to `nil`, so
+      # asserting non-nil here is a sound-in-practice approximation,
+      # not a proof - the same category of tradeoff #process_instance_of
+      # documents for its own true path.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param _false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_instance_variable_defined node, true_presences, _false_presences
+        return unless node.type == :send && node.children[1] == :instance_variable_defined?
+        # only handle the implicit-self form; an explicit receiver
+        # isn't the mixin-reads-its-own-ivar shape this exists for
+        return unless node.children[0].nil?
+
+        arg = node.children[2]
+        return unless arg&.type == :sym
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        ivar_name = arg.children[0].to_s
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        return unless ivar_name.start_with?('@')
+
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(node).start
+        pin = find_var(ivar_name, position)
+
+        if pin
+          # already has a real assignment somewhere in scope; just
+          # narrow it like any other guard would
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
+          return
+        end
+
+        return if closure.nil?
+
+        true_presences.each do |presence|
+          ivars.push(Pin::InstanceVariable.new(
+                       name: ivar_name,
+                       closure: closure,
+                       location: closure.location,
+                       return_type: ComplexType.parse('Object'),
+                       source: :flow_sensitive_typing,
+                       presence: presence
+                     ))
+        end
+      end
+
       # @param node [Parser::AST::Node, nil]
       # @return [String, nil] YARD/RBS-style literal type tag (e.g., ':foo', '"foo"', '1', 'true')
       def literal_type_name node
@@ -665,7 +739,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :closure
     end
   end
 end

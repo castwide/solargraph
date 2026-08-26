@@ -1250,6 +1250,65 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Object')
   end
 
+  it 'narrows a never-assigned ivar from an instance_variable_defined? guard' do
+    source = Solargraph::Source.load_string(%(
+      module LogMethod
+        # @return [void]
+        def log_something
+          return unless instance_variable_defined?(:@logger) && @logger.respond_to?(:puts)
+          @logger.puts('hi')
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq([])
+  end
+
+  it 'still reports an unguarded read of a never-assigned ivar as unresolved' do
+    source = Solargraph::Source.load_string(%(
+      module LogMethod
+        # @return [void]
+        def log_something
+          return unless instance_variable_defined?(:@logger) && @logger.respond_to?(:puts)
+          @logger.puts('hi')
+        end
+
+        # @return [void]
+        def log_unguarded
+          @logger.puts('unguarded')
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq(['Unresolved call to @logger'])
+  end
+
+  it 'narrows a never-assigned ivar from an instance_variable_defined? guard in a simple if()' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        if instance_variable_defined?(:@foo)
+          @foo
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 10])
+    expect(clip.infer.to_s).to eq('Object')
+  end
+
+  it 'does not narrow instance_variable_defined? with a non-literal argument' do
+    source = Solargraph::Source.load_string(%(
+      def check(name)
+        if instance_variable_defined?(name)
+          @foo
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 10])
+    expect { clip.infer.to_s }.not_to raise_error
+  end
+
   it 'uses kind_of? in a simple if() to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param arg [String, Integer]
