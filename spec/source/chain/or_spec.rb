@@ -47,6 +47,23 @@ describe Solargraph::Source::Chain::Or do
     expect(checker.problems).to be_empty
   end
 
+  it 'strips nil from the lhs type when the rhs always raises' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @param argv [Array<String>]
+        # @return [String]
+        def first_arg(argv)
+          x = argv[0] || raise('missing first argument')
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.simplify_literals.rooted_tags).to eq('::String')
+  end
+
   it 'infers just the lhs type when the rhs always fails via ||=' do
     source = Solargraph::Source.load_string(%(
       class Example
