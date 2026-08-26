@@ -391,6 +391,51 @@ describe 'YARD type specifier list parsing' do
       expect(types.to_rbs).to eq('Array[String & Comparable]')
     end
 
+    describe 'delegating to the first conjunct' do
+      let(:intersection) { Solargraph::ComplexType.parse('String & Comparable').first }
+
+      it 'reports the scope of its first conjunct' do
+        expect(intersection.scope).to eq(:instance)
+      end
+
+      it 'reports rooted for #namespace via the first conjunct' do
+        expect(intersection.namespace).to eq('String')
+      end
+    end
+
+    describe '#all_rooted?' do
+      it 'is true when every conjunct is rooted' do
+        intersection = Solargraph::ComplexType.parse('::String & ::Comparable').first
+        expect(intersection.all_rooted?).to be true
+      end
+
+      it 'is false when any conjunct is unrooted' do
+        intersection = Solargraph::ComplexType.parse('::String & Comparable').first
+        expect(intersection.all_rooted?).to be false
+      end
+    end
+
+    describe '#each_unique_type' do
+      it 'yields the unique type from every conjunct' do
+        intersection = Solargraph::ComplexType.parse('String & Comparable').first
+        yielded = []
+        intersection.each_unique_type { |ut| yielded << ut.tag }
+        expect(yielded).to eq(%w[String Comparable])
+      end
+
+      it 'returns an enumerator when no block is given' do
+        intersection = Solargraph::ComplexType.parse('String & Comparable').first
+        expect(intersection.each_unique_type.map(&:tag)).to eq(%w[String Comparable])
+      end
+    end
+
+    describe '#erase_parameters' do
+      it 'returns itself unchanged' do
+        intersection = Solargraph::ComplexType.parse('Hash{"a" => String} & Comparable').first
+        expect(intersection.erase_parameters).to equal(intersection)
+      end
+    end
+
     # `&` binds tighter than the top-level `,` (union), matching RBS's
     # documented precedence: "A & B | C is (A & B) | C". Our
     # single-pass parser doesn't implement precedence via grouping -
