@@ -1903,6 +1903,22 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('undefined')
   end
 
+  it 'propagates a concrete generic argument through an inherited method' do
+    # NoMethodError<T> < NameError<T>, and NameError#receiver
+    # returns T - given a concrete argument on the subclass
+    # reference, the inherited method should resolve it rather
+    # than erasing it to untyped/undefined.
+    source = Solargraph::Source.load_string(%(
+      # @type [NoMethodError<String>]
+      e = NoMethodError.new
+      e.receiver
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [3, 12])
+    type = clip.infer
+    expect(type.tag).to eq('String')
+  end
+
   it 'erases unresolvable method generics' do
     source = Solargraph::Source.load_string(%(
       # @generic T
