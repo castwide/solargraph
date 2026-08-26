@@ -971,6 +971,32 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
+    it 'resolves methods delegated from a class variable' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [Integer]
+          def size; 3; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegators :@@records, :size
+
+          # @type [Records]
+          @@records = Records.new
+
+          # @return [Integer]
+          def total
+            size
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
     it 'resolves methods delegated through another method' do
       checker = type_checker_with_gems(%(
         require 'forwardable'
