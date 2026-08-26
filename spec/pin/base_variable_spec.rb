@@ -66,6 +66,23 @@ describe Solargraph::Pin::BaseVariable do
     expect(args_pin.probe(api_map).tag).to eq('Array<Symbol, BasicObject>')
   end
 
+  it 'infers a splat target of a non-collection type as undefined' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param mutator [Integer]
+        # @return [void]
+        def call(mutator)
+          command, *args = mutator
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    locals = api_map.source_map('test.rb').locals
+    args_pin = locals.find { |l| l.name == 'args' }
+    expect(args_pin.probe(api_map)).to be_undefined
+  end
+
   it 'infers a splat target from a user-defined class that includes Enumerable' do
     source = Solargraph::Source.load_string(%(
       # @generic Elem
