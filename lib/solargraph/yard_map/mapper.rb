@@ -42,7 +42,6 @@ module Solargraph
           nspin = ToNamespace.make(code_object, @spec, @namespace_pins[code_object.namespace.to_s])
           @namespace_pins[code_object.path] = nspin
           result.push nspin
-          # See ToStructInitializer for why a Struct.new definition needs this.
           result.concat ToStructInitializer.make(code_object, nspin, @spec)
           if code_object.is_a?(YARD::CodeObjects::ClassObject) && !code_object.superclass.nil?
             # This method of superclass detection is a bit of a hack. If
