@@ -16,6 +16,23 @@ describe Solargraph::Parser::NodeProcessor do
     end.not_to raise_error
   end
 
+  it 'does not raise when a masgn target has no matching variable pin' do
+    # `a.b, c = 1, 2` mixes an attribute-writer target (`a.b=`, not a
+    # local/ivar/cvar/gvar) with a plain local. The attribute-writer
+    # target has no BaseVariable pin to attach mass_assignment info to,
+    # which used to be handled by a debug log and a `next`.
+    node = parse(%(
+      class Attrs
+        def b=(v); end
+      end
+      a = Attrs.new
+      a.b, c = 1, 2
+    ))
+    expect do
+      described_class.process(node)
+    end.not_to raise_error
+  end
+
   it 'orders optional args correctly' do
     node = parse(%(
       def foo(bar = nil, baz = nil); end
