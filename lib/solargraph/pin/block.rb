@@ -29,10 +29,7 @@ module Solargraph
       # @return [void]
       def rebind api_map
         @rebind ||= begin
-          # An enclosing block's rebind (e.g. a class_eval receiver)
-          # also applies to this block unless overridden here
-          enclosing = closure
-          enclosing.rebind(api_map) if enclosing.is_a?(Block)
+          warm_enclosing_rebind_cache(api_map)
           maybe_rebind(api_map)
         end
       end
@@ -102,6 +99,16 @@ module Solargraph
       end
 
       private
+
+      # Forces an enclosing block's @rebind memo to populate first, since
+      # binder/context fall through to it when this block has none of its own.
+      #
+      # @param api_map [ApiMap]
+      # @return [void]
+      def warm_enclosing_rebind_cache api_map
+        enclosing = closure
+        enclosing.rebind(api_map) if enclosing.is_a?(Block)
+      end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
