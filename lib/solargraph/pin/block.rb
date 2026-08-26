@@ -100,8 +100,8 @@ module Solargraph
 
       private
 
-      # Forces an enclosing block's @rebind memo to populate first, since
-      # binder/context fall through to it when this block has none of its own.
+      # Forces the enclosing block's cached rebind value to compute first,
+      # since this block's own binder/rebind fall through to it when unset.
       #
       # @param api_map [ApiMap]
       # @return [void]
