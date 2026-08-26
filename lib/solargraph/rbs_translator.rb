@@ -12,7 +12,7 @@ module Solargraph
       'NilClass' => 'nil'
     }.freeze
 
-    # @param type [RBS::Types::Bases::Base]
+    # @param type [RBS::Types::t]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [ComplexType]
     def self.to_complex_type type, type_alias_decls: {}
@@ -32,7 +32,6 @@ module Solargraph
                     elsif decl == :kwrestarg
                       ComplexType.parse('Hash{Symbol => Object}')
                     else
-                      # @sg-ignore Wrong argument type for to_complex_type: type expected RBS::Types::Bases::Base, received union of concrete subtypes
                       RbsTranslator.to_complex_type(param_type.type, type_alias_decls: type_alias_decls)
                     end
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
@@ -100,7 +99,6 @@ module Solargraph
       # handle those correctly
       generics = method_type.type_params.map(&:name).map(&:to_s).uniq
       parameters = to_parameter_pins(method_type, closure, parameter_names, type_alias_decls: type_alias_decls)
-      # @sg-ignore Wrong argument type for to_complex_type: type expected RBS::Types::Bases::Base, received union of concrete subtypes
       return_type = to_complex_type(method_type.type.return_type, type_alias_decls: type_alias_decls)
       block = if method_type.block
                 # @sg-ignore The `if method_type.block` guard above doesn't narrow nil out of this
@@ -142,7 +140,7 @@ module Solargraph
     class << self
       private
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [RBS::Types::t]
       # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
       # @param expanding_aliases [Array<String>] Names of aliases already
       #   being expanded in this call chain, to detect recursive aliases
@@ -158,6 +156,7 @@ module Solargraph
           # @sg-ignore flow sensitive typing should support case/when
           "Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
         when RBS::Types::Literal
+          # @sg-ignore flow sensitive typing should support case/when
           type.literal.inspect
         when RBS::Types::Union
           # @sg-ignore flow sensitive typing should support case/when
@@ -170,6 +169,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
+          # @sg-ignore flow sensitive typing should support case/when
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -199,7 +199,6 @@ module Solargraph
             # @sg-ignore flow sensitive typing should support case/when
             type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
           else
-            # @sg-ignore Wrong argument type for type_to_tag: type expected RBS::Types::Bases::Base, received union of concrete subtypes
             type_to_tag(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name])
           end
         when RBS::Types::ClassInstance, RBS::Types::Interface
