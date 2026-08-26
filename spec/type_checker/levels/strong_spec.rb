@@ -625,6 +625,61 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'narrows a literal-equality guard against an integer literal' do
+      checker = type_checker(%(
+        # @param code [Integer, :not_specified]
+        # @return [void]
+        def eq_guard(code)
+          if code == 1
+            code.succ
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'narrows a literal-equality guard with the literal on the left' do
+      checker = type_checker(%(
+        # @param code [Integer, :not_specified]
+        # @return [void]
+        def eq_guard(code)
+          if 1 == code
+            code.succ
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'narrows a literal-equality guard against a string literal' do
+      checker = type_checker(%(
+        # @param status [String, :not_specified]
+        # @return [void]
+        def eq_guard(status)
+          if status == 'ok'
+            status.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'narrows a literal-equality guard against true/false literals' do
+      checker = type_checker(%(
+        # @param flag [Boolean, :not_specified]
+        # @return [void]
+        def eq_guard(flag)
+          if flag == true
+            flag.to_s
+          end
+          if flag == false
+            flag.to_s
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on adding nil to types via return value' do
       checker = type_checker(%(
         # @param bar [Integer]
