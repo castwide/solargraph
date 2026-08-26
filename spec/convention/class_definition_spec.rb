@@ -18,6 +18,23 @@ describe Solargraph::Convention::ClassDefinition do
     expect(pin.type).to be(:class)
   end
 
+  it 'indexes an explicitly namespace-qualified Class.new assignment' do
+    api_map = Solargraph::ApiMap.new
+    api_map.map Solargraph::Source.load_string(%(
+      module Vendor
+      end
+
+      Vendor::Specific = Class.new(StandardError) do
+        # @return [Integer]
+        def retry_after
+          5
+        end
+      end
+    ), 'test.rb')
+
+    expect(api_map.get_methods('Vendor::Specific').map(&:name)).to include('retry_after')
+  end
+
   it 'attaches block methods to the new class rather than the enclosing module' do
     api_map = Solargraph::ApiMap.new
     api_map.map Solargraph::Source.load_string(%(
