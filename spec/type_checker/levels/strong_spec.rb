@@ -219,6 +219,26 @@ describe Solargraph::TypeChecker do
                                                      'Unresolved call to upcase on String, nil'])
     end
 
+    it 'applies a yieldparam type declared on a block-form @overload' do
+      checker = type_checker(%(
+        # @overload build
+        #   @return [String]
+        # @overload build
+        #   @yieldparam widget [String]
+        #   @return [void]
+        def build
+          return 'hi' unless block_given?
+
+          yield 'hi'
+        end
+
+        build do |w|
+          w.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer] an index
