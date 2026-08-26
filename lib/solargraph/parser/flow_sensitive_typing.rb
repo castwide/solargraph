@@ -9,21 +9,21 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param restricted_names [Array<String>, nil] If given, only
-      #   assert facts about variables with these names, ignoring any
-      #   other variable the analyzed condition happens to mention.
+      # @param only_downcast_these_names [Array<String>, nil] If given,
+      #   only apply a downcast to variables with these names, ignoring
+      #   any other variable the analyzed condition happens to mention.
       def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
-                     restricted_names: nil
+                     only_downcast_these_names: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
-        @restricted_names = restricted_names
+        @only_downcast_these_names = only_downcast_these_names
       end
 
       # Assert the facts implied by a condition being true/false over
       # the given ranges.  Public so that a differently-configured
-      # instance (see #initialize's restricted_names) can be handed a
+      # instance (see #initialize's only_downcast_these_names) can be handed a
       # condition to analyze.
       #
       # @param conditional_node [Parser::AST::Node]
@@ -262,6 +262,12 @@ module Solargraph
                            [rest_of_compound_statement], [])
       end
 
+      # "Assert" here means apply, not check: names is already known
+      # to be assigned unconditionally on the ranges given (the
+      # guard's own then/else clause), so this pushes the condition's
+      # narrowed types into effect for that code as an established
+      # fact, rather than testing anything at runtime.
+      #
       # @param conditional_node [Parser::AST::Node]
       # @param names [Array<String>]
       # @param true_ranges [Array<Range>]
@@ -272,7 +278,7 @@ module Solargraph
         return if names.empty?
 
         FlowSensitiveTyping.new(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
-                                restricted_names: names)
+                                only_downcast_these_names: names)
                            .process_condition(conditional_node, true_ranges, false_ranges)
       end
 
@@ -304,7 +310,7 @@ module Solargraph
       #
       # @return [void]
       def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
-        return if restricted_names && !restricted_names.include?(pin.name)
+        return if only_downcast_these_names && !only_downcast_these_names.include?(pin.name)
 
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
@@ -584,7 +590,7 @@ module Solargraph
       end
 
       attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin,
-                  :restricted_names
+                  :only_downcast_these_names
     end
   end
 end

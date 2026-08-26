@@ -6,6 +6,18 @@ module Solargraph
     # source.
     #
     class Region
+      # The nearest enclosing Closure pin (a method, block, or
+      # namespace). Every pin needs this at construction time, so it
+      # is tracked directly here rather than derived by walking
+      # `compound_statement` up to its nearest Closure ancestor on
+      # every pin push - that walk is `Pin::Base#closure`'s fallback
+      # for a pin built with no `@closure` of its own, not the normal
+      # path. `closure` only changes at a def/class/module/block
+      # boundary; `compound_statement` changes at every conditional
+      # branch, which is far more often - keeping them as two fields
+      # updated at their own rates avoids re-walking a chain that is
+      # usually unchanged since the last pin.
+      #
       # @return [Pin::Closure]
       attr_reader :closure
 
