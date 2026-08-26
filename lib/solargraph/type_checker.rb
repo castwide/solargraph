@@ -587,7 +587,7 @@ module Solargraph
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         }
         # don't complain about a param that didn't come from the pin we're looking at anyway
-        if details[:qualified].defined? ||
+        if details.fetch(:qualified).defined? ||
            relevant_pin.parameter_names.include?(tag.name.to_s)
           param_details[tag.name.to_s] = details
         end
