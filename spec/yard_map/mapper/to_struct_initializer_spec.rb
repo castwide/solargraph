@@ -135,6 +135,16 @@ describe Solargraph::YardMap::Mapper::ToStructInitializer do
     end
   end
 
+  it 'falls back to UTF-8 when the magic comment names an unknown encoding' do
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'struct_def.rb')
+      File.write(path, "# encoding: totally-bogus-encoding\nFoo = Struct.new(:bar)\n")
+
+      result = described_class.send(:detect_encoding, path)
+      expect(result).to eq(Encoding::UTF_8)
+    end
+  end
+
   it 'does not override an explicitly documented initialize' do
     pins = map(<<~RUBY)
       Foo = Struct.new(:bar) do
