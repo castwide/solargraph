@@ -78,6 +78,22 @@ describe Solargraph::Shell do
 
         expect(output).to include('Scanned ').and include(' seconds.')
       end
+
+      it 'reports and exits when typifying a pin raises' do
+        pin = instance_double(Solargraph::Pin::Method, path: 'Foo#bar', location: nil)
+        allow(api_map).to receive(:pins).and_return([pin])
+        allow(pin).to receive(:typify).and_raise(StandardError, 'boom')
+
+        output = capture_both do
+          shell.options = { directory: 'spec/fixtures/workspace' }
+          shell.scan
+        rescue SystemExit
+          # Ignore the SystemExit raised when a pin fails to typify
+        end
+
+        expect(output).to include('Error testing Foo#bar')
+        expect(output).to include('[StandardError]: boom')
+      end
     end
   end
 
@@ -143,6 +159,45 @@ describe Solargraph::Shell do
         end
 
         expect(output).to include("Gem 'solargraph123' not found")
+      end
+    end
+
+    context 'with mocked workspace' do
+      let(:workspace) { instance_double(Solargraph::Workspace) }
+
+      before do
+        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
+      end
+
+      it 'reports a gem whose lookup resolves to no gemspec' do
+        allow(workspace).to receive(:find_gem).with('no-gemspec').and_return(nil)
+
+        output = capture_both do
+          shell.gems('no-gemspec')
+        end
+
+        expect(output).to include("Gem 'no-gemspec' not found")
+      end
+
+      it 'reports a gem that raises Gem::MissingSpecError' do
+        allow(workspace).to receive(:find_gem).with('flaky-gem').and_raise(Gem::MissingSpecError.new('flaky-gem', '1.0'))
+
+        output = capture_both do
+          shell.gems('flaky-gem')
+        end
+
+        expect(output).to include("Gem 'flaky-gem' not found")
+      end
+
+      it 'reports a gem that raises Gem::Requirement::BadRequirementError' do
+        allow(workspace).to receive(:find_gem).with('bad-gem').and_raise(Gem::Requirement::BadRequirementError, 'bad requirement string')
+
+        output = capture_both do
+          shell.gems('bad-gem')
+        end
+
+        expect(output).to include("Gem 'bad-gem' failed while loading")
+        expect(output).to include('bad requirement string')
       end
     end
   end
