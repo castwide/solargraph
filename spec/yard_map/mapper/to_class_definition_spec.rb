@@ -126,6 +126,30 @@ describe Solargraph::YardMap::Mapper::ToClassDefinition do
     expect(pins_at(pins, 'Foo').map(&:class)).to eq([Solargraph::Pin::Constant])
   end
 
+  it 'logs and returns nil when reparsing raises' do
+    code_object = YARD::CodeObjects::ConstantObject.new(YARD::Registry.root, :Foo) do |obj|
+      obj.value = 'Class.new(StandardError)'
+    end
+    allow(described_class).to receive(:definition_pins).and_raise(StandardError, 'boom')
+    allow(Solargraph.logger).to receive(:info)
+    expect(described_class.make(code_object)).to be_nil
+    expect(Solargraph.logger).to have_received(:info)
+      .with(/Could not reparse Foo as a class definition: \[StandardError\] boom/)
+  end
+
+  it 'keeps a reference whose closure is two levels below the constant path' do
+    pins = map(<<~RUBY)
+      Foo = Class.new(StandardError) do
+        module Nested
+          include Comparable
+        end
+      end
+    RUBY
+    reference = pins.grep(Solargraph::Pin::Reference::Include).find { |pin| pin.name == 'Comparable' }
+    expect(reference).not_to be_nil
+    expect(reference.closure.path).to eq('Foo::Nested')
+  end
+
   it 'falls back to a constant pin when the value cannot be parsed' do
     code_object = YARD::CodeObjects::ConstantObject.new(YARD::Registry.root, :Foo) do |obj|
       obj.value = 'Class.new(StandardError) do'
