@@ -50,7 +50,16 @@ module Solargraph
                          else
                            code_object.superclass.to_s
                          end
-            result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin, source: :yard_map)
+            # YARD fills in `Object` for every class whose definition it never
+            # saw a superclass clause on - including a bare `class Foo`
+            # reopening, which asserts nothing about ancestry - and keeps no
+            # record of which case it was. A class with no superclass reference
+            # already resolves to Object, so recording this one adds nothing and
+            # can shadow a superclass declared in another source.
+            unless superclass.delete_prefix('::') == 'Object'
+              result.push Solargraph::Pin::Reference::Superclass.new(name: superclass, closure: nspin,
+                                                                     source: :yard_map)
+            end
           end
           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           code_object.class_mixins.each do |m|
