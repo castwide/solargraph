@@ -173,7 +173,7 @@ module Solargraph
 
         process_expression(conditional_node, true_ranges, false_ranges)
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore RBS Array[self] indexing infers Array instead of self
         process_guarded_reassignment(if_node, conditional_node, then_clause, else_clause)
       end
 

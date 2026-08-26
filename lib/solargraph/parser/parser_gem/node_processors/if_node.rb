@@ -25,7 +25,7 @@ module Solargraph
             end
             then_node = node.children[1]
             if then_node
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore RBS Array[self] indexing infers Array instead of self
               then_cs = Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(then_node),
                 closure: region.closure,
@@ -35,13 +35,13 @@ module Solargraph
                 source: :parser
               )
               pins.push then_cs
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore RBS Array[self] indexing infers Array instead of self
               NodeProcessor.process(then_node, region.update(compound_statement: then_cs), pins, locals, ivars)
             end
 
             else_node = node.children[2]
             if else_node
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore RBS Array[self] indexing infers Array instead of self
               else_cs = Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(else_node),
                 closure: region.closure,
@@ -51,7 +51,7 @@ module Solargraph
                 source: :parser
               )
               pins.push else_cs
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore RBS Array[self] indexing infers Array instead of self
               NodeProcessor.process(else_node, region.update(compound_statement: else_cs), pins, locals, ivars)
             end
 
