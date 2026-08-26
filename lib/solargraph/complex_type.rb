@@ -230,7 +230,7 @@ module Solargraph
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 
-      return duck_types_match?(api_map, expected, inferred) if expected.duck_type?
+      return duck_types_match?(api_map, expected, inferred, rules) if expected.duck_type?
 
       if rules.include? :allow_any_match
         inferred.any? do |inf|
@@ -248,24 +248,31 @@ module Solargraph
     # @param api_map [ApiMap]
     # @param expected [ComplexType, UniqueType]
     # @param inferred [ComplexType, UniqueType]
+    # @param rules [Array<Symbol>]
     # @return [Boolean]
-    def duck_types_match? api_map, expected, inferred
+    def duck_types_match? api_map, expected, inferred, rules = []
       raise ArgumentError, 'Expected type must be duck type' unless expected.duck_type?
+      allow_any_match = rules.include?(:allow_any_match)
       expected.each do |exp|
         next unless exp.duck_type?
-        quack = exp.to_s[1..]
-        return false if quack.nil?
-        unique_type = inferred.to_a.first
-        return false if unique_type.nil?
-        quacks = if unique_type.is_a?(UniqueType::Intersection)
-                   intersection_conjunct_quacks?(api_map, quack, unique_type)
-                 else
-                   !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
-                 end
-        return false unless quacks
+        quack = exp.to_s[1..] || ''
+        matched = allow_any_match ? inferred.any? { |inf| duck_type_provides?(api_map, inf, quack) } : inferred.all? { |inf| duck_type_provides?(api_map, inf, quack) }
+        return false unless matched
       end
       true
     end
+
+    # @param api_map [ApiMap]
+    # @param inf [UniqueType]
+    # @param quack [String]
+    # @return [Boolean]
+    def duck_type_provides? api_map, inf, quack
+      return true if inf.duck_type? && inf.to_s[1..] == quack
+      return intersection_conjunct_quacks?(api_map, quack, inf) if inf.is_a?(UniqueType::Intersection)
+
+      !api_map.get_method_stack(inf.namespace, quack, scope: inf.scope).empty?
+    end
+    private :duck_type_provides?
 
     # Intersection#namespace/#scope only report the first conjunct,
     # which loses the "any one conjunct satisfies" semantics an
