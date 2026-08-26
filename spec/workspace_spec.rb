@@ -146,6 +146,18 @@ describe Solargraph::Workspace do
     end.not_to raise_error
   end
 
+  describe '#gemfile?' do
+    it 'returns true when the workspace directory has a Gemfile' do
+      File.write(File.join(dir_path, 'Gemfile'), "source 'https://rubygems.org'")
+
+      expect(workspace.gemfile?).to be(true)
+    end
+
+    it 'returns false when the workspace directory has no Gemfile' do
+      expect(workspace.gemfile?).to be(false)
+    end
+  end
+
   describe '#cache_all_for_workspace!' do
     let(:pin_cache) { instance_double(Solargraph::PinCache) }
     let(:gemspecs)  { instance_double(Solargraph::Workspace::Gemspecs) }
