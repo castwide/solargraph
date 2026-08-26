@@ -737,4 +737,38 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  describe '#literal_node_tag' do
+    # literal_node_tag (#1231) turns a literal argument AST node into
+    # the dispatch tag used to narrow an intersection's Hash-keyed
+    # conjuncts to the one whose key_types match a call's literal
+    # argument - e.g. `period.fetch("Index")` narrowing
+    # `Hash{"Index" => Float} & Hash{"Triggers" => Array}` down to the
+    # first conjunct. Called from #unique_type_key_verdict.
+    let(:call) { described_class.new('fetch') }
+
+    it 'tags a string literal node' do
+      node = Solargraph::Parser.parse('"Index"')
+      expect(call.send(:literal_node_tag, node)).to eq('"Index"')
+    end
+
+    it 'tags a symbol literal node' do
+      node = Solargraph::Parser.parse(':Index')
+      expect(call.send(:literal_node_tag, node)).to eq(':Index')
+    end
+
+    it 'tags an integer literal node' do
+      node = Solargraph::Parser.parse('1')
+      expect(call.send(:literal_node_tag, node)).to eq('1')
+    end
+
+    it 'returns nil for a non-literal node' do
+      node = Solargraph::Parser.parse('[1, 2]')
+      expect(call.send(:literal_node_tag, node)).to be_nil
+    end
+
+    it 'returns nil for a non-AST-node argument' do
+      expect(call.send(:literal_node_tag, nil)).to be_nil
+    end
+  end
 end
