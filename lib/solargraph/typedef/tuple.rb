@@ -2,7 +2,7 @@
 
 module Solargraph
   module Typedef
-    class Tuple < Type
+    class Tuple < Unique
       def brackets
         [ '(', ')' ]
       end

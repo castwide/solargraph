@@ -531,7 +531,7 @@ module Solargraph
       end
     end
 
-    # @param type [Typedef::Type]
+    # @param type [Typedef::Unique]
     # @return [Array<Pin::Method>]
     def typedef_type_methods type
       if type.class?

@@ -2,10 +2,8 @@
 
 module Solargraph
   module Typedef
-    class Type < Element
-      attr_reader :base
-
-      attr_reader :params
+    class Unique < Element
+      attr_reader :base, :params
 
       # @param base [Path, Token]
       # @param params [Array<Path, Token, Element>]
@@ -15,14 +13,14 @@ module Solargraph
         @params = params.map { |par| Typedef.tokenize(par) }
       end
 
-      def expand(named_values)
+      def expand named_values
         new_base = base.expand(named_values)
         new_params = params.map { |par| par.expand(named_values) }
-        Type.new(new_base, *new_params)
+        Unique.new(new_base, *new_params)
       end
 
       def extract_generics type
-        return {} unless any_generic? && type.is_a?(Type)
+        return {} unless any_generic? && type.is_a?(Unique)
 
         extracted = base.extract_generics(type.base)
         params.map.with_index { |par, idx| extracted.merge!(par.extract_generics(type.params[idx])) }
@@ -31,11 +29,11 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param gates [Array<String>]
-      # @return [Type]
-      def resolve_rooted(api_map, gates)
+      # @return [Unique]
+      def resolve_rooted api_map, gates
         new_base = base.resolve_rooted(api_map, gates)
         new_params = params.map { |par| par.resolve_rooted(api_map, gates) }
-        Type.new(new_base, *new_params)
+        Unique.new(new_base, *new_params)
       end
 
       def resolved?
@@ -64,7 +62,7 @@ module Solargraph
         all.any?(&:any_generic?)
       end
 
-      # A Type is a single member from the any/all-of-immediate-members
+      # A Unique is a single member from the any/all-of-immediate-members
       # question (see Element), so the two coincide for it.
       # @return [Boolean]
       def all_generic?
@@ -107,23 +105,23 @@ module Solargraph
 
       # @return [Array<String>]
       def brackets
-        [ '[', ']' ]
+        ['[', ']']
       end
 
       private
 
       def params_to_s
-        return "" if params.empty?
+        return '' if params.empty?
         "#{brackets.first}#{params.join(', ')}#{brackets.last}"
       end
 
       def params_to_s_for_complex_type
-        return "" if @params.empty?
+        return '' if @params.empty?
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
 
-      ROOT = Type.new(Path::ROOT)
-      UNDEFINED = Type.new(Typedef.tokenize('undefined'))
+      ROOT = Unique.new(Path::ROOT)
+      UNDEFINED = Unique.new(Typedef.tokenize('undefined'))
     end
   end
 end

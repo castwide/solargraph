@@ -5,7 +5,7 @@ module Solargraph
     autoload :Path,       'solargraph/typedef/path'
     autoload :Token,      'solargraph/typedef/token'
     autoload :Element,    'solargraph/typedef/element'
-    autoload :Type,       'solargraph/typedef/type'
+    autoload :Unique,     'solargraph/typedef/unique'
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memos,      'solargraph/typedef/memos'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
@@ -23,7 +23,7 @@ module Solargraph
       when Path, Token, Element
         value
       when Array
-        Typedef::Type.new(*value)
+        Typedef::Unique.new(*value)
       else
         raise "Invalid value #{value.inspect}"
       end

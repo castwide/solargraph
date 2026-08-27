@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Typedef::Type do
+describe Solargraph::Typedef::Unique do
   describe '#from' do
     it 'updates paths' do
     end
@@ -8,14 +8,14 @@ describe Solargraph::Typedef::Type do
 
   describe '#expand' do
     it 'resolves simple named tokens to paths' do
-      named_values = { "foo" => "String" }
+      named_values = { 'foo' => 'String' }
       type = described_class.new('foo')
       resolved = type.expand(named_values)
       expect(resolved.to_s).to eq('String')
     end
 
     it 'resolves simple named tokens to rooted paths' do
-      named_values = { "foo" => "::String" }
+      named_values = { 'foo' => '::String' }
       type = described_class.new('foo')
       resolved = type.expand(named_values)
       expect(resolved.to_s).to eq('String')
@@ -23,7 +23,7 @@ describe Solargraph::Typedef::Type do
     end
 
     it 'returns unresolved types' do
-      named_values = { "foo" => "String" }
+      named_values = { 'foo' => 'String' }
       type = described_class.new('bar')
       unresolved = type.expand(named_values)
       expect(unresolved.to_s).to eq('bar')
@@ -44,7 +44,7 @@ describe Solargraph::Typedef::Type do
   end
 
   describe '#all_generic?' do
-    it 'coincides with #any_generic?, since a Type is a single member' do
+    it 'coincides with #any_generic?, since a Unique is a single member' do
       generic_type = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_types.first
       plain_type = Solargraph::ComplexType.parse('Array<String>').to_typedef_types.first
       expect(generic_type.all_generic?).to eq(generic_type.any_generic?)

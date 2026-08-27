@@ -22,7 +22,7 @@ module Solargraph
         @decl = decl
       end
 
-      # @param arguments [Array<Typedef::Type>]
+      # @param arguments [Array<Typedef::Unique>]
       def typedef_resolve_generics(arguments)
         
       end
