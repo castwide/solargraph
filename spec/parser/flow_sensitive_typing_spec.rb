@@ -1309,6 +1309,93 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect { clip.infer.to_s }.not_to raise_error
   end
 
+  it 'does not narrow instance_variable_defined? with an explicit receiver' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param other [Object]
+        # @return [void]
+        def check(other)
+          return unless other.instance_variable_defined?(:@bar)
+          @bar.to_s
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq(['Unresolved call to @bar'])
+  end
+
+  it 'does not narrow a call to a different method than instance_variable_defined?' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [void]
+        def check
+          return unless instance_variable_get(:@bar)
+          @bar.to_s
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq(['Unresolved call to @bar'])
+  end
+
+  it 'does not synthesize a pin when the instance_variable_defined? argument does not start with @' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [void]
+        def check
+          return unless instance_variable_defined?(:bar)
+          @bar.to_s
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq(['Unresolved call to @bar'])
+  end
+
+  it 'narrows an existing ivar assignment to non-nil via instance_variable_defined?' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param val [Integer, nil]
+        def initialize(val)
+          @bar = val
+        end
+
+        # @return [Integer]
+        def check
+          return 0 unless instance_variable_defined?(:@bar)
+          @bar
+        end
+      end
+  ), 'test.rb')
+    checker = Solargraph::TypeChecker.load_string(source.code, 'test.rb', :strong)
+    expect(checker.problems.map(&:message)).to eq([])
+  end
+
+  # The next two exercise defensive guards in
+  # FlowSensitiveTyping#process_instance_variable_defined that no real
+  # parsed source can reach through its only caller, #process_calls:
+  # that caller already filters to :send nodes before calling it, and
+  # #process_if/#process_while/etc. always hand it a closure built from
+  # a Region (which defaults to an anonymous Pin::Namespace, never
+  # nil). Calling the private method directly is the only way to cover
+  # them.
+  it 'does nothing when there is no enclosing closure' do
+    node = Solargraph::Parser.parse('instance_variable_defined?(:@bar)', 'test.rb', 0)
+    ivars = []
+    typing = described_class.new([], ivars, nil, nil, nil)
+    range = Solargraph::Range.from_node(node)
+    typing.send(:process_instance_variable_defined, node, [range], [])
+    expect(ivars).to eq([])
+  end
+
+  it 'ignores a non-send node' do
+    node = Solargraph::Parser.parse('1', 'test.rb', 0)
+    ivars = []
+    typing = described_class.new([], ivars, nil, nil, nil)
+    expect { typing.send(:process_instance_variable_defined, node, [], []) }.not_to raise_error
+    expect(ivars).to eq([])
+  end
+
   it 'uses kind_of? in a simple if() to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param arg [String, Integer]
