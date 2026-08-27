@@ -3,16 +3,16 @@
 describe Solargraph::Typedef::Typeset do
   describe '.new' do
     it 'accepts multiple types' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String'))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Array'))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String'))
       typeset = described_class.new([type1, type2])
       expect(typeset.to_s).to eq('Array | String')
     end
 
     it 'reduces to unique types' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String'))
-      type3 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Array'))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Array'))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String'))
+      type3 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Array'))
       typeset = described_class.new([type1, type2, type3])
       expect(typeset.to_s).to eq('Array | String')
     end
@@ -20,8 +20,8 @@ describe Solargraph::Typedef::Typeset do
 
   describe '#to_complex_type' do
     it 'converts to complex types' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String'))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Array'))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String'))
       typeset = described_class.new([type1, type2])
       complex_type = typeset.to_complex_type
       expect(complex_type).to be_a(Solargraph::ComplexType)
@@ -66,15 +66,15 @@ describe Solargraph::Typedef::Typeset do
 
   describe '#rooted?' do
     it 'is true only if every branch is rooted' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef::Path.new('String', rooted: true))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef::Path.new('Array', rooted: true))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('String', rooted: true))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('Array', rooted: true))
       typeset = described_class.new([type1, type2])
       expect(typeset).to be_rooted
     end
 
     it 'is false if any branch is unrooted' do
-      rooted = Solargraph::Typedef::Unique.new(Solargraph::Typedef::Path.new('::String', rooted: true))
-      unrooted = Solargraph::Typedef::Unique.new(Solargraph::Typedef::Path.new('Array', rooted: false))
+      rooted = Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('::String', rooted: true))
+      unrooted = Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('Array', rooted: false))
       typeset = described_class.new([rooted, unrooted])
       expect(typeset).not_to be_rooted
     end
@@ -82,15 +82,15 @@ describe Solargraph::Typedef::Typeset do
 
   describe '#resolved?' do
     it 'is true only if every branch is resolved' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('nil'))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('undefined'))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('nil'))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('undefined'))
       typeset = described_class.new([type1, type2])
       expect(typeset).to be_resolved
     end
 
     it 'is false if any branch is unresolved' do
-      resolved = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('nil'))
-      unresolved = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('foo'))
+      resolved = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('nil'))
+      unresolved = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('foo'))
       typeset = described_class.new([resolved, unresolved])
       expect(typeset).not_to be_resolved
     end
@@ -98,15 +98,15 @@ describe Solargraph::Typedef::Typeset do
 
   describe '#expanded?' do
     it 'is true only if every branch is expanded' do
-      type1 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('nil'))
-      type2 = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('undefined'))
+      type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('nil'))
+      type2 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('undefined'))
       typeset = described_class.new([type1, type2])
       expect(typeset).to be_expanded
     end
 
     it 'is false if any branch is unexpanded' do
-      expanded = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('nil'))
-      unexpanded = Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('foo'))
+      expanded = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('nil'))
+      unexpanded = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('foo'))
       typeset = described_class.new([expanded, unexpanded])
       expect(typeset).not_to be_expanded
     end

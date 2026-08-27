@@ -103,7 +103,7 @@ module Solargraph
           end
           arguments = pin.parameters.map.with_index do |param, idx|
             token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(link.arguments[idx].node))
-            Typeset.new([Unique.new(token)])
+            Typeset.new([Concrete.new(token)])
           end
           named_values = pin.parameter_names.zip(arguments).to_h
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)

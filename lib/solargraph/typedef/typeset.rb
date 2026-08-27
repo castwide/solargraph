@@ -12,7 +12,7 @@ module Solargraph
         @types = types.flat_map do |type_or_set|
           if type_or_set.is_a?(Typeset)
             type_or_set.types
-          elsif type_or_set.is_a?(Unique) && type_or_set.base.is_a?(Typeset) && type_or_set.params.empty?
+          elsif type_or_set.is_a?(Concrete) && type_or_set.base.is_a?(Typeset) && type_or_set.params.empty?
             type_or_set.base.types
           else
             type_or_set
@@ -89,7 +89,7 @@ module Solargraph
         types.uniq!(&:to_s)
       end
 
-      UNDEFINED = Typeset.new([Unique::UNDEFINED])
+      UNDEFINED = Typeset.new([Concrete::UNDEFINED])
     end
   end
 end

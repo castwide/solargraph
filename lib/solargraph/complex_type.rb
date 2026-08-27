@@ -399,10 +399,10 @@ module Solargraph
       ComplexType.new(types)
     end
 
-    # @return [Array<Typedef::Unique>]
+    # @return [Array<Typedef::Concrete>]
     def to_typedef_types
       # @todo Quick and dirty hack
-      return [Typedef::Unique::ROOT] if to_s == 'Class<>'
+      return [Typedef::Concrete::ROOT] if to_s == 'Class<>'
 
       items.map do |item|
         item.to_typedef_types
@@ -411,12 +411,12 @@ module Solargraph
 
     def to_typedef_typeset
       # @todo Quick and dirty hack
-      return Typedef::Typeset.new([Typedef::Unique::ROOT]) if to_s == 'Class<>'
+      return Typedef::Typeset.new([Typedef::Concrete::ROOT]) if to_s == 'Class<>'
       if hash_parameters? || name == 'Hash'
         top = Typedef.tokenize(name)
         key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
         val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
-        Typedef::Unique.new(top, key, val)
+        Typedef::Concrete.new(top, key, val)
       elsif fixed_parameters? && !value_types.empty?
         top = Typedef.tokenize(name)
         vals = value_types.map(&:to_typedef_typeset)

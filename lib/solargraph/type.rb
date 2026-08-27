@@ -2,7 +2,7 @@
 
 module Solargraph
   # Shared abstract interface for the composable kinds of type data used
-  # throughout Solargraph: a single type token (Typedef::Unique, including
+  # throughout Solargraph: a single type token (Typedef::Concrete, including
   # its Typedef::Tuple subclass) and a collection of such tokens
   # (Typedef::Typeset, a union). A future third kind (e.g. an
   # intersection) subclasses this and works at every call site already
@@ -11,7 +11,7 @@ module Solargraph
   # whichever kind" writes [Type], unqualified, from anywhere in the app.
   #
   # Typedef::Path and Typedef::Token sit outside this hierarchy - they're
-  # the leaf tokens a Typedef::Unique's base/params are built from, with
+  # the leaf tokens a Typedef::Concrete's base/params are built from, with
   # their own narrower protocol - but they implement #any_generic? for the
   # same reason: Type's own methods recurse into whatever base/params hold.
   #
@@ -30,9 +30,9 @@ module Solargraph
   #   - `any_generic?`/`all_generic?` ask whether any/all of the
   #     receiver's own immediate members contain a generic placeholder
   #     anywhere in their own structure. For a Typeset the members are
-  #     its union branches (`types`); for a Unique they're `base` and
+  #     its union branches (`types`); for a Concrete they're `base` and
   #     `params`, but that's an internal detail already folded into a
-  #     single fact, so a Unique is one member from this question's
+  #     single fact, so a Concrete is one member from this question's
   #     point of view and its `any_generic?`/`all_generic?` coincide.
   #     This is a breadth check over immediate members, not a depth
   #     check over nested structure - don't read it the way
@@ -61,7 +61,7 @@ module Solargraph
     #   @return [Hash]
 
     # @!method flat_types
-    #   @return [Array<Typedef::Unique>]
+    #   @return [Array<Typedef::Concrete>]
 
     # @!method to_complex_type
     #   @return [ComplexType]

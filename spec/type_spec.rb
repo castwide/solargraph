@@ -3,7 +3,7 @@
 # A minimal test double for a hypothetical third Type kind. Not a real
 # feature - just enough to prove a new kind can subclass Solargraph::Type
 # and work at an existing call site (Typeset's own construction and
-# predicates) without any change to Typeset or Unique.
+# predicates) without any change to Typeset or Concrete.
 #
 # Represents an intersection-equivalent: "every one of these conjuncts
 # must hold at once".
@@ -112,7 +112,7 @@ shared_examples 'a Type' do
 end
 
 describe Solargraph::Type do
-  describe Solargraph::Typedef::Unique do
+  describe Solargraph::Typedef::Concrete do
     subject { described_class.new(Solargraph::Typedef.tokenize('String')) }
 
     it_behaves_like 'a Type'
@@ -125,15 +125,15 @@ describe Solargraph::Type do
   end
 
   describe Solargraph::Typedef::Typeset do
-    subject { described_class.new([Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String'))]) }
+    subject { described_class.new([Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String'))]) }
 
     it_behaves_like 'a Type'
   end
 
   describe TypeSpecConjunction do
     subject do
-      types = [Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String')),
-               Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Comparable'))]
+      types = [Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String')),
+               Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Comparable'))]
       described_class.new(types)
     end
 
@@ -141,12 +141,12 @@ describe Solargraph::Type do
   end
 
   describe 'a future third kind subclassing Type directly' do
-    let(:string_type) { Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String')) }
-    let(:comparable_type) { Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Comparable')) }
+    let(:string_type) { Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('String')) }
+    let(:comparable_type) { Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Comparable')) }
     let(:conjunction) { TypeSpecConjunction.new([string_type, comparable_type]) }
 
     it 'passes through Typeset.new unmodified and participates in its predicates' do
-      typeset = Solargraph::Typedef::Typeset.new([conjunction, Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Integer'))])
+      typeset = Solargraph::Typedef::Typeset.new([conjunction, Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Integer'))])
 
       expect(typeset.types).to include(conjunction)
       expect(typeset.to_s).to eq('String & Comparable | Integer')

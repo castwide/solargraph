@@ -616,29 +616,29 @@ module Solargraph
 
       def to_typedef_types
         # @todo Quick and dirty hack
-        return Typedef::Unique.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+        return Typedef::Concrete.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
 
         base = name
         base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         params = all_params.map(&:to_typedef_types)
-        Typedef::Unique.new(base, *params)
+        Typedef::Concrete.new(base, *params)
       end
 
       def to_typedef_typeset
         # @todo Quick and dirty hack
-        return Typedef::Unique.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
+        return Typedef::Concrete.new(Typedef.tokenize(to_s)) if to_s.start_with?('generic<')
 
         base = name
         base = "::#{base}" if rooted? && base =~ /^[A-Z]/
         if all_params.empty?
-          Typedef::Unique.new(base)
+          Typedef::Concrete.new(base)
         else
           params = if name == 'Hash'
             all_params.map(&:to_typedef_typeset)
           else
             [Typedef::Typeset.new([all_params.map(&:to_typedef_typeset)])]
           end
-          Typedef::Typeset.new([Typedef::Unique.new(base, *params)])
+          Typedef::Typeset.new([Typedef::Concrete.new(base, *params)])
         end
       end
 

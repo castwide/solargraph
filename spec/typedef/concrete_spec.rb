@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Typedef::Unique do
+describe Solargraph::Typedef::Concrete do
   describe '#from' do
     it 'updates paths' do
     end
@@ -44,7 +44,7 @@ describe Solargraph::Typedef::Unique do
   end
 
   describe '#all_generic?' do
-    it 'coincides with #any_generic?, since a Unique is a single member' do
+    it 'coincides with #any_generic?, since a Concrete is a single member' do
       generic_type = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_types.first
       plain_type = Solargraph::ComplexType.parse('Array<String>').to_typedef_types.first
       expect(generic_type.all_generic?).to eq(generic_type.any_generic?)

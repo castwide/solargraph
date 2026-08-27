@@ -2,7 +2,7 @@
 
 module Solargraph
   module Typedef
-    class Unique < Type
+    class Concrete < Type
       attr_reader :base, :params
 
       # @param base [Path, Token]
@@ -16,11 +16,11 @@ module Solargraph
       def expand named_values
         new_base = base.expand(named_values)
         new_params = params.map { |par| par.expand(named_values) }
-        Unique.new(new_base, *new_params)
+        Concrete.new(new_base, *new_params)
       end
 
       def extract_generics type
-        return {} unless any_generic? && type.is_a?(Unique)
+        return {} unless any_generic? && type.is_a?(Concrete)
 
         extracted = base.extract_generics(type.base)
         params.map.with_index { |par, idx| extracted.merge!(par.extract_generics(type.params[idx])) }
@@ -29,11 +29,11 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @param gates [Array<String>]
-      # @return [Unique]
+      # @return [Concrete]
       def resolve_rooted api_map, gates
         new_base = base.resolve_rooted(api_map, gates)
         new_params = params.map { |par| par.resolve_rooted(api_map, gates) }
-        Unique.new(new_base, *new_params)
+        Concrete.new(new_base, *new_params)
       end
 
       def resolved?
@@ -62,7 +62,7 @@ module Solargraph
         all.any?(&:any_generic?)
       end
 
-      # A Unique is a single member from the any/all-of-immediate-members
+      # A Concrete is a single member from the any/all-of-immediate-members
       # question (see Type), so the two coincide for it.
       # @return [Boolean]
       def all_generic?
@@ -120,8 +120,8 @@ module Solargraph
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
 
-      ROOT = Unique.new(Path::ROOT)
-      UNDEFINED = Unique.new(Typedef.tokenize('undefined'))
+      ROOT = Concrete.new(Path::ROOT)
+      UNDEFINED = Concrete.new(Typedef.tokenize('undefined'))
     end
   end
 end
