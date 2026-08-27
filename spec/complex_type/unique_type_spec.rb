@@ -26,6 +26,11 @@ describe Solargraph::ComplexType::UniqueType do
     end
   end
 
+  # UniqueType#narrow_with duplicates ComplexType#narrow_with (see
+  # spec/complex_type/narrow_with_spec.rb) but is reachable on its
+  # own: BaseVariable#adjust_type calls #exclude before #narrow_with,
+  # and #exclude returns self - a bare UniqueType, unwrapped - when
+  # there's no exclusion type to apply.
   describe '#narrow_with' do
     let(:api_map) { Solargraph::ApiMap.new }
 
