@@ -636,9 +636,9 @@ module Solargraph
           params = if name == 'Hash'
             all_params.map(&:to_typedef_typeset)
           else
-            [Typedef::Typeset.new([all_params.map(&:to_typedef_typeset)])]
+            [Typedef::Union.new([all_params.map(&:to_typedef_typeset)])]
           end
-          Typedef::Typeset.new([Typedef::Concrete.new(base, *params)])
+          Typedef::Union.new([Typedef::Concrete.new(base, *params)])
         end
       end
 

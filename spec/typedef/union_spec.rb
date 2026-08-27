@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::Typedef::Typeset do
+describe Solargraph::Typedef::Union do
   describe '.new' do
     it 'accepts multiple types' do
       type1 = Solargraph::Typedef::Concrete.new(Solargraph::Typedef.tokenize('Array'))

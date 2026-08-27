@@ -411,18 +411,18 @@ module Solargraph
 
     def to_typedef_typeset
       # @todo Quick and dirty hack
-      return Typedef::Typeset.new([Typedef::Concrete::ROOT]) if to_s == 'Class<>'
+      return Typedef::Union.new([Typedef::Concrete::ROOT]) if to_s == 'Class<>'
       if hash_parameters? || name == 'Hash'
         top = Typedef.tokenize(name)
-        key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
-        val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
+        key = Typedef::Union.new(key_types.map(&:to_typedef_typeset))
+        val = Typedef::Union.new(value_types.map(&:to_typedef_typeset))
         Typedef::Concrete.new(top, key, val)
       elsif fixed_parameters? && !value_types.empty?
         top = Typedef.tokenize(name)
         vals = value_types.map(&:to_typedef_typeset)
         Typedef::Tuple.new(top, *vals)
       else
-        Typedef::Typeset.new(items.map { |item| item.to_typedef_typeset })
+        Typedef::Union.new(items.map { |item| item.to_typedef_typeset })
       end
     end
 

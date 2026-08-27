@@ -10,6 +10,7 @@ module Solargraph
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
+    autoload :Union,      'solargraph/typedef/union'
     autoload :Tuple,      'solargraph/typedef/tuple'
 
     # Convert a value to a Path, Token, or Type

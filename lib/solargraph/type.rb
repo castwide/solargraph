@@ -4,11 +4,13 @@ module Solargraph
   # Shared abstract interface for the composable kinds of type data used
   # throughout Solargraph: a single type token (Typedef::Concrete, including
   # its Typedef::Tuple subclass) and a collection of such tokens
-  # (Typedef::Typeset, a union). A future third kind (e.g. an
-  # intersection) subclasses this and works at every call site already
-  # written against it, instead of duck-typing the same method names by
-  # convention. Any code that needs to accept or return "a type value,
-  # whichever kind" writes [Type], unqualified, from anywhere in the app.
+  # (Typedef::Typeset, itself abstract - Typedef::Union combines its
+  # members with OR; a future Typedef::Intersection would combine them
+  # with AND). A future kind at either level subclasses the right spot and
+  # works at every call site already written against it, instead of
+  # duck-typing the same method names by convention. Any code that needs
+  # to accept or return "a type value, whichever kind" writes [Type],
+  # unqualified, from anywhere in the app.
   #
   # Typedef::Path and Typedef::Token sit outside this hierarchy - they're
   # the leaf tokens a Typedef::Concrete's base/params are built from, with
@@ -30,10 +32,12 @@ module Solargraph
   #   - `any_generic?`/`all_generic?` ask whether any/all of the
   #     receiver's own immediate members contain a generic placeholder
   #     anywhere in their own structure. For a Typeset the members are
-  #     its union branches (`types`); for a Concrete they're `base` and
-  #     `params`, but that's an internal detail already folded into a
-  #     single fact, so a Concrete is one member from this question's
-  #     point of view and its `any_generic?`/`all_generic?` coincide.
+  #     its own `types` branches (union members for a Union, and,
+  #     eventually, conjuncts for an Intersection); for a Concrete they're
+  #     `base` and `params`, but that's an internal detail already folded
+  #     into a single fact, so a Concrete is one member from this
+  #     question's point of view and its `any_generic?`/`all_generic?`
+  #     coincide.
   #     This is a breadth check over immediate members, not a depth
   #     check over nested structure - don't read it the way
   #     ComplexType::UniqueType#all_rooted? reads "all_", which is a
