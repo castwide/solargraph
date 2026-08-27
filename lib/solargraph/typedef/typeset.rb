@@ -2,10 +2,10 @@
 
 module Solargraph
   module Typedef
-    class Typeset < Element
+    class Typeset < Type
       attr_reader :types
 
-      # @param types [Array<Element>]
+      # @param types [Array<Type>]
       def initialize types
         super()
         # @todo Slightly naive reduction of nested typesets to types

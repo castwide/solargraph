@@ -6,7 +6,7 @@ module Solargraph
       # Contextual expansion of YARD macros.
       #
       class Macros < Base
-        # @return [Element]
+        # @return [Type]
         def expand
           return pin.typedef_typeset unless pin.macro_names?
 

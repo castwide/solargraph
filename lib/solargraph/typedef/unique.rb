@@ -2,11 +2,11 @@
 
 module Solargraph
   module Typedef
-    class Unique < Element
+    class Unique < Type
       attr_reader :base, :params
 
       # @param base [Path, Token]
-      # @param params [Array<Path, Token, Element>]
+      # @param params [Array<Path, Token, Type>]
       def initialize base, *params
         super()
         @base = Typedef.tokenize(base)
@@ -63,7 +63,7 @@ module Solargraph
       end
 
       # A Unique is a single member from the any/all-of-immediate-members
-      # question (see Element), so the two coincide for it.
+      # question (see Type), so the two coincide for it.
       # @return [Boolean]
       def all_generic?
         any_generic?

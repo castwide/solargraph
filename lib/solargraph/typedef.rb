@@ -4,7 +4,6 @@ module Solargraph
   module Typedef
     autoload :Path,       'solargraph/typedef/path'
     autoload :Token,      'solargraph/typedef/token'
-    autoload :Element,    'solargraph/typedef/element'
     autoload :Unique,     'solargraph/typedef/unique'
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memos,      'solargraph/typedef/memos'
@@ -13,14 +12,14 @@ module Solargraph
     autoload :Typeset,    'solargraph/typedef/typeset'
     autoload :Tuple,      'solargraph/typedef/tuple'
 
-    # Convert a value to a Path, Token, or Element
-    # @param value [String, Path, Token, Element, Array<String, Path, Token, Element>]
-    # @return [Path, Token, Element]
+    # Convert a value to a Path, Token, or Type
+    # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
+    # @return [Path, Token, Type]
     def self.tokenize value
       case value
       when String
         convert value
-      when Path, Token, Element
+      when Path, Token, Type
         value
       when Array
         Typedef::Unique.new(*value)

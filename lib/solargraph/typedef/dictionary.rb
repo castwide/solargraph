@@ -50,7 +50,7 @@ module Solargraph
         pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
       end
 
-      # @return [Element]
+      # @return [Type]
       def infer
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain

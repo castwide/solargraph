@@ -1,17 +1,16 @@
 # frozen_string_literal: true
 
-# A minimal test double for a hypothetical third Element kind. Not a real
-# feature - just enough to prove a new kind can subclass Element and work
-# at an existing call site (Typeset's own construction and predicates)
-# without any change to Typeset or Type.
+# A minimal test double for a hypothetical third Type kind. Not a real
+# feature - just enough to prove a new kind can subclass Solargraph::Type
+# and work at an existing call site (Typeset's own construction and
+# predicates) without any change to Typeset or Unique.
 #
 # Represents an intersection-equivalent: "every one of these conjuncts
-# must hold at once" - the composite kind Problem 1's background names as
-# the concrete example of a future third kind Typedef doesn't have yet.
-class TypedefElementSpecConjunction < Solargraph::Typedef::Element
+# must hold at once".
+class TypeSpecConjunction < Solargraph::Type
   attr_reader :conjuncts
 
-  # @param conjuncts [Array<Solargraph::Typedef::Element>]
+  # @param conjuncts [Array<Solargraph::Type>]
   def initialize conjuncts
     super()
     @conjuncts = conjuncts
@@ -71,15 +70,15 @@ class TypedefElementSpecConjunction < Solargraph::Typedef::Element
   end
 end
 
-# Every method Element stubs, minus the ones RSpec already exercises via
+# Every method Type stubs, minus the ones RSpec already exercises via
 # a predicate matcher (any_generic?/all_generic?/rooted?/resolved?/
 # expanded?/nullable? are covered per-kind by their own describe blocks
 # elsewhere in this directory) - this just proves each kind answers the
-# full protocol at all, which is what lets a caller hold "some Element"
+# full protocol at all, which is what lets a caller hold "some Type"
 # without knowing the concrete class.
-shared_examples 'a Typedef element' do
-  it 'is an Element' do
-    expect(subject).to be_a(Solargraph::Typedef::Element)
+shared_examples 'a Type' do
+  it 'is a Type' do
+    expect(subject).to be_a(Solargraph::Type)
   end
 
   it 'answers to_s' do
@@ -99,7 +98,7 @@ shared_examples 'a Typedef element' do
   end
 
   it 'answers expand' do
-    expect(subject.expand({})).to be_a(Solargraph::Typedef::Element)
+    expect(subject.expand({})).to be_a(Solargraph::Type)
   end
 
   it 'answers the boolean predicates' do
@@ -112,39 +111,39 @@ shared_examples 'a Typedef element' do
   end
 end
 
-describe Solargraph::Typedef::Element do
+describe Solargraph::Type do
   describe Solargraph::Typedef::Unique do
     subject { described_class.new(Solargraph::Typedef.tokenize('String')) }
 
-    it_behaves_like 'a Typedef element'
+    it_behaves_like 'a Type'
   end
 
   describe Solargraph::Typedef::Tuple do
     subject { described_class.new(Solargraph::Typedef.tokenize('Array'), Solargraph::Typedef.tokenize('String')) }
 
-    it_behaves_like 'a Typedef element'
+    it_behaves_like 'a Type'
   end
 
   describe Solargraph::Typedef::Typeset do
     subject { described_class.new([Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String'))]) }
 
-    it_behaves_like 'a Typedef element'
+    it_behaves_like 'a Type'
   end
 
-  describe TypedefElementSpecConjunction do
+  describe TypeSpecConjunction do
     subject do
       types = [Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String')),
                Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Comparable'))]
       described_class.new(types)
     end
 
-    it_behaves_like 'a Typedef element'
+    it_behaves_like 'a Type'
   end
 
-  describe 'a future third kind subclassing Element directly' do
+  describe 'a future third kind subclassing Type directly' do
     let(:string_type) { Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('String')) }
     let(:comparable_type) { Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Comparable')) }
-    let(:conjunction) { TypedefElementSpecConjunction.new([string_type, comparable_type]) }
+    let(:conjunction) { TypeSpecConjunction.new([string_type, comparable_type]) }
 
     it 'passes through Typeset.new unmodified and participates in its predicates' do
       typeset = Solargraph::Typedef::Typeset.new([conjunction, Solargraph::Typedef::Unique.new(Solargraph::Typedef.tokenize('Integer'))])
