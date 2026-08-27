@@ -72,7 +72,16 @@ module Solargraph
               unresolved_arm = true
               next
             end
-            resolved.concat inferred_pins([pin], api_map, name_pin, locals, context)
+            # Give this arm's resolution a name_pin whose #binder is this
+            # arm alone, not the whole union - every name_pin.binder read
+            # inside #inferred_pins (including the Class#new special case)
+            # then sees only this arm, with nothing extra to keep in sync.
+            arm_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                    closure: name_pin.closure,
+                                                    gates: name_pin.gates,
+                                                    binder: context,
+                                                    source: :chain)
+            resolved.concat inferred_pins([pin], api_map, arm_name_pin, locals)
           end
           return [] if unresolved_arm && !api_map.loose_unions
           return [] if resolved.empty?
@@ -86,15 +95,13 @@ module Solargraph
 
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
-        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
-        # @param self_binder [ComplexType, ComplexType::UniqueType, nil] The
-        #   type that `self` refers to in the resolved pins' declarations. For a
-        #   union receiver this is the single arm which supplied `pins`, not the
+        # @param name_pin [Pin::Base] name_pin.binder resolves `self` in the
+        #   resolved pins' declarations. For a union receiver, callers pass a
+        #   name_pin bound to the single arm that supplied `pins`, not the
         #   whole union.
+        # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
-        def inferred_pins pins, api_map, name_pin, locals, self_binder = nil
-          self_binder ||= name_pin.binder
+        def inferred_pins pins, api_map, name_pin, locals
           result = pins.map do |p|
             next p unless p.is_a?(Pin::Method)
             overloads = p.signatures
@@ -167,7 +174,7 @@ module Solargraph
                               # declaration - we can't just use the type of the
                               # method pin, as this might be a subclass of the
                               # place where the method is defined
-                              self_binder
+                              name_pin.binder
                             end
                 # This same logic applies to the YARD work done by
                 # 'with_params()'.
@@ -197,7 +204,7 @@ module Solargraph
               # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
               # @sg-ignore Need to add nil check here
-              selfy = pin.return_type.self_to_type(self_binder)
+              selfy = pin.return_type.self_to_type(name_pin.binder)
               # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end

@@ -423,6 +423,45 @@ describe Solargraph::Source::Chain::Call do
     expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>')
   end
 
+  it 'does not leak one union arm into a Class#new call resolved on another arm' do
+    source = Solargraph::Source.load_string(%(
+      class Beta; end
+
+      # @type [Class<Beta>, Class]
+      klass = beta_class_or_generic_class
+      klass.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Class<Beta>'s own `.new` resolves separately to Beta; the bare `Class`
+    # arm falls back to the generic Class#new, which cannot know the
+    # constructed type. The gate for that fallback must read only this
+    # arm's binder - a Class<Beta> arm elsewhere in the union must not leak
+    # Beta into the bare Class arm's result.
+    expect(type.rooted_tags).to eq('undefined')
+  end
+
+  it 'resolves Class#new the same way regardless of union arm order' do
+    source = Solargraph::Source.load_string(%(
+      class Beta; end
+
+      # @type [Class, Class<Beta>]
+      klass = generic_or_beta_class
+      klass.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Same union as the Class<Beta>, Class case with the arms reversed; the
+    # result must not depend on declaration order.
+    expect(type.rooted_tags).to eq('undefined')
+  end
+
   it 'allows calls off of nilable objects by default' do
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]
