@@ -29,7 +29,7 @@ module Solargraph
       # @return [void]
       def rebind api_map
         @rebind ||= begin
-          warm_enclosing_rebind_cache(api_map)
+          maybe_rebind_closure(api_map)
           maybe_rebind(api_map)
         end
       end
@@ -100,12 +100,12 @@ module Solargraph
 
       private
 
-      # Forces the enclosing block's cached rebind value to compute first,
-      # since this block's own binder/rebind fall through to it when unset.
+      # This block's own binder/context fall through to the closure's
+      # rebind when unset, so it must be computed first.
       #
       # @param api_map [ApiMap]
       # @return [void]
-      def warm_enclosing_rebind_cache api_map
+      def maybe_rebind_closure api_map
         enclosing = closure
         enclosing.rebind(api_map) if enclosing.is_a?(Block)
       end
