@@ -436,7 +436,6 @@ module Solargraph
             source: :overloads
           )
         end
-        @overloads
       end
 
       def anon_splat?
