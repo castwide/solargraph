@@ -2,11 +2,12 @@
 
 module Solargraph
   module Typedef
-    class Typeset
+    class Typeset < Element
       attr_reader :types
 
-      # @param types [Array<Typeset, Type>]
+      # @param types [Array<Element>]
       def initialize types
+        super()
         # @todo Slightly naive reduction of nested typesets to types
         @types = types.flat_map do |type_or_set|
           if type_or_set.is_a?(Typeset)
@@ -27,7 +28,7 @@ module Solargraph
 
       # @param typeset [Typeset, nil]
       def extract_generics(typeset)
-        return {} unless generic? && typeset.is_a?(Typeset)
+        return {} unless any_generic? && typeset.is_a?(Typeset)
         extracted = {}
         types.each.with_index { |type, idx| extracted.merge! type.extract_generics(typeset.types[idx]) }
         extracted
@@ -37,12 +38,28 @@ module Solargraph
         Typeset.new(types.map { |type| type.resolve_rooted(api_map, gates) })
       end
 
-      def generic?
-        types.any?(&:generic?)
+      # @return [Boolean] true if any union branch contains a generic
+      #   placeholder anywhere in its own structure
+      def any_generic?
+        types.any?(&:any_generic?)
+      end
+
+      # @return [Boolean] true if every union branch contains a generic
+      #   placeholder anywhere in its own structure
+      def all_generic?
+        types.all?(&:any_generic?)
       end
 
       def rooted?
         types.all?(&:rooted?)
+      end
+
+      def resolved?
+        types.all?(&:resolved?)
+      end
+
+      def expanded?
+        types.all?(&:expanded?)
       end
 
       # @return [ComplexType]

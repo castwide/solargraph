@@ -2,14 +2,15 @@
 
 module Solargraph
   module Typedef
-    class Type
+    class Type < Element
       attr_reader :base
 
       attr_reader :params
 
       # @param base [Path, Token]
-      # @param params [Array<Path, Token, Typeset>]
+      # @param params [Array<Path, Token, Element>]
       def initialize base, *params
+        super()
         @base = Typedef.tokenize(base)
         @params = params.map { |par| Typedef.tokenize(par) }
       end
@@ -21,7 +22,7 @@ module Solargraph
       end
 
       def extract_generics type
-        return {} unless generic? && type.is_a?(Type)
+        return {} unless any_generic? && type.is_a?(Type)
 
         extracted = base.extract_generics(type.base)
         params.map.with_index { |par, idx| extracted.merge!(par.extract_generics(type.params[idx])) }
@@ -29,7 +30,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param gates [Array<Path>]
+      # @param gates [Array<String>]
       # @return [Type]
       def resolve_rooted(api_map, gates)
         new_base = base.resolve_rooted(api_map, gates)
@@ -57,8 +58,17 @@ module Solargraph
         base.expanded? && params.all?(&:expanded?)
       end
 
-      def generic?
-        all.any?(&:generic?)        
+      # @return [Boolean] true if base or any param contains a generic
+      #   placeholder anywhere in its own structure
+      def any_generic?
+        all.any?(&:any_generic?)
+      end
+
+      # A Type is a single member from the any/all-of-immediate-members
+      # question (see Element), so the two coincide for it.
+      # @return [Boolean]
+      def all_generic?
+        any_generic?
       end
 
       def nullable?

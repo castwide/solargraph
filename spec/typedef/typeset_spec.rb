@@ -40,6 +40,78 @@ describe Solargraph::Typedef::Typeset do
     end
   end
 
+  describe '#any_generic?' do
+    it 'is true if any branch is generic' do
+      typeset = Solargraph::ComplexType.parse('Array<generic<T>>, String').to_typedef_typeset
+      expect(typeset).to be_any_generic
+    end
+
+    it 'is false if no branch is generic' do
+      typeset = Solargraph::ComplexType.parse('Array<String>, String').to_typedef_typeset
+      expect(typeset).not_to be_any_generic
+    end
+  end
+
+  describe '#all_generic?' do
+    it 'is true only if every branch is generic' do
+      all_generic = Solargraph::ComplexType.parse('generic<T>, generic<U>').to_typedef_typeset
+      expect(all_generic).to be_all_generic
+    end
+
+    it 'is false if only some branches are generic' do
+      mixed = Solargraph::ComplexType.parse('Array<generic<T>>, String').to_typedef_typeset
+      expect(mixed).not_to be_all_generic
+    end
+  end
+
+  describe '#rooted?' do
+    it 'is true only if every branch is rooted' do
+      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef::Path.new('String', rooted: true))
+      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef::Path.new('Array', rooted: true))
+      typeset = described_class.new([type1, type2])
+      expect(typeset).to be_rooted
+    end
+
+    it 'is false if any branch is unrooted' do
+      rooted = Solargraph::Typedef::Type.new(Solargraph::Typedef::Path.new('::String', rooted: true))
+      unrooted = Solargraph::Typedef::Type.new(Solargraph::Typedef::Path.new('Array', rooted: false))
+      typeset = described_class.new([rooted, unrooted])
+      expect(typeset).not_to be_rooted
+    end
+  end
+
+  describe '#resolved?' do
+    it 'is true only if every branch is resolved' do
+      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('nil'))
+      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('undefined'))
+      typeset = described_class.new([type1, type2])
+      expect(typeset).to be_resolved
+    end
+
+    it 'is false if any branch is unresolved' do
+      resolved = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('nil'))
+      unresolved = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('foo'))
+      typeset = described_class.new([resolved, unresolved])
+      expect(typeset).not_to be_resolved
+    end
+  end
+
+  describe '#expanded?' do
+    it 'is true only if every branch is expanded' do
+      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('nil'))
+      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('undefined'))
+      typeset = described_class.new([type1, type2])
+      expect(typeset).to be_expanded
+    end
+
+    it 'is false if any branch is unexpanded' do
+      expanded = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('nil'))
+      unexpanded = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('foo'))
+      typeset = described_class.new([expanded, unexpanded])
+      expect(typeset).not_to be_expanded
+    end
+  end
+
   describe '#nullable?' do
     it 'returns true with a nil return type' do
       complex_type = Solargraph::ComplexType.parse('String, nil')

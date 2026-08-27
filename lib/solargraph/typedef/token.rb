@@ -32,11 +32,27 @@ module Solargraph
       end
 
       def generic?
-        name.start_with?('generic<')        
+        name.start_with?('generic<')
       end
 
+      # Type#any_generic? recurses into base/params, which may be a Token.
+      # Token is a leaf with no sub-elements to distinguish any from all,
+      # so this is just #generic? under the name Type's recursion expects.
+      alias any_generic? generic?
+
+      # @todo Token has no way to tell whether a generic placeholder like
+      #   generic<T> has actually been rooted to a real namespace. Treating
+      #   every Token as rooted keeps Type#rooted? from raising on params
+      #   that are Tokens (e.g. a bare generic placeholder), matching how
+      #   the older ComplexType::UniqueType system treats its own generic
+      #   tag as always rooted.
+      def rooted?
+        true
+      end
+
+      # @return [Hash]
       def extract_generics token
-        return unless generic?
+        return {} unless generic?
         { name => token }
       end
 
