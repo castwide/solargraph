@@ -124,4 +124,53 @@ describe Solargraph::ApiMap::Index do
       end
     end
   end
+
+  # https://solargraph.org/guides/yard documents @!override with a bare
+  # @return tag (no @overload) as its primary example, using
+  # Benchmark.measure as the sample target:
+  #
+  #   # @!override Benchmark.measure
+  #   #   @return [Benchmark::Tms]
+  describe '#map_overrides with a bare @return tag' do
+    let(:benchmark_module) do
+      Solargraph::Pin::Namespace.new(name: 'Benchmark')
+    end
+
+    let(:measure) do
+      Solargraph::Pin::Method.new(name: 'measure',
+                                  scope: :class,
+                                  parameters: [],
+                                  closure: benchmark_module)
+    end
+
+    let(:measure_override) do
+      Solargraph::Pin::Reference::Override.from_comment('Benchmark.measure', '@return [Benchmark::Tms]')
+    end
+
+    let(:input_pins) do
+      [
+        benchmark_module,
+        measure,
+        measure_override
+      ]
+    end
+
+    it 'redefines the return type documented on solargraph.org' do
+      method_pin = output_pins.find { |pin| pin.path == 'Benchmark.measure' }
+      expect(method_pin.return_type.tag).to eq('Benchmark::Tms')
+    end
+
+    context 'when overriding a method that already had its signatures computed' do
+      it 'still redefines the return type' do
+        # Force memoization before the override applies, matching how a
+        # real consumer (e.g. solargraph-rspec's @!override annotations
+        # for ActionController::TestCase::Behavior#request/#response)
+        # can hit a pin whose signatures were already resolved.
+        measure.signatures
+
+        method_pin = output_pins.find { |pin| pin.path == 'Benchmark.measure' }
+        expect(method_pin.return_type.tag).to eq('Benchmark::Tms')
+      end
+    end
+  end
 end
