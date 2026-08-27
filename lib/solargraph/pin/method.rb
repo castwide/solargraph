@@ -101,6 +101,26 @@ module Solargraph
         nil
       end
 
+      # Discard any memoized #signatures and #overloads so the next read
+      # rebuilds them from the docstring.
+      #
+      # Unlike #reset_generated!, which only resets state already computed
+      # for the current signatures, this drops the memoized array itself --
+      # needed when a caller mutates the docstring directly (e.g. applying
+      # a `@!override`'s `@overload` tags to an already-cached pin) and
+      # needs the new tags to actually take effect.
+      #
+      # With no `@overload` tag present, #signatures instead regenerates
+      # from this pin's own #parameters, which is empty or stale for many
+      # RBS/combined pins -- callers should only invalidate when the
+      # docstring actually gained or lost `@overload` tags.
+      #
+      # @return [void]
+      def invalidate_signatures!
+        @signatures = nil
+        @overloads = nil
+      end
+
       def all_rooted?
         super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
       end
