@@ -545,7 +545,8 @@ module Solargraph
       def method_def_to_sigs decl, pin
         # rubocop:disable Style/SafeNavigationChainLength
         implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil') || false
-        # rubocop:enable Style/SafeNavigationChainLength        # @param overload [RBS::AST::Members::MethodDefinition::Overload]
+        # rubocop:enable Style/SafeNavigationChainLength
+        # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
