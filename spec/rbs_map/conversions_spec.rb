@@ -96,6 +96,28 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a module function on Kernel whose instance copy Ruby marks private' do
+      let(:rbs) do
+        <<~RBS
+          module Kernel
+            def self?.loop: () { () -> void } -> void
+          end
+        RBS
+      end
+
+      it 'makes the instance copy private' do
+        pin = api_map.get_method_stack('Kernel', 'loop', scope: :instance).first
+        expect(pin).not_to be_nil
+        expect(pin.visibility).to eq(:private)
+      end
+
+      it 'leaves the singleton copy public' do
+        pin = api_map.get_method_stack('Kernel', 'loop', scope: :class).first
+        expect(pin).not_to be_nil
+        expect(pin.visibility).to eq(:public)
+      end
+    end
+
     context 'with untyped response' do
       subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
 

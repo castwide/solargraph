@@ -466,7 +466,7 @@ module Solargraph
         visibility = VISIBILITY_OVERRIDE[override_key]
         simple_override_key = [closure.path, scope]
         visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
-        if closure.path == 'Kernel' && Kernel.private_method_defined?(decl.name, false)
+        if closure.path == 'Kernel' && scope == :instance && Kernel.private_method_defined?(decl.name, false)
           visibility ||= :private
         end
         if decl.kind == :singleton_instance && scope == :instance
