@@ -315,6 +315,32 @@ describe Solargraph::Pin::Method do
     expect(kwrestarg_overload.parameters.first.decl).to eq(:kwrestarg)
   end
 
+  it 'applies yieldparam tags from the matching overload only' do
+    pin = described_class.new(name: 'build', comments: %(
+@overload build
+  @return [String]
+@overload build
+  @yieldparam widget [String]
+  @return [void]
+    ))
+    expect(pin.signatures.length).to eq(2)
+    plain, block_form = pin.signatures
+    expect(plain.block).to be_nil
+    expect(block_form.block).not_to be_nil
+    expect(block_form.block.parameters.first.return_type.tag).to eq('String')
+  end
+
+  it 'does not leak a method-level yieldparam into an overload that declares no block' do
+    pin = described_class.new(name: 'foo', comments: %(
+@yieldparam bing [Integer]
+@overload foo(bar)
+  @param bar [Integer]
+  @return [String]
+    ))
+    expect(pin.signatures.length).to eq(1)
+    expect(pin.signatures.first.block).to be_nil
+  end
+
   it 'infers from nil return nodes' do
     source = Solargraph::Source.load_string(%(
       class Foo
