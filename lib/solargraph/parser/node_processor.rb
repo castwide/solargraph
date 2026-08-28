@@ -40,9 +40,16 @@ module Solargraph
       # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>, Array<Pin::InstanceVariable>)]
       def self.process node, region = Region.new, pins = [], locals = [], ivars = []
         if pins.empty?
+          # node: is required so flow-sensitive typing can find the
+          # end of this compound statement (see
+          # FlowSensitiveTyping#process_if) - without it, an
+          # is_a?/nil? guard at the top level of a file never
+          # narrows, because enclosing_compound_statement_pin.node
+          # is always nil.
           pins.push Pin::Namespace.new(
             location: region.source.location,
             name: '',
+            node: node,
             source: :parser
           )
         end

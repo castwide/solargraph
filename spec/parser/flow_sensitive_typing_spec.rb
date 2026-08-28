@@ -825,6 +825,38 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'uses is_a? in a return unless() at the top level of a file (no enclosing method) to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase, nil]
+      repr = Repro.new
+      return unless repr.is_a?(Repro)
+      repr
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 6])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? in a raise unless() at the top level of a class body (no enclosing method) to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      class Container
+        # @type [ReproBase, nil]
+        repr = Repro.new
+        raise 'invalid' unless repr.is_a?(Repro)
+        repr
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
   it 'uses .nil? in a raise if() to refine a type used as a call argument' do
     source = Solargraph::Source.load_string(%(
       class Foo

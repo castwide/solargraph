@@ -24,6 +24,10 @@ module Solargraph
               comments: comments,
               visibility: :public,
               gates: region.closure.gates.freeze,
+              # node: lets flow-sensitive typing find the end of this
+              # class/module body - see the same node: in
+              # NodeProcessor.process's root namespace pin.
+              node: node,
               source: :parser
             )
             pins.push nspin
