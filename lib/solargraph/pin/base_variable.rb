@@ -170,7 +170,7 @@ module Solargraph
             # 1`) must resolve against the variable's *other* assignments,
             # not against the not-yet-computed value being derived here.
             self_excluded_locals = clip.locals.reject do |candidate|
-              candidate.respond_to?(:assignments) && candidate.assignments.include?(parent_node)
+              candidate.assignments.include?(parent_node)
             end
             # @sg-ignore Need to add nil check here
             result = chain.infer(api_map, closure, self_excluded_locals).self_to_type(closure.context)
