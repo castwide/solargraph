@@ -3,8 +3,30 @@
 module Solargraph
   module Typedef
     class Memos
-      class Key < Data.define(:filename, :api_map, :chain, :position, :action)
-        def ==(other)
+      class Key
+        attr_reader :filename
+
+        attr_reader :api_map
+
+        attr_reader :chain
+
+        attr_reader :position
+
+        attr_reader :action
+
+        def initialize filename:, api_map:, chain:, position:, action:
+          @filename = filename
+          @api_map = api_map
+          @chain = chain
+          @position = position
+          @action = action
+        end
+
+        def hash
+          [filename, api_map, chain, position, action].hash
+        end
+
+        def eql?(other)
           other.instance_of?(Key) &&
             filename == other.filename &&
             api_map == other.api_map &&
