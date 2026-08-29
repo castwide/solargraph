@@ -7,23 +7,23 @@ describe Solargraph::Typedef::Memoizer::Cache do
 
   it 'saves on fetch' do
     memos.fetch(key) { 'value' }
-    expect(memos.cache[key].value).to eq('value')
+    expect(memos.data[key].value).to eq('value')
   end
 
   it 'fetches memoized values' do
-    memos.cache[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
+    memos.data[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
     result = memos.fetch(key) { raise 'Should not happen' }
     expect(result).to eq('value')
   end
 
   it 'clears the cache' do
-    memos.cache[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
+    memos.data[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
     memos.clear
-    expect(memos.cache).to be_empty
+    expect(memos.data).to be_empty
   end
 
   it 'tracks pending memos' do
-    memos.cache[key] do
+    memos.data[key] do
       expect(memos.pending).to include(key)
     end
     expect(memos.pending).not_to include(key)
@@ -41,17 +41,17 @@ describe Solargraph::Typedef::Memoizer::Cache do
     memos.fetch(key) { 'one' }
     result = memos.fetch(key2) { 'two' }
     expect(result).to eq('one')
-    expect(memos.cache).to be_one
+    expect(memos.data).to be_one
   end
 
   it 'filters cache by filename' do
     memos.fetch(key) { 'first' }
     memos.fetch(key2) { 'second' }
-    expect(memos.cache.length).to be(2)
+    expect(memos.data.length).to be(2)
 
     memos.filter('other.rb')
-    expect(memos.cache).to be_one
-    expect(memos.cache[key].value).to eq('first')
+    expect(memos.data).to be_one
+    expect(memos.data[key].value).to eq('first')
   end
 
   it 'cascades values' do
@@ -65,7 +65,7 @@ describe Solargraph::Typedef::Memoizer::Cache do
     memos.fetch(key) do
       memos.fetch(key2) { 'value' }
     end
-    expect(memos.cache[key].stack).to match_array(['example.rb'])
-    expect(memos.cache[key2].stack).to match_array(['example.rb', 'other.rb'])
+    expect(memos.data[key].stack).to match_array(['example.rb'])
+    expect(memos.data[key2].stack).to match_array(['example.rb', 'other.rb'])
   end
 end
