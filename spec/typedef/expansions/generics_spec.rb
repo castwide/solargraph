@@ -209,7 +209,7 @@ describe Solargraph::Typedef::Dictionary do
       generics = Solargraph::Typedef::Expansions::Generics.new(api_map, pin, receiver)
       expect(generics.names).to be_one
       # Name of generic varies in RBS versions
-      expect(generics.names.first).to be_in(['E', 'Elem'])
+      expect(generics.names.first).to eq('E').or(eq('Elem'))
     end
   end
 
