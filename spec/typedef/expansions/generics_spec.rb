@@ -207,7 +207,7 @@ describe Solargraph::Typedef::Dictionary do
       # Simulating the receiver
       receiver = api_map.get_path_pins('Array').first
       generics = Solargraph::Typedef::Expansions::Generics.new(api_map, pin, receiver)
-      expect(generics.names).to eq(['Elem'])
+      expect(generics.names).to eq(['E'])
     end
   end
 

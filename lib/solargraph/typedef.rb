@@ -6,6 +6,7 @@ module Solargraph
     autoload :Token,      'solargraph/typedef/token'
     autoload :Type,       'solargraph/typedef/type'
     autoload :Linker,     'solargraph/typedef/linker'
+    autoload :Memo,       'solargraph/typedef/memo'
     autoload :Memos,      'solargraph/typedef/memos'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Expansions, 'solargraph/typedef/expansions'

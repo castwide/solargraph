@@ -2,13 +2,24 @@
 
 module Solargraph
   module Typedef
-    # @todo Eventually it should be possible to clear memos for specific filenames
-    #
     class Memos
+      class Key < Data.define(:filename, :api_map, :chain, :position, :action)
+        def ==(other)
+          other.instance_of?(Key) &&
+            filename == other.filename &&
+            api_map == other.api_map &&
+            chain == other.chain &&
+            position == other.position &&
+            action == other.action
+        end
+      end
+
       def fetch key, default = nil
-        return cache[key] if cache.key?(key)
+        return cache[key].value if cache.key?(key)
         if pending.add?(key)
-          cache[key] = yield.tap { pending.delete(key) }
+          cache[key] = Memo.new(yield, stack)
+          pending.delete(key)
+          cache[key].value
         else
           Solargraph.logger.warn "Recursive definition detected: #{key}"
           default
@@ -21,12 +32,22 @@ module Solargraph
         cache.clear
       end
 
+      def filter filename
+        cache.delete_if { |_key, memo| memo.stack.include?(filename) }
+      end
+
       def cache
         @cache ||= {}
       end
 
       def pending
-        @processing ||= Set.new
+        @pending ||= Set.new
+      end
+
+      private
+
+      def stack
+        pending.map(&:filename).to_set
       end
     end
   end
