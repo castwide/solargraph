@@ -7,7 +7,14 @@ module Solargraph
     class Dictionary
       include Linker
 
-      attr_reader :api_map, :source_map, :position
+      # @return [ApiMap]
+      attr_reader :api_map
+      
+      # @return [SourceMap]
+      attr_reader :source_map
+      
+      # @return [Position]
+      attr_reader :position
 
       # @param api_map [ApiMap]
       # @param source_map [SourceMap, String] A SourceMap object or filename
@@ -66,27 +73,24 @@ module Solargraph
 
       private
 
-      # @param [Source::Chain]
+      # @param chain [Source::Chain]
       # @return [Array(Array<Pin::Base>, Pin::Closure)]
-      # @param [Source::Chain] chain
       def define_from chain
-        Typedef.memos.fetch memo_key(:define_from_chain), [[], nil] do
-          next [[closure], closure.closure] if chain.undefined?
+        return [[closure], closure.closure] if chain.undefined?
 
-          pins = []
-          receiver = closure
-          last_link = chain.links.last
-          chain.links.each do |link|
-            pins = hitch(link, receiver)
-            break if link == last_link
+        pins = []
+        receiver = closure
+        last_link = chain.links.last
+        chain.links.each do |link|
+          pins = hitch(link, receiver)
+          break if link == last_link
 
-            proxies = infer_proxies(pins, receiver)
-            return [[], receiver] if proxies.empty?
-            receiver = proxies.first
-            return [[], nil] unless receiver
-          end
-          [pins, receiver]
+          proxies = infer_proxies(pins, receiver)
+          return [[], receiver] if proxies.empty?
+          receiver = proxies.first
+          return [[], nil] unless receiver
         end
+        [pins, receiver]
       end
 
       # @param pins [Array<Pin::Base>]
@@ -173,6 +177,7 @@ module Solargraph
         end
       end
 
+      # @param pin [Pin::Base]
       # @return [Parser::AST::Node, nil]
       def method_body_node pin
         node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
@@ -183,6 +188,8 @@ module Solargraph
         node.children[3] if node.type == :defs
       end
 
+      # @param action [Symbol]
+      # @return [Key]
       def memo_key action
         Memoizer::Key.new(filename: source_map.filename, api_map: api_map, position: position, chain: chain, action: action)
       end
