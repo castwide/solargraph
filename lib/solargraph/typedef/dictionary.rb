@@ -46,8 +46,10 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        pins, receiver = define_from chain
-        pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
+        Typedef.memos.fetch memo_key(:define), [[], nil] do
+          pins, receiver = define_from chain
+          pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
+        end
       end
 
       # @return [Typeset]
@@ -64,10 +66,12 @@ module Solargraph
         end
       end
 
+      private
+
       # @param [Source::Chain]
       # @return [Array(Array<Pin::Base>, Pin::Closure)]
       def define_from chain
-        Typedef.memos.fetch memo_key(:define), [[], nil] do
+        Typedef.memos.fetch memo_key(:define_from_chain), [[], nil] do
           next [[closure], closure.closure] if chain.undefined?
 
           pins = []
