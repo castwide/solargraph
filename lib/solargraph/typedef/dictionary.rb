@@ -7,15 +7,13 @@ module Solargraph
     class Dictionary
       include Linker
 
-      attr_reader :api_map
-
-      attr_reader :source_map
-
-      attr_reader :position
+      attr_reader :api_map, :source_map, :position
 
       # @param api_map [ApiMap]
       # @param source_map [SourceMap, String] A SourceMap object or filename
       # @param position [Position, Array(Integer, Integer), nil]
+      # @param chain [Source::Chain, nil]
+      # @param closure [Pin::Closure, nil]
       def initialize api_map, source_map, position, chain: nil, closure: nil
         @api_map = api_map
         @source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
@@ -70,6 +68,7 @@ module Solargraph
 
       # @param [Source::Chain]
       # @return [Array(Array<Pin::Base>, Pin::Closure)]
+      # @param [Source::Chain] chain
       def define_from chain
         Typedef.memos.fetch memo_key(:define_from_chain), [[], nil] do
           next [[closure], closure.closure] if chain.undefined?
@@ -120,10 +119,10 @@ module Solargraph
         pin = pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.namespace }).to_complex_type)
         rooted = resolve_rooted(pin, receiver)
         inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
-          infer_by_pin_type pin, receiver
-        else
-          rooted
-        end
+                     infer_by_pin_type pin, receiver
+                   else
+                     rooted
+                   end
         # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
         #   breaks a whole lot of stuff
         Pin::ProxyType.anonymous(inferred.to_complex_type)
@@ -156,37 +155,35 @@ module Solargraph
         end
 
         call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-        block_inferred = Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+        Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
       end
 
       # @param pin [Pin::Base]
       # @return [Source::Chain, nil]
-      def next_chain(pin)
+      def next_chain pin
         return unless pin.location
 
         if pin.location.range.start != position
-          return Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
+          Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
         elsif pin.is_a?(Pin::Callable)
           node = method_body_node(pin)
           Parser::ParserGem::NodeChainer.chain(node) if node
         elsif pin.is_a?(Pin::BaseVariable)
           Parser::ParserGem::NodeChainer.chain(pin.assignment)
-        else
-          nil
         end
       end
 
       # @return [Parser::AST::Node, nil]
-      def method_body_node(pin)
+      def method_body_node pin
         node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
         return unless node
         return node.children[1].children.last if node.type == :DEFN
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
-        return node.children[3] if node.type == :defs
+        node.children[3] if node.type == :defs
       end
 
-      def memo_key(action)
+      def memo_key action
         Memoizer::Key.new(filename: source_map.filename, api_map: api_map, position: position, chain: chain, action: action)
       end
     end

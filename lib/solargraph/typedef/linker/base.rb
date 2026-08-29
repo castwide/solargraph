@@ -16,7 +16,7 @@ module Solargraph
         # @param dictionary [Dictionary]
         # @param link [Source::Chain::Link]
         # @param receiver [Pin::Closure]
-        def initialize(dictionary, link, receiver)
+        def initialize dictionary, link, receiver
           @dictionary = dictionary
           @link = link
           @receiver = receiver
@@ -35,7 +35,7 @@ module Solargraph
           raise 'Not implemented'
         end
 
-        def self.resolve(dictionary, link, receiver)
+        def self.resolve dictionary, link, receiver
           new(dictionary, link, receiver).resolve
         end
       end

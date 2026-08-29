@@ -5,21 +5,19 @@ module Solargraph
     class Token
       RESERVED_NAMES = %w[nil undefined]
 
-      attr_reader :name
-
-      attr_reader :params
+      attr_reader :name, :params
 
       def initialize name, *params
         @name = name
         @params = params
       end
 
-      def expand(named_values)
+      def expand named_values
         return self unless named_values[name]
         Typedef.tokenize(named_values[name])
       end
 
-      def resolve_rooted(api_map, gates)
+      def resolve_rooted api_map, gates
         self
       end
 
@@ -32,7 +30,7 @@ module Solargraph
       end
 
       def generic?
-        name.start_with?('generic<')        
+        name.start_with?('generic<')
       end
 
       def extract_generics token

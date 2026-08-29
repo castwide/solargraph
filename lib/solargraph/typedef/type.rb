@@ -3,9 +3,7 @@
 module Solargraph
   module Typedef
     class Type
-      attr_reader :base
-
-      attr_reader :params
+      attr_reader :base, :params
 
       # @param base [Path, Token]
       # @param params [Array<Path, Token, Typeset>]
@@ -14,7 +12,7 @@ module Solargraph
         @params = params.map { |par| Typedef.tokenize(par) }
       end
 
-      def expand(named_values)
+      def expand named_values
         new_base = base.expand(named_values)
         new_params = params.map { |par| par.expand(named_values) }
         Type.new(new_base, *new_params)
@@ -31,7 +29,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param gates [Array<Path>]
       # @return [Type]
-      def resolve_rooted(api_map, gates)
+      def resolve_rooted api_map, gates
         new_base = base.resolve_rooted(api_map, gates)
         new_params = params.map { |par| par.resolve_rooted(api_map, gates) }
         Type.new(new_base, *new_params)
@@ -58,7 +56,7 @@ module Solargraph
       end
 
       def generic?
-        all.any?(&:generic?)        
+        all.any?(&:generic?)
       end
 
       def nullable?
@@ -97,18 +95,18 @@ module Solargraph
 
       # @return [Array<String>]
       def brackets
-        [ '[', ']' ]
+        ['[', ']']
       end
 
       private
 
       def params_to_s
-        return "" if params.empty?
+        return '' if params.empty?
         "#{brackets.first}#{params.join(', ')}#{brackets.last}"
       end
 
       def params_to_s_for_complex_type
-        return "" if @params.empty?
+        return '' if @params.empty?
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
 

@@ -34,7 +34,7 @@ module Solargraph
           freeze
         end
 
-        def eql?(other)
+        def eql? other
           other.instance_of?(Key) &&
             filename == other.filename &&
             api_map == other.api_map &&

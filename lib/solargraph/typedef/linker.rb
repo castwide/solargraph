@@ -8,7 +8,7 @@ module Solargraph
       autoload :Call,             'solargraph/typedef/linker/call'
       autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
       autoload :Constant,         'solargraph/typedef/linker/constant'
-      autoload :Head,         'solargraph/typedef/linker/head'
+      autoload :Head,             'solargraph/typedef/linker/head'
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
       autoload :Literal,          'solargraph/typedef/linker/literal'
       autoload :Or,               'solargraph/typedef/linker/or'

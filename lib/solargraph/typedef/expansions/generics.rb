@@ -9,8 +9,8 @@ module Solargraph
         # @return [Typeset]
         def expand
           pin.typedef_typeset
-            .expand(zip_generic_values(pin))
-            .expand(zip_generic_values(receiver))
+             .expand(zip_generic_values(pin))
+             .expand(zip_generic_values(receiver))
         end
 
         def names
@@ -32,11 +32,11 @@ module Solargraph
 
         # @param reference [Pin::Base]
         def zip_generic_values reference
-          generic_names = names.map { |name| "generic<#{name}>"}
+          generic_names = names.map { |name| "generic<#{name}>" }
           type = unless generic_names.empty?
-            receiver.typedef_typeset.flat_types.find { |type| type.params.length == generic_names.length }
-          end
-          named_values = if type
+                   receiver.typedef_typeset.flat_types.find { |type| type.params.length == generic_names.length }
+                 end
+          if type
             generic_names.zip(type.params).to_h
           else
             {}

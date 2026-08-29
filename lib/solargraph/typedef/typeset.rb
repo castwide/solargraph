@@ -21,19 +21,19 @@ module Solargraph
       end
 
       # @param named_values [Hash]
-      def expand(named_values)
+      def expand named_values
         Typeset.new(types.map { |type| type.expand(named_values) })
       end
 
       # @param typeset [Typeset, nil]
-      def extract_generics(typeset)
+      def extract_generics typeset
         return {} unless generic? && typeset.is_a?(Typeset)
         extracted = {}
         types.each.with_index { |type, idx| extracted.merge! type.extract_generics(typeset.types[idx]) }
         extracted
       end
 
-      def resolve_rooted(api_map, gates)
+      def resolve_rooted api_map, gates
         Typeset.new(types.map { |type| type.resolve_rooted(api_map, gates) })
       end
 

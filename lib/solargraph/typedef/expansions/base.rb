@@ -28,7 +28,7 @@ module Solargraph
         def expand
           raise 'Not implemented'
         end
-        
+
         def self.expand api_map, pin, receiver
           new(api_map, pin, receiver).expand
         end
