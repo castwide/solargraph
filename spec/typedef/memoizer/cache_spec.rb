@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-describe Solargraph::Typedef::Memos do
-  let(:key) { Solargraph::Typedef::Memos::Key.new(filename: 'example.rb', api_map: nil, position: nil, chain: nil, action: :example) }
-  let(:key2) { Solargraph::Typedef::Memos::Key.new(filename: 'other.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+describe Solargraph::Typedef::Memoizer::Cache do
+  let(:key) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+  let(:key2) { Solargraph::Typedef::Memoizer::Key.new(filename: 'other.rb', api_map: nil, position: nil, chain: nil, action: :example) }
   let(:memos) { described_class.new }
 
   it 'saves on fetch' do
@@ -11,13 +11,13 @@ describe Solargraph::Typedef::Memos do
   end
 
   it 'fetches memoized values' do
-    memos.cache[key] = Solargraph::Typedef::Memo.new('value', [])
+    memos.cache[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
     result = memos.fetch(key) { raise 'Should not happen' }
     expect(result).to eq('value')
   end
 
   it 'clears the cache' do
-    memos.cache[key] = Solargraph::Typedef::Memo.new('value', [])
+    memos.cache[key] = Solargraph::Typedef::Memoizer::Memo.new('value', [])
     memos.clear
     expect(memos.cache).to be_empty
   end

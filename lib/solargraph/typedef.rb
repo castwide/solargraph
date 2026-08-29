@@ -6,8 +6,7 @@ module Solargraph
     autoload :Token,      'solargraph/typedef/token'
     autoload :Type,       'solargraph/typedef/type'
     autoload :Linker,     'solargraph/typedef/linker'
-    autoload :Memo,       'solargraph/typedef/memo'
-    autoload :Memos,      'solargraph/typedef/memos'
+    autoload :Memoizer,   'solargraph/typedef/memoizer'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
@@ -30,7 +29,7 @@ module Solargraph
     end
 
     def self.memos
-      @memos ||= Memos.new
+      @memos ||= Memoizer::Cache.new
     end
 
     class << self
