@@ -221,15 +221,7 @@ module Solargraph
 
       # @param atype [ComplexType]
       # @param api_map [ApiMap]
-      # @param require_literal [Boolean] Whether a literal-typed
-      #   parameter requires the argument to also be a literal (see
-      #   #literal_arg_matches?). Callers doing overload *selection*
-      #   should retry with this set to false if no overload matches
-      #   with it true, so a literal-typed parameter with no
-      #   non-literal sibling overload to fall back to (e.g. a Hash's
-      #   key type resolved to a literal from its receiver's declared
-      #   type) doesn't reject every candidate outright.
-      def compatible_arg? atype, api_map, require_literal: true
+      def compatible_arg? atype, api_map
         # make sure we get types from up the method
         # inheritance chain if we don't have them on this pin
         ptype = typify api_map
@@ -239,8 +231,6 @@ module Solargraph
                                                ptype,
                                                :method_call,
                                                %i[allow_empty_params allow_undefined]) || ptype.generic?
-
-        return true unless require_literal
 
         literal_arg_matches? ptype, atype
       end

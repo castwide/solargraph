@@ -84,10 +84,8 @@ module Solargraph
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @param type [ComplexType]
         # @param new_signature_pin [Pin::Signature, nil]
-        # @param require_literal [Boolean] whether a literal-typed overload
-        #   parameter must be matched by an exact literal argument type
         # @return [::Array(ComplexType, Pin::Signature)]
-        def match_overload_type overload, pin, api_map, name_pin, locals, type, new_signature_pin, require_literal:
+        def match_overload_type overload, pin, api_map, name_pin, locals, type, new_signature_pin
           return [type, new_signature_pin] unless overload.arity_matches?(arguments, with_block?)
 
           match = true
@@ -104,7 +102,7 @@ module Solargraph
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
             # @sg-ignore flow sensitive typing should handle is_a? and next
-            unless param.compatible_arg?(atype, api_map, require_literal: require_literal) || param.restarg?
+            unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
               break
             end
@@ -184,25 +182,16 @@ module Solargraph
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
-            # Two passes: first require an exact-literal match on any
-            # literal-typed overload parameter (so a real sibling
-            # catch-all, e.g. tuple's non-literal fallback, wins over a
-            # literal overload for a non-literal argument). If nothing
-            # matches at all, retry without that requirement - a
-            # literal-typed parameter with no non-literal sibling
-            # overload (e.g. Hash#fetch's key resolved to a literal
-            # from the receiver's declared type) would otherwise reject
-            # every candidate and fall through to the union of all
-            # overloads' return types instead of the one real match.
-            [true, false].each do |require_literal|
+            # A literal-typed overload parameter (e.g. tuple's `(0 index)
+            # -> A`) requires an exact literal argument match - see
+            # Pin::Parameter#literal_arg_matches? - so a real sibling
+            # catch-all (e.g. tuple's `(int index) -> ...`) wins over it
+            # for a non-literal argument.
+            # @sg-ignore flow sensitive typing should handle is_a? and next
+            # @param ol [Pin::Signature]
+            sorted_overloads.each do |ol|
+              type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
               break if type.defined?
-              # @sg-ignore flow sensitive typing should handle is_a? and next
-              # @param ol [Pin::Signature]
-              sorted_overloads.each do |ol|
-                type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin,
-                                                              require_literal: require_literal)
-                break if type.defined?
-              end
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
