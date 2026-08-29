@@ -613,8 +613,7 @@ module Solargraph
     # @param idx [Integer] the restarg's index within sig.parameters
     # @return [Array<Source::Chain>] the call-site arguments absorbed
     #   by the restarg at idx
-    # @sg-ignore flow sensitive typing incorrectly includes an
-    #   intermediate local variable's type in the inferred return type
+    # @sg-ignore flow sensitive typing incorrectly includes an intermediate local variable's type in the inferred return type
     def restarg_arguments sig, arguments, idx
       # A restarg can be followed by trailing positional parameters
       # (`def foo(*path, baz)`) - those consume the last N call-site

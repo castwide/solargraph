@@ -89,6 +89,7 @@ module Solargraph
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
       # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
+      # @todo 3: pin.closure is a Pin::Namespace for a top-level method pin
       # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
@@ -113,6 +114,8 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: flow sensitive typing incorrectly includes an intermediate local variable's type in the inferred return type
+      # @todo 1: flow sensitive typing issue with the ternary above
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end
