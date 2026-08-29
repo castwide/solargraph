@@ -158,10 +158,10 @@ module Solargraph
         # try to find common types via conformance
         items.each do |ut|
           narrowing_type.each do |candidate|
-            if ut.conforms_to?(api_map, candidate, :assignment)
-              types << ut
-            elsif candidate.conforms_to?(api_map, ut, :assignment)
+            if candidate.conforms_to?(api_map, ut, :assignment)
               types << candidate
+            elsif ut.conforms_to?(api_map, candidate, :assignment)
+              types << ut
             elsif mixin_pairing?(api_map, ut, candidate)
               types << Intersection.new([ComplexType.new([ut]), ComplexType.new([candidate])])
             end
