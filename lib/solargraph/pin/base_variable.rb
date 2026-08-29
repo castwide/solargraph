@@ -246,7 +246,7 @@ module Solargraph
       #
       # @return [String, nil]
       def identity_discriminator
-        presence&.inspect
+        presence&.hash&.to_s
       end
 
       # @sg-ignore need boolish support for ? methods
