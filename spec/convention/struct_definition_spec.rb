@@ -135,6 +135,20 @@ describe Solargraph::Convention::StructDefinition do
         expect(iv_baz.return_type.tag).to eql('Integer')
       end
     end
+
+    it 'supports assignment to a namespaced constant' do
+      source = Solargraph::SourceMap.load_string(%(
+        # @param bar [String]
+        # @param baz [Integer]
+        Foo::Baz = Struct.new(:bar, :baz)
+      ), 'test.rb')
+
+      # @type [Array<Solargraph::Pin::Parameter>]
+      params = source.pins.find { |p| p.path == 'Foo::Baz#initialize' }.parameters
+
+      expect(params.map(&:name)).to eql(%w[bar baz])
+      expect(params.map(&:return_type).map(&:tag)).to eql(%w[String Integer])
+    end
   end
 
   context 'with typechecking' do

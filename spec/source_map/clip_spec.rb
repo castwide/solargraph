@@ -3117,6 +3117,21 @@ describe Solargraph::SourceMap::Clip do
     expect(names).not_to include('bar=', 'baz=')
   end
 
+  it 'defines Data methods via namespaced const assignment' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [String]
+      # @param baz [Integer]
+      Foo::Baz = Data.define(:bar, :baz)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    pin = api_map.get_path_pins('Foo::Baz#baz').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('Integer')
+    pin = api_map.get_path_pins('Foo::Baz#bar').first
+    expect(pin).not_to be_nil
+    expect(pin.return_type.to_s).to eq('String')
+  end
+
   it 'defines calls with blocks to methods with yieldreceiver tags' do
     source = Solargraph::Source.load_string(%(
       class Base
