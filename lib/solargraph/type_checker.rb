@@ -162,10 +162,19 @@ module Solargraph
           result.push Problem.new(pin.location, "Untyped method #{pin.path} could not be inferred")
         end
       elsif rules.validate_tags?
-        unless pin.node.nil? || declared.void? || virtual_pin?(pin) || abstract?(pin)
+        # Attribute pins never have a node (attr_reader/attr_writer/attr_accessor are
+        # synthesized, not parsed method bodies), but their inferred type is still
+        # meaningful: #probe walks the backing ivar's assignments via infer_from_iv.
+        # Without this carve-out, a manually-written @return tag on an attribute is
+        # never cross-checked against how the ivar is actually assigned (e.g. a nilable
+        # default in the constructor), so a bad tag silently passes at every level.
+        unless (pin.node.nil? && !pin.attribute?) || declared.void? || virtual_pin?(pin) || abstract?(pin)
           inferred = pin.probe(api_map).self_to_type(pin.full_context)
           if inferred.undefined?
-            unless rules.ignore_all_undefined? || external?(pin)
+            # An attribute with no locally-discoverable ivar assignment (set via a
+            # mixin, metaprogramming, etc.) isn't a tag/inference mismatch - just
+            # unproven. Only methods with an actual body get flagged for this.
+            unless rules.ignore_all_undefined? || external?(pin) || pin.attribute?
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
           else
@@ -986,7 +995,7 @@ module Solargraph
     def all_sg_ignore_lines
       source.associated_comments.select do |_line, text|
         # @sg-ignore Need to add nil check here
-        text.include?('@sg-ignore')
+        text.any? { |t| t.include?('@sg-ignore') }
       end.keys.to_set
     end
 

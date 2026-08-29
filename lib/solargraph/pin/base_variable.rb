@@ -187,7 +187,7 @@ module Solargraph
         unless assignment_types.empty?
           # @type [Array<ComplexType::UniqueType>]
           items = assignment_types.flat_map(&:items).uniq
-          # A later, wider assignment (e.g. `index += 1`) can leave a
+          # A later, wider assignment (e.g. `index += n`) can leave a
           # stale literal (e.g. `0`) alongside its own non-literal
           # base type in the union - drop the redundant literal.
           type_from_assignment = ComplexType.new(items).without_redundant_literals

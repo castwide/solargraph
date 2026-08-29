@@ -769,5 +769,26 @@ describe 'YARD type specifier list parsing' do
       atype = Solargraph::ComplexType.parse(':foo')
       expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
+
+    it 'recognizes a duck type conforms with an identical duck type' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('#foo')
+      atype = Solargraph::ComplexType.parse('#foo')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
+    end
+
+    it 'recognizes a duck type does not conform with a different duck type' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('#bar')
+      atype = Solargraph::ComplexType.parse('#foo')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(false)
+    end
+
+    it 'recognizes a duck type conforms to a duck type method it inherits from Object' do
+      api_map = Solargraph::ApiMap.new
+      ptype = Solargraph::ComplexType.parse('#to_s')
+      atype = Solargraph::ComplexType.parse('#foo')
+      expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
+    end
   end
 end
