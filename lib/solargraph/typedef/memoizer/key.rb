@@ -3,17 +3,25 @@
 module Solargraph
   module Typedef
     module Memoizer
+      # Unique identifier for memoized values in Memoizer::Cache
+      #
       class Key
+        # @return [String, nil]
         attr_reader :filename
 
+        # @return [ApiMap, nil]
         attr_reader :api_map
 
+        # @return [Chain, nil]
         attr_reader :chain
 
+        # @return [Position, nil]
         attr_reader :position
 
+        # @return [Symbol]
         attr_reader :action
 
+        # @return [Integer]
         attr_reader :hash
 
         def initialize filename:, api_map:, chain:, position:, action:
