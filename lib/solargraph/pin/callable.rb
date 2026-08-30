@@ -168,7 +168,7 @@ module Solargraph
 
       # @param arguments [Array<Typedef::Type>]
       # @return [Array<Typedef::Type>]
-      def typedef_resolve_call(arguments)
+      def typedef_resolve_call arguments
         # named_values = closure.generics
         #                       .map { |name| "generic[#{name}]" }
         #                       .zip(arguments)

@@ -634,10 +634,10 @@ module Solargraph
           Typedef::Type.new(base)
         else
           params = if name == 'Hash'
-            all_params.map(&:to_typedef_typeset)
-          else
-            [Typedef::Typeset.new([all_params.map(&:to_typedef_typeset)])]
-          end
+                     all_params.map(&:to_typedef_typeset)
+                   else
+                     [Typedef::Typeset.new([all_params.map(&:to_typedef_typeset)])]
+                   end
           Typedef::Typeset.new([Typedef::Type.new(base, *params)])
         end
       end
