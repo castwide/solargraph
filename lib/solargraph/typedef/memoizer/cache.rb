@@ -12,7 +12,12 @@ module Solargraph
         def fetch key, default = nil
           return data[key].value if data.key?(key)
           if pending.add?(key)
-            data[key] = Memo.new(yield, stack)
+            value = if block_given?
+                      yield
+                    else
+                      default
+                    end
+            data[key] = Memo.new(value, stack)
             pending.delete(key)
             data[key].value
           else

@@ -33,8 +33,6 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
-      attr_reader :expansions
-
       def presence_certain?
         true
       end

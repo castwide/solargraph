@@ -38,8 +38,10 @@ module Solargraph
       # @param string [String]
       # @return [Path, Token]
       def convert string
+        # @todo cleanup
+        # rubocop:disable Lint\DuplicateBranch
         case string
-        when ""
+        when 's'
           Path::ROOT
         # @todo Should interfaces (e.g, `_Each`) be paths?
         #   (Probably)
@@ -51,7 +53,7 @@ module Solargraph
           Token.new(string)
         when /^"?[a-z\d_]*?"$/
           Token.new(string)
-        when /^\:?[a-z\d_]*?$/
+        when /^:?[a-z\d_]*?$/
           Token.new(string)
         # @todo How to handle integers?
         when /^\d+$/
@@ -59,6 +61,7 @@ module Solargraph
         else
           raise "Invalid Typedef token string: #{string.inspect}"
         end
+        # rubocop:enable Lint\DuplicateBranch
       end
     end
   end

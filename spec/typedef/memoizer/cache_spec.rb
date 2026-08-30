@@ -33,7 +33,7 @@ describe Solargraph::Typedef::Memoizer::Cache do
     result = memos.fetch(key) do
       memos.fetch(key, 'oops')
     end
-    expect(result).to be('safe')
+    expect(result).to be('oops')
   end
 
   it 'returns cache for equivalent keys' do

@@ -417,9 +417,7 @@ module Solargraph
       # @todo Quick and dirty hack
       return [Typedef::Type::ROOT] if to_s == 'Class<>'
 
-      items.map do |item|
-        item.to_typedef_types
-      end
+      items.map(&:to_typedef_types)
     end
 
     def to_typedef_typeset
@@ -435,7 +433,7 @@ module Solargraph
         vals = value_types.map(&:to_typedef_typeset)
         Typedef::Tuple.new(top, *vals)
       else
-        Typedef::Typeset.new(items.map { |item| item.to_typedef_typeset })
+        Typedef::Typeset.new(items.map(&:to_typedef_typeset))
       end
     end
 
