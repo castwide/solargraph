@@ -329,7 +329,7 @@ module Solargraph
         end
         started = true
       end
-      ctxt.join('')
+      ctxt.join
     end
 
     # A hash of line numbers and their associated comments.
