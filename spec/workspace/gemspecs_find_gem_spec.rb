@@ -97,4 +97,23 @@ describe Solargraph::Workspace::Gemspecs, '#find_gem' do
       end
     end
   end
+
+  context 'when Solargraph itself is not running under a discoverable Gemfile' do
+    # Regression test: Bundler.definition raises Bundler::GemfileNotFound
+    # (rather than returning nil) when no Gemfile is discoverable from the
+    # current process, e.g. when Solargraph is installed and invoked as a
+    # standalone gem. #in_this_bundle? must not let that exception escape.
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+    let(:name) { 'solargraph' }
+    let(:version) { nil }
+
+    before do
+      allow(Bundler).to receive(:definition).and_raise(Bundler::GemfileNotFound, 'Could not locate Gemfile')
+    end
+
+    it 'falls back to resolving gems ignoring any local bundle instead of raising' do
+      expect { gemspec }.not_to raise_error
+      expect(gemspec.name).to eq(name)
+    end
+  end
 end
