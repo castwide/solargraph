@@ -24,7 +24,6 @@ Layout/ElseAlignment:
   Exclude:
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/rbs_translator.rb'
-    - 'lib/solargraph/source/chain/call.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyleAlignWith, Severity.
@@ -35,7 +34,6 @@ Layout/EndAlignment:
     - 'lib/solargraph/pin/method.rb'
     - 'lib/solargraph/rbs_translator.rb'
     - 'lib/solargraph/shell.rb'
-    - 'lib/solargraph/source/chain/call.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: EnforcedStyle.
@@ -47,7 +45,12 @@ Layout/IndentationConsistency:
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: Width, AllowedPatterns.
 Layout/IndentationWidth:
-  Enabled: false
+  Exclude:
+    - 'lib/solargraph/parser/parser_gem/node_processors/namespace_node.rb'
+    - 'lib/solargraph/pin/method.rb'
+    - 'lib/solargraph/rbs_map/conversions.rb'
+    - 'lib/solargraph/rbs_translator.rb'
+    - 'lib/solargraph/shell.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowInHeredoc.
@@ -71,19 +74,11 @@ Lint/ConstantDefinitionInBlock:
   Exclude:
     - 'spec/complex_type_spec.rb'
 
-Lint/CopDirectiveSyntax:
-  Exclude:
-    - 'lib/solargraph/rbs_map/conversions.rb'
-
 # Configuration parameters: IgnoreLiteralBranches, IgnoreConstantBranches, IgnoreDuplicateElseBranch.
 Lint/DuplicateBranch:
   Exclude:
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/pin/base.rb'
-
-Lint/DuplicateMethods:
-  Exclude:
-    - 'lib/solargraph/rbs_map/conversions.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Lint/InterpolationCheck:
@@ -129,7 +124,7 @@ Metrics/AbcSize:
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.
 # AllowedMethods: refine
 Metrics/BlockLength:
-  Max: 58
+  Max: 57
 
 # Configuration parameters: CountBlocks, CountModifierForms.
 Metrics/BlockNesting:
@@ -156,7 +151,6 @@ Metrics/MethodLength:
     - 'lib/solargraph/convention/struct_definition.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
     - 'lib/solargraph/shell.rb'
-    - 'lib/solargraph/source/chain/call.rb'
 
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ModuleLength:
@@ -245,6 +239,7 @@ RSpec/DescribeClass:
     - '**/spec/system/**/*'
     - '**/spec/views/**/*'
     - 'spec/complex_type_spec.rb'
+    - 'spec/gemspec_spec.rb'
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 # Configuration parameters: SkipBlocks, EnforcedStyle, OnlyStaticConstants.
