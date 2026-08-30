@@ -823,7 +823,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'infers Class from Class#new' do
-    pending "Needs work"
+    pending 'Needs work'
     source = Solargraph::Source.load_string(%(
       cls = Class.new
       cls.new
