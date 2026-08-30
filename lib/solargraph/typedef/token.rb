@@ -3,7 +3,7 @@
 module Solargraph
   module Typedef
     class Token
-      RESERVED_NAMES = %w[nil undefined]
+      RESERVED_NAMES = %w[nil undefined].freeze
 
       attr_reader :name, :params
 
@@ -39,7 +39,7 @@ module Solargraph
       end
 
       def to_s
-        "#{([name] + params).join(', ')}"
+        ([name] + params).join(', ')
       end
 
       def to_s_for_complex_type

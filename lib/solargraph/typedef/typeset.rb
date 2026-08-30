@@ -63,7 +63,7 @@ module Solargraph
       end
 
       def to_s_for_complex_type
-        "#{types.map(&:to_s_for_complex_type).join(', ')}"
+        types.map(&:to_s_for_complex_type).join(', ')
       end
 
       private
@@ -71,8 +71,8 @@ module Solargraph
       def reduce!
         types.uniq!(&:to_s)
       end
-
-      UNDEFINED = Typeset.new([Type::UNDEFINED])
     end
+
+    Typeset::UNDEFINED = Typeset.new([Type::UNDEFINED])
   end
 end

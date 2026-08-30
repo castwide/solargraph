@@ -98,6 +98,9 @@ module Solargraph
         ['[', ']']
       end
 
+      ROOT = Type.new(Path::ROOT)
+      UNDEFINED = Type.new(Typedef.tokenize('undefined'))
+
       private
 
       def params_to_s
@@ -109,9 +112,6 @@ module Solargraph
         return '' if @params.empty?
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
-
-      ROOT = Type.new(Path::ROOT)
-      UNDEFINED = Type.new(Typedef.tokenize('undefined'))
     end
   end
 end

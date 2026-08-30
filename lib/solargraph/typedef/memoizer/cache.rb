@@ -48,7 +48,7 @@ module Solargraph
         private
 
         def stack
-          pending.map(&:filename).to_set
+          pending.to_set(&:filename)
         end
       end
     end

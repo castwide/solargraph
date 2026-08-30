@@ -9,10 +9,10 @@ module Solargraph
 
       # @return [ApiMap]
       attr_reader :api_map
-      
+
       # @return [SourceMap]
       attr_reader :source_map
-      
+
       # @return [Position]
       attr_reader :position
 
@@ -51,14 +51,17 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
+        # rubocop:disable Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:define), [[], nil] do
           pins, receiver = define_from chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
         end
+        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       # @return [Typeset]
       def infer
+        # rubocop:disable Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
@@ -69,6 +72,7 @@ module Solargraph
 
           ComplexType::UNDEFINED.to_typedef_typeset
         end
+        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       private
