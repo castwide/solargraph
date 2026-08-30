@@ -8,7 +8,7 @@ describe Solargraph::Typedef::Expansions::Macros do
       class Example
         # @macro klassify
         def foo(klass)
-        end  
+        end
       end
     ))
     api_map = Solargraph::ApiMap.new.map(source)

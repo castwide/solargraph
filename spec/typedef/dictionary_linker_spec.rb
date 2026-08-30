@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Dictionary do
-  it "infers types from new subclass calls without a subclass initialize method" do
+  it 'infers types from new subclass calls without a subclass initialize method' do
     source = Solargraph::Source.load_string(%(
       class Sup
         def initialize; end
@@ -19,7 +19,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(typeset.to_s).to eq('Sub')
   end
 
-  it "follows constant chains" do
+  it 'follows constant chains' do
     source = Solargraph::Source.load_string(%(
       module Mixin; end
       module Container
@@ -33,7 +33,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(pins).to be_empty
   end
 
-  it "rebases inner constants chains" do
+  it 'rebases inner constants chains' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar; end
@@ -46,7 +46,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(pins.first.path).to eq('Foo::Bar')
   end
 
-  it "resolves relative constant paths" do
+  it 'resolves relative constant paths' do
     source = Solargraph::Source.load_string(%(
       class Foo
         class Bar
@@ -63,19 +63,19 @@ describe Solargraph::Typedef::Dictionary do
     expect(pins.first.path).to eq('Foo::Bar::Baz')
   end
 
-  it "avoids recursive variable assignments" do
+  it 'avoids recursive variable assignments' do
     source = Solargraph::Source.load_string(%(
       @foo = @bar
       @bar = @foo.quz
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 18])
-    expect {
+    expect do
       dictionary.define
-    }.not_to raise_error
+    end.not_to raise_error
   end
 
-  it "pulls types from multiple lines of code" do
+  it 'pulls types from multiple lines of code' do
     source = Solargraph::Source.load_string(%(
       123
       'abc'
@@ -86,7 +86,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(typeset.to_s).to eq('String')
   end
 
-  it "uses last line of a begin expression as return type" do
+  it 'uses last line of a begin expression as return type' do
     source = Solargraph::Source.load_string(%(
       begin
         123
@@ -99,7 +99,7 @@ describe Solargraph::Typedef::Dictionary do
     expect(typeset.to_s).to eq('String')
   end
 
-  it "matches constants on complete symbols" do
+  it 'matches constants on complete symbols' do
     source = Solargraph::Source.load_string(%(
       class Correct; end
       class NotCorrect; end
@@ -281,7 +281,7 @@ describe Solargraph::Typedef::Dictionary do
         @foo = 'foo'
       end
     ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
+    Solargraph::ApiMap.new
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 8])

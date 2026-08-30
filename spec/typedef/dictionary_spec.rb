@@ -68,11 +68,11 @@ describe Solargraph::Typedef::Dictionary do
       class Example
         # @macro klassify
         def foo(klass)
-        end  
+        end
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    pin = api_map.get_path_pins('Example#foo').first
+    api_map.get_path_pins('Example#foo').first
     dictionary = described_class.new(api_map, 'test.rb', [5, 12])
     defined = dictionary.define.first
     expect(defined.typedef_typeset.to_s).to eq('Array[klass]')

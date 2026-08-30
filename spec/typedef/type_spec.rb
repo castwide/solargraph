@@ -8,14 +8,14 @@ describe Solargraph::Typedef::Type do
 
   describe '#expand' do
     it 'resolves simple named tokens to paths' do
-      named_values = { "foo" => "String" }
+      named_values = { 'foo' => 'String' }
       type = described_class.new('foo')
       resolved = type.expand(named_values)
       expect(resolved.to_s).to eq('String')
     end
 
     it 'resolves simple named tokens to rooted paths' do
-      named_values = { "foo" => "::String" }
+      named_values = { 'foo' => '::String' }
       type = described_class.new('foo')
       resolved = type.expand(named_values)
       expect(resolved.to_s).to eq('String')
@@ -23,7 +23,7 @@ describe Solargraph::Typedef::Type do
     end
 
     it 'returns unresolved types' do
-      named_values = { "foo" => "String" }
+      named_values = { 'foo' => 'String' }
       type = described_class.new('bar')
       unresolved = type.expand(named_values)
       expect(unresolved.to_s).to eq('bar')

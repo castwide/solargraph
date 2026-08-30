@@ -30,10 +30,10 @@ describe Solargraph::Typedef::Memoizer::Cache do
   end
 
   it 'returns default on recursive actions' do
-      result = memos.fetch(key) do
-        memos.fetch(key, 'safe') { 'oops' }
-      end
-      expect(result).to be('safe')
+    result = memos.fetch(key) do
+      memos.fetch(key, 'safe') { 'oops' }
+    end
+    expect(result).to be('safe')
   end
 
   it 'returns cache for equivalent keys' do
@@ -65,7 +65,7 @@ describe Solargraph::Typedef::Memoizer::Cache do
     memos.fetch(key) do
       memos.fetch(key2) { 'value' }
     end
-    expect(memos.data[key].stack).to match_array(['example.rb'])
-    expect(memos.data[key2].stack).to match_array(['example.rb', 'other.rb'])
+    expect(memos.data[key].stack).to contain_exactly('example.rb')
+    expect(memos.data[key2].stack).to contain_exactly('example.rb', 'other.rb')
   end
 end
