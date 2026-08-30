@@ -17,8 +17,7 @@ module Solargraph
                     else
                       default
                     end
-            data[key] = Memo.new(value, stack)
-            pending.delete(key)
+            data[key] = Memo.new(value, stack.clone.add(key.filename))
             data[key].value
           else
             Solargraph.logger.warn "Recursive definition detected: #{key}"
@@ -26,6 +25,11 @@ module Solargraph
           end
         ensure
           pending.delete key
+          if pending.empty?
+            stack.clear
+          else
+            stack.add key.filename
+          end
         end
 
         def clear
@@ -53,7 +57,7 @@ module Solargraph
         private
 
         def stack
-          pending.to_set(&:filename)
+          @stack ||= Set.new
         end
       end
     end
