@@ -24,7 +24,7 @@ describe Solargraph::Typedef::Path do
 
     it 'converts core pin paths' do
       api_map = Solargraph::ApiMap.new
-      api_map.pins.each { |pin| pin.typedef_path }
+      expect { api_map.pins.each(&:typedef_path) }.not_to raise_error
     end
   end
 

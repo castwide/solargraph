@@ -178,8 +178,10 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   describe '#names' do
+    # rubocop:disable RSpec/VerifiedDoubles
     let(:pin) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
     let(:receiver) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
+    # rubocop:enable RSpec/VerifiedDoubles
 
     it 'finds generic names from source pins' do
       source = Solargraph::Source.load_string(%(

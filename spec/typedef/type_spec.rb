@@ -1,11 +1,6 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Type do
-  describe '#from' do
-    it 'updates paths' do
-    end
-  end
-
   describe '#expand' do
     it 'resolves simple named tokens to paths' do
       named_values = { 'foo' => 'String' }

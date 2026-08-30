@@ -228,7 +228,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers String from interpolated strings' do
-    source = Solargraph::Source.load_string('"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%("#{Object}"), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
     typeset = dictionary.infer
@@ -252,7 +252,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers Symbol from interpolated symbols' do
-    source = Solargraph::Source.load_string(':"#{Object}"', 'test.rb')
+    source = Solargraph::Source.load_string(%(:"#{Object}"), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [0, 0])
     typeset = dictionary.infer

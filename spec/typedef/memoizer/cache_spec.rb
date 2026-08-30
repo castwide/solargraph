@@ -6,7 +6,7 @@ describe Solargraph::Typedef::Memoizer::Cache do
   let(:memos) { described_class.new }
 
   it 'saves on fetch' do
-    memos.fetch(key) { 'value' }
+    memos.fetch(key, 'value')
     expect(memos.data[key].value).to eq('value')
   end
 
@@ -31,22 +31,22 @@ describe Solargraph::Typedef::Memoizer::Cache do
 
   it 'returns default on recursive actions' do
     result = memos.fetch(key) do
-      memos.fetch(key, 'safe') { 'oops' }
+      memos.fetch(key, 'oops')
     end
     expect(result).to be('safe')
   end
 
   it 'returns cache for equivalent keys' do
     key2 = key.clone
-    memos.fetch(key) { 'one' }
-    result = memos.fetch(key2) { 'two' }
+    memos.fetch(key, 'one')
+    result = memos.fetch(key2, 'two')
     expect(result).to eq('one')
     expect(memos.data).to be_one
   end
 
   it 'filters cache by filename' do
-    memos.fetch(key) { 'first' }
-    memos.fetch(key2) { 'second' }
+    memos.fetch(key, 'first')
+    memos.fetch(key2, 'second')
     expect(memos.data.length).to be(2)
 
     memos.filter('other.rb')
@@ -56,14 +56,14 @@ describe Solargraph::Typedef::Memoizer::Cache do
 
   it 'cascades values' do
     result = memos.fetch(key) do
-      memos.fetch(key2) { 'value' }
+      memos.fetch(key2, 'value')
     end
     expect(result).to eq('value')
   end
 
   it 'stacks memo filenames' do
     memos.fetch(key) do
-      memos.fetch(key2) { 'value' }
+      memos.fetch(key2, 'value')
     end
     expect(memos.data[key].stack).to contain_exactly('example.rb')
     expect(memos.data[key2].stack).to contain_exactly('example.rb', 'other.rb')
