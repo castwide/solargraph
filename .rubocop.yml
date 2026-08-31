@@ -18,6 +18,8 @@ AllCops:
     - "spec/fixtures/gem-with-yard-macros/**/*"
     - "vendor/**/*"
     - "vendor/**/.*"
+    - ".claude/**/*"
+    - ".cursor/**/*"
   TargetRubyVersion: 3.1
 
 Gemspec/RequiredRubyVersion:
