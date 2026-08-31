@@ -198,7 +198,7 @@ module Solargraph
         end
       end
 
-      # @param pin [Pin::Method]
+      # @param pin [Pin::Base]
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
@@ -206,6 +206,9 @@ module Solargraph
         #   proxy() / proxy_with_signatures() instead?
         return unless pin && tag.tag_name == 'return'
         pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
+        # Only methods carry signatures; constants and other pins have
+        # just the one return type set above.
+        return unless pin.is_a?(Pin::Method)
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end
