@@ -466,7 +466,6 @@ module Solargraph
       end
 
       # @param clause_node [Parser::AST::Node, nil]
-      # @sg-ignore need boolish support for ? methods
       def always_breaks? clause_node
         clause_node&.type == :break
       end

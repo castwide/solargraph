@@ -32,6 +32,7 @@ module Solargraph
 
       private
 
+      # @return [ApiMap::Store]
       def core_store
         @core_store ||= ApiMap::Store.new(RbsMap::CoreMap.new.pins)
       end
