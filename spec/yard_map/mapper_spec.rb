@@ -58,6 +58,20 @@ describe Solargraph::YardMap::Mapper do
     expect(pin.closure.path).to eq('YARD::CodeObjects::ClassObject')
   end
 
+  it 'skips the Object superclass YARD records when no clause was seen' do
+    dir = File.absolute_path(File.join('spec', 'fixtures', 'yard_map'))
+    pins = Dir.chdir dir do
+      YARD::Registry.load([File.join(dir, 'superclass.rb')], true)
+      described_class.new(YARD::Registry.all).map
+    end
+    FileUtils.remove_entry_secure File.join(dir, '.yardoc')
+    refs = pins.select do |pin|
+      pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.closure.path.start_with?('Superclass')
+    end
+    expect(refs.map { |ref| [ref.closure.path, ref.name] })
+      .to eq([%w[SuperclassDeclared SuperclassBase]])
+  end
+
   it 'adds include references' do
     # Asssuming the ast gem exists because it's a known dependency
     inc = pins_with('ast').find do |pin|
@@ -90,5 +104,13 @@ describe Solargraph::YardMap::Mapper do
     end
     expect(pin).to be_a(Solargraph::Pin::Method)
     expect(pin.macros.map(&:name)).to include('my_attribute')
+  end
+
+  it 'adjusts YARD namespaces that conflict with core constants' do
+    gemspec = Gem::Specification.find_by_name('pp')
+    code_objects = Solargraph::Yardoc.load!(gemspec)
+    mapper = described_class.new(code_objects)
+    pins = mapper.map
+    expect(pins.map(&:path)).to include('RBS::Unnamed::ENVClass#pretty_print')
   end
 end
