@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Memoizer::Cache do
-  let(:key) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example.rb', api_map: nil, position: nil, chain: nil, action: :example) }
-  let(:key2) { Solargraph::Typedef::Memoizer::Key.new(filename: 'other.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+  let(:key) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example1.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+  let(:key2) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example2.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+  let(:key3) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example3.rb', api_map: nil, position: nil, chain: nil, action: :example) }
   let(:memos) { described_class.new }
 
   it 'saves on fetch' do
@@ -49,7 +50,7 @@ describe Solargraph::Typedef::Memoizer::Cache do
     memos.fetch(key2, 'second')
     expect(memos.data.length).to be(2)
 
-    memos.filter('other.rb')
+    memos.filter('example2.rb')
     expect(memos.data).to be_one
     expect(memos.data[key].value).to eq('first')
   end
@@ -63,9 +64,12 @@ describe Solargraph::Typedef::Memoizer::Cache do
 
   it 'stacks memo filenames' do
     memos.fetch(key) do
-      memos.fetch(key2, 'value')
+      memos.fetch(key2) do
+        memos.fetch(key3)
+      end
     end
-    expect(memos.data[key].stack).to contain_exactly('example.rb', 'other.rb')
-    expect(memos.data[key2].stack).to contain_exactly('other.rb')
+    expect(memos.data[key].stack).to contain_exactly('example1.rb', 'example2.rb', 'example3.rb')
+    expect(memos.data[key2].stack).to contain_exactly('example2.rb', 'example3.rb')
+    expect(memos.data[key3].stack).to contain_exactly('example3.rb')
   end
 end
