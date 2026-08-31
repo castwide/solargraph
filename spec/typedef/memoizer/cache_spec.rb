@@ -72,4 +72,16 @@ describe Solargraph::Typedef::Memoizer::Cache do
     expect(memos.data[key2].stack).to contain_exactly('example2.rb', 'example3.rb')
     expect(memos.data[key3].stack).to contain_exactly('example3.rb')
   end
+
+  it 'resets stacks' do
+    memos.fetch(key) do
+      memos.fetch(key2) do
+        memos.fetch(key3)
+      end
+    end
+    memos.filter('example1.rb')
+    memos.fetch(key, 'value')
+    expect(memos.data[key].stack).to contain_exactly('example1.rb')
+    expect(memos.data[key].value).to eq('value')
+  end
 end
