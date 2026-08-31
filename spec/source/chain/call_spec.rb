@@ -1,5 +1,23 @@
 # frozen_string_literal: true
 
+# Contributes a fixed set of pins to every source map, standing in for
+# the pins a resolved `require` brings in from a gem or the stdlib.
+# Specs assign #pins, register it, and unregister it again afterwards.
+class RbsPinConvention < Solargraph::Convention::Base
+  class << self
+    # @return [Array<Solargraph::Pin::Base>]
+    attr_accessor :pins
+  end
+
+  self.pins = []
+
+  # @param _source_map [Solargraph::SourceMap]
+  # @return [Solargraph::Environ]
+  def local _source_map
+    Solargraph::Environ.new(pins: self.class.pins)
+  end
+end
+
 describe Solargraph::Source::Chain::Call do
   it 'recognizes core methods that return subtypes' do
     api_map = Solargraph::ApiMap.new
@@ -708,5 +726,101 @@ describe Solargraph::Source::Chain::Call do
 
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
+  end
+
+  # Serves an RBS file's pins through the public Convention extension
+  # point, standing in for the pins a resolved `require` contributes via
+  # DocMap, so these specs exercise calls into a gem/stdlib method.
+  shared_context 'with a Box declared in RBS' do
+    # create a temporary directory with the scope of the spec
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @temp_dir = dir
+        example.run
+      end
+    end
+
+    attr_reader :temp_dir
+
+    let(:conversions) do
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+      loader.add(path: Pathname(temp_dir))
+      Solargraph::RbsMap::Conversions.new(loader: loader)
+    end
+
+    before do
+      File.write(File.join(temp_dir, 'box.rbs'), rbs)
+      RbsPinConvention.pins = conversions.pins
+      Solargraph::Convention.register RbsPinConvention
+    end
+
+    after do
+      Solargraph::Convention.unregister RbsPinConvention
+      RbsPinConvention.pins = []
+    end
+
+    # @param code [String]
+    # @param position [Array(Integer, Integer)]
+    # @return [Solargraph::ComplexType]
+    def infer_at code, position
+      api_map = Solargraph::ApiMap.new
+      source = Solargraph::Source.load_string(code, 'test.rb')
+      source_map = Solargraph::SourceMap.map(source)
+      api_map.catalog(Solargraph::Bench.new(source_maps: [source_map], live_map: source_map))
+      api_map.clip_at('test.rb', position).infer
+    end
+  end
+
+  context 'with an RBS-declared generic block-form overload accepting a kwrest parameter' do
+    include_context 'with a Box declared in RBS'
+
+    let(:rbs) do
+      <<~RBS
+        class Box
+          def self.start: (Integer val, ?String opt1, ?String opt2) -> Box
+                         | [T] (Integer val, ?String opt1, ?String opt2, **untyped opts) { (Integer v) -> T } -> T
+        end
+      RBS
+    end
+
+    it 'matches a trailing keyword argument to a kwrest parameter instead of the next positional parameter' do
+      type = infer_at(%(
+        Box.start(1, "x", foo: true) do |v|
+          v
+        end
+      ), [2, 10])
+      expect(type.rooted_tags).to eq('::Integer')
+    end
+
+    it 'still resolves the block-form overload when no keyword argument is passed' do
+      type = infer_at(%(
+        Box.start(1, "x") do |v|
+          v
+        end
+      ), [2, 10])
+      expect(type.rooted_tags).to eq('::Integer')
+    end
+  end
+
+  context 'with overloads that differ only in which keyword(s) they accept' do
+    include_context 'with a Box declared in RBS'
+
+    let(:rbs) do
+      <<~RBS
+        class Box
+          def self.add: (path: String) -> Integer
+                       | (library: String, ?resolve_dependencies: untyped) -> String
+        end
+      RBS
+    end
+
+    it 'matches a call by the keyword it actually passes, not an earlier overload with an untyped keyword param' do
+      code = %(
+        Box.add(path: "x")
+      )
+      type = infer_at(code, [1, code.lines[1].chomp.length])
+      expect(type.rooted_tags).to eq('::Integer')
+    end
   end
 end
