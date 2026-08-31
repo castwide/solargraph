@@ -28,7 +28,7 @@ module Solargraph
                   Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
                   0
                 end
-        @level = LEVELS[LEVELS.values.index(@rank)]
+        @level = LEVELS.key(@rank)
         @overrides = overrides
       end
 
