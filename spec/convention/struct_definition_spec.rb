@@ -148,5 +148,17 @@ describe Solargraph::Convention::StructDefinition do
       ))
       expect { checker.problems }.not_to raise_error
     end
+
+    it 'maps a Struct whose attribute tag will not parse, giving that attribute an undefined type' do
+      source = nil
+      expect do
+        source = Solargraph::SourceMap.load_string(%(
+          # @param dimensions [Hash{Symbol => Integer]
+          Box = Struct.new(:dimensions)
+        ), 'test.rb')
+      end.not_to raise_error
+
+      expect(source.pins.find { |p| p.path == 'Box#dimensions' }.return_type.tag).to eql('undefined')
+    end
   end
 end
