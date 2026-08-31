@@ -171,7 +171,7 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
-        out = maybe_nil(type)
+        out = maybe_nil(type, api_map)
         logger.debug do
           "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
             "name_pin=#{name_pin}, name_pin.closure=#{name_pin&.closure&.inspect}, " \
@@ -202,8 +202,38 @@ module Solargraph
         @splat
       end
 
-      def nullable?
-        links.any?(&:nullable?)
+      # Whether this chain's inferred type should have nil added to it
+      # because a `&.` earlier in the chain might have short-circuited
+      # evaluation to nil.
+      #
+      # A `&.` only makes the *immediate* call nil-or-normal-result; a
+      # later, non-safe-navigated call in the same chain is still
+      # invoked on whatever that produced. If receiver is nil at that
+      # point, Ruby calls the method on nil itself instead of skipping
+      # it - so nil only continues to flow through subsequent links
+      # that NilClass defines as returning `self` (e.g., #tap,
+      # #itself). Any other subsequent call resolves to a concrete,
+      # non-nil-including type (e.g. NilClass#== returns Boolean), and
+      # nil no longer needs to be tracked past that point (unless a
+      # later `&.` reintroduces it).
+      #
+      # @param api_map [ApiMap]
+      # @return [Boolean]
+      def nullable? api_map
+        currently_nullable = false
+        links.each do |link|
+          if link.nullable?
+            currently_nullable = true
+            next
+          end
+          next unless currently_nullable
+          next unless link.is_a?(Chain::Call)
+
+          pin = api_map.get_method_stack('NilClass', link.word, scope: :instance).first
+          # @sg-ignore Need to add nil check here
+          currently_nullable = pin.nil? || pin.return_type.tag == 'self'
+        end
+        currently_nullable
       end
 
       include Logging
@@ -289,10 +319,11 @@ module Solargraph
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]
+      # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType]
-      def maybe_nil type
+      def maybe_nil type, api_map
         return type if type.undefined? || type.void? || type.nullable?
-        return type unless nullable?
+        return type unless nullable?(api_map)
         ComplexType.new(type.items + [ComplexType::NIL])
       end
 

@@ -149,12 +149,13 @@ module Solargraph
 
       # @param parameters [::Array<Parameter>]
       # @param return_type [ComplexType, nil]
+      # @param tag_docstring [YARD::Docstring] source of @yieldparam/@yieldreturn tags; pass an @overload tag's own docstring here
       # @return [Signature]
-      def generate_signature parameters, return_type
+      def generate_signature parameters, return_type, tag_docstring = docstring
         # @type [Pin::Signature, nil]
         block = nil
-        yieldparam_tags = docstring.tags(:yieldparam)
-        yieldreturn_tags = docstring.tags(:yieldreturn)
+        yieldparam_tags = tag_docstring.tags(:yieldparam)
+        yieldreturn_tags = tag_docstring.tags(:yieldreturn)
         generics = docstring.tags(:generic).map(&:name)
         needs_block_param_signature =
           parameters.last&.block? || !yieldreturn_tags.empty? || !yieldparam_tags.empty?
@@ -764,7 +765,9 @@ module Solargraph
         top_type = generate_complex_type
         result = []
         result.push generate_signature(parameters, top_type) if top_type.defined?
-        result.concat(overloads.map { |meth| generate_signature(meth.parameters, meth.return_type) }) unless overloads.empty?
+        # @param meth [Pin::Signature]
+        # @param tag [YARD::Tags::OverloadTag]
+        result.concat(overloads.zip(docstring.tags(:overload).select(&:parameters)).map { |meth, tag| generate_signature(meth.parameters, meth.return_type, tag.docstring) }) unless overloads.empty?
         result.push generate_signature(parameters, @return_type || ComplexType::UNDEFINED) if result.empty?
         result
       end

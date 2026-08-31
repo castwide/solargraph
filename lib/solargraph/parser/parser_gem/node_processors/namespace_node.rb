@@ -28,7 +28,6 @@ module Solargraph
               source: :parser
             )
             pins.push nspin
-            Solargraph.logger.warn "Superclass: #{superclass_name}" if superclass_name&.start_with?('Array')
             if superclass_name
               pins.push Pin::Reference::Superclass.new(
                 location: loc,
@@ -42,12 +41,22 @@ module Solargraph
 
           private
 
-          # @param comments [String]
+          # Type arguments for a generic superclass in inline RBS syntax, e.g.,
+          # `class Foo < Array #[String]`. Only recognized where RBS defines
+          # it: directly after the superclass, on the same line, with no space
+          # between `#` and `[`. Anything else is an ordinary comment.
+          #
           # @return [String, nil]
           def parameters_from_inline_rbs
-            source = region.source.code_for(node)
-            match = source.match(/[^\n]*?#\s?+\[([^\]]*)/)
-            return unless match && match[1]
+            superclass = node.children[1]
+            return unless superclass
+
+            source = region.source.code
+            pos = get_node_end_position(superclass)
+            offset = Position.line_char_to_offset(source, pos.line, pos.character)
+            eol = source.index("\n", offset) || source.length
+            match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
+            return unless match
 
             # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             code = match[1].strip
