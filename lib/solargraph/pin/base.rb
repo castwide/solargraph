@@ -46,8 +46,9 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      # @param expansions [Hash]
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
-                     docstring: nil, directives: nil, combine_priority: nil
+                     docstring: nil, directives: nil, combine_priority: nil, expansions: {}
         @location = location
         @type_location = type_location
         @closure = closure
@@ -60,9 +61,23 @@ module Solargraph
         @combine_priority = combine_priority
         # @type [ComplexType, ComplexType::UniqueType, nil]
         @binder = nil
+        @expansions = expansions
 
         assert_source_provided
         assert_location_provided
+      end
+
+      def typedef_path
+        Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
+      end
+
+      # @return [Typedef::Typeset]
+      def typedef_typeset
+        return_type.to_typedef_typeset
+      end
+
+      def expansions
+        @expansions ||= {}
       end
 
       # @return [void]
@@ -491,7 +506,7 @@ module Solargraph
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
           # @sg-ignore flow sensitive typing needs to handle attrs
-          (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
+          (closure.equal?(other.closure) || closure&.nearly?(other.closure)) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
            # @sg-ignore Translate to something flow sensitive typing understands
@@ -580,7 +595,7 @@ module Solargraph
 
       # @todo Candidate for deprecation (see ApiMap#process_macros)
       def maybe_macros?
-        comments.include?('@macro')        
+        comments.include?('@macro')
       end
 
       def macros_names?
@@ -711,6 +726,18 @@ module Solargraph
         end
       end
 
+      def generics
+        @generics ||= []
+      end
+
+      def typedef_generics
+        @typedef_generics ||= if generics.empty?
+                                docstring.tags(:generic).map(&:name)
+                              else
+                                generics
+                              end
+      end
+
       protected
 
       # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
@@ -794,7 +821,7 @@ module Solargraph
       end
 
       def collect_macro_names
-        "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
+        "#{comments}\n".scan(/\s*?@macro +(\S+).*?\n/).map { |match| match[0] }
       end
     end
   end
