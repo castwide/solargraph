@@ -28,45 +28,11 @@ module Solargraph
       'Hash::_Key' => 'K'
     }.freeze
 
-    # Translates an RBS type into a ComplexType.
-    #
-    # Every RBS node that can *contain* another type - intersections,
-    # unions, optionals, tuples, and generic type arguments - is built
-    # directly as a ComplexType/UniqueType object graph by recursing
-    # through this method, continuing the move away from tag strings
-    # begun in castwide/solargraph#870 so that `rooted?` is carried
-    # through unchanged rather than re-derived by a parse. Only leaf
-    # types that can't contain a nested type (literals, `bool`, `nil`,
-    # `void`, generic type variables, `self`/`instance`, `Proc`, etc.)
-    # go through the tag-string fallback in type_to_tag.
-    #
     # @param type [RBS::Types::Bases::Base]
     # @return [ComplexType]
     def self.to_complex_type(type)
-      case type
-      when RBS::Types::Intersection
-        intersection_complex_type(type)
-      when RBS::Types::Optional
-        optional_complex_type(type)
-      when RBS::Types::Union
-        union_complex_type(type)
-      when RBS::Types::Tuple
-        tuple_complex_type(type)
-      when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
-        # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
-        # @todo ensure these get resolved after processing all aliases
-        # @todo handle recursive aliases
-        #
-        # `Interface` represents a mix-in module which can be considered a
-        # subtype of a consumer of it
-        ComplexType.new([build_unique_type(type.name, type.args)]).force_rooted
-      when RBS::Types::ClassSingleton
-        # e.g., singleton(String)
-        ComplexType.new([build_unique_type(type.name)]).force_rooted
-      else
-        tag = type_to_tag(type)
-        ComplexType.try_parse(tag).force_rooted
-      end
+      tag = type_to_tag(type)
+      ComplexType.try_parse(tag).force_rooted
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -179,45 +145,23 @@ module Solargraph
     class << self
       private
 
-      # @param type [RBS::Types::Intersection]
-      # @return [ComplexType]
-      def intersection_complex_type type
-        conjuncts = type.types.map { |member| RbsTranslator.to_complex_type(member) }
-        ComplexType.new([ComplexType::UniqueType::Intersection.new(conjuncts)]).force_rooted
-      end
-
-      # @param type [RBS::Types::Optional]
-      # @return [ComplexType]
-      def optional_complex_type type
-        inner = RbsTranslator.to_complex_type(type.type)
-        ComplexType.new(inner.items + [ComplexType::UniqueType::NIL]).force_rooted
-      end
-
-      # @param type [RBS::Types::Union]
-      # @return [ComplexType]
-      def union_complex_type type
-        ComplexType.new(type.types.flat_map { |t| RbsTranslator.to_complex_type(t).items }).force_rooted
-      end
-
-      # @param type [RBS::Types::Tuple]
-      # @return [ComplexType]
-      def tuple_complex_type type
-        subtypes = type.types.map { |t| RbsTranslator.to_complex_type(t) }
-        ComplexType.new([ComplexType::UniqueType.new('Array', [], subtypes, rooted: true, parameters_type: :fixed)]).force_rooted
-      end
-
-      # Renders a leaf RBS type (one that can't contain another type)
-      # as a tag string. Composite/recursive types are handled
-      # directly in to_complex_type instead - see its comment.
-      #
       # @param type [RBS::Types::Bases::Base]
       # @return [String]
       def type_to_tag type
         case type
+        when RBS::Types::Optional
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
+        when RBS::Types::Tuple
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
           type.literal.inspect
+        when RBS::Types::Union
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
           'Hash'
@@ -232,6 +176,26 @@ module Solargraph
         when RBS::Types::Bases::Top
           # `Top` is the most super superclass
           'BasicObject'
+        when RBS::Types::Intersection
+          # `&` binds tighter than `,`/`|`, so bracket a conjunct that
+          # renders as more than one type (Union, Optional).
+          #
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          type.types.map { |member| intersection_conjunct_tag(member) }.join(' & ')
+        when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
+          # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
+          # @todo ensure these get resolved after processing all aliases
+          # @todo handle recursive aliases
+          #
+          # `Interface` represents a mix-in module which can be considered a
+          # subtype of a consumer of it
+          #
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          build_unique_type(type.name, type.args).tags
+        when RBS::Types::ClassSingleton
+          # e.g., singleton(String)
+          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          build_unique_type(type.name).tags
         when RBS::Types::Proc
           'Proc'
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
@@ -245,6 +209,13 @@ module Solargraph
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
         end
+      end
+
+      # @param member [RBS::Types::Bases::Base]
+      # @return [String]
+      def intersection_conjunct_tag member
+        tag = type_to_tag(member)
+        member.is_a?(RBS::Types::Union) || member.is_a?(RBS::Types::Optional) ? "[#{tag}]" : tag
       end
     end
   end

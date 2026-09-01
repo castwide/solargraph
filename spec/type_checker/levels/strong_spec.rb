@@ -1070,11 +1070,10 @@ describe Solargraph::TypeChecker do
           .to include('Wrong argument type for Consumer#project_to_h: project_obj expected Asana::Resources::Project, received Mocha::Mock')
       end
 
-      it 'accepts an intersection-typed argument where the duck-typed conjunct is expected (#1231)' do
+      it 'accepts an intersection-typed argument where the duck-typed conjunct is expected' do
         # Duck-typed subtyping needs *some* conjunct to satisfy it, not
         # specifically the first one that Intersection#namespace/#scope
-        # delegate to -
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5280196737
+        # delegate to.
         checker = type_checker(%(
           # @param callback [#quack]
           # @return [void]
@@ -1105,19 +1104,14 @@ describe Solargraph::TypeChecker do
           .to include('Wrong argument type for #notify: callback expected #quack, received String & Integer')
       end
 
-      it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class (#1231)' do
+      it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class' do
         # Both conjuncts resolve to a pin with the same path (Hash#fetch)
         # but different, already-resolved return types, so dispatch keys on
         # path *and* return type, then narrows to the conjunct whose key
         # matches the call's literal argument. Overload resolution can't
         # do that on its own, since it runs per conjunct and both
-        # conjuncts yield a pin with the same path -
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
-        #
-        # castwide/solargraph#1223 is a prerequisite: without it the literal
-        # "Index"/"Triggers" key_types widen to plain String before the
-        # narrowing can see them.
-        pending 'needs castwide/solargraph#1223'
+        # conjuncts yield a pin with the same path.
+        pending 'https://github.com/castwide/solargraph/pull/1223'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
@@ -1134,11 +1128,8 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'dispatches generic methods per-conjunct regardless of conjunct order (#1231)' do
-        # The conjunct order of the sibling spec above, reversed: the same
-        # per-key narrowing applies either way, with the same
-        # castwide/solargraph#1223 prerequisite.
-        pending 'needs castwide/solargraph#1223'
+      it 'dispatches generic methods per-conjunct regardless of conjunct order' do
+        pending 'https://github.com/castwide/solargraph/pull/1223'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]
@@ -1155,14 +1146,13 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'dispatches generic methods per-conjunct for symbol keys (#1231)' do
-        # Symbol keys reach the same union by a different route than the
-        # string keys above: symbols already infer as literal types, so
-        # per-overload matching rejects the non-matching conjunct - but a
-        # pin whose overloads all fail to match falls through to its
-        # declared return type rather than being dropped, so only
-        # Call#key_verified_conjuncts can actually remove a conjunct.
-        pending 'needs castwide/solargraph#1223'
+      it 'dispatches generic methods per-conjunct for symbol keys' do
+        # Symbols already infer as literal types, so per-overload matching
+        # rejects the non-matching conjunct on its own here - a pin whose
+        # overloads all fail falls through to its declared return type
+        # rather than being dropped, so only Call#key_verified_conjuncts
+        # actually removes it.
+        pending 'https://github.com/castwide/solargraph/pull/1223'
         checker = type_checker(%(
           class Repro
             # @param period [Hash{:Index => Float} & Hash{:Triggers => Array<Hash{:Name => String}>}]
@@ -1193,11 +1183,10 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver (#1231)' do
+      it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver' do
         # Method lookup gives an intersection's conjuncts "any one is
         # enough" semantics (A & B <: A, A & B <: B), unlike a union, where
-        # every alternative has to define the method -
-        # https://github.com/castwide/solargraph/pull/1231#issuecomment-5207595119
+        # every alternative has to define the method.
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1249,9 +1238,7 @@ describe Solargraph::TypeChecker do
         expect(checker.problems.map(&:message)).to be_empty
       end
 
-      it 'resolves a conjunct method on an intersection-typed local variable, not just a call chain (#1231)' do
-        # Same fix as the sibling spec above applies to any intersection-typed
-        # value, not just method-return-value call chains.
+      it 'resolves a conjunct method on an intersection-typed local variable, not just a call chain' do
         checker = type_checker(%(
           class A
             # @return [void]
@@ -1274,8 +1261,6 @@ describe Solargraph::TypeChecker do
       end
 
       it 'resolves conjunct methods on a three-way intersection' do
-        # Same fix as the sibling specs above; each conjunct is checked
-        # independently regardless of how many there are.
         checker = type_checker(%(
           class A
             # @return [void]
