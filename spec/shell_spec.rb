@@ -157,6 +157,25 @@ describe Solargraph::Shell do
 
         expect(workspace).to have_received(:cache_gem).with(gemspec, out: an_instance_of(StringIO), rebuild: false)
       end
+
+      it 'reports a gem not found when find_gem raises Gem::MissingSpecError' do
+        allow(workspace).to receive(:find_gem)
+          .and_raise(Gem::MissingSpecError.new('backport', Gem::Requirement.new('>= 0')))
+
+        output = capture_both { shell.gems('backport') }
+
+        expect(output).to include("Gem 'backport' not found")
+      end
+
+      it 'reports the failure when find_gem raises Gem::Requirement::BadRequirementError' do
+        allow(workspace).to receive(:find_gem)
+          .and_raise(Gem::Requirement::BadRequirementError, 'bad requirement')
+
+        output = capture_both { shell.gems('backport') }
+
+        expect(output).to include("Gem 'backport' failed while loading")
+        expect(output).to include('bad requirement')
+      end
     end
   end
 
