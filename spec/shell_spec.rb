@@ -176,6 +176,30 @@ describe Solargraph::Shell do
         expect(output).to include("Gem 'backport' failed while loading")
         expect(output).to include('bad requirement')
       end
+
+      it "caches core pins when name is 'core'" do
+        allow(Solargraph::PinCache).to receive(:core?).and_return(false)
+        allow(Solargraph::PinCache).to receive(:cache_core)
+
+        capture_both do
+          shell.options = { rebuild: false }
+          shell.gems('core')
+        end
+
+        expect(Solargraph::PinCache).to have_received(:cache_core).with(out: an_instance_of(StringIO))
+      end
+
+      it "rebuilds core pins when name is 'core' and --rebuild is set even if already cached" do
+        allow(Solargraph::PinCache).to receive(:core?).and_return(true)
+        allow(Solargraph::PinCache).to receive(:cache_core)
+
+        capture_both do
+          shell.options = { rebuild: true }
+          shell.gems('core')
+        end
+
+        expect(Solargraph::PinCache).to have_received(:cache_core).with(out: an_instance_of(StringIO))
+      end
     end
   end
 

@@ -54,11 +54,13 @@ describe Solargraph::Yardoc do
     end
 
     it 'bails quietly if directory given does not exist' do
-      allow(File).to receive(:exist?).and_return(false)
+      allow(Dir).to receive(:exist?).and_return(false)
+      allow(Open3).to receive(:capture2e)
 
       expect do
         described_class.build_docs(gem_yardoc_path, [], gemspec)
       end.not_to raise_error
+      expect(Open3).not_to have_received(:capture2e)
     end
 
     it 'is idempotent' do
