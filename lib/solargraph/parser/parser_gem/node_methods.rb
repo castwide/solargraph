@@ -181,12 +181,8 @@ module Solargraph
           result
         end
 
-        # Determines whether a clause necessarily leaves its
-        # enclosing compound statement (method body, block, etc.) -
-        # e.g., via an explicit 'return', a loop-control keyword, or
-        # a raise/fail call - so code that depends on execution
-        # actually reaching the statements after it can treat those
-        # statements as unreachable from this clause.
+        # Whether clause_node necessarily leaves its enclosing
+        # compound statement (return/loop-control/raise/fail).
         #
         # @param clause_node [Parser::AST::Node, nil]
         # @return [Boolean]
@@ -195,18 +191,12 @@ module Solargraph
           return true if %i[return next redo retry].include?(clause_node&.type)
           return false if clause_node.nil?
 
-          # A clause with more than one statement (e.g., a raise
-          # preceded by other statements building the error message)
-          # parses as a :begin node - only its last child determines
-          # whether the clause leaves.
+          # A multi-statement clause parses as :begin; only its last child leaves.
           return always_leaves_compound_statement?(clause_node.children.last) if clause_node.type == :begin
 
           return false unless clause_node.type == :send
 
-          # Unlike return/next/redo/retry, `raise` and `fail` are plain
-          # method calls to the parser - `raise 'msg'` parses as
-          # s(:send, nil, :raise, s(:str, "msg")), not a dedicated node
-          # type - so they need to be recognized by shape instead of type.
+          # raise/fail are plain :send calls, not a dedicated node type.
           clause_node.children[0].nil? && %i[raise fail].include?(clause_node.children[1])
         end
 
