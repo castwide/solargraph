@@ -652,7 +652,6 @@ module Solargraph
     # @return [Hash{String => Hash{Symbol => String, ComplexType}}]
     def param_details_from_stack signature, method_pin_stack
       signature_type = signature.typify(api_map)
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
       signature = signature.proxy signature_type
       param_details = signature_param_details(signature)
       param_names = signature.parameter_names
