@@ -10,11 +10,7 @@ task :console do
   sh 'pry -I lib -r solargraph.rb'
 end
 
-# `vernier` is an optional dependency that `solargraph profile` requires
-# lazily, so a checkout without it reports three `Unresolved constant Vernier`
-# findings in shell.rb. CI appends this to the gitignored `.Gemfile` before
-# every typecheck run; do the same locally:
-#
+# `vernier` is an optional dependency typecheck needs; CI adds it before every run, so do the same locally:
 #   echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile && bundle install
 desc 'Run the type checker'
 task typecheck: [:typecheck_strong]
@@ -51,9 +47,9 @@ task :full_spec do
   warn 'ending spec'
   # move coverage/full-new to coverage/full on success so that we
   # always have the last successful run's 'coverage info
-  # @sg-ignore Need a downcast here
+  # @sg-ignore https://github.com/castwide/solargraph/issues/1255
   FileUtils.rm_rf('coverage/full')
-  # @sg-ignore Need a downcast here
+  # @sg-ignore https://github.com/castwide/solargraph/issues/1255
   FileUtils.mv('coverage/full-new', 'coverage/full')
 end
 
