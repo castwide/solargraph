@@ -697,17 +697,14 @@ module Solargraph
     end
 
     # A short plain-language cause for the first failing link of a chain.
-    # The pin count picks the wording: zero pins means the name did not
-    # resolve at all; otherwise a definition exists but its return type
-    # could not be determined.
+    # Zero pins means the name did not resolve; otherwise a definition
+    # exists but its return type could not be determined.
     #
     # @param blame [Source::Chain::LinkResolution]
     # @return [String, nil] nil when the failing link has no name to report
     def blame_description blame
-      # The parser produced an undefined placeholder rather than a named
-      # link, so there is no name to report - say nothing rather than
-      # guessing. (Numbered block parameters land here.)
-      return nil if blame.link.word == '<undefined>'
+      # No name to report for an undefined link (e.g. a numbered block parameter).
+      return nil if blame.link.undefined?
 
       receiver = blame.receiver_type&.defined? ? " on #{blame.receiver_type}" : ''
       if blame.pin_count.zero?

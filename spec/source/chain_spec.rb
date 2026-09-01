@@ -461,8 +461,7 @@ describe Solargraph::Source::Chain do
   end
 
   it 'chains a numbered-parameter block like an ordinary block' do
-    pending 'NodeChainer#generate_links has no :numblock branch, so a `_1` block produces ' \
-            'no links and the whole expression resolves to the undefined-call placeholder'
+    pending 'https://github.com/castwide/solargraph/pull/1320'
     node = Solargraph::Parser.parse('[1].map { _1.to_s }.compact')
     chain = Solargraph::Parser.chain(node, 'test.rb')
     expect(chain.links.map(&:word)).to eq(%w[map compact])
