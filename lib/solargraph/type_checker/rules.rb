@@ -99,6 +99,8 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
+      # @todo 2: https://github.com/castwide/solargraph/issues/1251
+      # @todo 2: https://github.com/castwide/solargraph/issues/1227
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

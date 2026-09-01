@@ -9,7 +9,7 @@ module Solargraph
         class OpasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            target = node.children[0]
+            target = node.children.fetch(0)
             operator = node.children[1]
             argument = node.children[2]
             if target.type == :send
@@ -20,7 +20,6 @@ module Solargraph
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       # @sg-ignore node.children[0] is untyped, so target.type is unresolved
                                        "Unexpected op_asgn target type: #{target.type}")
             end
           end

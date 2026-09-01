@@ -140,7 +140,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore Hash#fetch(key, default) leaks a generic<X> into the return type
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1227
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -152,7 +152,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore Hash#fetch(key, default) leaks a generic<X> into the return type
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1227
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
