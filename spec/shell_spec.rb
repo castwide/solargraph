@@ -94,6 +94,39 @@ describe Solargraph::Shell do
         expect(output).to include('Error testing Foo#bar')
         expect(output).to include('[StandardError]: boom')
       end
+
+      context 'with a pin in the workspace' do
+        let(:pin) { instance_double(Solargraph::Pin::Base, path: 'Foo#bar', location: nil) }
+
+        before do
+          allow(api_map).to receive(:pins).and_return([pin])
+        end
+
+        it 'typifies and probes the pin' do
+          allow(pin).to receive(:typify)
+          allow(pin).to receive(:probe)
+
+          capture_stdout do
+            shell.options = { directory: 'spec/fixtures/workspace', verbose: false }
+            shell.scan
+          end
+
+          expect(pin).to have_received(:typify).with(api_map)
+          expect(pin).to have_received(:probe).with(api_map)
+        end
+
+        it 'prints the pin description when --verbose is set' do
+          allow(pin).to receive(:typify)
+          allow(pin).to receive(:probe)
+
+          output = capture_stdout do
+            shell.options = { directory: 'spec/fixtures/workspace', verbose: true }
+            shell.scan
+          end
+
+          expect(output).to include('Foo#bar')
+        end
+      end
     end
   end
 
