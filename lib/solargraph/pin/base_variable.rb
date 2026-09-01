@@ -214,10 +214,6 @@ module Solargraph
 
       # @return [ComplexType, nil]
       def return_type
-        # A proxied pin's @return_type was just set by #proxy with a
-        # freshly-typified/probed, rooted result; the docstring on a
-        # dup'd proxy is stale (never resynced), so it must not shadow it.
-        return @return_type if proxied?
         generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
       end
 

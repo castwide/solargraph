@@ -47,11 +47,11 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
-  it 'returns a rooted return_type for a realized variable pin despite a stale docstring :type tag' do
+  it 'resyncs the docstring :type tag to a rooted type for a realized variable pin' do
     api_map = Solargraph::ApiMap.new
     pin = Solargraph::Pin::LocalVariable.new(name: 'x', closure: Solargraph::Pin::ROOT_PIN, comments: '@type [String]')
     realized = pin.realize(api_map)
-    expect(realized.docstring.tag(:type).types).to eq(['String']) # stays stale/unrooted, as documented above
+    expect(realized.docstring.tag(:type).types).to eq(['::String'])
     expect(realized.return_type.rooted_tags).to eq('::String')
     expect(realized.return_type.all_rooted?).to be(true)
   end
