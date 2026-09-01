@@ -71,10 +71,8 @@ describe Solargraph::ApiMap::Store do
     end
 
     it 'does not combine a method alias with a regular method sharing its path' do
-      # Combining an alias pin with a non-alias pin at the same path
-      # previously produced a `:combined` pin that couldn't be
-      # resolved back to its original target, raising under
-      # SOLARGRAPH_ASSERTS=on.
+      # A combined alias pin can't be traced back to its original
+      # target, which #resolve_method_alias needs to work.
       regular = Solargraph::SourceMap.load_string(%(
         class Foo
           def bar; end
@@ -95,28 +93,8 @@ describe Solargraph::ApiMap::Store do
     end
 
     it 'combines many same-path pins without timing out' do
-      # Smoke test for the concern that originally motivated
-      # castwide/solargraph#1186 ("Stub combine_same_type_arity_signatures",
-      # merged as a stopgap for "an infinite loop bug in Ruby 3.x") and
-      # castwide/solargraph#1195 ("Limit pin combination to doc maps",
-      # which removed this combining logic from Store#get_methods
-      # entirely). The "infinite loop" was later diagnosed as an
-      # exponential blowup in Pin::Method#combine_same_type_arity_signatures
-      # and fixed in castwide/solargraph#1238.
-      #
-      # This does NOT reproduce that specific bug: these hand-written
-      # single-type parameters all collapse to the same
-      # Pin::Parameter#type_arity_decl bucket (a separate, still-open
-      # gap - it groups by union member *count*, not the actual
-      # types), so they hit the ">10" bail-out before ever reaching
-      # the code path #1238 fixed. #1238's own regression spec
-      # (spec/pin/method_spec.rb "combines many non-mergeable
-      # same-type-arity signatures without exponential blowup") is
-      # the precise guard for that bug, exercising
-      # combine_same_type_arity_signatures directly with signatures
-      # engineered to never merge. This spec instead just confirms
-      # Store#get_methods' combination of many real same-path pins,
-      # as this PR adds, completes quickly rather than hanging.
+      # Store#get_methods must combine many real same-path pins
+      # quickly, not hang or blow up combinatorially.
       maps = (1..30).map do |i|
         Solargraph::SourceMap.load_string(%(
           class Foo

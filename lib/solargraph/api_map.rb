@@ -812,12 +812,8 @@ module Solargraph
       @store ||= Store.new
     end
 
-    # Get the namespace pin that should be used to resolve generic type
-    # parameters for a fully qualified namespace. Multiple pins can
-    # exist for the same namespace (e.g., a gem's own class definition
-    # plus a `@!parse` stub in a different file that adds `@generic`
-    # tags); the one that actually declares the generics must be used,
-    # regardless of load order.
+    # The namespace pin for fqns that actually declares its generics,
+    # picked from any duplicate pins for the same namespace.
     #
     # @param fqns [String]
     # @return [Pin::Namespace, nil]

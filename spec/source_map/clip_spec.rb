@@ -1918,9 +1918,8 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'binds generics through a cross-file @!parse stub that adds @generic to an existing class' do
-    # The plain implementation (e.g., as it would be defined in a gem) is
-    # unaware of any generics. It's mapped first, simulating a gem's pins
-    # being loaded before the workspace's.
+    # plain_impl has no `@generic` tag or `@!parse` stub - as a gem's
+    # own source looks - and is mapped before the workspace's stub.
     plain_impl = Solargraph::SourceMap.load_string(%(
       module Widgetbox
         class Collection
