@@ -11,11 +11,10 @@ describe Solargraph::ComplexType::UniqueType do
     end
 
     it 'is equal to ComplexType::BOT.first' do
-      # rooted: true is load-bearing here - #bot?/#tag/#to_s all
-      # match regardless of #rooted, but #== (via Equality's
-      # equality_fields) also compares the raw @rooted ivar, so a
-      # rooted: false construction would silently fail this equality
-      # despite looking identical everywhere else.
+      # #bot?/#tag/#to_s all match regardless of #rooted, but #== (via
+      # Equality's equality_fields) also compares the raw @rooted
+      # ivar - a rooted: false construction would silently fail this
+      # equality despite looking identical everywhere else.
       expect(described_class::BOT).to eq(Solargraph::ComplexType::BOT.first)
     end
   end
