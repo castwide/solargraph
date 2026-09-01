@@ -1904,10 +1904,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'propagates a concrete generic argument through an inherited method' do
-    # NoMethodError<T> < NameError<T>, and NameError#receiver
-    # returns T - given a concrete argument on the subclass
-    # reference, the inherited method should resolve it rather
-    # than erasing it to untyped/undefined.
+    # NoMethodError<T> < NameError<T>; NameError#receiver returns T.
     source = Solargraph::Source.load_string(%(
       # @type [NoMethodError<String>]
       e = NoMethodError.new

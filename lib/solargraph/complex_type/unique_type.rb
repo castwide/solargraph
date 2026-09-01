@@ -463,14 +463,8 @@ module Solargraph
             elsif idx.zero? && !context_type.all_params.empty?
               ComplexType.new(context_type.all_params)
             else
-              # No concrete value was supplied for this type param (e.g.
-              # a bare reference to a generic class/superclass with no
-              # type arguments) and it has no default. Leave it as an
-              # unbound generic placeholder rather than erasing it to
-              # untyped -- the same type param queried directly on its
-              # declaring class (with no reference/superclass involved)
-              # is never substituted at all and stays unbound the same
-              # way.
+              # No concrete value was supplied; leave unbound rather than untyped,
+              # matching a direct (non-substituted) lookup on the declaring class.
               t
             end
           else
