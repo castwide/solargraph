@@ -1124,5 +1124,24 @@ describe 'YARD type specifier list parsing' do
       atype = Solargraph::ComplexType.parse('#foo')
       expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
+
+    it 'returns itself unchanged when erasing parameters on an intersection' do
+      itype = Solargraph::ComplexType.parse('Hash{:a => Integer} & Hash{:b => String}').first
+      expect(itype.erase_parameters).to be(itype)
+    end
+
+    it 'falls back to ordinary conjunct matching when an expected conjunct is not a record' do
+      api_map = Solargraph::ApiMap.new
+      atype = Solargraph::ComplexType.parse('Hash{:a => Integer} & String')
+      ptype = Solargraph::ComplexType.parse('Hash{:a => Integer} & String')
+      expect(atype.conforms_to?(api_map, ptype, :assignment)).to be(true)
+    end
+
+    it 'rejects an intersection assignment when the non-record conjunct does not conform' do
+      api_map = Solargraph::ApiMap.new
+      atype = Solargraph::ComplexType.parse('Hash{:a => Integer} & Integer')
+      ptype = Solargraph::ComplexType.parse('Hash{:a => Integer} & String')
+      expect(atype.conforms_to?(api_map, ptype, :assignment)).to be(false)
+    end
   end
 end
