@@ -140,10 +140,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore tool-limitation:hash-fetch-default-generic-leak -
-      #   Hash#fetch(key, default) leaks a spurious generic<X> member
-      #   into the declared return type even though RBS_TO_CLASS is a
-      #   plain Hash{String => String}. No upstream issue filed yet.
+      # @sg-ignore Hash#fetch(key, default) leaks a generic<X> into the return type
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -155,7 +152,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore tool-limitation:hash-fetch-default-generic-leak
+      # @sg-ignore Hash#fetch(key, default) leaks a generic<X> into the return type
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")

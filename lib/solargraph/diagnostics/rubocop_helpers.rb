@@ -25,12 +25,7 @@ module Solargraph
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " +
-                # @sg-ignore Gem::Specification#version resolves to
-                #   String here instead of Gem::Version, so the second
-                #   #version call is unresolved - "Unresolved call to
-                #   version on String". Likely an RBS stdlib gap for
-                #   Gem::Specification, not traced further. No upstream
-                #   issue filed yet.
+                # @sg-ignore Gem::Specification#version resolves to String here, not Gem::Version
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'

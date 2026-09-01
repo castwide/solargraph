@@ -702,12 +702,10 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
-      # @sg-ignore tool-limitation:boolish - a bare && chain's return
-      #   type isn't inferred as Boolean without an explicit cast. No
-      #   upstream issue filed yet.
+      # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
-        # @sg-ignore Need to add nil check here
-        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
+        window = client_capabilities['window']
+        window && window['workDoneProgress']
       end
 
       private
@@ -857,12 +855,10 @@ module Solargraph
         }
       end
 
-      # @sg-ignore tool-limitation:boolish - a bare && chain's return
-      #   type isn't inferred as Boolean without an explicit cast. No
-      #   upstream issue filed yet.
+      # @sg-ignore need boolish support for ? methods
       def prepare_rename?
-        # @sg-ignore Need to add nil check here
-        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
+        rename = client_capabilities['rename']
+        rename && rename['prepareSupport']
       end
 
       # @param library [Library]

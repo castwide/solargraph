@@ -118,13 +118,9 @@ module Solargraph
           elsif n.type == :and
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            # @sg-ignore tool-limitation:is_a-narrowing:external-gem-class -
-            #   the is_a?(::Parser::AST::Node) guard at method entry
-            #   narrows n for a workspace-local class but not for this
-            #   external gem-sourced one, so n.children below is
-            #   unresolved. No upstream issue filed yet.
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
-                                       # @sg-ignore tool-limitation:is_a-narrowing:external-gem-class
+                                       # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                                        NodeChainer.chain(n.children[1], @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]

@@ -20,10 +20,7 @@ module Solargraph
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       # @sg-ignore node.children[0] is untyped, so
-                                       #   target.type is unresolved here the same
-                                       #   way it already is at the if/elsif
-                                       #   conditions above.
+                                       # @sg-ignore node.children[0] is untyped, so target.type is unresolved
                                        "Unexpected op_asgn target type: #{target.type}")
             end
           end

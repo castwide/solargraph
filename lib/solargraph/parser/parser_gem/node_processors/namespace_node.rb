@@ -57,10 +57,9 @@ module Solargraph
             match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
             return unless match
 
-            captured = match[1]
-            return unless captured
-
-            code = captured.strip
+            # @sg-ignore MatchData#[] is String, nil even for a required capture group
+            code = match[1].strip
+            # @sg-ignore MatchData#[] is String, nil even for a required capture group
             return if code.empty?
 
             "<#{code}>"

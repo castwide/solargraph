@@ -523,8 +523,8 @@ module Solargraph
     def kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
-      par = sig.parameters[idx]
-      return result if par.nil?
+      # idx always came from the caller's own sig.parameters.each_with_index
+      par = sig.parameters.fetch(idx)
 
       # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
