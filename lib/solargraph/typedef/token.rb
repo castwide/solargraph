@@ -3,23 +3,21 @@
 module Solargraph
   module Typedef
     class Token
-      RESERVED_NAMES = %w[nil undefined]
+      RESERVED_NAMES = %w[nil undefined].freeze
 
-      attr_reader :name
-
-      attr_reader :params
+      attr_reader :name, :params
 
       def initialize name, *params
         @name = name
         @params = params
       end
 
-      def expand(named_values)
+      def expand named_values
         return self unless named_values[name]
         Typedef.tokenize(named_values[name])
       end
 
-      def resolve_rooted(api_map, gates)
+      def resolve_rooted api_map, gates
         self
       end
 
@@ -57,7 +55,7 @@ module Solargraph
       end
 
       def to_s
-        "#{([name] + params).join(', ')}"
+        ([name] + params).join(', ')
       end
 
       def to_s_for_complex_type

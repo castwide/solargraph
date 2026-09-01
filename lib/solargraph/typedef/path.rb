@@ -8,19 +8,18 @@ module Solargraph
       def initialize name, rooted: false
         @name = name
         @rooted = rooted
-        if name.start_with?('::')
-          @name = @name[2..]
-          @rooted = true
-        end
+        return unless name.start_with?('::')
+        @name = @name[2..]
+        @rooted = true
       end
 
-      def expand(named_values)
+      def expand named_values
         self
       end
 
       # @param api_map [ApiMap]
       # @param gates [Array<String>]
-      def resolve_rooted(api_map, gates)
+      def resolve_rooted api_map, gates
         return self if rooted?
 
         new_path = api_map.qualify(name, *gates)
@@ -60,7 +59,7 @@ module Solargraph
         {}
       end
 
-      def from(base)
+      def from base
         return self if rooted?
 
         Path.new("#{base.name}::#{name}", rooted: base.rooted?)
@@ -71,7 +70,7 @@ module Solargraph
       end
 
       def to_s_for_complex_type
-        "#{rooted? ? '::' : ''}#{to_s}"
+        "#{'::' if rooted?}#{self}"
       end
 
       ROOT = Path.new('', rooted: true)

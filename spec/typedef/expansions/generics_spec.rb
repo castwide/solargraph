@@ -178,8 +178,10 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   describe '#names' do
+    # rubocop:disable RSpec/VerifiedDoubles
     let(:pin) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
     let(:receiver) { double(Solargraph::Pin::Base, typedef_generics: [], closure: nil) }
+    # rubocop:enable RSpec/VerifiedDoubles
 
     it 'finds generic names from source pins' do
       source = Solargraph::Source.load_string(%(
@@ -207,7 +209,9 @@ describe Solargraph::Typedef::Dictionary do
       # Simulating the receiver
       receiver = api_map.get_path_pins('Array').first
       generics = Solargraph::Typedef::Expansions::Generics.new(api_map, pin, receiver)
-      expect(generics.names).to eq(['Elem'])
+      expect(generics.names).to be_one
+      # Name of generic varies in RBS versions
+      expect(generics.names.first).to eq('E').or(eq('Elem'))
     end
   end
 

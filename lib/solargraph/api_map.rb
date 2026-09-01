@@ -407,7 +407,6 @@ module Solargraph
     #
     # @return [Pin::BaseVariable, nil]
     def var_at_location candidates, name, closure, location
-      # @todo Location can be nil if clips have trouble finding node recipients
       return unless location
 
       with_correct_name = candidates.select { |pin| pin.name == name }

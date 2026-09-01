@@ -21,11 +21,11 @@ module Solargraph
 
         def local_variable
           found = if link.head?
-            source_map.locals_at(dictionary.location)
-                      .reverse
-                      .find { |pin| pin.name == link.word }
-          end
-          return [found] if found
+                    source_map.locals_at(dictionary.location)
+                              .reverse
+                              .find { |pin| pin.name == link.word }
+                  end
+          [found] if found
         end
 
         def method_call
@@ -45,7 +45,8 @@ module Solargraph
 
         # @param pin [Pin::Method]
         # @return [Pin::Signature, Pin::Method]
-        def find_matching_signature(pin, receiver)
+        # @param receiver [Pin::Closure]
+        def find_matching_signature pin, receiver
           pin.signatures.each do |signature|
             next unless signature.arity_matches?(link.arguments, link.with_block?)
 
@@ -68,7 +69,7 @@ module Solargraph
                          parameter.typedef_typeset.any_generic?
           # @todo Conformance needs to work for typesets
           atype = argument&.to_complex_type || ComplexType::UNDEFINED
-            atype.conforms_to?(api_map, parameter.typedef_typeset.to_complex_type, :method_call, %i[allow_empty_params allow_undefined])
+          atype.conforms_to?(api_map, parameter.typedef_typeset.to_complex_type, :method_call, %i[allow_empty_params allow_undefined])
         end
 
         # Expanding generic parameters needs to be done here because we need to
@@ -93,7 +94,7 @@ module Solargraph
         def expand_macros_from_arguments pin
           return pin unless pin.closure.maybe_directives?
 
-          pin.closure.directives.each do |directive|
+          pin.closure.directives.each do |_directive|
             macro = Solargraph::YardMap::Macro.from_directive(pin.closure.directives.first, pin.closure)
             expanded = macro.macro_object.expand([pin.name, *pin.parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
@@ -101,7 +102,7 @@ module Solargraph
             complex_type = ComplexType.try_parse(*types)
             pin = pin.proxy(complex_type)
           end
-          arguments = pin.parameters.map.with_index do |param, idx|
+          arguments = pin.parameters.map.with_index do |_param, idx|
             token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(link.arguments[idx].node))
             Union.new([Concrete.new(token)])
           end

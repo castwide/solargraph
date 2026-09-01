@@ -23,9 +23,7 @@ module Solargraph
       end
 
       # @param arguments [Array<Typedef::Concrete>]
-      def typedef_resolve_generics(arguments)
-        
-      end
+      def typedef_resolve_generics arguments; end
 
       def type_location
         super || closure&.type_location

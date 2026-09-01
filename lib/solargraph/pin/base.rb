@@ -33,8 +33,6 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
-      attr_reader :expansions
-
       def presence_certain?
         true
       end
@@ -48,6 +46,7 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      # @param expansions [Hash]
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
                      docstring: nil, directives: nil, combine_priority: nil, expansions: {}
         @location = location
@@ -507,7 +506,7 @@ module Solargraph
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
           # @sg-ignore flow sensitive typing needs to handle attrs
-          (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
+          (closure.equal?(other.closure) || closure&.nearly?(other.closure)) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
            # @sg-ignore Translate to something flow sensitive typing understands
@@ -596,7 +595,7 @@ module Solargraph
 
       # @todo Candidate for deprecation (see ApiMap#process_macros)
       def maybe_macros?
-        comments.include?('@macro')        
+        comments.include?('@macro')
       end
 
       def macros_names?
@@ -733,10 +732,10 @@ module Solargraph
 
       def typedef_generics
         @typedef_generics ||= if generics.empty?
-          docstring.tags(:generic).map(&:name)
-        else
-          generics
-        end
+                                docstring.tags(:generic).map(&:name)
+                              else
+                                generics
+                              end
       end
 
       protected
@@ -822,7 +821,7 @@ module Solargraph
       end
 
       def collect_macro_names
-        "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
+        "#{comments}\n".scan(/\s*?@macro +(\S+).*?\n/).map { |match| match[0] }
       end
     end
   end

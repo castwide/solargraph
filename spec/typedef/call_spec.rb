@@ -3,7 +3,7 @@
 # @todo describe Linker::Call
 describe Solargraph::Typedef::Dictionary do
   it 'handles super calls to same method' do
-    api_map = Solargraph::ApiMap.new
+    Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
         def my_method
@@ -24,7 +24,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers return types based on yield call and @yieldreturn' do
-    api_map = Solargraph::ApiMap.new
+    Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
         # @yieldreturn [Integer]
@@ -41,7 +41,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers return types based only on yield call and @yieldreturn' do
-    api_map = Solargraph::ApiMap.new
+    Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       class Foo
         # @yieldreturn [Integer]

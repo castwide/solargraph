@@ -6,7 +6,7 @@ module Solargraph
     autoload :Token,      'solargraph/typedef/token'
     autoload :Concrete,    'solargraph/typedef/concrete'
     autoload :Linker,     'solargraph/typedef/linker'
-    autoload :Memos,      'solargraph/typedef/memos'
+    autoload :Memoizer,   'solargraph/typedef/memoizer'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
@@ -30,7 +30,7 @@ module Solargraph
     end
 
     def self.memos
-      @memos ||= Memos.new
+      @memos ||= Memoizer::Cache.new
     end
 
     class << self
@@ -39,8 +39,10 @@ module Solargraph
       # @param string [String]
       # @return [Path, Token]
       def convert string
+        # @todo cleanup
+        # rubocop:disable Lint\DuplicateBranch
         case string
-        when ""
+        when 's'
           Path::ROOT
         # @todo Should interfaces (e.g, `_Each`) be paths?
         #   (Probably)
@@ -52,7 +54,7 @@ module Solargraph
           Token.new(string)
         when /^"?[a-z\d_]*?"$/
           Token.new(string)
-        when /^\:?[a-z\d_]*?$/
+        when /^:?[a-z\d_]*?$/
           Token.new(string)
         # @todo How to handle integers?
         when /^\d+$/
@@ -60,6 +62,7 @@ module Solargraph
         else
           raise "Invalid Typedef token string: #{string.inspect}"
         end
+        # rubocop:enable Lint\DuplicateBranch
       end
     end
   end

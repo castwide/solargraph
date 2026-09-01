@@ -823,7 +823,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'infers Class from Class#new' do
-    pending "Needs work"
+    pending 'Needs work'
     source = Solargraph::Source.load_string(%(
       cls = Class.new
       cls.new
@@ -2282,6 +2282,66 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [0, 0])
     expect(clip.infer.to_s).to eq('nil')
+  end
+
+  it 'uses types to determine overload to match' do
+    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
+    source = Solargraph::Source.load_string(%(
+      # @generic A
+      # @generic B
+      class Foo
+        # @overload find(index)
+        #   @param [String] index
+        #   @return [generic<A>]
+        # @overload find(index)
+        #   @param [Symbol] index
+        #   @return [generic<B>]
+        def find(index); end
+      end
+
+      # @type [Foo(String, Integer)]
+      m = blah
+      mb = m.find('foo')
+      mb
+      mc = m.find(:bar)
+      mc
+), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 6])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [18, 6])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
+
+  it 'uses types to determine overload of [] to match' do
+    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
+    source = Solargraph::Source.load_string(%(
+      # @generic A
+      # @generic B
+      class Foo
+        # @overload [](index)
+        #   @param [String] index
+        #   @return [generic<A>]
+        # @overload [](index)
+        #   @param [Symbol] index
+        #   @return [generic<B>]
+        def [](index); end
+      end
+
+      # @type [Foo(String, Integer)]
+      m = blah
+      mb = m['foo']
+      mb
+      mc = m[:bar]
+      mc
+), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 6])
+    expect(clip.infer.to_s).to eq('String')
+
+    clip = api_map.clip_at('test.rb', [18, 6])
+    expect(clip.infer.to_s).to eq('Integer')
   end
 
   it 'uses literal types to determine overload of [] to match' do
