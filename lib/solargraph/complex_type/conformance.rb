@@ -88,13 +88,9 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      # Settles interface conformance before parameter/subtype checks,
-      # which don't apply once an interface is involved and whose own
-      # type parameters (e.g. `_Each[Elem]`) this doesn't verify:
-      # https://github.com/castwide/solargraph/issues/1267.
-      # :allow_unmatched_interface is the fallback when `inferred`
-      # itself is an interface, since its runtime type is unknown.
-      #
+      # Settles interface conformance before subtype checks (which don't
+      # apply once an interface is involved); doesn't verify an
+      # interface's own type params, see https://github.com/castwide/solargraph/issues/1267
       # @return [Boolean, nil] settled verdict, or nil to fall through
       def interface_bypass_verdict
         return true if inferred.interface? && rules.include?(:allow_unmatched_interface)

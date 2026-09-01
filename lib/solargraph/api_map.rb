@@ -443,8 +443,7 @@ module Solargraph
     end
 
     # Methods a namespace declares directly on itself, excluding ones
-    # inherited from Object, superclasses, or mixins - e.g. the two
-    # methods `Hash::_Key` itself requires (`#hash`, `#eql?`).
+    # inherited from Object, superclasses, or mixins.
     #
     # @param rooted_tag [String] The fully qualified namespace/interface to search for methods
     # @param scope [Symbol] :class or :instance

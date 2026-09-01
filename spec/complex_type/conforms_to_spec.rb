@@ -81,13 +81,8 @@ describe Solargraph::ComplexType do
   end
 
   it 'handles singleton types compared against their literals' do
-    # https://github.com/castwide/solargraph/issues/1196
-    #
-    # `nil` doesn't yet simplify to `NilClass` the way other literals
-    # simplify to their class name. Fixed by
-    # https://github.com/castwide/solargraph/pull/1223 (stacked:
-    # https://github.com/apiology/solargraph/pull/40).
-    pending 'nil does not yet simplify to NilClass (issue #1196, fixed by PR #1223)'
+    pending 'https://github.com/castwide/solargraph/issues/1196'
+    pending 'https://github.com/castwide/solargraph/pull/1223'
     exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
     inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
     match = inf.conforms_to?(api_map, exp, :method_call)
