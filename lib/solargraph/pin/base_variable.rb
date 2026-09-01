@@ -293,12 +293,7 @@ module Solargraph
       # @return [Range]
       attr_writer :presence
 
-      # Flow-sensitive typing downcasts a variable/call pin into multiple
-      # copies that otherwise share name/location/closure/source (see
-      # FlowSensitiveTyping#add_downcast_var) -- they must stay distinct
-      # by presence and narrowed type, or callers that key off of pin
-      # equality (e.g. Chain's inference cache) can conflate two pins
-      # that carry different narrowing facts.
+      # Downcast pins share name/location/closure; must differ by narrowing facts too.
       #
       # @return [::Array]
       def equality_fields

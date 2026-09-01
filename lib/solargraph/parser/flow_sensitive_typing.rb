@@ -253,11 +253,9 @@ module Solargraph
         process_call_chain(expression_node, true_ranges, false_ranges)
       end
 
-      # Recognizes receivers of the form 'foo', '@foo', 'foo.bar', or
+      # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
       # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
-      # calls/variable references rooted in a local variable, instance
-      # variable, or (for a bare call, e.g. 'foo' referring to a 0-arg
-      # method on self) an as-yet-unresolved name.
+      # calls/variables rooted in a local, ivar, or unresolved name.
       #
       # @param node [Parser::AST::Node, nil]
       # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
@@ -278,10 +276,6 @@ module Solargraph
         # 'foo' could be a local variable or a 0-arg method on self
         return [method_name.to_s] if receiver.nil?
 
-        # @sg-ignore a :send node's receiver (children[0]) is nil or an
-        #   AST::Node, never any of the other types children[] can hold
-        #   for other node shapes (e.g. Symbol, Array) -- and
-        #   parse_receiver_chain re-checks node.is_a?(...) itself anyway
         base = parse_receiver_chain(receiver)
         return unless base
 
@@ -303,10 +297,6 @@ module Solargraph
         call_receiver = call_node.children[0]
         call_arg = type_name(call_node.children[2])
 
-        # @sg-ignore node.children is typed as a broad union (it can hold
-        #   nested arrays/symbols for other node shapes), but
-        #   parse_receiver_chain re-checks node.is_a?(::Parser::AST::Node)
-        #   itself and safely returns nil for anything else
         chain_words = parse_receiver_chain(call_receiver)
         return unless chain_words
 
@@ -339,16 +329,9 @@ module Solargraph
         end
       end
 
-      # Finds (for a single tracked local/instance variable) or builds
-      # (for a chain of simple calls off of one, e.g. ['pin', 'location'])
-      # the pin flow-sensitive-typing facts should be recorded against.
-      #
-      # A synthesized pin's type is computed lazily, from `node` itself,
-      # by Pin::BaseVariable#probe the same way a real local variable's
-      # type is computed from its assignment node -- since `node` is the
-      # receiver expression at *this*, necessarily earlier, guard site,
-      # re-inferring it can never see the narrowing facts this same pin
-      # is about to be asked to carry.
+      # Finds (single var) or builds (chain, e.g. ['pin', 'location'])
+      # the pin narrowing facts get recorded on. A built pin probes its
+      # type lazily from `node`, so it can't see its own new facts.
       #
       # @param chain_words [::Array<String>]
       # @param node [Parser::AST::Node] the receiver expression, e.g. the
@@ -500,11 +483,8 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
-      # Handles a bare truthy check on a call chain, e.g. 'pin.location'
-      # in 'return nil unless pin.location'. Bare references to a single
-      # local/instance variable are handled by #process_variable instead;
-      # this only fires once there's an explicit receiver (chain_words
-      # has more than one word).
+      # Handles a truthy check on a call chain, e.g. 'pin.location' in
+      # 'return nil unless pin.location'; bare vars go to #process_variable.
       #
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
@@ -520,9 +500,7 @@ module Solargraph
         chain_words = parse_receiver_chain(node)
         return if chain_words.nil? || chain_words.length < 2
 
-        # @sg-ignore Range.from_node is nil only for a node without
-        #   source location info, which doesn't happen for real parsed
-        #   nodes reaching here (same as isa_position/nilp_position above)
+        # @sg-ignore Need to add nil check here
         position = Range.from_node(node).start
 
         pin = chain_pin(chain_words, node, position)
