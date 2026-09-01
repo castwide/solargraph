@@ -30,7 +30,6 @@ describe Solargraph::Convention::StructDefinition do
         Foo = Struct.new(:bar, :baz, keyword_init: true)
       ), 'test.rb')
 
-      # @type [Array<Solargraph::Pin::Parameter>]
       params = source.pins.find { |p| p.path == 'Foo#initialize' }.parameters
 
       expect(params.map(&:decl)).to eql(%i[kwoptarg kwoptarg])
