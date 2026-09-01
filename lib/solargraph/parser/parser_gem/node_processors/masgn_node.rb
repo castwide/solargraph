@@ -33,15 +33,8 @@ module Solargraph
             process_children
 
             lhs_arr.each_with_index do |lhs, i|
-              # A splat entry (e.g. `*args`) wraps the actual
-              # assignment target - `s(:splat, s(:lvasgn, :args))` -
-              # and the splat node's own location (which includes
-              # the leading `*`) never matches the location of the
-              # pin created for the inner assignment target. Unwrap
-              # it so the pin lookup below finds the right pin, and
-              # remember that this entry captures the "rest" of the
-              # right-hand side as an array rather than a single
-              # element.
+              # A splat (`*args`) wraps its target - `s(:splat, s(:lvasgn, :args))` -
+              # at a location that won't match the inner pin's, so unwrap it.
               splat = lhs.type == :splat
               target = splat ? lhs.children[0] : lhs
               # An anonymous splat (`a, * = arr`) has no assignment

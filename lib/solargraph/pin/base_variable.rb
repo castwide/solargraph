@@ -20,6 +20,8 @@ module Solargraph
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
       # @param mass_assignment [::Array(Parser::AST::Node, Integer, Boolean), nil]
+      #   The mass assignment node, this variable's position in the
+      #   left-hand side, and whether this variable is a splat target.
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -184,13 +186,6 @@ module Solargraph
         #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index, splat = @mass_assignment
-          # @sg-ignore Solargraph confuses mass_node's type with the
-          #   @mass_assignment tuple once the else branch below is
-          #   restructured as a flat_map - "Wrong argument type for
-          #   Solargraph::Pin::BaseVariable#return_types_from_node:
-          #   parent_node expected Parser::AST::Node, received
-          #   Parser::AST::Node, Integer, Boolean". No upstream issue
-          #   filed yet.
           types = return_types_from_node(mass_node, api_map)
           # rubocop:disable Style/ConditionalAssignment
           if splat
@@ -335,10 +330,8 @@ module Solargraph
 
       private
 
-      # True for a type whose elements can be destructured by a splat
-      # or positional multiple-assignment target - Array/Set/Enumerable
-      # by name, or any type that structurally conforms to Enumerable
-      # (a user-defined class that includes it, Hash, Range, etc).
+      # True for a type destructurable by a splat/multi-assignment target -
+      # Array/Set/Enumerable by name, or anything structurally Enumerable.
       #
       # @param api_map [ApiMap]
       # @param type [ComplexType]

@@ -112,12 +112,7 @@ describe Solargraph::Pin::BaseVariable do
   end
 
   it 'gives every non-splat target the full element union of a non-tuple Array' do
-    # Array<Integer, String> (no tuple parens) declares a union of
-    # possible element types, not a positional tuple, so every
-    # position - a and b alike - can hold either member. Note: #tag
-    # delegates to the first union member only, so a multi-member
-    # union must be asserted with #to_s instead, or a regression that
-    # collapses the union to its first member would still pass here.
+    # #to_s, not #tag, so a regression collapsing the union to one member fails here.
     source = Solargraph::Source.load_string(%(
       class Repro
         # @param pair [Array<Integer, String>]
