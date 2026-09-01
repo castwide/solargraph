@@ -70,7 +70,7 @@ module Solargraph
           # been resolved to different return types for their
           # respective context. Dedup on both so we don't silently
           # drop every member but the first.
-          # @param p [Pin::Base]
+          # @sg-ignore uniq's block param isn't inferred from the receiver's element type (Array#first is)
           pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.tag] }
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)

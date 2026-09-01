@@ -402,7 +402,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'resolves same-class generics from a union independently of declaration order' do
-    # https://github.com/castwide/solargraph/issues/1272
     ['Box<Integer>, Box<String>', 'Box<String>, Box<Integer>'].each do |union_tag|
       source = Solargraph::Source.load_string(%(
         # @generic T
