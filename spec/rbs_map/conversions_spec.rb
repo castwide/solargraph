@@ -173,4 +173,12 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
   end
+
+  describe '.ivar_to_pin / .cvar_to_pin / .civar_to_pin / .global_decl_to_pin' do
+    it 'uses a :type tag, not :return, for variable-like RBS pins' do
+      return_type = Solargraph::ComplexType.try_parse('String').force_rooted
+      pin = Solargraph::Pin::InstanceVariable.new(name: '@foo', closure: Solargraph::Pin::ROOT_PIN, return_type: return_type, source: :rbs)
+      expect(pin.docstring.tag(:type)&.types).to eq(['::String'])
+    end
+  end
 end
