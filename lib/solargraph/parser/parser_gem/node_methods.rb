@@ -442,6 +442,11 @@ module Solargraph
             CONDITIONAL_ALL_BUT_FIRST = %i[if unless].freeze
             ONLY_ONE_CHILD = [:return].freeze
             FIRST_TWO_CHILDREN = [:rescue].freeze
+            # :ensure's value is always its body's value (first
+            # child); the ensure clause itself (second child) never
+            # contributes to the method's return value unless it
+            # explicitly returns.
+            ENSURE = [:ensure].freeze
             COMPOUND_STATEMENTS = %i[begin kwbegin].freeze
             SKIPPABLE = %i[def defs class sclass module].freeze
             FUNCTION_VALUE = [:block].freeze
@@ -488,6 +493,13 @@ module Solargraph
                 result.concat reduce_to_value_nodes([node.children[0]])
               elsif FIRST_TWO_CHILDREN.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
+              elsif ENSURE.include?(node.type)
+                result.concat reduce_to_value_nodes([node.children[0]])
+                ensure_body = node.children[1]
+                if include_explicit_returns && ensure_body.is_a?(::Parser::AST::Node)
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+                  result.concat explicit_return_values_from_compound_statement(ensure_body)
+                end
               elsif FUNCTION_VALUE.include?(node.type)
                 # the block itself is a first class value that could be returned
                 result.push node
@@ -605,10 +617,13 @@ module Solargraph
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes(node.children[1..])
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                elsif node.type == :return
+                elsif ONLY_ONE_CHILD.include?(node.type) || ENSURE.include?(node.type)
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[0]])
+                elsif FIRST_TWO_CHILDREN.include?(node.type)
+                  # a :rescue node's value is its body's value or the
+                  # value of whichever resbody handled the exception
+                  result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :or
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
