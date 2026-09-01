@@ -794,22 +794,15 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_nilable(arg) = must_nilable(arg).length
       ))
-      # The remaining "Declared return type generic<A> does not match
-      # inferred type generic<A>, nil for #must_nilable" problem is
-      # caused by #1276 (`raise` does not narrow the type), which is
-      # independent of the generic resolution behavior under test here.
+      # The remaining problem is unrelated to this test:
+      # https://github.com/castwide/solargraph/issues/1276
       messages = checker.problems.map(&:message)
       expect(messages).not_to include('#via_nilable return type could not be inferred')
       expect(messages).not_to include('Unresolved call to length on String, nil')
     end
 
-    # NOTE: this scenario doesn't distinguish fixed from unfixed
-    # behavior - a union return type of the exact same shape as the
-    # union @param type flattens/dedupes an incorrectly-too-wide
-    # binding back down to the right answer by coincidence (the union
-    # already contains 'nil' as a sibling member either way). It's
-    # included as a no-regression check for union return types, not as
-    # a regression test for #1298 itself.
+    # Non-discriminating: an identically-shaped union return type flattens/dedupes
+    # a too-wide binding back to the right answer by coincidence, not by the fix.
     it 'resolves a generic type variable when both the @param and @return types are the same union' do
       checker = type_checker(%(
         # @generic A
