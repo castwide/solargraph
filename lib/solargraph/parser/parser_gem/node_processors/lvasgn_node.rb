@@ -28,14 +28,8 @@ module Solargraph
 
           private
 
-          # The closure the assigned variable belongs to.
-          #
-          # An assignment inside a block writes through to a variable of the
-          # same name already in scope outside the block, so the pin belongs
-          # to that outer closure and stays visible after the block ends. A
-          # name the block introduces itself - a block parameter, a shadow
-          # arg, or an earlier assignment in the same block - is block-local
-          # and shadows anything outside.
+          # The closure `name` is already declared in, searching outward
+          # through enclosing blocks; defaults to the current block if none.
           #
           # @param name [String]
           # @param here [Position]
