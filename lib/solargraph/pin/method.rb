@@ -101,6 +101,16 @@ module Solargraph
         nil
       end
 
+      # Discards memoized #signatures/#overloads so a docstring mutation
+      # (e.g. `@!override` adding `@overload` tags) takes effect on the
+      # next read. Only call when `@overload` tags changed.
+      #
+      # @return [void]
+      def invalidate_signatures!
+        @signatures = nil
+        @overloads = nil
+      end
+
       def all_rooted?
         super && parameters.all?(&:all_rooted?) && (!block || block&.all_rooted?) && signatures.all?(&:all_rooted?)
       end
@@ -417,7 +427,6 @@ module Solargraph
             source: :overloads
           )
         end
-        @overloads
       end
 
       def anon_splat?
