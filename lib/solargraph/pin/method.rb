@@ -101,14 +101,9 @@ module Solargraph
         nil
       end
 
-      # Discards memoized #signatures/#overloads so the next read rebuilds
-      # from the docstring -- needed when a caller mutates the docstring
-      # directly (e.g. applying `@!override`'s `@overload` tags to an
-      # already-cached pin) and needs the new tags to take effect.
-      #
-      # Only call this when `@overload` tags were added or removed: with
-      # none present, #signatures regenerates from this pin's own
-      # #parameters, which is empty or stale for many RBS/combined pins.
+      # Discards memoized #signatures/#overloads so a docstring mutation
+      # (e.g. `@!override` adding `@overload` tags) takes effect on the
+      # next read. Only call when `@overload` tags changed.
       #
       # @return [void]
       def invalidate_signatures!

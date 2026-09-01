@@ -183,17 +183,12 @@ module Solargraph
               pin.docstring.delete_tags tag
               new_pin&.docstring&.delete_tags tag
             end
-            # Add all tags before invalidating: #signatures rebuilds every
-            # @overload tag at once, so invalidating mid-loop would freeze
-            # it against a half-applied docstring and drop the rest.
+            # Add all tags first, or invalidating mid-loop drops later ones.
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
               new_pin&.docstring&.add_tag(tag)
             end
-            # reset_generated! always runs, so non-overload tags (e.g.
-            # @param) still re-typify; invalidate_signatures! only runs in
-            # addition when the override has @overload tags -- see its doc
-            # comment on Pin::Method for why.
+            # invalidate_signatures! only runs for @overload tags; see its doc comment.
             pin.reset_generated!
             new_pin&.reset_generated!
             if ovr.tags.any? { |tag| tag.tag_name == 'overload' }

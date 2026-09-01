@@ -113,9 +113,7 @@ describe Solargraph::ApiMap::Index do
       end
 
       it 'still applies every @overload tag, not zero of them' do
-        # Force memoization of the original (un-overridden) signatures,
-        # simulating an earlier pass over the ApiMap having already
-        # read #signatures before the override was applied.
+        # Simulates #signatures already being read before the override applied.
         identity.signatures
 
         method_pin = output_pins.find { |pin| pin.path == 'Passthrough#identity' }
@@ -162,10 +160,7 @@ describe Solargraph::ApiMap::Index do
 
     context 'when overriding a method that already had its signatures computed' do
       it 'still redefines the return type' do
-        # Force memoization before the override applies, matching how a
-        # real consumer (e.g. solargraph-rspec's @!override annotations
-        # for ActionController::TestCase::Behavior#request/#response)
-        # can hit a pin whose signatures were already resolved.
+        # Mirrors solargraph-rspec's @!override hitting an already-resolved pin.
         measure.signatures
 
         method_pin = output_pins.find { |pin| pin.path == 'Benchmark.measure' }
