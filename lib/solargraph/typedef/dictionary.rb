@@ -59,10 +59,10 @@ module Solargraph
         # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
-      # @return [Typeset]
+      # @return [Type]
       def infer
         # rubocop:disable Lint/UselessDefaultValueArgument
-        Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
+        Typedef.memos.fetch memo_key(:infer), Union::UNDEFINED do
           pins, receiver = define_from chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 

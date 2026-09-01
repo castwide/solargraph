@@ -1,81 +1,76 @@
 # frozen_string_literal: true
 
+# A minimal test double for a hypothetical second Typeset subclass - an
+# intersection-equivalent, standing in for the not-yet-built
+# Typedef::Intersection. Deliberately does not override any of the four
+# methods Typeset only documents as abstract stubs (nullable?, to_s,
+# to_s_for_complex_type, to_complex_type), to prove they are NOT inherited
+# - only Typeset's real shared methods are.
+class TypesetSpecConjunction < Solargraph::Typedef::Typeset
+end
+
 describe Solargraph::Typedef::Typeset do
-  describe '.new' do
-    it 'accepts multiple types' do
-      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
-      typeset = described_class.new([type1, type2])
-      expect(typeset.to_s).to eq('Array | String')
+  let(:string_type) { Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('String', rooted: true)) }
+  let(:array_type) { Solargraph::Typedef::Concrete.new(Solargraph::Typedef::Path.new('Array', rooted: true)) }
+  let(:conjunction) { TypesetSpecConjunction.new([string_type, array_type]) }
+
+  describe 'a subclass that overrides nothing' do
+    it 'inherits the well-formedness predicates' do
+      expect(conjunction).to be_rooted
+      expect(conjunction).to be_resolved
+      expect(conjunction).to be_expanded
     end
 
-    it 'reduces to unique types' do
-      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
-      type3 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
-      typeset = described_class.new([type1, type2, type3])
-      expect(typeset.to_s).to eq('Array | String')
-    end
-  end
-
-  describe '#to_complex_type' do
-    it 'converts to complex types' do
-      type1 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('Array'))
-      type2 = Solargraph::Typedef::Type.new(Solargraph::Typedef.tokenize('String'))
-      typeset = described_class.new([type1, type2])
-      complex_type = typeset.to_complex_type
-      expect(complex_type).to be_a(Solargraph::ComplexType)
-      expect(complex_type.to_s).to eq('Array, String')
-    end
-  end
-
-  describe '#expand' do
-    it 'expands all types' do
-      type1 = Solargraph::ComplexType.parse('Array<generic<T>>').to_typedef_typeset
-      type2 = Solargraph::ComplexType.parse('Set<generic<T>>').to_typedef_typeset
-      typeset = described_class.new([type1, type2])
-      named_values = { 'generic<T>' => 'String' }
-      expanded = typeset.expand(named_values)
-      expect(expanded.to_s).to eq('Array[String] | Set[String]')
-    end
-  end
-
-  describe '#nullable?' do
-    it 'returns true with a nil return type' do
-      complex_type = Solargraph::ComplexType.parse('String, nil')
-      typeset = complex_type.to_typedef_typeset
-      expect(typeset).to be_nullable
+    it 'inherits the generics-completeness predicates' do
+      expect(conjunction).not_to be_any_generic
+      expect(conjunction).not_to be_all_generic
     end
 
-    it 'returns false without a nil return type' do
-      complex_type = Solargraph::ComplexType.parse('String')
-      typeset = complex_type.to_typedef_typeset
-      expect(typeset).not_to be_nullable
-    end
-  end
-
-  # Although these tests are for a ComplexType method, they're collected here
-  # because they're specific to the Typedef library. They'll eventually get
-  # deprecated along with the ComplexType library itself.
-  describe 'ComplexType#to_typedef_typeset' do
-    it 'handles complex types with hashes' do
-      complex_type = Solargraph::ComplexType.parse('Hash{String => Integer}')
-      expect(complex_type.to_typedef_typeset.to_s).to eq('Hash[String, Integer]')
+    it 'inherits flat_types' do
+      expect(conjunction.flat_types).to eq([string_type, array_type])
     end
 
-    it 'handles complex types with hashes and non-hash parameters' do
-      complex_type = Solargraph::ComplexType.parse('Hash<String, Integer>')
-      expect(complex_type.to_typedef_typeset.to_s).to eq('Hash[String, Integer]')
+    it 'inherits extract_generics' do
+      expect(conjunction.extract_generics(conjunction)).to eq({})
     end
 
-    it 'handles complex types with inline hashes' do
-      complex_type = Solargraph::ComplexType.parse('Array<undefined>, Hash{String => undefined}, String, Integer')
-      expect(complex_type.to_typedef_typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer')
+    it 'inherits resolve_rooted and builds the same subclass via self.class.new' do
+      api_map = Solargraph::ApiMap.new
+      resolved = conjunction.resolve_rooted(api_map, [''])
+      expect(resolved).to be_a(TypesetSpecConjunction)
+      expect(resolved).to be_rooted
     end
 
-    it 'handles complex types with inline hashes and non-hash parameters' do
-      complex_type = Solargraph::ComplexType.parse('Array<undefined>, Hash<String, undefined>, String, Integer')
-      expect(complex_type.to_typedef_typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer')
+    it 'inherits expand and builds the same subclass via self.class.new' do
+      expanded = conjunction.expand({})
+      expect(expanded).to be_a(TypesetSpecConjunction)
+      expect(expanded.types.map(&:to_s)).to eq(%w[String Array])
+    end
+
+    # Typeset only documents nullable?, to_s_for_complex_type, and
+    # to_complex_type via @!method stubs - the same abstract-interface
+    # pattern Solargraph::Type itself uses. A subclass that doesn't
+    # override one gets no implementation at all, so calling it raises
+    # NoMethodError rather than silently falling back to Union's OR logic.
+    it 'does not inherit nullable?' do
+      expect { conjunction.nullable? }.to raise_error(NoMethodError)
+    end
+
+    it 'does not inherit to_s_for_complex_type' do
+      expect { conjunction.to_s_for_complex_type }.to raise_error(NoMethodError)
+    end
+
+    it 'does not inherit to_complex_type' do
+      expect { conjunction.to_complex_type }.to raise_error(NoMethodError)
+    end
+
+    # to_s can't be tested the same way: Object#to_s is a real inherited
+    # method with no override needed to avoid NoMethodError, so a subclass
+    # that skips it still responds - just with Object's default
+    # #<TypesetSpecConjunction:0x...> instead of the joined-branches
+    # rendering Union and a future Intersection each provide.
+    it 'does not inherit a joined-branches to_s' do
+      expect(conjunction.to_s).not_to eq('String | Array')
     end
   end
 end

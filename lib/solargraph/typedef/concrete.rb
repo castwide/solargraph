@@ -2,12 +2,13 @@
 
 module Solargraph
   module Typedef
-    class Type
+    class Concrete < Type
       attr_reader :base, :params
 
       # @param base [Path, Token]
-      # @param params [Array<Path, Token, Typeset>]
+      # @param params [Array<Path, Token, Type>]
       def initialize base, *params
+        super()
         @base = Typedef.tokenize(base)
         @params = params.map { |par| Typedef.tokenize(par) }
       end
@@ -15,11 +16,11 @@ module Solargraph
       def expand named_values
         new_base = base.expand(named_values)
         new_params = params.map { |par| par.expand(named_values) }
-        Type.new(new_base, *new_params)
+        Concrete.new(new_base, *new_params)
       end
 
       def extract_generics type
-        return {} unless generic? && type.is_a?(Type)
+        return {} unless any_generic? && type.is_a?(Concrete)
 
         extracted = base.extract_generics(type.base)
         params.map.with_index { |par, idx| extracted.merge!(par.extract_generics(type.params[idx])) }
@@ -27,12 +28,12 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param gates [Array<Path>]
-      # @return [Type]
+      # @param gates [Array<String>]
+      # @return [Concrete]
       def resolve_rooted api_map, gates
         new_base = base.resolve_rooted(api_map, gates)
         new_params = params.map { |par| par.resolve_rooted(api_map, gates) }
-        Type.new(new_base, *new_params)
+        Concrete.new(new_base, *new_params)
       end
 
       def resolved?
@@ -55,8 +56,17 @@ module Solargraph
         base.expanded? && params.all?(&:expanded?)
       end
 
-      def generic?
-        all.any?(&:generic?)
+      # @return [Boolean] true if base or any param contains a generic
+      #   placeholder anywhere in its own structure
+      def any_generic?
+        all.any?(&:any_generic?)
+      end
+
+      # A Concrete is a single member from the any/all-of-immediate-members
+      # question (see Type), so the two coincide for it.
+      # @return [Boolean]
+      def all_generic?
+        any_generic?
       end
 
       def nullable?
@@ -98,9 +108,6 @@ module Solargraph
         ['[', ']']
       end
 
-      ROOT = Type.new(Path::ROOT)
-      UNDEFINED = Type.new(Typedef.tokenize('undefined'))
-
       private
 
       def params_to_s
@@ -112,6 +119,9 @@ module Solargraph
         return '' if @params.empty?
         "<#{params.map(&:to_s_for_complex_type).join(', ')}>"
       end
+
+      ROOT = Concrete.new(Path::ROOT)
+      UNDEFINED = Concrete.new(Typedef.tokenize('undefined'))
     end
   end
 end

@@ -161,14 +161,14 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [Array<Typedef::Type>]
+      # @return [Array<Typedef::Concrete>]
       def typedef_resolve_rooted api_map
         typedef_return_types.map { |rt| rt.resolve_rooted(api_map, gates) }
       end
 
-      # @param arguments [Array<Typedef::Type>]
-      # @return [Array<Typedef::Type>]
-      def typedef_resolve_call arguments
+      # @param arguments [Array<Typedef::Concrete>]
+      # @return [Array<Typedef::Concrete>]
+      def typedef_resolve_call(arguments)
         # named_values = closure.generics
         #                       .map { |name| "generic[#{name}]" }
         #                       .zip(arguments)

@@ -4,25 +4,26 @@ module Solargraph
   module Typedef
     autoload :Path,       'solargraph/typedef/path'
     autoload :Token,      'solargraph/typedef/token'
-    autoload :Type,       'solargraph/typedef/type'
+    autoload :Concrete,    'solargraph/typedef/concrete'
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memoizer,   'solargraph/typedef/memoizer'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
+    autoload :Union,      'solargraph/typedef/union'
     autoload :Tuple,      'solargraph/typedef/tuple'
 
-    # Convert a value to a Path or Token
+    # Convert a value to a Path, Token, or Type
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
     # @return [Path, Token, Type]
     def self.tokenize value
       case value
       when String
         convert value
-      when Path, Token, Type, Typeset, Tuple
+      when Path, Token, Type
         value
       when Array
-        Typedef::Type.new(*value)
+        Typedef::Concrete.new(*value)
       else
         raise "Invalid value #{value.inspect}"
       end
