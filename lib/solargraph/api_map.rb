@@ -442,12 +442,9 @@ module Solargraph
       store.pins_by_class(Pin::Block)
     end
 
-    # Get the methods a namespace (e.g. an RBS interface) declares
-    # directly on itself, excluding ones inherited from Object,
-    # superclasses, or mixins. Useful for structural (duck-type)
-    # checks against an interface's own contract, e.g. whether some
-    # other type implements every method `Hash::_Key` itself declares
-    # (`#hash`, `#eql?`), independent of the interface's name.
+    # Methods a namespace declares directly on itself, excluding ones
+    # inherited from Object, superclasses, or mixins - e.g. the two
+    # methods `Hash::_Key` itself requires (`#hash`, `#eql?`).
     #
     # @param rooted_tag [String] The fully qualified namespace/interface to search for methods
     # @param scope [Symbol] :class or :instance

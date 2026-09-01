@@ -283,11 +283,7 @@ describe Solargraph::ComplexType do
     end
 
     it 'rejects a same-named method with the wrong return type' do
-      # https://github.com/castwide/solargraph/issues/1267
-      #
-      # The structural check only confirms a `to_ary` method exists; it
-      # doesn't verify it actually returns an Array.
-      pending 'structural interface conformance does not yet check method return types (issue #1267)'
+      pending 'https://github.com/castwide/solargraph/issues/1267'
       source = Solargraph::Source.load_string(%(
         class BadToAry
           # @return [String]
@@ -304,11 +300,7 @@ describe Solargraph::ComplexType do
     end
 
     it 'rejects a same-named method with the wrong arity' do
-      # https://github.com/castwide/solargraph/issues/1267
-      #
-      # The structural check only confirms an `eql?` method exists; it
-      # doesn't verify it accepts the argument Hash::_Key#eql? requires.
-      pending 'structural interface conformance does not yet check method parameters (issue #1267)'
+      pending 'https://github.com/castwide/solargraph/issues/1267'
       source = Solargraph::Source.load_string(%(
         class BadKey
           def eql?
