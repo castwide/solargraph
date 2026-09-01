@@ -311,6 +311,11 @@ module Solargraph
       ComplexType.new(map(&:simplify_literals))
     end
 
+    # @return [self]
+    def non_literal_type
+      ComplexType.new(map(&:non_literal_type))
+    end
+
     # @param new_name [String, nil]
     # @yieldparam t [UniqueType]
     # @yieldreturn [UniqueType]

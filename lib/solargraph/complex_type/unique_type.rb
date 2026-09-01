@@ -103,7 +103,7 @@ module Solargraph
       # @return [self]
       def simplify_literals
         transform do |t|
-          next t unless t.literal?
+          next t unless t.simplifyable_literal?
           t.recreate(new_name: t.non_literal_name)
         end
       end
@@ -153,6 +153,11 @@ module Solargraph
       # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
+      end
+
+      # @return [self]
+      def non_literal_type
+        recreate(new_name: non_literal_name)
       end
 
       # @return [self]
