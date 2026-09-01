@@ -370,16 +370,12 @@ module Solargraph
         @explicit
       end
 
-      # False for method pins that were synthesized from a statement in a
-      # class body rather than parsed from a def, and so have no body of
-      # their own.
+      # False for method pins synthesized from a class-body statement rather than parsed from a def.
       #
       # @return [Boolean]
-      # rubocop:disable Naming/PredicatePrefix
-      def has_body?
+      def body?
         !attribute?
       end
-      # rubocop:enable Naming/PredicatePrefix
 
       def attribute?
         @attribute

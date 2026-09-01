@@ -153,10 +153,7 @@ module Solargraph
       @resolved
     end
 
-    # Pins this map can hand back directly when a caller has nowhere else
-    # cached to look (no combined gem cache entry yet, no RBS collection
-    # entry). Base RbsMap has none; a subclass whose own pins are safe to
-    # serve standalone (see RbsMap::StdlibMap) overrides this.
+    # Pins a subclass can serve standalone with no gem cache entry yet; see RbsMap::StdlibMap.
     #
     # @return [Array<Pin::Base>, nil]
     def fallback_pins

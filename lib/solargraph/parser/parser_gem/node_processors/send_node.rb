@@ -59,6 +59,7 @@ module Solargraph
 
           # True when the enclosing namespace extends Forwardable, which is
           # what makes def_delegator and def_delegators available there.
+          # Matched by name only, so a same-named local module would fool this.
           #
           # @return [Boolean]
           def extends_forwardable?
