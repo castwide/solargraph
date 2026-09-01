@@ -372,10 +372,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
       rescue StandardError => e
-        # A single call site's type inference should never take down the
-        # rest of the typecheck run (or, when this is invoked per-file
-        # across a workspace, every file after it) -- degrade to one
-        # reported problem for this call site instead.
+        # Don't let one call site's inference crash the whole typecheck run.
         # @sg-ignore Need to add nil check here
         word = chain.links.last.word
         Solargraph.logger.warn "Error checking call to #{word} at #{location.range}: [#{e.class}] #{e.message}"
