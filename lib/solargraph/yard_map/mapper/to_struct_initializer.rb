@@ -101,10 +101,11 @@ module Solargraph
 
           # @param path [String]
           # @return [Encoding]
-          # @sg-ignore `Encoding.find`'s RBS signature allows a nil return
-          #   that Ruby's own docs say never happens in practice; the `||`
-          #   below already covers it, but flow-sensitive typing doesn't
-          #   narrow it out of this method's inferred overall return type.
+          # @sg-ignore Only Encoding.find("internal") can return nil, per
+          #   https://docs.ruby-lang.org/en/3.2/Encoding.html#method-c-find --
+          #   never a name parsed from a magic comment. The `||` below
+          #   covers it, but flow-sensitive typing doesn't narrow it out of
+          #   this method's inferred return type.
           def detect_encoding path
             first_lines = File.open(path, 'rb') { |f| [f.gets, f.gets] }.compact
             first_lines.shift if first_lines.first&.start_with?('#!')
