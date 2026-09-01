@@ -56,11 +56,7 @@ module Solargraph
           # need to worry about the not-nil case
 
           binder = binder.without_nil if nullable?
-          # Resolve each arm of a union receiver against that arm alone. A
-          # method whose declared return type is `self` must resolve to the
-          # arm that supplied the method pin, not to the entire union - e.g.
-          # for a String, Symbol receiver, Symbol#to_sym (RBS `-> self`) is
-          # Symbol, not String, Symbol.
+          # Resolve each arm alone, so a `self` return type narrows to that arm, not the whole union.
           # @type [::Array<Pin::Base>]
           resolved = []
           unresolved_arm = false
@@ -72,10 +68,7 @@ module Solargraph
               unresolved_arm = true
               next
             end
-            # Give this arm's resolution a name_pin whose #binder is this
-            # arm alone, not the whole union - every name_pin.binder read
-            # inside #inferred_pins (including the Class#new special case)
-            # then sees only this arm, with nothing extra to keep in sync.
+            # This arm's name_pin binds only this arm, so #inferred_pins (incl. Class#new) sees just it.
             arm_name_pin = Pin::ProxyType.anonymous(name_pin.context,
                                                     closure: name_pin.closure,
                                                     gates: name_pin.gates,
@@ -85,9 +78,7 @@ module Solargraph
           end
           return [] if unresolved_arm && !api_map.loose_unions
           return [] if resolved.empty?
-          # Different arms can resolve to the same pin path (a method
-          # inherited from a shared ancestor); dedup on the resolved return
-          # type too, so a real union doesn't lose every arm but the first.
+          # Dedup on return type too, so arms sharing an inherited pin path don't collapse to just the first.
           resolved.uniq { |pin| [pin.path, pin.return_type.tag] }
         end
 

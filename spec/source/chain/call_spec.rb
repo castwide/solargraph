@@ -361,9 +361,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # Array#each's enumerator overload is `() -> ::Enumerator[Elem, self]`, so
-    # `self` resolves to the Array<Integer> arm that supplied the pin rather
-    # than to the whole String, Array<Integer> union.
+    # Array#each's `-> Enumerator[Elem, self]` narrows to the Array<Integer> arm, not the union.
     expect(type.tag).to eq('Enumerator<Integer, Array<Integer>>')
   end
 
