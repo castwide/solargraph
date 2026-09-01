@@ -59,20 +59,6 @@ module Solargraph
         logger.debug { "Signature#typify(self=#{self}) => #{out}" }
         out
       end
-
-      # The index of the first parameter typed as the receiver's own
-      # key (e.g. `Hash#fetch`'s), or nil if none. RBS >= 4.1's
-      # `Hash::_Key` is stubbed back to `K` by RbsTranslator first.
-      #
-      # @param api_map [ApiMap]
-      # @param key_tags [::Array<String>] the receiver's own resolved
-      #   `key_types` tags. Empty means there is nothing to match.
-      # @return [Integer, nil]
-      def hash_key_param_index api_map, key_tags
-        return nil if key_tags.empty?
-
-        parameters.find_index { |p| key_tags.include?(p.typify(api_map).tag) }
-      end
     end
   end
 end

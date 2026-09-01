@@ -1150,7 +1150,7 @@ describe Solargraph::TypeChecker do
         # Symbols already infer as literal types, so per-overload matching
         # rejects the non-matching conjunct on its own here - a pin whose
         # overloads all fail falls through to its declared return type
-        # rather than being dropped, so only Call#key_verified_conjuncts
+        # rather than being dropped, so only Call#argument_verified_conjuncts
         # actually removes it.
         pending 'https://github.com/castwide/solargraph/pull/1223'
         checker = type_checker(%(
@@ -1208,6 +1208,45 @@ describe Solargraph::TypeChecker do
 
           Factory.new.make.foo
           Factory.new.make.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'dispatches to the conjunct whose parameter type actually accepts the argument' do
+        # Same problem as the Hash-record specs above, generalized:
+        # narrowing an intersection's conjuncts by argument fit isn't
+        # Hash-key-specific, it's ordinary overload matching applied
+        # per conjunct instead of per signature.
+        checker = type_checker(%(
+          class A
+            # @param x [String]
+            # @return [Integer]
+            def pick(x)
+              1
+            end
+          end
+
+          class B
+            # @param x [Symbol]
+            # @return [Float]
+            def pick(x)
+              1.0
+            end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          # @type [Integer]
+          from_a = Factory.new.make.pick("hello")
+
+          # @type [Float]
+          from_b = Factory.new.make.pick(:hello)
       ))
         expect(checker.problems.map(&:message)).to be_empty
       end
