@@ -47,6 +47,39 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
+  it 'infers an undefined splat target when the source is not itself a tuple or container' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param mutator [Integer]
+        # @return [void]
+        def call(mutator)
+          command, *args = mutator
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    locals = api_map.source_map('test.rb').locals
+    args_pin = locals.find { |l| l.name == 'args' }
+    expect(args_pin.probe(api_map).tag).to eq('undefined')
+  end
+
+  it 'treats downcasts with the same presence but different narrowed_return_type as unequal' do
+    smap = Solargraph::SourceMap.load_string('foo = "foo"')
+    pin = smap.locals.first
+    narrowed_int = pin.downcast(presence: pin.presence, narrowed_return_type: Solargraph::ComplexType.parse('Integer'))
+    narrowed_str = pin.downcast(presence: pin.presence, narrowed_return_type: Solargraph::ComplexType.parse('String'))
+    expect(narrowed_int.eql?(narrowed_str)).to be(false)
+  end
+
+  it 'treats downcasts with the same presence but different exclude_return_type as unequal' do
+    smap = Solargraph::SourceMap.load_string('foo = "foo"')
+    pin = smap.locals.first
+    excludes_int = pin.downcast(presence: pin.presence, exclude_return_type: Solargraph::ComplexType.parse('Integer'))
+    excludes_str = pin.downcast(presence: pin.presence, exclude_return_type: Solargraph::ComplexType.parse('String'))
+    expect(excludes_int.eql?(excludes_str)).to be(false)
+  end
+
   it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
