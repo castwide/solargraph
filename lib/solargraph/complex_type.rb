@@ -402,14 +402,8 @@ module Solargraph
       items.each do |ut|
         intersection_type.each do |int_type|
           if int_type.duck_type?
-            # A duck-type fact (e.g. from a respond_to? guard) selects
-            # the union arms that already provide the method; arms that
-            # don't are excluded by the guard, not replaced by the duck
-            # type. If no arm provides it (an opaque receiver like
-            # Object), the fall-through below keeps the bare duck type.
-            # UniqueType#conforms_to? can't express this test: its
-            # inferred-side duck_type? short-circuit answers true in
-            # the wrong direction.
+            # A duck-type fact selects arms that already provide the
+            # method; #conforms_to?'s own duck-type check matches unconditionally instead.
             types << ut if duck_types_match?(api_map, int_type, ComplexType.new([ut]))
           elsif int_type.conforms_to?(api_map, ut, :assignment)
             types << int_type
