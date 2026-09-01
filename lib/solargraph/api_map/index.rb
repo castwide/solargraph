@@ -186,6 +186,7 @@ module Solargraph
             ovr.tags.each do |tag|
               pin.docstring.add_tag(tag)
               redefine_return_type pin, tag
+              pin.comments = "#{pin.docstring.to_raw}\n"
               pin.reset_generated!
 
               next unless new_pin

@@ -60,5 +60,15 @@ describe Solargraph::ApiMap::Index do
       first_parameter = method_pin.parameters.first
       expect(first_parameter.return_type.tag).to eq('String')
     end
+
+    it 'resyncs #initialize comments to match its overridden docstring' do
+      method_pin = output_pins.find { |pin| pin.path == 'Foo#initialize' }
+      expect(method_pin.comments).to eq("#{method_pin.docstring.to_raw}\n")
+    end
+
+    it 'resyncs .new comments to match its overridden docstring' do
+      method_pin = output_pins.find { |pin| pin.path == 'Foo.new' }
+      expect(method_pin.comments).to eq("#{method_pin.docstring.to_raw}\n")
+    end
   end
 end
