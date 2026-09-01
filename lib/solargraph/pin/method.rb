@@ -305,11 +305,9 @@ module Solargraph
 
       def documentation
         if @documentation.nil?
-          # #signatures for a pin with no comments (e.g. RBS-sourced) is
-          # only safe to force here when it can't fall through to
-          # #generate_signature, which assumes real Parameter pins -
-          # i.e. when #signatures is already resolved or comes from
-          # inline RBS rather than YARD.
+          # Only force when it can't fall through to #generate_signature,
+          # which assumes real Parameter pins: already-resolved
+          # #signatures, or inline RBS rather than YARD.
           if (instance_variable_get(:@signatures) || !inline_rbs.empty?) && docstring.tags(return_type_tag_name).empty? && return_type&.defined?
             sync_return_type_tag
           end

@@ -638,9 +638,8 @@ module Solargraph
         result.return_type = return_type
         result.proxied = true
         result.reset_generated!
-        # dup carries over the original docstring, whose :return/:type tag
-        # (if any) reflects the old return_type. Clear it so the next
-        # #docstring access resyncs via #parse_comments.
+        # dup keeps the original docstring, whose tag reflects the old
+        # return_type. Clear it so #docstring resyncs via #parse_comments.
         result.instance_variable_set(:@docstring, nil)
         # Macros should have been processed already
         result.macro_names.clear
@@ -757,12 +756,9 @@ module Solargraph
         sync_return_type_tag
       end
 
-      # Syncs @return_type into the docstring tag. Reads the ivar, not
-      # #return_type: some pins (e.g. BaseVariable) compute #return_type
-      # from the docstring tag this method writes, so calling the getter
-      # here would sync a stale value back to itself. Callers that need
-      # #return_type forced first (e.g. Method#documentation) must call
-      # it themselves before calling this.
+      # Reads @return_type, not #return_type: BaseVariable's getter reads
+      # back from this tag, so calling it here would sync a stale value
+      # to itself. Callers needing #return_type forced call it first.
       #
       # @return [void]
       def sync_return_type_tag
