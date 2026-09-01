@@ -89,6 +89,16 @@ describe Solargraph::Pin::CompoundStatement do
       expect(pin2.combine_with(pin1).compound_statement).to eq(earlier_cs)
     end
 
+    it 'prefers the compound_statement with a location when the other has none' do
+      cs_no_location = described_class.new(location: nil, source: :parser)
+      cs_with_location = described_class.new(location: later_location, source: :parser)
+      pin1 = described_class.new(location: earlier_location, compound_statement: cs_no_location, source: :parser)
+      pin2 = described_class.new(location: earlier_location, compound_statement: cs_with_location, source: :parser)
+
+      expect(pin1.combine_with(pin2).compound_statement).to eq(cs_with_location)
+      expect(pin2.combine_with(pin1).compound_statement).to eq(cs_with_location)
+    end
+
     it 'prefers a non-nil compound_statement over a nil one' do
       cs = described_class.new(location: earlier_location, source: :parser)
       pin1 = described_class.new(location: earlier_location, compound_statement: nil, source: :parser)
