@@ -181,4 +181,63 @@ describe Solargraph::RbsMap::Conversions do
       expect(pin.docstring.tag(:type)&.types).to eq(['::String'])
     end
   end
+
+  context 'with RBS to digest for return_type coverage' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @temp_dir = dir
+        example.run
+      end
+    end
+
+    let(:conversions) do
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+      loader.add(path: Pathname(temp_dir))
+      described_class.new(loader: loader)
+    end
+
+    let(:rbs) do
+      <<~RBS
+        $my_global: String
+
+        class Foo
+          FOO: String
+
+          attr_reader foo: String
+          attr_writer bar: String
+
+          @baz: String
+          @@qux: String
+          self.@quux: String
+        end
+      RBS
+    end
+
+    attr_reader :temp_dir
+
+    before { File.write(File.join(temp_dir, 'foo.rbs'), rbs) }
+
+    it 'produces a fully-rooted return_type for every .*_to_pin method that builds one from an RBS type' do
+      pins = conversions.pins
+      find = lambda do |klass, name|
+        pins.find { |p| p.is_a?(klass) && p.name == name }
+      end
+
+      candidates = {
+        '$my_global (global_decl_to_pin)' => find.call(Solargraph::Pin::GlobalVariable, '$my_global'),
+        'FOO (constant_decl_to_pin)' => find.call(Solargraph::Pin::Constant, 'FOO'),
+        'foo (attr_reader_to_pin)' => find.call(Solargraph::Pin::Method, 'foo'),
+        'bar= (attr_writer_to_pin)' => find.call(Solargraph::Pin::Method, 'bar='),
+        '@baz (ivar_to_pin)' => find.call(Solargraph::Pin::InstanceVariable, '@baz'),
+        '@@qux (cvar_to_pin)' => find.call(Solargraph::Pin::ClassVariable, '@@qux'),
+        '@quux (civar_to_pin)' => find.call(Solargraph::Pin::InstanceVariable, '@quux')
+      }
+      candidates.each do |label, pin|
+        expect(pin).not_to be_nil, "expected a pin for #{label}"
+        expect(pin.return_type.all_rooted?).to be(true), "#{label}: expected an all_rooted? return_type"
+        expect(pin.return_type.rooted_tags).to eq('::String')
+      end
+    end
+  end
 end

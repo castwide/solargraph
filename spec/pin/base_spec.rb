@@ -83,6 +83,15 @@ describe Solargraph::Pin::Base do
       expect(realized.return_type.all_rooted?).to be(true)
       expect(realized.return_type.rooted_tags).to eq('::String')
     end
+
+    it 'keeps a correctly-synced docstring on the already-rooted fast path' do
+      return_type = Solargraph::ComplexType.try_parse('String').force_rooted
+      pin = Solargraph::Pin::Method.new(name: 'bar', return_type: return_type)
+      realized = pin.realize(Solargraph::ApiMap.new)
+      expect(realized).to equal(pin) # fast path: proxy is never called
+      expect(realized.docstring.tag(:return)&.types).to eq(['::String'])
+      expect(realized.documentation).to include('Returns:')
+    end
   end
 
   describe '#macro_names' do
