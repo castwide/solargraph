@@ -113,6 +113,21 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type.tag).to eq('Hash')
   end
 
+  it 'shows the return type for a YARD-commented method regardless of call order' do
+    pin = described_class.new(name: 'bar', comments: '@return [String]')
+    expect(pin.documentation).to include('Returns:')
+  end
+
+  it 'shows the return type for an RBS-sourced method the same way, regardless of call order',
+     pending: 'RBS pins only sync return_type into the docstring if something already computed it first; ' \
+              'YARD pins get it straight from source comments' do
+    api_map = Solargraph::ApiMap.new
+    pin = api_map.get_method_stack('String', 'upcase').first.dup
+    pin.instance_variable_set(:@return_type, nil)
+    pin.instance_variable_set(:@docstring, nil)
+    expect(pin.documentation).to include('Returns:')
+  end
+
   it 'ignores malformed return tags' do
     pin = described_class.new(name: 'bar', comments: '@return [Array<String')
     expect(pin.return_type).to be_undefined
