@@ -64,11 +64,11 @@ describe Solargraph::Pin::BaseVariable do
     expect(args_pin.probe(api_map).tag).to eq('undefined')
   end
 
-  it 'treats downcasts with the same presence but different narrowed_return_type as unequal' do
+  it 'treats downcasts with the same presence but different intersection_return_type as unequal' do
     smap = Solargraph::SourceMap.load_string('foo = "foo"')
     pin = smap.locals.first
-    narrowed_int = pin.downcast(presence: pin.presence, narrowed_return_type: Solargraph::ComplexType.parse('Integer'))
-    narrowed_str = pin.downcast(presence: pin.presence, narrowed_return_type: Solargraph::ComplexType.parse('String'))
+    narrowed_int = pin.downcast(presence: pin.presence, intersection_return_type: Solargraph::ComplexType.parse('Integer'))
+    narrowed_str = pin.downcast(presence: pin.presence, intersection_return_type: Solargraph::ComplexType.parse('String'))
     expect(narrowed_int.eql?(narrowed_str)).to be(false)
   end
 
