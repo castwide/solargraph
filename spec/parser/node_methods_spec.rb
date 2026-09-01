@@ -216,6 +216,17 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[str str])
   end
 
+  it 'handles an ensure clause with an empty body' do
+    node = parse(%(
+      begin
+        'hello'
+      ensure
+      end
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq([:str])
+  end
+
   it 'uses the body value for a method-level ensure clause with no begin/end' do
     def_node = parse(%(
       def foo

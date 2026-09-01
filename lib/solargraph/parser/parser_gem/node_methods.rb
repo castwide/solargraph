@@ -495,9 +495,10 @@ module Solargraph
                 result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
               elsif ENSURE.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
-                if include_explicit_returns
-                  # @sg-ignore Need to add nil check here
-                  result.concat explicit_return_values_from_compound_statement(node.children[1])
+                ensure_body = node.children[1]
+                if include_explicit_returns && ensure_body.is_a?(::Parser::AST::Node)
+                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+                  result.concat explicit_return_values_from_compound_statement(ensure_body)
                 end
               elsif FUNCTION_VALUE.include?(node.type)
                 # the block itself is a first class value that could be returned
