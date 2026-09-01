@@ -997,5 +997,161 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'rebinds self to the new class in Class.new blocks' do
+      checker = type_checker(%(
+        # @return [void]
+        def make_class
+          Class.new do
+            define_method(:foo) { nil }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
+
+    it 'keeps the rebound self in blocks nested inside Class.new blocks' do
+      checker = type_checker(%(
+        # @param names [Array<Symbol>]
+        # @return [void]
+        def make_class(names)
+          Class.new do
+            names.each { |m| define_method(m) { nil } }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
+
+    it 'keeps the rebound self in blocks nested inside class_eval blocks' do
+      checker = type_checker(%(
+        # @param names [Array<Symbol>]
+        # @return [void]
+        def decorate(names)
+          String.class_eval do
+            names.each { |m| define_method(m) { nil } }
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to define_method')
+    end
+
+    it 'resolves top-level methods inside blocks whose self was rebound' do
+      checker = type_checker(%(
+        # @param type [Class]
+        # @return [Boolean]
+        def skip_check?(type)
+          !type.is_a?(Class)
+        end
+
+        # @param mock_sym [Symbol]
+        # @param type [Class]
+        # @return [void]
+        def define_mock(mock_sym, type)
+          Object.define_method(mock_sym.to_s) do
+            [1].each do |_i|
+              skip_check?(type)
+            end
+          end
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to include('Unresolved call to skip_check?')
+    end
+
+    it 'resolves top-level methods from an ordinary instance method body' do
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        class Report
+          # @return [String]
+          def call_helper
+            helper.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves top-level methods in a class_eval block body' do
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        class Report; end
+
+        Report.class_eval do
+          helper.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'prefers a method on the binder over a top-level method of the same name' do
+      checker = type_checker(%(
+        # @return [String]
+        def label
+          'top'
+        end
+
+        class Report
+          # @return [Integer]
+          def label
+            42
+          end
+
+          # @return [Integer]
+          def from_binder
+            label.abs
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'prefers a local variable over a top-level method of the same name' do
+      checker = type_checker(%(
+        # @return [Integer]
+        def label
+          42
+        end
+
+        class Report
+          # @return [String]
+          def from_local
+            label = 'shadow'
+            label.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not resolve a top-level method called with an explicit receiver' do
+      # Top-level defs are private instance methods of Object at runtime, so
+      # 'str'.helper raises NoMethodError. Receiverless resolution must not
+      # make them reachable through a receiver.
+      checker = type_checker(%(
+        # @return [String]
+        def helper
+          'x'
+        end
+
+        # @return [Integer]
+        def explicit_receiver
+          'str'.helper
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include(match(/could not be inferred/))
+      expect(checker.problems.map(&:message)).not_to include(match(/does not match inferred/))
+    end
   end
 end
