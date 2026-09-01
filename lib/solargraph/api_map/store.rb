@@ -297,11 +297,8 @@ module Solargraph
         @index ||= Index.new
       end
 
-      # Combines pins that share a method path (e.g. a gem's own
-      # implementation plus a `@!parse` stub overriding its docs)
-      # into one pin, so callers see a single consistent signature.
-      # Aliases are skipped: combining a MethodAlias with a
-      # non-alias pin breaks #resolve_method_alias under
+      # Combines same-path pins into one pin. Skips aliases - merging
+      # a MethodAlias breaks #resolve_method_alias under
       # SOLARGRAPH_ASSERTS=on.
       #
       # @param pins [Array<Pin::Method>]
