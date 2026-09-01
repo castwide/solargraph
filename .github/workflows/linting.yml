@@ -142,11 +142,8 @@ jobs:
            exit 1
         fi
 
-    # master only: the "Run RuboCop" step above already proved the tree is
-    # clean against the current .rubocop_todo.yml, so any diff here can only
-    # be a shrink (offenses that got fixed without their todo entry being
-    # removed) -- never a new offense. Commit and push that cleanup instead
-    # of asking someone to do it by hand.
+    # Diffs here can only be a shrink: "Run RuboCop" above already
+    # confirmed no new offenses exist against .rubocop_todo.yml.
     - name: Auto-update .rubocop_todo.yml
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       continue-on-error: true
