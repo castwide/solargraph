@@ -115,7 +115,7 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
       # @todo 1: flow sensitive typing incorrectly includes an intermediate local variable's type in the inferred return type
-      # @todo 1: flow sensitive typing issue with the ternary above
+      # @todo 3: flow sensitive typing issue with the ternary above
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end

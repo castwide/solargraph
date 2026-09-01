@@ -50,18 +50,9 @@ describe Solargraph::TypeChecker do
     end
 
     it 'catches a bad #push argument against an inferred Array element type (#1223)' do
-      # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
-      #
-      #   y = [1]
-      #   y.push 'two'
-      #   y # => inferred as Array<Integer>, silently missing the pushed String
-      #
-      # Inference still can't track the mutation (see the "does not
-      # track a plain array through a mutating call" spec in
-      # clip_spec.rb), but type checking can now catch the bad
-      # argument at the call site itself, since Array#push's restarg
-      # is checked against the receiver's element type instead of
-      # being skipped entirely.
+      # Array#push's restarg is checked against the receiver's inferred
+      # element type; inference still can't track a mutating call's effect
+      # on the array itself (see clip_spec.rb's mutating-call spec).
       checker = type_checker(%(
         y = [1]
         y.push 'two'
@@ -74,15 +65,8 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not report a bogus problem for a restarg typed as RBS `untyped` (#1223)' do
-      # Reported at https://github.com/castwide/solargraph/pull/1223#issuecomment-5198820509 -
-      # BasicObject#instance_exec is declared `(*untyped, **untyped)`, so its
-      # restarg has no per-element type to check arguments against.
-      # #restarg_problems_for used to unwrap that down to a
-      # ComplexType with zero items, which #undefined? failed to
-      # recognize (ComplexType#method_missing only delegates to
-      # #items.first, so it returns nil - not true - when #items is
-      # empty), so the empty type fell through to the error message
-      # instead of being skipped, rendering as "expected , received".
+      # `**untyped` restargs (e.g. BasicObject#instance_exec) have no
+      # per-element type to check arguments against.
       checker = type_checker(%(
         1.instance_exec(2) { }
       ))
@@ -90,18 +74,8 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not leak an unresolved generic from a literal-keyed Hash#fetch (#1223)' do
-      # Reported at https://github.com/castwide/solargraph/pull/1223#issuecomment-5296594623 -
-      # on RBS 4.0.x, a single-argument Hash#fetch call resolved K to the
-      # receiver's literal key type (e.g. "Index" from a
-      # `Hash{"Index" => Float}` @param tag), giving Hash#fetch a single
-      # candidate overload with no non-literal sibling to fall back to.
-      # The overload-selection gate that requires an exact-literal match
-      # (added to make tuple's literal-indexed overloads win over its
-      # safe catch-all) rejected that candidate outright, since the
-      # call's plain string argument isn't itself literal-typed - so no
-      # overload matched at all, and inference fell back to the union of
-      # every overload's declared return type instead of the one real
-      # match.
+      # A single-argument Hash#fetch call must resolve K against any
+      # matching overload, not only one with a literal-typed key.
       checker = type_checker(%(
         class ReproLeak
           # @param period [Hash{"Index" => Float}]
@@ -121,12 +95,8 @@ describe Solargraph::TypeChecker do
     end
 
     it 'catches a bad #<< argument against a fixed-arity generic parameter resolved against the receiver (#1242)' do
-      # Array#<< has a single fixed-arity parameter typed as the
-      # generic `E`. Before this fix, only restarg parameters (like
-      # Array#push's, above) had their generic types resolved against
-      # the receiver's actual element type - fixed-arity params like
-      # this one still typed themselves from the unresolved generic
-      # declaration and never flagged a mismatch.
+      # Array#<<'s single fixed-arity parameter, typed as the generic
+      # `E`, must resolve against the receiver's actual element type too.
       checker = type_checker(%(
         y = [1]
         y << 'two'

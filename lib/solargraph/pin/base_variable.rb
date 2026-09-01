@@ -164,11 +164,9 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            # Exclude the pin(s) this exact assignment belongs to from the
-            # candidates available to resolve its own RHS - a self-reference
-            # (e.g. `a = a`, or `index += 1` desugared to `index = index +
-            # 1`) must resolve against the variable's *other* assignments,
-            # not against the not-yet-computed value being derived here.
+            # Exclude this assignment's own pin(s) from RHS resolution - a
+            # self-reference (e.g. `a = a`) must resolve against the
+            # variable's *other* assignments, not the value being derived.
             self_excluded_locals = clip.locals.reject do |candidate|
               candidate.assignments.include?(parent_node)
             end
@@ -238,11 +236,9 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
-      # A merged multi-assignment variable pin and its earliest constituent
-      # assignment pin share the same #choose-d (earliest) location but differ
-      # in presence, so discriminating on it keeps Chain's recursion guard from
-      # conflating "resolving the merged pin" with "resolving one of its
-      # narrower assignments" and dropping a legitimate recursive lookup.
+      # A merged multi-assignment pin and its earliest assignment share the
+      # same #choose-d location but differ in presence, which is what keeps
+      # Chain's recursion guard from conflating the two and dropping a valid lookup.
       #
       # @return [String, nil]
       def identity_discriminator
