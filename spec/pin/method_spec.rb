@@ -683,11 +683,8 @@ describe Solargraph::Pin::Method do
       expect(pin.return_type.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
     end
 
-    # RBS allows a union as one member of an intersection - `&` and
-    # `|` nest freely in either direction, unlike the YARD/tag-string
-    # grammar (see complex_type_spec.rb "with parentheses"), so these
-    # go through RbsTranslator directly instead of round-tripping
-    # through a tag string.
+    # RBS nests `&`/`|` freely, unlike the YARD/tag-string grammar, so
+    # these go through RbsTranslator instead of a round-tripped tag string.
     context 'with a union nested inside an intersection' do
       it 'preserves a union as the first conjunct' do
         source = Solargraph::Source.load_string(%(

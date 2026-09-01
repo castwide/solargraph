@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 # ComplexType#narrow_with is flow-sensitive type narrowing (e.g.
-# refining a declared type using a type learned from an `is_a?`
-# guard) - see spec/parser/flow_sensitive_typing_spec.rb for
-# end-to-end coverage through real source. These specs exercise the
-# narrowing logic directly.
+# from an `is_a?` guard) - see
+# spec/parser/flow_sensitive_typing_spec.rb for end-to-end coverage.
 describe Solargraph::ComplexType do
   let(:api_map) { Solargraph::ApiMap.new }
 

@@ -999,17 +999,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves Hash#fetch on a literal-keyed Hash with no intersection involved' do
-      # Not #1231-specific: https://github.com/castwide/solargraph/pull/1231#issuecomment-5207523909
-      # reported this against an intersection of two Hash instantiations, but it
-      # reproduced identically for a single, non-intersected generic Hash.
-      #
-      # On RBS >= 4.1.0, Pin::Parameter#compatible_arg? rejected Hash#fetch's
-      # exact-arity `(key: Hash::_Key) -> V` overload, because Hash::_Key is
-      # checked nominally rather than structurally against the String argument,
-      # and fell through to the pin's raw combined signature type, which still
-      # carries an unresolved generic X from the other overloads. RbsTranslator
-      # now stubs Hash::_Key back to K (see RBS_INTERFACE_TO_GENERIC), so the
-      # nominal check succeeds and no interface is left to resolve structurally.
       checker = type_checker(%(
         class Repro
           # @param period [Hash{"Index" => Float}]
@@ -1023,34 +1012,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'always dispatches a same-class generic method through the first union member, not #1231-specific' do
-      # Not an intersection-types bug at all: a *union* of two Hash
-      # instantiations shows the identical "always the first one, regardless
-      # of order or argument" dispatch bug that the same-class intersection
-      # specs below track. Confirmed on unmodified castwide/solargraph
-      # master (8fda63384, no & or | involved) with a minimal @generic
-      # class (no Hash, no literal keys, no #1266 dependency):
-      #
-      #   # @generic T
-      #   class Box
-      #     # @return [generic<T>]
-      #     def get; end
-      #   end
-      #
-      #   # @param b [Box<Integer>, Box<String>]
-      #   b.get  # infers Integer
-      #   # @param b [Box<String>, Box<Integer>]
-      #   b.get  # infers String - order picked the type, not the call
-      #
-      # Root cause: Call#inferred_pins resolves the class's generic
-      # parameter against `self_type = name_pin.binder` - the *whole*
-      # union/intersection type - rather than per-member, so it binds
-      # against whichever member it structurally matches first.
-      #
-      # Filing this as its own issue/PR against master, independent of
-      # #1231 and #1266, so the Hash intersection specs below inherit the
-      # fix whichever order the PRs land in rather than stacking one PR on
-      # top of another.
+    it 'always dispatches a same-class generic method through the first union member' do
       pending 'Call#inferred_pins binds a generic against the first union/intersection member only'
       checker = type_checker(%(
         class Repro

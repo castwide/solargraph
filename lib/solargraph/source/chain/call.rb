@@ -65,9 +65,7 @@ module Solargraph
         private
 
         # Resolves the pins for calling `word` on every top-level
-        # alternative of a (possibly union) binder type. Each
-        # alternative must define the method unless
-        # api_map.loose_unions allows duck-typed leniency.
+        # alternative of a binder type (loose_unions allows leniency).
         #
         # @param binder_type [ComplexType, ComplexType::UniqueType]
         # @param api_map [ApiMap]
@@ -76,20 +74,14 @@ module Solargraph
           top_level_types = binder_type.is_a?(ComplexType) ? binder_type.to_a : [binder_type]
           pin_groups = top_level_types.map { |unique_type| method_stack_pins(unique_type, api_map) }
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:nil?)
-          # Alternatives can share a pin path (e.g. the same generic
-          # method against `Box<Integer>` and `Box<String>`) while
-          # already resolving to different return types, so dedup on
-          # both rather than losing every alternative but the first.
+          # Dedup on path *and* return type: alternatives can share a
+          # path (e.g. same generic method on different instantiations).
           # @param p [Pin::Base]
           pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.tag] }
         end
 
-        # Resolves the method stack's first pin for a single top-level
-        # unique type. An Intersection needs only *one* of its conjuncts
-        # to define the method (A & B <: A, A & B <: B) - the opposite of
-        # a union - so it recurses per conjunct and accepts whichever
-        # ones resolve. A conjunct is a full ComplexType, since RBS
-        # allows e.g. `(A | B) & C`.
+        # Resolves the method stack's first pin for one top-level type.
+        # An Intersection needs only one conjunct to define the method.
         #
         # @param unique_type [ComplexType::UniqueType]
         # @param api_map [ApiMap]
@@ -111,18 +103,8 @@ module Solargraph
           end
         end
 
-        # Narrows an intersection's conjuncts to the ones whose own
-        # `key_types` match this call's literal argument at a Hash-like
-        # key parameter, so
-        # `(Hash{"Index" => Float} & Hash{"Triggers" => Array<...>})#fetch("Index")`
-        # resolves to the "Index" conjunct rather than a union of both.
-        # Overload resolution can't do this on its own: it runs per
-        # conjunct, and both conjuncts produce a pin with the same path,
-        # so nothing downstream knows which one the argument selected.
-        #
-        # A conjunct is only narrowed away when *every* conjunct yields a
-        # positive verdict (matched or didn't); if even one is
-        # undeterminable, every conjunct passes through unfiltered.
+        # Narrows conjuncts to the ones whose `key_types` match the
+        # call's literal argument; unfiltered if any verdict is unknown.
         #
         # @param conjuncts [::Array<ComplexType>]
         # @param api_map [ApiMap]
@@ -137,11 +119,8 @@ module Solargraph
           matching.empty? ? conjuncts : matching
         end
 
-        # Whether this conjunct's own literal `key_types` positively match
-        # the call's own literal argument at the key parameter's position
-        # (see Pin::Signature#hash_key_param_index), or nil if that can't be
-        # determined (no key-shaped parameter here, non-literal argument,
-        # or no literal `key_types` to compare against).
+        # Whether this conjunct's key_types match the call's literal
+        # argument (see Signature#hash_key_param_index), or nil if unknown.
         #
         # @param conjunct [ComplexType]
         # @param api_map [ApiMap]
@@ -182,13 +161,13 @@ module Solargraph
         def literal_node_tag node
           return nil unless Parser.is_ast_node?(node)
 
-          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+          # @sg-ignore flow sensitive typing needs to narrow through a predicate wrapper like Parser.is_ast_node?
           case node.type
-          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+          # @sg-ignore flow sensitive typing needs to narrow through a predicate wrapper like Parser.is_ast_node?
           when :str then node.children.first.inspect
-          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+          # @sg-ignore flow sensitive typing needs to narrow through a predicate wrapper like Parser.is_ast_node?
           when :sym then ":#{node.children.first}"
-          # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+          # @sg-ignore flow sensitive typing needs to narrow through a predicate wrapper like Parser.is_ast_node?
           when :int then node.children.first.to_s
           end
         end

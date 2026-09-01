@@ -284,14 +284,7 @@ describe Solargraph::ComplexType do
     end
 
     context 'when both the inferred and expected types are intersections' do
-      # A & B <: C & D iff every conjunct of the expected side is
-      # satisfied by *some* conjunct of the inferred side - not "one
-      # single inferred conjunct satisfies the whole expected type."
-      # Checking a single already-chosen conjunct against the full
-      # expected intersection (rather than letting different inferred
-      # conjuncts cover different expected conjuncts) makes an
-      # intersection fail to conform to an identical copy of itself
-      # whenever its conjuncts don't already relate to each other.
+      # A & B <: C & D: each expected conjunct needs some inferred match.
       it 'conforms to an identical intersection with unrelated conjuncts' do
         inf = described_class.parse('Sub & Unrelated')
         exp = described_class.parse('Sub & Unrelated')

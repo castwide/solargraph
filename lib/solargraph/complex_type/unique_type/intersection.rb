@@ -9,8 +9,9 @@ module Solargraph
       # Unlike ComplexType's comma-separated items (a union, where any
       # one member describes the value), every conjunct must describe
       # the value independently, so the subtyping rules are a union's
-      # mirror image: A & B <: A and A & B <: B, but a value satisfies
-      # A & B only if it satisfies every conjunct.
+      # mirror image: A & B <: A and A & B <: B (<: means "is a
+      # subtype of"), but a value satisfies A & B only if it satisfies
+      # every conjunct.
       #
       # Each conjunct is a full ComplexType, not a plain UniqueType, as
       # RBS allows a union as one member of an intersection
@@ -130,17 +131,9 @@ module Solargraph
           end
         end
 
-        # Every conjunct describes the same value, so each is resolved
-        # against the same context type, and a generic bound by one
-        # conjunct is visible to the rest through the shared
-        # resolved_generic_values hash. UniqueType's implementation
-        # looks for generics in #subtypes and #key_types, which an
-        # intersection does not use - its type parameters live inside
-        # the conjuncts - so `Class<generic<T>> & #new` never bound T.
-        #
-        # Conjuncts resolve left to right, so a generic that only
-        # becomes bindable through a later conjunct stays unresolved in
-        # an earlier one's output.
+        # Every conjunct resolves against the same context, sharing
+        # resolved_generic_values - resolved left to right, so an
+        # earlier conjunct won't see a generic only a later one binds.
         #
         # @param generics_to_resolve [Enumerable<String>]
         # @param context_type [ComplexType, UniqueType, nil]
@@ -171,11 +164,8 @@ module Solargraph
 
         private
 
-        # Renders the conjuncts as a tag, bracketing any conjunct that
-        # holds more than one type. `&` binds tighter than the `,`/`|`
-        # of a union, so without the brackets `[A | B] & C` would
-        # render as `A, B & C` and parse back as `A | (B & C)` - a
-        # different type.
+        # Renders conjuncts as a tag, bracketing multi-item ones since
+        # `&` binds tighter than `,`/`|` (`[A|B] & C`, not `A, B & C`).
         #
         # @param tags_method [:tags, :rooted_tags]
         # @return [String]
@@ -186,13 +176,6 @@ module Solargraph
           end.join(' & ')
         end
 
-        # Returns expected itself when it's a bare Intersection, or
-        # its one item when it's a ComplexType consisting of nothing
-        # but a single Intersection. A union with an intersection as
-        # one of several alternatives returns nil; #conforms_to? has
-        # already tried each alternative on its own by then, so what
-        # reaches here is the fallback "any conjunct" path.
-        #
         # True when expected is a union and this intersection conforms
         # to one of its alternatives taken on its own.
         #
@@ -210,6 +193,8 @@ module Solargraph
           end
         end
 
+        # Returns expected itself (or its one item) when it's an Intersection, else nil.
+        #
         # @param expected [ComplexType, ComplexType::UniqueType]
         # @return [Intersection, nil]
         def sole_intersection expected

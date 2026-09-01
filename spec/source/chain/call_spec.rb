@@ -417,11 +417,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'denies calls on a two-class union when loose union mode is off and only one class defines the method' do
-    # The nilable spec above covers the same "every union member must
-    # define the method, unless loose_unions" rule, but only via
-    # nullable?/without_nil stripping nil out first, not the general
-    # two-real-class case. This is a pre-existing gap, unrelated to
-    # intersections: it reproduces identically on unmodified master.
     pending 'strict union mode does not deny a call when only one of two plain classes defines it'
     source = Solargraph::Source.load_string(%(
       class A
@@ -739,12 +734,8 @@ describe Solargraph::Source::Chain::Call do
   end
 
   describe '#literal_node_tag' do
-    # literal_node_tag (#1231) turns a literal argument AST node into
-    # the dispatch tag used to narrow an intersection's Hash-keyed
-    # conjuncts to the one whose key_types match a call's literal
-    # argument - e.g. `period.fetch("Index")` narrowing
-    # `Hash{"Index" => Float} & Hash{"Triggers" => Array}` down to the
-    # first conjunct. Called from #unique_type_key_verdict.
+    # Turns a literal argument node into the dispatch tag used to
+    # narrow an intersection's Hash-keyed conjuncts by key.
     let(:call) { described_class.new('fetch') }
 
     it 'tags a string literal node' do

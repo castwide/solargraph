@@ -1,16 +1,8 @@
 # frozen_string_literal: true
 
-# ComplexType#exclude already accepts an api_map parameter, but its
-# current implementation ignores it and does plain exact-match array
-# subtraction. This documents the api_map-aware behavior it would
-# ideally have (a third example of api-map-driven type simplification,
-# alongside narrow_with's subtype/mix-in reduction and qualify's name
-# resolution): excluding a type should also exclude any union member
-# already known to be one of its subtypes, since a value that fails
-# `is_a?(Sup)` can't be a `Sub` either.
-#
-# Not implemented - out of scope for the PR that added this file.
-# These specs exist so the gap is tracked rather than silently unknown.
+# ComplexType#exclude accepts an api_map parameter but ignores it,
+# doing plain exact-match subtraction instead of also excluding
+# known subtypes of an excluded type.
 describe Solargraph::ComplexType do
   let(:api_map) { Solargraph::ApiMap.new }
 

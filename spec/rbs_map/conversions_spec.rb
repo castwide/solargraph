@@ -162,11 +162,6 @@ describe Solargraph::RbsMap::Conversions do
       end
 
       it 'finds superclass method pin parameter type' do
-        # RBS core's Hash#[] takes its key as the _Key duck-type interface
-        # rather than the generic K as of RBS 4.1.0. RbsTranslator stubs
-        # that back to K (see RBS_INTERFACE_TO_GENERIC), so instantiating
-        # Hash{Symbol => untyped} substitutes the param type on every RBS
-        # version rather than leaving the interface unresolved.
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
                  .uniq).to eq(['Symbol'])
       end

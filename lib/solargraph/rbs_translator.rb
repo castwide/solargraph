@@ -145,8 +145,8 @@ module Solargraph
     end
 
     # Builds a named type (with its generic arguments, if any) directly
-    # as an object rather than via a tag string, so `rooted?` survives -
-    # see castwide/solargraph#870.
+    # as an object rather than via a tag string, so `rooted?` survives.
+    # https://github.com/castwide/solargraph/pull/870
     #
     # @param type_name [RBS::TypeName]
     # @param type_args [Enumerable<RBS::Types::Bases::Base>]

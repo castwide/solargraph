@@ -61,15 +61,8 @@ module Solargraph
       end
 
       # The index of the first parameter typed as the receiver's own
-      # key (e.g. `Hash#fetch`'s first parameter), or nil if none is.
-      #
-      # The parameter is declared `K`, which by this point has been
-      # resolved against the receiver - for a literal-keyed receiver
-      # that makes it the literal key type `key_tags` matches against.
-      # RBS >= 4.1 declares it as the structural interface `Hash::_Key`
-      # instead; RbsTranslator stubs that back to `K` on the way in
-      # (see RBS_INTERFACE_TO_GENERIC), so only this one shape is left
-      # to recognize here.
+      # key (e.g. `Hash#fetch`'s), or nil if none. RBS >= 4.1's
+      # `Hash::_Key` is stubbed back to `K` by RbsTranslator first.
       #
       # @param api_map [ApiMap]
       # @param key_tags [::Array<String>] the receiver's own resolved
