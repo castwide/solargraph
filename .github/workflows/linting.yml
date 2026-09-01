@@ -102,6 +102,10 @@ jobs:
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
+    # Needed only so the auto-update step (push-to-master only, below) can
+    # push a commit back to the branch it checked out.
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v3
@@ -116,14 +120,19 @@ jobs:
 
     - name: Run RuboCop
       run: bundle exec rubocop -c .rubocop.yml
-      # @todo Temporary, expect to revert in 0.60
-      continue-on-error: true
 
+    # PRs and other non-master events: contributors are expected to have
+    # regenerated .rubocop_todo.yml locally and committed it; fail with the
+    # diff if they didn't. We can't auto-push here because GITHUB_TOKEN
+    # can't write to a fork's branch, which is where most PRs come from.
     - name: Run RuboCop against todo file
-      continue-on-error: true
+      if: github.event_name != 'push' || github.ref != 'refs/heads/master'
       run: |
         cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
-        ${cmd:?}
+        # --auto-gen-config's exit code reflects the underlying offense count,
+        # not whether new offenses were introduced; the git diff check below
+        # is the actual pass/fail signal.
+        ${cmd:?} || true
         set +e
         if [ -n "$(git status --porcelain)" ]
         then
@@ -131,4 +140,24 @@ jobs:
           git diff -u .
            >&2 echo "Please address any new issues, then run '${cmd:?}' and push up any improvements"
            exit 1
+        fi
+
+    # Diffs here can only be a shrink: "Run RuboCop" above already
+    # confirmed no new offenses exist against .rubocop_todo.yml.
+    - name: Auto-update .rubocop_todo.yml
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      continue-on-error: true
+      run: |
+        cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
+        ${cmd:?} || true
+        if [ -n "$(git status --porcelain -- .rubocop_todo.yml)" ]
+        then
+          git diff -u -- .rubocop_todo.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .rubocop_todo.yml
+          git commit -m "Auto-update .rubocop_todo.yml [skip ci]"
+          git push origin HEAD:master
+        else
+          echo "No .rubocop_todo.yml cleanup needed."
         fi
