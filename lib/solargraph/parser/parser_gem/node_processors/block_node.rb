@@ -34,12 +34,9 @@ module Solargraph
 
           private
 
-          # Blocks written with implicit parameters carry no args node for
-          # ArgsNode to work from, so their parameter pins are synthesized
-          # here instead. A numblock is a regular block that has no args
-          # node - it stores its highest numbered parameter where an
-          # ordinary block stores that node instead (see
-          # #numbered_parameter_count).
+          # Blocks written with implicit parameters (numblocks, `it`)
+          # carry no args node for ArgsNode to work from, so their
+          # parameter pins are synthesized here instead.
           #
           # @param block_pin [Pin::Block]
           # @return [void]
@@ -51,14 +48,8 @@ module Solargraph
             end
           end
 
-          # A numblock stores the highest numbered parameter its body uses
-          # (2 for `_2`) where an ordinary block stores its args node, e.g.
-          # `[1, 2].each { _1 + _2 }` parses as:
-          #
-          #   s(:numblock,
-          #     s(:send, s(:array, s(:int, 1), s(:int, 2)), :each),
-          #     2,
-          #     s(:send, s(:lvar, :_1), :+, s(:lvar, :_2)))
+          # A numblock stores its highest numbered parameter (2 for `_2`)
+          # where an ordinary block stores its args node.
           #
           # @sg-ignore flow sensitive typing does not narrow the return value through the is_a? guard
           # @return [Integer]
@@ -98,12 +89,13 @@ module Solargraph
           # block from having one: in `xs.map { it.map { it.upcase } }` each
           # `it` belongs to the block it appears in.
           #
-          # This diverges from Ruby for an enclosing block with an explicit
-          # parameter named `it`. In `xs.map { |it| ys.map { it } }` Ruby
-          # reads the inner `it` as the outer parameter; this gives the
-          # inner block its own. Treating a block parameter as a shadow
-          # instead would break every nested implicit `it`, which is the
-          # far more common shape.
+          # This diverges from Ruby for an enclosing block with an
+          # explicit `it` parameter: `xs.map { |it| ys.map { it } }`
+          # reads the inner `it` as the outer parameter, but here the
+          # inner block gets its own. A synthesized `it` pin looks
+          # identical to an explicit one, so honoring the explicit case
+          # would also stop `[[1]].each { it.each { it } }`'s inner block
+          # from getting its own `it`.
           #
           # @return [Boolean]
           def shadowed_it_local?
