@@ -480,7 +480,7 @@ module Solargraph
 
     # @param api_map [ApiMap]
     # @param unique_type [ComplexType::UniqueType]
-    # @sg-ignore return type could not be inferred
+    # @sg-ignore flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
     # @return [:class, :module, nil] nil when the namespace has no pin
     def namespace_kind api_map, unique_type
       pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
