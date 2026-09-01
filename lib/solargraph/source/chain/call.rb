@@ -71,11 +71,8 @@ module Solargraph
 
         private
 
-        # Which visibilities a call at this position can reach. A
-        # receiverless call - head? - reaches private and protected
-        # methods whatever self is. A call with an explicit receiver
-        # only reaches them from inside the receiver's own namespace or
-        # a subclass of it, mirroring ApiMap#get_complex_type_methods.
+        # A receiverless call reaches private/protected regardless of self; a call
+        # with a receiver only reaches them from its namespace or a subclass, per ApiMap#get_complex_type_methods.
         #
         # @param api_map [ApiMap]
         # @param context [ComplexType::UniqueType] the receiver's type
