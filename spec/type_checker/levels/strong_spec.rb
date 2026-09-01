@@ -675,6 +675,24 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'derives a method-scoped generic return type from a block result' do
+      checker = type_checker(%(
+        class Repro
+          # @generic T
+          # @yieldreturn [generic<T>]
+          # @return [generic<T>]
+          def call
+            yield
+          end
+        end
+        # @type [String]
+        x = Repro.new.call { 123 }
+        x
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Declared type String does not match inferred type Integer for variable x'])
+    end
+
     it 'ignores generic resolution failures with only one arg' do
       checker = type_checker(%(
         # @generic T

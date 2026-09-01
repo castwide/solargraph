@@ -14,10 +14,8 @@ module Solargraph
       # @param block [Signature, nil]
       # @param return_type [ComplexType, nil]
       # @param parameters [::Array<Pin::Parameter>]
-      # @param block_required [Boolean] Whether callers must pass a block for
-      #   this signature to apply. Only ever true for RBS-sourced signatures
-      #   with a non-optional block (`{ ... }` rather than `?{ ... }`); a bare
-      #   `&block` parameter or YARD @yield tag never makes a block mandatory.
+      # @param block_required [Boolean] Whether callers must pass a block, per
+      #   an RBS non-optional block (`{ ... }` rather than `?{ ... }`).
       # @param [Hash{Symbol => Object}] splat
       def initialize block: nil, return_type: nil, parameters: [], block_required: false, **splat
         super(**splat)
