@@ -177,6 +177,81 @@ module Solargraph
         out
       end
 
+      # One link's resolution outcome within a chain walk: which pins the
+      # link matched, the receiver (binder) type it was resolved against,
+      # and the type inferred from those pins. Undefined `type` (or zero
+      # pins) on a non-final record means every later link was skipped.
+      class LinkResolution
+        # @return [Chain::Link]
+        attr_reader :link
+
+        # @return [Integer] zero-based position of the link in its chain
+        attr_reader :index
+
+        # @return [Integer] number of links in the chain
+        attr_reader :total
+
+        # @return [ComplexType, ComplexType::UniqueType, nil] binder type the link was resolved against
+        attr_reader :receiver_type
+
+        # @return [Integer] pins the link matched
+        attr_reader :pin_count
+
+        # @return [ComplexType, ComplexType::UniqueType] type inferred from the matched pins
+        attr_reader :type
+
+        # @param link [Chain::Link]
+        # @param index [Integer]
+        # @param total [Integer]
+        # @param receiver_type [ComplexType, ComplexType::UniqueType, nil]
+        # @param pin_count [Integer]
+        # @param type [ComplexType, ComplexType::UniqueType]
+        def initialize link:, index:, total:, receiver_type:, pin_count:, type:
+          @link = link
+          @index = index
+          @total = total
+          @receiver_type = receiver_type
+          @pin_count = pin_count
+          @type = type
+        end
+      end
+
+      # Re-walk the chain the same way #define does, recording each link's
+      # resolution until the first link whose type is undefined. Uncached
+      # and intended for diagnostics on the error path, not inference.
+      #
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @return [::Array<LinkResolution>]
+      def trace api_map, name_pin, locals
+        records = []
+        working_pin = name_pin
+        links.each_with_index do |link, index|
+          link.last_context = working_pin if index == links.length - 1
+          pins = link.resolve(api_map, working_pin, locals)
+          type = infer_from_definitions(pins, working_pin, api_map, locals)
+          records.push LinkResolution.new(link: link, index: index, total: links.length,
+                                          receiver_type: working_pin&.binder, pin_count: pins.length,
+                                          type: type)
+          return records if type.undefined?
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
+        end
+        records
+      end
+
+      # The first link at which this chain's inference fails, or nil if
+      # every link resolves to a defined type.
+      #
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @return [LinkResolution, nil]
+      def first_undefined_link api_map, name_pin, locals
+        failure = trace(api_map, name_pin, locals).last
+        failure if failure&.type&.undefined?
+      end
+
       # @return [Boolean]
       def literal?
         links.last.is_a?(Chain::Literal)
