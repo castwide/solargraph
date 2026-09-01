@@ -49,10 +49,9 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
-    it 'catches a bad #push argument against an inferred Array element type (#1223)' do
-      # Array#push's restarg is checked against the receiver's inferred
-      # element type; inference still can't track a mutating call's effect
-      # on the array itself (see clip_spec.rb's mutating-call spec).
+    it 'catches a bad #push argument against an inferred Array element type' do
+      # Inference still can't track a mutating call's effect on the
+      # array itself (see clip_spec.rb's mutating-call spec).
       checker = type_checker(%(
         y = [1]
         y.push 'two'
@@ -64,7 +63,7 @@ describe Solargraph::TypeChecker do
         .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received String\z/))
     end
 
-    it 'does not report a bogus problem for a restarg typed as RBS `untyped` (#1223)' do
+    it 'does not report a bogus problem for a restarg typed as RBS `untyped`' do
       # `**untyped` restargs (e.g. BasicObject#instance_exec) have no
       # per-element type to check arguments against.
       checker = type_checker(%(
@@ -73,9 +72,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'does not leak an unresolved generic from a literal-keyed Hash#fetch (#1223)' do
-      # A single-argument Hash#fetch call must resolve K against any
-      # matching overload, not only one with a literal-typed key.
+    it 'does not leak an unresolved generic from a literal-keyed Hash#fetch' do
       checker = type_checker(%(
         class ReproLeak
           # @param period [Hash{"Index" => Float}]
@@ -94,9 +91,8 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'catches a bad #<< argument against a fixed-arity generic parameter resolved against the receiver (#1242)' do
-      # Array#<<'s single fixed-arity parameter, typed as the generic
-      # `E`, must resolve against the receiver's actual element type too.
+    it 'catches a bad #<< argument against a fixed-arity generic parameter resolved against the receiver' do
+      # The fixed-arity counterpart to the restarg check above.
       checker = type_checker(%(
         y = [1]
         y << 'two'
@@ -105,7 +101,7 @@ describe Solargraph::TypeChecker do
         .to contain_exactly(a_string_matching(/\AWrong argument type for Array#<<: \w+ expected Integer, received String\z/))
     end
 
-    it 'does not flag a #<< argument matching the receiver element type (#1242)' do
+    it 'does not flag a #<< argument matching the receiver element type' do
       checker = type_checker(%(
         y = [1]
         y << 5

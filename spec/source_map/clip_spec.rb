@@ -2129,14 +2129,10 @@ describe Solargraph::SourceMap::Clip do
     # @todo more root-safety to be done - expect(type.rooted?).to be true
   end
 
-  # Tuples deliberately do not give index-specific types for [], #at,
-  # or #fetch (see https://github.com/castwide/solargraph/issues/1196):
-  # once a variable holding a tuple has been reassigned, indexed with a
-  # non-literal, or mutated, there's no reliable way to know which
-  # position is actually being read, so a precise-looking but
-  # potentially wrong answer is worse than the union of all element
-  # types. This applies uniformly regardless of which literal index is
-  # used.
+  # Once reassigned, non-literally indexed, or mutated, a tuple can no
+  # longer say which position is being read, so [], #at, and #fetch
+  # fall back to the safe union of all element types.
+  # https://github.com/castwide/solargraph/issues/1196
   it 'resolves declared tuple types correctly' do
     source = Solargraph::Source.load_string(%(
       # @type [::Solargraph::Fills::Tuple(String, Integer)]
@@ -2314,7 +2310,7 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Integer')
   end
 
-  it 'tracks a literal value through reassignment for tuple indexing (#1196)' do
+  it 'tracks a literal value through reassignment for tuple indexing' do
     source = Solargraph::Source.load_string(%(
       array = [1, 'two']
       index = 0
@@ -2329,18 +2325,14 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [4, 6])
     expect(clip.infer.to_s).to eq('Integer')
 
-    # Before the reassignment fix, this returned the stale pre-`+=`
-    # answer (`'Integer'`, i.e. array[0]'s type) instead of reflecting
-    # that `index` is now 1 - a wrong, specious answer. It must never
-    # be wrong; since `index`'s type after `+=` widens to plain
-    # Integer (RBS's Integer#+ doesn't preserve literal values), the
-    # safe union of all element types is the correct, precise-as-
-    # possible result here.
+    # `index`'s type after `+=` widens to plain Integer (RBS's
+    # Integer#+ doesn't preserve literal values), so the safe union of
+    # all element types is the correct, precise-as-possible result.
     clip = api_map.clip_at('test.rb', [7, 6])
     expect(clip.infer.to_s).to eq('Integer, String, nil')
   end
 
-  it 'safely handles a nil-typed index into a tuple (#1196)' do
+  it 'safely handles a nil-typed index into a tuple' do
     source = Solargraph::Source.load_string(%(
       array = [1, 'two']
       # @type [Integer]
@@ -2354,17 +2346,11 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer, String, nil')
   end
 
-  it 'does not track a tuple through a mutating call (documented #1196 limitation)' do
-    # Unlike reassignment (tracked, see the spec above), mutating
-    # calls like #unshift are NOT tracked - Solargraph has no way to
-    # know the tuple's positions shifted, so a literal index still
-    # returns array[0]'s *original* element type, which is now wrong
-    # (the actual index-0 value is 'zero', a String). This is a
-    # known, deliberate limitation - see the tuple.rbs top comment
-    # and https://github.com/castwide/solargraph/issues/1196 (scenario
-    # 4). If this spec ever starts failing because the result became
-    # safe/correct, update it - that would mean mutation tracking got
-    # implemented.
+  it 'does not track a tuple through a mutating call (documented limitation)' do
+    # Solargraph has no mutation tracking, so a literal index still
+    # returns the position's original element type after a mutating
+    # call like #unshift, even though the value there has since moved.
+    # https://github.com/castwide/solargraph/issues/1196 (scenario 4)
     source = Solargraph::Source.load_string(%(
       array = [1, 'two']
       array.unshift 'zero'
@@ -2377,16 +2363,11 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
-  it 'widens a tuple to the safe union when a mutating call result is reassigned (#1223)' do
-    # Unlike the bare-statement form above (still an unfixed,
-    # documented limitation), explicitly capturing a
-    # position-shifting mutator's result via reassignment is now
-    # safe: tuple.rbs gives #unshift (and the other calls that can
-    # shift/replace/reorder positions - see the top-of-file @note)
-    # a widened, position-erased `Array[...]` return type instead of
-    # `self`. Combined with this PR's reassignment-tracking fix, that
-    # means `array = array.unshift(x)` falls back to the safe union
-    # instead of preserving the stale Tuple type.
+  it 'widens a tuple to the safe union when a mutating call result is reassigned' do
+    # tuple.rbs gives #unshift (and the other position-shifting calls
+    # - see the top-of-file @note) a widened, position-erased
+    # `Array[...]` return type instead of `self`, so reassigning its
+    # result falls back to the safe union instead of a stale Tuple.
     source = Solargraph::Source.load_string(%(
       array = [1, 'two']
       array = array.unshift('zero')
@@ -2399,29 +2380,11 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer, String, nil')
   end
 
-  it 'drops a reassigned literal from the union once a wider assignment subsumes it (#1223)' do
-    # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
-    #
-    #   x = 0
-    #   x += 1
-    #   x # => inferred as 0 (well, "0, Integer" as of this PR's
-    #        reassignment-tracking fix, before the union was simplified)
-    #
-    # A variable pin's type is the union of the return types of *all*
-    # its assignments in scope, not just the one nearest the
-    # reference (narrowing to only the most recent assignment is
-    # general "sequential assignment" flow narrowing - a separate,
-    # still-open, pre-existing limitation since PR #863; see the
-    # pending 'replaces type with reassignments' spec above). But
-    # when one of those assignments' types is a literal (`0`, from
-    # `x = 0`) and another is that literal's own non-literal base
-    # type (`Integer`, from `x += 1`, which correctly widens away the
-    # literal per the #1223 reassignment fix - see "tracks a literal
-    # value through reassignment for tuple indexing" above), the
-    # literal adds no information beyond what the base type already
-    # says - `Integer` alone is precise-as-possible and doesn't
-    # misleadingly suggest `0` is still reachable after the
-    # increment. `probe` now drops such redundant literal items.
+  it 'drops a reassigned literal from the union once a wider assignment subsumes it' do
+    # A variable's type is the union of all its assignments' return
+    # types. When one assignment's type is a literal and another is
+    # that literal's own non-literal base type, the literal adds
+    # nothing the base type doesn't already say, so it's dropped.
     source = Solargraph::Source.load_string(%(
       x = 0
       x += 1
@@ -2433,25 +2396,10 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
-  it 'does not track a plain array through a mutating call like #push (pre-existing, documented limitation)' do
-    # Reported by @castwide on PR #1223: https://github.com/castwide/solargraph/pull/1223#issuecomment-3138551901
-    #
-    #   y = [1]
-    #   y.push 'two'
-    #   y # => inferred as Array<Integer>
-    #
-    # Same root cause as "does not track a tuple through a mutating
-    # call" above (#unshift on a Tuple), just for a plain Array
-    # literal's inferred element type instead of a Tuple's positional
-    # types: Solargraph has no mutation tracking, so `y`'s type stays
-    # `Array<Integer>` (inferred from the `[1]` literal at
-    # assignment) even though `#push 'two'` means `y` can now also
-    # hold a String. This reproduces identically on master, before
-    # any of #1223/#1196's changes, and via a wholly separate code
-    # path (plain array literal inference, not tuple.rbs) - it's a
-    # pre-existing, general limitation, not something #1196 covers or
-    # this PR regresses. This spec exists so the exact case Fred
-    # raised has a regression test.
+  it 'does not track a plain array through a mutating call like #push (documented limitation)' do
+    # Same root cause as the tuple #unshift case above: Solargraph has
+    # no mutation tracking, so a plain array's inferred element type
+    # doesn't account for what a later #push adds to it.
     source = Solargraph::Source.load_string(%(
       y = [1]
       y.push 'two'
