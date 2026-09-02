@@ -11,6 +11,18 @@ describe Solargraph::ComplexType::UniqueType do
     end
   end
 
+  describe '#literal_keyed?' do
+    it 'is false when there are no key types' do
+      type = described_class.parse('String')
+      expect(type.literal_keyed?).to be(false)
+    end
+
+    it 'is false when a key type is not a literal' do
+      type = Solargraph::ComplexType.parse('Hash{Float => Float}').first
+      expect(type.literal_keyed?).to be(false)
+    end
+  end
+
   describe '#key_type_tag?' do
     it 'matches a single literal key type' do
       type = Solargraph::ComplexType.parse('Hash{"Index" => Float}').first
