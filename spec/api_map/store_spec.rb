@@ -93,13 +93,8 @@ describe Solargraph::ApiMap::Store do
     end
 
     it 'does not combine two delegated methods sharing a path' do
-      # Pin::Base#combine_with rebuilds the merged pin with
-      # self.class.new(**new_attrs), and new_attrs carries only generic pin
-      # attributes. Pin::DelegatedMethod#initialize requires exactly one of
-      # :method / :receiver, so combining two of them raises
-      # `either :method or :receiver is required (ArgumentError)`.
-      # castwide/solargraph#1311 mints these pins for def_delegators, which
-      # makes duplicate-path groups routine.
+      # DelegatedMethod#initialize requires exactly one of :method /
+      # :receiver, so a merged pin can't hold both delegation targets.
       closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
       delegated = lambda do |receiver_name|
         chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new(receiver_name, nil)])

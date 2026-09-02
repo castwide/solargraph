@@ -297,17 +297,10 @@ module Solargraph
         @index ||= Index.new
       end
 
-      # Combines same-path pins into one pin. Skips aliases - merging
-      # a MethodAlias breaks #resolve_method_alias under
-      # SOLARGRAPH_ASSERTS=on.
-      #
-      # DelegatedMethod pins are skipped for the same reason, but they
-      # raise outright rather than degrade: Pin::Base#combine_with rebuilds
-      # the merged pin with self.class.new(**new_attrs) carrying only
-      # generic pin attributes, and DelegatedMethod#initialize requires
-      # exactly one of :method / :receiver. Each pin's delegation target is
-      # per-pin state that a merged pin has no way to represent, so both
-      # are kept.
+      # Combines same-path pins into one. Skips aliases (breaks
+      # #resolve_method_alias under SOLARGRAPH_ASSERTS=on) and
+      # DelegatedMethod (initialize needs exactly one of
+      # :method/:receiver; a merged pin can't hold both).
       #
       # @param pins [Array<Pin::Method>]
       # @return [Array<Pin::Method>]
