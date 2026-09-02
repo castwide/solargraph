@@ -114,8 +114,6 @@ describe Solargraph::ApiMap::Store do
     end
 
     it 'combines many same-path pins without timing out' do
-      # Store#get_methods must combine many real same-path pins
-      # quickly, not hang or blow up combinatorially.
       maps = (1..30).map do |i|
         Solargraph::SourceMap.load_string(%(
           class Foo
@@ -133,9 +131,8 @@ describe Solargraph::ApiMap::Store do
 
       bar_pins = result.select { |p| p.name == 'bar' }
       expect(bar_pins.length).to eq(1)
-      # The real regression is combinatorial blowup, not the exact
-      # merge outcome - bound the result size rather than pin down
-      # merge semantics unrelated to this concern.
+      # Regression is combinatorial blowup, not exact merge outcome -
+      # bound the result size rather than pin exact merge semantics.
       expect(bar_pins.first.signatures.length).to be <= maps.length
     end
   end
