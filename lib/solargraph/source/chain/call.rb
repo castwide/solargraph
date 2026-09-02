@@ -43,10 +43,16 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
-        def resolve api_map, name_pin, locals
+        # @param receiver_path [::Array<String>, nil] Dotted-word path of the
+        #   receiver chain leading up to this call (see Chain#define). Used
+        #   to find flow-sensitive-typing facts recorded against repeated
+        #   calls to the same argument-less accessor, e.g. a nil check on
+        #   'pin.location' narrowing a later 'pin.location.filename'.
+        def resolve api_map, name_pin, locals, receiver_path = nil
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
+          found ||= narrowed_call_pin(api_map, name_pin, locals, receiver_path) unless head?
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           binder = name_pin.binder
@@ -158,6 +164,30 @@ module Solargraph
           end
           type ||= ComplexType::UNDEFINED
           [type, new_signature_pin]
+        end
+
+        # Looks for a flow-sensitive-typing fact recorded against this
+        # exact call chained off of the same receiver expression -- e.g.
+        # the narrowing FlowSensitiveTyping records for 'pin.location'
+        # after a 'return unless pin.location' guard, consulted here while
+        # resolving the 'location' call in a later 'pin.location.filename'.
+        #
+        # Only applies to simple, argument-less, blockless calls whose
+        # entire receiver chain is itself simple -- the same shape
+        # FlowSensitiveTyping tracks facts against (see
+        # Chain#next_receiver_path).
+        #
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::Base>]
+        # @param receiver_path [::Array<String>, nil]
+        # @return [Pin::Base, nil]
+        def narrowed_call_pin api_map, name_pin, locals, receiver_path
+          return nil if receiver_path.nil? || receiver_path.empty?
+          return nil unless arguments.empty? && !with_block?
+
+          composite_name = (receiver_path + [word]).join('.')
+          api_map.var_at_location(locals, composite_name, name_pin, location)
         end
 
         # @param pins [::Enumerable<Pin::Base>]
