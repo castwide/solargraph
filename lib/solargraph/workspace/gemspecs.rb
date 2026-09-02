@@ -180,8 +180,7 @@ module Solargraph
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification if we can
                                                           if specish.respond_to?(:stub)
-                                                            # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
-                                                            to_gem_specification specish.stub
+                                                            to_gem_specification specish.send(:stub)
                                                           else
                                                             # A Bundler::StubSpecification is a Bundler::
                                                             # RemoteSpecification which ought to proxy a Gem::
