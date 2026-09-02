@@ -963,6 +963,47 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('String')
   end
 
+  it 'narrows a bare, implicit-self attr_reader-style accessor assigned into a fresh local variable' do
+    pending('https://github.com/apiology/solargraph/pull/53')
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil if steps.nil?
+
+          local = steps
+          local.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
+  end
+
+  it 'narrows a bare, implicit-self attr_reader-style accessor assigned into a fresh local ' \
+     'variable after a truthy guard' do
+    pending('https://github.com/apiology/solargraph/pull/53')
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil unless steps
+
+          local = steps
+          local.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
+  end
+
   it 'uses ! to detect nilness' do
     source = Solargraph::Source.load_string(%(
       class A
