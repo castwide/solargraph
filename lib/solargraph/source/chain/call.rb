@@ -163,6 +163,7 @@ module Solargraph
         def matching_arg_types overload, api_map, name_pin, locals
           return nil unless overload.arity_matches?(arguments, with_block?)
 
+          # @type [::Array<ComplexType>]
           atypes = []
           arguments.each_with_index do |arg, idx|
             param = overload.parameters[idx]
