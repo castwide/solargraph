@@ -413,10 +413,7 @@ module Solargraph
         end
       end
       if types.empty?
-        # intersection_type may be a bare UniqueType, which has no
-        # #select of its own; #to_a normalizes both it and ComplexType
-        # to an Array<UniqueType> first.
-        duck_candidates = intersection_type.to_a.select(&:duck_type?)
+        duck_candidates = intersection_type.select(&:duck_type?)
         types = duck_candidates.empty? ? [ComplexType::UniqueType::UNDEFINED] : duck_candidates
       end
       ComplexType.new(types)
