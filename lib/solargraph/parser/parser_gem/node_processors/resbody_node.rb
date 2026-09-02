@@ -30,7 +30,27 @@ module Solargraph
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            # Not pushed onto `pins`: this CompoundStatement is never
+            # looked up on its own (an and/or/orasgn/resbody body has
+            # no identity worth indexing the way a def/class does),
+            # it only needs to exist as the value every pin created
+            # below it (via region.update(compound_statement: ...))
+            # carries in its own `compound_statement` field, so those
+            # pins can walk back up to find their enclosing
+            # conditionally-executed scope. Once processing the body
+            # returns, rescue_body_cs itself is discarded.
+            # @sg-ignore RBS Array[self] indexing infers Array instead of self
+            rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
+              # @sg-ignore RBS Array[self] indexing infers Array instead of self
+              location: node.children[2] ? get_node_location(node.children[2]) : nil,
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
+              node: node.children[2],
+              source: :parser
+            )
+            # @sg-ignore RBS Array[self] indexing infers Array instead of self
+            NodeProcessor.process(node.children[2], region.update(compound_statement: rescue_body_cs), pins, locals, ivars)
           end
         end
       end

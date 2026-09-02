@@ -99,6 +99,7 @@ module Solargraph
       # @todo 2: Need to handle duck-typed method calls on union types
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
+      # @todo 8: RBS Array[self] indexing infers Array instead of self
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

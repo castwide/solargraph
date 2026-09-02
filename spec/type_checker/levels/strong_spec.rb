@@ -954,6 +954,246 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'updates a parameter type after reassignment to a different non-literal type' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          position = PositionNormalizer.normalize(position)
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not treat a parameter reassignment inside a block as guaranteed to have run' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          [1].each { position = PositionNormalizer.normalize(position) }
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([
+                                                      '#describe return type could not be inferred',
+                                                      'Unresolved call to line on Position, Array(Integer, Integer)'
+                                                    ])
+    end
+
+    it 'still treats a conditional reassignment as guaranteed to have run for a use site inside the same branch' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def conditional_reassign(str, num, flag)
+          local = num
+          if flag
+            local = str
+            local.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default after the modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default after a non-modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if tasks.nil?
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an unless modifier' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] unless tasks
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an else clause' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if !tasks.nil?
+            puts 'have tasks'
+          else
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows only the reassigned variable when an or-condition guards it' do
+      checker = type_checker(%(
+        # @param xs [Array<String>, nil]
+        # @param ys [Array<String>, nil]
+        # @return [void]
+        def or_guard(xs, ys)
+          xs = ['a'] if xs.nil? || ys.nil?
+          xs.each { |t| puts t }
+          ys.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guard tests something other than the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def unrelated_guard(tasks, flag)
+          tasks = ['a'] if flag
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the nil guard does not reassign the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def no_reassignment(tasks)
+          puts 'hi' if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guarded assignment is itself conditional' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def nested_conditional_assign(tasks, flag)
+          if tasks.nil?
+            tasks = ['a'] if flag
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'does not let a loop-body reassignment override a reference textually before it' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def loop_reassign(str, num, flag)
+          local = num
+          while flag
+            local.abs
+            local = str
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'updates a local variable type after reassignment to a different literal type' do
+      checker = type_checker(%(
+        # @return [void]
+        def run
+          local = 5
+          local = 'hello'
+          local.upcase
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'updates an instance variable type after reassignment in the same method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def run
+            @ivar = 5
+            @ivar = 'hello'
+            @ivar.upcase
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves a self-referential reassignment against the pre-assignment type' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String]
+          # @return [Integer]
+          def foo(x)
+            x = x.length
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
@@ -965,6 +1205,17 @@ describe Solargraph::TypeChecker do
           def foo?
             !@foo.nil? && @foo.upcase == 'FOO'
           end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'infers a Boolean return from !!(x.nil? || x < n) on a nilable param' do
+      checker = type_checker(%(
+        # @param val [Integer, nil]
+        # @return [Boolean]
+        def check?(val)
+          !!(val.nil? || val < 5)
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])

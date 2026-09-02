@@ -30,7 +30,7 @@ module Solargraph
         super || closure&.type_location
       end
 
-      def combine_with other, attrs = {}
+      def combine_with other, attrs = {}, location: nil
         # Parameters can only be combined with local variables in the same closure
         return self unless other.closure == closure
 
@@ -45,7 +45,7 @@ module Solargraph
                         asgn_code: asgn_code
                       }
                     end
-        super(other, new_attrs.merge(attrs))
+        super(other, new_attrs.merge(attrs), location: location)
       end
 
       def combine_return_type other
@@ -208,6 +208,15 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
+        if definite
+          # flow sensitive typing: this parameter was reassigned by
+          # an assignment guaranteed to have executed, so prefer the
+          # type of the value it was reassigned to over its declared
+          # @param type
+          reassigned_type = probe(api_map)
+          return reassigned_type if reassigned_type.defined?
+        end
+
         new_type = super
         return new_type if new_type.defined?
 
