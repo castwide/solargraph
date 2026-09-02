@@ -250,6 +250,24 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'do_cache' do
+    it 'complains when the gemspec is nil, even with Ruby warnings disabled' do
+      # bin/solargraph sets $VERBOSE = nil, which turns Kernel#warn into a
+      # no-op - a warn-based message would never reach the user.
+      old_verbose = $VERBOSE
+      $VERBOSE = nil
+      begin
+        output = capture_both do
+          shell.send(:do_cache, nil)
+        end
+      ensure
+        $VERBOSE = old_verbose
+      end
+
+      expect(output).to include("Gem '' not found")
+    end
+  end
+
   # @type cmd [Array<String>]
   # @return [String]
   def bundle_exec(*cmd)
