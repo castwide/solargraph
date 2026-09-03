@@ -80,4 +80,11 @@ describe Solargraph::Source::Chain::Or do
     checker = Solargraph::TypeChecker.new('test.rb', api_map: api_map)
     expect(checker.problems).to be_empty
   end
+
+  it 'falls back to undefined when the rhs never returns but there is no lhs type to infer' do
+    or_link = described_class.new([], rhs_never_returns: true)
+    api_map = Solargraph::ApiMap.new
+    pin = or_link.resolve(api_map, nil, []).first
+    expect(pin.return_type.tag).to eq('undefined')
+  end
 end
