@@ -4,7 +4,7 @@ require 'pathname' # @todo Required by RBS but not loaded in some use cases
 require 'rbs'
 
 module Solargraph
-  module PinCache
+  module PinCache2
     class << self
       include Logging
 
@@ -28,16 +28,9 @@ module Solargraph
         File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
       end
 
-      # @param gemspec [Gem::Specification]
+      # @param gemspec [Metagem]
       # @return [String]
-      def yardoc_path gemspec
-        File.join(base_dir,
-                  "yard-#{YARD::VERSION}",
-                  "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",
-                  "#{gemspec.name}-#{gemspec.version}.yardoc")
-      end
-
-      def yardoc_path_for_metagem metagem
+      def yardoc_path metagem
         File.join(base_dir,
                   "yard-#{YARD::VERSION}",
                   "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",

@@ -1,0 +1,22 @@
+PATH
+  remote: ../gem-with-yard-macros
+  specs:
+    gem-with-yard-macros (0.1.0)
+
+GEM
+  specs:
+    backport (1.2.0)
+
+PLATFORMS
+  x64-mingw-ucrt
+
+DEPENDENCIES
+  backport
+  gem-with-yard-macros!
+
+CHECKSUMS
+  backport (1.2.0)
+  gem-with-yard-macros (0.1.0)
+
+BUNDLED WITH
+  4.0.6
