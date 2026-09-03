@@ -4,6 +4,7 @@ module Solargraph
   module Pin
     class Callable < Closure
       # @return [Signature]
+      # @sg-ignore Need to add nil check here
       attr_reader :block
 
       attr_accessor :parameters
@@ -37,6 +38,7 @@ module Solargraph
       # @param other [self]
       #
       # @return [Pin::Signature, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_blocks other
         if block.nil?
           other.block
@@ -123,7 +125,7 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 
@@ -144,8 +146,10 @@ module Solargraph
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             param.dup
           else
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             param.resolve_generics_from_context(generics_to_resolve,
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)
@@ -162,6 +166,7 @@ module Solargraph
 
       def typify api_map
         type = return_type
+        # @sg-ignore Need to add nil check here
         return type.qualify(api_map, *gates) if type.defined?
         if method_name.end_with?('?')
           logger.debug { "Callable#typify(self=#{self}) => Boolean (? suffix)" }
@@ -240,11 +245,13 @@ module Solargraph
       def arity_matches? arguments, with_block
         argcount = arguments.length
         parcount = mandatory_positional_param_count
+        # @sg-ignore Need to add nil check here
         parcount -= 1 if !parameters.empty? && parameters.last.block?
         return false if block? && !with_block
         # @todo this and its caller should be changed so that this can
         #   look at the kwargs provided and check names against what
         #   we acccept
+        # @sg-ignore Need to add nil check here
         return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
         true
       end

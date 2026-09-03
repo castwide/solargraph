@@ -56,14 +56,13 @@ module Solargraph
         ].compact.uniq
         # @param gem_name [String]
         gem_names_to_try.each do |gem_name|
-          # @sg-ignore Unresolved call to == on Boolean
           gemspec = all_gemspecs.find { |gemspec| gemspec.name == gem_name }
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           return [gemspec_or_preference(gemspec)] if gemspec
 
           begin
             gemspec = Gem::Specification.find_by_name(gem_name)
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            # @sg-ignore https://github.com/castwide/solargraph/issues/1250
             return [gemspec_or_preference(gemspec)] if gemspec
           rescue Gem::MissingSpecError
             logger.debug do
@@ -79,7 +78,7 @@ module Solargraph
             # @sg-ignore Translate to something flow sensitive typing understands
             spec&.files&.any? { |gemspec_file| file == gemspec_file }
           end
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           return [gemspec_or_preference(gemspec)] if gemspec
         end
 
@@ -100,11 +99,9 @@ module Solargraph
       #
       # @return [Gem::Specification, nil]
       def find_gem name, version = nil, out: $stderr
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name && specish.version == version }
         return to_gem_specification specish if specish
 
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
         # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
         return to_gem_specification specish if specish
@@ -136,6 +133,7 @@ module Solargraph
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
+        # @sg-ignore Need to add nil check here
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
         (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end
@@ -188,7 +186,12 @@ module Solargraph
                                                             # Specification
                                                             specish
                                                           end
-                                                        # @sg-ignore Unresolved constant Gem::StubSpecification
+                                                        # Do not remove on a local "Unneeded @sg-ignore"
+                                                        # verdict. Whether this constant resolves varies by
+                                                        # Ruby patch release, and CI runs a newer one than
+                                                        # most worktrees. It has been removed and restored
+                                                        # twice on local verdicts alone.
+                                                        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                                                         when Gem::StubSpecification
                                                           # @sg-ignore Unresolved call to to_spec on Gem::Specification, Bundler::LazySpecification, Bundler::StubSpecification
                                                           specish.to_spec
@@ -207,8 +210,10 @@ module Solargraph
             "require 'bundler'; require 'json'; Dir.chdir('#{directory}') { puts begin; #{command}; end.to_json }"
           ]
           o, e, s = Open3.capture3(*cmd)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if s.success?
             Solargraph.logger.debug "External bundle: #{o}"
+            # @sg-ignore o.split("\n") is non-empty here because !o.empty?
             o && !o.empty? ? JSON.parse(o.split("\n").last) : nil
           else
             Solargraph.logger.warn e
@@ -353,8 +358,10 @@ module Solargraph
       # @return [Gem::Specification]
       def gemspec_or_preference gemspec
         return gemspec unless preference_map.key?(gemspec.name)
+        # @sg-ignore Need to add nil check here
         return gemspec if gemspec.version == preference_map[gemspec.name].version
 
+        # @sg-ignore Need to add nil check here
         change_gemspec_version gemspec, preference_map[gemspec.name].version
       end
 

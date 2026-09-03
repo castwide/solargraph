@@ -24,7 +24,8 @@ module Solargraph
           # @type [Array<Gem::Specification>]
           specs = e.specs
           raise InvalidRubocopVersionError,
-                "could not find '#{e.name}' (#{e.requirement}) - " \
+                "could not find '#{e.name}' (#{e.requirement}) - " +
+                # @sg-ignore Need a downcast here
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'

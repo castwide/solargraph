@@ -11,6 +11,7 @@ module Solargraph
       attr_reader :scope
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       attr_reader :original
 
       # @param scope [::Symbol]

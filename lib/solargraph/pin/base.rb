@@ -23,9 +23,10 @@ module Solargraph
       attr_reader :name
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       attr_reader :path
 
-      # @return [::Symbol]
+      # @return [::Symbol, nil]
       attr_accessor :source
 
       # @type [::Numeric, nil] A priority for determining if pins should be combined or not
@@ -42,7 +43,7 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String, nil]
-      # @param source [Symbol, nil]
+      # @param source [::Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
@@ -157,6 +158,7 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_closure other
         choose_pin_attr_with_same_name(other, :closure)
       end
@@ -452,7 +454,7 @@ module Solargraph
       # @return [String, nil]
       def filename
         return nil if location.nil?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         location.filename
       end
 
@@ -490,7 +492,7 @@ module Solargraph
         instance_of?(other.class) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
           # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
@@ -539,6 +541,7 @@ module Solargraph
         @macros ||= collect_macros
       end
 
+      # @return [Array<String>]
       def macro_names
         parse_comments unless @macro_names
         @macro_names ||= collect_macro_names
@@ -757,6 +760,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
+          # @sg-ignore Need to add nil check here
           return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
@@ -768,6 +772,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
+          # @sg-ignore Need to add nil check here
           return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true
@@ -793,6 +798,7 @@ module Solargraph
         end
       end
 
+      # @return [Array<String>]
       def collect_macro_names
         "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
       end

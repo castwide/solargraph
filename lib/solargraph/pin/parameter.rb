@@ -7,6 +7,7 @@ module Solargraph
       attr_reader :decl
 
       # @return [String]
+      # @sg-ignore Need to add nil check here
       attr_reader :asgn_code
 
       # allow this to be set to the method after the method itself has
@@ -63,7 +64,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         decl == :kwrestarg || (assignment && %i[HASH hash].include?(assignment.type))
       end
 
@@ -181,7 +182,7 @@ module Solargraph
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           if @return_type.undefined?
             case decl
             when :restarg
@@ -234,7 +235,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
@@ -261,6 +262,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
+      # @sg-ignore Need to add nil check here
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -281,6 +283,7 @@ module Solargraph
             found = p
             break
           end
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
@@ -319,6 +322,7 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
+        # @sg-ignore Need to add nil check here
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else

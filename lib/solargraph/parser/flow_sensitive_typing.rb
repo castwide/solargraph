@@ -25,8 +25,10 @@ module Solargraph
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -51,8 +53,10 @@ module Solargraph
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         lhs = or_node.children[0]
         # @type [Parser::AST::Node]
+        # @sg-ignore Need to add nil check here
         rhs = or_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -152,6 +156,7 @@ module Solargraph
                                     get_node_end_position(else_clause))
         end
 
+        # @sg-ignore Need to add nil check here
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -187,6 +192,7 @@ module Solargraph
                                    get_node_end_position(do_clause))
         end
 
+        # @sg-ignore Need to add nil check here
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -227,6 +233,7 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
@@ -265,16 +272,20 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
+        # @sg-ignore Need to add nil check here
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
+        # @sg-ignore Need to add nil check here
         if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
+          # @sg-ignore Need to add nil check here
           variable_name = call_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
+        # @sg-ignore Need to add nil check here
         variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
@@ -299,10 +310,10 @@ module Solargraph
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
         else
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
       end
@@ -392,6 +403,7 @@ module Solargraph
         receiver = bang_node.children[0]
 
         # swap the two presences
+        # @sg-ignore Need to add nil check here
         process_expression(receiver, false_presences, true_presences)
       end
 
@@ -454,7 +466,6 @@ module Solargraph
       end
 
       # @param clause_node [Parser::AST::Node, nil]
-      # @sg-ignore need boolish support for ? methods
       def always_breaks? clause_node
         clause_node&.type == :break
       end

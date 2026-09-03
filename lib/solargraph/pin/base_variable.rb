@@ -63,7 +63,7 @@ module Solargraph
       # @param presence [Range]
       # @param exclude_return_type [ComplexType, nil]
       # @param intersection_return_type [ComplexType, nil]
-      # @param source [::Symbol]
+      # @param source [::Symbol, nil]
       #
       # @return [self]
       def downcast presence:, exclude_return_type: nil, intersection_return_type: nil,
@@ -229,11 +229,11 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       def starts_at? other_loc
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           presence.start == other_loc.range.start
       end
 
@@ -245,7 +245,7 @@ module Solargraph
       def combine_presence other
         return presence || other.presence if presence.nil? || other.presence.nil?
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
       end
 
@@ -263,14 +263,14 @@ module Solargraph
           return closure || other.closure
         end
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         if closure.location.nil? || other.closure.location.nil?
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           return closure.location.nil? ? other.closure : closure
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         return closure if closure.location <= other.closure.location
 
         other.closure
@@ -279,9 +279,9 @@ module Solargraph
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at? other_closure, other_loc
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         location.filename == other_loc.filename &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end
@@ -291,6 +291,7 @@ module Solargraph
       attr_accessor :exclude_return_type, :intersection_return_type
 
       # @return [Range]
+      # @sg-ignore Need to add nil check here
       attr_writer :presence
 
       private

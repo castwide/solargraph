@@ -108,19 +108,25 @@ module Solargraph
 
           # @param a [Array<String>]
           # @return [String]
+          # @sg-ignore Need to add nil check here
           def arg_name a
+            # @sg-ignore Need to add nil check here
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array]
           # @return [::Symbol]
           def arg_type a
+            # @sg-ignore Need to add nil check here
             if a[0].start_with?('**')
               :kwrestarg
+            # @sg-ignore Need to add nil check here
             elsif a[0].start_with?('*')
               :restarg
+            # @sg-ignore Need to add nil check here
             elsif a[0].start_with?('&')
               :blockarg
+            # @sg-ignore Need to add nil check here
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]

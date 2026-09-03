@@ -12,14 +12,17 @@ module Solargraph
             target = node.children[0]
             operator = node.children[1]
             argument = node.children[2]
+            # @sg-ignore Need to add nil check here
             if target.type == :send
               # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
+            # @sg-ignore Need to add nil check here
             elsif target.type.to_s.end_with?('vasgn')
               # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
+                                       # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                                        "Unexpected op_asgn target type: #{target.type}")
             end
           end
@@ -71,6 +74,7 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
+            # @sg-ignore Need to add nil check here
             # @type [Parser::AST::Node]
             variable_name = asgn.children[0]
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar

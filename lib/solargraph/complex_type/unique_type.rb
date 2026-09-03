@@ -39,7 +39,6 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
-          # @sg-ignore Need to add nil check here
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             unless !subs.is_a?(ComplexType) && (subs.length == 2) && !subs[0].is_a?(UniqueType) && !subs[1].is_a?(UniqueType)
@@ -342,6 +341,7 @@ module Solargraph
       # @return [String]
       def rbs_union types
         if types.length == 1
+          # @sg-ignore Need to add nil check here
           types.first.to_rbs
         else
           "(#{types.map(&:to_rbs).join(' | ')})"
@@ -383,11 +383,11 @@ module Solargraph
       # @param context_type [ComplexType, UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
+      # @sg-ignore Need to add nil check here
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
           return self unless generics_to_resolve.include? type_param
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
             # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
@@ -395,11 +395,11 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               complex_type.resolve_generics_from_context(generics_to_resolve, nil,
                                                          resolved_generic_values: resolved_generic_values)
             end
           end
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return resolved_generic_values[type_param] || self
         end
 
@@ -419,6 +419,7 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]
@@ -547,6 +548,8 @@ module Solargraph
         yield new_type
       end
 
+      # @param named_types [Hash{String => UniqueType}]
+      # @return [UniqueType]
       def expand named_types
         named_types[name] || self
       end
