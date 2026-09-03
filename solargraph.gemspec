@@ -65,7 +65,7 @@ Gem::Specification.new do |s|
   #
   # even more specific on RuboCop itself, which is written into _todo
   # file.
-  s.add_development_dependency 'overcommit', '~> 0.71.0'
+  s.add_development_dependency 'overcommit', '~> 0.72.0'
   s.add_development_dependency 'rubocop', '~> 1.80.0.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'
