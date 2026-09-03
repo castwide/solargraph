@@ -678,4 +678,14 @@ describe Solargraph::Library do
       expect { library.send(:sync_catalog) }.not_to raise_error
     end
   end
+
+  describe '#cache_next_gemspec' do
+    it 'does not start a new caching pass while one is already in progress' do
+      library = described_class.new
+      library.instance_variable_set(:@cache_progress, Solargraph::LanguageServer::Progress.new('Caching gem'))
+      allow(library).to receive(:report_cache_progress)
+      library.send(:cache_next_gemspec)
+      expect(library).not_to have_received(:report_cache_progress)
+    end
+  end
 end

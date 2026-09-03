@@ -111,6 +111,28 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'falls through a non-macro directive that names no registered macro' do
+    # @!visibility is a directive but not a macro, so `bar`'s pin has
+    # macros: [] and directives: [VisibilityDirective] - this exercises
+    # inferred_pins's directive branch, distinct from the macro branch
+    # covered above. Since no macro is registered under that directive's
+    # name, process_directive resolves nothing and falls through to
+    # ordinary body-probing, which infers String from the method body.
+    source = Solargraph::Source.load_string(%(
+      # @!visibility public
+      def bar
+        "hi"
+      end
+
+      bar
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(6, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('::String')
+  end
+
   it 'infers generic types from Array#reverse' do
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
@@ -708,5 +730,9 @@ describe Solargraph::Source::Chain::Call do
 
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
+  end
+
+  it 'accepts a word with no location, for external callers that omit it' do
+    expect { described_class.new('foo') }.not_to raise_error
   end
 end

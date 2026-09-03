@@ -925,6 +925,34 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[Integer Integer])
   end
 
+  it 'preserves duck type return tags in attached macros' do
+    source = Solargraph::SourceMap.load_string(%(
+      class Macro
+        # @!macro [new] duck_attr
+        #   @!method $1
+        #     @return [#quack]
+        # @param name [Symbol]
+        # @return [void]
+        def self.duck_attr(name); end
+
+        # @!macro [new] class_attr
+        #   @!method $1
+        #     @return [String]
+        # @param name [Symbol]
+        # @return [void]
+        def self.class_attr(name); end
+
+        duck_attr :ducky
+        class_attr :stringy
+      end
+    ), 'test.rb')
+    @api_map.catalog(Solargraph::Bench.new(source_maps: [source]))
+    expect(@api_map.get_path_pins('Macro#ducky').first.return_type.tag).to eq('#quack')
+    expect(@api_map.get_path_pins('Macro#stringy').first.return_type.tag).to eq('String')
+    methods = @api_map.get_complex_type_methods(Solargraph::ComplexType.parse('#quack'))
+    expect(methods.map(&:name)).to include('quack')
+  end
+
   it 'generates methods from @!attribute tag in attached dsl macros' do
     source = Solargraph::SourceMap.load_string(%(
       class Macro
