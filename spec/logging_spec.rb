@@ -14,6 +14,27 @@ describe Solargraph::Logging do
     expect(output).to include('valid values are')
   end
 
+  it 'gives a class overriding log_level its own logger at that level, leaving the shared one alone' do
+    logging = described_class
+    verbose_class = Class.new do
+      include logging
+
+      def log_level
+        :debug
+      end
+
+      # module_function makes #logger private on includers.
+      def build_logger
+        logger
+      end
+    end
+
+    built = verbose_class.new.build_logger
+
+    expect(built.level).to eq(Logger::DEBUG)
+    expect(built).not_to be(described_class.logger)
+  end
+
   it 'logs messages with levels' do
     file = Tempfile.new('log')
     described_class.logger.reopen file
