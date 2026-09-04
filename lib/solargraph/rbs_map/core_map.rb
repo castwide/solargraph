@@ -13,6 +13,11 @@ module Solargraph
 
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
+      # Like FILLS_DIRECTORY, but a declaration here *replaces* the core
+      # definition of the same method path rather than adding an overload
+      # alongside it.
+      OVERRIDES_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'overrides'))
+
       def initialize; end
 
       # @param out [IO, nil] output stream for logging
@@ -25,6 +30,7 @@ module Solargraph
       # @param out [StringIO, IO, nil] output stream for logging
       # @return [Array<Pin::Base>]
       def cache_core out: $stderr
+        # @type [Array<Pin::Base>]
         new_pins = []
         cache = PinCache.deserialize_core
         return cache if cache
@@ -36,6 +42,15 @@ module Solargraph
         out&.puts 'Caching RBS pins for Ruby core'
         fill_conversions = Conversions.new(loader: fill_loader)
         new_pins.concat fill_conversions.pins
+
+        override_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+        override_loader.add(path: Pathname(OVERRIDES_DIRECTORY))
+        override_pins = Conversions.new(loader: override_loader).pins
+        # An override replaces what core declared for that path.
+        overridden = override_pins.grep(Pin::Method).to_set(&:path)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1266
+        new_pins.reject! { |pin| pin.is_a?(Pin::Method) && overridden.include?(pin.path) }
+        new_pins.concat override_pins
 
         # add some overrides
         new_pins.concat RbsMap::CoreFills::ALL
