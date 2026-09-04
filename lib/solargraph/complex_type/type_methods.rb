@@ -225,7 +225,7 @@ module Solargraph
       def qualify api_map, context = ''
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined? || t.bot?
+          next t if t.duck_type? || t.void? || t.undefined?
           recon = (t.rooted? ? '' : context)
           fqns = api_map.qualify(t.name, recon)
           if fqns.nil?
