@@ -5,6 +5,8 @@ module Solargraph
   #
   class ComplexType
     GENERIC_TAG_NAME = 'generic'
+    # the quote characters that open and close a string literal type
+    QUOTE_CHARACTERS = ['"', "'"].freeze
     # @!parse
     #   include TypeMethods
     include Equality
@@ -484,9 +486,17 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
+          # the open quote character of the string literal being read
+          quote = nil
           # @param char [String]
           type_string&.each_char do |char|
-            if char == '='
+            if quote
+              # inside a string literal every character is content, so
+              # separators and brackets carry no syntactic meaning
+              quote = nil if char == quote
+            elsif QUOTE_CHARACTERS.include?(char)
+              quote = char
+            elsif char == '='
               # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'
               point_stack += 1
@@ -543,6 +553,7 @@ module Solargraph
             raise ComplexTypeError,
                   "Unclosed subtype in #{type_string}"
           end
+          raise ComplexTypeError, "Unclosed string literal in #{type_string}" if quote
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
           types.push UniqueType.parse(base.strip, subtype_string.strip)
         end
