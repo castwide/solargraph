@@ -361,6 +361,6 @@ describe Solargraph::Source::SourceChainer do
 
     chain = described_class.chain(source, Solargraph::Position.new(1, 20))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Array<String>')
+    expect(type.tag).to eq('Array<"s">')
   end
 end

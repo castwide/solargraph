@@ -184,7 +184,7 @@ describe Solargraph::SourceMap do
     bench = Solargraph::Bench.new(source_maps: [file1, file2])
     api_map.catalog bench
     clip = api_map.clip_at('file2.rb', [1, 6])
-    expect(clip.infer.to_s).to eq('String')
+    expect(clip.infer.to_s).to eq('""')
     original_api_map_hash = api_map.hash
     original_source_map_hash = file1.hash
 

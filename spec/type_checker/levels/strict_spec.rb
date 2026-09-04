@@ -60,7 +60,7 @@ describe Solargraph::TypeChecker do
       # across core RBS versions, so match on the substance of the
       # message rather than the exact name.
       expect(checker.problems.map(&:message))
-        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received String\z/))
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received "two"\z/))
     end
 
     it 'does not report a bogus problem for a restarg typed as RBS `untyped`' do
@@ -98,7 +98,7 @@ describe Solargraph::TypeChecker do
         y << 'two'
       ))
       expect(checker.problems.map(&:message))
-        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#<<: \w+ expected Integer, received String\z/))
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#<<: \w+ expected Integer, received "two"\z/))
     end
 
     it 'does not flag a #<< argument matching the receiver element type' do

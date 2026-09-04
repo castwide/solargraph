@@ -497,7 +497,7 @@ describe Solargraph::SourceMap::Clip do
     clip = map.clip_at('test.rb', Solargraph::Position.new(6, 10))
     type = clip.infer
     # @todo expect(type.tags).to eq('"bar"')
-    expect(type.tags).to eq('String')
+    expect(type.tags).to eq('"bar"')
     expect(type.simple_tags).to eq('String')
   end
 
@@ -726,7 +726,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [7, 8])
     # @todo expect(clip.infer.tags).to eq('""')
-    expect(clip.infer.tags).to eq('String')
+    expect(clip.infer.tags).to eq('""')
     expect(clip.infer.simple_tags).to eq('String')
   end
 
@@ -784,7 +784,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [5, 8])
     # @todo expect(clip.infer.tags).to eq('""')
-    expect(clip.infer.tags).to eq('String')
+    expect(clip.infer.tags).to eq('""')
     expect(clip.infer.simple_tags).to eq('String')
   end
 
@@ -869,7 +869,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [6, 7])
     # @todo expect(clip.infer.tags).to eq('"one", Array')
-    expect(clip.infer.tags).to eq('String, Array')
+    expect(clip.infer.tags).to eq('"one", Array')
     expect(clip.infer.simple_tags).to eq('String, Array')
   end
 
@@ -913,7 +913,7 @@ describe Solargraph::SourceMap::Clip do
     api_map.map source
     clip = api_map.clip_at('test.rb', [15, 20])
     # @todo expect(clip.infer.tags).to eq('""')
-    expect(clip.infer.tags).to eq('String')
+    expect(clip.infer.tags).to eq('""')
     expect(clip.infer.simple_tags).to eq('String')
   end
 
@@ -1119,7 +1119,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [5, 14])
-    expect(clip.infer.to_s).to eq('String, 456')
+    expect(clip.infer.to_s).to eq('"foo", 456')
   end
 
   it 'handles parallel type possibilities with #new' do
@@ -1762,7 +1762,7 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [9, 7])
     type = clip.infer
     # @todo expect(type.tags).to eq('"string"')
-    expect(type.tags).to eq('String')
+    expect(type.tags).to eq('"string"')
     expect(type.simple_tags).to eq('String')
   end
 
@@ -2736,7 +2736,7 @@ describe Solargraph::SourceMap::Clip do
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [5, 6])
-    expect(clip.infer.to_s).to eq('nil, String')
+    expect(clip.infer.to_s).to eq('nil, "a"')
   end
 
   it 'replaces nil with alternate reassignments' do
@@ -2801,7 +2801,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [7, 6])
     # The order of the types can vary between platforms
-    expect(clip.infer.items.map(&:to_s).sort).to eq(['123', ':foo', 'String'])
+    expect(clip.infer.items.map(&:to_s).sort).to eq(['"a"', '123', ':foo'])
   end
 
   it 'does not map Module methods into an Object' do
@@ -3033,7 +3033,7 @@ describe Solargraph::SourceMap::Clip do
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.to_s).to eq('String')
+    expect(clip.infer.to_s).to eq('"foo"')
   end
 
   it 'preserves hash value when it is a union with brackets' do

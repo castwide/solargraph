@@ -677,7 +677,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
 
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.rooted_tags).to eq('::String')
+    expect(clip.infer.rooted_tags).to eq('"UTF-8"')
   end
 
   it 'sends proper gates in ProxyType' do
