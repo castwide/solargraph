@@ -502,7 +502,14 @@ module Solargraph
       ensure
         Signal.trap('INT', previous_int_trap || 'DEFAULT')
 
-        print_profile_timings prepare_time, catalog_time, definition_time
+        puts "\n=== Timing Results ==="
+        puts "Parsing & mapping: #{(prepare_time * 1000).round(2)}ms" if prepare_time
+        puts "Catalog building: #{(catalog_time * 1000).round(2)}ms" if catalog_time
+        puts "Go-to-definition: #{(definition_time * 1000).round(2)}ms" if definition_time
+        if prepare_time && catalog_time && definition_time
+          total_time = prepare_time + catalog_time + definition_time
+          puts "Total time: #{(total_time * 1000).round(2)}ms"
+        end
 
         saved = [parse_path, catalog_path, definition_path].select { |p| File.exist?(p) }
         unless saved.empty?
@@ -568,23 +575,6 @@ module Solargraph
       # @sg-ignore Need to add nil check here
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
-    end
-
-    # Times are nil for any phase that did not finish.
-    #
-    # @param prepare_time [Float, nil]
-    # @param catalog_time [Float, nil]
-    # @param definition_time [Float, nil]
-    # @return [void]
-    def print_profile_timings prepare_time, catalog_time, definition_time
-      puts "\n=== Timing Results ==="
-      puts "Parsing & mapping: #{(prepare_time * 1000).round(2)}ms" if prepare_time
-      puts "Catalog building: #{(catalog_time * 1000).round(2)}ms" if catalog_time
-      puts "Go-to-definition: #{(definition_time * 1000).round(2)}ms" if definition_time
-      return unless prepare_time && catalog_time && definition_time
-
-      total_time = prepare_time + catalog_time + definition_time
-      puts "Total time: #{(total_time * 1000).round(2)}ms"
     end
 
     # @param type [ComplexType, ComplexType::UniqueType]
