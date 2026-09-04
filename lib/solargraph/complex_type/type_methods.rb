@@ -217,25 +217,6 @@ module Solargraph
         tag == other.tag
       end
 
-      # Generate a ComplexType that fully qualifies this type's namespaces.
-      #
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param context [String] The namespace from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
-      def qualify api_map, context = ''
-        transform do |t|
-          next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined? || t.bot?
-          recon = (t.rooted? ? '' : context)
-          fqns = api_map.qualify(t.name, recon)
-          if fqns.nil?
-            next UniqueType::BOOLEAN if t.tag == 'Boolean'
-            next UniqueType::UNDEFINED
-          end
-          t.recreate(new_name: fqns, make_rooted: true)
-        end
-      end
-
       # @yieldparam [UniqueType]
       # @return [void]
       # @overload each_unique_type()
