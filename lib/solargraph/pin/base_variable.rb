@@ -179,7 +179,8 @@ module Solargraph
             # exclude it from candidates to resolve `steps` against here,
             # discarding its narrowing. Compare by identity instead.
             self_excluded_locals = clip.locals.reject do |candidate|
-              candidate.assignments.any? { |a| a.equal?(parent_node) }
+              candidate.name == name &&
+                candidate.assignments.any? { |a| a.equal?(parent_node) }
             end
             # @sg-ignore Need to add nil check here
             result = chain.infer(api_map, closure, self_excluded_locals).self_to_type(closure.context)
