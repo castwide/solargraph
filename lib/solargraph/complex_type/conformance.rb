@@ -93,7 +93,6 @@ module Solargraph
       # interface's own type params, see https://github.com/castwide/solargraph/issues/1267
       # @return [Boolean, nil] settled verdict, or nil to fall through
       def interface_bypass_verdict
-        return true if inferred.interface? && rules.include?(:allow_unmatched_interface)
         return nil unless expected.interface?
 
         verdict = structural_interface_verdict
