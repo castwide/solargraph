@@ -7,6 +7,28 @@ module Solargraph
       # to the method pin
       attr_writer :closure
 
+      # What `self` is inside this signature's body, from an RBS block
+      # binding like `{ () [self: Foo] -> void }`. Nil when the source
+      # declares no binding.
+      #
+      # @return [ComplexType, nil]
+      attr_reader :self_type
+
+      # @param self_type [ComplexType, nil]
+      # @param [Hash{Symbol => Object}] splat
+      def initialize self_type: nil, **splat
+        super(**splat)
+        @self_type = self_type
+      end
+
+      # @param other [self]
+      # @param attrs [Hash{::Symbol => Object}]
+      #
+      # @return [self]
+      def combine_with other, attrs = {}
+        super(other, { self_type: self_type || other.self_type }.merge(attrs))
+      end
+
       def generics
         # @type [Array<::String, nil>]
         @generics ||= [].freeze
