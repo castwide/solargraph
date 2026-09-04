@@ -202,6 +202,28 @@ describe Solargraph::RbsMap::Conversions do
         expect(parameter.return_type.rooted_tags).not_to include('generic<')
       end
     end
+
+    context 'with a prepended module' do
+      subject(:prepend_pin) do
+        conversions.pins.find { |pin| pin.is_a?(Solargraph::Pin::Reference::Prepend) && pin.namespace == 'Foo' }
+      end
+
+      let(:rbs) do
+        <<~RBS
+          module Bar
+            def baz: () -> String
+          end
+
+          class Foo
+            prepend Bar
+          end
+        RBS
+      end
+
+      it 'generates a prepend reference naming the module' do
+        expect(prepend_pin.name).to eq('Bar')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
