@@ -106,8 +106,8 @@ module Solargraph
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
-        types = receiver_pin.docstring.tag(:yieldreceiver)&.types
-        return ComplexType::UNDEFINED unless types&.any?
+        bound = declared_binding(receiver_pin)
+        return ComplexType::UNDEFINED if bound.nil?
 
         name_pin = self
         # if we have Foo.bar { |x| ... }, and the bar method references self...
@@ -120,7 +120,22 @@ module Solargraph
                    closure.full_context
                  end
 
-        ComplexType.try_parse(*types).qualify(api_map, *receiver_pin.gates).self_to_type(target)
+        bound.qualify(api_map, *receiver_pin.gates).self_to_type(target)
+      end
+
+      # A @yieldreceiver tag outranks an RBS `[self: Foo]` binding, because
+      # CoreFills uses the tag to state a binding more precisely than RBS
+      # does: Module#define_method is `[self: top]` in RBS and
+      # `::Object<self>` here.
+      #
+      # @param receiver_pin [Pin::Base]
+      # @return [ComplexType, nil]
+      def declared_binding receiver_pin
+        types = receiver_pin.docstring.tag(:yieldreceiver)&.types
+        return ComplexType.try_parse(*types) if types&.any?
+        return nil unless receiver_pin.is_a?(Pin::Method)
+
+        receiver_pin.block&.self_type
       end
     end
   end
