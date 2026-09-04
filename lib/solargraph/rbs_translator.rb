@@ -167,13 +167,12 @@ module Solargraph
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
           type_tag(type.name)
-        when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
-          # `Bottom`` is used in contexts where nothing will ever return
-          # - e.g., it could be the return type of 'exit()' or 'raise'
-          # @todo define a specific bottom type and use it to
-          #   determine dead code
-          #
+        when RBS::Types::Bases::Any
           'undefined'
+        when RBS::Types::Bases::Bottom
+          # `Bottom` is used in contexts where nothing will ever return
+          # - e.g., it could be the return type of 'exit()' or 'raise'
+          'bot'
         else
           Solargraph.logger.warn "Unrecognized RBS type: #{type.class} at #{type.location}"
           'undefined'
