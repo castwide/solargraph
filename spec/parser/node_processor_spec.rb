@@ -33,6 +33,22 @@ describe Solargraph::Parser::NodeProcessor do
     end.not_to raise_error
   end
 
+  it 'names the unmatched target node type when a masgn target has no variable pin' do
+    node = parse(%(
+      class Attrs
+        def b=(v); end
+      end
+      a = Attrs.new
+      a.b, c = 1, 2
+    ))
+    logged = []
+    # Calling the block directly: the message is only built when the
+    # logger is at debug level, which earlier specs can leave raised.
+    allow(Solargraph.logger).to receive(:debug) { |*args, &block| logged << (block ? block.call : args.first) }
+    described_class.process(node)
+    expect(logged).to include(a_string_matching(/Could not find local for masgn= value.*target\.type = send/m))
+  end
+
   it 'orders optional args correctly' do
     node = parse(%(
       def foo(bar = nil, baz = nil); end
