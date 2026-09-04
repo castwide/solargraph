@@ -110,22 +110,6 @@ module Solargraph
       Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: :rbs, type_location: closure.location, closure: closure)
     end
 
-    # @param type_name [RBS::TypeName]
-    # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-    # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
-    # @return [ComplexType::UniqueType]
-    def self.build_unique_type type_name, type_args = [], type_alias_decls: {}
-      base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-      params = type_args.map do |a|
-        RbsTranslator.to_complex_type(a, type_alias_decls: type_alias_decls)
-      end
-      if base == 'Hash' && params.length == 2
-        ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
-      else
-        ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
-      end
-    end
-
     # @param location [RBS::Location, nil]
     # @return [Solargraph::Location, nil]
     def self.to_sg_location location
