@@ -533,6 +533,48 @@ describe 'YARD type specifier list parsing' do
           end
         end
       end
+
+      # Exercises ComplexType#resolve_generics_from_context against union
+      # types with more than one member. Compares #to_s, not #tag, since
+      # #tag delegates to only the first union member (method_missing).
+      # https://github.com/castwide/solargraph/issues/1298
+      UNION_COMPLEX_TYPE_GENERIC_TESTS = {
+        # tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map
+        discriminating_two_member_union: ['generic<A>, nil', 'String, nil', {}, %w[A], 'String, nil', { 'A' => 'String' }],
+        discriminating_three_member_union: ['generic<A>, nil, Symbol', 'String, nil, Symbol', {}, %w[A],
+                                            'String, nil, Symbol', { 'A' => 'String' }],
+        non_discriminating_single_member_context: ['generic<A>, nil', 'String', {}, %w[A], 'String, nil',
+                                                   { 'A' => 'String' }],
+        non_discriminating_nested_array_generic: ['Array<generic<A>>, nil', 'Array<String>, nil', {}, %w[A],
+                                                  'Array<String>, nil', { 'A' => 'String' }],
+        non_discriminating_nested_hash_generic: ['Hash{generic<K> => generic<V>}, nil', 'Hash{String => Integer}, nil',
+                                                 {}, %w[K V], 'Hash{String => Integer}, nil',
+                                                 { 'K' => 'String', 'V' => 'Integer' }],
+        non_discriminating_preserves_already_resolved_generic: ['generic<A>, nil', 'String, nil', { 'A' => 'Integer' },
+                                                                %w[A], 'Integer, nil', { 'A' => 'Integer' }],
+        discriminating_reordered_context_members: ['generic<A>, nil', 'nil, String', {}, %w[A], 'String, nil',
+                                                   { 'A' => 'String' }]
+        # Left out as open questions. The first has no concrete member to subtract,
+        # and telling A from B would need union member order, which carries no
+        # meaning. The second leaves nothing over, so A binds to the whole context.
+        # no_discriminating_context_member: ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], ...],
+        # context_fully_covered_by_concrete_member: ['generic<A>, nil', 'nil', {}, %w[A], ...]
+      }.freeze
+
+      UNION_COMPLEX_TYPE_GENERIC_TESTS.each do |name, (tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map)|
+        context "when resolving #{name}: union #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
+          let(:complex_type) { Solargraph::ComplexType.parse(tag) }
+          let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
+
+          it "resolves to #{expected_to_s} with updated map #{expected_output_map}" do
+            resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
+            resolved_type = complex_type.resolve_generics_from_context(generics_to_resolve, context_type,
+                                                                       resolved_generic_values: resolved_generic_values)
+            expect(resolved_type.to_s).to eq(expected_to_s)
+            expect(resolved_generic_values.transform_values(&:to_s)).to eq(expected_output_map)
+          end
+        end
+      end
     end
   end
 

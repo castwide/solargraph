@@ -779,6 +779,84 @@ describe Solargraph::TypeChecker do
       end
     end
 
+    it 'resolves a generic type variable against a union @param type' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def must_nilable(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_nilable(arg) = must_nilable(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable when both the @param and @return types are the same union' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>, nil]
+        def maybe(arg)
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [String, nil]
+        def via(arg) = maybe(arg)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type with more than two members' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil, Symbol]
+        # @return [generic<A>]
+        def must_not_nil_or_symbol(arg)
+          raise ArgumentError, 'arg must not be nil or a Symbol' if arg.nil? || arg.is_a?(Symbol)
+
+          arg
+        end
+
+        # @param arg [String, nil, Symbol]
+        # @return [Integer]
+        def via_triple(arg) = must_not_nil_or_symbol(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer1(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer2(arg) = layer1(arg)
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_layers(arg) = layer2(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar
