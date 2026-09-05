@@ -447,9 +447,9 @@ module Solargraph
     #
     # @param rooted_tag [String] The fully qualified namespace/interface to search for methods
     # @param scope [Symbol] :class or :instance
-    # @return [Array<Solargraph::Pin::Method>]
+    # @return [Enumerable<Solargraph::Pin::Method>]
     def get_own_methods rooted_tag, scope: :instance
-      get_methods(rooted_tag, scope: scope).select { |pin| pin.closure&.path == rooted_tag }
+      store.get_methods(ComplexType.try_parse(rooted_tag).namespace, scope: scope)
     end
 
     # Get an array of methods available in a particular context.

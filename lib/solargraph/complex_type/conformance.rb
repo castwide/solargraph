@@ -91,7 +91,7 @@ module Solargraph
       # Whether `expected` is an RBS interface declaring methods of its own:
       # https://github.com/ruby/rbs/blob/master/docs/syntax.md#interface-declaration
       def interface_declares_methods?
-        expected.interface? && !required_interface_methods.empty?
+        expected.interface? && required_interface_methods.any?
       end
 
       def can_strip_expected_parameters?
@@ -130,7 +130,7 @@ module Solargraph
         true
       end
 
-      # @return [Array<Pin::Method>]
+      # @return [Enumerable<Pin::Method>]
       def required_interface_methods
         @required_interface_methods ||= api_map.get_own_methods(expected.name)
       end
