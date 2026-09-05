@@ -638,9 +638,9 @@ module Solargraph
         result.return_type = return_type
         result.proxied = true
         result.reset_generated!
-        # dup keeps the original docstring, whose tag reflects the old
-        # return_type. Clear it so #docstring resyncs via #parse_comments.
-        result.instance_variable_set(:@docstring, nil)
+        # dup keeps the old docstring, whose tag still holds the previous
+        # return_type; nil makes #docstring reparse from comments.
+        result.docstring = nil
         # Macros should have been processed already
         result.macro_names.clear
         result
