@@ -41,8 +41,8 @@ module Solargraph
           # :nocov:
         end
 
-        conformance = interface_conformance
-        return conformance unless conformance.nil?
+        return conforms_via_interface? if interface_declares_methods?
+        return true if expected.interface? && rules.include?(:allow_unmatched_interface)
 
         return true if conforms_via_reverse_match?
 
@@ -88,18 +88,10 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      # Settles conformance when `expected` is an RBS interface:
+      # Whether `expected` is an RBS interface declaring methods of its own:
       # https://github.com/ruby/rbs/blob/master/docs/syntax.md#interface-declaration
-      # Does not verify interface type params: https://github.com/castwide/solargraph/issues/1267
-      # @return [Boolean, nil] nil when no interface, or nothing here decides
-      def interface_conformance
-        return nil unless expected.interface?
-
-        structural = structural_interface_conformance
-        return structural unless structural.nil?
-        return true if rules.include?(:allow_unmatched_interface)
-
-        nil
+      def interface_declares_methods?
+        expected.interface? && !required_interface_methods.empty?
       end
 
       def can_strip_expected_parameters?
@@ -140,16 +132,13 @@ module Solargraph
 
       # @return [Array<Pin::Method>]
       def required_interface_methods
-        api_map.get_own_methods(expected.name)
+        @required_interface_methods ||= api_map.get_own_methods(expected.name)
       end
 
-      # @return [Boolean, nil] whether `inferred` implements every method the
-      #   interface declares, or nil if it has no pin or declares none
-      def structural_interface_conformance
-        required = required_interface_methods
-        return nil if required.empty?
-
-        required.all? { |pin| !api_map.get_method_stack(inferred.name, pin.name, scope: :instance).empty? }
+      # Whether `inferred` implements every method the interface declares; their
+      # signatures go unchecked: https://github.com/castwide/solargraph/issues/1267
+      def conforms_via_interface?
+        required_interface_methods.all? { |pin| !api_map.get_method_stack(inferred.name, pin.name, scope: :instance).empty? }
       end
 
       def key_types_conform?
