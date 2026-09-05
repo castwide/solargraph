@@ -576,7 +576,7 @@ module Solargraph
       def parts_of_function type, pin, implicit_nil
         [
           RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names),
-          extract_method_type_return_type(type, implicit_nil).force_rooted
+          extract_method_type_return_type(type, implicit_nil: implicit_nil).force_rooted
         ]
       end
 
@@ -772,9 +772,9 @@ module Solargraph
       # This method will convert type aliases to concrete types.
       #
       # @param type [RBS::MethodType]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType]
-      # @param [Object] implicit_nil
-      def extract_method_type_return_type type, implicit_nil
+      def extract_method_type_return_type type, implicit_nil:
         tag = RbsTranslator.to_complex_type(type.type.return_type)
         return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
         tag
