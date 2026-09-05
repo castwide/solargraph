@@ -12,10 +12,9 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # RBS 4.1 types the key lookups on Hash (`#[]`, `#fetch`, `#dig`,
-    # `#delete`) as the structural interface `Hash::_Key`. Solargraph
-    # resolves interfaces by name, so stub the name to the type
-    # parameter it stands in for until structural support lands.
+    # Solargraph resolves interfaces by name, so Hash's `_Key` lookups
+    # (`#[]`, `#fetch`, `#dig`, `#delete`) are stubbed to the type
+    # parameter they stand in for.
     #
     # https://github.com/castwide/solargraph/pull/1266
     #

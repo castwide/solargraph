@@ -145,12 +145,7 @@ module Solargraph
         end
 
         # Whether an overload's arity and each parameter's declared
-        # type accept the call's actual arguments. Used both for
-        # regular overload resolution and, per conjunct, to narrow an
-        # Intersection's conjuncts to the ones a call can actually
-        # dispatch to (see #conjunct_accepts_arguments) - the same
-        # question either way: does this signature accept these
-        # arguments.
+        # type accept the call's actual arguments.
         #
         # @param overload [Pin::Signature]
         # @param api_map [ApiMap]
