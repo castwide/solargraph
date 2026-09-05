@@ -145,4 +145,55 @@ describe Solargraph::Workspace do
       described_class.new('./path', config)
     end.not_to raise_error
   end
+
+  describe '#gemfile?' do
+    it 'returns true when the workspace directory has a Gemfile' do
+      File.write(File.join(dir_path, 'Gemfile'), "source 'https://rubygems.org'")
+
+      expect(workspace.gemfile?).to be(true)
+    end
+
+    it 'returns false when the workspace directory has no Gemfile' do
+      expect(workspace.gemfile?).to be(false)
+    end
+  end
+
+  describe '#cache_all_for_workspace!' do
+    let(:pin_cache) { instance_double(Solargraph::PinCache) }
+    let(:gemspecs)  { instance_double(Solargraph::Workspace::Gemspecs) }
+
+    before do
+      allow(Solargraph::PinCache).to receive(:cache_core)
+      allow(Solargraph::PinCache).to receive(:possible_stdlibs)
+      allow(Solargraph::PinCache).to receive(:new).and_return(pin_cache)
+      allow(pin_cache).to receive_messages(cache_gem: nil, possible_stdlibs: [])
+      allow(Solargraph::PinCache).to receive(:cache_all_stdlibs)
+      allow(Solargraph::Workspace::Gemspecs).to receive(:new).and_return(gemspecs)
+      gemspec = instance_double(Gem::Specification, name: 'test_gem', version: '1.0.0')
+      allow(gemspecs).to receive(:all_gemspecs_from_bundle).and_return([gemspec])
+    end
+
+    it 'caches core pins' do
+      allow(Solargraph::PinCache).to receive_messages(core?: false)
+      allow(pin_cache).to receive_messages(cached?: true,
+                                           cache_all_stdlibs: nil)
+
+      workspace.cache_all_for_workspace!(nil, rebuild: false)
+
+      expect(Solargraph::PinCache).to have_received(:cache_core).with(out: nil)
+    end
+
+    it 'caches gems' do
+      allow(pin_cache).to receive(:cached?).and_return(false)
+
+      allow(pin_cache).to receive(:cache_all_stdlibs).with(out: nil, rebuild: false)
+
+      allow(Solargraph::PinCache).to receive_messages(core?: true,
+                                                      possible_stdlibs: [])
+
+      workspace.cache_all_for_workspace!(nil, rebuild: false)
+
+      expect(pin_cache).to have_received(:cache_gem)
+    end
+  end
 end
