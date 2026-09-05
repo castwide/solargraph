@@ -286,6 +286,31 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'profile' do
+    # vernier is an optional dependency (see the LoadError rescue in
+    # Shell#profile) and isn't installed in this repo's Gemfile, so stub it
+    # out entirely rather than requiring the real gem.
+    before do
+      allow(shell).to receive(:require).with('vernier').and_return(true)
+      stub_const('Vernier', Module.new)
+      allow(Vernier).to receive(:profile).and_yield
+    end
+
+    it 'profiles go-to-definition against a real workspace' do
+      Dir.mktmpdir do |output_dir|
+        output = capture_both do
+          shell.options = { directory: 'spec/fixtures/workspace', output_dir: output_dir, line: 4, column: 10 }
+          shell.profile
+        end
+
+        expect(output).to include('Processing go-to-definition request...')
+        expect(output).to include('Result: [{')
+        expect(output).to include('uri')
+        expect(output).to include('thing.rb"')
+      end
+    end
+  end
+
   context 'with unbundled environments' do
     let!(:command_path) { File.realpath(File.join('spec', 'fixtures', 'shim.rb')) }
     let!(:unbundled_env) { Bundler.unbundled_env.merge({ 'BUNDLE_GEMFILE' => nil }) }

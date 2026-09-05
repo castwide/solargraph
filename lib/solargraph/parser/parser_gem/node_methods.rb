@@ -341,7 +341,7 @@ module Solargraph
           name_start = idx + 1
           return nil if name_start >= name_end
           method_name = code[name_start...name_end]
-          return nil if method_name.empty?
+          return nil if method_name.nil? || method_name.empty?
 
           # Check for receiver pattern: receiver.method( or receiver::method(
           idx = name_start - 1
@@ -354,7 +354,7 @@ module Solargraph
             recv_start = idx + 1
             if recv_start < recv_end
               recv_name = code[recv_start...recv_end]
-              unless recv_name.empty?
+              unless recv_name.nil? || recv_name.empty?
                 receiver_node = ::Parser::AST::Node.new(:send, [nil, recv_name.to_sym])
                 return ::Parser::AST::Node.new(:send, [receiver_node, method_name.to_sym])
               end
@@ -364,7 +364,7 @@ module Solargraph
             const_start = const_end
             const_start -= 1 while const_start.positive? && code[const_start - 1] =~ /[a-zA-Z0-9_]/
             const_name = code[const_start...const_end]
-            unless const_name.empty? || method_name.empty?
+            unless const_name.nil? || const_name.empty? || method_name.empty?
               const_node = ::Parser::AST::Node.new(:const, [nil, const_name.to_sym])
               return ::Parser::AST::Node.new(:send, [const_node, method_name.to_sym])
             end

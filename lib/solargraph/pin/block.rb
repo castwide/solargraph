@@ -45,6 +45,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
+      # @sg-ignore Need better handling of Enumerator#with_index
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1

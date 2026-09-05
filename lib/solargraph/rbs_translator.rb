@@ -112,7 +112,7 @@ module Solargraph
     # @param location [RBS::Location, nil]
     # @return [Solargraph::Location, nil]
     def self.to_sg_location(location)
-      return nil if location&.name.nil?
+      return nil if location.nil? || location.name.nil?
 
       start_pos = Position.new(location.start_line - 1, location.start_column)
       end_pos = Position.new(location.end_line - 1, location.end_column)

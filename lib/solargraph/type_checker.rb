@@ -523,7 +523,9 @@ module Solargraph
     def kwarg_problems_for sig, argchain, api_map, closure_pin, locals, location, pin, params, idx
       result = []
       kwargs = convert_hash(argchain.node)
-      par = sig.parameters[idx]
+      # idx always came from the caller's own sig.parameters.each_with_index
+      par = sig.parameters.fetch(idx)
+
       # @type [Solargraph::Source::Chain]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
@@ -594,7 +596,7 @@ module Solargraph
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         }
         # don't complain about a param that didn't come from the pin we're looking at anyway
-        if details[:qualified].defined? ||
+        if details.fetch(:qualified).defined? ||
            relevant_pin.parameter_names.include?(tag.name.to_s)
           param_details[tag.name.to_s] = details
         end
@@ -730,7 +732,7 @@ module Solargraph
         return [] if r.empty?
         r
       end
-      results.first
+      results.first || []
     end
 
     # @param pin [Pin::Method]

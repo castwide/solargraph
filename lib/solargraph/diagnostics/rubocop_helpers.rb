@@ -25,7 +25,7 @@ module Solargraph
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
-                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
+                "did find: [#{specs.map { |s| s.version.to_s }.join(', ')}]"
         end
         require 'rubocop'
       end
