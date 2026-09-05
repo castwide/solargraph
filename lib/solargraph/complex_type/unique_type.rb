@@ -490,13 +490,6 @@ module Solargraph
         [self]
       end
 
-      # @yieldparam t [self]
-      # @yieldreturn [Boolean]
-      # @return [Array<UniqueType>]
-      def select(&)
-        [self].select(&)
-      end
-
       # @param new_name [String, nil]
       # @param make_rooted [Boolean, nil]
       # @param new_key_types [Array<ComplexType>, nil]

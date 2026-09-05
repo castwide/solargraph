@@ -401,21 +401,14 @@ module Solargraph
       # try to find common types via conformance
       items.each do |ut|
         intersection_type.each do |int_type|
-          if int_type.duck_type?
-            # A duck-type fact selects arms that already provide the
-            # method; #conforms_to?'s own duck-type check matches unconditionally instead.
-            types << ut if duck_types_match?(api_map, int_type, ComplexType.new([ut]))
-          elsif int_type.conforms_to?(api_map, ut, :assignment)
+          if int_type.conforms_to?(api_map, ut, :assignment)
             types << int_type
           elsif ut.conforms_to?(api_map, int_type, :assignment)
             types << ut
           end
         end
       end
-      if types.empty?
-        duck_candidates = intersection_type.select(&:duck_type?)
-        types = duck_candidates.empty? ? [ComplexType::UniqueType::UNDEFINED] : duck_candidates
-      end
+      types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
       ComplexType.new(types)
     end
 
