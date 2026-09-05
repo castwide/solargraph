@@ -180,10 +180,9 @@ module Solargraph
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification if we can
                                                           if specish.respond_to?(:stub)
-                                                            # @todo Dispatched through send to avoid
-                                                            #   Object#stub from rspec-mocks, which
-                                                            #   produces a false alarm in typechecking
-                                                            #   when rspec-mocks is in the bundle
+                                                            # @todo Dispatched through send to avoid a
+                                                            #   false alarm in typechecking when
+                                                            #   rspec-mocks is in the bundle
                                                             to_gem_specification specish.send(:stub)
                                                           else
                                                             # A Bundler::StubSpecification is a Bundler::
