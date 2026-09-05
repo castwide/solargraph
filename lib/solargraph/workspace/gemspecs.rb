@@ -44,7 +44,6 @@ module Solargraph
         return auto_required_gemspecs_from_bundler if require == 'bundler/require'
 
         # Determine gem name based on the require path
-        file = "lib/#{require}.rb"
         spec_with_path = Gem::Specification.find_by_path(require)
 
         all_gemspecs = all_gemspecs_from_bundle
@@ -73,6 +72,7 @@ module Solargraph
 
           # look ourselves just in case this is hanging out somewhere
           # that find_by_path doesn't index
+          file = "lib/#{require}.rb"
           gemspec = all_gemspecs.find do |spec|
             spec = to_gem_specification(spec) unless spec.respond_to?(:files)
 
