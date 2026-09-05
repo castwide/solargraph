@@ -119,7 +119,7 @@ module Solargraph
         def argument_verified_conjuncts conjuncts, api_map, name_pin, locals
           return conjuncts if arguments.empty?
 
-          accepts = conjuncts.map { |c| conjunct_matches_arguments?(c, api_map, name_pin, locals) }
+          accepts = conjuncts.map { |c| conjunct_accepts_arguments(c, api_map, name_pin, locals) }
           return conjuncts if accepts.any?(&:nil?)
 
           matching = conjuncts.zip(accepts).select { |(_c, matched)| matched }.map(&:first)
@@ -134,7 +134,7 @@ module Solargraph
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Boolean, nil]
-        def conjunct_matches_arguments? conjunct, api_map, name_pin, locals
+        def conjunct_accepts_arguments conjunct, api_map, name_pin, locals
           pins = method_pins_for_binder(conjunct, api_map, name_pin, locals)
           return nil if pins.empty?
 
@@ -148,7 +148,7 @@ module Solargraph
         # type accept the call's actual arguments. Used both for
         # regular overload resolution and, per conjunct, to narrow an
         # Intersection's conjuncts to the ones a call can actually
-        # dispatch to (see #conjunct_matches_arguments?) - the same
+        # dispatch to (see #conjunct_accepts_arguments) - the same
         # question either way: does this signature accept these
         # arguments.
         #
