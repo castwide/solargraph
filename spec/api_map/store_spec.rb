@@ -126,8 +126,8 @@ describe Solargraph::ApiMap::Store do
 
       bar_pins = result.select { |p| p.name == 'bar' }
       expect(bar_pins.length).to eq(1)
-      # Regression is combinatorial blowup, not exact merge outcome -
-      # bound the result size rather than pin exact merge semantics.
+      # The regression is combinatorial blowup, not a specific merge
+      # outcome, so bound the size rather than assert exact merges.
       expect(bar_pins.first.signatures.length).to be <= maps.length
     end
   end
