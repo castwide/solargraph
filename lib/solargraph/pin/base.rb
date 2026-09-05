@@ -756,9 +756,9 @@ module Solargraph
         sync_return_type_tag
       end
 
-      # Reads @return_type, not #return_type: BaseVariable's getter reads
-      # back from this tag, so calling it here would sync a stale value
-      # to itself. Callers needing #return_type forced call it first.
+      # Reads the return type instance variable, not the reader method:
+      # BaseVariable derives its reader from this tag, so it would sync
+      # the tag to itself. Callers force the reader first.
       #
       # @return [void]
       def sync_return_type_tag
