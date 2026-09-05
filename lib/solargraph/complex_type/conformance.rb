@@ -41,8 +41,8 @@ module Solargraph
           # :nocov:
         end
 
-        interface_verdict = interface_bypass_verdict
-        return interface_verdict unless interface_verdict.nil?
+        conformance = interface_conformance
+        return conformance unless conformance.nil?
 
         return true if conforms_via_reverse_match?
 
@@ -88,15 +88,18 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      # Settles interface conformance before subtype checks (which don't
-      # apply once an interface is involved); doesn't verify an
-      # interface's own type params, see https://github.com/castwide/solargraph/issues/1267
-      # @return [Boolean, nil] settled verdict, or nil to fall through
-      def interface_bypass_verdict
+      # Settles conformance when `expected` is an RBS interface, before
+      # subtype checks (which don't apply once an interface is involved);
+      # doesn't verify the interface's own type params, see
+      # https://github.com/castwide/solargraph/issues/1267
+      # https://github.com/ruby/rbs/blob/master/docs/syntax.md#interface-declaration
+      # @return [Boolean, nil] nil when `expected` is not an interface, or
+      #   when nothing here decides and the normal path should run
+      def interface_conformance
         return nil unless expected.interface?
 
-        verdict = structural_interface_verdict
-        return verdict unless verdict.nil?
+        structural = structural_interface_conformance
+        return structural unless structural.nil?
         return true if rules.include?(:allow_unmatched_interface)
 
         nil
@@ -143,9 +146,9 @@ module Solargraph
         api_map.get_own_methods(expected.name)
       end
 
-      # @return [Boolean, nil] verdict against `inferred`'s method stack,
-      #   or nil if the interface has no pin or declares no methods
-      def structural_interface_verdict
+      # @return [Boolean, nil] whether `inferred` implements every method the
+      #   interface declares, or nil if it has no pin or declares none
+      def structural_interface_conformance
         required = required_interface_methods
         return nil if required.empty?
 
