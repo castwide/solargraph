@@ -202,7 +202,7 @@ describe 'YARD type specifier list parsing' do
     it 'parses Hash using <> notation' do
       types = Solargraph::ComplexType.parse 'Hash<Symbol, String>'
       expect(types.length).to eq(1)
-      expect(types.first.tag).to eq('Hash<Symbol, String>')
+      expect(types.first.tag).to eq('Hash{Symbol => String}')
       expect(types.first.name).to eq('Hash')
       expect(types.first.key_types.length).to eq(1)
       expect(types.first.key_types[0].name).to eq('Symbol')
@@ -221,6 +221,29 @@ describe 'YARD type specifier list parsing' do
       expect(type.key_types.map(&:name)).to eq(%w[String Symbol])
       expect(type.value_types.map(&:name)).to eq(%w[Integer BigDecimal])
       expect(type.to_rbs).to eq('Hash[(String | Symbol), (Integer | BigDecimal)]')
+    end
+
+    it 'round-trips a Hash tag when key_types has more than one element and hash_parameters? is unset' do
+      original = Solargraph::ComplexType.parse('Hash{String, nil => Enumerable<Integer>}').items.first
+
+      mismatched = Solargraph::ComplexType::UniqueType.new(
+        'Hash', original.key_types, original.subtypes, rooted: original.rooted?, parameters_type: :list
+      )
+
+      expect(mismatched.tag).to eq('Hash{String, nil => Enumerable<Integer>}')
+      expect(Solargraph::ComplexType.parse(mismatched.tag).tag).to eq(mismatched.tag)
+    end
+
+    it 'round-trips a Hash tag when a single key_types slot is itself a union and hash_parameters? is unset' do
+      union_key = Solargraph::ComplexType.parse('String', 'nil')
+      value = Solargraph::ComplexType.parse('Enumerable<Integer>')
+
+      mismatched = Solargraph::ComplexType::UniqueType.new(
+        'Hash', [union_key], [value], rooted: false, parameters_type: :list
+      )
+
+      expect(mismatched.tag).to eq('Hash{String, nil => Enumerable<Integer>}')
+      expect(Solargraph::ComplexType.parse(mismatched.tag).tag).to eq(mismatched.tag)
     end
 
     #

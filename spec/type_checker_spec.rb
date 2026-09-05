@@ -22,6 +22,22 @@ describe Solargraph::TypeChecker do
     expect(checker.problems).to be_one
   end
 
+  it 'reports a problem instead of aborting the whole run when inferring a single call raises' do
+    checker = described_class.load_string(%(
+      boom_call
+      another_undefined_call
+    ), nil, :strict)
+    allow(Solargraph::Parser).to receive(:chain).and_wrap_original do |original, *args|
+      chain = original.call(*args)
+      allow(chain).to receive(:infer).and_raise(Solargraph::ComplexTypeError, 'boom') if chain.links.last.word == 'boom_call'
+      chain
+    end
+
+    problems = nil
+    expect { problems = checker.problems }.not_to raise_error
+    expect(problems.map(&:message).join).to include('another_undefined_call')
+  end
+
   it 'uses caching in Solargraph::Chain to handle a degenerate case' do
     checker = described_class.load_string(%(
       def documentation

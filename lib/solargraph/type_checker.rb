@@ -371,6 +371,12 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
+      rescue StandardError => e
+        # Don't let one call site's inference crash the whole typecheck run.
+        # @sg-ignore Need to add nil check here
+        word = chain.links.last.word
+        Solargraph.logger.warn "Error checking call to #{word} at #{location.range}: [#{e.class}] #{e.message}"
+        result.push Problem.new(location, "Internal error inferring type for call to #{word}: [#{e.class}] #{e.message}")
       end
       result
     end
