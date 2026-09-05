@@ -5,6 +5,8 @@ module Solargraph
   #
   class ComplexType
     GENERIC_TAG_NAME = 'generic'
+    # the quote characters that open and close a string literal type
+    QUOTE_CHARACTERS = ['"', "'"].freeze
     # @!parse
     #   include TypeMethods
     include Equality
@@ -189,8 +191,19 @@ module Solargraph
 
     # @return [ComplexType]
     def downcast_to_literal_if_possible
-      return self
       ComplexType.new(items.map(&:downcast_to_literal_if_possible))
+    end
+
+    # Drop a literal item (e.g. `0`) when its non-literal base type
+    # (e.g. `Integer`) is also present in the same union - a wider
+    # type already subsumes it, so keeping both is redundant and
+    # reads as if the literal value were still specifically reachable.
+    #
+    # @return [ComplexType]
+    def without_redundant_literals
+      non_literal_names = items.reject(&:literal?).map(&:name)
+      new_items = items.reject { |item| item.literal? && non_literal_names.include?(item.non_literal_name) }
+      ComplexType.new(new_items)
     end
 
     # @return [String]
@@ -298,6 +311,11 @@ module Solargraph
     # @return [self]
     def simplify_literals
       ComplexType.new(map(&:simplify_literals))
+    end
+
+    # @return [self]
+    def non_literal_type
+      ComplexType.new(map(&:non_literal_type))
     end
 
     # @param new_name [String, nil]
@@ -468,9 +486,17 @@ module Solargraph
           paren_stack = 0
           base = String.new
           subtype_string = String.new
+          # the open quote character of the string literal being read
+          quote = nil
           # @param char [String]
           type_string&.each_char do |char|
-            if char == '='
+            if quote
+              # inside a string literal every character is content, so
+              # separators and brackets carry no syntactic meaning
+              quote = nil if char == quote
+            elsif QUOTE_CHARACTERS.include?(char)
+              quote = char
+            elsif char == '='
               # raise ComplexTypeError, "Invalid = in type #{type_string}" unless curly_stack > 0
             elsif char == '<'
               point_stack += 1
@@ -527,6 +553,7 @@ module Solargraph
             raise ComplexTypeError,
                   "Unclosed subtype in #{type_string}"
           end
+          raise ComplexTypeError, "Unclosed string literal in #{type_string}" if quote
           # types.push ComplexType.new([UniqueType.new(base, subtype_string)])
           types.push UniqueType.parse(base.strip, subtype_string.strip)
         end

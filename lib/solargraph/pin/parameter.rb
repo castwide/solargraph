@@ -227,11 +227,12 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
-        return true if atype.conforms_to?(api_map,
-                                          ptype,
-                                          :method_call,
-                                          %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        return false unless atype.conforms_to?(api_map,
+                                               ptype,
+                                               :method_call,
+                                               %i[allow_empty_params allow_undefined]) || ptype.generic?
+
+        literal_arg_matches? ptype, atype
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs
@@ -245,6 +246,29 @@ module Solargraph
 
       def generate_complex_type
         nil
+      end
+
+      # #compatible_arg? is too permissive for overload *selection*: it
+      # would let a literal-typed overload always win over the safe
+      # catch-all for any argument merely assignable to it, not just literals.
+      #
+      # @param ptype [ComplexType]
+      # @param atype [ComplexType]
+      # @return [Boolean]
+      def literal_arg_matches? ptype, atype
+        return true unless ptype.items.any? { |item| dispatch_literal?(item) }
+
+        atype.items.all?(&:literal?)
+      end
+
+      # nil/true/false are technically "literal" per #literal?, but as
+      # singletons they aren't dispatch-relevant like `0` vs `1` -
+      # excluding them keeps ordinary nilable params from tripping #literal_arg_matches?.
+      #
+      # @param unique_type [ComplexType::UniqueType]
+      # @return [Boolean]
+      def dispatch_literal? unique_type
+        unique_type.literal? && !unique_type.singleton?
       end
 
       # @return [YARD::Tags::Tag, nil]

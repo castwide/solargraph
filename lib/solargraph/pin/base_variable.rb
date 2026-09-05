@@ -164,8 +164,25 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
+            # Exclude this assignment's own pin(s) from RHS resolution - a
+            # self-reference (e.g. `a = a`) must resolve against the
+            # variable's *other* assignments, not the value being derived.
+            #
+            # Array#include? compares with #==, and Parser::AST::Node#==
+            # is structural (type + children), not identity - two
+            # unrelated call nodes with the same shape (e.g. two separate
+            # bare `steps` calls at different source locations) compare
+            # equal. Using #include? here would wrongly treat an
+            # unrelated candidate - e.g. a flow-sensitive-typing pin
+            # synthesized from an earlier, textually-identical guard call
+            # like `steps.nil?` - as this assignment's own pin, and
+            # exclude it from candidates to resolve `steps` against here,
+            # discarding its narrowing. Compare by identity instead.
+            self_excluded_locals = clip.locals.reject do |candidate|
+              candidate.assignments.any? { |a| a.equal?(parent_node) }
+            end
             # @sg-ignore Need to add nil check here
-            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = chain.infer(api_map, closure, self_excluded_locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -176,7 +193,14 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType]
       def probe api_map
         assignment_types = assignments.flat_map { |node| return_types_from_node(node, api_map) }
-        type_from_assignment = ComplexType.new(assignment_types.flat_map(&:items).uniq) unless assignment_types.empty?
+        unless assignment_types.empty?
+          # @type [Array<ComplexType::UniqueType>]
+          items = assignment_types.flat_map(&:items).uniq
+          # A later, wider assignment (e.g. `index += n`) can leave a
+          # stale literal (e.g. `0`) alongside its own non-literal
+          # base type in the union - drop the redundant literal.
+          type_from_assignment = ComplexType.new(items).without_redundant_literals
+        end
         return adjust_type api_map, type_from_assignment unless type_from_assignment.nil?
 
         # @todo should handle merging types from mass assignments as
@@ -221,6 +245,15 @@ module Solargraph
         raw_return_type = super
 
         adjust_type(api_map, raw_return_type)
+      end
+
+      # A merged multi-assignment pin and its earliest assignment share the
+      # same #choose-d location but differ in presence, which is what keeps
+      # Chain's recursion guard from conflating the two and dropping a valid lookup.
+      #
+      # @return [String, nil]
+      def identity_discriminator
+        presence&.hash&.to_s
       end
 
       # @sg-ignore need boolish support for ? methods

@@ -182,6 +182,9 @@ module Solargraph
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
+            # A literal-typed overload (tuple's `(0 index) -> A`) rejects a
+            # non-literal argument (#literal_arg_matches?), so the loop
+            # below falls through to the next overload instead of stopping.
             # @sg-ignore flow sensitive typing should handle is_a? and next
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
