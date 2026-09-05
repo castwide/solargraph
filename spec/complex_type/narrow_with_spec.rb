@@ -52,4 +52,22 @@ describe Solargraph::ComplexType do
       expect(narrowed.tag).to eq('T')
     end
   end
+
+  context 'when narrowing a class with a duck type' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        class T; end
+      ))
+    end
+
+    before { api_map.map source }
+
+    it 'builds an intersection rather than discarding the class' do
+      pending 'https://github.com/castwide/solargraph/pull/1297'
+      declared = described_class.parse('T')
+      learned = described_class.parse('#bar')
+      narrowed = declared.narrow_with(learned, api_map)
+      expect(narrowed.tag).to eq('T & #bar')
+    end
+  end
 end
