@@ -56,13 +56,6 @@ module Solargraph
 
         next yard_pin unless rbs_pin && yard_pin.is_a?(Pin::Method)
 
-        unless rbs_pin
-          logger.debug do
-            "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})"
-          end
-          next yard_pin
-        end
-
         # at this point both yard_pins and rbs_pins are methods or
         # method aliases.  if not plain methods, prefer the YARD one
         next yard_pin if rbs_pin.class != Pin::Method
