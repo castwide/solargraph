@@ -763,7 +763,7 @@ module Solargraph
       # @return [ComplexType]
       def extract_method_type_return_type type, implicit_nil
         return_type = RbsTranslator.to_complex_type(type.type.return_type)
-        return ComplexType.new(return_type.items + [ComplexType::UniqueType::NIL]) if return_type && implicit_nil
+        return ComplexType.parse("#{return_type.rooted_tags}, nil") if return_type && implicit_nil
 
         return_type
       end
