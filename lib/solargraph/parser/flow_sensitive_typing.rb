@@ -324,7 +324,6 @@ module Solargraph
         end
       end
 
-
       # @param isa_node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
       # @param false_presences [Array<Range>]
