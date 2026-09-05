@@ -61,6 +61,11 @@ module Solargraph
         true
       end
 
+      # @return [Array<Pin::Base>, nil]
+      def fallback_pins
+        pins if resolved?
+      end
+
       # @param library [String]
       # @return [StdlibMap]
       def self.load library

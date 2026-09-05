@@ -268,6 +268,19 @@ module Solargraph
         logger.debug { "Using only RBS collection pins for #{gemspec.name}:#{gemspec.version}" }
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = rbs_collection_pins
         combined_pins_in_memory[[gemspec.name, gemspec.version]]
+      elsif (fallback_pins = rbs_map.fallback_pins)
+        # rbs_map's own stdlib cache (stdlib/#{gemspec.name}.ser) already
+        # has these pins - built and serialized by RbsMap::StdlibMap#initialize
+        # a few lines above. What's missing is a *combined* cache entry
+        # for this gemspec, which only `solargraph gems` writes; until
+        # that runs, this method has nowhere else to look.
+        #
+        # Deliberately not written to combined_pins_in_memory: that is
+        # process-wide and keyed only by name and version, so a
+        # provisional set stored there would go on being served after
+        # the build that supersedes it.
+        logger.debug { "Using #{gemspec.name}:#{gemspec.version}'s stdlib RBS pins (no combined cache entry yet)" }
+        fallback_pins
       else
         logger.debug { "Pins not yet cached for #{gemspec.name}:#{gemspec.version}" }
         nil
