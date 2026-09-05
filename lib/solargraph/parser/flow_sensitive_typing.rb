@@ -15,11 +15,11 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param closure [Solargraph::Pin::Closure, nil] Closure the
-      #   guarded code lives in. Needed to synthesize a pin for an
-      #   instance variable that has no assignment anywhere in scope
-      #   (see #process_instance_variable_defined).
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure = nil
+      # @param closure [Solargraph::Pin::Closure] Closure the guarded
+      #   code lives in. Needed to synthesize a pin for an instance
+      #   variable that has no assignment anywhere in scope (see
+      #   #process_instance_variable_defined).
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
@@ -419,7 +419,7 @@ module Solargraph
       #
       # @return [void]
       def process_instance_variable_defined node, true_presences, _false_presences
-        return unless node.type == :send && node.children[1] == :instance_variable_defined?
+        return unless node.children[1] == :instance_variable_defined?
         # only handle the implicit-self form; an explicit receiver
         # isn't the mixin-reads-its-own-ivar shape this exists for
         return unless node.children[0].nil?
@@ -442,8 +442,6 @@ module Solargraph
           process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
           return
         end
-
-        return if closure.nil?
 
         true_presences.each do |presence|
           ivars.push(Pin::InstanceVariable.new(
