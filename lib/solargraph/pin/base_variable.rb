@@ -370,6 +370,11 @@ module Solargraph
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         nil
       end
+
+      # @return [::Symbol]
+      def return_type_tag_name
+        :type
+      end
     end
   end
 end

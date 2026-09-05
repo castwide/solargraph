@@ -10,7 +10,7 @@ module Solargraph
       # @return [::Symbol] :public, :private, or :protected
       attr_reader :visibility
 
-      attr_writer :signatures
+      attr_writer :signatures, :comments
 
       # @return [Parser::AST::Node]
       attr_reader :node
@@ -98,7 +98,7 @@ module Solargraph
         end
         block&.reset_generated!
         @signatures&.each(&:reset_generated!)
-        nil
+        @documentation = nil
       end
 
       def all_rooted?
@@ -305,6 +305,12 @@ module Solargraph
 
       def documentation
         if @documentation.nil?
+          # Only force when it can't fall through to #generate_signature,
+          # which assumes real Parameter pins: already-resolved
+          # #signatures, or inline RBS rather than YARD.
+          if (signatures_generated? || !inline_rbs.empty?) && docstring.tags(return_type_tag_name).empty? && return_type&.defined?
+            sync_return_type_tag
+          end
           method_docs ||= super || ''
           param_tags = docstring.tags(:param)
           unless param_tags.nil? || param_tags.empty?
@@ -741,6 +747,14 @@ module Solargraph
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard
+      end
+
+      # True once #signatures holds a value; unlike calling it, this
+      # does not generate the signatures.
+      #
+      # @return [Boolean]
+      def signatures_generated?
+        !@signatures.nil?
       end
 
       # @return [Array<Pin::Signature>]

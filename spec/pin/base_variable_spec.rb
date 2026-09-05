@@ -47,6 +47,15 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
+  it 'resyncs the docstring :type tag to a rooted type for a realized variable pin' do
+    api_map = Solargraph::ApiMap.new
+    pin = Solargraph::Pin::LocalVariable.new(name: 'x', closure: Solargraph::Pin::ROOT_PIN, comments: '@type [String]')
+    realized = pin.realize(api_map)
+    expect(realized.docstring.tag(:type).types).to eq(['::String'])
+    expect(realized.return_type.rooted_tags).to eq('::String')
+    expect(realized.return_type.all_rooted?).to be(true)
+  end
+
   it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]

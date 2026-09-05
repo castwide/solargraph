@@ -617,9 +617,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [self]
       def realize api_map
-        return self if return_type.defined?
+        return self if return_type.defined? && return_type.all_rooted?
         type = typify(api_map)
-        return proxy(type) if type.defined?
+        return proxy(type) if type.defined? && type.all_rooted?
         type = probe(api_map)
         return self if type.undefined?
         result = proxy(type)
@@ -637,6 +637,10 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
+        result.reset_generated!
+        # dup keeps the old docstring, whose tag still holds the previous
+        # return_type; nil makes #docstring reparse from comments.
+        result.docstring = nil
         # Macros should have been processed already
         result.macro_names.clear
         result
@@ -746,6 +750,36 @@ module Solargraph
           @directives = parse.directives
           @macro_names = collect_macro_names
         end
+        return unless @return_type&.defined?
+
+        @docstring ||= Solargraph::Source.parse_docstring("\n").to_docstring
+        sync_return_type_tag
+      end
+
+      # Reads the return type instance variable, not the reader method:
+      # BaseVariable derives its reader from this tag, so it would sync
+      # the tag to itself. Callers force the reader first.
+      #
+      # @return [void]
+      def sync_return_type_tag
+        rooted_types = @return_type.items.map(&:rooted_tag)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        if @docstring.tags(return_type_tag_name)&.length == 1
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+          @docstring.tag(return_type_tag_name).types = rooted_types
+        else
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+          @docstring.add_tag(YARD::Tags::Tag.new(return_type_tag_name, '', rooted_types))
+        end
+      end
+
+      # The docstring tag name that holds this pin's return type. Method
+      # and constant pins use :return; variable pins (ivars, cvars, gvars)
+      # use :type, the YARD convention for variables.
+      #
+      # @return [::Symbol]
+      def return_type_tag_name
+        :return
       end
 
       # True if two docstrings have the same tags, regardless of any other

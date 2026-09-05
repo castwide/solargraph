@@ -113,6 +113,32 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type.tag).to eq('Hash')
   end
 
+  it 'shows the return type for a YARD-commented method regardless of call order' do
+    pin = described_class.new(name: 'bar', comments: '@return [String]')
+    expect(pin.documentation).to include('Returns:')
+  end
+
+  it 'shows the return type for an RBS-sourced method the same way, regardless of call order' do
+    api_map = Solargraph::ApiMap.new
+    pin = api_map.get_method_stack('String', 'upcase').first.dup
+    pin.instance_variable_set(:@return_type, nil)
+    pin.instance_variable_set(:@docstring, nil)
+    expect(pin.documentation).to include('Returns:')
+  end
+
+  it 'shows the return type for a combined RBS-sourced method too' do
+    # Callable#combine_with computes combine_return_type(other) before
+    # Base#combine_with chooses a docstring, which forces #return_type
+    # (and its docstring sync) on both sides first.
+    return_type = Solargraph::ComplexType.try_parse('String').force_rooted
+    sig1 = Solargraph::Pin::Signature.new(return_type: return_type)
+    sig2 = Solargraph::Pin::Signature.new(return_type: return_type)
+    pin1 = described_class.new(name: 'bar', signatures: [sig1])
+    pin2 = described_class.new(name: 'bar', signatures: [sig2])
+    combined = pin1.combine_with(pin2)
+    expect(combined.documentation).to include('Returns:')
+  end
+
   it 'ignores malformed return tags' do
     pin = described_class.new(name: 'bar', comments: '@return [Array<String')
     expect(pin.return_type).to be_undefined
