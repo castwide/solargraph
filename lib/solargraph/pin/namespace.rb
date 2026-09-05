@@ -16,6 +16,9 @@ module Solargraph
       # qualified
       attr_reader :closure
 
+      # node: (see CompoundStatement) carries this namespace body, which
+      # flow-sensitive typing scans to bound where a narrowed type holds.
+      #
       # @param type [::Symbol] :class or :module
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]

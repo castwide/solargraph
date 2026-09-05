@@ -181,8 +181,7 @@ module Solargraph
           result
         end
 
-        # Whether clause_node necessarily leaves its enclosing
-        # compound statement (return/loop-control/raise/fail).
+        # Whether clause_node necessarily leaves its enclosing compound statement.
         #
         # @param clause_node [Parser::AST::Node, nil]
         # @return [Boolean]

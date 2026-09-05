@@ -31,7 +31,6 @@ module Solargraph
 
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
             combined_type = combined_type.without_nil
           end
 
@@ -40,7 +39,7 @@ module Solargraph
 
         protected
 
-        # @sg-ignore return type could not be inferred
+        # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
         def equality_fields
           # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@links, @rhs_never_returns]

@@ -40,9 +40,6 @@ module Solargraph
       # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>, Array<Pin::InstanceVariable>)]
       def self.process node, region = Region.new, pins = [], locals = [], ivars = []
         if pins.empty?
-          # node: lets flow-sensitive typing find this statement's
-          # end (FlowSensitiveTyping#process_if); without it,
-          # top-level is_a?/nil? guards never narrow.
           pins.push Pin::Namespace.new(
             location: region.source.location,
             name: '',
