@@ -552,13 +552,12 @@ describe 'YARD type specifier list parsing' do
                                                  { 'K' => 'String', 'V' => 'Integer' }],
         non_discriminating_preserves_already_resolved_generic: ['generic<A>, nil', 'String, nil', { 'A' => 'Integer' },
                                                                 %w[A], 'Integer, nil', { 'A' => 'Integer' }],
-        # Known limitation: no concrete member to discriminate by, so both generics bind to the whole context.
-        no_discriminating_context_member: ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], 'String, Integer',
-                                           { 'A' => 'String, Integer', 'B' => 'String, Integer' }],
         discriminating_reordered_context_members: ['generic<A>, nil', 'nil, String', {}, %w[A], 'String, nil',
-                                                   { 'A' => 'String' }],
-        # Known limitation: duplicate concrete context members cancel out, leaving nothing to subtract.
-        duplicate_concrete_context_members: ['generic<A>, nil', 'nil, nil', {}, %w[A], 'nil', { 'A' => 'nil' }]
+                                                   { 'A' => 'String' }]
+        # Left out: nothing concrete to subtract, and union members are unordered, so
+        # what these should resolve to is undecided.
+        # no_discriminating_context_member: ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], ...],
+        # duplicate_concrete_context_members: ['generic<A>, nil', 'nil, nil', {}, %w[A], ...]
       }.freeze
 
       UNION_COMPLEX_TYPE_GENERIC_TESTS.each do |name, (tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map)|

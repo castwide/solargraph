@@ -801,8 +801,6 @@ describe Solargraph::TypeChecker do
       expect(messages).not_to include('Unresolved call to length on String, nil')
     end
 
-    # Non-discriminating: an identically-shaped union return type flattens/dedupes
-    # a too-wide binding back to the right answer by coincidence, not by the fix.
     it 'resolves a generic type variable when both the @param and @return types are the same union' do
       checker = type_checker(%(
         # @generic A
@@ -834,9 +832,8 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_triple(arg) = must_not_nil_or_symbol(arg).length
       ))
-      # As with the two-member case above, the remaining "Declared
-      # return type...does not match inferred type" problem is #1276
-      # (`raise` does not narrow the type), independent of this test.
+      # The remaining problem is unrelated to this test:
+      # https://github.com/castwide/solargraph/issues/1276
       messages = checker.problems.map(&:message)
       expect(messages).not_to include('#via_triple return type could not be inferred')
       expect(messages).not_to include('Unresolved call to length on String, nil, Symbol')
@@ -862,9 +859,8 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_layers(arg) = layer2(arg).length
       ))
-      # As above, any "Declared return type...does not match inferred
-      # type" problems here are #1276 (`raise` does not narrow the
-      # type), independent of this test.
+      # The remaining problem is unrelated to this test:
+      # https://github.com/castwide/solargraph/issues/1276
       messages = checker.problems.map(&:message)
       expect(messages).not_to include('#via_layers return type could not be inferred')
       expect(messages).not_to include('Unresolved call to length on String, nil')
