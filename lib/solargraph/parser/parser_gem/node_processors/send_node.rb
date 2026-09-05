@@ -77,15 +77,10 @@ module Solargraph
           def symbol_word subject
             return nil unless subject.is_a?(::Parser::AST::Node)
 
-            # @sg-ignore is_a? guard above narrows subject to a
-            # workspace-local type but not to an external gem-sourced
-            # type like Parser::AST::Node - "Unresolved call to type on
-            # Object" without this. No upstream issue filed yet.
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             return nil unless %i[sym str].include?(subject.type)
 
-            # @sg-ignore Same is_a?-vs-external-type narrowing gap as
-            # above - "Unresolved call to children on Object" without
-            # this. No upstream issue filed yet.
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
             subject.children.first.to_s
           end
 
