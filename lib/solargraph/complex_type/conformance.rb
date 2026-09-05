@@ -88,13 +88,10 @@ module Solargraph
         with_new_types(inferred, expected.erase_parameters).conforms_to_unique_type?
       end
 
-      # Settles conformance when `expected` is an RBS interface, before
-      # subtype checks (which don't apply once an interface is involved);
-      # doesn't verify the interface's own type params, see
-      # https://github.com/castwide/solargraph/issues/1267
+      # Settles conformance when `expected` is an RBS interface:
       # https://github.com/ruby/rbs/blob/master/docs/syntax.md#interface-declaration
-      # @return [Boolean, nil] nil when `expected` is not an interface, or
-      #   when nothing here decides and the normal path should run
+      # Does not verify interface type params: https://github.com/castwide/solargraph/issues/1267
+      # @return [Boolean, nil] nil when no interface, or nothing here decides
       def interface_conformance
         return nil unless expected.interface?
 
