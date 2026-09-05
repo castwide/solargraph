@@ -577,7 +577,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: %i[private protected public],
                          preserve_generics: false
-      rooted_type = ComplexType.parse(rooted_tag)
+      rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first
       methods = if namespace_pin.is_a?(Pin::Constant)
@@ -823,7 +823,7 @@ module Solargraph
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
     def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
-      rooted_type = ComplexType.parse(rooted_tag).force_rooted
+      rooted_type = ComplexType.try_parse(rooted_tag).force_rooted
       fqns = rooted_type.namespace
       rooted_type.all_params
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first

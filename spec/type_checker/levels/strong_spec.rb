@@ -997,5 +997,383 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves Hash#fetch on a literal-keyed Hash with no intersection involved' do
+      checker = type_checker(%(
+        class Repro
+          # @param period [Hash{"Index" => Float}]
+          # @return [void]
+          def process(period)
+            # @type [Float]
+            index = period.fetch("Index")
+          end
+        end
+    ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'always dispatches a same-class generic method through the first union member' do
+      pending 'Call#inferred_pins binds a generic against the first union/intersection member only'
+      checker = type_checker(%(
+        class Repro
+          # @param period [Hash{"Index" => Float}, Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+          # @return [void]
+          def process(period)
+            # @type [Float]
+            index = period.fetch("Index")
+          end
+        end
+    ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    context 'with intersection types' do
+      it 'accepts an intersection-typed argument where any one conjunct is expected' do
+        checker = type_checker(%(
+          class Asana; class Resources; class Project; end; end; end
+          class Mocha; class Mock; end; end
+
+          class Consumer
+            # @param project_obj [Asana::Resources::Project]
+            # @return [void]
+            def project_to_h(project_obj); end
+          end
+
+          class MockFactory
+            # @sg-ignore Mocha::Mock configured with responds_like_instance_of
+            #   duck-types as Asana::Resources::Project at every call site.
+            # @return [Mocha::Mock & Asana::Resources::Project]
+            def make_mock
+              Mocha::Mock.new
+            end
+          end
+
+          Consumer.new.project_to_h(MockFactory.new.make_mock)
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'still rejects a plain conjunct type that does not satisfy the expected type' do
+        checker = type_checker(%(
+          class Asana; class Resources; class Project; end; end; end
+          class Mocha; class Mock; end; end
+
+          class Consumer
+            # @param project_obj [Asana::Resources::Project]
+            # @return [void]
+            def project_to_h(project_obj); end
+          end
+
+          Consumer.new.project_to_h(Mocha::Mock.new)
+      ))
+        expect(checker.problems.map(&:message))
+          .to include('Wrong argument type for Consumer#project_to_h: project_obj expected Asana::Resources::Project, received Mocha::Mock')
+      end
+
+      it 'accepts an intersection-typed argument where the duck-typed conjunct is expected' do
+        # Duck-typed subtyping needs *some* conjunct to satisfy it, not
+        # specifically the first one that Intersection#namespace/#scope
+        # delegate to.
+        checker = type_checker(%(
+          # @param callback [#quack]
+          # @return [void]
+          def notify(callback); end
+
+          # @param x [String & #quack]
+          # @return [void]
+          def relay(x)
+            notify(x)
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'still rejects an intersection-typed argument when no conjunct satisfies the duck-typed expectation' do
+        checker = type_checker(%(
+          # @param callback [#quack]
+          # @return [void]
+          def notify(callback); end
+
+          # @param x [String & Integer]
+          # @return [void]
+          def relay(x)
+            notify(x)
+          end
+      ))
+        expect(checker.problems.map(&:message))
+          .to include('Wrong argument type for #notify: callback expected #quack, received String & Integer')
+      end
+
+      it 'dispatches generic methods per-conjunct when intersecting two instantiations of the same generic class' do
+        # Both conjuncts resolve to a pin with the same path (Hash#fetch)
+        # but different, already-resolved return types, so dispatch keys on
+        # path *and* return type, then narrows to the conjunct whose key
+        # matches the call's literal argument. Overload resolution can't
+        # do that on its own, since it runs per conjunct and both
+        # conjuncts yield a pin with the same path.
+        pending 'https://github.com/castwide/solargraph/pull/1223'
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+            # @return [void]
+            def process(period)
+              # @type [Float]
+              index = period.fetch("Index")
+
+              # @type [Array<Hash{"Name" => String}>]
+              triggers = period.fetch("Triggers")
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'dispatches generic methods per-conjunct regardless of conjunct order' do
+        pending 'https://github.com/castwide/solargraph/pull/1223'
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Triggers" => Array<Hash{"Name" => String}>} & Hash{"Index" => Float}]
+            # @return [void]
+            def process(period)
+              # @type [Array<Hash{"Name" => String}>]
+              triggers = period.fetch("Triggers")
+
+              # @type [Float]
+              index = period.fetch("Index")
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'dispatches generic methods per-conjunct for symbol keys' do
+        # Symbols already infer as literal types, so per-overload matching
+        # rejects the non-matching conjunct on its own here - a pin whose
+        # overloads all fail falls through to its declared return type
+        # rather than being dropped, so only Call#argument_verified_conjuncts
+        # actually removes it.
+        pending 'https://github.com/castwide/solargraph/pull/1223'
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{:Index => Float} & Hash{:Triggers => Array<Hash{:Name => String}>}]
+            # @return [void]
+            def process(period)
+              # @type [Float]
+              index = period.fetch(:Index)
+
+              # @type [Array<Hash{:Name => String}>]
+              triggers = period.fetch(:Triggers)
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a non-generic method shared by both conjuncts of a same-class intersection' do
+        checker = type_checker(%(
+          class Repro
+            # @param period [Hash{"Index" => Float} & Hash{"Triggers" => Array<Hash{"Name" => String}>}]
+            # @return [void]
+            def process(period)
+              # @type [Integer]
+              n = period.size
+            end
+          end
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a call to a method defined on just one conjunct of an intersection-typed receiver' do
+        # Method lookup gives an intersection's conjuncts "any one is
+        # enough" semantics (A & B <: A, A & B <: B), unlike a union, where
+        # every alternative has to define the method.
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          Factory.new.make.foo
+          Factory.new.make.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'dispatches to the conjunct whose parameter type actually accepts the argument' do
+        # Same problem as the Hash-record specs above, generalized:
+        # narrowing an intersection's conjuncts by argument fit isn't
+        # Hash-key-specific, it's ordinary overload matching applied
+        # per conjunct instead of per signature.
+        checker = type_checker(%(
+          class A
+            # @param x [String]
+            # @return [Integer]
+            def pick(x)
+              1
+            end
+          end
+
+          class B
+            # @param x [Symbol]
+            # @return [Float]
+            def pick(x)
+              1.0
+            end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          # @type [Integer]
+          from_a = Factory.new.make.pick("hello")
+
+          # @type [Float]
+          from_b = Factory.new.make.pick(:hello)
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a call to a method inherited from a common ancestor of both conjuncts' do
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B for this repro
+            # @return [A & B]
+            def make
+              A.new
+            end
+          end
+
+          # @type [String]
+          s = Factory.new.make.to_s
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves a conjunct method on an intersection-typed local variable, not just a call chain' do
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          # @sg-ignore A.new duck-types as A & B for this repro
+          # @type [A & B]
+          value = A.new
+
+          value.foo
+          value.bar
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'resolves conjunct methods on a three-way intersection' do
+        checker = type_checker(%(
+          class A
+            # @return [void]
+            def foo; end
+          end
+
+          class B
+            # @return [void]
+            def bar; end
+          end
+
+          class C
+            # @return [void]
+            def baz; end
+          end
+
+          class Factory
+            # @sg-ignore A.new duck-types as A & B & C for this repro
+            # @return [A & B & C]
+            def make
+              A.new
+            end
+          end
+
+          Factory.new.make.foo
+          Factory.new.make.bar
+          Factory.new.make.baz
+      ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      # Passes with and without the conjunct resolution: an unbound
+      # generic return is accepted leniently, so this is a
+      # no-regression check. The mismatch spec below is the
+      # discriminating one.
+      it 'binds a generic declared only inside an intersection @param' do
+        checker = type_checker(%(
+          class Factory
+            # @generic T
+            # @param clazz [Class<generic<T>> & #new]
+            # @return [Class<generic<T>>]
+            def echo(clazz)
+              clazz
+            end
+
+            # @return [Class<String>]
+            def use
+              echo(String)
+            end
+          end
+        ))
+        expect(checker.problems.map(&:message)).to be_empty
+      end
+
+      it 'reports a mismatch against the generic bound through the intersection' do
+        checker = type_checker(%(
+          class Factory
+            # @generic T
+            # @param clazz [Class<generic<T>> & #new]
+            # @return [Class<generic<T>>]
+            def echo(clazz)
+              clazz
+            end
+
+            # @return [Class<Integer>]
+            def use
+              echo(String)
+            end
+          end
+        ))
+        expect(checker.problems.map(&:message))
+          .to eq(['Declared return type ::Class<::Integer> does not match inferred type ::Class<::String> ' \
+                  'for Factory#use'])
+      end
+    end
   end
 end

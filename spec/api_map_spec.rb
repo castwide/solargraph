@@ -223,6 +223,12 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to eq(['Bar#meth', 'Foo#meth', 'Mixin#meth'])
   end
 
+  it 'returns no methods for an unparseable tag instead of raising' do
+    pins = nil
+    expect { pins = @api_map.get_method_stack('Hash{"a" => Float}{"b" => Float}', 'keys') }.not_to raise_error
+    expect(pins).to eq([])
+  end
+
   it 'finds symbols' do
     map = Solargraph::SourceMap.load_string('sym = :sym')
     @api_map.index map.pins

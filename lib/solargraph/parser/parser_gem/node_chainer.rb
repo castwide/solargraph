@@ -146,7 +146,7 @@ module Solargraph
               result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0]}")
             end
           elsif n.type == :hash
-            result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
+            result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n), hash_pairs(n))
           elsif n.type == :array
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
@@ -166,6 +166,27 @@ module Solargraph
             return false
           end
           true
+        end
+
+        # Chains each key/value pair of a literal hash so Chain::Hash
+        # can infer Hash{K => V} from its actual contents, the same
+        # way Chain::Array infers Array<T> from its elements. Returns
+        # nil (falling back to a bare, unparameterized Hash) when any
+        # entry isn't a plain `key => value` pair - a `**splat` entry
+        # contributes key/value types we have no node to chain.
+        #
+        # @param node [Parser::AST::Node]
+        # @return [::Array<::Array(Chain, Chain)>, nil]
+        def hash_pairs node
+          return nil unless Parser.is_ast_node?(node) && node.type == :hash
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          return nil unless node.children.all? { |pair| Parser.is_ast_node?(pair) && pair.type == :pair }
+
+          node.children.map do |pair|
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            key_node, value_node = pair.children
+            [NodeChainer.chain(key_node, @filename, pair), NodeChainer.chain(value_node, @filename, pair)]
+          end
         end
 
         # @param node [Parser::AST::Node]

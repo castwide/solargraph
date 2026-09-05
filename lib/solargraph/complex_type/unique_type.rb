@@ -9,7 +9,16 @@ module Solargraph
       include TypeMethods
       include Equality
 
+      autoload :Intersection, 'solargraph/complex_type/unique_type/intersection'
+
       attr_reader :all_params, :subtypes, :key_types
+
+      # @type [Hash{String => String}]
+      ANONYMOUS_NAME_BY_STARTING_TAG = {
+        '{' => 'Hash',
+        '(' => 'Array',
+        '<' => 'Array'
+      }.freeze
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -22,6 +31,9 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         raise ComplexTypeError, "Illegal prefix: #{name}" if name.start_with?(':::')
+        # Anonymous shorthand (`<A>`, `(A)`, `{A=>B}`) defaults the
+        # omitted type name to Array or Hash, before the rooted check below.
+        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring[0]) if name.empty? && !substring.empty?
         if name.start_with?('::')
           name = name[2..]
           rooted = true
@@ -119,28 +131,56 @@ module Solargraph
         ComplexType.new(types)
       end
 
-      # @see https://en.wikipedia.org/wiki/Intersection_type
+      # Flow-sensitive narrowing (e.g. via `is_a?`): keeps the more
+      # specific of each compatible pair, or an Intersection when
+      # only a confirmed mix-in relationship holds.
       #
-      # @param intersection_type [ComplexType, ComplexType::UniqueType, nil]
+      # @see https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+      #
+      # @param narrowing_type [ComplexType, ComplexType::UniqueType, nil]
       # @param api_map [ApiMap]
       # @return [self, ComplexType]
-      def intersect_with intersection_type, api_map
-        return self if intersection_type.nil?
-        return intersection_type if undefined?
+      def narrow_with narrowing_type, api_map
+        return self if narrowing_type.nil?
+        return narrowing_type if undefined?
         types = []
         # try to find common types via conformance
         items.each do |ut|
-          intersection_type.each do |int_type|
-            if ut.conforms_to?(api_map, int_type, :assignment)
+          narrowing_type.each do |candidate|
+            if candidate.conforms_to?(api_map, ut, :assignment)
+              types << candidate
+            elsif ut.conforms_to?(api_map, candidate, :assignment)
               types << ut
-            elsif int_type.conforms_to?(api_map, ut, :assignment)
-              types << int_type
+            elsif mixin_pairing?(api_map, ut, candidate)
+              types << Intersection.new([ComplexType.new([ut]), ComplexType.new([candidate])])
             end
           end
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
         ComplexType.new(types)
       end
+
+      # Safe to combine into an intersection only when one side is a
+      # confirmed mix-in (any class can pick up any module); two
+      # classes, or an unpinned namespace, stay false.
+      #
+      # @param api_map [ApiMap]
+      # @param declared [ComplexType::UniqueType]
+      # @param candidate [ComplexType::UniqueType]
+      # @return [Boolean]
+      def mixin_pairing? api_map, declared, candidate
+        namespace_kind(api_map, declared) == :module || namespace_kind(api_map, candidate) == :module
+      end
+
+      # @param api_map [ApiMap]
+      # @param unique_type [ComplexType::UniqueType]
+      # @sg-ignore flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
+      # @return [Symbol, nil] :class, :module, or nil if unknown
+      def namespace_kind api_map, unique_type
+        pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
+        pin&.type
+      end
+      private :mixin_pairing?, :namespace_kind
 
       def simplifyable_literal?
         literal? && name != 'nil'
@@ -154,6 +194,23 @@ module Solargraph
       # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
+      end
+
+      # Whether every key_type is a literal, e.g. `Hash{"Index" =>
+      # Float}`'s key is the literal `"Index"`, not a general class.
+      #
+      # @return [Boolean]
+      def literal_keyed?
+        key_types.any? && key_types.all? { |kt| kt.items.all?(&:literal?) }
+      end
+
+      # Whether any key_type has the given literal tag (e.g.
+      # `'"Index"'`) - checks every item, since a key_type may be a union.
+      #
+      # @param tag [String]
+      # @return [Boolean]
+      def key_type_tag? tag
+        key_types.any? { |kt| kt.items.any? { |item| item.tag == tag } }
       end
 
       # @return [self]
@@ -262,9 +319,7 @@ module Solargraph
         # match one of their unique types
         expected.any? do |expected_unique_type|
           # :nocov:
-          unless expected_unique_type.instance_of?(UniqueType)
-            raise "Expected type must be a UniqueType, got #{expected_unique_type.class} in #{expected.inspect}"
-          end
+          raise "Expected type must be a UniqueType in #{expected.inspect}" unless expected_unique_type.is_a?(UniqueType)
           # :nocov:
           conformance = Conformance.new(api_map, self, expected_unique_type, situation,
                                         rules, variance: variance)

@@ -2284,7 +2284,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'uses types to determine overload to match' do
-    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
+    pending 'https://github.com/castwide/solargraph/issues/1246'
     source = Solargraph::Source.load_string(%(
       # @generic A
       # @generic B
@@ -2314,7 +2314,7 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'uses types to determine overload of [] to match' do
-    pending 'Overload resolution by argument type currently unions signatures instead of narrowing (see castwide/solargraph#1246)'
+    pending 'https://github.com/castwide/solargraph/issues/1246'
     source = Solargraph::Source.load_string(%(
       # @generic A
       # @generic B
@@ -3166,5 +3166,21 @@ describe Solargraph::SourceMap::Clip do
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
+  end
+
+  it 'binds a generic through an intersection param at the call site' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      # @param clazz [Class<generic<T>> & #new]
+      # @return [generic<T>]
+      def construct_it(clazz)
+        raise
+      end
+      construct_it(String)
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.tag).to eq('String')
   end
 end

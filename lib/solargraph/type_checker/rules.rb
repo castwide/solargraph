@@ -75,12 +75,13 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (96):
+      # flow sensitive typing could handle (103):
       #
       # @todo 36: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
       # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
+      # @todo 10: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
@@ -88,7 +89,6 @@ module Solargraph
       # @todo 5: flow sensitive typing needs to handle 'raise if'
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
-      # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
@@ -96,9 +96,10 @@ module Solargraph
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: Need to handle duck-typed method calls on union types
+      # @todo 2: flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
+      # @todo 1: Need to handle duck-typed method calls on union types
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

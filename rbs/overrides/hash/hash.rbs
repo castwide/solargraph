@@ -1,0 +1,14 @@
+# RBS 4.1 retyped Hash key lookups as the structural interface
+# `Hash::_Key` - anything answering `hash`/`eql?`. That is accurate
+# about what Ruby accepts, but it erases the receiver's own key type,
+# so a call on a record type (`Hash{"Index" => Float}`) can no longer
+# be resolved against the key it was declared with.
+#
+# Restore RBS 4.0's shape, which typed these as the class parameter
+# `K`. Remove this once Solargraph can resolve a structural interface
+# to the receiver's corresponding type parameter.
+class Hash[unchecked out K, unchecked out V]
+  def fetch: (K arg0) -> V
+           | [X] (K arg0, X arg1) -> (V | X)
+           | [X] (K arg0) { (K arg0) -> X } -> (V | X)
+end

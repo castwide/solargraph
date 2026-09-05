@@ -93,6 +93,26 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    context 'with an implicitly-returns-nil annotation' do
+      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: %a{implicitly-returns-nil} () -> ::String
+          end
+        RBS
+      end
+
+      it 'adds nil to the declared return type' do
+        expect(method_pin.return_type.tags).to eq('String, nil')
+      end
+
+      it 'keeps the declared return type rooted' do
+        expect(method_pin.return_type.rooted_tags).to eq('::String, nil')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
@@ -142,17 +162,8 @@ describe Solargraph::RbsMap::Conversions do
       end
 
       it 'finds superclass method pin parameter type' do
-        # RBS core's Hash#[] started taking its key as the _Key duck-type
-        # interface instead of the generic K as of RBS 4.1.0, so instantiating
-        # Hash{Symbol => untyped} no longer substitutes the param type on
-        # newer RBS - see ruby/rbs core/hash.rbs.
-        expected = if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
-                     ['::Hash::_Key']
-                   else
-                     ['Symbol']
-                   end
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
-                 .uniq).to eq(expected)
+                 .uniq).to eq(['Symbol'])
       end
     end
   end
