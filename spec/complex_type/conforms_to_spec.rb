@@ -81,7 +81,6 @@ describe Solargraph::ComplexType do
   end
 
   it 'handles singleton types compared against their literals' do
-    pending 'https://github.com/castwide/solargraph/issues/1196'
     pending 'https://github.com/castwide/solargraph/pull/1223'
     exp = Solargraph::ComplexType::UniqueType.new('nil', rooted: true)
     inf = Solargraph::ComplexType::UniqueType.new('NilClass', rooted: true)
