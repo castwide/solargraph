@@ -787,9 +787,11 @@ describe Solargraph::Pin::Method do
     end
   end
 
-  it 'typifies a DuckMethod pin with no closure without raising' do
+  it 'resolves a closureless DuckMethod pin to the core method return type' do
     api_map = Solargraph::ApiMap.new
     pin = Solargraph::Pin::DuckMethod.new(name: 'to_s', source: :api_map)
-    expect { pin.typify(api_map) }.not_to raise_error
+    expect(pin.closure).to be_nil
+    expect(pin.return_type).to be_undefined
+    expect(pin.typify(api_map).rooted_tags).to eq('::String')
   end
 end

@@ -297,9 +297,10 @@ module Solargraph
         @index ||= Index.new
       end
 
-      # Combines same-path pins into one. Skips aliases (a merged pin
-      # breaks #resolve_method_alias under SOLARGRAPH_ASSERTS=on) and
-      # DelegatedMethod (initialize needs exactly one of :method/:receiver).
+      # Combines same-path pins into one. They arise when a method is
+      # documented in more than one file - a `@!parse` stub re-documenting
+      # a method the gem already defines, or a reopened class. Aliases and
+      # DelegatedMethod are skipped; neither survives a merge.
       #
       # @param pins [Array<Pin::Method>]
       # @return [Array<Pin::Method>]

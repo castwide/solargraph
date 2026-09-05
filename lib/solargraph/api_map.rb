@@ -818,8 +818,8 @@ module Solargraph
     # @param fqns [String]
     # @return [Pin::Namespace, nil]
     def namespace_pin_for_generics fqns
-      # @type [Array<Pin::Namespace>]
       candidates = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }
+      # @sg-ignore select with an is_a? block does not narrow the element type
       candidates.find { |p| !p.generics.empty? } || candidates.first
     end
 
