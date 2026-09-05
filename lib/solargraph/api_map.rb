@@ -442,6 +442,16 @@ module Solargraph
       store.pins_by_class(Pin::Block)
     end
 
+    # Methods a namespace declares directly on itself, excluding ones
+    # inherited from Object, superclasses, or mixins.
+    #
+    # @param rooted_tag [String] The fully qualified namespace/interface to search for methods
+    # @param scope [Symbol] :class or :instance
+    # @return [Enumerable<Solargraph::Pin::Method>]
+    def get_own_methods rooted_tag, scope: :instance
+      store.get_methods(ComplexType.try_parse(rooted_tag).namespace, scope: scope)
+    end
+
     # Get an array of methods available in a particular context.
     #
     # @param rooted_tag [String] The fully qualified namespace to search for methods
