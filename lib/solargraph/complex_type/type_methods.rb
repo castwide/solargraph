@@ -185,25 +185,12 @@ module Solargraph
         if (key_types.none?(&:defined?) && subtypes.none?(&:defined?)) ||
            (key_types.empty? && subtypes.empty?)
           ''
-        elsif hash_parameters?
-          "{#{key_types_str} => #{subtypes_str}}"
         elsif fixed_parameters?
           "(#{subtypes_str})"
-        elsif name == 'Hash'
-          # The <K, V> notation only has room for exactly one key type and
-          # one value type -- a single top-level comma splits it into K
-          # and V, so a second comma on either side (whether from more
-          # than one entry in key_types/subtypes, or from a single entry
-          # that is itself a multi-item union) produces a string with too
-          # many top-level parameters to reparse. Fall back to the
-          # {K => V} notation, which can represent a comma-separated list
-          # on either side and still reparses correctly, whenever either
-          # side isn't exactly one single type.
-          if key_types.sum { |t| t.items.length } == 1 && subtypes.sum { |t| t.items.length } == 1
-            "<#{key_types_str}, #{subtypes_str}>"
-          else
-            "{#{key_types_str} => #{subtypes_str}}"
-          end
+        elsif hash_parameters? || name == 'Hash'
+          # Hash renders as {K => V} even when written Hash<K, V>: the <>
+          # form holds one type per side, so a union in either fails to reparse.
+          "{#{key_types_str} => #{subtypes_str}}"
         else
           "<#{key_types_str}#{subtypes_str}>"
         end

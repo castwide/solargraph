@@ -202,7 +202,7 @@ describe 'YARD type specifier list parsing' do
     it 'parses Hash using <> notation' do
       types = Solargraph::ComplexType.parse 'Hash<Symbol, String>'
       expect(types.length).to eq(1)
-      expect(types.first.tag).to eq('Hash<Symbol, String>')
+      expect(types.first.tag).to eq('Hash{Symbol => String}')
       expect(types.first.name).to eq('Hash')
       expect(types.first.key_types.length).to eq(1)
       expect(types.first.key_types[0].name).to eq('Symbol')
@@ -223,19 +223,15 @@ describe 'YARD type specifier list parsing' do
       expect(type.to_rbs).to eq('Hash[(String | Symbol), (Integer | BigDecimal)]')
     end
 
-    # <K, V> can hold only one key type and one value type; regenerating
-    # the tag must fall back to {K => V} when either side has more.
     it 'round-trips a Hash tag when key_types has more than one element and hash_parameters? is unset' do
       original = Solargraph::ComplexType.parse('Hash{String, nil => Enumerable<Integer>}').items.first
-      expect(original.key_types.length).to eq(2)
 
       mismatched = Solargraph::ComplexType::UniqueType.new(
         'Hash', original.key_types, original.subtypes, rooted: original.rooted?, parameters_type: :list
       )
 
-      expect do
-        Solargraph::ComplexType.parse(mismatched.tag)
-      end.not_to raise_error
+      expect(mismatched.tag).to eq('Hash{String, nil => Enumerable<Integer>}')
+      expect(Solargraph::ComplexType.parse(mismatched.tag).tag).to eq(mismatched.tag)
     end
 
     it 'round-trips a Hash tag when a single key_types slot is itself a union and hash_parameters? is unset' do
@@ -246,9 +242,8 @@ describe 'YARD type specifier list parsing' do
         'Hash', [union_key], [value], rooted: false, parameters_type: :list
       )
 
-      expect do
-        Solargraph::ComplexType.parse(mismatched.tag)
-      end.not_to raise_error
+      expect(mismatched.tag).to eq('Hash{String, nil => Enumerable<Integer>}')
+      expect(Solargraph::ComplexType.parse(mismatched.tag).tag).to eq(mismatched.tag)
     end
 
     #
