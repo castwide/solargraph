@@ -554,10 +554,11 @@ describe 'YARD type specifier list parsing' do
                                                                 %w[A], 'Integer, nil', { 'A' => 'Integer' }],
         discriminating_reordered_context_members: ['generic<A>, nil', 'nil, String', {}, %w[A], 'String, nil',
                                                    { 'A' => 'String' }]
-        # Left out: nothing concrete to subtract, and union members are unordered, so
-        # what these should resolve to is undecided.
+        # Left out as open questions. The first has no concrete member to subtract,
+        # and telling A from B would need union member order, which carries no
+        # meaning. The second leaves nothing over, so A binds to the whole context.
         # no_discriminating_context_member: ['generic<A>, generic<B>', 'String, Integer', {}, %w[A B], ...],
-        # duplicate_concrete_context_members: ['generic<A>, nil', 'nil, nil', {}, %w[A], ...]
+        # context_fully_covered_by_concrete_member: ['generic<A>, nil', 'nil', {}, %w[A], ...]
       }.freeze
 
       UNION_COMPLEX_TYPE_GENERIC_TESTS.each do |name, (tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_to_s, expected_output_map)|

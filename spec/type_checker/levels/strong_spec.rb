@@ -780,12 +780,13 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves a generic type variable against a union @param type' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil]
         # @return [generic<A>]
         def must_nilable(arg)
-          raise if arg.nil?
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
 
           arg
         end
@@ -794,11 +795,7 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_nilable(arg) = must_nilable(arg).length
       ))
-      # The remaining problem is unrelated to this test:
-      # https://github.com/castwide/solargraph/issues/1276
-      messages = checker.problems.map(&:message)
-      expect(messages).not_to include('#via_nilable return type could not be inferred')
-      expect(messages).not_to include('Unresolved call to length on String, nil')
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'resolves a generic type variable when both the @param and @return types are the same union' do
@@ -818,12 +815,13 @@ describe Solargraph::TypeChecker do
     end
 
     it 'resolves a generic type variable against a union @param type with more than two members' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil, Symbol]
         # @return [generic<A>]
         def must_not_nil_or_symbol(arg)
-          raise if arg.nil? || arg.is_a?(Symbol)
+          raise ArgumentError, 'arg must not be nil or a Symbol' if arg.nil? || arg.is_a?(Symbol)
 
           arg
         end
@@ -832,20 +830,17 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_triple(arg) = must_not_nil_or_symbol(arg).length
       ))
-      # The remaining problem is unrelated to this test:
-      # https://github.com/castwide/solargraph/issues/1276
-      messages = checker.problems.map(&:message)
-      expect(messages).not_to include('#via_triple return type could not be inferred')
-      expect(messages).not_to include('Unresolved call to length on String, nil, Symbol')
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
       checker = type_checker(%(
         # @generic A
         # @param arg [generic<A>, nil]
         # @return [generic<A>]
         def layer1(arg)
-          raise if arg.nil?
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
 
           arg
         end
@@ -859,11 +854,7 @@ describe Solargraph::TypeChecker do
         # @return [Integer]
         def via_layers(arg) = layer2(arg).length
       ))
-      # The remaining problem is unrelated to this test:
-      # https://github.com/castwide/solargraph/issues/1276
-      messages = checker.problems.map(&:message)
-      expect(messages).not_to include('#via_layers return type could not be inferred')
-      expect(messages).not_to include('Unresolved call to length on String, nil')
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'resolves constants inside modules inside classes' do

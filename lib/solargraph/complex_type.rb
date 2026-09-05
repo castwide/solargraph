@@ -562,13 +562,9 @@ module Solargraph
 
     private
 
-    # When this type is itself a union (e.g. `generic<A>, nil`) being
-    # matched against a union context type (e.g. `String, nil`), a
-    # generic member should only be bound against the parts of the
-    # context union not already accounted for by this type's other,
-    # concrete (non-generic) members. Otherwise `generic<A>` in
-    # `generic<A>, nil` would bind to the entire `String, nil` context
-    # instead of just `String`.
+    # Narrows what a generic member binds against: context members this
+    # type already matches concretely are dropped, so the generic takes
+    # only what is left over rather than the whole union.
     #
     # @param unique_type [UniqueType] A member of @items
     # @param context_type [ComplexType, UniqueType, nil]
