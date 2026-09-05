@@ -601,13 +601,13 @@ module Solargraph
       # parsed as an implicit kwargs hash appended to the call's
       # arguments - it belongs to the signature's keyword parameters,
       # not the restarg.
-      # @sg-ignore flow sensitive typing issue with the ternary above
+      # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
       last_arg = restargs.last
-      # @sg-ignore flow sensitive typing issue with the ternary above
+      # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
       has_trailing_hash = last_arg && last_arg.links.last.is_a?(Solargraph::Source::Chain::Hash)
       has_keyword_params = sig.parameters.any? { |p| %i[kwarg kwoptarg kwrestarg].include?(p.decl) }
       if has_trailing_hash && has_keyword_params
-        # @sg-ignore flow sensitive typing issue with the ternary above
+        # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
         restargs[0...-1]
       else
         restargs
