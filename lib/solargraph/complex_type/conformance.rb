@@ -138,9 +138,6 @@ module Solargraph
         true
       end
 
-      # The methods `expected` declares directly on itself, excluding ones
-      # inherited from `Object` and other ancestors.
-      #
       # @return [Array<Pin::Method>]
       def required_interface_methods
         api_map.get_own_methods(expected.name)
