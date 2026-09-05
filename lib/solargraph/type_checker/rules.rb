@@ -75,14 +75,15 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (96):
+      # flow sensitive typing could handle (108):
       #
       # @todo 36: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
       # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 6: need boolish support for ? methods
+      # @todo 7: need boolish support for ? methods
+      # @todo 6: missing flow-sensitive typing on array elements
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
@@ -101,6 +102,9 @@ module Solargraph
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
       # @todo 2: https://github.com/castwide/solargraph/issues/1251
       # @todo 2: https://github.com/castwide/solargraph/issues/1227
+      # @todo 2: missing flow-sensitive typing on hash keys
+      # @todo 2: MatchData#[] is String, nil even for a required capture group
+      # @todo 1: Need better handling of Enumerator#with_index
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"

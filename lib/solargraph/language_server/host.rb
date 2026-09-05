@@ -704,8 +704,8 @@ module Solargraph
 
       # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
-        window = client_capabilities['window']
-        window && window['workDoneProgress']
+        # @sg-ignore missing flow-sensitive typing on hash keys
+        client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
       private
@@ -857,8 +857,8 @@ module Solargraph
 
       # @sg-ignore need boolish support for ? methods
       def prepare_rename?
-        rename = client_capabilities['rename']
-        rename && rename['prepareSupport']
+        # @sg-ignore missing flow-sensitive typing on hash keys
+        client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
       # @param library [Library]

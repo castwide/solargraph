@@ -281,9 +281,9 @@ module Solargraph
             found = p
             break
           end
-          indexed_param = index.nil? ? nil : params[index]
-          if found.nil? && indexed_param && (indexed_param.name.nil? || indexed_param.name.empty?)
-            found = indexed_param
+          # @sg-ignore missing flow-sensitive typing on array elements
+          if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
+            found = params[index]
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,

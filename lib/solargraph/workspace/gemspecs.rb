@@ -180,6 +180,9 @@ module Solargraph
                                                           # turns a Bundler::StubSpecification into a
                                                           # Gem::StubSpecification if we can
                                                           if specish.respond_to?(:stub)
+                                                            # .send, not .stub: rspec-mocks defines
+                                                            # Object#stub when solargraph-rspec loads,
+                                                            # so a direct call resolves to that.
                                                             to_gem_specification specish.send(:stub)
                                                           else
                                                             # A Bundler::StubSpecification is a Bundler::

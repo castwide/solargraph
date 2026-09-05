@@ -45,13 +45,14 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
+      # @sg-ignore Need better handling of Enumerator#with_index
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
-        parameters.each_with_index.map { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
+        parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
       end
 
       # @param api_map [ApiMap]
