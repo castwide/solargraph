@@ -308,7 +308,7 @@ module Solargraph
           # Only force when it can't fall through to #generate_signature,
           # which assumes real Parameter pins: already-resolved
           # #signatures, or inline RBS rather than YARD.
-          if (instance_variable_get(:@signatures) || !inline_rbs.empty?) && docstring.tags(return_type_tag_name).empty? && return_type&.defined?
+          if (signatures_generated? || !inline_rbs.empty?) && docstring.tags(return_type_tag_name).empty? && return_type&.defined?
             sync_return_type_tag
           end
           method_docs ||= super || ''
@@ -747,6 +747,14 @@ module Solargraph
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard
+      end
+
+      # True once #signatures holds a value; unlike calling it, this
+      # does not generate the signatures.
+      #
+      # @return [Boolean]
+      def signatures_generated?
+        !@signatures.nil?
       end
 
       # @return [Array<Pin::Signature>]
