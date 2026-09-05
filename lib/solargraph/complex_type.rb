@@ -525,12 +525,8 @@ module Solargraph
           bracket_stack = 0
           base = String.new
           subtype_string = String.new
-          # conjuncts of an intersection type (`A & B`) seen so far in
-          # the current `|`-disjunct of the segment being parsed
           # @type [Array<ComplexType>]
           conjuncts = []
-          # disjuncts of a union type (`A | B`) seen so far in the
-          # segment currently being parsed
           # @type [Array<ComplexType, ComplexType::UniqueType>]
           disjuncts = []
           # the open quote character of the string literal being read

@@ -12,16 +12,12 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # From 4.1.0, RBS types Hash's own key lookups (`#[]`, `#fetch`,
-    # `#dig`, `#delete`) as the structural interface `Hash::_Key` -
-    # anything answering `hash`/`eql?` - rather than the class's own
-    # `K`, which is how it declared them before. Solargraph resolves
-    # interfaces by name rather than structurally, so the well-known
-    # name is stubbed to the type parameter it stands in for, the same
-    # way `bool`/`string`/`int` are stubbed above.
+    # RBS 4.1 types the key lookups on Hash (`#[]`, `#fetch`, `#dig`,
+    # `#delete`) as the structural interface `Hash::_Key`. Solargraph
+    # resolves interfaces by name, so stub the name to the type
+    # parameter it stands in for until structural support lands.
     #
-    # This is a stand-in, not a translation: it reads as `K`, which is
-    # narrower than the `hash`/`eql?` that RBS actually accepts.
+    # https://github.com/castwide/solargraph/pull/1266
     #
     # @type [Hash{String => String}]
     RBS_INTERFACE_TO_GENERIC = {
@@ -182,6 +178,8 @@ module Solargraph
           #
           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           type.types.map { |member| intersection_conjunct_tag(member) }.join(' & ')
+        when RBS::Types::Proc
+          'Proc'
         when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
           # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
           # @todo ensure these get resolved after processing all aliases
@@ -196,8 +194,6 @@ module Solargraph
           # e.g., singleton(String)
           # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           build_unique_type(type.name).tags
-        when RBS::Types::Proc
-          'Proc'
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
           # - e.g., it could be the return type of 'exit()' or 'raise'

@@ -577,9 +577,6 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Method>]
     def get_method_stack rooted_tag, name, scope: :instance, visibility: %i[private protected public],
                          preserve_generics: false
-      # rooted_tag is inference-derived, so an unparseable tag means
-      # "no methods here", the same way #get_methods already treats it,
-      # rather than an exception that aborts the whole request.
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).first

@@ -107,11 +107,9 @@ module Solargraph
           end
         end
 
-        # Narrows conjuncts to the ones with at least one signature the
-        # call's actual arguments conform to - the same per-signature
-        # overload matching #match_overload_type does, applied per
-        # conjunct instead of per signature. Unfiltered if any verdict
-        # is unknown (conjunct's method pin/signatures don't resolve).
+        # Narrows conjuncts to the ones with at least one signature
+        # the call arguments conform to. Left unfiltered when any
+        # conjunct resolves no signature to judge against.
         #
         # @param conjuncts [::Array<ComplexType>]
         # @param api_map [ApiMap]
@@ -121,23 +119,22 @@ module Solargraph
         def argument_verified_conjuncts conjuncts, api_map, name_pin, locals
           return conjuncts if arguments.empty?
 
-          verdicts = conjuncts.map { |c| conjunct_argument_verdict(c, api_map, name_pin, locals) }
-          return conjuncts if verdicts.any?(&:nil?)
+          accepts = conjuncts.map { |c| conjunct_matches_arguments?(c, api_map, name_pin, locals) }
+          return conjuncts if accepts.any?(&:nil?)
 
-          matching = conjuncts.zip(verdicts).select { |(_c, matched)| matched }.map(&:first)
+          matching = conjuncts.zip(accepts).select { |(_c, matched)| matched }.map(&:first)
           matching.empty? ? conjuncts : matching
         end
 
-        # Whether any of this conjunct's resolved method signatures
-        # match the call's actual arguments, or nil if the conjunct's
-        # method pin/signatures don't resolve at all.
+        # Whether any signature of the method this conjunct resolves
+        # accepts the call arguments; nil when none resolves.
         #
         # @param conjunct [ComplexType]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Boolean, nil]
-        def conjunct_argument_verdict conjunct, api_map, name_pin, locals
+        def conjunct_matches_arguments? conjunct, api_map, name_pin, locals
           pins = method_pins_for_binder(conjunct, api_map, name_pin, locals)
           return nil if pins.empty?
 
@@ -151,7 +148,7 @@ module Solargraph
         # type accept the call's actual arguments. Used both for
         # regular overload resolution and, per conjunct, to narrow an
         # Intersection's conjuncts to the ones a call can actually
-        # dispatch to (see #conjunct_argument_verdict) - the same
+        # dispatch to (see #conjunct_matches_arguments?) - the same
         # question either way: does this signature accept these
         # arguments.
         #
