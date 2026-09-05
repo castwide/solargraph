@@ -361,8 +361,119 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(4, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # @todo It would be more accurate to return `Enumerator<Array<Integer>>` here
-    expect(type.tag).to eq('Enumerator<Integer, String, Array<Integer>>')
+    # Array#each's `-> Enumerator[Elem, self]` narrows to the Array<Integer> arm, not the union.
+    expect(type.tag).to eq('Enumerator<Integer, Array<Integer>>')
+  end
+
+  it 'resolves an RBS self return type to the union arm that supplied the method' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, Symbol]
+      name = string_or_symbol
+      name.to_sym
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Symbol#to_sym is `-> self` and String#to_sym is `-> Symbol`, so both arms give Symbol.
+    expect(type.tag).to eq('Symbol')
+  end
+
+  it 'resolves a shared self-returning method separately for each union arm' do
+    source = Solargraph::Source.load_string(%(
+      # @type [String, Symbol]
+      name = string_or_symbol
+      name.itself
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Kernel#itself is `-> self` and one pin for both arms, so each arm contributes its own self.
+    expect(type.rooted_tags).to eq('::String, ::Symbol')
+  end
+
+  it 'resolves a YARD @return [self] to the union arm that supplied the method' do
+    source = Solargraph::Source.load_string(%(
+      class Alpha
+        # @return [Symbol]
+        def to_thing; end
+      end
+
+      class Beta
+        # @return [self]
+        def to_thing; end
+      end
+
+      # @type [Alpha, Beta]
+      thing = alpha_or_beta
+      thing.to_thing
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(13, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # A YARD `@return [self]` resolves like an RBS `self`, so Beta#to_thing narrows to Beta.
+    expect(type.rooted_tags).to eq('::Symbol, ::Beta')
+  end
+
+  it 'distributes a YARD self nested in a generic across union arms' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [Array<self>]
+        def many; end
+      end
+
+      class Alpha < Base; end
+      class Beta < Base; end
+
+      # @type [Alpha, Beta]
+      thing = alpha_or_beta
+      thing.many
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # Base#many is one shared pin, so the nested `self` resolves per arm, not to Array<Alpha, Beta>.
+    expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>')
+  end
+
+  it 'does not leak one union arm into a Class#new call resolved on another arm' do
+    source = Solargraph::Source.load_string(%(
+      class Beta; end
+
+      # @type [Class<Beta>, Class]
+      klass = beta_class_or_generic_class
+      klass.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # The bare `Class` arm cannot know what its #new constructs, and Beta must not leak in from the other arm.
+    expect(type.rooted_tags).to eq('undefined')
+  end
+
+  it 'resolves Class#new the same way regardless of union arm order' do
+    source = Solargraph::Source.load_string(%(
+      class Beta; end
+
+      # @type [Class, Class<Beta>]
+      klass = generic_or_beta_class
+      klass.new
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.rooted_tags).to eq('undefined')
   end
 
   it 'allows calls off of nilable objects by default' do

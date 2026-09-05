@@ -55,18 +55,31 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
-          pin_groups = binder.each_unique_type.map do |context|
+          # Resolve each arm alone, so a `self` return type narrows to that arm, not the whole union.
+          # @type [::Array<Pin::Base>]
+          resolved = []
+          unresolved_arm = false
+          binder.each_unique_type do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+            pin = stack.first
+            if pin.nil?
+              unresolved_arm = true
+              next
+            end
+            # This arm's name_pin binds only this arm, so #inferred_pins (incl. Class#new) sees just it.
+            arm_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                    closure: name_pin.closure,
+                                                    gates: name_pin.gates,
+                                                    binder: context,
+                                                    source: :chain)
+            resolved.concat inferred_pins([pin], api_map, arm_name_pin, locals)
           end
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          pins = pin_groups.flatten.uniq(&:path)
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin, locals)
+          return [] if unresolved_arm && !api_map.loose_unions
+          return [] if resolved.empty?
+          # Dedup on return type too, so arms sharing an inherited pin path don't collapse to just the first.
+          resolved.uniq { |pin| [pin.path, pin.return_type.tag] }
         end
 
         private
@@ -162,7 +175,10 @@ module Solargraph
 
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # @param name_pin [Pin::Base] name_pin.binder resolves `self` in the
+        #   resolved pins' declarations. For a union receiver, callers pass a
+        #   name_pin bound to the single arm that supplied `pins`, not the
+        #   whole union.
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
