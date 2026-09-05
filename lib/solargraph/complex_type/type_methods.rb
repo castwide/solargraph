@@ -75,6 +75,14 @@ module Solargraph
         name == 'undefined'
       end
 
+      # @return [Boolean] True if this type is RBS's bottom type - an
+      #   expression that never produces a value (e.g., the return type
+      #   of `raise` or `abort`). A bottom type is a subtype of every
+      #   other type.
+      def bot?
+        name == 'bot'
+      end
+
       # Variance of the type ignoring any type parameters
       # @return [Symbol]
       # @param situation [Symbol] The situation in which the variance is being considered.
@@ -207,25 +215,6 @@ module Solargraph
         return false unless self.class == other.class
         # @sg-ignore flow sensitive typing should support .class == .class
         tag == other.tag
-      end
-
-      # Generate a ComplexType that fully qualifies this type's namespaces.
-      #
-      # @param api_map [ApiMap] The ApiMap that performs qualification
-      # @param context [String] The namespace from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
-      def qualify api_map, context = ''
-        transform do |t|
-          next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined?
-          recon = (t.rooted? ? '' : context)
-          fqns = api_map.qualify(t.name, recon)
-          if fqns.nil?
-            next UniqueType::BOOLEAN if t.tag == 'Boolean'
-            next UniqueType::UNDEFINED
-          end
-          t.recreate(new_name: fqns, make_rooted: true)
-        end
       end
 
       # @yieldparam [UniqueType]

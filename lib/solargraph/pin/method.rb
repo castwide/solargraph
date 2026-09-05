@@ -295,8 +295,7 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore Need to add nil check here
-          qualified = type.qualify(api_map, *closure.gates)
+          qualified = type.qualify(api_map, *gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -612,13 +611,14 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @return [ComplexType, nil]
+      # @return [ComplexType, ComplexType::UniqueType, nil]
       def typify_from_super api_map
         stack = rest_of_stack api_map
         return nil if stack.empty?
         stack.each do |pin|
           # @sg-ignore Need to add nil check here
-          return pin.return_type unless pin.return_type.undefined?
+          next if pin.return_type.undefined?
+          return pin.typify(api_map)
         end
         nil
       end
