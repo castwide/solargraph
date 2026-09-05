@@ -626,12 +626,9 @@ module Solargraph
       end
 
       UNDEFINED = UniqueType.new('undefined', rooted: false)
-      # #eql?/#==/#hash compare the raw @rooted ivar; #rooted? reports
-      # true for any lowercase name regardless of it, so a wrong
-      # @rooted here would not break #bot?/#tag/#to_s - only equality
-      # (Array#uniq, Array#-, Set membership, pin dedup). rooted: true
-      # is required to match how ComplexType.parse('bot') constructs
-      # ComplexType::BOT.first.
+      # rooted: true to hash alongside ComplexType.parse('bot'). #rooted?
+      # ignores the ivar for lowercase names, so a wrong value here shows
+      # up only in hash-based lookup (Set, uniq, -), never in tag or bot?.
       BOT = UniqueType.new('bot', rooted: true)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
       TRUE = UniqueType.new('true', rooted: true)
