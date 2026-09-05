@@ -108,11 +108,10 @@ module Solargraph
         [generics, blockless_parameters.map(&:arity_decl), block&.arity]
       end
 
-      # e.g., [["T"], "1", "?3", "foo:5"] - parameter arity
-      #   declarations, including the number of unique types in each
-      #   parameter.  Used to determine whether combining two
-      #   signatures has lost useful information mapping specific
-      #   parameter types to specific return types.
+      # e.g., [["T"], "::String", "?::Integer", "foo:::Symbol"] - parameter
+      #   arity declarations carrying the rooted types of each parameter.
+      #   Used to tell whether combining two signatures loses the mapping
+      #   from specific parameter types to specific return types.
       #
       # @return [Array<Array, String, nil>]
       def type_arity
