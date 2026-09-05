@@ -24,6 +24,7 @@ module Solargraph
               comments: comments,
               visibility: :public,
               gates: region.closure.gates.freeze,
+              node: node,
               source: :parser
             )
             pins.push nspin

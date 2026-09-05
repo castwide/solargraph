@@ -43,6 +43,7 @@ module Solargraph
           pins.push Pin::Namespace.new(
             location: region.source.location,
             name: '',
+            node: node,
             source: :parser
           )
         end
