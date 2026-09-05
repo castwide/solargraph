@@ -376,8 +376,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # String#to_sym is `-> Symbol`; Symbol#to_sym is `-> self`, which narrows
-    # to Symbol rather than expanding to the String, Symbol receiver.
+    # Symbol#to_sym is `-> self` and String#to_sym is `-> Symbol`, so both arms give Symbol.
     expect(type.tag).to eq('Symbol')
   end
 
@@ -392,8 +391,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # Kernel#itself is `-> self` and is the same pin for both arms, so the
-    # result is the union of each arm's own self type.
+    # Kernel#itself is `-> self` and one pin for both arms, so each arm contributes its own self.
     expect(type.rooted_tags).to eq('::String, ::Symbol')
   end
 
@@ -418,9 +416,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(13, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # `self` in a YARD @return tag reaches the same resolution as an RBS `self`
-    # return type, so Beta#to_thing narrows to Beta instead of expanding to the
-    # whole Alpha, Beta receiver.
+    # A YARD `@return [self]` resolves like an RBS `self`, so Beta#to_thing narrows to Beta.
     expect(type.rooted_tags).to eq('::Symbol, ::Beta')
   end
 
@@ -443,8 +439,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # Base#many is one pin shared by both arms, so `self` inside the generic
-    # resolves once per arm rather than collapsing to Array<Alpha, Beta>.
+    # Base#many is one shared pin, so the nested `self` resolves per arm, not to Array<Alpha, Beta>.
     expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>')
   end
 
@@ -461,11 +456,7 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # Class<Beta>'s own `.new` resolves separately to Beta; the bare `Class`
-    # arm falls back to the generic Class#new, which cannot know the
-    # constructed type. The gate for that fallback must read only this
-    # arm's binder - a Class<Beta> arm elsewhere in the union must not leak
-    # Beta into the bare Class arm's result.
+    # The bare `Class` arm cannot know what its #new constructs, and Beta must not leak in from the other arm.
     expect(type.rooted_tags).to eq('undefined')
   end
 
@@ -482,8 +473,6 @@ describe Solargraph::Source::Chain::Call do
 
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 13))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    # Same union as the Class<Beta>, Class case with the arms reversed; the
-    # result must not depend on declaration order.
     expect(type.rooted_tags).to eq('undefined')
   end
 
