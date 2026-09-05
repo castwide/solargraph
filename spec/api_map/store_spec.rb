@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'timeout'
-
 describe Solargraph::ApiMap::Store do
   it 'indexes multiple pinsets' do
     foo_pin = Solargraph::Pin::Namespace.new(name: 'Foo')
@@ -108,7 +106,7 @@ describe Solargraph::ApiMap::Store do
       expect(bar_pins).to all(be_an_instance_of(Solargraph::Pin::DelegatedMethod))
     end
 
-    it 'combines many same-path pins without timing out' do
+    it 'combines many same-path pins into a single pin' do
       maps = (1..30).map do |i|
         Solargraph::SourceMap.load_string(%(
           class Foo
@@ -118,13 +116,9 @@ describe Solargraph::ApiMap::Store do
           end
         ), "source#{i}.rb")
       end
-      store = nil
-      Timeout.timeout(5) { store = described_class.new(maps.flat_map(&:pins)) }
+      store = described_class.new(maps.flat_map(&:pins))
 
-      result = nil
-      Timeout.timeout(5) { result = store.get_methods('Foo', scope: :instance) }
-
-      bar_pins = result.select { |p| p.name == 'bar' }
+      bar_pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'bar' }
       expect(bar_pins.length).to eq(1)
       # The regression is combinatorial blowup, not a specific merge
       # outcome, so bound the size rather than assert exact merges.

@@ -814,7 +814,7 @@ module Solargraph
 
     # The namespace pin for fqns that actually declares its generics,
     # picked from any duplicate pins for the same namespace.
-    #
+    # @todo Consider trade-offs of merging namespace pins instead of trying to choose the best one for this use
     # @param fqns [String]
     # @return [Pin::Namespace, nil]
     def namespace_pin_for_generics fqns
