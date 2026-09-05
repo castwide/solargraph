@@ -63,7 +63,6 @@ module Solargraph
 
           begin
             gemspec = Gem::Specification.find_by_name(gem_name)
-            # @sg-ignore flow sensitive typing should be able to handle redefinition
             return [gemspec_or_preference(gemspec)] if gemspec
           rescue Gem::MissingSpecError
             logger.debug do
@@ -106,7 +105,6 @@ module Solargraph
 
         # @sg-ignore flow sensitive typing should be able to handle redefinition
         specish = all_gemspecs_from_bundle.find { |specish| specish.name == name }
-        # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
         return to_gem_specification specish if specish
 
         resolve_gem_ignoring_local_bundle name, version, out: out

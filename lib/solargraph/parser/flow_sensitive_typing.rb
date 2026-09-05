@@ -9,11 +9,30 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param restricted_names [Array<String>, nil] If given, only
+      #   assert facts about variables with these names, ignoring any
+      #   other variable the analyzed condition happens to mention.
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
+                     restricted_names: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @restricted_names = restricted_names
+      end
+
+      # Assert the facts implied by a condition being true/false over
+      # the given ranges.  Public so that a differently-configured
+      # instance (see #initialize's restricted_names) can be handed a
+      # condition to analyze.
+      #
+      # @param conditional_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_condition conditional_node, true_ranges, false_ranges
+        process_expression(conditional_node, true_ranges, false_ranges)
       end
 
       # @param and_node [Parser::AST::Node]
@@ -153,6 +172,9 @@ module Solargraph
         end
 
         process_expression(conditional_node, true_ranges, false_ranges)
+
+        # @sg-ignore Need to add nil check here
+        process_guarded_reassignment(if_node, conditional_node, then_clause, else_clause)
       end
 
       # @param while_node [Parser::AST::Node]
@@ -198,6 +220,83 @@ module Solargraph
 
       private
 
+      # The standard default-argument idiom reassigns a variable in
+      # the branch where the guard on that same variable fired:
+      #
+      #   tasks = ['a'] if tasks.nil?
+      #   tasks.each { ... }
+      #
+      # At a use site *after* the conditional, the two incoming paths
+      # are (a) the guard fired and the clause assigned a new value,
+      # and (b) the guard did not fire, leaving the original value -
+      # which the condition tells us something about.  Path (a) is
+      # already handled: the assignment's pin is unioned in.  Path (b)
+      # is what's asserted here - the opposite branch's facts from the
+      # condition hold over the rest of the enclosing compound
+      # statement.
+      #
+      # The facts are restricted to the variables the clause
+      # definitely reassigns.  Without that restriction a condition
+      # like `x.nil? || y.nil?` would wrongly narrow `y` after the
+      # conditional, since the clause only replaced `x`'s value.
+      #
+      # @param if_node [Parser::AST::Node]
+      # @param conditional_node [Parser::AST::Node]
+      # @param then_clause [Parser::AST::Node, nil]
+      # @param else_clause [Parser::AST::Node, nil]
+      #
+      # @return [void]
+      def process_guarded_reassignment if_node, conditional_node, then_clause, else_clause
+        compound_statement_node = enclosing_compound_statement_pin&.node
+        return if compound_statement_node.nil?
+
+        rest_of_compound_statement = Range.new(get_node_end_position(if_node),
+                                               get_node_end_position(compound_statement_node))
+
+        # the then clause ran only when the condition was true, so the
+        # path that preserved the original value is the false one -
+        # and vice versa for the else clause
+        assert_after_guard(conditional_node, definitely_assigned_names(then_clause),
+                           [], [rest_of_compound_statement])
+        assert_after_guard(conditional_node, definitely_assigned_names(else_clause),
+                           [rest_of_compound_statement], [])
+      end
+
+      # @param conditional_node [Parser::AST::Node]
+      # @param names [Array<String>]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def assert_after_guard conditional_node, names, true_ranges, false_ranges
+        return if names.empty?
+
+        FlowSensitiveTyping.new(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
+                                restricted_names: names)
+                           .process_condition(conditional_node, true_ranges, false_ranges)
+      end
+
+      # Names of the variables this clause assigns on every path
+      # through it.  Only unconditional, plain assignments count -
+      # anything inside a nested conditional or loop may not run, and
+      # `||=`/`+=`-style assignments keep the previous value in play.
+      #
+      # @param clause_node [Parser::AST::Node, nil]
+      #
+      # @return [Array<String>]
+      def definitely_assigned_names clause_node
+        return [] if clause_node.nil?
+
+        case clause_node.type
+        when :lvasgn, :ivasgn
+          [clause_node.children[0].to_s]
+        when :begin, :kwbegin
+          clause_node.children.flat_map { |child| definitely_assigned_names(child) }
+        else
+          []
+        end
+      end
+
       # @param pin [Pin::BaseVariable]
       # @param presence [Range]
       # @param downcast_type [ComplexType, nil]
@@ -205,6 +304,8 @@ module Solargraph
       #
       # @return [void]
       def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
+        return if restricted_names && !restricted_names.include?(pin.name)
+
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
@@ -249,7 +350,60 @@ module Solargraph
         process_calls(expression_node, true_ranges, false_ranges)
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
+        process_parentheses(expression_node, true_ranges, false_ranges)
+        process_assignment(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+      end
+
+      # `(foo)` parses as a one-child :begin wrapping the expression,
+      # which is how an assignment used as a condition normally shows
+      # up: `if (md = foo.match(...))`.  A multi-statement :begin
+      # takes its truthiness from the last statement, which isn't
+      # worth handling here.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_parentheses node, true_ranges, false_ranges
+        return unless node.type == :begin && node.children.length == 1
+
+        child = node.children[0]
+        return unless child.is_a?(::Parser::AST::Node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `child` past the guard above
+        process_expression(child, true_ranges, false_ranges)
+      end
+
+      # An assignment used as a condition - `if (md = foo.match(...))`
+      # - evaluates to the value assigned, so the branches tell us the
+      # same thing about the variable that a bare reference to it
+      # would.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_assignment node, true_presences, false_presences
+        return unless %i[lvasgn ivasgn].include?(node.type)
+
+        variable_name = node.children[0]&.to_s
+        return if variable_name.nil? || variable_name.empty?
+
+        # look the variable up at the end of its own assignment, where
+        # the new value has become visible
+        pin = find_var(variable_name, get_node_end_position(node))
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = { pin => [{ not_type: ComplexType::NIL }] }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = { pin => [{ type: ComplexType.parse('nil, false') }] }
+        process_facts(if_false, false_presences)
       end
 
       # @param call_node [Parser::AST::Node]
@@ -298,13 +452,30 @@ module Solargraph
       #   return type could not be inferred
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
-        if variable_name.start_with?('@')
+        pins = variable_name.start_with?('@') ? ivars : locals
+        # Prefer the pin whose presence starts latest - i.e., the
+        # most recent assignment reaching this position - rather
+        # than the first-declared pin for this name. Multiple pins
+        # can match (e.g. a variable's original declaration and a
+        # later reassignment both have presences that include this
+        # position), and picking the wrong one here would narrow the
+        # stale, superseded pin instead of the current one.
+        #
+        # Exclude pins whose own assignment is still being evaluated
+        # at this position (e.g. the receiver inside its own RHS,
+        # such as `baz ||= begin ... end`) - that pin's value isn't
+        # available yet, so its presence including this position
+        # would otherwise make it a false match ahead of the pin it's
+        # about to supersede.
+        matches = pins.select do |pin|
+          next false unless pin.name == variable_name
           # @sg-ignore flow sensitive typing needs to handle attrs
-          ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
-        else
-          # @sg-ignore flow sensitive typing needs to handle attrs
-          locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
+          next false unless !pin.presence || pin.presence.include?(position)
+
+          other_loc = Location.new(pin.location&.filename, Range.new(position, position))
+          !pin.within_own_assignment?(other_loc)
         end
+        matches.max_by { |pin| pin.presence&.start || Position.new(0, 0) }
       end
 
       # @param isa_node [Parser::AST::Node]
@@ -465,7 +636,8 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin,
+                  :restricted_names
     end
   end
 end

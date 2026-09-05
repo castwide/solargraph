@@ -30,7 +30,19 @@ module Solargraph
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            # not pushed onto `pins` - and/or/orasgn/resbody bodies are
+            # too common to warrant a pin per occurrence, so only the
+            # pointer is needed for the compound_statement chain
+            rescue_body_node = node.children[2]
+            rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
+              location: rescue_body_node ? get_node_location(rescue_body_node) : nil,
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
+              node: rescue_body_node,
+              source: :parser
+            )
+            NodeProcessor.process(rescue_body_node, region.update(compound_statement: rescue_body_cs), pins, locals, ivars) if rescue_body_node
           end
         end
       end
