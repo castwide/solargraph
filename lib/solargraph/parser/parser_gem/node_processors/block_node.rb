@@ -34,9 +34,7 @@ module Solargraph
 
           private
 
-          # Blocks written with implicit parameters (numblocks, `it`)
-          # carry no args node for ArgsNode to work from, so their
-          # parameter pins are synthesized here instead.
+          # Numblocks and `it` blocks have no args node for ArgsNode to work from.
           #
           # @param block_pin [Pin::Block]
           # @return [void]
@@ -48,10 +46,9 @@ module Solargraph
             end
           end
 
-          # A numblock stores its highest numbered parameter (2 for `_2`)
-          # where an ordinary block stores its args node.
+          # A numblock stores its highest numbered parameter (2 for `_2`) where a block stores its args node.
           #
-          # @sg-ignore flow sensitive typing does not narrow the return value through the is_a? guard
+          # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
           # @return [Integer]
           def numbered_parameter_count
             count = node.children[1]
@@ -60,42 +57,23 @@ module Solargraph
             count
           end
 
-          # An `it` block reaches us as an ordinary block with an empty args
-          # node, so the node itself records nothing about the parameter and
-          # the only available signal is an `it` reference in the body.
-          #
-          # Mixing `it` with ordinary parameters is a syntax error, so an
-          # empty args node is a precondition rather than a guess. A local
-          # variable named `it` in an enclosing scope does take precedence
-          # over the implicit parameter, and is parsed identically, so it has
-          # to be excluded here.
+          # An `it` block parses as an ordinary block with an empty args node, so the only
+          # signal is an `it` reference in the body. Mixing `it` with named parameters is a
+          # syntax error, so the empty args node is a precondition rather than a guess.
           #
           # @return [Boolean]
           def implicit_it_parameter?
             args = node.children[1]
             return false unless Parser.is_ast_node?(args)
-            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper -
-            #   flow-sensitive typing only recognizes a literal is_a? call
-            #   on the guarded variable, not one wrapped in a helper
-            #   predicate method like Parser.is_ast_node? above. No
-            #   upstream issue filed yet.
+            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
             return false unless args.type == :args && args.children.empty?
             return false if shadowed_it_local?
             references_it?(node.children[2])
           end
 
-          # Only a local variable declared outside any block shadows the
-          # implicit parameter. A block's own `it` must not stop a nested
-          # block from having one: in `xs.map { it.map { it.upcase } }` each
-          # `it` belongs to the block it appears in.
-          #
-          # This diverges from Ruby for an enclosing block with an
-          # explicit `it` parameter: `xs.map { |it| ys.map { it } }`
-          # reads the inner `it` as the outer parameter, but here the
-          # inner block gets its own. A synthesized `it` pin looks
-          # identical to an explicit one, so honoring the explicit case
-          # would also stop `[[1]].each { it.each { it } }`'s inner block
-          # from getting its own `it`.
+          # Only a local declared outside any block shadows the implicit parameter, so a
+          # nested block still gets its own. A synthesized `it` is indistinguishable from an
+          # explicit `|it|`, so an outer `|it|` does not shadow either, unlike in Ruby.
           #
           # @return [Boolean]
           def shadowed_it_local?
@@ -105,24 +83,21 @@ module Solargraph
             end
           end
 
-          # `it` inside a nested block belongs to that block, so the search
-          # skips a nested block's body. Its receiver and arguments are still
-          # searched, since those sit in the enclosing block: the `it` in
-          # `xs.map { it.map { |y| y } }` is the outer block's parameter.
+          # Skips a nested block's body, whose `it` belongs to that block, but still searches
+          # its receiver and arguments: those sit in the enclosing block.
           #
           # @param subject [BasicObject, nil]
           # @return [Boolean]
           def references_it? subject
             return false unless Parser.is_ast_node?(subject)
-            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper -
-            #   same Parser.is_ast_node? gap as in #implicit_it_parameter?
+            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
             return true if subject.type == :lvar && subject.children[0] == :it
-            # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+            # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
             children = if %i[block numblock].include?(subject.type)
-                         # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+                         # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
                          subject.children[0..1]
                        else
-                         # @sg-ignore tool-limitation:is_a-narrowing:predicate-wrapper
+                         # @sg-ignore flow sensitive typing needs to narrow through a predicate method like Parser.is_ast_node?
                          subject.children
                        end
             children.any? { |child| references_it?(child) }
