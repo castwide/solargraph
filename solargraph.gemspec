@@ -69,7 +69,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rubocop', '~> 1.80.0.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'
-  s.add_development_dependency 'rubocop-yard', '~> 1.0.0'
+  # rubocop-yard is in the Gemfile, which can gate it on the Ruby version
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
   s.add_development_dependency 'undercover', '~> 0.7'
