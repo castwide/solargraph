@@ -37,13 +37,6 @@ module Solargraph
                   "#{gemspec.name}-#{gemspec.version}.yardoc")
       end
 
-      def yardoc_path_for_metagem metagem
-        File.join(base_dir,
-                  "yard-#{YARD::VERSION}",
-                  "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}",
-                  "#{metagem.cache_name}.yardoc")
-      end
-
       # @return [String]
       def stdlib_path
         File.join(work_dir, 'stdlib')
@@ -163,10 +156,6 @@ module Solargraph
       # @return [Array<Pin::Base>, nil]
       def deserialize_combined_gem gemspec, hash
         load(combined_path(gemspec, hash))
-      end
-
-      def deserialize_combined_metagem(metagem)
-        
       end
 
       # @param gemspec [Gem::Specification]
