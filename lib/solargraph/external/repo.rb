@@ -34,7 +34,7 @@ module Solargraph
         Solargraph.with_clean_env do
           cmd = [
             'ruby', '-e',
-            "require 'bundler/setup'; require 'json'; Dir.chdir('#{@directory}') { puts Gem::Specification.all.map { |spec| { name: spec.name, full_path: spec.full_gem_path, spec_file: spec.spec_file, source: spec.source.class, version: spec.version, require_paths: spec.require_paths, dependencies: spec.dependencies.map(&:name) } }.to_json }"
+            "require 'bundler/setup'; require 'json'; Dir.chdir('#{@directory}') { puts Gem::Specification.all.map { |spec| { name: spec.name, full_path: spec.full_gem_path, spec_file: spec.spec_file, source: spec.source.to_s, version: spec.version, require_paths: spec.require_paths, dependencies: spec.dependencies.map(&:name) } }.to_json }"
           ]
           o, e, s = Open3.capture3(*cmd)
           if s.success?
@@ -56,6 +56,8 @@ module Solargraph
       def system_find_by_name name
         gem = Gem::Specification.find_by_name(name)
         gem && Metagem.from_specification(gem)
+      rescue Gem::MissingSpecError => _e
+        nil
       end
     end
   end

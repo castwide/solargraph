@@ -37,6 +37,27 @@ module Solargraph
                   "#{metagem.cache_name}.yardoc")
       end
 
+      # @param metagem [Metagem]
+      def serialize_yard_pins metagem
+        yard = Yardoc2.load!(metagem)
+        pins = YardMap::Mapper.new(yard, metagem.to_specification)
+      end
+
+      def deserialize_yard_pins metagem
+      end
+
+      def serialize_rbs_pins metagem
+      end
+
+      def deserialize_rbs_pins metagem
+      end
+
+      def serialize_combined_pins metagem
+      end
+
+      def deserialize_combined_pins metagem
+      end
+
       # @return [String]
       def stdlib_path
         File.join(work_dir, 'stdlib')
@@ -50,149 +71,149 @@ module Solargraph
 
       # @param require [String]
       # @return [Array<Pin::Base>, nil]
-      def deserialize_stdlib_require require
-        load(stdlib_require_path(require))
-      end
+      # def deserialize_stdlib_require require
+      #   load(stdlib_require_path(require))
+      # end
 
-      # @param require [String]
-      # @param pins [Array<Pin::Base>]
-      # @return [void]
-      def serialize_stdlib_require require, pins
-        save(stdlib_require_path(require), pins)
-      end
+      # # @param require [String]
+      # # @param pins [Array<Pin::Base>]
+      # # @return [void]
+      # def serialize_stdlib_require require, pins
+      #   save(stdlib_require_path(require), pins)
+      # end
 
-      # @return [String]
-      def core_path
-        File.join(work_dir, 'core.ser')
-      end
+      # # @return [String]
+      # def core_path
+      #   File.join(work_dir, 'core.ser')
+      # end
 
-      # @return [Array<Pin::Base>, nil]
-      def deserialize_core
-        load(core_path)
-      end
+      # # @return [Array<Pin::Base>, nil]
+      # def deserialize_core
+      #   load(core_path)
+      # end
 
-      # @param pins [Array<Pin::Base>]
-      # @return [void]
-      def serialize_core pins
-        save(core_path, pins)
-      end
+      # # @param pins [Array<Pin::Base>]
+      # # @return [void]
+      # def serialize_core pins
+      #   save(core_path, pins)
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @return [String]
-      def yard_gem_path gemspec
-        File.join(work_dir, 'yard', "#{gemspec.name}-#{gemspec.version}.ser")
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @return [String]
+      # def yard_gem_path gemspec
+      #   File.join(work_dir, 'yard', "#{gemspec.name}-#{gemspec.version}.ser")
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @return [Array<Pin::Base>, nil]
-      def deserialize_yard_gem gemspec
-        load(yard_gem_path(gemspec))
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @return [Array<Pin::Base>, nil]
+      # def deserialize_yard_gem gemspec
+      #   load(yard_gem_path(gemspec))
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param pins [Array<Pin::Base>]
-      # @return [void]
-      def serialize_yard_gem gemspec, pins
-        save(yard_gem_path(gemspec), pins)
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param pins [Array<Pin::Base>]
+      # # @return [void]
+      # def serialize_yard_gem gemspec, pins
+      #   save(yard_gem_path(gemspec), pins)
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @return [Boolean]
-      def has_yard? gemspec
-        exist?(yard_gem_path(gemspec))
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @return [Boolean]
+      # def has_yard? gemspec
+      #   exist?(yard_gem_path(gemspec))
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @return [String]
-      def rbs_collection_path gemspec, hash
-        File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @return [String]
+      # def rbs_collection_path gemspec, hash
+      #   File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @return [String]
-      def rbs_collection_path_prefix gemspec
-        File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-")
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @return [String]
+      # def rbs_collection_path_prefix gemspec
+      #   File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-")
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @return [Array<Pin::Base>, nil]
-      def deserialize_rbs_collection_gem gemspec, hash
-        load(rbs_collection_path(gemspec, hash))
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @return [Array<Pin::Base>, nil]
+      # def deserialize_rbs_collection_gem gemspec, hash
+      #   load(rbs_collection_path(gemspec, hash))
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @param pins [Array<Pin::Base>]n
-      # @return [void]
-      def serialize_rbs_collection_gem gemspec, hash, pins
-        save(rbs_collection_path(gemspec, hash), pins)
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @param pins [Array<Pin::Base>]n
+      # # @return [void]
+      # def serialize_rbs_collection_gem gemspec, hash, pins
+      #   save(rbs_collection_path(gemspec, hash), pins)
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @return [String]
-      def combined_path gemspec, hash
-        File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @return [String]
+      # def combined_path gemspec, hash
+      #   File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @return [String]
-      def combined_path_prefix gemspec
-        File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-")
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @return [String]
+      # def combined_path_prefix gemspec
+      #   File.join(work_dir, 'combined', "#{gemspec.name}-#{gemspec.version}-")
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @param pins [Array<Pin::Base>]
-      # @return [void]
-      def serialize_combined_gem gemspec, hash, pins
-        save(combined_path(gemspec, hash), pins)
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @param pins [Array<Pin::Base>]
+      # # @return [void]
+      # def serialize_combined_gem gemspec, hash, pins
+      #   save(combined_path(gemspec, hash), pins)
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @return [Array<Pin::Base>, nil]
-      def deserialize_combined_gem gemspec, hash
-        load(combined_path(gemspec, hash))
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @return [Array<Pin::Base>, nil]
+      # def deserialize_combined_gem gemspec, hash
+      #   load(combined_path(gemspec, hash))
+      # end
 
-      def deserialize_combined_metagem(metagem)
+      # def deserialize_combined_metagem(metagem)
         
-      end
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param hash [String, nil]
-      # @return [Boolean]
-      def has_rbs_collection? gemspec, hash
-        exist?(rbs_collection_path(gemspec, hash))
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param hash [String, nil]
+      # # @return [Boolean]
+      # def has_rbs_collection? gemspec, hash
+      #   exist?(rbs_collection_path(gemspec, hash))
+      # end
 
-      # @return [void]
-      def uncache_core
-        uncache(core_path)
-      end
+      # # @return [void]
+      # def uncache_core
+      #   uncache(core_path)
+      # end
 
-      # @return [void]
-      def uncache_stdlib
-        uncache(stdlib_path)
-      end
+      # # @return [void]
+      # def uncache_stdlib
+      #   uncache(stdlib_path)
+      # end
 
-      # @param gemspec [Gem::Specification]
-      # @param out [IO, StringIO, nil]
-      # @return [void]
-      def uncache_gem gemspec, out: nil
-        uncache(yardoc_path(gemspec), out: out)
-        uncache_by_prefix(rbs_collection_path_prefix(gemspec), out: out)
-        uncache(yard_gem_path(gemspec), out: out)
-        uncache_by_prefix(combined_path_prefix(gemspec), out: out)
-      end
+      # # @param gemspec [Gem::Specification]
+      # # @param out [IO, StringIO, nil]
+      # # @return [void]
+      # def uncache_gem gemspec, out: nil
+      #   uncache(yardoc_path(gemspec), out: out)
+      #   uncache_by_prefix(rbs_collection_path_prefix(gemspec), out: out)
+      #   uncache(yard_gem_path(gemspec), out: out)
+      #   uncache_by_prefix(combined_path_prefix(gemspec), out: out)
+      # end
 
-      # @return [void]
-      def clear
-        FileUtils.rm_rf base_dir, secure: true
-      end
+      # # @return [void]
+      # def clear
+      #   FileUtils.rm_rf base_dir, secure: true
+      # end
 
       private
 
@@ -208,10 +229,10 @@ module Solargraph
         nil
       end
 
-      # @param path [String]
-      def exist? *path
-        File.file? File.join(*path)
-      end
+      # # @param path [String]
+      # def exist? *path
+      #   File.file? File.join(*path)
+      # end
 
       # @param file [String]
       # @param pins [Array<Pin::Base>]
@@ -224,29 +245,29 @@ module Solargraph
         logger.debug { "Cache#save: Saved #{pins.length} pins to #{file}" }
       end
 
-      # @param path_segments [Array<String>]
-      # @return [void]
-      # @param [Object, nil] out
-      def uncache *path_segments, out: nil
-        path = File.join(*path_segments)
-        return unless File.exist?(path)
-        FileUtils.rm_rf path, secure: true
-        out&.puts "Clearing pin cache in #{path}"
-      end
+      # # @param path_segments [Array<String>]
+      # # @return [void]
+      # # @param [Object, nil] out
+      # def uncache *path_segments, out: nil
+      #   path = File.join(*path_segments)
+      #   return unless File.exist?(path)
+      #   FileUtils.rm_rf path, secure: true
+      #   out&.puts "Clearing pin cache in #{path}"
+      # end
 
-      # @return [void]
-      # @param path_segments [Array<String>]
-      # @param [Object, nil] out
-      def uncache_by_prefix *path_segments, out: nil
-        path = File.join(*path_segments)
-        glob = "#{path}*"
-        out&.puts "Clearing pin cache in #{glob}"
-        Dir.glob(glob).each do |file|
-          next unless File.file?(file)
-          FileUtils.rm_rf file, secure: true
-          out&.puts "Clearing pin cache in #{file}"
-        end
-      end
+      # # @return [void]
+      # # @param path_segments [Array<String>]
+      # # @param [Object, nil] out
+      # def uncache_by_prefix *path_segments, out: nil
+      #   path = File.join(*path_segments)
+      #   glob = "#{path}*"
+      #   out&.puts "Clearing pin cache in #{glob}"
+      #   Dir.glob(glob).each do |file|
+      #     next unless File.file?(file)
+      #     FileUtils.rm_rf file, secure: true
+      #     out&.puts "Clearing pin cache in #{file}"
+      #   end
+      # end
     end
   end
 end

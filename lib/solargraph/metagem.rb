@@ -6,6 +6,8 @@ module Solargraph
 
     attr_reader :full_path
 
+    attr_reader :spec_file
+
     attr_reader :source
 
     attr_reader :version
@@ -24,6 +26,8 @@ module Solargraph
       @version = version
       @require_paths = require_paths
       @dependencies = dependencies
+      # @todo Possible change to cache names to make them more specific to sources
+      # @cache_name = "#{File.basename(full_path)}__#{source.gsub(/[^a-z0-9\-_]/i, '_')}" unless source.end_with?('Path')
       @cache_name = File.basename(full_path) unless source.end_with?('Path')
     end
 
@@ -32,14 +36,23 @@ module Solargraph
     end
 
     def require? path
-      require_paths.each do |req|
-        return true if File.file?(File.join(full_path, req, "#{path}.rb"))
+      require_paths.any? do |req|
+        File.file?(File.join(full_path, req, "#{path}.rb"))
       end
-      false
+    end
+
+    def to_specification
+      Gem::Specification.load(spec_file)
     end
 
     def self.from_specification gem
-      Metagem.new(name: gem.name, full_path: gem.full_gem_path, spec_file: gem.spec_file, source: gem.source.class.name, version: gem.version, require_paths: gem.require_paths, dependencies: gem.dependencies.map(&:name))
+      Metagem.new(name: gem.name,
+                  full_path: gem.full_gem_path,
+                  spec_file: gem.spec_file,
+                  source: gem.source.to_s,
+                  version: gem.version,
+                  require_paths: gem.require_paths,
+                  dependencies: gem.dependencies.map(&:name))
     end
   end
 end
