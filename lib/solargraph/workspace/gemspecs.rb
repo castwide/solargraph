@@ -282,7 +282,7 @@ module Solargraph
               'Bundler.definition.dependencies' \
               '.select { |dep| dep.groups.include?(:default) && dep.should_include? }' \
               '.map(&:name)'
-            # @sg-ignore
+            # @sg-ignore Need to resolve @generic T from a block's yieldreturn
             # @type [Array<String>]
             dep_names = query_external_bundle command
 

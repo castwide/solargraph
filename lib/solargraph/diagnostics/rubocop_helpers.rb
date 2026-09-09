@@ -40,7 +40,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore
+        # @sg-ignore Unresolved call to []=
         options[:stdin] = code
         [options, paths]
       end

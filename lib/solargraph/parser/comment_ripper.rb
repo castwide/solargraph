@@ -22,7 +22,7 @@ module Solargraph
       end
 
       def on_comment *args
-        # @sg-ignore
+        # @sg-ignore super is typed void though it returns a value
         # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
         result = super
         # @sg-ignore Need to add nil check here

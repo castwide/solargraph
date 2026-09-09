@@ -88,7 +88,7 @@ module Solargraph
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore
+              # @sg-ignore Unresolved constant BlankRubocopFormatter
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])

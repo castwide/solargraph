@@ -135,7 +135,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_longer other, attr
         # @type [undefined]
@@ -237,7 +237,7 @@ module Solargraph
       # @param other [Pin::Base]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined, nil]
       def choose other, attr
         results = [self, other].map(&attr).compact
@@ -253,7 +253,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_node other, attr
         if other.object_id < attr.object_id
@@ -265,7 +265,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def prefer_rbs_location other, attr
         if rbs_location? && !other.rbs_location?
@@ -307,7 +307,7 @@ module Solargraph
         values1 = arr1.map(&)
         # @type [undefined]
         values2 = arr2.map(&)
-        # @sg-ignore
+        # @sg-ignore Unresolved call to ==
         return arr1 if values1 == values2
         Solargraph.assert_or_log(:"combine_with_#{attr}",
                                  "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self values = #{values1}\nother values =#{attr} = #{values2}")
@@ -334,7 +334,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def assert_same other, attr
         if other.nil?
@@ -352,7 +352,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_pin_attr_with_same_name other, attr
         # @type [Pin::Base, nil]

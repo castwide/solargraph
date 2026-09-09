@@ -71,11 +71,19 @@ module Solargraph
       #
       # pending code fixes (605):
       #
-      # @todo 433: Need to add nil check here
+      # @todo 434: Need to add nil check here
       # @todo 79: https://github.com/castwide/solargraph/pull/1223
       # @todo 50: https://github.com/castwide/solargraph/pull/1245
       # @todo 26: Translate to something flow sensitive typing understands
       # @todo 17: Need a downcast here
+      # @todo 7: Missing @return tag
+      # @todo 1: Unresolved call to ==
+      # @todo 1: Unresolved call to []=
+      # @todo 1: Unresolved constant BlankRubocopFormatter
+      # @todo 1: Proc#call return type isn't inferred without generics
+      # @todo 1: super is typed void though it returns a value
+      # @todo 1: parser gem's Builders::Default#value has no return type
+      # @todo 1: @@inference_cache has no declared value type
       #
       # flow sensitive typing could handle (161):
       #
@@ -86,7 +94,7 @@ module Solargraph
       # @todo 11: flow sensitive typing needs better handling of ||= on lvars
       # @todo 11: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
-      # @todo 5: need boolish support for ? methods
+      # @todo 7: need boolish support for ? methods
       # @todo 4: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 4: flow sensitive typing needs to handle 'raise if'
@@ -97,6 +105,7 @@ module Solargraph
       # @todo 2: downcast output of Enumerable#select
       # @todo 1: flow sensitive typing should support ivars
       # @todo 1: Need to be able to resolve generics based on a
+      # @todo 1: Need to resolve @generic T from a block's yieldreturn
       # @todo 1: Need to support this in flow sensitive typing
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
       # @todo 1: flow sensitive typing should be able to identify more blocks that always return

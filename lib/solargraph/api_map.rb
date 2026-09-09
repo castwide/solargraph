@@ -1060,7 +1060,7 @@ module Solargraph
 
     # @todo need to model type def statement in chains as a symbol so
     #   that this overload of 'protected' will typecheck @sg-ignore
-    # @sg-ignore
+    # @sg-ignore Missing @return tag
     def equality_fields
       [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires, @missing_docs,
        @loose_unions]
