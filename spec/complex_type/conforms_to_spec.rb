@@ -255,4 +255,50 @@ describe Solargraph::ComplexType do
       expect(match).to be(false)
     end
   end
+  context 'with a module reached through the ancestry' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        module Mixin; end
+        module OuterMixin; include Mixin; end
+        class Includer; include Mixin; end
+        class Sub < Includer; end
+        class Deep < Sub; end
+        class ModModIncluder; include OuterMixin; end
+        class Prepender; prepend Mixin; end
+        class Extender; extend Mixin; end
+      ))
+    end
+    let(:mixin) { described_class.parse('Mixin') }
+
+    before do
+      api_map.map source
+    end
+
+    it 'validates a module the superclass includes' do
+      match = described_class.parse('Sub').conforms_to?(api_map, mixin, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'validates a module included further up the superclass chain' do
+      match = described_class.parse('Deep').conforms_to?(api_map, mixin, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'validates a module reached through another included module' do
+      match = described_class.parse('ModModIncluder').conforms_to?(api_map, mixin, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'validates a prepended module' do
+      match = described_class.parse('Prepender').conforms_to?(api_map, mixin, :method_call)
+      expect(match).to be(true)
+    end
+
+    # extend adds the module to the singleton class, so an instance of
+    # Extender is not a Mixin and must not conform to one.
+    it 'rejects a module the class only extends' do
+      match = described_class.parse('Extender').conforms_to?(api_map, mixin, :method_call)
+      expect(match).to be(false)
+    end
+  end
 end
