@@ -725,15 +725,35 @@ module Solargraph
       false
     end
 
-    # Check if the host class includes the specified module, ignoring
-    # type parameters used.
+    # Check whether an instance of the host namespace is a kind of the given
+    # module, through its own includes and prepends or through any ancestor's.
+    # Type parameters are ignored. Extends are not consulted: they join the
+    # singleton class, so they never make instances conform.
     #
     # @param host_ns [String] The class namesapce (no type parameters)
     # @param module_ns [String] The module namespace (no type parameters)
     #
     # @return [Boolean]
     def type_include? host_ns, module_ns
-      store.get_includes(host_ns).map { |inc_tag| inc_tag.type.name }.include?(module_ns)
+      visited = Set.new
+      queue = [host_ns]
+      until queue.empty?
+        current = queue.shift
+        next if current.nil? || current.empty? || visited.include?(current)
+
+        visited.add current
+        mixins = store.get_includes(current).map { |ref| ref.type.name } +
+                 store.get_prepends(current).map { |ref| ref.type.name }
+        return true if mixins.include?(module_ns)
+
+        # A mixin can itself include or prepend the module, and so can any
+        # superclass, so both are followed rather than only the direct ones.
+        queue.concat mixins
+        superclass = store.get_superclass(current)
+        fqns = superclass && dereference(superclass)
+        queue << fqns if fqns
+      end
+      false
     end
 
     # @param pins [Enumerable<Pin::Base>]
