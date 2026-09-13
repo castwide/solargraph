@@ -50,6 +50,7 @@ module Solargraph
   autoload :Convention,       'solargraph/convention'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
+  autoload :RbsMap2,           'solargraph/rbs_map2'
   autoload :GemPins,          'solargraph/gem_pins'
   autoload :PinCache,         'solargraph/pin_cache'
   autoload :PinCache2,         'solargraph/pin_cache2'
