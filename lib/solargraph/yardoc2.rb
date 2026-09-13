@@ -29,6 +29,14 @@ module Solargraph
       File.exist?(yardoc)
     end
 
+    # True if another process is currently building the yardoc cache.
+    #
+    # @param metagem [Metagem]
+    def processing? metagem
+      yardoc = File.join(PinCache2.yardoc_path(metagem), 'processing')
+      File.exist?(yardoc)
+    end
+
     # Load a gem's yardoc cache and return its code objects.
     #
     # @note This method modifies the global YARD registry.
