@@ -76,7 +76,8 @@ module Solargraph
 
     # @param metagem [Metagem]
     def process_uncached_gem(metagem)
-      workspace = Workspace.new(metagem)
+      # @todo Consider leveraging require_paths to load source maps
+      workspace = Workspace.new(metagem.full_path)
       source_maps = workspace.sources.map { |source| Solargraph::SourceMap.new(source) }
       source_pins = source_maps.flat_map(&:pins)
       rbs_pins = RbsMap2.new(metagem).pins

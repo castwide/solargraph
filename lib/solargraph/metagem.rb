@@ -28,7 +28,8 @@ module Solargraph
       @dependencies = dependencies
       # @todo Possible change to cache names to make them more specific to sources
       # @cache_name = "#{File.basename(full_path)}__#{source.gsub(/[^a-z0-9\-_]/i, '_')}" unless source.end_with?('Path')
-      @cache_name = File.basename(full_path) unless source.end_with?('Path')
+      # @todo Better path source detection
+      @cache_name = File.basename(full_path) unless source.start_with?('source at') || source.to_s.end_with?('::Path')
     end
 
     def cacheable?
