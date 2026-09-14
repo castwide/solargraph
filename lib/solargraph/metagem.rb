@@ -45,6 +45,8 @@ module Solargraph
       Gem::Specification.load(spec_file)
     end
 
+    alias full_gem_path full_path
+
     def self.from_specification gem
       Metagem.new(name: gem.name,
                   full_path: gem.full_gem_path,

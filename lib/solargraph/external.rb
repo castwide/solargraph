@@ -8,18 +8,30 @@ module Solargraph
 
     attr_reader :requires
 
+    attr_reader :unresolved_requires
+
+    attr_reader :loaded_gems
+
+    attr_reader :unloaded_gems
+
+    attr_reader :pins
+
     # @param bench [Bench]
     def initialize bench, cached: true
       @requires = select_external_requires(bench)
       @cached = cached
       @repo = Repo.new(bench.workspace.directory)
       @pins = []
+      @unresolved_requires = []
+      @loaded_gems = []
+      @unloaded_gems = []
       bundler_require = false
       @requires.each do |path|
         if path == 'bundler/require'
           bundler_require = true
         end
         metagem = @repo.find_by_path(path)
+        next @unresolved_requires.push(path) unless metagem
         if metagem.cacheable? && cached?
           process_cached_gem(metagem)
         else
@@ -52,16 +64,25 @@ module Solargraph
            .reject { |path| bench.workspace.would_require?(path) }
     end
 
+    # @param metagem [Metagem]
     def process_cached_gem(metagem)
-      if Yardoc2.cached?(metagem)
-        Yardoc2.load!(metagem)
+      if GemCache.exist?(metagem)
+        @pins.concat GemCache.load(metagem)
+        @loaded_gems.push metagem
       else
-        puts "#{metagem.cache_name} is NOT cached."
+        @unloaded_gems.push metagem
       end
     end
 
+    # @param metagem [Metagem]
     def process_uncached_gem(metagem)
-      puts "And dis is where I just load it in place!!1!"
+      workspace = Workspace.new(metagem)
+      source_maps = workspace.sources.map { |source| Solargraph::SourceMap.new(source) }
+      source_pins = source_maps.flat_map(&:pins)
+      rbs_pins = RbsMap2.new(metagem).pins
+      combined = GemPins.combine(source_pins, rbs_pins)
+      @pins.concat combined
+      @loaded_gems.push(metagem)
     end
   end
 end
