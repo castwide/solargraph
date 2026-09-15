@@ -35,13 +35,14 @@ module Solargraph
       @pins ||= []
     end
 
+    # @param new_requires [Array<String>]
+    # @return [Boolean]
     def update new_requires
-      if requires == new_requires
-        # @todo nothing to do?
-      else
-        requires.replace new_requires
-        load_requires
-      end
+      return false if requires == new_requires
+
+      requires.replace new_requires
+      load_requires
+      true
     end
 
     private
