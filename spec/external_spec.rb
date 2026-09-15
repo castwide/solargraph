@@ -51,4 +51,9 @@ describe Solargraph::External do
       expect(pins.length).to be_positive
     end
   end
+
+  it 'tracks unresolved requires' do
+    external = described_class.new(directory, ['not_a_valid_path'])
+    expect(external.unresolved_requires).to eq(['not_a_valid_path'])
+  end
 end
