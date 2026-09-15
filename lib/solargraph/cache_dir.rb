@@ -24,6 +24,16 @@ module Solargraph
           .tap { |dir| FileUtils.mkdir_p(dir) unless File.exist?(dir) }
     end
 
+    def gem_dir
+      File.join(work_dir, 'gems')
+          .tap { |dir| FileUtils.mkdir_p(dir) unless File.exist?(dir) }
+    end
+
+    def stdlib_dir
+      File.join(work_dir, 'stdlib')
+          .tap { |dir| FileUtils.mkdir_p(dir) unless File.exist?(dir) }
+    end
+
     # The directory for the current YARD version.
     #
     # @return [String]
