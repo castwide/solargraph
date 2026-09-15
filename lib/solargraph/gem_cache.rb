@@ -21,7 +21,7 @@ module Solargraph
     end
 
     # @param metagem [Metagem]
-    def save metagem
+    def cache metagem
       Yardoc2.cache(metagem) unless Yardoc2.cached?(metagem)
       yardoc = Yardoc2.load!(metagem)
       yard_pins = YardMap::Mapper.new(yardoc, metagem).map
@@ -33,26 +33,25 @@ module Solargraph
         yard_pins
       end
       cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
-      write(cache_path, pins)
+      base = File.dirname(cache_path)
+      FileUtils.mkdir_p base unless File.directory?(base)
+      ser = Marshal.dump(pins)
+      File.write cache_path, ser, mode: 'wb'
+      # @todo Fix log message
+      # logger.debug { "Cache#save: Saved #{pins.length} pins to #{file}" }
       cache_path
+    end
+
+    # @param metagem [Metagem]
+    def uncache metagem
+      cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
+      FileUtils.rm_f cache_path
     end
 
     # @param metagem [Metagem]
     def exist? metagem
       cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
       File.file?(cache_path)
-    end
-
-    # @param file [String]
-    # @param pins [Array<Pin::Base>]
-    # @return [void]
-    def write file, pins
-      base = File.dirname(file)
-      FileUtils.mkdir_p base unless File.directory?(base)
-      ser = Marshal.dump(pins)
-      File.write file, ser, mode: 'wb'
-      # @todo Fix log message
-      # logger.debug { "Cache#save: Saved #{pins.length} pins to #{file}" }
     end
   end
 end
