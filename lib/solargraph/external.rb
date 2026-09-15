@@ -65,28 +65,24 @@ module Solargraph
         end
         metagem = @repo.find_by_path(path)
         next unresolved_requires.push(path) unless metagem
-        if metagem.cacheable?
-          process_cached_gem(metagem)
-        else
-          process_uncached_gem(metagem)
-        end
-        load_dependencies metagem
+        process_gem metagem
       end
 
-      # @todo handle bundler/require
+      if bundler_require
+        @repo.bundled.each do |metagem|
+          next if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
+          process_gem metagem
+        end
+      end
     end
 
-    def load_dependencies parent
-      parent.dependencies.each do |name|
-        next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)
-        metagem = @repo.find_by_name(name)
-        next unresolved_dependencies.push(name) unless metagem
-        if metagem.cacheable?
-          process_cached_gem(metagem)
-        else
-          process_uncached_gem(metagem)
-        end
+    def process_gem metagem
+      if metagem.cacheable?
+        process_cached_gem(metagem)
+      else
+        process_uncached_gem(metagem)
       end
+      load_dependencies metagem
     end
 
     # @param metagem [Metagem]
@@ -110,6 +106,15 @@ module Solargraph
       combined = GemPins.combine(source_pins, rbs_pins)
       pins.concat combined
       loaded_gems.push(metagem)
+    end
+
+    def load_dependencies parent
+      parent.dependencies.each do |name|
+        next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)
+        metagem = @repo.find_by_name(name)
+        next unresolved_dependencies.push(name) unless metagem
+        process_gem metagem
+      end
     end
   end
 end

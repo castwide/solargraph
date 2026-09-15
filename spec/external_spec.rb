@@ -56,4 +56,11 @@ describe Solargraph::External do
     external = described_class.new(directory, ['not_a_valid_path'])
     expect(external.unresolved_requires).to eq(['not_a_valid_path'])
   end
+
+  it 'imports all gems when bundler/require is required' do
+    external = described_class.new(directory, ['bundler/require'])
+    expect(external.loaded_gems.map(&:name)).to include('backport')
+    expect(external.loaded_gems.map(&:name)).to include('gem-with-yard-macros')
+    expect(external.loaded_gems.map(&:name)).to include('reverse_markdown')
+  end
 end

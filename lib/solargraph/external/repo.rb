@@ -26,6 +26,10 @@ module Solargraph
         !!@metagems
       end
 
+      def bundled
+        @metagems || []
+      end
+
       private
 
       def build_from_directory
