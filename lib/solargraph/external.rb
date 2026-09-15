@@ -1,70 +1,75 @@
 # frozen_string_literal: true
 
 module Solargraph
+  # @todo This class might need a way to track changes to the repo, e.g.,
+  #   bundle or dependency updates
+  #
   class External
-    # autoload :Metagem,   'solargraph/external/metagem'
     autoload :Repo, 'solargraph/external/repo'
-    # autoload :Require,   'solargraph/external/require'
 
-    attr_reader :requires
-
-    attr_reader :unresolved_requires
-
-    attr_reader :loaded_gems
-
-    attr_reader :unloaded_gems
-
-    attr_reader :pins
-
-    # @param bench [Bench]
-    def initialize bench, cached: true
-      @requires = select_external_requires(bench)
-      @cached = cached
-      @repo = Repo.new(bench.workspace.directory)
-      @pins = []
-      @unresolved_requires = []
-      @loaded_gems = []
-      @unloaded_gems = []
-      bundler_require = false
-      @requires.each do |path|
-        if path == 'bundler/require'
-          bundler_require = true
-        end
-        metagem = @repo.find_by_path(path)
-        next @unresolved_requires.push(path) unless metagem
-        if metagem.cacheable? && cached?
-          process_cached_gem(metagem)
-        else
-          process_uncached_gem(metagem)
-        end
-      end
+    # @param directory [String]
+    # @param requires [Array<String>]
+    def initialize directory, requires
+      @repo = Repo.new(directory)
+      @directory = directory
+      update requires
     end
 
-    def cached?
-      @cached
+    def requires
+      @requires ||= []
     end
 
-    def update bench
-      new_requires = select_external_requires(bench)
+    def unresolved_requires
+      @unresolved_requires ||= []
+    end
+
+    def loaded_gems
+      @loaded_gems ||= []
+    end
+
+    def unloaded_gems
+      @loaded_gems ||= []
+    end
+
+    def pins
+      @pins ||= []
+    end
+
+    def update new_requires
       if requires == new_requires
-        return if uncached_gems.empty?
-        # @todo try to cache gems
+        # @todo nothing to do?
       else
-        @requires = new_requires
-        # @todo rest of update
+        requires.replace new_requires
+        load_requires
       end
     end
 
     private
 
-    def select_external_requires bench
-      bench.source_maps
-           .flat_map(&:requires)
-           .map(&:name)
-           .reject { |path| bench.workspace.would_require?(path) }
+    def load_requires
+      pins.clear
+      unresolved_requires.clear
+      loaded_gems.clear
+      unloaded_gems.clear
+
+      bundler_require = true
+      requires.each do |path|
+        if path == 'bundler/require'
+          bundler_require = true
+        end
+        metagem = @repo.find_by_path(path)
+        next @unresolved_requires.push(path) unless metagem
+        if metagem.cacheable?
+          process_cached_gem(metagem)
+        else
+          process_uncached_gem(metagem)
+        end
+      end
+      # @todo handle bundler/require
     end
 
     # @param metagem [Metagem]
+    # @return [void]
     def process_cached_gem(metagem)
       if GemCache.exist?(metagem)
         @pins.concat GemCache.load(metagem)
@@ -75,6 +80,7 @@ module Solargraph
     end
 
     # @param metagem [Metagem]
+    # @return [void]
     def process_uncached_gem(metagem)
       # @todo Consider leveraging require_paths to load source maps
       workspace = Workspace.new(metagem.full_path)
