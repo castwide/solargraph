@@ -53,6 +53,7 @@ module Solargraph
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :RbsMap2,           'solargraph/rbs_map2'
   autoload :GemPins,          'solargraph/gem_pins'
+  autoload :CacheDir,         'solargraph/cache_dir'
   autoload :PinCache,         'solargraph/pin_cache'
   autoload :PinCache2,         'solargraph/pin_cache2'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
