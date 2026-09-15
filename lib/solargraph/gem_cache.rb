@@ -11,7 +11,7 @@ module Solargraph
 
     # @param metagem [Metagem]
     def load metagem
-      file = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
+      file = path_for(metagem)
       return nil unless File.file?(file)
       Marshal.load(File.read(file, mode: 'rb'))
     rescue StandardError => e
@@ -32,7 +32,7 @@ module Solargraph
         # GemPins.combine(yard_pins, rbs_pins)
         yard_pins
       end
-      cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
+      cache_path = path_for(metagem)
       base = File.dirname(cache_path)
       FileUtils.mkdir_p base unless File.directory?(base)
       ser = Marshal.dump(pins)
@@ -44,14 +44,12 @@ module Solargraph
 
     # @param metagem [Metagem]
     def uncache metagem
-      cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
-      FileUtils.rm_f cache_path
+      FileUtils.rm_f path_for(metagem)
     end
 
     # @param metagem [Metagem]
     def exist? metagem
-      cache_path = File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
-      File.file?(cache_path)
+      File.file? path_for(metagem)
     end
   end
 end
