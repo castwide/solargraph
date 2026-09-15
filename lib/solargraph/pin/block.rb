@@ -5,10 +5,10 @@ module Solargraph
     class Block < Callable
       include Breakable
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :receiver
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
