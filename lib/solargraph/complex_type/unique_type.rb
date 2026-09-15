@@ -353,6 +353,28 @@ module Solargraph
                         variance: variance).conforms_to_unique_type?
       end
 
+      # A named type is its own only part, so the block decides it
+      # directly.
+      #
+      # @yieldparam named_type [ComplexType::UniqueType]
+      # @yieldreturn [ComplexType::UniqueType, nil]
+      # @return [ComplexType::UniqueType, nil]
+      def qualify_parts
+        yield self
+      end
+
+      # Whether this type provides +quack+: a duck type vouches for its
+      # own named method, anything else for what its namespace defines.
+      #
+      # @param api_map [ApiMap]
+      # @param quack [String]
+      # @return [Boolean]
+      def provides_duck_method? api_map, quack
+        return true if duck_type? && to_s[1..] == quack
+
+        !api_map.get_method_stack(namespace, quack, scope: scope).empty?
+      end
+
       def hash
         [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
       end

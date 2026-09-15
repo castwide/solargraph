@@ -246,6 +246,29 @@ module Solargraph
           end
         end
 
+        # An intersection has no single namespace, so each conjunct is
+        # qualified on its own; a conjunct the block cannot resolve
+        # leaves the whole type unresolvable.
+        #
+        # @yieldparam named_type [ComplexType::UniqueType]
+        # @yieldreturn [ComplexType::UniqueType, nil]
+        # @return [Intersection, nil]
+        def qualify_parts &block
+          parts = conjuncts.map { |conjunct| conjunct.qualify_parts(&block) }
+          Intersection.new(parts) unless parts.any?(&:nil?)
+        end
+
+        # Whether any conjunct provides +quack+: the value is all of them
+        # at once, so one is enough.  #namespace and #scope report only
+        # the first conjunct, which is why this cannot use them.
+        #
+        # @param api_map [ApiMap]
+        # @param quack [String]
+        # @return [Boolean]
+        def provides_duck_method? api_map, quack
+          conjuncts.any? { |conjunct| conjunct.provides_duck_method?(api_map, quack) }
+        end
+
         # Every conjunct resolves against the same context, sharing
         # resolved_generic_values - resolved left to right, so an
         # earlier conjunct won't see a generic only a later one binds.

@@ -300,40 +300,32 @@ module Solargraph
       expected.items.each do |exp|
         next unless exp.duck_type?
         quack = exp.to_s[1..] || ''
-        matched = allow_any_match ? inferred.items.any? { |inf| duck_type_provides?(api_map, inf, quack) } : inferred.items.all? { |inf| duck_type_provides?(api_map, inf, quack) }
+        matched = allow_any_match ? inferred.items.any? { |inf| inf.provides_duck_method?(api_map, quack) } : inferred.items.all? { |inf| inf.provides_duck_method?(api_map, quack) }
         return false unless matched
       end
       true
     end
 
-    # @param api_map [ApiMap]
-    # @param inf [UniqueType]
-    # @param quack [String]
-    # @return [Boolean]
-    def duck_type_provides? api_map, inf, quack
-      return true if inf.duck_type? && inf.to_s[1..] == quack
-      return intersection_conjunct_quacks?(api_map, quack, inf) if inf.is_a?(UniqueType::Intersection)
-
-      !api_map.get_method_stack(inf.namespace, quack, scope: inf.scope).empty?
+    # Rebuilds this union with each named type replaced by what the
+    # block returns for it.  A block returning nil makes the whole type
+    # unresolvable, since a union with a missing member is not one.
+    #
+    # @yieldparam named_type [ComplexType::UniqueType]
+    # @yieldreturn [ComplexType::UniqueType, nil]
+    # @return [ComplexType, nil]
+    def qualify_parts &block
+      parts = unioned_items.map { |item| item.qualify_parts(&block) }
+      ComplexType.new(parts) unless parts.any?(&:nil?)
     end
-    private :duck_type_provides?
 
-    # Intersection#namespace/#scope only report the first conjunct,
-    # so this checks every conjunct against the duck type directly.
+    # Whether every member of this union provides +quack+, since any of
+    # them could be the runtime type.
     #
     # @param api_map [ApiMap]
     # @param quack [String]
-    # @param unique_type [ComplexType::UniqueType]
     # @return [Boolean]
-    def intersection_conjunct_quacks? api_map, quack, unique_type
-      if unique_type.is_a?(UniqueType::Intersection)
-        return unique_type.conjuncts.any? do |conjunct|
-          conjunct.items.all? { |ut| intersection_conjunct_quacks?(api_map, quack, ut) }
-        end
-      end
-      # A duck-typed conjunct only vouches for its own named method.
-      return unique_type.to_s[1..] == quack if unique_type.duck_type?
-      !api_map.get_method_stack(unique_type.namespace, quack, scope: unique_type.scope).empty?
+    def provides_duck_method? api_map, quack
+      unioned_items.all? { |item| item.provides_duck_method?(api_map, quack) }
     end
 
     # @return [String]
