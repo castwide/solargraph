@@ -8,10 +8,14 @@ module Solargraph
   module Yardoc2
     module_function
 
+    def path_for metagem
+      File.join(CacheDir.yard_dir, "#{metagem.cache_name}.yardoc")
+    end
+
     # @param metagem [Metagem]
     # @return [String]
     def cache metagem
-      path = PinCache2.yardoc_path(metagem)
+      path = path_for(metagem)
       Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
       cmd = "yardoc --db #{path} --no-output --plugin solargraph"
       Solargraph.logger.debug "Running: #{cmd}"
@@ -25,7 +29,7 @@ module Solargraph
 
     # @param metagem [Metagem]
     def cached? metagem
-      yardoc = File.join(PinCache2.yardoc_path(metagem), 'complete')
+      yardoc = File.join(path_for(metagem), 'complete')
       File.exist?(yardoc)
     end
 
@@ -33,7 +37,7 @@ module Solargraph
     #
     # @param metagem [Metagem]
     def processing? metagem
-      yardoc = File.join(PinCache2.yardoc_path(metagem), 'processing')
+      yardoc = File.join(path_for(metagem), 'processing')
       File.exist?(yardoc)
     end
 
@@ -44,7 +48,7 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [Array<YARD::CodeObjects::Base>]
     def load! metagem
-      YARD::Registry.load! PinCache2.yardoc_path(metagem)
+      YARD::Registry.load! path_for(metagem)
       YARD::Registry.all
     end
   end
