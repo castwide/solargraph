@@ -133,6 +133,14 @@ module Solargraph
       @items
     end
 
+    # @deprecated Call #items instead.  Kept because plugins released
+    #   against earlier versions call it, and a union member is not what
+    #   an intersection returns here.
+    # @return [UniqueType, nil]
+    def first
+      @items.first
+    end
+
     # Pairs this union up with another type member by member, yields
     # each pair, and reassembles the results into one union.
     #
