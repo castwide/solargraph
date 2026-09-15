@@ -33,7 +33,6 @@ module Solargraph
       end
       cache_path = path_for(metagem)
       base = File.dirname(cache_path)
-      FileUtils.mkdir_p base unless File.directory?(base)
       ser = Marshal.dump(pins)
       File.write cache_path, ser, mode: 'wb'
       # @todo Fix log message
