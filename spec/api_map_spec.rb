@@ -158,7 +158,7 @@ describe Solargraph::ApiMap do
   it 'gets instance methods for complex types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('String')
-    pins = type.methods_visible_from(@api_map, '', false)
+    pins = type.candidate_methods_from(@api_map, '', false)
     expect(pins.map(&:path)).to include('String#upcase')
   end
 
@@ -175,10 +175,10 @@ describe Solargraph::ApiMap do
     ))
     @api_map.index map.pins
     type = Solargraph::ComplexType.parse('Foo')
-    pins = type.methods_visible_from(@api_map, 'Foo', false)
+    pins = type.candidate_methods_from(@api_map, 'Foo', false)
     expect(pins.map(&:path)).to include('Foo#prot')
     expect(pins.map(&:path)).not_to include('Foo#priv')
-    pins = type.methods_visible_from(@api_map, 'Foo', true)
+    pins = type.candidate_methods_from(@api_map, 'Foo', true)
     expect(pins.map(&:path)).to include('Foo#prot')
     expect(pins.map(&:path)).to include('Foo#priv')
   end
@@ -186,7 +186,7 @@ describe Solargraph::ApiMap do
   it 'finds methods for duck types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('#foo, #bar')
-    pins = type.methods_visible_from(@api_map, '', false)
+    pins = type.candidate_methods_from(@api_map, '', false)
     expect(pins.map(&:name)).to include('foo')
     expect(pins.map(&:name)).to include('bar')
   end
@@ -194,14 +194,14 @@ describe Solargraph::ApiMap do
   it 'adds Object instance methods to duck types' do
     api_map = described_class.new
     type = Solargraph::ComplexType.parse('#foo')
-    pins = type.methods_visible_from(api_map, '', false)
+    pins = type.candidate_methods_from(api_map, '', false)
     expect(pins.any? { |p| p.namespace == 'BasicObject' }).to be(true)
   end
 
   it 'finds methods for parametrized class types' do
     @api_map.index []
     type = Solargraph::ComplexType.parse('Class<String>')
-    pins = type.methods_visible_from(@api_map, '', false)
+    pins = type.candidate_methods_from(@api_map, '', false)
     expect(pins.map(&:path)).to include('String.try_convert')
   end
 
@@ -358,13 +358,13 @@ describe Solargraph::ApiMap do
     )
     source = Solargraph::Source.load_string(code)
     @api_map.map source
-    pins = Solargraph::ComplexType.parse('Sub').methods_visible_from(@api_map, 'Sub', false)
+    pins = Solargraph::ComplexType.parse('Sub').candidate_methods_from(@api_map, 'Sub', false)
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = Solargraph::ComplexType.parse('Sub2').methods_visible_from(@api_map, 'Sub2', false)
+    pins = Solargraph::ComplexType.parse('Sub2').candidate_methods_from(@api_map, 'Sub2', false)
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = Solargraph::ComplexType.parse('Sup').methods_visible_from(@api_map, 'Sub', false)
+    pins = Solargraph::ComplexType.parse('Sup').candidate_methods_from(@api_map, 'Sub', false)
     expect(pins.map(&:path)).to include('Sup#bar')
-    pins = Solargraph::ComplexType.parse('Sup').methods_visible_from(@api_map, 'Sub2', false)
+    pins = Solargraph::ComplexType.parse('Sup').candidate_methods_from(@api_map, 'Sub2', false)
     expect(pins.map(&:path)).to include('Sup#bar')
   end
 
@@ -376,7 +376,7 @@ describe Solargraph::ApiMap do
     source = Solargraph::Source.load_string(code)
     @api_map.map source
     expect do
-      Solargraph::ComplexType.parse('Sub').methods_visible_from(@api_map, 'Sub2', false)
+      Solargraph::ComplexType.parse('Sub').candidate_methods_from(@api_map, 'Sub2', false)
     end.not_to raise_error
   end
 

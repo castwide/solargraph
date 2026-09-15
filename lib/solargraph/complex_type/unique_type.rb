@@ -371,7 +371,7 @@ module Solargraph
       # @param context [String] Fully qualified namespace the type is referenced from
       # @param internal [Boolean] True to include private methods
       # @return [Array<Pin::Base>]
-      def methods_visible_from api_map, context, internal
+      def candidate_methods_from api_map, context, internal
         if duck_type?
           return [Pin::DuckMethod.new(name: to_s[1..], source: :api_map)] +
                  api_map.get_methods('Object')

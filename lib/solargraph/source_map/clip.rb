@@ -216,7 +216,7 @@ module Solargraph
           end
         else
           type = cursor.chain.base.infer(api_map, closure, locals)
-          result.concat type.methods_visible_from(api_map, closure.binder.namespace, cursor.chain.links.length == 1)
+          result.concat type.candidate_methods_from(api_map, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))

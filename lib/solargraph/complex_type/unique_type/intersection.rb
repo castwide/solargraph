@@ -267,8 +267,8 @@ module Solargraph
         # @param context [String] Fully qualified namespace the type is referenced from
         # @param internal [Boolean] True to include private methods
         # @return [Array<Pin::Base>]
-        def methods_visible_from api_map, context, internal
-          conjuncts.flat_map { |conjunct| conjunct.methods_visible_from(api_map, context, internal) }
+        def candidate_methods_from api_map, context, internal
+          conjuncts.flat_map { |conjunct| conjunct.candidate_methods_from(api_map, context, internal) }
                    .uniq
         end
 

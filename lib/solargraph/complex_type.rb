@@ -318,18 +318,21 @@ module Solargraph
       ComplexType.new(parts) unless parts.any?(&:nil?)
     end
 
-    # The methods reachable on a value of this union, from +context+.
+    # The methods that might be reachable on a value of this union, from
+    # +context+.
     #
-    # Every member offers its own, and they are pooled rather than
-    # intersected: a caller wanting only what all members provide has to
-    # narrow the result itself, which is what the loose_unions rule does.
+    # Pooled, not intersected: a value is only one member, so what is
+    # certainly callable is what they all provide.  Both callers want the
+    # wider set - completion offers candidates, and the macro test asks
+    # whether a pin might belong here.  #method_stack_pins is where a
+    # union is strict, under loose_unions.
     #
     # @param api_map [ApiMap]
     # @param context [String] Fully qualified namespace the type is referenced from
     # @param internal [Boolean] True to include private methods
     # @return [Array<Pin::Base>]
-    def methods_visible_from api_map, context, internal
-      unioned_items.flat_map { |item| item.methods_visible_from(api_map, context, internal) }.uniq
+    def candidate_methods_from api_map, context, internal
+      unioned_items.flat_map { |item| item.candidate_methods_from(api_map, context, internal) }.uniq
     end
 
     # Whether every member of this union provides +quack+, since any of
