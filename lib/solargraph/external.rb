@@ -23,12 +23,16 @@ module Solargraph
       @unresolved_requires ||= []
     end
 
+    def unresolved_dependencies
+      @unresolved_dependencies ||= []
+    end
+
     def loaded_gems
       @loaded_gems ||= []
     end
 
     def unloaded_gems
-      @loaded_gems ||= []
+      @unloaded_gems ||= []
     end
 
     def pins
@@ -50,6 +54,7 @@ module Solargraph
     def load_requires
       pins.clear
       unresolved_requires.clear
+      unresolved_dependencies.clear
       loaded_gems.clear
       unloaded_gems.clear
 
@@ -65,8 +70,24 @@ module Solargraph
         else
           process_uncached_gem(metagem)
         end
+        load_dependencies metagem
       end
+
       # @todo handle bundler/require
+    end
+
+    def load_dependencies parent
+      parent.dependencies.each do |name|
+        # @todo Smelly loaded gem check
+        next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)
+        metagem = @repo.find_by_name(name)
+        next unresolved_dependencies.push(name) unless metagem
+        if metagem.cacheable?
+          process_cached_gem(metagem)
+        else
+          process_uncached_gem(metagem)
+        end
+      end
     end
 
     # @param metagem [Metagem]
