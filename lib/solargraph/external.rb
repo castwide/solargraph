@@ -59,7 +59,7 @@ module Solargraph
           bundler_require = true
         end
         metagem = @repo.find_by_path(path)
-        next @unresolved_requires.push(path) unless metagem
+        next unresolved_requires.push(path) unless metagem
         if metagem.cacheable?
           process_cached_gem(metagem)
         else
@@ -73,10 +73,10 @@ module Solargraph
     # @return [void]
     def process_cached_gem(metagem)
       if GemCache.exist?(metagem)
-        @pins.concat GemCache.load(metagem)
-        @loaded_gems.push metagem
+        pins.concat GemCache.load(metagem)
+        loaded_gems.push metagem
       else
-        @unloaded_gems.push metagem
+        unloaded_gems.push metagem
       end
     end
 
@@ -89,8 +89,8 @@ module Solargraph
       source_pins = source_maps.flat_map(&:pins)
       rbs_pins = RbsMap2.new(metagem).pins
       combined = GemPins.combine(source_pins, rbs_pins)
-      @pins.concat combined
-      @loaded_gems.push(metagem)
+      pins.concat combined
+      loaded_gems.push(metagem)
     end
   end
 end
