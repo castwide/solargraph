@@ -4,12 +4,19 @@ describe Solargraph::GemCache do
   let(:gemspec) { Gem::Specification.find_by_name('backport') }
   let(:metagem) { Solargraph::Metagem.from_specification(gemspec) }
 
-  it 'saves' do
-    described_class.save(metagem)
+  before(:each) { described_class.cache(metagem) }
+
+  it 'caches metagem pins' do
+    expect(described_class.exist?(metagem)).to be(true)
     # @todo expectations
   end
 
-  it 'loads' do
+  it 'uncaches metagem pins' do
+    described_class.uncache(metagem)
+    expect(described_class.exist?(metagem)).to be(false)
+  end
+
+  it 'loads metagem pins' do
     described_class.load(metagem)
     # @todo expectations
   end
