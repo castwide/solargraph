@@ -88,14 +88,16 @@ module Solargraph
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
           if %i[const cbase].include?(node.type)
-            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
+            child = node.children[0]
+            signature += drill_signature(child, signature) unless child.nil?
             signature += '::' unless signature.empty?
             signature += node.children[1].to_s
           elsif %i[lvar ivar cvar].include?(node.type)
             signature += '.' unless signature.empty?
             signature += node.children[0].to_s
           elsif node.type == :send
-            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
+            child = node.children[0]
+            signature += drill_signature(child, signature) unless child.nil?
             signature += '.' unless signature.empty?
             signature += node.children[1].to_s
           end
