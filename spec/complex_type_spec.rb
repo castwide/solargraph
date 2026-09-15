@@ -796,6 +796,7 @@ describe 'YARD type specifier list parsing' do
       expect(narrowed.rooted_tags).to eq('::A & ::M, ::B_with_M')
     end
   end
+
   context 'when narrowing a union whose module member could satisfy a class guard' do
     let(:mirror_api_map) do
       api_map = Solargraph::ApiMap.new
