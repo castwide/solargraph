@@ -29,8 +29,7 @@ module Solargraph
       pins = if rbs_pins.empty?
         yard_pins
       else
-        # GemPins.combine(yard_pins, rbs_pins)
-        yard_pins
+        GemPins.combine(yard_pins, rbs_pins)
       end
       cache_path = path_for(metagem)
       base = File.dirname(cache_path)
