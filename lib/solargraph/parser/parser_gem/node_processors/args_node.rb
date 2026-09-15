@@ -20,7 +20,7 @@ module Solargraph
                     comments: comments_for(node),
                     name: u.children[0].to_s,
                     assignment: u.children[1],
-                    # @sg-ignore Need to add nil check here
+                    # @sg-ignore Translate to something flow sensitive typing understands
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                     # @sg-ignore Need to add nil check here
                     presence: callable.location.range,

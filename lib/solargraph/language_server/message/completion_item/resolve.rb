@@ -22,10 +22,10 @@ module Solargraph
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
             result = params
                      .transform_keys(&:to_sym)
-                     # @sg-ignore Need to add nil check here
+                     # @sg-ignore Translate to something flow sensitive typing understands
                      .merge(pins.first.resolve_completion_item)
                      .merge(documentation: markup_content(join_docs(docs)))
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Translate to something flow sensitive typing understands
             result[:detail] = pins.first.detail
             result
           end

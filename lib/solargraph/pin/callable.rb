@@ -92,7 +92,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Translate to something flow sensitive typing understands
       # @return [Array<Pin::Parameter>]
       def blockless_parameters
         if parameters.last&.block?
@@ -245,7 +245,7 @@ module Solargraph
       def arity_matches? arguments, with_block
         argcount = arguments.length
         parcount = mandatory_positional_param_count
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Translate to something flow sensitive typing understands
         parcount -= 1 if !parameters.empty? && parameters.last.block?
         return false if block? && !with_block
         # @todo this and its caller should be changed so that this can

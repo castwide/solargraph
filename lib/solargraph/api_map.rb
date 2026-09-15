@@ -146,12 +146,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Translate to something flow sensitive typing understands
             match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
               get_complex_type_methods(closure.return_type).include?(pin)
             end
             if match
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore Translate to something flow sensitive typing understands
               match.macros.each do |macro|
                 macro_pins.concat macro.generate_pins_from(chain, match, source_map)
               end
@@ -207,11 +207,11 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Translate to something flow sensitive typing understands
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Translate to something flow sensitive typing understands
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -657,7 +657,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Translate to something flow sensitive typing understands
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -676,7 +676,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Translate to something flow sensitive typing understands
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 

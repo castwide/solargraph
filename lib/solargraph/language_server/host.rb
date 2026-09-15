@@ -781,7 +781,7 @@ module Solargraph
         diffs = Diff::LCS.diff(source.code, change['text'])
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Translate to something flow sensitive typing understands
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

@@ -771,7 +771,7 @@ module Solargraph
         if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = parameters.count(&:keyword?)
         else
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Translate to something flow sensitive typing understands
           kwargs = convert_hash(unchecked.last.node)
           if parameters.any? { |param| %i[kwarg kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
@@ -786,7 +786,7 @@ module Solargraph
                 elsif param.decl == :kwarg
                   # @sg-ignore Need to add nil check here
                   last_arg_last_link = arguments.last.links.last
-                  # @sg-ignore Need to add nil check here
+                  # @sg-ignore https://github.com/castwide/solargraph/issues/1251
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
@@ -811,7 +811,7 @@ module Solargraph
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Translate to something flow sensitive typing understands
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
         # See https://github.com/castwide/solargraph/issues/418

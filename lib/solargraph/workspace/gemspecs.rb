@@ -358,10 +358,10 @@ module Solargraph
       # @return [Gem::Specification]
       def gemspec_or_preference gemspec
         return gemspec unless preference_map.key?(gemspec.name)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Translate to something flow sensitive typing understands
         return gemspec if gemspec.version == preference_map[gemspec.name].version
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Translate to something flow sensitive typing understands
         change_gemspec_version gemspec, preference_map[gemspec.name].version
       end
 

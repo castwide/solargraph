@@ -125,7 +125,7 @@ module Solargraph
                      else
                        {
                          line: original.lines.length - 1,
-                         # @sg-ignore Need to add nil check here
+                         # @sg-ignore Translate to something flow sensitive typing understands
                          character: original.lines.last.length
                        }
                      end

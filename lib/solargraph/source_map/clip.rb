@@ -142,7 +142,7 @@ module Solargraph
             next unless param.keyword?
             result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Translate to something flow sensitive typing understands
           next unless !pin.parameters.empty? && pin.parameters.last.kwrestarg?
           pin.docstring.tags(:param).each do |tag|
             next if done.include?(tag.name)

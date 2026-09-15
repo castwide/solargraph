@@ -26,9 +26,9 @@ module Solargraph
           next if rng.nil? || lines.include?(rng.start.line)
           lines.push rng.start.line
           next if rng.start.line >= code.lines.length
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Translate to something flow sensitive typing understands
           scol = code.lines[rng.start.line].index(/[^\s]/) || 0
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Translate to something flow sensitive typing understands
           ecol = code.lines[rng.start.line].length
           result.push Range.from_to(rng.start.line, scol, rng.start.line, ecol)
         end

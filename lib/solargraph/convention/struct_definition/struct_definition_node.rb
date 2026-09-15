@@ -42,7 +42,7 @@ module Solargraph
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
             return false unless struct_node.children[0]&.type == :const
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Translate to something flow sensitive typing understands
             return false unless struct_node.children[0].children[1] == :Struct
             return false unless struct_node.children[1] == :new
 
