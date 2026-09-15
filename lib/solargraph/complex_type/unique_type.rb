@@ -317,16 +317,40 @@ module Solargraph
         # @todo teach this to validate duck types as inferred type
         return true if duck_type?
 
-        # complex types as expectations are unions - we only need to
-        # match one of their unique types
-        expected.items.any? do |expected_unique_type|
-          # :nocov:
-          raise "Expected type must be a UniqueType in #{expected.inspect}" unless expected_unique_type.is_a?(UniqueType)
-          # :nocov:
-          conformance = Conformance.new(api_map, self, expected_unique_type, situation,
-                                        rules, variance: variance)
-          conformance.conforms_to_unique_type?
-        end
+        expected.satisfied_by?(self, api_map, situation, rules, variance: variance)
+      end
+
+      # What an inferred type must do to satisfy this one.  The
+      # counterpart of #conforms_to?, dispatched on the expected type so
+      # a union or intersection answers from its own members instead of
+      # being taken apart by the inferred side.
+      #
+      # @param inferred [ComplexType, ComplexType::UniqueType]
+      # @param api_map [ApiMap]
+      # @param situation [:method_call, :assignment, :return_type]
+      # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+      # @param variance [:invariant, :covariant, :contravariant]
+      # @return [Boolean]
+      def satisfied_by? inferred, api_map, situation, rules = [],
+                        variance: inferred.erased_variance(situation)
+        inferred.conforms_to_unique?(self, api_map, situation, rules, variance: variance)
+      end
+
+      # Whether this type conforms to a single named expectation.  The
+      # inferred-side counterpart of #satisfied_by?: the expectation has
+      # already been reduced to one named type, so a union or
+      # intersection now reduces itself the same way.
+      #
+      # @param expected [ComplexType::UniqueType]
+      # @param api_map [ApiMap]
+      # @param situation [:method_call, :assignment, :return_type]
+      # @param rules [Array<Symbol>]
+      # @param variance [:invariant, :covariant, :contravariant]
+      # @return [Boolean]
+      def conforms_to_unique? expected, api_map, situation, rules = [],
+                              variance: erased_variance(situation)
+        Conformance.new(api_map, self, expected, situation, rules,
+                        variance: variance).conforms_to_unique_type?
       end
 
       def hash

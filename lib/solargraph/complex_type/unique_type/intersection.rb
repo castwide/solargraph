@@ -210,18 +210,39 @@ module Solargraph
         # @return [Boolean]
         def conforms_to? api_map, expected, situation, rules = [],
                          variance: erased_variance(situation)
-          return true if any_union_alternative_conforms?(api_map, expected, situation, rules, variance)
+          expected.satisfied_by?(self, api_map, situation, rules, variance: variance)
+        end
 
-          expected_intersection = sole_intersection(expected)
-          if expected_intersection
-            return expected_intersection.conjuncts.all? do |expected_conjunct|
-              conjuncts.any? do |conjunct|
-                conjunct.conforms_to?(api_map, expected_conjunct, situation, rules, variance: variance)
-              end
-            end
-          end
+        # Whether this intersection conforms to a single named
+        # expectation: one conjunct carrying it is enough, since the
+        # value is all of them at once.
+        #
+        # @param expected [ComplexType::UniqueType]
+        # @param api_map [ApiMap]
+        # @param situation [:method_call, :assignment, :return_type]
+        # @param rules [Array<Symbol>]
+        # @param variance [:invariant, :covariant, :contravariant]
+        # @return [Boolean]
+        def conforms_to_unique? expected, api_map, situation, rules = [],
+                                variance: erased_variance(situation)
           conjuncts.any? do |conjunct|
-            conjunct.conforms_to?(api_map, expected, situation, rules, variance: variance)
+            conjunct.conforms_to_unique?(expected, api_map, situation, rules, variance: variance)
+          end
+        end
+
+        # What an inferred type must do to satisfy this intersection:
+        # conform to every conjunct, since A & B <: A and A & B <: B.
+        #
+        # @param inferred [ComplexType, ComplexType::UniqueType]
+        # @param api_map [ApiMap]
+        # @param situation [:method_call, :assignment, :return_type]
+        # @param rules [Array<Symbol>]
+        # @param variance [:invariant, :covariant, :contravariant]
+        # @return [Boolean]
+        def satisfied_by? inferred, api_map, situation, rules = [],
+                          variance: inferred.erased_variance(situation)
+          conjuncts.all? do |conjunct|
+            inferred.conforms_to?(api_map, conjunct, situation, rules, variance: variance)
           end
         end
 
@@ -512,32 +533,6 @@ module Solargraph
           end.join(' & ')
         end
 
-        # True when expected is a union and this intersection conforms
-        # to one of its alternatives taken on its own.
-        #
-        # @param api_map [ApiMap]
-        # @param expected [ComplexType, ComplexType::UniqueType]
-        # @param situation [:method_call, :assignment, :return_type]
-        # @param rules [Array<Symbol>]
-        # @param variance [:invariant, :covariant, :contravariant]
-        # @return [Boolean]
-        def any_union_alternative_conforms? api_map, expected, situation, rules, variance
-          return false unless expected.is_a?(ComplexType) && expected.items.length > 1
-
-          expected.items.any? do |item|
-            conforms_to?(api_map, ComplexType.new([item]), situation, rules, variance: variance)
-          end
-        end
-
-        # Returns expected itself (or its one item) when it's an Intersection, else nil.
-        #
-        # @param expected [ComplexType, ComplexType::UniqueType]
-        # @return [Intersection, nil]
-        def sole_intersection expected
-          return expected if expected.is_a?(Intersection)
-          return expected.items.first if expected.is_a?(ComplexType) && expected.items.length == 1 && expected.items.first.is_a?(Intersection)
-          nil
-        end
       end
     end
   end

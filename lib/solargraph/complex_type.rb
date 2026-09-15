@@ -247,6 +247,48 @@ module Solargraph
       end
     end
 
+    # What an inferred type must do to satisfy this union: conform to
+    # any one member.
+    #
+    # @param inferred [ComplexType, ComplexType::UniqueType]
+    # @param api_map [ApiMap]
+    # @param situation [:method_call, :assignment, :return_type]
+    # @param rules [Array<Symbol>]
+    # @param variance [:invariant, :covariant, :contravariant]
+    # @return [Boolean]
+    def satisfied_by? inferred, api_map, situation, rules = [],
+                      variance: inferred.erased_variance(situation)
+      # A duck-typed expectation is structural, so it is checked against
+      # the inferred type as a whole rather than member by member.
+      return duck_types_match?(api_map, self, inferred, rules) if duck_type?
+
+      unioned_items.any? do |item|
+        inferred.conforms_to?(api_map, item, situation, rules, variance: variance)
+      end
+    end
+
+    # Whether this union conforms to a single named expectation: every
+    # member must, since any of them could be the runtime type.
+    #
+    # @param expected [ComplexType::UniqueType]
+    # @param api_map [ApiMap]
+    # @param situation [:method_call, :assignment, :return_type]
+    # @param rules [Array<Symbol>]
+    # @param variance [:invariant, :covariant, :contravariant]
+    # @return [Boolean]
+    def conforms_to_unique? expected, api_map, situation, rules = [],
+                            variance: erased_variance(situation)
+      if rules.include? :allow_any_match
+        return unioned_items.any? do |item|
+          item.conforms_to_unique?(expected, api_map, situation, rules, variance: variance)
+        end
+      end
+
+      unioned_items.all? do |item|
+        item.conforms_to_unique?(expected, api_map, situation, rules, variance: variance)
+      end
+    end
+
     # @param api_map [ApiMap]
     # @param expected [ComplexType, UniqueType]
     # @param inferred [ComplexType, UniqueType]
