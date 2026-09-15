@@ -363,6 +363,25 @@ module Solargraph
         yield self
       end
 
+      # The methods reachable on a value of this type, from +context+.  A
+      # duck type contributes the one method it names, over everything on
+      # Object; a type with no methods to offer contributes none.
+      #
+      # @param api_map [ApiMap]
+      # @param context [String] Fully qualified namespace the type is referenced from
+      # @param internal [Boolean] True to include private methods
+      # @return [Array<Pin::Base>]
+      def methods_visible_from api_map, context, internal
+        if duck_type?
+          return [Pin::DuckMethod.new(name: to_s[1..], source: :api_map)] +
+                 api_map.get_methods('Object')
+        end
+        return [] if undefined? || void?
+
+        api_map.get_methods(tag, scope: scope,
+                                 visibility: api_map.visibility_for(self, context, internal))
+      end
+
       # Whether this type provides +quack+: a duck type vouches for its
       # own named method, anything else for what its namespace defines.
       #

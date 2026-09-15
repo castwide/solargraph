@@ -258,6 +258,20 @@ module Solargraph
           Intersection.new(parts) unless parts.any?(&:nil?)
         end
 
+        # The methods reachable on a value of this intersection: the value
+        # is every conjunct at once, so it offers whatever any conjunct
+        # offers.  #tag names the whole compound type, which is not a
+        # namespace, so this cannot go through UniqueType.
+        #
+        # @param api_map [ApiMap]
+        # @param context [String] Fully qualified namespace the type is referenced from
+        # @param internal [Boolean] True to include private methods
+        # @return [Array<Pin::Base>]
+        def methods_visible_from api_map, context, internal
+          conjuncts.flat_map { |conjunct| conjunct.methods_visible_from(api_map, context, internal) }
+                   .uniq
+        end
+
         # Whether any conjunct provides +quack+: the value is all of them
         # at once, so one is enough.  #namespace and #scope report only
         # the first conjunct, which is why this cannot use them.

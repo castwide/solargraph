@@ -146,7 +146,7 @@ module Solargraph
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
             match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-              get_complex_type_methods(closure.return_type).include?(pin)
+              closure.return_type.methods_visible_from(self, '', false).include?(pin)
             end
             if match
               match.macros.each do |macro|
@@ -519,45 +519,18 @@ module Solargraph
       result
     end
 
-    # Get an array of method pins for a complex type.
+    # Which visibilities a type's methods may have to be reachable from
+    # +context+.  Needs the ancestry, so it belongs here rather than on the
+    # type.
     #
-    # The type's namespace and the context should be fully qualified. If the
-    # context matches the namespace type or is a subclass of the type,
-    # protected methods are included in the results. If protected methods are
-    # included and internal is true, private methods are also included.
-    #
-    # @example
-    #   api_map = Solargraph::ApiMap.new
-    #   type = Solargraph::ComplexType.parse('String')
-    #   api_map.get_complex_type_methods(type)
-    #
-    # @param complex_type [Solargraph::ComplexType] The complex type of the namespace
-    # @param context [String] The context from which the type is referenced
+    # @param type [ComplexType::UniqueType]
+    # @param context [String] Fully qualified namespace the type is referenced from
     # @param internal [Boolean] True to include private methods
-    # @return [Array<Solargraph::Pin::Base>]
-    def get_complex_type_methods complex_type, context = '', internal = false
-      # This method does not qualify the complex type's namespace because
-      # it can cause conflicts between similar names, e.g., `Foo` vs.
-      # `Other::Foo`. It still takes a context argument to determine whether
-      # protected and private methods are visible.
-      return [] if complex_type.undefined? || complex_type.void?
-      result = Set.new
-      complex_type.items.each do |type|
-        if type.duck_type?
-          result.add Pin::DuckMethod.new(name: type.to_s[1..], source: :api_map)
-          result.merge get_methods('Object')
-        else
-          unless type.nil? || type.name == 'void'
-            visibility = [:public]
-            if type.namespace == context || super_and_sub?(type.namespace, context)
-              visibility.push :protected
-              visibility.push :private if internal
-            end
-            result.merge get_methods(type.tag, scope: type.scope, visibility: visibility)
-          end
-        end
-      end
-      result.to_a
+    # @return [Array<Symbol>]
+    def visibility_for type, context, internal
+      return [:public] unless type.namespace == context || super_and_sub?(type.namespace, context)
+
+      internal ? %i[public protected private] : %i[public protected]
     end
 
     # Get a stack of method pins for a method name in a potentially
