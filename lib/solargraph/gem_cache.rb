@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 module Solargraph
   module GemCache
     module_function
 
     # @param metagem [Metagem]
     def path_for metagem
-      File.join(PinCache.work_dir, 'gems', "#{metagem.cache_name}.ser")
+      File.join(CacheDir.gem_dir, "#{metagem.cache_name}.ser")
     end
 
     # @param metagem [Metagem]
@@ -46,8 +48,9 @@ module Solargraph
     end
 
     # @param metagem [Metagem]
-    def exist? metagem
+    def cached? metagem
       File.file? path_for(metagem)
     end
+    alias exist? cached?
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'fileutils'
 
 module Solargraph
   # Methods for caching and loading YARD documentation for gems.
@@ -16,6 +17,7 @@ module Solargraph
     # @return [String]
     def cache metagem
       path = path_for(metagem)
+
       Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
       cmd = "yardoc --db #{path} --no-output --plugin solargraph"
       Solargraph.logger.debug "Running: #{cmd}"
@@ -28,10 +30,16 @@ module Solargraph
     end
 
     # @param metagem [Metagem]
+    def uncache metagem
+      FileUtils.rm_f path_for(metagem)
+    end
+
+    # @param metagem [Metagem]
     def cached? metagem
       yardoc = File.join(path_for(metagem), 'complete')
       File.exist?(yardoc)
     end
+    alias exist? cached?
 
     # True if another process is currently building the yardoc cache.
     #

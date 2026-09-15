@@ -106,7 +106,6 @@ module Solargraph
       combined = GemPins.combine(source_pins, rbs_pins)
       pins.concat combined
       loaded_gems.push metagem
-      load_dependencies metagem
     end
 
     def load_dependencies parent
