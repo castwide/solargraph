@@ -15,9 +15,6 @@ module Solargraph
     autoload :Index,          'solargraph/api_map/index'
     autoload :Constants,      'solargraph/api_map/constants'
 
-    # @return [Array<String>]
-    attr_reader :unresolved_requires
-
     @@core_map = RbsMap::CoreMap.new
 
     # @return [Array<String>]
@@ -106,6 +103,7 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @source_map_hash = bench.source_map_hash
       # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
@@ -114,22 +112,18 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
-      unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
-      recreate_docmap = @unresolved_requires != unresolved_requires ||
-                        # @sg-ignore Unresolved call to rbs_collection_path on Solargraph::Workspace, nil
-                        workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
-                        @doc_map.uncached_gemspecs.any?
-
-      if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
-        @unresolved_requires = @doc_map.unresolved_requires
-      end
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      Solargraph.logger.info 'Cataloging ApiMap started'
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
-      @missing_docs = [] # @todo Implement missing docs
+      external.update bench.external_requires.to_a
+      @cache.clear if store.update(@@core_map.pins, external.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
+    end
+
+    def external
+      @external ||= External.new(workspace.directory, [])
+    end
+
+    def unresolved_requires
+      external.unresolved_requires
     end
 
     # @return [Array<Pin::Base>]
