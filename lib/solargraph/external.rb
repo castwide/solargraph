@@ -78,7 +78,6 @@ module Solargraph
 
     def load_dependencies parent
       parent.dependencies.each do |name|
-        # @todo Smelly loaded gem check
         next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)
         metagem = @repo.find_by_name(name)
         next unresolved_dependencies.push(name) unless metagem
@@ -104,9 +103,8 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [void]
     def process_uncached_gem(metagem)
-      # @todo Consider leveraging require_paths to load source maps
-      workspace = Workspace.new(metagem.full_path)
-      source_maps = workspace.sources.map { |source| Solargraph::SourceMap.new(source) }
+      files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
+      source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
       source_pins = source_maps.flat_map(&:pins)
       rbs_pins = RbsMap2.new(metagem).pins
       combined = GemPins.combine(source_pins, rbs_pins)
