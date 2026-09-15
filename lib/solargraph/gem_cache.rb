@@ -4,7 +4,7 @@ require 'fileutils'
 
 module Solargraph
   module GemCache
-    module_function
+    extend self
 
     # @param metagem [Metagem]
     def path_for metagem

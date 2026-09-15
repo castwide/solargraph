@@ -7,7 +7,7 @@ module Solargraph
   # Methods for caching and loading YARD documentation for gems.
   #
   module Yardoc2
-    module_function
+    extend self
 
     def path_for metagem
       File.join(CacheDir.yard_dir, "#{metagem.cache_name}.yardoc")
