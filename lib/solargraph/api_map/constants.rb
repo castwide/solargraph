@@ -120,7 +120,8 @@ module Solargraph
       # @return [ComplexType, nil]
       def qualify_conjuncts intersection, gates
         qualified = intersection.conjuncts.map do |conjunct|
-          # qualify_type needs a ComplexType: it calls #first, which no UniqueType has.
+          # Wrapped so the qualified conjunct comes back a ComplexType,
+          # which is what Intersection expects its conjuncts to be.
           qualified_conjunct = qualify_type(ComplexType.new([conjunct]), *gates)
           return nil if qualified_conjunct.nil?
 

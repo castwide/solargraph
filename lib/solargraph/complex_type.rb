@@ -362,9 +362,10 @@ module Solargraph
 
     # @return [ComplexType]
     def reduce_class_type
+      # [type] not type: flat_map asks a bare block result for to_ary.
       new_items = items.flat_map do |type|
-        next type unless %w[Module Class].include?(type.name)
-        next type if type.all_params.empty?
+        next [type] unless %w[Module Class].include?(type.name)
+        next [type] if type.all_params.empty?
 
         type.all_params
       end

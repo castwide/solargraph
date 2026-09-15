@@ -471,6 +471,8 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
+          # both branches yield an array: flat_map asks a bare block
+          # result for to_ary
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]
@@ -480,8 +482,8 @@ module Solargraph
                                                  resolved_generic_values: resolved_generic_values
               end
             else
-              ut.resolve_generics_from_context generics_to_resolve, nil,
-                                               resolved_generic_values: resolved_generic_values
+              [ut.resolve_generics_from_context(generics_to_resolve, nil,
+                                                resolved_generic_values: resolved_generic_values)]
             end
           end
         end
@@ -647,9 +649,10 @@ module Solargraph
 
       # @return [ComplexType]
       def reduce_class_type
+        # [type] not type: flat_map asks a bare block result for to_ary.
         new_items = items.flat_map do |type|
-          next type unless %w[Module Class].include?(type.name)
-          next type if type.all_params.empty?
+          next [type] unless %w[Module Class].include?(type.name)
+          next [type] if type.all_params.empty?
 
           type.all_params
         end
