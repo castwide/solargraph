@@ -62,61 +62,59 @@ module Solargraph
 
       # An array of domains configured for the workspace.
       # A domain is a namespace that the ApiMap should include in the global
-      # namespace. It's typically used to identify available DSLs.
+      # namespace. It is typically used to identify available DSLs.
       #
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def domains
-        raw_data['domains']
+        validated_array('domains')
       end
 
       # An array of required paths to add to the workspace.
       #
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def required
-        raw_data['require']
+        validated_array('require')
       end
 
       # An array of load paths for required paths.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
-      # @sg-ignore Need to validate config
       def require_paths
-        raw_data['require_paths'] || []
+        validated_array('require_paths')
       end
 
       # An array of reporters to use for diagnostics.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def reporters
-        raw_data['reporters']
+        validated_array('reporters')
       end
 
       # A hash of options supported by the formatter
       #
-      # @sg-ignore Need to validate config
       # @return [Hash]
       def formatter
-        raw_data['formatter']
+        value = raw_data['formatter']
+        return value if value.is_a?(Hash)
+        warn_invalid('formatter', value)
+        {}
       end
 
       # An array of plugins to require.
       #
-      # @sg-ignore Need to validate config
       # @return [Array<String>]
       def plugins
-        raw_data['plugins']
+        validated_array('plugins')
       end
 
       # The maximum number of files to parse from the workspace.
       #
-      # @sg-ignore Need to validate config
       # @return [Integer]
       def max_files
-        raw_data['max_files']
+        value = raw_data['max_files']
+        return value if value.is_a?(Integer)
+        warn_invalid('max_files', value)
+        MAX_FILES
       end
 
       # @return [Hash{Symbol => Symbol}]
@@ -129,6 +127,26 @@ module Solargraph
       end
 
       private
+
+      # Read an array-valued .solargraph.yml key, falling back to an
+      # empty array when the value is not actually an array.
+      #
+      # @param key [String]
+      # @return [Array<String>]
+      def validated_array key
+        value = raw_data[key]
+        return value if value.is_a?(Array)
+        warn_invalid(key, value)
+        []
+      end
+
+      # @param key [String]
+      # @param value [Object, nil]
+      # @return [void]
+      def warn_invalid key, value
+        return if value.nil?
+        Solargraph.logger.warn "Invalid .solargraph.yml value for #{key.inspect}: #{value.inspect}"
+      end
 
       # @return [String]
       def global_config_path

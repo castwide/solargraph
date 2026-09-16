@@ -194,6 +194,25 @@ describe Solargraph::LanguageServer::Host do
     expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
+  describe '#command_path' do
+    it 'defaults to solargraph' do
+      host = described_class.new
+      expect(host.command_path).to eq('solargraph')
+    end
+
+    it 'uses the configured commandPath' do
+      host = described_class.new
+      host.configure({ 'commandPath' => '/usr/local/bin/solargraph' })
+      expect(host.command_path).to eq('/usr/local/bin/solargraph')
+    end
+
+    it 'falls back to solargraph when commandPath is not a string' do
+      host = described_class.new
+      host.configure({ 'commandPath' => true })
+      expect(host.command_path).to eq('solargraph')
+    end
+  end
+
   describe '#locate_pins' do
     it 'locates #initialize for Class#new calls' do
       code = %(

@@ -52,4 +52,36 @@ describe Solargraph::Workspace::Config do
     expect(config.reporters).to include('rubocop')
     expect(config.reporters).to include('require_not_found')
   end
+
+  it 'falls back to an empty array when a value should be an array of strings' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'domains: not_an_array'
+    end
+    config = described_class.new(dir_path)
+    expect(config.domains).to eq([])
+  end
+
+  it 'falls back to an empty array when a value is explicitly nil' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'plugins:'
+    end
+    config = described_class.new(dir_path)
+    expect(config.plugins).to eq([])
+  end
+
+  it 'falls back to the default max_files when the value is not an integer' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'max_files: not_an_integer'
+    end
+    config = described_class.new(dir_path)
+    expect(config.max_files).to eq(described_class::MAX_FILES)
+  end
+
+  it 'falls back to an empty hash when formatter is not a hash' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'formatter: not_a_hash'
+    end
+    config = described_class.new(dir_path)
+    expect(config.formatter).to eq({})
+  end
 end
