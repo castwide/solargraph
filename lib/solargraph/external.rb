@@ -102,7 +102,7 @@ module Solargraph
       files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
       source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
       source_pins = source_maps.flat_map(&:pins)
-      rbs_pins = RbsMap2.new(metagem).pins
+      rbs_pins = RbsMap.new(metagem).pins
       combined = GemPins.combine(source_pins, rbs_pins)
       pins.concat combined
       loaded_gems.push metagem

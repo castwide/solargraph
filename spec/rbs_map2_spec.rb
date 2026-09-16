@@ -2,7 +2,7 @@
 
 require 'rbs'
 
-describe Solargraph::RbsMap2 do
+describe Solargraph::RbsMap do
   describe '#pins' do
     let(:rbs_map) do
       # language_server-protocol is a known transitive dependency with RBS definitions

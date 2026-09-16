@@ -112,7 +112,11 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
-      external.update bench.external_requires.to_a
+      if external.unloaded_gems.any? { |metagem| GemCache.cached?(metagem) }
+        # @todo External can be rebuilt here, in which case all query/inference caching should be cleared
+      else
+        external.update bench.external_requires.to_a
+      end
       @cache.clear if store.update(@@core_map.pins, external.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self

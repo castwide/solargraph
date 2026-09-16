@@ -3,14 +3,16 @@
 describe Solargraph::RbsMap do
   it 'loads from a gemspec' do
     spec = Gem::Specification.find_by_name('rbs')
-    rbs_map = described_class.from_gemspec(spec, nil, nil)
+    metagem = Solargraph::Metagem.from_specification(spec)
+    rbs_map = described_class.new(metagem)
     pin = rbs_map.path_pin('RBS::EnvironmentLoader#add_collection')
     expect(pin).not_to be_nil
   end
 
   it 'fails if it does not find data from gemspec' do
     spec = Gem::Specification.find_by_name('backport')
-    rbs_map = described_class.from_gemspec(spec, nil, nil)
+    metagem = Solargraph::Metagem.from_specification(spec)
+    rbs_map = described_class.new(metagem)
     expect(rbs_map).not_to be_resolved
   end
 
