@@ -39,7 +39,7 @@ module Solargraph
 
       # @param metagem [Metagem]
       def serialize_yard_pins metagem
-        yard = Yardoc2.load!(metagem)
+        yard = Yardoc.load!(metagem)
         pins = YardMap::Mapper.new(yard, metagem.to_specification)
       end
 

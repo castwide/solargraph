@@ -55,7 +55,8 @@ describe Solargraph::Library do
 
   context 'with a require from an already-cached external gem' do
     before do
-      Solargraph::Shell.new.gems('backport')
+      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
+      Solargraph::GemCache.cache(metagem) unless Solargraph::GemCache.cached?(metagem)
     end
 
     it 'returns a Completion' do

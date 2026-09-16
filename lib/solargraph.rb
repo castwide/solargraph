@@ -29,7 +29,6 @@ module Solargraph
   autoload :SourceMap,        'solargraph/source_map'
   autoload :ApiMap,           'solargraph/api_map'
   autoload :Yardoc,           'solargraph/yardoc'
-  autoload :Yardoc2,          'solargraph/yardoc2'
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
   autoload :DocMap,           'solargraph/doc_map'

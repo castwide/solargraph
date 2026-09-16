@@ -36,9 +36,10 @@ module Solargraph
     # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>]
     def self.build_yard_pins yard_plugins, gemspec
-      Yardoc.cache(yard_plugins, gemspec) unless Yardoc.cached?(gemspec)
-      return [] unless Yardoc.cached?(gemspec)
-      yardoc = Yardoc.load!(gemspec)
+      metagem = Metagem.from_specification(gemspec)
+      Yardoc.cache(metagem) unless Yardoc.cached?(metagem)
+      return [] unless Yardoc.cached?(metagem)
+      yardoc = Yardoc.load!(metagem)
       YardMap::Mapper.new(yardoc, gemspec).map
     end
 
