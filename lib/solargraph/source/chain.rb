@@ -300,11 +300,8 @@ module Solargraph
         type = if types.empty?
                  ComplexType::UNDEFINED
                elsif types.length > 1
-                 # Move nil to the end by convention
-
-                 # @param a [ComplexType::UniqueType]
-                 sorted = types.flat_map(&:items).sort { |a, _| a.tag == 'nil' ? 1 : 0 }
-                 ComplexType.new(sorted.uniq)
+                 # Only a union we assembled ourselves gets reordered.
+                 ComplexType.new(types).order_nil_last
                else
                  ComplexType.new(types)
                end

@@ -414,6 +414,17 @@ module Solargraph
       ComplexType.new(new_items)
     end
 
+    # A union describes the same type in any order, so this changes only
+    # rendering and first-member delegation; partition keeps the rest in place.
+    #
+    # @return [ComplexType]
+    def order_nil_last
+      nils, rest = unioned_items.partition(&:nil_type?)
+      return self if nils.empty?
+
+      ComplexType.new(rest + nils)
+    end
+
     # @return [Array<ComplexType>]
     def all_params
       @items.first.all_params || []

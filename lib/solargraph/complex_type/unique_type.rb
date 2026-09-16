@@ -210,6 +210,13 @@ module Solargraph
         self
       end
 
+      # A lone type has no members to reorder.
+      #
+      # @return [self]
+      def order_nil_last
+        self
+      end
+
       # @return [String]
       def determine_non_literal_name
         # https://github.com/ruby/rbs/blob/master/docs/syntax.md

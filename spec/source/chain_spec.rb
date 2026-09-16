@@ -435,4 +435,25 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
+
+  it 'moves nil to the end of a union without reordering the other members' do
+    # Nine members: an unstable reordering is undetectable below eight.
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [nil, String, Integer, Symbol, Float]
+        def baz; end
+      end
+      class Bar
+        # @return [Range, Hash, Array, Proc]
+        def baz; end
+      end
+      # @type [Foo, Bar]
+      x = nil
+      x.baz
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.to_s).to eq('String, Integer, Symbol, Float, Range, Hash, Array, Proc, nil')
+  end
 end
