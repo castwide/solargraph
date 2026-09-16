@@ -573,7 +573,6 @@ module Solargraph
             conjunct.items.length > 1 ? "[#{tags}]" : tags
           end.join(' & ')
         end
-
       end
     end
   end
