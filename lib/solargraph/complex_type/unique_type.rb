@@ -40,7 +40,7 @@ module Solargraph
         raise ComplexTypeError, "Illegal prefix: #{name}" if name.start_with?(':::')
         # Anonymous shorthand (`<A>`, `(A)`, `{A=>B}`) defaults the
         # omitted type name to Array or Hash, before the rooted check below.
-        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring[0]) if name.empty? && !substring.empty?
+        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring.chars.fetch(0)) if name.empty? && !substring.empty?
         if name.start_with?('::')
           name = name[2..]
           rooted = true
