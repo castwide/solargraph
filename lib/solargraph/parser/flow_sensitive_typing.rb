@@ -9,11 +9,16 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param closure [Solargraph::Pin::Closure, nil] The pin enclosing
+      #   the code being processed (e.g. the current method), used to
+      #   resolve the declared type of self for narrowing a
+      #   self.class == other.class guard (see #process_class_eq).
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure = nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -82,6 +87,7 @@ module Solargraph
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
+        process_class_eq(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -334,6 +340,81 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
+      # @param node [Parser::AST::Node, nil]
+      # @return [Parser::AST::Node, nil] the receiver being asked for
+      #   its class, e.g. "other" in "other.class", or nil unless
+      #   node is exactly a 0-arg .class call
+      def parse_class_call node
+        return if node.nil?
+        return unless node.type == :send && node.children[1] == :class
+        return unless (node.children[2..] || []).empty?
+
+        node.children[0]
+      end
+
+      # @param node [Parser::AST::Node, nil]
+      # @return [String, nil] the plain local/instance variable name
+      #   node refers to, or nil unless it is a bare lvar/ivar
+      #   reference
+      def parse_variable_name node
+        return if node.nil?
+        return unless %i[lvar ivar].include?(node.type)
+
+        node.children[0].to_s
+      end
+
+      # A guard like "self.class == other.class" (or
+      # "self.class.eql?(other.class)") guarantees other has the
+      # same runtime class as self. The runtime class of self is
+      # always a subtype of the declared instance type of the
+      # enclosing method, so the runtime class of other is too --
+      # narrowing other to that declared type is a sound upper
+      # bound, the same tradeoff #process_isa documents for is_a?.
+      # Only sound when self is an actual instance: a class methods
+      # self is the class object itself, whose .class is always
+      # ::Class rather than the enclosing type, so scope: :class is
+      # left alone.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param _false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_class_eq node, true_presences, _false_presences
+        return unless node.type == :send && %i[== eql?].include?(node.children[1])
+
+        enclosing = closure
+        return unless enclosing && enclosing.scope == :instance
+
+        lhs = parse_class_call(node.children[0])
+        return unless lhs
+
+        rhs = parse_class_call(node.children[2])
+        return unless rhs
+
+        other_side = if lhs.type == :self
+                       rhs
+                     elsif rhs.type == :self
+                       lhs
+                     end
+        return unless other_side
+
+        self_type = enclosing.context
+        return if self_type.undefined?
+
+        variable_name = parse_variable_name(other_side)
+        return unless variable_name
+
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(node).start
+
+        pin = find_var(variable_name, position)
+        return unless pin
+
+        if_true = { pin => [{ type: self_type }] }
+        process_facts(if_true, true_presences)
+      end
+
       # @param nilp_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
       def parse_nilp nilp_node
@@ -466,6 +547,9 @@ module Solargraph
       end
 
       attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+
+      # @return [Solargraph::Pin::Closure, nil]
+      attr_reader :closure
     end
   end
 end
