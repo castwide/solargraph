@@ -731,6 +731,18 @@ module Solargraph
         ComplexType.new(all_params)
       end
 
+      # The types a YARD `Object<A, B>` tag stands for: its subtypes.
+      # A bare Object names no others, and any other type already
+      # describes itself.
+      #
+      # @return [ComplexType]
+      def reduce_object
+        return ComplexType.new([self]) unless name == 'Object'
+        return ComplexType.new([self]) if subtypes.empty?
+
+        ComplexType.new(subtypes)
+      end
+
       def all_rooted?
         return true if name == GENERIC_TAG_NAME
         rooted? && all_params.all?(&:rooted?)
@@ -760,6 +772,8 @@ module Solargraph
       TRUE = UniqueType.new('true', rooted: true)
       FALSE = UniqueType.new('false', rooted: true)
       NIL = UniqueType.new('nil', rooted: true)
+      # Boolean covers exactly these two cases.
+      BOOLEAN_CASES = [UniqueType::TRUE, UniqueType::FALSE].freeze
       # @type [Hash{String => UniqueType}]
       SINGLE_SUBTYPE = {
         '::TrueClass' => UniqueType::TRUE,

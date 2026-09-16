@@ -264,6 +264,27 @@ describe 'YARD type specifier list parsing' do
       expect(type.to_s).to eq('false')
     end
 
+    describe 'a union offering both boolean cases' do
+      it 'is named Boolean' do
+        expect(Solargraph::ComplexType.parse('true, false').tags).to eq('Boolean')
+      end
+
+      it 'folds in either order, keeping its other members' do
+        expect(Solargraph::ComplexType.parse('String, false, true').tags).to eq('Boolean, String')
+      end
+
+      it 'keeps a union offering only one case as that case' do
+        expect(Solargraph::ComplexType.parse('String, true').tags).to eq('String, true')
+      end
+
+      it 'does not count a case reached through an intersection' do
+        # true & Comparable denotes exactly true, but folding it away
+        # would drop Comparable, so the set does not cover Boolean.
+        expect(Solargraph::ComplexType.parse('true & Comparable, false').tags)
+          .to eq('true & Comparable, false')
+      end
+    end
+
     # See literal details at
     # https://github.com/ruby/rbs/blob/master/docs/syntax.md and
     # https://yardoc.org/types.html
@@ -549,6 +570,28 @@ describe 'YARD type specifier list parsing' do
       it 'answers for itself when asked directly' do
         intersection = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>').items.first
         expect(intersection.reduce_class_type.tags).to eq('Foo & Baz')
+      end
+    end
+
+    describe '#reduce_object' do
+      it 'unwraps every conjunct written as a parameterized Object' do
+        type = Solargraph::ComplexType.parse('Object<::Foo> & Object<::Baz>')
+        expect(type.reduce_object.tags).to eq('Foo & Baz')
+      end
+
+      it 'unwraps only the conjuncts written that way' do
+        type = Solargraph::ComplexType.parse('Object<::Foo, ::Bar> & ::Qux')
+        expect(type.reduce_object.tags).to eq('[Foo, Bar] & Qux')
+      end
+
+      it 'leaves a conjunct that is a bare Object alone' do
+        type = Solargraph::ComplexType.parse('::Object & ::Qux')
+        expect(type.reduce_object.tags).to eq('Object & Qux')
+      end
+
+      it 'answers for itself when asked directly' do
+        intersection = Solargraph::ComplexType.parse('Object<::Foo> & ::Qux').items.first
+        expect(intersection.reduce_object.tags).to eq('Foo & Qux')
       end
     end
 
@@ -882,6 +925,29 @@ describe 'YARD type specifier list parsing' do
           item = Solargraph::ComplexType.parse('Class<::Foo>').items.first
           expect(item.reduce_class_type.tags).to eq('Foo')
         end
+      end
+    end
+
+    # YARD writes Object<A, B> where the parameters are the whole of
+    # what the tag says; core_fills uses Object<self> for a receiver.
+    describe '#reduce_object' do
+      it 'unwraps each union member' do
+        type = Solargraph::ComplexType.parse('Object<::Foo>, Object<::Baz>')
+        expect(type.reduce_object.tags).to eq('Foo, Baz')
+      end
+
+      it 'leaves a bare Object alone' do
+        expect(Solargraph::ComplexType.parse('Object').reduce_object.tags).to eq('Object')
+      end
+
+      it 'unwraps a conjunct of an intersection sitting in a union' do
+        type = Solargraph::ComplexType.parse('::Bar, Object<::Foo> & ::Qux')
+        expect(type.reduce_object.tags).to eq('Bar, Foo & Qux')
+      end
+
+      it 'answers for a single type asked directly' do
+        item = Solargraph::ComplexType.parse('Object<::Foo>').items.first
+        expect(item.reduce_object.tags).to eq('Foo')
       end
     end
 

@@ -365,6 +365,15 @@ module Solargraph
           ComplexType.new([Intersection.new(conjuncts.map(&:reduce_class_type))])
         end
 
+        # Unwrapping distributes over conjuncts: a value that is both
+        # an Object<A, B> and a C is both an A-or-B and a C. #name is the
+        # compound tag rather than "Object", so UniqueType cannot do this.
+        #
+        # @return [ComplexType]
+        def reduce_object
+          ComplexType.new([Intersection.new(conjuncts.map(&:reduce_object))])
+        end
+
         # @return [Array<ComplexType::UniqueType>]
         def unioned_items
           [self]
