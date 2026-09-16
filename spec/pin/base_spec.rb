@@ -88,4 +88,44 @@ describe Solargraph::Pin::Base do
       expect { pin1.nearly?(pin2) }.not_to raise_error
     end
   end
+
+  describe '#type_desc' do
+    # @param tag [String]
+    # @return [String, nil]
+    def desc_of tag
+      Solargraph::Pin::ProxyType.new(name: 'foo', return_type: Solargraph::ComplexType.parse(tag)).type_desc
+    end
+
+    it 'keeps the parameter of a class object inside an intersection' do
+      expect(desc_of('Class<Foo> & Comparable')).to eq('Class<Foo> & Comparable')
+    end
+
+    it 'keeps the parameter of a module object, which RBS cannot write either' do
+      expect(desc_of('Module<Foo>')).to eq('Module<Foo>')
+    end
+
+    it 'keeps the parameter of a class object that is not the first union member' do
+      expect(desc_of('String, Class<Foo>')).to eq('String, Class<Foo>')
+    end
+
+    it 'keeps the parameter of a lone class object' do
+      expect(desc_of('Class<Foo>')).to eq('Class<Foo>')
+    end
+
+    it 'prefers RBS for a type RBS can write, even where the tag reads differently' do
+      expect(desc_of('Array<String>')).to eq('Array[String]')
+    end
+
+    it 'prefers RBS for a bare Class, which names no instance to lose' do
+      pin = Solargraph::Pin::Method.new(name: 'foo', comments: '@return [Class]', scope: :instance,
+                                        closure: Solargraph::Pin::Namespace.new(name: 'Bar'))
+      expect(pin.type_desc).to eq('Bar#foo def foo: () -> Class')
+    end
+
+    it 'prefers RBS when the return type is a UniqueType rather than a ComplexType' do
+      pin = Solargraph::Pin::ProxyType.anonymous(Solargraph::ComplexType.parse('Array<String>').items.first)
+      expect(pin.return_type).to be_a(Solargraph::ComplexType::UniqueType)
+      expect(pin.type_desc).to eq('Array[String]')
+    end
+  end
 end
