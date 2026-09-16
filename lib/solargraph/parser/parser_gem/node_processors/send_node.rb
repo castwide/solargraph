@@ -59,7 +59,7 @@ module Solargraph
           # @return [void]
           def process_visibility
             if node.children.length > 2
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               node.children[2..].each do |child|
                 # @sg-ignore Variable type could not be inferred for method_name
                 # @type [Symbol]
@@ -90,7 +90,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure
@@ -133,7 +133,7 @@ module Solargraph
             # @sg-ignore Translate to something flow sensitive typing understands
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[2..].each do |i|
               type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
               pins.push type.new(
@@ -150,7 +150,7 @@ module Solargraph
             # @sg-ignore Translate to something flow sensitive typing understands
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[2..].each do |i|
               pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
@@ -163,7 +163,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[2..].each do |i|
               loc = get_node_location(node)
               if i.type == :self
@@ -286,9 +286,9 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               name: node.children[2].children[0].to_s,
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               original: node.children[3].children[0].to_s,
               scope: region.scope || :instance,
               source: :parser
@@ -297,10 +297,10 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             if %i[sym str].include?(node.children[2].type)
               ref = pins.select do |p|
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore node.children[] relies on grammar-guaranteed arity
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
               end.first
               # HACK: Smelly instance variable access

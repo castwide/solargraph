@@ -112,7 +112,7 @@ module Solargraph
           message
         elsif request['id']
           if requests[request['id']]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Hash#[] relies on key always being present
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -317,7 +317,7 @@ module Solargraph
       def prepare_folders array
         return if array.nil?
         array.each do |folder|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Hash#[] relies on key always being present
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
@@ -706,9 +706,9 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Hash#[] relies on key always being present
       def client_supports_progress?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -863,9 +863,9 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Hash#[] relies on key always being present
       def prepare_rename?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 

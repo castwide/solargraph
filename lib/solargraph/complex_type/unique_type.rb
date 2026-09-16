@@ -341,7 +341,7 @@ module Solargraph
       # @return [String]
       def rbs_union types
         if types.length == 1
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           types.first.to_rbs
         else
           "(#{types.map(&:to_rbs).join(' | ')})"

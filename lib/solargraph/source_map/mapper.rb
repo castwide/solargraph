@@ -86,7 +86,7 @@ module Solargraph
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
         return start unless start < comment.lines.length
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         num = comment.lines[start..].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning

@@ -689,7 +689,7 @@ module Solargraph
     #
     # @param filename [String]
     # @return [SourceMap]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Hash#[] relies on key always being present
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]

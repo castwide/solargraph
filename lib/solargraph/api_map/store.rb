@@ -35,7 +35,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return catalog(pinsets) if changed.zero?
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
@@ -44,7 +44,7 @@ module Solargraph
                                       @indexes[changed + idx - 1].merge(pins)
                                     end
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         # @type [Index]
         @index = @indexes.last.clone
         # @sg-ignore Need to add nil check here
@@ -93,7 +93,7 @@ module Solargraph
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 
@@ -366,7 +366,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Hash#[] relies on key always being present
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]

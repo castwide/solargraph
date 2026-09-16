@@ -62,10 +62,10 @@ module Solargraph
       # @return [::Array<ComplexType>]
       def typify_parameters api_map
         chain = Parser.chain(receiver, filename, node)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
         # @param meth [Pin::Method]
@@ -85,7 +85,7 @@ module Solargraph
             unless arg_type.nil?
               # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               if arg_type.generic? && param_type.defined?
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore Array#first/#last relies on non-empty invariant
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 # @sg-ignore Need to add nil check here
                 arg_type.resolve_generics(namespace_pin, param_type)
@@ -107,11 +107,11 @@ module Solargraph
       def maybe_rebind api_map
         return ComplexType::UNDEFINED unless receiver
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         chain = Parser.chain(receiver, location.filename, node)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         locals = api_map.source_map(location.filename).locals_at(location)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
@@ -125,7 +125,7 @@ module Solargraph
                    chain.base.infer(api_map, name_pin, locals)
                  else
                    # if not, any self there must be the context of our closure
-                   # @sg-ignore Need to add nil check here
+                   # @sg-ignore pin.closure relies on closure always resolved
                    closure.full_context
                  end
 

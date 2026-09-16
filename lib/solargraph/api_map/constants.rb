@@ -31,7 +31,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
@@ -214,7 +214,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore String/Array Range slice relies on valid bounds
           inner_qualify(namespace[2..], '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)
@@ -270,13 +270,13 @@ module Solargraph
         result = []
 
         store.get_prepends(fqns).each do |pre|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           pre_fqns = resolve(pre.name, pre.closure.gates - skip.to_a)
           result.concat inner_get_constants(pre_fqns, [:public], skip)
         end
         result.concat(store.get_constants(fqns, visibility).sort { |a, b| a.name <=> b.name })
         store.get_includes(fqns).each do |pin|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           inc_fqns = resolve(pin.name, pin.closure.gates - skip.to_a)
           result.concat inner_get_constants(inc_fqns, [:public], skip)
         end

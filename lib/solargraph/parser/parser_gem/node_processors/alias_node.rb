@@ -10,9 +10,9 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: loc,
               closure: region.closure,
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               name: node.children[0].children[0].to_s,
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               original: node.children[1].children[0].to_s,
               scope: region.scope || :instance,
               source: :parser

@@ -52,11 +52,11 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         def data_node
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore node.children[] relies on grammar-guaranteed arity
           if node.children[2].type == :block
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[2].children[0]
           else
             node.children[2]

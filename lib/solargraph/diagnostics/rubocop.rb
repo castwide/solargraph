@@ -50,7 +50,7 @@ module Solargraph
       # Extracts the rubocop version from _args_
       #
       # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Array#first/#last relies on non-empty invariant
       def rubocop_version
         args.find { |a| a =~ /version=/ }.to_s.split('=').last
       end
@@ -59,7 +59,7 @@ module Solargraph
       # @return [Array<Hash>]
       def make_array resp
         diagnostics = []
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         resp['files'].each do |file|
           file['offenses'].each do |off|
             diagnostics.push offense_to_diagnostic(off)
@@ -92,18 +92,18 @@ module Solargraph
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_start_position off
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         Position.new(off['location']['start_line'] - 1, off['location']['start_column'] - 1)
       end
 
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_ending_position off
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         if off['location']['start_line'] == off['location']['last_line']
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Hash#[] relies on key always being present
           start_line = off['location']['start_line'] - 1
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Hash#[] relies on key always being present
           # @type [Integer]
           last_column = off['location']['last_column']
           line = @source.code.lines[start_line]
@@ -117,7 +117,7 @@ module Solargraph
             start_line, last_column - col_off
           )
         else
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Hash#[] relies on key always being present
           Position.new(off['location']['start_line'], 0)
         end
       end

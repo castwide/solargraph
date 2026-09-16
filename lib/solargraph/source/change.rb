@@ -62,7 +62,7 @@ module Solargraph
           result = commit text, fixed
           # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           off = Position.to_offset(text, range.start)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore MatchData relies on regex always matching
           match = result[0, off].match(/[.:]+\z/)
           if match
             # @sg-ignore https://github.com/castwide/solargraph/issues/1250
@@ -78,9 +78,9 @@ module Solargraph
       # @param insert [String]
       # @return [String]
       def commit text, insert
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         start_offset = Position.to_offset(text, range.start)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         end_offset = Position.to_offset(text, range.ending)
         (start_offset.zero? ? '' : text[0..(start_offset - 1)].to_s) + normalize(insert) + text[end_offset..].to_s
       end

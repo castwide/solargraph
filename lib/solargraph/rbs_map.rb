@@ -200,9 +200,9 @@ module Solargraph
     end
 
     # @return [String]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def short_name
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Array#first/#last relies on non-empty invariant
       self.class.name.split('::').last
     end
   end

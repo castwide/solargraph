@@ -110,7 +110,7 @@ module Solargraph
 
     # @param path [String]
     # @return [Pin::Base]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -230,9 +230,9 @@ module Solargraph
         next if pin.is_a?(Pin::Method) && pin.attribute?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.location relies on location always resolved
         end) && pin.location.range.contain?(position)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

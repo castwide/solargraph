@@ -112,7 +112,7 @@ module Solargraph
     #
     # @param filename [String]
     # @return [Solargraph::Source]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Hash#[] relies on key always being present
     def source filename
       source_hash[filename]
     end
@@ -156,7 +156,7 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Hash#[] relies on key always being present
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 

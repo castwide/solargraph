@@ -16,7 +16,7 @@ module Solargraph
                         region.closure
                       else
                         Solargraph::Pin::Namespace.new(
-                          # @sg-ignore Need to add nil check here
+                          # @sg-ignore node.children[] relies on grammar-guaranteed arity
                           name: unpack_name(node.children[0]),
                           source: :parser
                         )

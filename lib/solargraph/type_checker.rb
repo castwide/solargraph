@@ -207,7 +207,7 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def virtual_pin? pin
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.location relies on location always resolved
       pin.location && source.comment_at?(pin.location.range.ending)
     end
 
@@ -304,10 +304,10 @@ module Solargraph
       Solargraph::Parser::NodeMethods.const_nodes_from(source.node).each do |const|
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         closure_pin.rebind(api_map)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, closure_pin, locals)
@@ -324,10 +324,10 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         if call.type == :block
           # blocks in the AST include the method call as well, so the
@@ -339,7 +339,7 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         closure_pin.rebind(api_map)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         # @sg-ignore Need to add nil check here
@@ -351,7 +351,7 @@ module Solargraph
           found = nil
           # @type [Array<Solargraph::Pin::Base>]
           all_found = []
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           until base.links.first.undefined?
             # @sg-ignore Need to add nil check here
             all_found = base.define(api_map, closure_pin, locals)
@@ -365,10 +365,10 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore Array#first/#last relies on non-empty invariant
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore Array#first/#last relies on non-empty invariant
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
             end
             @marked_ranges.push rng
@@ -576,7 +576,7 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         next unless params.key?(pname.to_s)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
@@ -712,7 +712,7 @@ module Solargraph
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       rng = Solargraph::Range.from_node(pin.assignment)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Range.from_node result assumed always present
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))
@@ -724,7 +724,7 @@ module Solargraph
         found = nil
         # @type [Array<Solargraph::Pin::Base>]
         all_found = []
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         until base.links.first.undefined?
           all_found = base.define(api_map, closure_pin, locals)
           found = all_found.first
@@ -784,7 +784,7 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
-                  # @sg-ignore Need to add nil check here
+                  # @sg-ignore Array#first/#last relies on non-empty invariant
                   last_arg_last_link = arguments.last.links.last
                   # @sg-ignore https://github.com/castwide/solargraph/issues/1251
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?

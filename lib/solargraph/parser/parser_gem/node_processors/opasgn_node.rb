@@ -74,7 +74,7 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             # @type [Parser::AST::Node]
             variable_name = asgn.children[0]
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar

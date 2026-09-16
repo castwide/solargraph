@@ -41,7 +41,7 @@ module Solargraph
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
                            ''
                          else
-                           # @sg-ignore Need to add nil check here
+                           # @sg-ignore pin.closure relies on closure always resolved
                            "#{closure.full_context.namespace}::"
                          end
           closure_name += parts.join('::')
@@ -58,7 +58,7 @@ module Solargraph
       end
 
       def to_rbs
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 

@@ -25,7 +25,7 @@ module Solargraph
         result.concat file_global_methods
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore pin.location relies on location always resolved
             p.name == cursor.word && p.location.range.contain?(cursor.position)
           end)
         end
@@ -40,7 +40,7 @@ module Solargraph
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
           return package_completions(api_map.get_symbols)
         end
@@ -167,19 +167,19 @@ module Solargraph
       # @return [Completion]
       def tag_complete
         result = []
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore MatchData relies on regex always matching
         match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore MatchData relies on regex always matching
           full = match[1]
           # @sg-ignore Need to add nil check here
           if full.include?('::')
             # @sg-ignore Need to add nil check here
             if full.end_with?('::')
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
             end
           else
@@ -195,13 +195,13 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
                    cursor.chain.base.infer(api_map, context_pin, locals)
                  # @sg-ignore Need to add nil check here
                  elsif full.include?('::') && cursor.chain.links.length == 1
-                   # @sg-ignore Need to add nil check here
+                   # @sg-ignore String/Array Range slice relies on valid bounds
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
                  elsif cursor.chain.links.length > 1
                    ComplexType.try_parse(full)

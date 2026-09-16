@@ -52,7 +52,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         path[0].upcase + path[1..]
       end
 

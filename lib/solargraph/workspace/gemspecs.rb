@@ -133,7 +133,7 @@ module Solargraph
         # RBS tracks implicit dependencies, like how the YAML standard
         # library implies pulling in the psych library.
         stdlib_deps = RbsMap::StdlibMap.stdlib_dependencies(gemspec.name, gemspec.version) || []
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Hash#[] relies on key always being present
         stdlib_dep_gemspecs = stdlib_deps.map { |dep| find_gem(dep['name'], dep['version']) }.compact
         (gem_dep_gemspecs.values.compact + stdlib_dep_gemspecs).uniq(&:name)
       end

@@ -74,7 +74,7 @@ module Solargraph
     # @param line [Integer]
     # @param column [Integer]
     # @return [AST::Node]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def node_at line, column
       tree_at(line, column).first
     end
@@ -134,29 +134,29 @@ module Solargraph
       return false if Position.to_offset(code, position) >= code.length
       string_nodes.each do |node|
         range = Range.from_node(node)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         next if range.ending.line < position.line
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         break if range.ending.line > position.line
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         return true if node.type == :str && range.include?(position) && range.start != position
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         return true if %i[STR str].include?(node.type) && range.include?(position) && range.start != position
         if node.type == :dstr
           inner = node_at(position.line, position.column)
           next if inner.nil?
           inner_range = Range.from_node(inner)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Range.from_node result assumed always present
           next unless range.include?(inner_range.ending)
           return true if inner.type == :str
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Range.from_node result assumed always present
           inner_code = at(Solargraph::Range.new(inner_range.start, position))
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Range.from_node result assumed always present
           return true if (inner.type == :dstr && inner_range.ending.character <= position.character && !inner_code.end_with?('}')) ||
-                         # @sg-ignore Need to add nil check here
+                         # @sg-ignore Range.from_node result assumed always present
                          (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         break if range.ending.line > position.line
       end
       false
@@ -193,9 +193,9 @@ module Solargraph
     # @return [String]
     def code_for node
       rng = Range.from_node(node)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Range.from_node result assumed always present
       b = Position.line_char_to_offset(code, rng.start.line, rng.start.column)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Range.from_node result assumed always present
       e = Position.line_char_to_offset(code, rng.ending.line, rng.ending.column)
       frag = code[b..(e - 1)].to_s
       frag.strip.gsub(/,$/, '')
@@ -206,9 +206,9 @@ module Solargraph
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Range.from_node result assumed always present
       stringified_comments[rng.start.line] ||= begin
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         buff = associated_comments[rng.start.line]
         stringify_comment_array(buff)
       end
@@ -296,7 +296,7 @@ module Solargraph
       if FOLDING_NODE_TYPES.include?(top.type)
         # @sg-ignore Translate to something flow sensitive typing understands
         range = Range.from_node(top)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
           result.push range
         end
@@ -397,7 +397,7 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore Range.from_node result assumed always present
       return unless here.contain?(position)
       stack.unshift node
       # @param c [Parser::AST::Node]

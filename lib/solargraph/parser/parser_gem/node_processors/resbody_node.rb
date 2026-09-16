@@ -12,7 +12,7 @@ module Solargraph
             if node.children[1] # Exception local variable name
               # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               here = get_node_start_position(node.children[1])
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore pin.closure relies on closure always resolved
               presence = Range.new(here, region.closure.location.range.ending)
               # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               loc = get_node_location(node.children[1])
@@ -34,7 +34,7 @@ module Solargraph
                 source: :parser
               )
             end
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             NodeProcessor.process(node.children[2], region, pins, locals, ivars)
           end
         end

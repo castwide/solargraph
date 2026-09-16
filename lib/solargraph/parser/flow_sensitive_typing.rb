@@ -25,10 +25,10 @@ module Solargraph
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -53,10 +53,10 @@ module Solargraph
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         lhs = or_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         rhs = or_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -272,20 +272,20 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore node.children[] relies on grammar-guaranteed arity
           variable_name = call_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
@@ -326,7 +326,7 @@ module Solargraph
       def process_isa isa_node, true_presences, false_presences
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         isa_position = Range.from_node(isa_node).start
 
         pin = find_var(variable_name, isa_position)
@@ -363,7 +363,7 @@ module Solargraph
         # we're looking for and typechecking will cover any invalid
         # ones
         return unless nilp_arg.nil?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         nilp_position = Range.from_node(nilp_node).start
 
         pin = find_var(variable_name, nilp_position)
@@ -426,7 +426,7 @@ module Solargraph
         variable_name = parse_variable(node)
         return if variable_name.nil?
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         var_position = Range.from_node(node).start
 
         pin = find_var(variable_name, var_position)

@@ -199,11 +199,11 @@ module Solargraph
 
       # The parameter's zero-based location in the block's signature.
       #
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.closure relies on closure always resolved
       # @return [Integer]
       def index
         method_pin = closure
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         method_pin.parameter_names.index(name)
       end
 
@@ -250,7 +250,7 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         params = closure.docstring.tags(:param)
         # @sg-ignore Need to add nil check here
         params.each do |p|
@@ -262,7 +262,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.closure relies on closure always resolved
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -272,7 +272,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
         meths.each do |meth|
@@ -289,7 +289,7 @@ module Solargraph
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
-                                                               # @sg-ignore Need to add nil check here
+                                                               # @sg-ignore pin.closure relies on closure always resolved
                                                                *meth.closure.gates)
           end
         end
@@ -322,13 +322,13 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

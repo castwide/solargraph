@@ -53,12 +53,12 @@ module Solargraph
         # @return [Array<Chain::Link>]
         def generate_links n
           return [] unless n.is_a?(::Parser::AST::Node)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore node.children[] relies on grammar-guaranteed arity
           return generate_links(n.children[0]) if n.type == :splat
           # @type [Array<Chain::Link>]
           result = []
           if n.type == :block
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             result.concat NodeChainer.chain(n.children[0], @filename, n).links
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
@@ -66,7 +66,7 @@ module Solargraph
               result.concat generate_links(n.children[0])
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               n.children[2..].map do |c|
                 NodeChainer.chain(c, @filename, n)
               end
@@ -111,9 +111,9 @@ module Solargraph
             # s(:or_asgn,
             #   s(:ivasgn, :@bar),
             #   s(:int, 123))
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
             or_link = Chain::Or.new([lhs_chain, rhs_chain])
             # this is just for a call chain, so we don't need to record the assignment
@@ -125,9 +125,9 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat generate_links(n.children.last)
           elsif n.type == :or
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
-                                       # @sg-ignore Need to add nil check here
+                                       # @sg-ignore node.children[] relies on grammar-guaranteed arity
                                        NodeChainer.chain(n.children[1], @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]
@@ -137,7 +137,7 @@ module Solargraph
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
             else_clause = if n.children[2]
-                            # @sg-ignore Need to add nil check here
+                            # @sg-ignore node.children[] relies on grammar-guaranteed arity
                             NodeChainer.chain(n.children[2], @filename, n)
                           else
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
@@ -192,10 +192,10 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         # @return [Array<Source::Chain>]
         def node_args node
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore node.children[] relies on grammar-guaranteed arity
           node.children[2..].map do |child|
             NodeChainer.chain(child, @filename, node)
           end

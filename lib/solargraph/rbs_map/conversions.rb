@@ -350,7 +350,7 @@ module Solargraph
         parts = fqns.split('::')
         if parts.length > 1
           fqns = parts.last
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
         else
           fqns = parts.first

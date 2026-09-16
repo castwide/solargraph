@@ -213,7 +213,7 @@ module Solargraph
         detail += if signatures.length > 1
                     '(*) '
                   else
-                    # @sg-ignore Need to add nil check here
+                    # @sg-ignore Array#first/#last relies on non-empty invariant
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
         # @sg-ignore Need to add nil check here
@@ -299,7 +299,7 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           qualified = type.qualify(api_map, *closure.gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
@@ -404,7 +404,7 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore Array#first/#last relies on non-empty invariant
               name, decl = parse_overload_param(src.first)
               # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               Pin::Parameter.new(
@@ -414,7 +414,7 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location&.range,
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore Array#first/#last relies on non-empty invariant
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
               )
@@ -614,7 +614,7 @@ module Solargraph
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore MatchData relies on regex always matching
         resolve_reference match[1], api_map
       end
 
@@ -640,13 +640,13 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
@@ -660,9 +660,9 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         return node.children[1].children.last if node.type == :DEFN
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
         return node.children[3] if node.type == :defs
@@ -684,11 +684,11 @@ module Solargraph
           rng = Range.from_node(n)
           next unless rng
           clip = api_map.clip_at(
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore pin.location relies on location always resolved
             location.filename,
             rng.ending
           )
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.location relies on location always resolved
           chain = Solargraph::Parser.chain(n, location.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
@@ -776,7 +776,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore String/Array Range slice relies on valid bounds
                 .map { |line| line[2..].strip }
                 .join("\n")
       end

@@ -28,10 +28,10 @@ module Solargraph
         super
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.closure relies on closure always resolved
       # @return [String]
       def method_namespace
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         closure.namespace
       end
 
@@ -177,11 +177,11 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.closure relies on closure always resolved
       # @return [String]
       def method_name
         raise "closure was nil in #{inspect}" if closure.nil?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         @method_name ||= closure.name
       end
 
@@ -251,7 +251,7 @@ module Solargraph
         # @todo this and its caller should be changed so that this can
         #   look at the kwargs provided and check names against what
         #   we acccept
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         return false if argcount < parcount && !(argcount == parcount - 1 && parameters.last.restarg?)
         true
       end

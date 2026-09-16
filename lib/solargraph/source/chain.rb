@@ -66,7 +66,7 @@ module Solargraph
 
       # @return [Chain]
       def base
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         @base ||= Chain.new(links[0..-2])
       end
 
@@ -109,7 +109,7 @@ module Solargraph
         #
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         links[0..-2].each do |link|
           pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
@@ -129,9 +129,9 @@ module Solargraph
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         links.last.last_context = working_pin
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -169,7 +169,7 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
@@ -275,7 +275,7 @@ module Solargraph
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore pin.closure relies on closure always resolved
               type = type.resolve_generics(pin.closure, name_pin.binder)
             end
             types << type

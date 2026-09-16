@@ -131,17 +131,17 @@ module Solargraph
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
-           # @sg-ignore Need to add nil check here
+           # @sg-ignore Hash#[] relies on key always being present
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
-           # @sg-ignore Need to add nil check here
+           # @sg-ignore Hash#[] relies on key always being present
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
-           # @sg-ignore Need to add nil check here
+           # @sg-ignore Hash#[] relies on key always being present
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references

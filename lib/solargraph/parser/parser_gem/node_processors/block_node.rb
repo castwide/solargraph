@@ -11,7 +11,7 @@ module Solargraph
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               clazz_name = unpack_name(node.children[0].children[0])
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
@@ -35,11 +35,11 @@ module Solargraph
           private
 
           def other_class_eval?
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             node.children[0].type == :send &&
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               node.children[0].children[1] == :class_eval &&
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore node.children[] relies on grammar-guaranteed arity
               %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end

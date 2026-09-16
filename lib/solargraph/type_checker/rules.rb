@@ -69,13 +69,22 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (605):
+      # pending code fixes (589):
       #
-      # @todo 434: Need to add nil check here
+      # @todo 141: Need to add nil check here
       # @todo 79: https://github.com/castwide/solargraph/pull/1223
+      # @todo 66: node.children[] relies on grammar-guaranteed arity
       # @todo 50: https://github.com/castwide/solargraph/pull/1245
+      # @todo 48: Array#first/#last relies on non-empty invariant
+      # @todo 33: pin.closure relies on closure always resolved
+      # @todo 29: Range.from_node result assumed always present
       # @todo 26: Translate to something flow sensitive typing understands
+      # @todo 23: Hash#[] relies on key always being present
+      # @todo 22: String/Array Range slice relies on valid bounds
+      # @todo 19: pin.location relies on location always resolved
       # @todo 17: Need a downcast here
+      # @todo 12: MatchData relies on regex always matching
+      # @todo 10: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to []=

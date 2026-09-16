@@ -22,7 +22,7 @@ module Solargraph
                     assignment: u.children[1],
                     # @sg-ignore Translate to something flow sensitive typing understands
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
-                    # @sg-ignore Need to add nil check here
+                    # @sg-ignore pin.location relies on location always resolved
                     presence: callable.location.range,
                     decl: get_decl(u),
                     source: :parser
@@ -43,7 +43,7 @@ module Solargraph
             locals.push Solargraph::Pin::Parameter.new(
               location: loc,
               closure: callable,
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore pin.closure relies on closure always resolved
               presence: region.closure.location.range,
               decl: get_decl(node),
               source: :parser

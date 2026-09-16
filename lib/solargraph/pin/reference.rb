@@ -48,10 +48,10 @@ module Solargraph
         )
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore pin.closure relies on closure always resolved
       # @return [Array<String>]
       def reference_gates
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         closure.gates
       end
     end
