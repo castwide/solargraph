@@ -54,7 +54,6 @@ module Solargraph
   autoload :GemPins,          'solargraph/gem_pins'
   autoload :CacheDir,         'solargraph/cache_dir'
   autoload :PinCache,         'solargraph/pin_cache'
-  autoload :PinCache2,         'solargraph/pin_cache2'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
 
   dir = File.dirname(__FILE__)
