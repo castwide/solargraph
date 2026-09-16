@@ -446,6 +446,18 @@ describe 'YARD type specifier list parsing' do
       it 'has no namespace of its own to report' do
         expect { intersection.namespace }.to raise_error(NotImplementedError)
       end
+
+      it 'cannot root the compound name the way #rooted_tag roots each conjunct' do
+        intersection = Solargraph::ComplexType.parse('::Comparable & ::Enumerable').items.first
+        expect(intersection.rooted_tag).to eq('::Comparable & ::Enumerable')
+        expect { intersection.rooted_name }.to raise_error(NotImplementedError)
+      end
+
+      it 'refuses to report no parameters while answering that it is generic' do
+        intersection = Solargraph::ComplexType.parse('::Array<generic<T>> & ::Enumerable<generic<T>>').items.first
+        expect(intersection.generic?).to be true
+        expect { intersection.all_params }.to raise_error(NotImplementedError)
+      end
     end
 
     describe '#all_rooted?' do

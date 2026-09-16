@@ -380,6 +380,36 @@ module Solargraph
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def rooted_name(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def can_root_name?(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def key_types(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def subtypes(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def all_params(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def parameters_type(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def namespace_type(*, **, &)
           raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
         end
