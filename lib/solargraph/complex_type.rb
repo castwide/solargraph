@@ -419,16 +419,12 @@ module Solargraph
       @items.first.all_params || []
     end
 
+    # Each member reduces on its own, since a value described by any
+    # one of them is described by that member's instance type.
+    #
     # @return [ComplexType]
     def reduce_class_type
-      # [type] not type: flat_map asks a bare block result for to_ary.
-      new_items = items.flat_map do |type|
-        next [type] unless %w[Module Class].include?(type.name)
-        next [type] if type.all_params.empty?
-
-        type.all_params
-      end
-      ComplexType.new(new_items)
+      ComplexType.new(unioned_items.map(&:reduce_class_type))
     end
 
     # every type and subtype in this union have been resolved to be

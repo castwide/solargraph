@@ -339,6 +339,15 @@ module Solargraph
           self
         end
 
+        # Reduction distributes over conjuncts: Class<A> & Class<B>
+        # describes a value that is both an A and a B. #name is the
+        # compound tag rather than "Class", so UniqueType cannot do this.
+        #
+        # @return [ComplexType]
+        def reduce_class_type
+          ComplexType.new([Intersection.new(conjuncts.map(&:reduce_class_type))])
+        end
+
         # @return [Array<ComplexType::UniqueType>]
         def unioned_items
           [self]
@@ -492,11 +501,6 @@ module Solargraph
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def exclude(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
-        end
-
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
-        def reduce_class_type(*, **, &)
           raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
         end
 

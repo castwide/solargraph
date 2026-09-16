@@ -712,16 +712,16 @@ module Solargraph
         end
       end
 
+      # The instance type a class-object type describes: Class<Foo> and
+      # Module<Foo> reduce to Foo. A bare Class or Module names no
+      # instance, and any other type already is one.
+      #
       # @return [ComplexType]
       def reduce_class_type
-        # [type] not type: flat_map asks a bare block result for to_ary.
-        new_items = items.flat_map do |type|
-          next [type] unless %w[Module Class].include?(type.name)
-          next [type] if type.all_params.empty?
+        return ComplexType.new([self]) unless %w[Module Class].include?(name)
+        return ComplexType.new([self]) if all_params.empty?
 
-          type.all_params
-        end
-        ComplexType.new(new_items)
+        ComplexType.new(all_params)
       end
 
       def all_rooted?

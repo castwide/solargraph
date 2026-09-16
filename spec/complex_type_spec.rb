@@ -481,6 +481,28 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
+    describe '#reduce_class_type' do
+      it 'reduces every conjunct naming a class object' do
+        type = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>')
+        expect(type.reduce_class_type.tags).to eq('Foo & Baz')
+      end
+
+      it 'reduces only the conjuncts naming a class object' do
+        type = Solargraph::ComplexType.parse('Class<::Foo> & ::Qux')
+        expect(type.reduce_class_type.tags).to eq('Foo & Qux')
+      end
+
+      it 'leaves an intersection of instance types alone' do
+        type = Solargraph::ComplexType.parse('::Bar & ::Qux')
+        expect(type.reduce_class_type.tags).to eq('Bar & Qux')
+      end
+
+      it 'answers for itself when asked directly' do
+        intersection = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>').items.first
+        expect(intersection.reduce_class_type.tags).to eq('Foo & Baz')
+      end
+    end
+
     # `&` binds tighter than the top-level `,` (union), matching RBS's
     # documented precedence: "A & B | C is (A & B) | C". Our
     # single-pass parser doesn't implement precedence via grouping -
@@ -790,6 +812,27 @@ describe 'YARD type specifier list parsing' do
         expect(multiple_types.namespaces).to eq(%w[Foo Bar String NilClass])
         # RBS doesn't support individual module types like this
         expect(multiple_types.to_rbs).to eq('(Module | Class | String | nil)')
+      end
+
+      describe '#reduce_class_type' do
+        it 'reduces each union member' do
+          type = Solargraph::ComplexType.parse('Class<::Foo>, Module<::Baz>')
+          expect(type.reduce_class_type.tags).to eq('Foo, Baz')
+        end
+
+        it 'leaves a bare Class with nothing to reduce to alone' do
+          expect(Solargraph::ComplexType.parse('Class').reduce_class_type.tags).to eq('Class')
+        end
+
+        it 'reduces an intersection sitting in a union' do
+          type = Solargraph::ComplexType.parse('::Bar, Class<::Foo> & Class<::Baz>')
+          expect(type.reduce_class_type.tags).to eq('Bar, Foo & Baz')
+        end
+
+        it 'answers for a single type asked directly' do
+          item = Solargraph::ComplexType.parse('Class<::Foo>').items.first
+          expect(item.reduce_class_type.tags).to eq('Foo')
+        end
       end
     end
 
