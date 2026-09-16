@@ -171,9 +171,11 @@ module Solargraph
     # @return [Object, nil]
     # @param [Array<Object>] args
     def method_missing name, *args, &block
+      # Check the name before the emptiness guard, so an unknown name
+      # reaches super and raises even when there are no members.
+      return super unless respond_to_missing?(name)
       return if @items.first.nil?
-      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
-      super
+      @items.first.send(name, *args, &block)
     end
 
     # @param name [Symbol]

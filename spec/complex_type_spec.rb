@@ -1232,4 +1232,18 @@ describe 'YARD type specifier list parsing' do
       expect(atype.conforms_to?(api_map, ptype, :assignment)).to be(false)
     end
   end
+
+  context 'when sent a message that no type member defines' do
+    it 'raises NoMethodError on an empty union' do
+      expect { Solargraph::ComplexType.parse.frobnicate }.to raise_error(NoMethodError)
+    end
+
+    it 'raises NoMethodError on a populated union' do
+      expect { Solargraph::ComplexType.parse('String').frobnicate }.to raise_error(NoMethodError)
+    end
+
+    it 'answers nil for a TypeMethods name on an empty union' do
+      expect(Solargraph::ComplexType.parse.undefined?).to be_nil
+    end
+  end
 end
