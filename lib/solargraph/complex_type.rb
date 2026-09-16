@@ -520,10 +520,6 @@ module Solargraph
       ComplexType.new(new_items)
     end
 
-    def bottom?
-      @items.all?(&:bot?)
-    end
-
     # Whether combining these two into an intersection is safe. Only
     # true when at least one side is *positively confirmed* to be a
     # mix-in, since any class can pick up any module. Two concrete
