@@ -493,6 +493,43 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
+    describe '#freeze' do
+      it 'freezes rather than raising, unlike the compound questions' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect { intersection.freeze }.not_to raise_error
+        expect(intersection).to be_frozen
+      end
+
+      it 'still compares equal to a reordered twin once frozen' do
+        frozen = Solargraph::ComplexType.parse('Foo & Bar').items.first.freeze
+        expect(frozen).to eq(Solargraph::ComplexType.parse('Bar & Foo').items.first)
+      end
+    end
+
+    describe '#implicit_union?' do
+      it 'is true when a conjunct treats its parameters as an implicit union' do
+        intersection = Solargraph::ComplexType.parse('Array<String> & Enumerable').items.first
+        expect(intersection.implicit_union?).to be true
+      end
+
+      it 'is false when no conjunct does' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect(intersection.implicit_union?).to be false
+      end
+    end
+
+    describe '#order_nil_last' do
+      it 'moves nil last inside a conjunct that is itself a union' do
+        intersection = Solargraph::ComplexType.parse('Foo & [nil, Bar]').items.first
+        expect(intersection.order_nil_last.tag).to eq('Foo & [Bar, nil]')
+      end
+
+      it 'leaves an intersection with no nil member alone' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect(intersection.order_nil_last.tag).to eq('Foo & Bar')
+      end
+    end
+
     describe '#reduce_class_type' do
       it 'reduces every conjunct naming a class object' do
         type = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>')

@@ -151,6 +151,15 @@ module Solargraph
           conjuncts.any?(&:literal?)
         end
 
+        # True when any conjunct gathers its parameters as a union, since
+        # the value is all of them at once. A conjunct is a ComplexType,
+        # which has no #implicit_union?, so its members answer instead.
+        #
+        # @return [Boolean]
+        def implicit_union?
+          each_unique_type.any?(&:implicit_union?)
+        end
+
         # @param other [Object]
         # @return [Boolean]
         def eql? other
@@ -337,6 +346,14 @@ module Solargraph
         # @return [self]
         def erase_parameters
           self
+        end
+
+        # Conjuncts are not a union, so nothing moves at this level; a
+        # conjunct that is one reorders its own members.
+        #
+        # @return [Intersection]
+        def order_nil_last
+          Intersection.new(conjuncts.map(&:order_nil_last))
         end
 
         # Reduction distributes over conjuncts: Class<A> & Class<B>
@@ -566,9 +583,14 @@ module Solargraph
 
         protected
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
-        def equality_fields(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        # The conjunct set #eql? and #hash already answer from, wrapped so
+        # Equality#freeze freezes the set and not each conjunct: freezing
+        # a conjunct ComplexType freezes the ComplexType class itself,
+        # since its own equality_fields lead with self.class.
+        #
+        # @return [Array<Array<ComplexType>>]
+        def equality_fields
+          [sorted_conjuncts]
         end
 
         # Conjunct order is not part of the type. rooted_tags keys the
