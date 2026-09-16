@@ -609,7 +609,7 @@ module Solargraph
                 subtype_string += char
               elsif base.end_with?('=')
                 raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore Translate to something flow sensitive typing understands
                 disjuncts.push close_intersection(conjuncts, finish_atom(base[0..-2], subtype_string))
                 types.push close_disjunction(disjuncts)
                 # @todo this should either expand key_type's type
