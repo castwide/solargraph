@@ -33,7 +33,7 @@ module Solargraph
       private
 
       def core_store
-        @core_store ||= ApiMap::Store.new(RbsMap::CoreMap.new.pins)
+        @core_store ||= ApiMap::Store.new(RbsMap::Core.new.pins)
       end
 
       # @param code_object [YARD::CodeObjects::Base]

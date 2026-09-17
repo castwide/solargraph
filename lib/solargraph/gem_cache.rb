@@ -27,7 +27,7 @@ module Solargraph
       Yardoc.cache(metagem) unless Yardoc.cached?(metagem)
       yardoc = Yardoc.load!(metagem)
       yard_pins = YardMap::Mapper.new(yardoc, metagem).map
-      rbs_pins = RbsMap.new(metagem).pins
+      rbs_pins = RbsMap::Gem.new(metagem).pins
       pins = if rbs_pins.empty?
         yard_pins
       else
