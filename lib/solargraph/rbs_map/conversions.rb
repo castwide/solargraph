@@ -3,7 +3,7 @@
 require 'rbs'
 
 module Solargraph
-  class RbsMap
+  module RbsMap
     # Functions for converting RBS declarations to Solargraph pins
     #
     class Conversions

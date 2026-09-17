@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-describe Solargraph::RbsMap::CoreMap do
+describe Solargraph::RbsMap::Core do
   it 'maps core Errno classes' do
     map = described_class.new
     store = Solargraph::ApiMap::Store.new(map.pins)

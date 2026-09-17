@@ -3,42 +3,13 @@
 require 'rbs'
 
 module Solargraph
-  class RbsMap
+  module RbsMap
+    autoload :Base,        'solargraph/rbs_map/base'
     autoload :Conversions, 'solargraph/rbs_map/conversions'
-    autoload :CoreMap,     'solargraph/rbs_map/core_map'
+    autoload :Core,        'solargraph/rbs_map/core'
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
-    autoload :StdlibMap,   'solargraph/rbs_map/stdlib_map'
-
-    # @param metagem [Metagem]
-    def initialize metagem
-      loader.add path: Pathname.new(metagem.full_path)
-    end
-
-    def pins
-      @pins ||= conversions.pins
-    end
-
-    # @return [RBS::Repository]
-    def repository
-      @repository ||= RBS::Repository.new(no_stdlib: false)
-    end
-
-    # @return [RBS::EnvironmentLoader]
-    def loader
-      @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
-    end
-
-    # @param path [String]
-    # @return [Pin::Base, nil]
-    def path_pin path
-      pins.find { |p| p.path == path }
-    end
-
-    private
-
-    # @return [RbsMap::Conversions]
-    def conversions
-      @conversions ||= RbsMap::Conversions.new(loader: loader)
-    end
+    autoload :Gem,         'solargraph/rbs_map/gem'
+    autoload :Path,        'solargraph/rbs_map/path'
+    autoload :Stdlib,      'solargraph/rbs_map/stdlib'
   end
 end
