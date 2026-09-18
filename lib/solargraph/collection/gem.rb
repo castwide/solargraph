@@ -31,7 +31,8 @@ module Solargraph
       private
 
       def cacheable_pins
-        yard_pins = Yardoc.load!(metagem)
+        code_objects = Yardoc.load!(metagem)
+        yard_pins = YardMap::Mapper.new(code_objects, metagem).map
         rbs_pins = RbsMap::Gem.pins(metagem)
         GemPins.combine(yard_pins, rbs_pins)
       end
