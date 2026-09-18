@@ -98,6 +98,7 @@ module Solargraph
     # @return [self]
     def catalog bench
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @workspace = bench.workspace
       @source_map_hash = bench.source_map_hash
       # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
@@ -118,11 +119,15 @@ module Solargraph
     end
 
     def external
-      @external ||= External.new(workspace.directory, [])
+      @external ||= External.new(workspace&.directory, [])
     end
 
     def unresolved_requires
       external.unresolved_requires
+    end
+
+    def unloaded_gems
+      external.unloaded_gems
     end
 
     # @return [Array<Pin::Base>]
@@ -151,26 +156,6 @@ module Solargraph
         end
       end
       macro_pins
-    end
-
-    # @return [DocMap]
-    def doc_map
-      @doc_map ||= DocMap.new([], Workspace.new('.'))
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_gemspecs
-      doc_map.uncached_gemspecs || []
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_rbs_collection_gemspecs
-      @doc_map.uncached_rbs_collection_gemspecs
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_yard_gemspecs
-      @doc_map.uncached_yard_gemspecs
     end
 
     # @return [Enumerable<Pin::Base>]
@@ -748,7 +733,7 @@ module Solargraph
 
     # @return [Workspace, nil]
     def workspace
-      doc_map.workspace
+      @workspace
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in

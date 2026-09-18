@@ -35,7 +35,7 @@ module Solargraph
     private
 
     def build_from_directory
-      return unless File.file?(File.join(@directory, 'Gemfile'))
+      return unless @directory && File.file?(File.join(@directory, 'Gemfile'))
 
       Solargraph.with_clean_env do
         cmd = [
