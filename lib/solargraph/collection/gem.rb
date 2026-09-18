@@ -2,6 +2,8 @@
 
 module Solargraph
   module Collection
+    # Cacheable gem pins.
+    #
     class Gem < Base
       attr_reader :metagem
 

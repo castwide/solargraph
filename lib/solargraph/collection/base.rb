@@ -4,10 +4,15 @@ require 'fileutils'
 
 module Solargraph
   module Collection
+    # The base class for cacheable pin collections. Subclasses need to
+    # implement #pins and #cache_file.
+    #
     # @!method pins
+    #   The array of pins for this collection.
     #   @abstract
     #   @return [Array<Pin::Base>]
     # @!method cache_file
+    #   The file that will store serialized pins.
     #   @abstract
     #   @return [String]
     class Base
@@ -23,6 +28,7 @@ module Solargraph
         end
       end
 
+      # @return [Array<Pin::Base>]
       def self.load(...)
         new(...).load
       end

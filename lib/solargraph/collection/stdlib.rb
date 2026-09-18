@@ -2,6 +2,8 @@
 
 module Solargraph
   module Collection
+    # Cacheable stdlib pins.
+    #
     class Stdlib < Base
       attr_reader :library
 
