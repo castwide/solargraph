@@ -15,7 +15,7 @@ module Solargraph
     autoload :Index,          'solargraph/api_map/index'
     autoload :Constants,      'solargraph/api_map/constants'
 
-    @@core_map = External::Core
+    @@core_map = Collection::Core.new
 
     # @return [Array<String>]
     attr_reader :missing_docs

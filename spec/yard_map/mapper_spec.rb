@@ -4,7 +4,7 @@ describe Solargraph::YardMap::Mapper do
   def pins_with require
     repo = Solargraph::Repo.new('.')
     metagem = repo.find_by_path(require)
-    Solargraph::External::Gem.pins(metagem)
+    Solargraph::Collection::Gem.load(metagem)
   end
 
   it 'converts nil docstrings to empty strings' do

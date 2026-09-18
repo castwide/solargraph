@@ -36,6 +36,7 @@ module Solargraph
   autoload :GemCache,         'solargraph/gem_cache'
   autoload :Repo,             'solargraph/repo'
   autoload :External,         'solargraph/external'
+  autoload :Collection,       'solargraph/collection'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
