@@ -9,8 +9,8 @@ describe Solargraph::Yardoc do
 
   describe '.cache' do
     it 'saves yardoc caches from metagems' do
-      path = described_class.cache(metagem)
-      expect(File.exist?(path)).to be(true)
+      described_class.cache(metagem)
+      expect(File.exist?(described_class.path_for(metagem))).to be(true)
     end
   end
 

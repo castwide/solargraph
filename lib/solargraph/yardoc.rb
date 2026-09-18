@@ -14,22 +14,24 @@ module Solargraph
     end
 
     # @param metagem [Metagem]
-    # @return [String]
-    def cache metagem
-      path = path_for(metagem)
-
-      Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
-      cmd = "yardoc --db #{path} --no-output --plugin solargraph"
-      Solargraph.logger.debug "Running: #{cmd}"
-      output, status = Open3.capture2e(cmd, chdir: metagem.full_path)
-      unless status.success?
-        Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
-        Solargraph.logger.info output
+    # @param force [Boolean]
+    # @return [void]
+    def cache metagem, force: false
+      if force || !cached?(metagem)
+        Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
+        path = path_for(metagem)
+        cmd = "yardoc --db #{path} --no-output --plugin solargraph"
+        Solargraph.logger.debug "Running: #{cmd}"
+        output, status = Open3.capture2e(cmd, chdir: metagem.full_path)
+        unless status.success?
+          Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
+          Solargraph.logger.info output
+        end
       end
-      path
     end
 
     # @param metagem [Metagem]
+    # @return [void]
     def uncache metagem
       FileUtils.rm_f path_for(metagem)
     end
@@ -56,6 +58,7 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [Array<YARD::CodeObjects::Base>]
     def load! metagem
+      cache metagem
       YARD::Registry.load! path_for(metagem)
       YARD::Registry.all
     end
