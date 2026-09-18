@@ -16,8 +16,13 @@ module Solargraph
         File.join CacheDir.work_dir, 'gems', "#{metagem.cache_name}.ser"
       end
 
+      def load
+        return pins unless metagem.cacheable?
+        super
+      end
+
       def pins
-        if metagem.cacheable?
+        @pins ||= if metagem.cacheable?
           cacheable_pins
         else
           uncacheable_pins

@@ -40,7 +40,7 @@ module Solargraph
     # @param new_requires [Array<String>]
     # @return [Boolean]
     def update new_requires
-      return false if requires == new_requires
+      return false if requires == new_requires && !cache_changed?
 
       requires.replace new_requires
       load_requires
@@ -48,6 +48,10 @@ module Solargraph
     end
 
     private
+
+    def cache_changed?
+      unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
+    end
 
     def load_requires
       clear_all

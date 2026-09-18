@@ -595,10 +595,10 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-      spec = cacheable_specs.first
+      spec = api_map.unloaded_gems.first
       return end_cache_progress unless spec
 
-      pending = api_map.uncached_gemspecs.length - cache_errors.length - 1
+      pending = api_map.unloaded_gems.length - cache_errors.length - 1
 
       if Yardoc.processing?(spec)
         logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
@@ -613,32 +613,23 @@ module Solargraph
         cache_next_gemspec
       else
         logger.info "Caching #{spec.name} #{spec.version}"
+        # @todo Maybe change to ractor
         Thread.new do
           report_cache_progress spec.name, pending
-          _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
-          if s.success?
-            logger.info "Cached #{spec.name} #{spec.version}"
-          else
-            cache_errors.add spec
-            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
-            logger.warn e
-          end
+          # _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
+          # if s.success?
+          #   logger.info "Cached #{spec.name} #{spec.version}"
+          # else
+          #   cache_errors.add spec
+          #   logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+          #   logger.warn e
+          # end
+          Collection::Gem.load spec
           end_cache_progress
           catalog
           sync_catalog
         end
       end
-    end
-
-    # @return [Array<Gem::Specification>]
-    def cacheable_specs
-      cacheable = api_map.uncached_yard_gemspecs +
-                  api_map.uncached_rbs_collection_gemspecs -
-                  queued_gemspec_cache -
-                  cache_errors.to_a
-      return cacheable unless cacheable.empty?
-
-      queued_gemspec_cache
     end
 
     # @return [Array<Gem::Specification>]
@@ -696,8 +687,9 @@ module Solargraph
         source_map_hash.each_value { |map| find_external_requires(map) }
         api_map.catalog bench
         logger.info "Catalog complete (#{api_map.source_maps.length} files, #{api_map.pins.length} pins)"
-        logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
-        logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
+        # @todo This needs work
+        # logger.info "#{api_map.uncached_yard_gemspecs.length} uncached YARD gemspecs"
+        # logger.info "#{api_map.uncached_rbs_collection_gemspecs.length} uncached RBS collection gemspecs"
         cache_next_gemspec
         @sync_count = 0
       end

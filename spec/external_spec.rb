@@ -8,7 +8,7 @@ describe Solargraph::External do
   context 'with uncached sources' do
     before(:all) do
       metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
-      Solargraph::GemCache.uncache(metagem)
+      Solargraph::Collection::Gem.uncache(metagem)
     end
 
     it 'tracks unloaded gems' do
@@ -20,7 +20,7 @@ describe Solargraph::External do
     before(:all) do
       ['backport', 'reverse_markdown', 'nokogiri'].each do |name|
         metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name(name))
-        Solargraph::GemCache.cache(metagem) unless Solargraph::GemCache.exist?(metagem)
+        Solargraph::Collection::Gem.load(metagem) unless Solargraph::Collection::Gem.cached?(metagem)
       end
     end
 
