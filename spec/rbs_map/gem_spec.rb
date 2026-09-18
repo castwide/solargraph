@@ -19,7 +19,7 @@ describe Solargraph::RbsMap::Gem do
     spec = Gem::Specification.find_by_name('rbs')
     metagem = Solargraph::Metagem.from_specification(spec)
     rbs_map = described_class.new(metagem)
-    pin = rbs_map.path_pin('RBS::EnvironmentLoader#add_collection')
+    pin = rbs_map.path_pins('RBS::EnvironmentLoader#add_collection').first
     expect(pin).not_to be_nil
   end
 
@@ -39,9 +39,9 @@ describe Solargraph::RbsMap::Gem do
     spec = Gem::Specification.find_by_name('rbs')
     metagem = Solargraph::Metagem.from_specification(spec)
     rbs_map = described_class.new(metagem)
-    pin = rbs_map.path_pin('RBS::EnvironmentLoader::DEFAULT_CORE_ROOT')
+    pin = rbs_map.path_pins('RBS::EnvironmentLoader::DEFAULT_CORE_ROOT').first
     expect(pin.return_type.tag).to eq('Pathname')
-    pin = rbs_map.path_pin('RBS::EnvironmentWalker::InstanceNode')
+    pin = rbs_map.path_pins('RBS::EnvironmentWalker::InstanceNode').first
     expect(pin.return_type.tag).to eq('Class<RBS::EnvironmentWalker::InstanceNode>')
   end
 

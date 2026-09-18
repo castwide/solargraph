@@ -6,11 +6,7 @@ module Solargraph
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
       def pins
-        @pins ||= if cache_exist?
-          load_cache
-        else
-          save_cache
-        end
+        @pins ||= generate_pins
       end
 
       # @return [RBS::EnvironmentLoader]
@@ -20,21 +16,8 @@ module Solargraph
 
       private
 
-      def cache_file
-        File.join(CacheDir.work_dir, 'core.ser')
-      end
-
-      def cache_exist?
-        File.file?(cache_file)
-      end
-
       # @return [Array<Pin::Base>]
-      def load_cache
-        Marshal.load(File.read(cache_file, mode: 'rb'))
-      end
-
-      # @return [Array<Pin::Base>]
-      def save_cache
+      def generate_pins
         new_pins = RbsMap::Conversions.new(loader: loader).pins
 
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
@@ -48,8 +31,8 @@ module Solargraph
 
         # process overrides, then remove any which couldn't be resolved
         processed = ApiMap::Store.new(new_pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-        serial = Marshal.dump(processed)
-        File.write cache_file, serial, mode: 'wb'
+        # serial = Marshal.dump(processed)
+        # File.write cache_file, serial, mode: 'wb'
         processed
       end
     end

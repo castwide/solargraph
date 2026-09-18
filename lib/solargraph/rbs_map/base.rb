@@ -9,7 +9,7 @@ module Solargraph
 
       # @return [RBS::Repository]
       def repository
-        @repository ||= RBS::Repository.new(no_stdlib: true)
+        @repository ||= RBS::Repository.new(no_stdlib: false)
       end
 
       # @return [RBS::EnvironmentLoader]
@@ -18,9 +18,9 @@ module Solargraph
       end
 
       # @param path [String]
-      # @return [Pin::Base, nil]
-      def path_pin path
-        pins.find { |p| p.path == path }
+      # @return [Array<Pin::Base>]
+      def path_pins path
+        pins.select { |p| p.path == path }
       end
 
       def self.pins(...)

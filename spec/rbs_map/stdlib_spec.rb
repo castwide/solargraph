@@ -13,13 +13,13 @@ describe Solargraph::RbsMap::Stdlib do
 
   it 'finds stdlib require paths' do
     rbs_map = described_class.new('fileutils')
-    pin = rbs_map.path_pin('FileUtils#chdir')
+    pin = rbs_map.path_pins('FileUtils#chdir').first
     expect(pin).not_to be_nil
   end
 
   it 'maps YAML' do
     rbs_map = described_class.new('yaml')
-    pin = rbs_map.path_pin('YAML')
+    pin = rbs_map.path_pins('YAML').first
     expect(pin).to be_a(Solargraph::Pin::Base)
   end
 
