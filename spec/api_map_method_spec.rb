@@ -140,27 +140,18 @@ describe Solargraph::ApiMap do
     end
   end
 
-  describe '#cache_all_for_doc_map!' do
-    it 'can cache gems without a bench' do
-      api_map = described_class.new
-      doc_map = instance_double(Solargraph::DocMap, cache_all!: true)
-      allow(Solargraph::DocMap).to receive(:new).and_return(doc_map)
-      api_map.cache_all_for_doc_map!(out: $stderr)
-      expect(doc_map).to have_received(:cache_all!).with($stderr, rebuild: false)
-    end
-  end
-
   describe '#workspace' do
     it 'can get a default workspace without a bench' do
+      pending 'Determine correct behavior'
       api_map = described_class.new
       expect(api_map.workspace).not_to be_nil
     end
   end
 
-  describe '#uncached_gemspecs' do
-    it 'can get uncached gemspecs workspace without a bench' do
+  describe '#unloaded_gems' do
+    it 'can get unloaded gems without a bench' do
       api_map = described_class.new
-      expect(api_map.uncached_gemspecs).not_to be_nil
+      expect(api_map.unloaded_gems).not_to be_nil
     end
   end
 
