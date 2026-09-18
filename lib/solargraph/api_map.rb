@@ -15,7 +15,7 @@ module Solargraph
     autoload :Index,          'solargraph/api_map/index'
     autoload :Constants,      'solargraph/api_map/constants'
 
-    @@core_map = RbsMap::Core.new
+    @@core_map = External::Core
 
     # @return [Array<String>]
     attr_reader :missing_docs
@@ -33,12 +33,6 @@ module Solargraph
       @cache = Cache.new
       @loose_unions = loose_unions
       index pins
-    end
-
-    # @param out [StringIO, IO, nil] output stream for logging
-    # @return [void]
-    def self.reset_core out: nil
-      @@core_map = RbsMap::CoreMap.new
     end
 
     #
@@ -114,6 +108,7 @@ module Solargraph
       end
       if external.unloaded_gems.any? { |metagem| GemCache.cached?(metagem) }
         # @todo External can be rebuilt here, in which case all query/inference caching should be cleared
+        external.update bench.external_requires.to_a
       else
         external.update bench.external_requires.to_a
       end

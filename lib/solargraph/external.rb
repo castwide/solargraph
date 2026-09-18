@@ -5,7 +5,9 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
-    autoload :Repo, 'solargraph/external/repo'
+    autoload :Core,   'solargraph/external/core'
+    autoload :Gem,    'solargraph/external/gem'
+    autoload :Stdlib, 'solargraph/external/stdlib'
 
     # @param directory [String]
     # @param requires [Array<String>]
@@ -63,9 +65,13 @@ module Solargraph
         if path == 'bundler/require'
           bundler_require = true
         end
-        metagem = @repo.find_by_path(path)
-        next unresolved_requires.push(path) unless metagem
-        process_gem metagem
+        if RbsMap::Stdlib.has?(path)
+          Stdlib.pins(path)
+        else
+          metagem = @repo.find_by_path(path)
+          next unresolved_requires.push(path) unless metagem
+          process_gem metagem
+        end
       end
 
       if bundler_require
@@ -78,35 +84,41 @@ module Solargraph
 
     def process_gem metagem
       if metagem.cacheable?
-        process_cached_gem(metagem)
+        if Gem.cached?(metagem)
+          pins.concat Gem.pins(metagem)
+          loaded_gems.push metagem
+        else
+          unloaded_gems.push metagem
+        end
       else
-        process_uncached_gem(metagem)
+        pins.concat Gem.pins(metagem)
+        loaded_gems.push metagem
       end
       load_dependencies metagem
     end
 
     # @param metagem [Metagem]
     # @return [void]
-    def process_cached_gem(metagem)
-      if GemCache.exist?(metagem)
-        pins.concat GemCache.load(metagem)
-        loaded_gems.push metagem
-      else
-        unloaded_gems.push metagem
-      end
-    end
+    # def process_cached_gem(metagem)
+    #   if GemCache.exist?(metagem)
+    #     pins.concat GemCache.load(metagem)
+    #     loaded_gems.push metagem
+    #   else
+    #     unloaded_gems.push metagem
+    #   end
+    # end
 
     # @param metagem [Metagem]
     # @return [void]
-    def process_uncached_gem(metagem)
-      files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
-      source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
-      source_pins = source_maps.flat_map(&:pins)
-      rbs_pins = RbsMap::Gem.pins(metagem)
-      combined = GemPins.combine(source_pins, rbs_pins)
-      pins.concat combined
-      loaded_gems.push metagem
-    end
+    # def process_uncached_gem(metagem)
+    #   files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
+    #   source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
+    #   source_pins = source_maps.flat_map(&:pins)
+    #   rbs_pins = RbsMap::Gem.pins(metagem)
+    #   combined = GemPins.combine(source_pins, rbs_pins)
+    #   pins.concat combined
+    #   loaded_gems.push metagem
+    # end
 
     def load_dependencies parent
       parent.dependencies.each do |name|

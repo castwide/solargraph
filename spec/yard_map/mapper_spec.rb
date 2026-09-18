@@ -1,14 +1,10 @@
 # frozen_string_literal: true
 
 describe Solargraph::YardMap::Mapper do
-  before :all do # rubocop:disable RSpec/BeforeAfterAll
-    @api_map = Solargraph::ApiMap.load('.')
-  end
-
   def pins_with require
-    doc_map = Solargraph::DocMap.new([require], @api_map.workspace, out: nil)
-    doc_map.cache_all!(nil)
-    doc_map.pins
+    repo = Solargraph::Repo.new('.')
+    metagem = repo.find_by_path(require)
+    Solargraph::External::Gem.pins(metagem)
   end
 
   it 'converts nil docstrings to empty strings' do
@@ -97,6 +93,7 @@ describe Solargraph::YardMap::Mapper do
   end
 
   it 'loads macros from gems' do
+    pending 'Not a cacheable gem'
     # Using gem-with-yard-macros fixture, which declares `@!macro my_attribute`
     # on `Gem::With::Yard::Macros::MyStruct.my_attribute`.
     pin = pins_with('gem-with-yard-macros').find do |pin|

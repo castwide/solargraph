@@ -34,6 +34,7 @@ module Solargraph
   autoload :DocMap,           'solargraph/doc_map'
   autoload :Metagem,          'solargraph/metagem'
   autoload :GemCache,         'solargraph/gem_cache'
+  autoload :Repo,             'solargraph/repo'
   autoload :External,         'solargraph/external'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :LanguageServer,   'solargraph/language_server'

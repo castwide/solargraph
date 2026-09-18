@@ -68,8 +68,7 @@ describe Solargraph::ApiMap::Store do
     end
 
     it 'maps core Errno classes' do
-      map = Solargraph::RbsMap::CoreMap.new
-      store = described_class.new(map.pins)
+      store = described_class.new(Solargraph::External::Core.pins)
       Errno.constants.each do |const|
         pin = store.get_path_pins("Errno::#{const}").first
         expect(pin).to be_a(Solargraph::Pin::Namespace)

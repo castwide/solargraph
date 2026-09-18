@@ -13,6 +13,11 @@ module Solargraph
         end
       end
 
+      # @return [RBS::EnvironmentLoader]
+      def loader
+        @loader ||= RBS::EnvironmentLoader.new(repository: repository)
+      end
+
       private
 
       def cache_file
