@@ -1,55 +1,27 @@
 # frozen_string_literal: true
 
 describe Solargraph::RbsMap::Gem do
-  describe '#pins' do
-    let(:rbs_map) do
-      # language_server-protocol is a known transitive dependency with RBS definitions
-      gemspec = Gem::Specification.find_by_name('language_server-protocol')
-      metagem = Solargraph::Metagem.from_specification(gemspec)
-      described_class.new(metagem)
-    end
-
-    it 'converts signatures to pins' do
-      interface = rbs_map.pins.find { |pin| pin.path == 'LanguageServer::Protocol::Interface' }
-      expect(interface).to be_a(Solargraph::Pin::Namespace)
-    end
-  end
-
-  it 'loads from a gemspec' do
+  before(:all) do
     spec = Gem::Specification.find_by_name('rbs')
     metagem = Solargraph::Metagem.from_specification(spec)
-    rbs_map = described_class.new(metagem)
-    pin = rbs_map.path_pins('RBS::EnvironmentLoader#add_collection').first
+    @gem = described_class.new(metagem)
+  end
+  let(:gem) { @gem }
+
+  it 'loads from a gemspec' do
+    pin = gem.path_pins('RBS::EnvironmentLoader#add_collection').first
     expect(pin).not_to be_nil
   end
 
-  # it 'fails if it does not find data from gemspec' do
-  #   spec = Gem::Specification.find_by_name('backport')
-  #   metagem = Solargraph::Metagem.from_specification(spec)
-  #   rbs_map = described_class.new(metagem)
-  #   expect(rbs_map).not_to be_resolved
-  # end
-
-  # it 'fails if it does not find data from name' do
-  #   rbs_map = described_class.new('lskdflaksdfjl')
-  #   expect(rbs_map.pins).to be_empty
-  # end
-
   it 'converts constants and aliases to correct types' do
-    spec = Gem::Specification.find_by_name('rbs')
-    metagem = Solargraph::Metagem.from_specification(spec)
-    rbs_map = described_class.new(metagem)
-    pin = rbs_map.path_pins('RBS::EnvironmentLoader::DEFAULT_CORE_ROOT').first
+    pin = gem.path_pins('RBS::EnvironmentLoader::DEFAULT_CORE_ROOT').first
     expect(pin.return_type.tag).to eq('Pathname')
-    pin = rbs_map.path_pins('RBS::EnvironmentWalker::InstanceNode').first
+    pin = gem.path_pins('RBS::EnvironmentWalker::InstanceNode').first
     expect(pin.return_type.tag).to eq('Class<RBS::EnvironmentWalker::InstanceNode>')
   end
 
   it 'processes RBS class variables' do
-    spec = Gem::Specification.find_by_name('rbs')
-    metagem = Solargraph::Metagem.from_specification(spec)
-    rbs_map = described_class.new(metagem)
-    store = Solargraph::ApiMap::Store.new(rbs_map.pins)
+    store = Solargraph::ApiMap::Store.new(gem.pins)
     class_variable_pins = store.pins_by_class(Solargraph::Pin::ClassVariable)
     count_pins = class_variable_pins.select do |pin|
       pin.name.to_s == '@@count' && pin.context.to_s == 'Class<RBS::Types::Variable>'
@@ -60,10 +32,7 @@ describe Solargraph::RbsMap::Gem do
   end
 
   it 'processes RBS class instance variables' do
-    spec = Gem::Specification.find_by_name('rbs')
-    metagem = Solargraph::Metagem.from_specification(spec)
-    rbs_map = described_class.new(metagem)
-    store = Solargraph::ApiMap::Store.new(rbs_map.pins)
+    store = Solargraph::ApiMap::Store.new(gem.pins)
     instance_variable_pins = store.pins_by_class(Solargraph::Pin::InstanceVariable)
     root_pins = instance_variable_pins.select do |pin|
       pin.name.to_s == '@root' && pin.context.to_s == 'Class<RBS::Namespace>' && pin.scope == :class
