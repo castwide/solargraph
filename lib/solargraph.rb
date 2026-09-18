@@ -32,7 +32,6 @@ module Solargraph
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
   autoload :Metagem,          'solargraph/metagem'
-  autoload :GemCache,         'solargraph/gem_cache'
   autoload :Repo,             'solargraph/repo'
   autoload :External,         'solargraph/external'
   autoload :Collection,       'solargraph/collection'
