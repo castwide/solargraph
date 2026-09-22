@@ -613,18 +613,20 @@ module Solargraph
         cache_next_gemspec
       else
         logger.info "Caching #{spec.name} #{spec.version}"
-        # @todo Maybe change to ractor
         Thread.new do
           report_cache_progress spec.name, pending
-          # _o, e, s = Open3.capture3(workspace.command_path, 'cache', spec.name, spec.version.to_s)
-          # if s.success?
-          #   logger.info "Cached #{spec.name} #{spec.version}"
-          # else
-          #   cache_errors.add spec
-          #   logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
-          #   logger.warn e
-          # end
-          Collection::Gem.load spec
+
+          cmd = [workspace.command_path, 'cache', spec.name]
+          cmd.concat ['--directory', workspace.directory] if workspace.directory
+          _o, e, s = Open3.capture3(*cmd)
+          if s.success?
+            logger.info "Cached #{spec.name} #{spec.version}"
+          else
+            cache_errors.add spec
+            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+            logger.warn e
+          end
+
           end_cache_progress
           catalog
           sync_catalog

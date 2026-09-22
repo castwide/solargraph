@@ -103,26 +103,18 @@ module Solargraph
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
 
-    desc 'cache', 'Cache a gem', hide: true
+    desc 'cache GEM', 'Cache a gem', hide: true
+    option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @return [void]
-    # @param gem [String]
-    # @param version [String, nil]
-    def cache gem, version = nil
-      gemspec = Gem::Specification.find_by_name(gem, version)
-
-      if options[:rebuild] || !PinCache.has_yard?(gemspec)
-        pins = GemPins.build_yard_pins(['yard-activesupport-concern'], gemspec)
-        PinCache.serialize_yard_gem(gemspec, pins)
+    def cache gem_name
+      repo = Solargraph::Repo.new(options[:directory])
+      metagem = repo.find_by_name(gem_name)
+      if metagem
+        Solargraph::Collection::Gem.uncache(metagem) if options[:rebuild]
+        Solargraph::Collection::Gem.load(metagem)
+      else
+        warn "Gem `#{gem_name}` not found (directory: #{options[:directory].inspect})" unless metagem
       end
-
-      workspace = Solargraph::Workspace.new(Dir.pwd) if File.exist?('rbs_collection.yaml')
-      rbs_map = RbsMap.from_gemspec(gemspec, workspace&.rbs_collection_path, workspace&.rbs_collection_config_path)
-      if options[:rebuild] || !PinCache.has_rbs_collection?(gemspec, rbs_map.cache_key)
-        PinCache.serialize_rbs_collection_gem(gemspec, rbs_map.cache_key, rbs_map.pins)
-      end
-    rescue Gem::MissingSpecError
-      warn "Gem '#{gem}' not found"
     end
 
     desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
