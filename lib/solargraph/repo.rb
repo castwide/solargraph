@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-require 'open3'
-
 module Solargraph
+  # A repository for the gems available in the specified directory. If the
+  # directory has a Gemfile, Repo will use its gem definitions. Otherwise it
+  # uses the system gems.
+  #
   class Repo
-    # autoload :Core,   'solargraph/repo/core'
-    # autoload :Stdlib, 'solargraph/repo/stdlib'
-
     def initialize directory
       @directory = directory
       @metagems = build_from_directory
@@ -38,18 +37,18 @@ module Solargraph
       return unless @directory && File.file?(File.join(@directory, 'Gemfile'))
 
       Solargraph.with_clean_env do
-        cmd = [
-          'ruby', '-e',
-          "require 'bundler/setup'; require 'json'; Dir.chdir('#{@directory}') { puts Gem::Specification.all.map { |spec| { name: spec.name, full_path: spec.full_gem_path, spec_file: spec.spec_file, source: spec.source.to_s, version: spec.version, require_paths: spec.require_paths, dependencies: spec.dependencies.map(&:name) } }.to_json }"
-        ]
-        o, e, s = Open3.capture3(*cmd)
-        if s.success?
-          Solargraph.logger.debug "External bundle: #{o}"
-          list = o && !o.empty? ? JSON.parse(o.split("\n").last, symbolize_names: true) : {}
-          list.map { |hash| Metagem.new(**hash) }
-        else
-          Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: #{e}"
-          nil
+        Dir.chdir(@directory) do
+          Bundler.definition.specs.map do |spec|
+            Metagem.new(
+              name: spec.name,
+              full_path: spec.full_gem_path,
+              spec_file: spec.spec_file,
+              source: spec.source.to_s,
+              version: spec.version,
+              require_paths: spec.require_paths,
+              dependencies: spec.dependencies.map(&:name)
+            )
+          end
         end
       end
     end
