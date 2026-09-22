@@ -6,13 +6,15 @@ describe Solargraph::External do
   let(:external) { described_class.new(directory, requires) }
 
   context 'with uncached sources' do
-    before(:all) do
-      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
-      Solargraph::Collection::Gem.uncache(metagem)
-    end
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
 
-    it 'tracks unloaded gems' do
+    it 'tracks and updates unloaded gems' do
+      Solargraph::Collection::Gem.uncache(metagem)
       expect(external.unloaded_gems.map(&:name)).to include('backport')
+      Solargraph::Collection::Gem.load(metagem)
+      expect(external.update(requires)).to be(true)
+      expect(external.unloaded_gems.map(&:name)).not_to include('backport')
+      expect(external.loaded_gems.map(&:name)).to include('backport')
     end
   end
 

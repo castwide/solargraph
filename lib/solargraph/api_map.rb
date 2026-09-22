@@ -104,10 +104,9 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
-      # @todo Nullifying the external should not be necessary
-      @external = nil if external.unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
-      external.update(bench.external_requires.to_a)
-      @cache.clear if store.update(@@core_pins, external.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      external_changed = external.update(bench.external_requires.to_a)
+      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
     end
