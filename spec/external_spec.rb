@@ -54,6 +54,26 @@ describe Solargraph::External do
     end
   end
 
+  context 'with RBS collection' do
+    let(:directory) { File.join('spec', 'fixtures', 'rbs_collection') }
+    let(:requires) { [] }
+
+    it 'combines gem_rbs_collection pins' do
+      pin = external.pins.find { |pin| pin.path == 'Addressable::URI.parse' }
+      expect(pin).to be
+    end
+
+    it 'combines local source pins' do
+      pin = external.pins.find { |pin| pin.path == 'Foo#bar' }
+      expect(pin).to be      
+    end
+
+    it 'appends local source pins' do
+      pin = external.pins.find { |pin| pin.path == 'Foo#baz' }
+      expect(pin).to be
+    end
+  end
+
   it 'tracks unresolved requires' do
     external = described_class.new(directory, ['not_a_valid_path'])
     expect(external.unresolved_requires).to eq(['not_a_valid_path'])

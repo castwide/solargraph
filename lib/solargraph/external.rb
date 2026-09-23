@@ -7,16 +7,15 @@ module Solargraph
   class External
     attr_reader :directory
 
+    attr_reader :requires
+
     # @param directory [String]
     # @param requires [Array<String>]
     def initialize directory, requires
       @repo = Repo.new(directory)
       @directory = directory
-      update requires
-    end
-
-    def requires
-      @requires ||= []
+      @requires = requires
+      update!
     end
 
     def unresolved_requires
@@ -45,9 +44,7 @@ module Solargraph
       return false if requires == new_requires && !cache_changed?
 
       requires.replace new_requires
-      clear_all
-      load_requires
-      load_rbs_collection
+      update!
       true
     end
 
@@ -66,6 +63,12 @@ module Solargraph
     end
 
     private
+
+    def update!
+      clear_all
+      load_requires
+      load_rbs_collection
+    end
 
     def cache_changed?
       unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
