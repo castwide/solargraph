@@ -5,6 +5,8 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
+    attr_reader :directory
+
     # @param directory [String]
     # @param requires [Array<String>]
     def initialize directory, requires
@@ -45,6 +47,19 @@ module Solargraph
       requires.replace new_requires
       load_requires
       true
+    end
+
+    # @return [String, nil]
+    def rbs_collection_path
+      @rbs_collection_path ||= read_rbs_collection_path
+    end
+
+    # @return [String, nil]
+    def rbs_collection_config_path
+      @rbs_collection_config_path ||= unless directory.nil? directory.empty? || directory == '*'
+                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
+                                        yaml_file if File.file?(yaml_file)
+                                      end
     end
 
     private
@@ -108,6 +123,15 @@ module Solargraph
         next unresolved_dependencies.push(name) unless metagem
         process_gem metagem
       end
+    end
+
+    # @return [String, nil]
+    def read_rbs_collection_path
+      return unless rbs_collection_config_path
+
+      path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
+      # make fully qualified
+      File.expand_path(path, directory)
     end
   end
 end
