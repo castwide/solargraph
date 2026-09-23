@@ -65,12 +65,12 @@ describe Solargraph::External do
 
     it 'combines local source pins' do
       pin = external.pins.find { |pin| pin.path == 'Foo#bar' }
-      expect(pin).to be      
+      expect(pin.return_type.to_s).to eq('String')
     end
 
     it 'appends local source pins' do
       pin = external.pins.find { |pin| pin.path == 'Foo#baz' }
-      expect(pin).to be
+      expect(pin.return_type.to_s).to eq('Integer')
     end
   end
 
