@@ -5,31 +5,30 @@ module Solargraph
     module Helpers
       module_function
 
-      # @param yard_pins [Array<Pin::Base>]
+      # @param  orig_pins [Array<Pin::Base>]
       # @param rbs_pins [Array<Pin::Base>]
-      #
       # @return [Array<Pin::Base>]
-      def combine yard_pins, rbs_pins
-        in_yard = Set.new
+      def combine  orig_pins, rbs_pins
+        in_orig = Set.new
         # @todo There's gotta be a better way!
         rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
-        combined = yard_pins.map do |yard_pin|
-          in_yard.add yard_pin.path
-          rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
-          next yard_pin unless rbs_pin && yard_pin.instance_of?(Pin::Method)
+        combined =  orig_pins.map do |orig_pin|
+          in_orig.add orig_pin.path
+          rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+          next orig_pin unless rbs_pin && orig_pin.instance_of?(Pin::Method)
 
           unless rbs_pin
             # @sg-ignore https://github.com/castwide/solargraph/pull/1114
-            Solargraph.logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
-            next yard_pin
+            Solargraph.logger.debug { "GemPins.combine: No rbs pin for #{orig_pin.path} - using YARD's '#{orig_pin.inspect} (return_type=#{orig_pin.return_type}; signatures=#{orig_pin.signatures})" }
+            next orig_pin
           end
 
-          out = combine_method_pins(rbs_pin, yard_pin)
-          Solargraph.logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
+          out = combine_method_pins(rbs_pin, orig_pin)
+          Solargraph.logger.debug { "GemPins.combine: Combining yard.path=#{orig_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{orig_pin.inspect} into #{out}" }
           out
         end
         in_rbs_only = rbs_pins.select do |pin|
-          pin.path.nil? || !in_yard.include?(pin.path)
+          pin.path.nil? || !in_orig.include?(pin.path)
         end
         out = combined + in_rbs_only
         Solargraph.logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
