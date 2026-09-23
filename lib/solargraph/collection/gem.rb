@@ -82,6 +82,27 @@ module Solargraph
         logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
         out
       end
+
+      # @param pins [Array<Pin::Method>]
+      # @return [Pin::Method, nil]
+      def combine_method_pins(*pins)
+        # @type [Pin::Method, nil]
+        combined_pin = nil
+        # @param memo [Pin::Method, nil]
+        # @param pin [Pin::Method]
+        out = pins.reduce(combined_pin) do |memo, pin|
+          next pin if memo.nil?
+          if memo == pin && memo.source != :combined
+            # @todo we should track down situations where we are handled
+            #   the same pin from the same source here and eliminate them -
+            #   this is an efficiency workaround for now
+            next memo
+          end
+          memo.combine_with(pin)
+        end
+        logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
+        out
+      end
     end
   end
 end
