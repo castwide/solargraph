@@ -9,6 +9,7 @@ module Solargraph
     autoload :Core,        'solargraph/rbs_map/core'
     autoload :CoreFills,   'solargraph/rbs_map/core_fills'
     autoload :Gem,         'solargraph/rbs_map/gem'
+    autoload :Helpers,     'solargraph/rbs_map/helpers'
     autoload :Path,        'solargraph/rbs_map/path'
     autoload :Stdlib,      'solargraph/rbs_map/stdlib'
   end

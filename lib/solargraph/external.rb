@@ -45,18 +45,21 @@ module Solargraph
       return false if requires == new_requires && !cache_changed?
 
       requires.replace new_requires
+      clear_all
       load_requires
+      load_rbs_collection
       true
     end
 
-    # @return [String, nil]
-    def rbs_collection_path
-      @rbs_collection_path ||= read_rbs_collection_path
+    # @return [Array<String>]
+    def rbs_collection_paths
+      @rbs_collection_paths ||= read_rbs_collection_paths
     end
 
     # @return [String, nil]
     def rbs_collection_config_path
-      @rbs_collection_config_path ||= unless directory.nil? directory.empty? || directory == '*'
+      # @todo Get rid of the '*' case
+      @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)
                                       end
@@ -69,8 +72,6 @@ module Solargraph
     end
 
     def load_requires
-      clear_all
-
       bundler_require = true
       requires.each do |path|
         if path == 'bundler/require'
@@ -91,6 +92,11 @@ module Solargraph
           process_gem metagem
         end
       end
+    end
+
+    def load_rbs_collection
+      rbs_collection_pins = rbs_collection_paths.flat_map { |path| RbsMap::Path.pins(path) }
+      pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
     end
 
     def clear_all
@@ -125,13 +131,16 @@ module Solargraph
       end
     end
 
-    # @return [String, nil]
-    def read_rbs_collection_path
-      return unless rbs_collection_config_path
+    # @return [Array<String>]
+    def read_rbs_collection_paths
+      return [] unless rbs_collection_config_path
 
-      path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
-      # make fully qualified
-      File.expand_path(path, directory)
+      yaml = YAML.load_file(rbs_collection_config_path)
+      [File.expand_path(yaml.fetch('path'), directory)].concat(
+        yaml.fetch('sources', [])
+            .select { |source| source['type'] == 'local' && source['path'] }
+            .map { |source| File.expand_path(source['path'], directory) }
+      ).compact
     end
   end
 end
