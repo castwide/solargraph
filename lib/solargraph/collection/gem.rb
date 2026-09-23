@@ -15,7 +15,7 @@ module Solargraph
       end
 
       def cache_file
-        File.join CacheDir.work_dir, 'gems', "#{metagem.cache_name}.ser"
+        File.join CacheDir.gem_dir, "#{metagem.cache_name}.ser"
       end
 
       def load

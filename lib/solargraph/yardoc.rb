@@ -20,6 +20,7 @@ module Solargraph
       if force || !cached?(metagem)
         Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
         path = path_for(metagem)
+        FileUtils.mkdir_p File.dirname(path)
         cmd = "yardoc --db #{path} --no-output --plugin solargraph"
         Solargraph.logger.debug "Running: #{cmd}"
         output, status = Open3.capture2e(cmd, chdir: metagem.full_path)

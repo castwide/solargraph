@@ -17,7 +17,7 @@ module Solargraph
       end
 
       def cache_file
-        File.join CacheDir.work_dir, 'stdlib', "#{library}.ser"
+        File.join CacheDir.stdlib_dir, "#{library}.ser"
       end
     end
   end

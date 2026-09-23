@@ -98,7 +98,7 @@ module Solargraph
     # @return [void]
     def clear
       puts 'Deleting all cached documentation (gems, core and stdlib)'
-      Solargraph::PinCache.clear
+      Solargraph::CacheDir.delete
     end
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
@@ -127,19 +127,17 @@ module Solargraph
     # @return [void]
     def uncache *gems
       raise ArgumentError, 'No gems specified.' if gems.empty?
+      repo = Solargraph::Repo.new(options[:directory])
+
       gems.each do |gem|
         if gem == 'core'
-          PinCache.uncache_core
-          next
+          Solargraph::Collection::Core.uncache
+        elsif gem == 'stdlib'
+          FileUtils.rm_f CacheDir.stdlib_dir
+        else
+          metagem = repo.find_by_name(gem)
+          Solargraph::Collection::Gem.uncache(metagem) if metagem
         end
-
-        if gem == 'stdlib'
-          PinCache.uncache_stdlib
-          next
-        end
-
-        spec = Gem::Specification.find_by_name(gem)
-        PinCache.uncache_gem(spec, out: $stdout)
       end
     end
 
@@ -164,7 +162,7 @@ module Solargraph
         If the library is already cached, it will be rebuilt if the
         --rebuild option is set.
 
-        Cached documentation is stored in #{PinCache.base_dir}, which
+        Cached documentation is stored in #{CacheDir.base_dir}, which
         can be stored between CI runs.
     )
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
