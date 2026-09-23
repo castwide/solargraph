@@ -1024,7 +1024,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     def equality_fields
-      [self.class, @source_map_hash, conventions_environ, @external.pins, @unresolved_requires, @loose_unions]
+      [self.class, @source_map_hash, conventions_environ, @external&.pins, @unresolved_requires, @loose_unions]
     end
   end
 end
