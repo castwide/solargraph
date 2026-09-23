@@ -23,9 +23,10 @@ module Solargraph
       @metagems.find { |mg| mg.name == name }
     end
 
-    def bundle?
+    def bundled?
       !!@metagems
     end
+    alias bundle? bundled?
 
     def bundled
       @metagems || []

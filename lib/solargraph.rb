@@ -51,7 +51,6 @@ module Solargraph
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :CacheDir,         'solargraph/cache_dir'
-  autoload :PinCache,         'solargraph/pin_cache'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
 
   dir = File.dirname(__FILE__)
