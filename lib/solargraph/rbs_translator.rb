@@ -12,7 +12,9 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # @param type [RBS::Types::Bases::Base]
+    # rubocop:disable Layout/LineLength
+    # @param type [RBS::Types::Bases::Bool, RBS::Types::Bases::Void, RBS::Types::Bases::Any, RBS::Types::Bases::Nil, RBS::Types::Bases::Top, RBS::Types::Bases::Bottom, RBS::Types::Bases::Self, RBS::Types::Bases::Instance, RBS::Types::Bases::Class, RBS::Types::Variable, RBS::Types::ClassSingleton, RBS::Types::Interface, RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Tuple, RBS::Types::Record, RBS::Types::Optional, RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc, RBS::Types::Literal]
+    # rubocop:enable Layout/LineLength
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
@@ -35,7 +37,7 @@ module Solargraph
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
     end
 
-    # @param method_type [RBS::MethodType]
+    # @param method_type [RBS::MethodType, RBS::Types::Block]
     # @param closure [Pin::Closure]
     # @param parameter_names [Array<String>]
     # @return [Array<Pin::Parameter>]
@@ -49,10 +51,12 @@ module Solargraph
       arg_num = 0
       params = []
       method_type.type.required_positionals.each do |param|
+        # @sg-ignore Unresolved call to name
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :arg, closure)
         arg_num += 1
       end
       method_type.type.optional_positionals.each do |param|
+        # @sg-ignore Unresolved call to name
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :optarg, closure)
         arg_num += 1
       end
@@ -61,10 +65,12 @@ module Solargraph
         arg_num += 1
       end
       method_type.type.required_keywords.each do |param|
+        # @sg-ignore Unresolved call to first, last
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwarg, closure)
         arg_num += 1
       end
       method_type.type.optional_keywords.each do |param|
+        # @sg-ignore Unresolved call to first, last
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwoptarg, closure)
         arg_num += 1
       end
@@ -87,6 +93,7 @@ module Solargraph
       parameters = to_parameter_pins(method_type, closure, parameter_names)
       return_type = to_complex_type(method_type.type.return_type)
       block = if method_type.block
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         block_parameters = to_parameter_pins(method_type.block, closure)
         block_return_type = to_complex_type(method_type.block.type.return_type)
         Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
@@ -114,28 +121,37 @@ module Solargraph
     def self.to_sg_location(location)
       return nil if location&.name.nil?
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       start_pos = Position.new(location.start_line - 1, location.start_column)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       end_pos = Position.new(location.end_line - 1, location.end_column)
       range = Range.new(start_pos, end_pos)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       Location.new(location.name.to_s, range)
     end
 
     class << self
       private
 
-      # @param type [RBS::Types::Bases::Base]
+      # rubocop:disable Layout/LineLength
+      # @param type [RBS::Types::Bases::Bool, RBS::Types::Bases::Void, RBS::Types::Bases::Any, RBS::Types::Bases::Nil, RBS::Types::Bases::Top, RBS::Types::Bases::Bottom, RBS::Types::Bases::Self, RBS::Types::Bases::Instance, RBS::Types::Bases::Class, RBS::Types::Variable, RBS::Types::ClassSingleton, RBS::Types::Interface, RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Tuple, RBS::Types::Record, RBS::Types::Optional, RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc, RBS::Types::Literal]
+      # rubocop:enable Layout/LineLength
       # @return [String]
       def type_to_tag type
         case type
         when RBS::Types::Optional
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
         when RBS::Types::Tuple
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           type.literal.inspect
         when RBS::Types::Union
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -145,6 +161,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -152,6 +169,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
           'Proc'
@@ -163,9 +181,11 @@ module Solargraph
           # `Interface represents a mix-in module which can be considered a
           # subtype of a consumer of it
           #
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           type_tag(type.name, type.args)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
           type_tag(type.name)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return

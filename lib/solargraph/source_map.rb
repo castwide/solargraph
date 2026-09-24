@@ -110,6 +110,7 @@ module Solargraph
 
     # @param path [String]
     # @return [Pin::Base]
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def first_pin path
       pins.select { |p| p.path == path }.first
     end
@@ -124,6 +125,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Method,Pin::Namespace]
+    # @sg-ignore Need a downcast here
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
@@ -131,6 +133,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Closure]
+    # @sg-ignore Need a downcast here
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end
@@ -158,7 +161,7 @@ module Solargraph
       @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)
     end
 
-    # @param macro_method_names [Array<String>]
+    # @param macro_method_names [Set<String>]
     # @return [Array<Parser::AST::Node>]
     def macro_method_candidates macro_method_names
       return @macro_method_candidates if @macro_method_names == macro_method_names
@@ -193,6 +196,7 @@ module Solargraph
     private
 
     # @return [Array<Pin::Base>]
+    # @sg-ignore Need to add nil check here
     attr_writer :convention_pins
 
     # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
@@ -226,9 +230,9 @@ module Solargraph
         next if pin.is_a?(Pin::Method) && pin.attribute?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.location relies on location always resolved
         end) && pin.location.range.contain?(position)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

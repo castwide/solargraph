@@ -23,6 +23,7 @@ module Solargraph
           @resolved = true
           @loaded = true
           logger.debug { "Deserialized #{cached_pins.length} cached pins for stdlib require #{library.inspect}" }
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         elsif self.class.source.has? library, nil
           super(library, out: out)
           unless resolved?

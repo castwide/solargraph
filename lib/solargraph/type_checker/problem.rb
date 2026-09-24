@@ -7,6 +7,7 @@ module Solargraph
     class Problem
       # @todo Missed nil violation
       # @return [Solargraph::Location]
+      # @sg-ignore Need to add nil check here
       attr_reader :location
 
       # @return [String]
@@ -14,6 +15,7 @@ module Solargraph
 
       # @todo Missed nil violation
       # @return [Pin::Base]
+      # @sg-ignore Need to add nil check here
       attr_reader :pin
 
       # @return [String, nil]

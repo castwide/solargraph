@@ -24,7 +24,8 @@ module Solargraph
           # @type [Array<Gem::Specification>]
           specs = e.specs
           raise InvalidRubocopVersionError,
-                "could not find '#{e.name}' (#{e.requirement}) - " \
+                "could not find '#{e.name}' (#{e.requirement}) - " +
+                # @sg-ignore Need a downcast here
                 "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
         end
         require 'rubocop'
@@ -39,7 +40,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore
+        # @sg-ignore Unresolved call to []=
         options[:stdin] = code
         [options, paths]
       end
@@ -51,7 +52,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore String/Array Range slice relies on valid bounds
         path[0].upcase + path[1..]
       end
 

@@ -86,6 +86,7 @@ module Solargraph
               "found module extends of #{rooted_include_tag}: #{module_extends}"
           end
           return unless module_extends.include? 'ActiveSupport::Concern'
+          # @sg-ignore Need to add nil check here
           included_class_pins = api_map.inner_get_methods_from_reference(rooted_include_tag, namespace_pin, rooted_type,
                                                                          :class, visibility, deep, skip, true)
           logger.debug do
@@ -96,6 +97,7 @@ module Solargraph
           # another pattern is to put class methods inside a submodule
           classmethods_include_tag = "#{rooted_include_tag}::ClassMethods"
           included_classmethods_pins =
+            # @sg-ignore Need to add nil check here
             api_map.inner_get_methods_from_reference(classmethods_include_tag, namespace_pin, rooted_type,
                                                      :instance, visibility, deep, skip, true)
           logger.debug do

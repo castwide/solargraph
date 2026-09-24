@@ -30,6 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             data_definition_node?(node.children[1])
           end
 
@@ -41,6 +42,7 @@ module Solargraph
             return false unless data_node.is_a?(::Parser::AST::Node)
             return false unless data_node&.type == :send
             return false unless data_node.children[0]&.type == :const
+            # @sg-ignore Translate to something flow sensitive typing understands
             return false unless data_node.children[0].children[1] == :Data
             return false unless data_node.children[1] == :define
 
@@ -81,10 +83,10 @@ module Solargraph
           node.children[1]
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore node.children[] relies on grammar-guaranteed arity
           data_node.children[2..]
         end
       end

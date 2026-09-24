@@ -32,6 +32,7 @@ module Solargraph
             Logging.logger.warn "[#{e.class}] #{e.message}"
             # @sg-ignore Need to add nil check here
             Logging.logger.warn e.backtrace.join("\n")
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             set_result nil
           end
 

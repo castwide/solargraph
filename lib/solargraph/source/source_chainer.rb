@@ -38,7 +38,7 @@ module Solargraph
         # end
         if phrase.start_with?(':') && !phrase.start_with?('::')
           return Chain.new([Chain::Literal.new('Symbol',
-                                               # @sg-ignore Need to add nil check here
+                                               # @sg-ignore String/Array Range slice relies on valid bounds
                                                phrase[1..].to_sym)])
         end
         if end_of_phrase.strip == '::' && source.code[Position.to_offset(
@@ -100,13 +100,13 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore String/Array Range slice relies on valid bounds
       # @return [String]
       def phrase
         @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore String/Array Range slice relies on valid bounds
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
@@ -118,7 +118,7 @@ module Solargraph
       end
 
       # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore MatchData relies on regex always matching
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
@@ -172,12 +172,12 @@ module Solargraph
           if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore String/Array Range slice relies on valid bounds
             if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
               @source.code[(index + 1)..]
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               @source.code[(index + 1)..].lstrip
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
               break
             end

@@ -17,7 +17,7 @@ module Solargraph
         # @param location [Location, nil]
         # @param name [String]
         # @param tags [::Array<YARD::Tags::Tag>]
-        # @param delete [::Array<Symbol>]
+        # @param delete [::Array<::Symbol>]
         # @param splat [Hash]
         def initialize location, name, tags, delete = [], **splat
           super(location: location, name: name, **splat)
@@ -27,10 +27,11 @@ module Solargraph
 
         # @param name [String]
         # @param tags [::Array<String>]
-        # @param delete [::Array<Symbol>]
+        # @param delete [::Array<::Symbol>]
         # @param splat [Hash]
         # @return [Solargraph::Pin::Reference::Override]
         def self.method_return name, *tags, delete: [], **splat
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           new(nil, name, [YARD::Tags::Tag.new('return', '', tags)], delete, **splat)
         end
 
@@ -39,6 +40,7 @@ module Solargraph
         # @param splat [Hash]
         # @return [Solargraph::Pin::Reference::Override]
         def self.from_comment name, comment, **splat
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           new(nil, name, Solargraph::Source.parse_docstring(comment).to_docstring.tags, **splat)
         end
       end
