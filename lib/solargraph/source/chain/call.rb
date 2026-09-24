@@ -59,9 +59,15 @@ module Solargraph
           binder = binder.without_nil if nullable?
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+            if context.duck_type? && context.name[1..] == word
+              # explicit: false skips arity checking; the duck type
+              # only tells us the method exists, not its signature
+              [Pin::DuckMethod.new(name: word, source: :chain, explicit: false)]
+            else
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              [stack.first].compact
+            end
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           pins = pin_groups.flatten.uniq(&:path)
