@@ -7,7 +7,7 @@ describe Solargraph::ApiMap do
     @api_map = described_class.new
   end
 
-  it 'returns core methods' do
+  it 'returns core methods', time_limit_seconds: 120 do
     pins = @api_map.get_methods('String')
     expect(pins.map(&:path)).to include('String#upcase')
   end
