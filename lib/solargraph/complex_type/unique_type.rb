@@ -463,7 +463,9 @@ module Solargraph
             elsif idx.zero? && !context_type.all_params.empty?
               ComplexType.new(context_type.all_params)
             else
-              ComplexType::UNDEFINED
+              # No concrete value was supplied; leave unbound rather than untyped,
+              # matching a direct (non-substituted) lookup on the declaring class.
+              t
             end
           else
             t
