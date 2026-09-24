@@ -145,4 +145,12 @@ describe Solargraph::Workspace do
       described_class.new('./path', config)
     end.not_to raise_error
   end
+
+  it 'caches rules separately per level' do
+    normal_rules = workspace.rules(:normal)
+    strict_rules = workspace.rules(:strict)
+    expect(normal_rules.level).to be(:normal)
+    expect(strict_rules.level).to be(:strict)
+    expect(workspace.rules(:normal)).to be(normal_rules)
+  end
 end

@@ -11,6 +11,42 @@ module Solargraph
       # The workspace's .solargraph.yml can override this value.
       MAX_FILES = 5000
 
+      # Per-key doc comment for `solargraph config`'s generated YAML
+      # (see .commented_yaml) - a key missing here gets no comment.
+      #
+      # @return [Hash{String => Array<String>}]
+      CONFIG_DOCS = {
+        'include' => [
+          'Files to include in the workspace, as glob patterns relative to',
+          'this directory.'
+        ],
+        'exclude' => [
+          'Files to exclude from the workspace, as glob patterns (checked',
+          'after include, so an excluded file stays excluded).'
+        ],
+        'require' => ['Paths to require before indexing the workspace.'],
+        'domains' => [
+          'Namespaces to include in the global namespace - e.g. to expose a',
+          "DSL's methods without qualifying them."
+        ],
+        'reporters' => ['Diagnostics reporters to run - see `solargraph reporters`.'],
+        'formatter' => ['Options for diagnostics reporters that support them.'],
+        'type_checker' => [
+          'Per-rule overrides for `solargraph typecheck --level <level>` -',
+          'see lib/solargraph/type_checker/rules.rb for the current list',
+          'of rule names. Each value is a level name (normal, typed,',
+          'strict, strong, alpha) the rule starts reporting at instead',
+          'of its default.'
+        ],
+        'require_paths' => ['Load paths for the paths listed in require above.'],
+        'plugins' => ['Plugins to require - see https://solargraph.org/guides/plugins'],
+        'max_files' => ['Maximum number of files Solargraph will index in this workspace.'],
+        'extensions' => [
+          'solargraph-*-ext gems to require automatically. Populated by',
+          '`solargraph config`; pass --no-extensions to skip.'
+        ]
+      }.freeze
+
       # @return [String]
       attr_reader :directory
 
@@ -128,6 +164,22 @@ module Solargraph
         end
       end
 
+      class << self
+        # Render config data as YAML, with a doc comment from
+        # CONFIG_DOCS above each top-level key.
+        #
+        # @param conf [Hash{String => undefined}]
+        # @return [String]
+        def commented_yaml conf
+          conf.map do |key, value|
+            comment = CONFIG_DOCS.fetch(key, []).map { |line| "# #{line}" }.join("\n")
+            # @sg-ignore Psych.dump's RBS also misreads a positional Hash arg as kwargs
+            yaml = YAML.dump({ key => value }).sub(/\A---\n/, '')
+            [comment, yaml].reject(&:empty?).join("\n")
+          end.join("\n")
+        end
+      end
+
       private
 
       # @return [String]
@@ -186,7 +238,8 @@ module Solargraph
           },
           'require_paths' => [],
           'plugins' => [],
-          'max_files' => MAX_FILES
+          'max_files' => MAX_FILES,
+          'extensions' => []
         }
       end
 

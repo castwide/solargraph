@@ -79,14 +79,10 @@ module Solargraph
         end
       end
       conf = Solargraph::Workspace::Config.new.raw_data
-      unless matches.empty?
-        matches.each do |m|
-          conf['extensions'].push m
-        end
-      end
+      conf['extensions'].concat(matches)
       # @param file [File]
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
-        file.puts conf.to_yaml
+        file.puts Solargraph::Workspace::Config.commented_yaml(conf)
       end
       $stdout.puts 'Configuration file initialized.'
     end

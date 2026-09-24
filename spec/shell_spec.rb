@@ -61,6 +61,32 @@ describe Solargraph::Shell do
     end
   end
 
+  describe 'config' do
+    it 'writes a config file with every key documented' do
+      shell.config(temp_dir)
+      conf_path = File.join(temp_dir, '.solargraph.yml')
+      contents = File.read(conf_path)
+
+      expect(YAML.safe_load(contents)).to eq(Solargraph::Workspace::Config.new.raw_data)
+      Solargraph::Workspace::Config::CONFIG_DOCS.each_value do |lines|
+        expect(contents).to include(lines.first)
+      end
+    end
+
+    it 'does not crash when an extension gem is installed' do
+      shell.options = { extensions: true }
+      allow(Gem::Specification).to receive(:each).and_yield(
+        instance_double(Gem::Specification, name: 'solargraph-rails-ext')
+      )
+      allow(shell).to receive(:require).with('solargraph-rails-ext')
+
+      expect { shell.config(temp_dir) }.not_to raise_error
+
+      conf = YAML.safe_load_file(File.join(temp_dir, '.solargraph.yml'))
+      expect(conf['extensions']).to eq(['solargraph-rails-ext'])
+    end
+  end
+
   describe 'scan' do
     context 'with mocked dependencies' do
       let(:api_map) { instance_double(Solargraph::ApiMap) }

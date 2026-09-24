@@ -54,7 +54,9 @@ module Solargraph
     # @param level [Symbol]
     # @return [TypeChecker::Rules]
     def rules level
-      @rules ||= TypeChecker::Rules.new(level, config.type_checker_rules)
+      # @type [Hash{Symbol => TypeChecker::Rules}]
+      @rules ||= {}
+      @rules[level] ||= TypeChecker::Rules.new(level, config.type_checker_rules)
     end
 
     # Merge the source. A merge will update the existing source for the file
