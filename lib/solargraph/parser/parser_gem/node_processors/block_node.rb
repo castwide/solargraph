@@ -20,6 +20,11 @@ module Solargraph
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: region.closure,
+              compound_statement: region.compound_statement,
+              # a block's body may execute zero or multiple times (e.g.
+              # Enumerable#each), so an assignment inside it is never
+              # guaranteed to have executed
+              conditional: true,
               node: node,
               context: context,
               receiver: node.children[0],
@@ -28,7 +33,7 @@ module Solargraph
               source: :parser
             )
             pins.push block_pin
-            process_children region.update(closure: block_pin)
+            process_children region.update(closure: block_pin, compound_statement: block_pin)
           end
 
           private

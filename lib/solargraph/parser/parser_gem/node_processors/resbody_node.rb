@@ -30,7 +30,17 @@ module Solargraph
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            rescue_body_node = node.children[2]
+            rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
+              location: rescue_body_node ? get_node_location(rescue_body_node) : nil,
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
+              node: rescue_body_node,
+              source: :parser
+            )
+            pins.push rescue_body_cs
+            NodeProcessor.process(rescue_body_node, region.update(compound_statement: rescue_body_cs), pins, locals, ivars) if rescue_body_node
           end
         end
       end

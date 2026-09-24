@@ -224,6 +224,7 @@ module Solargraph
                      situation,
                      rules = [],
                      variance: erased_variance(situation)
+      # @sg-ignore flow sensitive typing needs to handle a self-referential reassignment (x = x.foo)
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 

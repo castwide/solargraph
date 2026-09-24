@@ -954,6 +954,536 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'updates a parameter type after reassignment to a different non-literal type' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          position = PositionNormalizer.normalize(position)
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not treat a parameter reassignment inside a block as guaranteed to have run' do
+      checker = type_checker(%(
+        class Position
+          # @return [Integer]
+          def line
+            1
+          end
+        end
+
+        module PositionNormalizer
+          # @param position [Position, Array(Integer, Integer)]
+          # @return [Position]
+          def self.normalize(position)
+            Position.new
+          end
+        end
+
+        # @param position [Position, Array(Integer, Integer)]
+        # @return [Integer]
+        def describe(position)
+          [1].each { position = PositionNormalizer.normalize(position) }
+          position.line
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([
+                                                      '#describe return type could not be inferred',
+                                                      'Unresolved call to line on Position, Array(Integer, Integer)'
+                                                    ])
+    end
+
+    it 'still treats a conditional reassignment as guaranteed to have run for a use site inside the same branch' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def conditional_reassign(str, num, flag)
+          local = num
+          if flag
+            local = str
+            local.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a variable assigned in the if condition' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer]
+        def limit_of(name)
+          if (md = name.match(/\\[(.*)\\]/))
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a variable assigned in the right side of an && condition' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [Integer]
+        def limit_of(name)
+          if !name.nil? && (md = name.match(/\\[(.*)\\]/))
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not narrow a variable assigned in the left side of an || condition' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @param fallback [Boolean]
+        # @return [Integer]
+        def limit_of(name, fallback)
+          if (md = name.match(/\\[(.*)\\]/)) || fallback
+            md[1].to_i
+          else
+            0
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to []'])
+    end
+
+    it 'treats a variable assigned in the if condition as falsy in the else clause' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer]
+        def limit_of(name)
+          if (md = name.match(/\\[(.*)\\]/))
+            0
+          else
+            md[1].to_i
+          end
+        end
+      ))
+      # the falsy-only receiver renders as either `nil, false` or
+      # `nil, Boolean` depending on literal handling; both mean narrowed
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AUnresolved call to \[\] on nil, (false|Boolean)\z/))
+    end
+
+    it 'uses a branch-local reassignment at a use site later in the same branch' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @return [void]
+        def clean(items)
+          if items.nil?
+            items = fetch_items
+            items.reject! { |i| i.empty? }
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not use a reassignment made in a nested branch that may not run' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def clean(items, flag)
+          if items.nil?
+            if flag
+              items = fetch_items
+            end
+            items.reject! { |i| i.empty? }
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to reject! on nil'])
+    end
+
+    it 'does not use a branch-local reassignment at a use site before it' do
+      checker = type_checker(%(
+        # @param items [Array<String>, nil]
+        # @return [void]
+        def clean(items)
+          if items.nil?
+            items.reject! { |i| i.empty? }
+            items = fetch_items
+          end
+        end
+
+        # @return [Array<String>]
+        def fetch_items; ['x']; end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to reject! on nil'])
+    end
+
+    it 'accumulates every fact an or-guard asserts about the same value' do
+      checker = type_checker(%(
+        # @param name [String, Integer, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.is_a?(Integer)
+          a
+        end
+
+        # @param name [String, Integer, nil]
+        # @return [String, Integer, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default behind an or-guard with three operands' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.empty? || a == 'x'
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default behind an or-guard with four operands' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          a = 'd' if a.nil? || a.empty? || a == 'x' || a == 'y'
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    # Soundness controls for the or-guard narrowing above. `¬(x || y)` implies
+    # every operand is false, so the guard's false path may narrow any variable
+    # it tests - but the guard's TRUE path only reassigns `a`, so nothing may be
+    # concluded about a second variable the guard happens to mention.
+    it 'does not narrow a second variable an or-guard tests but never reassigns' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @return [String]
+        def f(name)
+          a = lookup(name)
+          b = lookup(name)
+          a = 'd' if a.nil? || b.nil?
+          b
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include(a_string_matching(/Declared return type ::String does not match/))
+    end
+
+    it 'does not narrow when the or-guard never tests the variable at all' do
+      checker = type_checker(%(
+        # @param name [String, nil]
+        # @param flag [Boolean]
+        # @return [String]
+        def f(name, flag)
+          a = lookup(name)
+          a = 'd' if flag || name.nil?
+          a
+        end
+
+        # @param name [String, nil]
+        # @return [String, nil]
+        def lookup(name); end
+      ))
+      expect(checker.problems.map(&:message))
+        .to include(a_string_matching(/Declared return type ::String does not match/))
+    end
+
+    it 'applies a modifier-if guard after the variable was reassigned' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = lookup(name)
+          return got.length if got
+
+          got = lookup(name)
+          got.length if got
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'applies a modifier-if guard after a reassignment whose block shadows the name' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = candidates.find { |got| got == name }
+          return got.length if got
+
+          got = candidates.find { |got| got != name }
+          got.length if got
+        end
+
+        # @return [Array<String>]
+        def candidates; []; end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'keeps a guard fact in force until the variable is reassigned' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @return [Integer, nil]
+        def find(name)
+          got = lookup(name)
+          return got.length if got
+
+          got.length
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AUnresolved call to length on nil, (false|Boolean)\z/))
+    end
+
+    it 'does not apply a guard fact past a reassignment that only runs in a branch' do
+      checker = type_checker(%(
+        # @param name [String]
+        # @param flag [Boolean]
+        # @return [Integer, nil]
+        def find(name, flag)
+          got = lookup(name)
+          return got.length if got
+
+          if flag
+            got = lookup(name)
+          end
+          got.length
+        end
+
+        # @param name [String]
+        # @return [String, nil]
+        def lookup(name); name; end
+      ))
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AUnresolved call to length on nil, (false|Boolean)\z/))
+    end
+
+    it 'narrows a nil-guarded default after the modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a nil-guarded default after a non-modifier if' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if tasks.nil?
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an unless modifier' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          tasks = ['a'] unless tasks
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows a guarded default assigned in an else clause' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def guarded_default(tasks)
+          if !tasks.nil?
+            puts 'have tasks'
+          else
+            tasks = ['a']
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows only the reassigned variable when an or-condition guards it' do
+      checker = type_checker(%(
+        # @param xs [Array<String>, nil]
+        # @param ys [Array<String>, nil]
+        # @return [void]
+        def or_guard(xs, ys)
+          xs = ['a'] if xs.nil? || ys.nil?
+          xs.each { |t| puts t }
+          ys.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guard tests something other than the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def unrelated_guard(tasks, flag)
+          tasks = ['a'] if flag
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the nil guard does not reassign the variable' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @return [void]
+        def no_reassignment(tasks)
+          puts 'hi' if tasks.nil?
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'keeps nil in the type when the guarded assignment is itself conditional' do
+      checker = type_checker(%(
+        # @param tasks [Array<String>, nil]
+        # @param flag [Boolean]
+        # @return [void]
+        def nested_conditional_assign(tasks, flag)
+          if tasks.nil?
+            tasks = ['a'] if flag
+          end
+          tasks.each { |t| puts t }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to each on Array<String>, nil'])
+    end
+
+    it 'does not let a loop-body reassignment override a reference textually before it' do
+      checker = type_checker(%(
+        # @param str [String]
+        # @param num [Integer]
+        # @param flag [Boolean]
+        # @return [void]
+        def loop_reassign(str, num, flag)
+          local = num
+          while flag
+            local.abs
+            local = str
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'updates a local variable type after reassignment to a different literal type' do
+      checker = type_checker(%(
+        # @return [void]
+        def run
+          local = 5
+          local = 'hello'
+          local.upcase
+          nil
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'updates an instance variable type after reassignment in the same method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [void]
+          def run
+            @ivar = 5
+            @ivar = 'hello'
+            @ivar.upcase
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves a self-referential reassignment against the pre-assignment type' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String]
+          # @return [Integer]
+          def foo(x)
+            x = x.length
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
@@ -965,6 +1495,17 @@ describe Solargraph::TypeChecker do
           def foo?
             !@foo.nil? && @foo.upcase == 'FOO'
           end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'infers a Boolean return from !!(x.nil? || x < n) on a nilable param' do
+      checker = type_checker(%(
+        # @param val [Integer, nil]
+        # @return [Boolean]
+        def check?(val)
+          !!(val.nil? || val < 5)
         end
       ))
       expect(checker.problems.map(&:message)).to eq([])
