@@ -108,7 +108,7 @@ module Solargraph
       end
       character = 0 if character.nil? && (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
-      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
       Position.new(line, character)
     end
 
@@ -122,6 +122,7 @@ module Solargraph
     def self.normalize object
       return object if object.is_a?(Position)
       return Position.new(object[0], object[1]) if object.is_a?(Array)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1277
       raise ArgumentError, "Unable to convert #{object.class} to Position"
     end
 

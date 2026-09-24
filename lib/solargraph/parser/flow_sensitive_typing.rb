@@ -462,7 +462,20 @@ module Solargraph
       # @param clause_node [Parser::AST::Node, nil]
       def always_leaves_compound_statement? clause_node
         # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
-        %i[return raise next redo retry].include?(clause_node&.type)
+        return true if %i[return next redo retry].include?(clause_node&.type)
+
+        # 'raise' has no node type of its own - the parser gem represents
+        # it as a plain :send call, so it must be matched by name.
+        raise_call?(clause_node)
+      end
+
+      # @param clause_node [Parser::AST::Node, nil]
+      def raise_call? clause_node
+        return false if clause_node.nil?
+        return false unless %i[send csend].include?(clause_node.type)
+
+        receiver, method_name = clause_node.children
+        receiver.nil? && method_name == :raise
       end
 
       attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin

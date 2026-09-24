@@ -114,7 +114,10 @@ module Solargraph
       def exclude exclude_types, api_map
         return self if exclude_types.nil?
 
-        types = items - exclude_types.items
+        # see ComplexType#exclude: matches by conformance, not equality
+        types = items.reject do |ut|
+          exclude_types.any? { |exclude_type| ut.conforms_to?(api_map, exclude_type, :assignment) }
+        end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
         ComplexType.new(types)
       end

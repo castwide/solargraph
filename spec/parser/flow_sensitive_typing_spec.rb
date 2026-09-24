@@ -688,6 +688,62 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 
+  it 'uses is_a? in a raise if() in a method to refine types, excluding a parameterized member of the same class' do
+    source = Solargraph::Source.load_string(%(
+      module Repro
+        # @param x [Symbol, Array<Symbol, Array>]
+        # @return [Symbol, String]
+        def self.as_simple_pred(x)
+          raise 'no' if x.is_a?(Array)
+
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.rooted_tags).to eq('::Symbol')
+  end
+
+  it 'uses is_a? in a raise if() in a method to refine types, leaving an unparameterized member alone' do
+    source = Solargraph::Source.load_string(%(
+      module Repro
+        # @param x [Symbol, Array]
+        # @return [Symbol, String]
+        def self.as_simple_pred(x)
+          raise 'no' if x.is_a?(Array)
+
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.rooted_tags).to eq('::Symbol')
+  end
+
+  it 'uses is_a? in a raise if() to exclude a narrower parameterized member than the class it tests' do
+    # excluding Array also excludes Array<Integer>: every Array<Integer>
+    # is an Array, even though is_a?(Array) can't tell them apart.
+    source = Solargraph::Source.load_string(%(
+      module Repro
+        # @param x [Symbol, Array<Integer>]
+        # @return [Symbol]
+        def self.as_simple_pred(x)
+          raise 'no' if x.is_a?(Array)
+
+          x
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.rooted_tags).to eq('::Symbol')
+  end
+
   it 'uses .nil? in a return if() in an unless to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo

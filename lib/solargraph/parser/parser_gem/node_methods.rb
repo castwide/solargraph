@@ -31,6 +31,7 @@ module Solargraph
                   parts += pack_name(n)
                 end
               else
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1277
                 parts.push n unless n.nil?
               end
             end
