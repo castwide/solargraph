@@ -177,7 +177,10 @@ module Solargraph
             unless rules.ignore_all_undefined? || external?(pin) || pin.attribute?
               result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
             end
-          else
+          elsif !inferred.bot?
+            # A method body that never returns (e.g., only ever raises or
+            # aborts) is compatible with any declared return type - bot is
+            # a subtype of everything, so there's nothing to check.
             unless return_type_conforms_to?(inferred, declared)
               result.push Problem.new(pin.location,
                                       "Declared return type #{declared.rooted_tags} does not match inferred type #{inferred.rooted_tags} for #{pin.path}", pin: pin)
