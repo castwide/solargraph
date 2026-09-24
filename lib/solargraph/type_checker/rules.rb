@@ -71,21 +71,21 @@ module Solargraph
       #
       # pending code fixes (277):
       #
-      # @todo 281: Need to add nil check here
+      # @todo 278: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
       # flow sensitive typing could handle (96):
       #
       # @todo 36: flow sensitive typing needs to handle attrs
-      # @todo 29: flow sensitive typing should be able to handle redefinition
+      # @todo 28: flow sensitive typing should be able to handle redefinition
       # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
-      # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
-      # @todo 5: flow sensitive typing needs to handle 'raise if'
+      # @todo 6: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
+      # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
       # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
