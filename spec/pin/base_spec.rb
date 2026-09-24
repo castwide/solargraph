@@ -88,4 +88,16 @@ describe Solargraph::Pin::Base do
       expect { pin1.nearly?(pin2) }.not_to raise_error
     end
   end
+
+  describe '#choose' do
+    it 'logs and re-raises when the two values cannot be compared' do
+      pin1 = described_class.new(location: zero_location, name: 'Foo')
+      pin2 = described_class.new(location: zero_location, name: 'Foo')
+      allow(pin2).to receive(:location).and_return(Object.new)
+      allow(Solargraph.logger).to receive(:warn)
+
+      expect { pin1.choose(pin2, :location) }.to raise_error(StandardError)
+      expect(Solargraph.logger).to have_received(:warn).with(/Problem handling location/)
+    end
+  end
 end
