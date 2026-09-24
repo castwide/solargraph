@@ -56,7 +56,7 @@ module Solargraph
           return generate_links(n.children[0]) if n.type == :splat
           # @type [Array<Chain::Link>]
           result = []
-          if n.type == :block
+          if %i[block numblock].include?(n.type)
             result.concat NodeChainer.chain(n.children[0], @filename, n).links
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
@@ -171,7 +171,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Source::Chain, nil]
         def passed_block node
-          return unless node == @node && @parent&.type == :block
+          return unless node == @node && %i[block numblock].include?(@parent&.type)
 
           # @sg-ignore Need to add nil check here
           NodeChainer.chain(@parent.children[2], @filename)
