@@ -34,7 +34,7 @@ module Solargraph
       end
 
       def self.uncache(...)
-        FileUtils.rm_f new(...).cache_file
+        FileUtils.rm_rf new(...).cache_file
       end
     end
   end

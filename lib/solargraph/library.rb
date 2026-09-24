@@ -614,6 +614,7 @@ module Solargraph
       else
         logger.info "Caching #{spec.name} #{spec.version}"
         Thread.new do
+          puts "Caching #{spec.name}"
           report_cache_progress spec.name, pending
 
           cmd = [workspace.command_path, 'cache', spec.name]
@@ -626,7 +627,7 @@ module Solargraph
             logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
             logger.warn e
           end
-
+          puts "done"
           end_cache_progress
           catalog
           sync_catalog

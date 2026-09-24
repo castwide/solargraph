@@ -48,6 +48,7 @@ describe Solargraph::Library do
       # give Solargraph time to cache the gem
       while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
         sleep 0.25
+        puts library.send(:api_map).pins.select { |pin| pin.path&.start_with?('Backport') }.inspect
       end
       expect(completion).to be_a(Solargraph::SourceMap::Completion)
       expect(completion.pins.map(&:name)).to include('remote')

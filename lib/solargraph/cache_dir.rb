@@ -45,7 +45,7 @@ module Solargraph
     end
 
     def delete
-      FileUtils.rm_f base_dir
+      FileUtils.rm_rf base_dir
     end
   end
 end

@@ -133,7 +133,7 @@ module Solargraph
         if gem == 'core'
           Solargraph::Collection::Core.uncache
         elsif gem == 'stdlib'
-          FileUtils.rm_f CacheDir.stdlib_dir
+          FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
           Solargraph::Collection::Gem.uncache(metagem) if metagem

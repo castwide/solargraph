@@ -34,7 +34,7 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [void]
     def uncache metagem
-      FileUtils.rm_f path_for(metagem)
+      FileUtils.rm_rf path_for(metagem)
     end
 
     # @param metagem [Metagem]
