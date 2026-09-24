@@ -40,6 +40,7 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
+        cache-version: 2026-01-11
     - name: Set rbs version
       run: echo "gem 'rbs', '${{ matrix.rbs-version }}'" >> .Gemfile
     #  /home/runner/.rubies/ruby-head/lib/ruby/gems/3.5.0+2/gems/rbs-3.9.4/lib/rbs.rb:11:
@@ -53,6 +54,17 @@ jobs:
         bundle update rbs # use latest available for this Ruby version
     - name: Update types
       run: bundle exec rbs collection update
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Run tests
       run: bundle exec rake spec
   undercover:
@@ -68,6 +80,7 @@ jobs:
       with:
         ruby-version: '3.4'
         bundler-cache: true
+        cache-version: 2026-01-11
     - name: Update types
       run: bundle exec rbs collection update
     - name: Run tests
