@@ -185,12 +185,12 @@ module Solargraph
         if (key_types.none?(&:defined?) && subtypes.none?(&:defined?)) ||
            (key_types.empty? && subtypes.empty?)
           ''
-        elsif hash_parameters?
-          "{#{key_types_str} => #{subtypes_str}}"
         elsif fixed_parameters?
           "(#{subtypes_str})"
-        elsif name == 'Hash'
-          "<#{key_types_str}, #{subtypes_str}>"
+        elsif hash_parameters? || name == 'Hash'
+          # Hash renders as {K => V} even when written Hash<K, V>: the <>
+          # form holds one type per side, so a union in either fails to reparse.
+          "{#{key_types_str} => #{subtypes_str}}"
         else
           "<#{key_types_str}#{subtypes_str}>"
         end
