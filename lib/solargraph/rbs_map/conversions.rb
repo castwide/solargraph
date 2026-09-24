@@ -466,11 +466,13 @@ module Solargraph
         visibility = VISIBILITY_OVERRIDE[override_key]
         simple_override_key = [closure.path, scope]
         visibility ||= VISIBILITY_OVERRIDE[simple_override_key]
-        if closure.path == 'Kernel' && Kernel.private_method_defined?(decl.name, false)
+        if closure.path == 'Kernel' && scope == :instance && Kernel.private_method_defined?(decl.name, false)
           visibility ||= :private
         end
-        if decl.kind == :singleton_instance
-          # this is a 'module function'
+        if decl.kind == :singleton_instance && scope == :instance
+          # This is a 'module function'. It makes the instance copy
+          # private, but the singleton copy stays public - Marshal.dump
+          # and FileUtils.rm_rf are the usual way to call these.
           visibility ||= :private
         end
         visibility ||= decl.visibility
