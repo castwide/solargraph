@@ -72,11 +72,12 @@ module Solargraph
       # @param fqns [String]
       # @param scope [Symbol]
       # @param visibility [Array<Symbol>]
-      # @return [Enumerable<Solargraph::Pin::Method>]
+      # @return [Array<Solargraph::Pin::Method>]
       def get_methods fqns, scope: :instance, visibility: [:public]
-        namespace_children(fqns).select do |pin|
+        pins = namespace_children(fqns).select do |pin|
           pin.is_a?(Pin::Method) && pin.scope == scope && visibility.include?(pin.visibility)
         end
+        combine_duplicate_method_pins(pins)
       end
 
       BOOLEAN_SUPERCLASS_PIN = Pin::Reference::Superclass.new(name: 'Boolean', closure: Pin::ROOT_PIN,
@@ -294,6 +295,27 @@ module Solargraph
       # @return [Index]
       def index
         @index ||= Index.new
+      end
+
+      # Combines same-path pins into one. They arise when a method is
+      # documented in more than one file - a `@!parse` stub re-documenting
+      # a method the gem already defines, or a reopened class. Aliases and
+      # DelegatedMethod are skipped; neither survives a merge.
+      #
+      # @param pins [Array<Pin::Method>]
+      # @return [Array<Pin::Method>]
+      def combine_duplicate_method_pins pins
+        result = []
+        pins.group_by(&:path).each_value do |group|
+          if group.length == 1 || group.any? { |pin| pin.is_a?(Pin::MethodAlias) || pin.is_a?(Pin::DelegatedMethod) }
+            result.concat(group)
+          else
+            # @sg-ignore group is never empty here (group_by never yields an empty group)
+            combined = group[1..].reduce(group.first) { |memo, pin| memo.combine_with(pin) }
+            result.push(combined)
+          end
+        end
+        result
       end
 
       # @param pinsets [Array<Array<Pin::Base>>]

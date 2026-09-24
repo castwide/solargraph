@@ -295,8 +295,7 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore Need to add nil check here
-          qualified = type.qualify(api_map, *closure.gates)
+          qualified = type.qualify(api_map, *(closure&.gates || ['']))
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -493,9 +492,11 @@ module Solargraph
       #
       # @return [Array<Pin::Signature>]
       def combine_signatures_by_type_arity(*signature_pins)
+        merged_pins = merge_signatures_differing_only_by_block_informativeness(signature_pins)
+
         # @type [Hash{Array => Array<Pin::Signature>}]
         by_type_arity = {}
-        signature_pins.each do |signature_pin|
+        merged_pins.each do |signature_pin|
           by_type_arity[signature_pin.type_arity] ||= []
           by_type_arity[signature_pin.type_arity] << signature_pin
         end
@@ -504,6 +505,46 @@ module Solargraph
           combine_same_type_arity_signatures same_type_arity_signatures
         end
         by_type_arity.values.flatten
+      end
+
+      # A block documented with fewer yielded parameters than a
+      # sibling signature's block (including zero, e.g. `&block` with
+      # no @yieldparam at all) differs in type_arity from it, so
+      # combine_signatures_by_type_arity's bucketing would otherwise
+      # keep them as separate overloads. They're the same overload,
+      # just documented with different completeness - merge them
+      # here, before that bucketing, so the merged signature carries
+      # the more complete block onward.
+      #
+      # @param signature_pins [Array<Pin::Signature>]
+      # @return [Array<Pin::Signature>]
+      def merge_signatures_differing_only_by_block_informativeness signature_pins
+        # @param sig [Pin::Signature]
+        # @param result [Array<Pin::Signature>]
+        signature_pins.each_with_object([]) do |sig, result|
+          # @type [Integer, nil]
+          match_index = result.find_index { |existing| combinable_by_block_informativeness?(existing, sig) }
+          if match_index.nil?
+            result << sig
+          else
+            existing = result.fetch(match_index)
+            # Bypass Callable#combine_with's default parameter zip: it
+            # compares the signatures' full arity, which folds in the
+            # block's own arity and would raise here even though the
+            # blockless parameters already match (that's what
+            # combinable_by_block_informativeness? just verified).
+            result[match_index] = existing.combine_with(sig, parameters: existing.parameters)
+          end
+        end
+      end
+
+      # @param sig1 [Pin::Signature]
+      # @param sig2 [Pin::Signature]
+      # @return [Boolean]
+      def combinable_by_block_informativeness? sig1, sig2
+        return false if sig1.block.nil? || sig2.block.nil?
+        return false if sig1.block.parameters.length == sig2.block.parameters.length
+        sig1.type_arity[0..-2] == sig2.type_arity[0..-2]
       end
 
       # @param same_type_arity_signatures [Array<Pin::Signature>]
