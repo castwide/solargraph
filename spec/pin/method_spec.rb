@@ -786,4 +786,30 @@ describe Solargraph::Pin::Method do
       expect { pin.signatures }.not_to raise_error
     end
   end
+
+  describe '#probe_blame' do
+    # @param body [String] the body of Foo#bar
+    # @return [Array(Solargraph::ApiMap, Solargraph::Pin::Method)]
+    def bar_pin_for body
+      api_map = Solargraph::ApiMap.new
+      api_map.map Solargraph::Source.load_string(%(
+        class Foo
+          def bar
+            #{body}
+          end
+        end
+      ), 'test.rb')
+      [api_map, api_map.get_path_pins('Foo#bar').first]
+    end
+
+    it 'returns nil when every return value infers cleanly' do
+      api_map, pin = bar_pin_for('String.new.upcase')
+      expect(pin.probe_blame(api_map)).to be_nil
+    end
+
+    it 'reports the failing link of the returned expression' do
+      api_map, pin = bar_pin_for('String.new.no_such_method')
+      expect(pin.probe_blame(api_map).link.word).to eq('no_such_method')
+    end
+  end
 end
