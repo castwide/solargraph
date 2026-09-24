@@ -118,14 +118,28 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type).to be_undefined
   end
 
-  it 'combines many non-mergeable same-type-arity signatures without exponential blowup' do
+  it 'combines many non-mergeable same-arity signatures without exponential blowup' do
     pin = described_class.new(name: 'foo')
-    signatures = (1..8).map { |_i| instance_double(Solargraph::Pin::Signature, type_arity: ['same']) }
-    signatures.each do |sig|
-      allow(sig).to receive(:combine_with).and_return(instance_double(Solargraph::Pin::Signature, type_arity: ['different']))
-    end
-    result = pin.send(:combine_same_type_arity_signatures, signatures)
+    signatures = (1..8).map { |_i| instance_double(Solargraph::Pin::Signature, same_parameter_types?: false) }
+    result = pin.send(:combine_same_arity_signatures, signatures)
     expect(result.length).to eq(signatures.length)
+  end
+
+  it 'keeps a signature per parameter type when combining, so an argument type can still select its own return type' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo', type: :class)
+    integer_pin = described_class.new(closure: closure, name: 'add', scope: :instance, comments: %(
+@overload add(bar)
+  @param bar [Integer]
+  @return [Integer]
+    ))
+    float_pin = described_class.new(closure: closure, name: 'add', scope: :instance, comments: %(
+@overload add(bar)
+  @param bar [Float]
+  @return [Float]
+    ))
+    combined = integer_pin.combine_with(float_pin)
+    expect(combined.signatures.length).to eq(2)
+    expect(combined.signatures.flat_map { |sig| sig.parameters.map { |param| param.return_type.rooted_tags } }).to contain_exactly('Integer', 'Float')
   end
 
   it 'does not merge with changes in parameters' do
