@@ -188,7 +188,6 @@ module Solargraph
     # @param name [String, nil]
     # @return [Solargraph::YardMap::Macro, nil]
     def named_macro name
-      # @sg-ignore Need to add nil check here
       store.named_macros[name]
     end
 
@@ -941,8 +940,11 @@ module Solargraph
       original = nil
 
       # Search each ancestor for the original method
-      ancestors.each do |ancestor_fqns|
-        next if ancestor_fqns.nil?
+      ancestors.each do |ancestor_tag|
+        next if ancestor_tag.nil?
+        # A generic superclass arrives parameterized - "Hash<Symbol, undefined>"
+        # rather than "Hash" - and method paths are indexed by bare namespace.
+        ancestor_fqns = ComplexType.try_parse(ancestor_tag).namespace
         ancestor_method_path = if alias_pin.original == 'new' && alias_pin.scope == :class
                                  "#{ancestor_fqns}#initialize"
                                else
