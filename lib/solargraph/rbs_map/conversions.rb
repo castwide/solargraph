@@ -49,6 +49,8 @@ module Solargraph
           return
         end
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+      rescue RBS::DuplicatedDeclarationError => e
+        Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
       end
 
       # @param decl [RBS::AST::Declarations::Base]
