@@ -140,6 +140,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1227
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -151,6 +152,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1227
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
@@ -558,8 +560,8 @@ module Solargraph
 
       # @param location [RBS::Location, nil]
       # @return [Solargraph::Location, nil]
-      def location_decl_to_pin_location(location)
-        return nil if location&.name.nil?
+      def location_decl_to_pin_location location
+        return nil if location.nil? || location.name.nil?
 
         start_pos = Position.new(location.start_line - 1, location.start_column)
         end_pos = Position.new(location.end_line - 1, location.end_column)
@@ -778,7 +780,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [ComplexType::UniqueType]
-      def build_type(type_name, type_args = [])
+      def build_type type_name, type_args = []
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
         params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
         if base == 'Hash' && params.length == 2

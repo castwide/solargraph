@@ -39,6 +39,14 @@ describe Solargraph::Diagnostics::RubocopHelpers do
     end
   end
 
+  context 'with an uninstalled version' do
+    it 'names the versions that are installed' do
+      expect { described_class.require_rubocop('99.99.99') }
+        .to raise_error(Solargraph::InvalidRubocopVersionError,
+                        /could not find 'rubocop' \(= 99\.99\.99\) - did find: \[\d+\.\d+\.\d+\]/)
+    end
+  end
+
   it 'converts lower-case drive letters to upper-case' do
     input = 'c:/one/two'
     output = described_class.fix_drive_letter(input)

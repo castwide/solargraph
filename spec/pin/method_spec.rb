@@ -785,5 +785,17 @@ describe Solargraph::Pin::Method do
       pin = api_map.get_path_pins('#foo').first
       expect { pin.signatures }.not_to raise_error
     end
+
+    it 'ignores a comment that parses to no method type at all' do
+      source = Solargraph::Source.load_string(%(
+        #: # invalid RBS
+        def foo; end
+      ))
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      pin = api_map.get_path_pins('#foo').first
+      expect { pin.return_type }.not_to raise_error
+      expect { pin.signatures }.not_to raise_error
+    end
   end
 end

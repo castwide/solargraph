@@ -133,4 +133,31 @@ describe Solargraph::Source::Cursor do
     a = source.cursor_at(Solargraph::Position.new(1, 16))
     expect(a.recipient.node).to eq(r.node)
   end
+
+  it 'finds recipient nodes via text-based fallback for unparseable receiver calls' do
+    source = Solargraph::Source.load_string('foo.bar(1, ')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 11))
+    node = Solargraph::Parser::NodeMethods.find_recipient_node(cursor)
+    expect(node.type).to eq(:send)
+    expect(node.children[0].children[1]).to eq(:foo)
+    expect(node.children[1]).to eq(:bar)
+  end
+
+  it 'finds recipient nodes via text-based fallback for unparseable const calls' do
+    source = Solargraph::Source.load_string('Foo::bar(1, ')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 12))
+    node = Solargraph::Parser::NodeMethods.find_recipient_node(cursor)
+    expect(node.type).to eq(:send)
+    expect(node.children[0].children[1]).to eq(:Foo)
+    expect(node.children[1]).to eq(:bar)
+  end
+
+  it 'finds recipient nodes via text-based fallback for unparseable calls without a receiver' do
+    source = Solargraph::Source.load_string('foo(1, 2')
+    cursor = source.cursor_at(Solargraph::Position.new(0, 8))
+    node = Solargraph::Parser::NodeMethods.find_recipient_node(cursor)
+    expect(node.type).to eq(:send)
+    expect(node.children[0]).to be_nil
+    expect(node.children[1]).to eq(:foo)
+  end
 end

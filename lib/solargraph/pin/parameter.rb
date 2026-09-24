@@ -281,6 +281,7 @@ module Solargraph
             found = p
             break
           end
+          # @sg-ignore missing flow-sensitive typing on array elements
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end

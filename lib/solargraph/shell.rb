@@ -492,9 +492,9 @@ module Solargraph
             }
           )
           puts 'Processing go-to-definition request...'
-          result = message.process
+          message.process
 
-          puts "Result: #{result.inspect}"
+          puts "Result: #{message.result.inspect}"
         end
         definition_time = Time.now - definition_start
       rescue Interrupt

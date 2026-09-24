@@ -12,8 +12,9 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         closure_pin = closure
-        # @sg-ignore Need to add nil check here
-        if closure_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(closure_pin.receiver).contain?(cursor.range.start)
+        if closure_pin.is_a?(Pin::Block) && closure_pin.receiver &&
+           # @sg-ignore Range.from_node can return nil for a node with no location, though a real receiver always has one
+           !Solargraph::Range.from_node(closure_pin.receiver).contain?(cursor.range.start)
           closure_pin.rebind(api_map)
         end
       end

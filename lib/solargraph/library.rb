@@ -485,8 +485,6 @@ module Solargraph
         Logging.logger.debug "Mapping #{src.filename}"
         # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename]
       else
         false
       end

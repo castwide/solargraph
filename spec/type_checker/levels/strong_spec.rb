@@ -997,5 +997,23 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'does not validate a non-delegating override against its ancestor return tag' do
+      checker = type_checker(%(
+        class Base
+          # @return [Boolean]
+          # @return [void]
+          def process
+            true
+          end
+        end
+
+        class Sub < Base
+          def process
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
