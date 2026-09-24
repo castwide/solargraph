@@ -34,12 +34,32 @@ module Solargraph
 
     private
 
-    def build_from_directory
-      gemfile = File.expand_path('Gemfile', @directory)
-      lockfile = File.expand_path('Gemfile.lock', @directory)
-      return unless File.file?(gemfile) && File.file?(lockfile)
+    def gemfile
+      @gemfile ||= File.expand_path('Gemfile', @directory)
+    end
 
-      Bundler::Definition.build(gemfile, lockfile, nil).specs.map do |spec|
+    def lockfile
+      @lockfile ||= File.expand_path('Gemfile.lock', @directory)
+    end
+
+    def bundled_directory?
+      File.file?(gemfile) && File.file?(lockfile)
+    end
+
+    def bundle_definition
+      @bundle_definition ||= if bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
+        Bundler::Definition.build(gemfile, lockfile, nil)
+      elsif ENV['BUNDLE_GEMFILE']
+        Bundler.definition
+      else
+        nil
+      end
+    end
+
+    def build_from_directory
+      return unless bundle_definition
+
+      bundle_definition.specs.map do |spec|
         Metagem.new(
           name: spec.name,
           full_path: spec.full_gem_path,
@@ -51,7 +71,7 @@ module Solargraph
         )
       end
     rescue StandardError => e
-      Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: #{e}"
+      Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: [#{e.class}] #{e.message}"
       nil
     end
 
