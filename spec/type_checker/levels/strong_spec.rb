@@ -997,5 +997,20 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves the operators TrueClass and FalseClass share on Boolean' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def flag; true; end
+
+          # @return [Boolean]
+          def combined
+            flag & flag
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

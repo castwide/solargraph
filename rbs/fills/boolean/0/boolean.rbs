@@ -1,0 +1,12 @@
+# Boolean is Solargraph's name for the RBS `bool` type. Store#get_superclass
+# already gives TrueClass and FalseClass `Boolean` as their superclass, but
+# nothing defined it, so it had no pin and carried only Object's methods.
+#
+# The members are the ones TrueClass and FalseClass share beyond Object.
+class Boolean
+  def &: (untyped obj) -> bool
+
+  def ^: (untyped obj) -> bool
+
+  def |: (untyped obj) -> bool
+end
