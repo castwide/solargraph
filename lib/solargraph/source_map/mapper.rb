@@ -144,9 +144,10 @@ module Solargraph
                         code_lines.length, 0
                       )
                     end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Need to handle Hash#each
           com_pos = Position.new(line + 1 - comments.length, 0)
-          process_comment(src_pos, com_pos, comments.join(''))
+          # @sg-ignore Need to handle Hash#each
+          process_comment(src_pos, com_pos, comments.join)
         end
       rescue StandardError => e
         raise e.class, "Error processing comment directives in #{@filename}: #{e.message}"
