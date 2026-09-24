@@ -409,9 +409,8 @@ describe Solargraph::Source::Chain do
     api_map = Solargraph::ApiMap.new.map(source)
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(5, 7))
     expect { chain.infer(api_map, Solargraph::Pin::ROOT_PIN, []) }.not_to raise_error
-    # @todo get this to also return a defined type
-    # type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    # expect(type.to_s).to eq('String')
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(type.to_s).to eq('String')
   end
 
   it 'resolves variable and method name collisions' do

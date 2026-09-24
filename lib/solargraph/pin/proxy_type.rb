@@ -3,16 +3,19 @@
 module Solargraph
   module Pin
     class ProxyType < Base
+      attr_reader :generics
+
       # @param return_type [ComplexType, ComplexType::UniqueType]
       # @param gates [Array<String>, nil] Namespaces to try while resolving non-rooted types
       # @param binder [ComplexType, ComplexType::UniqueType, nil]
       # @param gates [Array<String>, nil]
       # @param [Hash{Symbol => Object}] splat
-      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, **splat
+      def initialize return_type: ComplexType::UNDEFINED, binder: nil, gates: nil, generics: [], **splat
         super(**splat)
         @gates = gates
         @return_type = return_type
         @binder = binder if binder
+        @generics = generics
       end
 
       def context
