@@ -1005,4 +1005,22 @@ describe Solargraph::ApiMap do
     # @todo Undefined because the return tag expands to `type: String`
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[undefined])
   end
+
+  # @!override on a constant used to abort cataloging with NoMethodError
+  # because Pin::Constant does not respond to #signatures.
+  # https://github.com/castwide/solargraph/issues/1302
+  it 'applies override directives to constants without aborting' do
+    source = Solargraph::Source.load_string(%(
+      # @!override Overridable::CONST
+      #   @return [Integer]
+
+      module Overridable
+        CONST = 'a string'
+      end
+    ), 'test.rb')
+    api_map = described_class.new
+    expect { api_map.map source }.not_to raise_error
+    pin = api_map.get_path_pins('Overridable::CONST').first
+    expect(pin.return_type.tag).to eq('Integer')
+  end
 end
