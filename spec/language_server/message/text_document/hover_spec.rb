@@ -43,6 +43,6 @@ describe Solargraph::LanguageServer::Message::TextDocument::Hover do
                                     }
                                   })
     message.process
-    expect(message.result[:contents][:value]).to eq("x\n\n`=~ String`")
+    expect(message.result[:contents][:value]).to eq("x\n\n`=~ String`\n\nType:\n* [::String]")
   end
 end

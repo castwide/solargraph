@@ -73,6 +73,27 @@ describe Solargraph::Pin::Base do
     end
   end
 
+  describe '#realize' do
+    it 'roots an already-defined but unrooted return type' do
+      api_map = Solargraph::ApiMap.new
+      pin = Solargraph::Pin::Method.new(name: 'bar', comments: '@return [String]')
+      expect(pin.return_type).to be_defined
+      expect(pin.return_type.all_rooted?).to be(false)
+      realized = pin.realize(api_map)
+      expect(realized.return_type.all_rooted?).to be(true)
+      expect(realized.return_type.rooted_tags).to eq('::String')
+    end
+
+    it 'keeps a correctly-synced docstring on the already-rooted fast path' do
+      return_type = Solargraph::ComplexType.try_parse('String').force_rooted
+      pin = Solargraph::Pin::Method.new(name: 'bar', return_type: return_type)
+      realized = pin.realize(Solargraph::ApiMap.new)
+      expect(realized).to equal(pin) # fast path: proxy is never called
+      expect(realized.docstring.tag(:return)&.types).to eq(['::String'])
+      expect(realized.documentation).to include('Returns:')
+    end
+  end
+
   describe '#macro_names' do
     it 'returns names' do
       pin = described_class.new(name: 'Example', comments: "@macro addcomment\n@macro returnself")
@@ -86,6 +107,70 @@ describe Solargraph::Pin::Base do
       pin1.closure = pin1
       pin2 = Solargraph::Pin::Base.new(name: 'foo', closure: pin1)
       expect { pin1.nearly?(pin2) }.not_to raise_error
+    end
+  end
+
+  describe '#reset_generated!' do
+    it 'discards a memoized documentation string on a pin class that is not a method' do
+      pin = Solargraph::Pin::Constant.new(name: 'BAZ', closure: Solargraph::Pin::ROOT_PIN, source: :rbs,
+                                          comments: 'Original description.')
+      expect(pin.documentation).to include('Original description.')
+      pin.instance_variable_set(:@comments, 'Changed description.')
+      pin.instance_variable_set(:@docstring, nil)
+      pin.reset_generated!
+      expect(pin.documentation).to include('Changed description.')
+    end
+  end
+
+  describe 'combining with an authoritative pin' do
+    let(:closure) { Solargraph::Pin::Namespace.new(name: 'Foo') }
+
+    let(:base) do
+      Solargraph::Pin::Method.new(name: 'bar', closure: closure,
+                                  comments: "Original prose.\n@param baz [Integer]\n@return [Integer]")
+    end
+
+    let(:boss) do
+      Solargraph::Pin::Method.new(name: 'bar', closure: closure,
+                                  comments: '@return [String]', combine_priority: 1)
+    end
+
+    it 'replaces only the tags the authoritative pin supplies' do
+      combined = base.combine_with(boss)
+      expect(combined.docstring.tag(:return).types).to eq(['String'])
+      expect(combined.docstring.tag(:param).name).to eq('baz')
+    end
+
+    it 'keeps comments and docstring describing the same thing' do
+      combined = base.combine_with(boss)
+      expect(combined.comments).to eq("#{combined.docstring.to_raw}\n")
+    end
+
+    it 'wins from either side of the combine' do
+      expect(boss.combine_with(base).docstring.tag(:return).types).to eq(['String'])
+    end
+
+    it 'prefers the higher priority when both pins declare one' do
+      lower = Solargraph::Pin::Method.new(name: 'bar', closure: closure,
+                                          comments: '@return [Integer]', combine_priority: 1)
+      higher = Solargraph::Pin::Method.new(name: 'bar', closure: closure,
+                                           comments: '@return [String]', combine_priority: 2)
+      expect(lower.combine_with(higher).docstring.tag(:return).types).to eq(['String'])
+    end
+
+    it 'merges by the ordinary rules when neither pin has priority' do
+      plain = Solargraph::Pin::Method.new(name: 'bar', closure: closure, comments: '@return [String]')
+      expect(base.combine_with(plain).docstring.tag(:param).name).to eq('baz')
+    end
+  end
+
+  describe '#parse_comments' do
+    it 'keeps a docstring supplied at construction when there are no comments to reparse' do
+      docstring = Solargraph::Source.parse_docstring('@param x [String] the x').to_docstring
+      pin = Solargraph::Pin::Method.new(name: 'initialize', closure: Solargraph::Pin::ROOT_PIN,
+                                        docstring: docstring, comments: '')
+      expect(pin.directives).to be_empty
+      expect(pin.docstring.tags(:param).map(&:name)).to eq(['x'])
     end
   end
 end

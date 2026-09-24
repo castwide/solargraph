@@ -22,6 +22,20 @@ module Solargraph
         @original = original
       end
 
+      # @param other [self]
+      # @param attrs [Hash{::Symbol => Object}]
+      # @return [self]
+      def combine_with other, attrs = {}
+        new_attrs = {
+          scope: assert_same(other, :scope),
+          # An alias that loses this resolves to nothing, and
+          # ApiMap#resolve_method_alias rejects it. A pin synthesized from an
+          # override carries no original, so take whichever side has one.
+          original: original || other.original
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
       def visibility
         :public
       end

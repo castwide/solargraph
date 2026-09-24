@@ -38,6 +38,11 @@ module Solargraph
         return ComplexType::UNDEFINED if tags.empty?
         ComplexType.try_parse(*tags)
       end
+
+      # @return [::Symbol]
+      def return_type_tag_name
+        :return
+      end
     end
   end
 end

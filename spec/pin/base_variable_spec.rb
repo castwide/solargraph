@@ -47,6 +47,15 @@ describe Solargraph::Pin::BaseVariable do
     expect(type.simplify_literals.to_rbs).to eq('(::Integer | nil)')
   end
 
+  it 'resyncs the docstring :type tag to a rooted type for a realized variable pin' do
+    api_map = Solargraph::ApiMap.new
+    pin = Solargraph::Pin::LocalVariable.new(name: 'x', closure: Solargraph::Pin::ROOT_PIN, comments: '@type [String]')
+    realized = pin.realize(api_map)
+    expect(realized.docstring.tag(:type).types).to eq(['::String'])
+    expect(realized.return_type.rooted_tags).to eq('::String')
+    expect(realized.return_type.all_rooted?).to be(true)
+  end
+
   it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
@@ -60,5 +69,23 @@ describe Solargraph::Pin::BaseVariable do
     )
     checker = Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     expect(checker.problems.map(&:message)).to eq([])
+  end
+
+  it 'recovers an RBS-supplied parameterized type unchanged from the docstring type tag it is synced into' do
+    return_type = Solargraph::ComplexType.try_parse('Hash{Symbol => Array<String>}').force_rooted
+    pin = Solargraph::Pin::InstanceVariable.new(name: '@h', closure: Solargraph::Pin::ROOT_PIN,
+                                                source: :rbs, return_type: return_type)
+    expect(pin.docstring.tag(:type).types).to eq(['::Hash{::Symbol => ::Array<::String>}'])
+    expect(pin.return_type.rooted_tags).to eq(return_type.rooted_tags)
+  end
+
+  it 'shows its type in documentation, whether the type came from RBS or from a YARD type tag' do
+    rbs_pin = Solargraph::Pin::InstanceVariable.new(name: '@foo', closure: Solargraph::Pin::ROOT_PIN, source: :rbs,
+                                                    comments: 'The foo.',
+                                                    return_type: Solargraph::ComplexType.try_parse('String').force_rooted)
+    yard_pin = Solargraph::Pin::InstanceVariable.new(name: '@bar', closure: Solargraph::Pin::ROOT_PIN,
+                                                     source: :source, comments: "The bar.\n@type [String]")
+    expect(rbs_pin.documentation).to include('String')
+    expect(yard_pin.documentation).to include('String')
   end
 end

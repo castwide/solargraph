@@ -75,7 +75,7 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (96):
+      # flow sensitive typing could handle (99):
       #
       # @todo 36: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
@@ -88,6 +88,7 @@ module Solargraph
       # @todo 5: flow sensitive typing needs to handle 'raise if'
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
+      # @todo 3: https://github.com/castwide/solargraph/pull/1259
       # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?

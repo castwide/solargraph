@@ -71,6 +71,14 @@ module Solargraph
         end
       end
 
+      # Why the documented thing is abstract, when it is. Pins override this
+      # via Abstractable; anything else mixing Documenting in is not abstract.
+      #
+      # @return [String, nil]
+      def abstract_note
+        nil
+      end
+
       # @return [String]
       def documentation
         @documentation ||= begin
@@ -89,7 +97,9 @@ module Solargraph
             end
             sections.last.concat l
           end
-          sections.map(&:to_s).join.strip
+          text = sections.map(&:to_s).join.strip
+          note = abstract_note
+          note.to_s.empty? ? text : [text, "Abstract: #{note}"].reject(&:empty?).join("\n\n")
         end
       end
 
