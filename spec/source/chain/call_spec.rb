@@ -401,6 +401,29 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'resolves same-class generics from a union independently of declaration order' do
+    ['Box<Integer>, Box<String>', 'Box<String>, Box<Integer>'].each do |union_tag|
+      source = Solargraph::Source.load_string(%(
+        # @generic T
+        class Box
+          # @return [generic<T>]
+          def get; end
+        end
+
+        # @type [#{union_tag}]
+        b = boxed
+        c = b.get
+        c
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+
+      chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(10, 7))
+      type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+      expect(type.items.map(&:tag).sort).to eq(%w[Integer String])
+    end
+  end
+
   it 'denies calls off of nilable objects when loose union mode is off' do
     source = Solargraph::Source.load_string(%(
       # @type [String, nil]
