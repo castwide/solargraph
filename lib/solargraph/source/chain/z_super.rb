@@ -19,7 +19,8 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::Base>]
-        def resolve api_map, name_pin, locals
+        # @param _receiver_path [::Array<String>, nil]
+        def resolve api_map, name_pin, locals, _receiver_path = nil
           super_pins(api_map, name_pin)
         end
       end
