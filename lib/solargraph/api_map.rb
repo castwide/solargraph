@@ -799,6 +799,15 @@ module Solargraph
       store.qualify_superclass fq_sub_tag
     end
 
+    # @param require_path [String]
+    #
+    # @return [Array<Gem::Specification>, nil]
+    def resolve_require require_path
+      raise "Unable to resolve require '#{require_path}' without a workspace" if workspace.nil?
+
+      Workspace::Gemspecs.new(workspace.directory).resolve_require require_path
+    end
+
     private
 
     # A hash of source maps with filename keys.

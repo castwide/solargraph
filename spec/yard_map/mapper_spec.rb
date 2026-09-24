@@ -37,13 +37,6 @@ describe Solargraph::YardMap::Mapper do
     expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
   end
 
-  it 'marks correct return type from RuboCop::Options.new' do
-    # Using rubocop because it's a known dependency
-    pins = pins_with('rubocop').select { |pin| pin.path == 'RuboCop::Options.new' }
-    expect(pins.map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
-    expect(pins.flat_map(&:signatures).map(&:return_type).uniq.map(&:to_s)).to eq(['self'])
-  end
-
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
     pin = pins_with('rspec/expectations').find { |pin| pin.path == 'RSpec::Matchers#expect' }

@@ -554,7 +554,9 @@ describe Solargraph::Pin::Method do
       # on type.  Let's make sure we combine those with anything else
       # found (e.g., additions from the BigDecimal RBS collection)
       # without collapsing signatures
-      api_map = Solargraph::ApiMap.load_with_cache(Dir.pwd, nil)
+      api_map = Solargraph::ApiMap.load(Dir.pwd)
+      bench = Solargraph::Bench.new external_requires: ['bigdecimal']
+      api_map.catalog(bench)
       method = api_map.get_method_stack('Integer', '+', scope: :instance).first
       expect(method.signatures.count).to be > 3
     end
