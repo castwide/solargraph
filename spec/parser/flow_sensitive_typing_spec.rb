@@ -611,14 +611,13 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.rooted_tags).to eq('nil, ::Integer')
+    expect(clip.infer.rooted_tags).to eq('nil, 10')
 
     clip = api_map.clip_at('test.rb', [5, 10])
-    expect(clip.infer.rooted_tags).to eq('::Integer')
+    expect(clip.infer.rooted_tags).to eq('10')
 
     clip = api_map.clip_at('test.rb', [7, 10])
-    # @todo `false` might be acceptable here
-    expect(clip.infer.rooted_tags).to eq('nil, ::Boolean')
+    expect(clip.infer.rooted_tags).to eq('nil, false')
   end
 
   it 'uses .nil? in a return if() in an if to refine types using nil checks' do
@@ -962,6 +961,47 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [8, 10])
     expect(clip.infer.to_s).to eq('String')
+  end
+
+  it 'narrows a bare, implicit-self attr_reader-style accessor assigned into a fresh local variable' do
+    pending('https://github.com/apiology/solargraph/pull/53')
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil if steps.nil?
+
+          local = steps
+          local.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
+  end
+
+  it 'narrows a bare, implicit-self attr_reader-style accessor assigned into a fresh local ' \
+     'variable after a truthy guard' do
+    pending('https://github.com/apiology/solargraph/pull/53')
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil unless steps
+
+          local = steps
+          local.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
   end
 
   it 'uses ! to detect nilness' do

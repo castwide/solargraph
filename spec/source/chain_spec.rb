@@ -235,7 +235,8 @@ describe Solargraph::Source::Chain do
     # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
     chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Boolean')
+    expect(type.tag).to eq('true')
+    expect(type.simplify_literals.tag).to eq('Boolean')
   end
 
   it 'infers self from Object#freeze' do

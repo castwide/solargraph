@@ -642,10 +642,18 @@ module Solargraph
         result
       end
 
+      # Distinguishes pins that share a #location but cover different things.
+      # Nil for pins with no such distinction to make.
+      #
+      # @return [String, nil]
+      def identity_discriminator
+        nil
+      end
+
       # @deprecated
       # @return [String]
       def identity
-        @identity ||= "#{closure&.path}|#{name}|#{location}"
+        @identity ||= "#{closure&.path}|#{name}|#{location}|#{identity_discriminator}"
       end
 
       # The namespaces available for resolving the current namespace. Each gate

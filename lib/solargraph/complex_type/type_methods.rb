@@ -58,8 +58,16 @@ module Solargraph
         @nil_type ||= name.casecmp('nil').zero?
       end
 
+      # Whether this type is one of Ruby's singleton values (nil,
+      # true, false) rather than a general class or a multi-valued
+      # literal (e.g. `0`, `:foo`).
+      #
+      # @return [Boolean]
+      def singleton?
+        nil_type? || %w[true false].include?(name)
+      end
+
       def tuple?
-        return false
         @tuple ||= (name == 'Tuple') || (name == 'Array' && subtypes.length >= 1 && fixed_parameters?)
       end
 

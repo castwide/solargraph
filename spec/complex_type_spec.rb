@@ -427,7 +427,6 @@ describe 'YARD type specifier list parsing' do
       end
 
       it 'squashes literal types when simplifying literals of same type' do
-        pending 'Maybe feasible'
         api_map = Solargraph::ApiMap.new
         type = Solargraph::ComplexType.parse('1, 2, 3')
         type = type.qualify(api_map, '')
@@ -499,6 +498,34 @@ describe 'YARD type specifier list parsing' do
         )
         type = return_type.resolve_generics(generic_class, called_method.return_type)
         expect(type.tag).to eq('Array<String>')
+      end
+
+      it 'resolves generic parameters on a tuple using ()' do
+        return_type = Solargraph::ComplexType.parse('Array(generic<GenericTypeParam1>, generic<GenericTypeParam2>)')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Foo',
+                                                       comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+        called_method = Solargraph::Pin::Method.new(
+          location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+          closure: generic_class,
+          name: 'bar',
+          comments: '@return [Foo<String, Integer>]'
+        )
+        type = return_type.resolve_generics(generic_class, called_method.return_type)
+        expect(type.tag).to eq('Array(String, Integer)')
+      end
+
+      it 'resolves generic parameters on a tuple using <()>' do
+        return_type = Solargraph::ComplexType.parse('Array<(generic<GenericTypeParam1>, generic<GenericTypeParam2>)>')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Foo',
+                                                       comments: "@generic GenericTypeParam1\n@generic GenericTypeParam2")
+        called_method = Solargraph::Pin::Method.new(
+          location: Solargraph::Location.new('file:///foo.rb', Solargraph::Range.from_to(0, 0, 0, 0)),
+          closure: generic_class,
+          name: 'bar',
+          comments: '@return [Foo<String, Integer>]'
+        )
+        type = return_type.resolve_generics(generic_class, called_method.return_type)
+        expect(type.tag).to eq('Array<(String, Integer)>')
       end
 
       UNIQUE_METHOD_GENERIC_TESTS = [
@@ -737,7 +764,6 @@ describe 'YARD type specifier list parsing' do
     end
 
     it 'recognizes a literal conforms with its type' do
-      pending 'Maybe feasible'
       api_map = Solargraph::ApiMap.new
       ptype = Solargraph::ComplexType.parse('Symbol')
       atype = Solargraph::ComplexType.parse(':foo')

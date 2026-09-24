@@ -126,10 +126,13 @@ jobs:
       BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
     steps:
     - uses: actions/checkout@v3
-    - name: clone https://github.com/lekemula/solargraph-rspec/
+    # lekemula/solargraph-rspec#36 raises the expectations this branch's
+    # more precise Array literal inference now satisfies.
+    - name: clone https://github.com/lekemula/solargraph-rspec/ pull/36
       run: |
        cd ..
-       git clone https://github.com/lekemula/solargraph-rspec.git
+       # git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone --branch fix-hash-literal-type-precision https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
