@@ -74,6 +74,40 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a block binding self to a class' do
+      subject(:block_signature) { conversions.pins.find { |pin| pin.path == 'Foo.build' }.signatures.first.block }
+
+      let(:rbs) do
+        <<~RBS
+          class Bar
+          end
+          class Foo
+            def self.build: () { () [self: Bar] -> void } -> void
+          end
+        RBS
+      end
+
+      it 'carries the binding on the block signature, so Pin::Block can rebind without a @yieldreceiver tag' do
+        expect(block_signature.self_type.tag).to eq('Bar')
+      end
+    end
+
+    context 'with a block binding self to the receiver' do
+      subject(:block_signature) { conversions.pins.find { |pin| pin.path == 'Foo.build' }.signatures.first.block }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def self.build: () { () [self: self] -> void } -> void
+          end
+        RBS
+      end
+
+      it 'drops the binding, because self_to_type would reduce the receiver to its instance type' do
+        expect(block_signature.self_type).to be_nil
+      end
+    end
+
     context 'with untyped response' do
       subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
 

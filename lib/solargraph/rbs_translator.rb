@@ -12,7 +12,10 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # @param type [RBS::Types::Bases::Base]
+    # RBS::Types::t is the alias the rbs gem declares for every type node;
+    # only the Bases::* members of it descend from Bases::Base.
+    #
+    # @param type [RBS::Types::t]
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
@@ -74,6 +77,26 @@ module Solargraph
       params
     end
 
+    # The `[self: Foo]` binding on a method's block, if it declares one.
+    #
+    # Two forms are skipped. RBS `self` (`Module#class_eval`) means the
+    # receiver unchanged, which no Solargraph tag expresses: it translates to
+    # `self`, and `self_to_type` reduces `Class<Foo>` to `Foo` — right for
+    # RBS `instance`, wrong here. A type variable (`Data.define`'s
+    # `[self: KLASS]`) cannot name a namespace to bind to at all.
+    #
+    # @param method_type [RBS::MethodType]
+    # @return [ComplexType, nil]
+    def self.block_self_type method_type
+      rbs_type = method_type.block&.self_type
+      return nil if rbs_type.nil? || rbs_type.is_a?(RBS::Types::Bases::Self)
+
+      type = to_complex_type(rbs_type)
+      return nil if type.undefined? || type.generic?
+
+      type
+    end
+
     # @param method_type [RBS::MethodType]
     # @param closure [Pin::Closure]
     # @param parameter_names [Array<String>]
@@ -89,7 +112,7 @@ module Solargraph
       block = if method_type.block
         block_parameters = to_parameter_pins(method_type.block, closure)
         block_return_type = to_complex_type(method_type.block.type.return_type)
-        Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
+        Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure, self_type: block_self_type(method_type))
       end
       Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: :rbs, type_location: closure.location, closure: closure)
     end
