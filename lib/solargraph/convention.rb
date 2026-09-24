@@ -11,6 +11,7 @@ module Solargraph
     autoload :Rakefile, 'solargraph/convention/rakefile'
     autoload :StructDefinition, 'solargraph/convention/struct_definition'
     autoload :DataDefinition,   'solargraph/convention/data_definition'
+    autoload :ClassDefinition,  'solargraph/convention/class_definition'
     autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
 
     # @type [Set<Convention::Base>]
