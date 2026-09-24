@@ -59,6 +59,8 @@ module Solargraph
     def build_from_directory
       return unless bundle_definition
 
+      # @todo Smelly suppression of output from Bundler::Definition#specs
+      $stdout = StringIO.new
       bundle_definition.specs.map do |spec|
         Metagem.new(
           name: spec.name,
@@ -73,6 +75,9 @@ module Solargraph
     rescue StandardError => e
       Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: [#{e.class}] #{e.message}"
       nil
+    ensure
+      # @todo Smelly suppression of output from Bundler::Definition#specs
+      $stdout = STDOUT
     end
 
     def system_find_by_path path
