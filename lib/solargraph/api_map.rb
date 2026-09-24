@@ -759,7 +759,7 @@ module Solargraph
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    # @param namespace_pin [Pin::Base, nil] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
     # @param type [ComplexType] The type which is having its
     #   methods supplemented from fq_reference_tag
@@ -844,7 +844,7 @@ module Solargraph
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
           fqim = store.constants.dereference(im)
-          result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
+          result.concat inner_get_methods_from_reference(fqim, namespace_pin, rooted_type, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
       # Store#get_methods doesn't know about full tags, just
@@ -876,7 +876,7 @@ module Solargraph
           end
           store.get_extends(fqns).reverse.each do |em|
             fqem = dereference(em)
-            result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
+            result.concat inner_get_methods_from_reference(fqem, namespace_pin, rooted_type, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?

@@ -27,6 +27,41 @@ describe Solargraph::RbsMap::Conversions do
 
     attr_reader :temp_dir
 
+    context 'with a generic module prepended and extended' do
+      let(:rbs) do
+        <<~RBS
+          module Wrapper[T]
+          end
+
+          class Holder
+            prepend Wrapper[String]
+            extend Wrapper[Integer]
+          end
+        RBS
+      end
+
+      # @param klass [Class<Solargraph::Pin::Reference>]
+      # @return [Array<Array<String>>]
+      def generic_values_for klass
+        conversions.pins
+                   .select { |pin| pin.instance_of?(klass) && pin.name == '::Wrapper' }
+                   .map(&:generic_values)
+                   .uniq
+      end
+
+      it 'carries the prepended type argument' do
+        expect(generic_values_for(Solargraph::Pin::Reference::Prepend)).to eq([['::String']])
+      end
+
+      it 'carries the extended type argument' do
+        expect(generic_values_for(Solargraph::Pin::Reference::Extend)).to include(['::Integer'])
+      end
+
+      it 'leaves no extend reference pin without its type argument' do
+        expect(generic_values_for(Solargraph::Pin::Reference::Extend)).not_to include([])
+      end
+    end
+
     context 'with overlapping module hierarchies and inheritance' do
       subject(:method_pin) { api_map.get_method_stack('A::B::C', 'foo').first }
 
@@ -91,6 +126,51 @@ describe Solargraph::RbsMap::Conversions do
 
       it 'maps untyped in RBS to undefined in Solargraph' do
         expect(method_pin.return_type.tag).to eq('undefined')
+      end
+    end
+
+    context 'with generic modules mixed in' do
+      let(:rbs) do
+        <<~RBS
+          module Prependable[T]
+            def value: () -> T
+          end
+          module Extendable[T]
+            def build: () -> T
+          end
+          module Includable[T]
+            def fetch: () -> T
+          end
+          class Prepender
+            prepend Prependable[Integer]
+          end
+          class Extender
+            extend Extendable[String]
+          end
+          class Includer
+            include Includable[Symbol]
+          end
+        RBS
+      end
+
+      # @param namespace [String]
+      # @param method [String]
+      # @param scope [Symbol]
+      # @return [String, nil]
+      def inferred_type namespace, method, scope
+        api_map.get_method_stack(namespace, method, scope: scope).first&.return_type&.tag
+      end
+
+      it 'substitutes the type argument of a prepended module' do
+        expect(inferred_type('Prepender', 'value', :instance)).to eq('Integer')
+      end
+
+      it 'substitutes the type argument of an extended module' do
+        expect(inferred_type('Extender', 'build', :class)).to eq('String')
+      end
+
+      it 'substitutes the type argument of an included module' do
+        expect(inferred_type('Includer', 'fetch', :instance)).to eq('Symbol')
       end
     end
   end

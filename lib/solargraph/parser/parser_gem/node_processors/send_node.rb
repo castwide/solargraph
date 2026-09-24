@@ -138,6 +138,7 @@ module Solargraph
                 location: get_node_location(i),
                 closure: cp,
                 name: unpack_name(i),
+                generic_values: mixin_generic_values,
                 source: :parser
               )
             end
@@ -153,6 +154,7 @@ module Solargraph
                 location: get_node_location(i),
                 closure: cp,
                 name: unpack_name(i),
+                generic_values: mixin_generic_values,
                 source: :parser
               )
             end
@@ -175,10 +177,26 @@ module Solargraph
                   location: loc,
                   closure: region.closure,
                   name: unpack_name(i),
+                  generic_values: mixin_generic_values,
                   source: :parser
                 )
               end
             end
+          end
+
+          # Type arguments for a generic module mixed in with inline RBS
+          # syntax, e.g. `include Enumerable #[String]`. RBS recognizes this
+          # for one module argument only, so `include A, B` takes none.
+          #
+          # @return [Array<String>]
+          def mixin_generic_values
+            args = node.children[2..]
+            return [] unless args && args.length == 1
+
+            arg = args.first
+            return [] unless arg.is_a?(AST::Node)
+
+            trailing_rbs_type_args arg, region.source.code
           end
 
           # @return [void]

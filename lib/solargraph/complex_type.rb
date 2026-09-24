@@ -322,7 +322,7 @@ module Solargraph
       end
     end
 
-    # @param definitions [Pin::Namespace, Pin::Method]
+    # @param definitions [Pin::Namespace, Pin::Method, nil]
     # @param context_type [ComplexType]
     # @return [ComplexType]
     def resolve_generics definitions, context_type
