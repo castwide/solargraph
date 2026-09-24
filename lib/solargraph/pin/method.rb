@@ -370,6 +370,13 @@ module Solargraph
         @explicit
       end
 
+      # False for method pins synthesized from a class-body statement rather than parsed from a def.
+      #
+      # @return [Boolean]
+      def body?
+        !attribute?
+      end
+
       def attribute?
         @attribute
       end
