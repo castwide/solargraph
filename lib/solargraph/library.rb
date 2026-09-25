@@ -617,7 +617,7 @@ module Solargraph
           report_cache_progress spec.name, pending
 
           cmd = [workspace.command_path, 'cache', spec.name]
-          cmd.concat ['--directory', workspace.directory] if workspace.directory
+          cmd.push('--directory', workspace.directory) if workspace.directory
           _o, e, s = Open3.capture3(*cmd)
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
