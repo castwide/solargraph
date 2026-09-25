@@ -7,7 +7,7 @@ module Solargraph
   # Methods for caching and loading YARD documentation for gems.
   #
   module Yardoc
-    extend self
+    module_function
 
     def path_for metagem
       File.join(CacheDir.yard_dir, "#{metagem.cache_name}.yardoc")
@@ -17,18 +17,18 @@ module Solargraph
     # @param force [Boolean]
     # @return [void]
     def cache metagem, force: false
-      if force || !cached?(metagem)
-        Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
-        path = path_for(metagem)
-        FileUtils.mkdir_p File.dirname(path)
-        cmd = ['yardoc', '--db', path, '--no-output', '--plugin', 'solargraph', '--plugin', 'activesupport-concern']
-        Solargraph.logger.debug "Running: #{cmd.inspect}"
-        output, status = Open3.capture2e(*cmd, chdir: metagem.full_path)
-        unless status.success?
-          Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
-          Solargraph.logger.info output
-        end
-      end
+      return unless force || !cached?(metagem)
+
+      Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
+      path = path_for(metagem)
+      FileUtils.mkdir_p File.dirname(path)
+      cmd = ['yardoc', '--db', path, '--no-output', '--plugin', 'solargraph', '--plugin', 'activesupport-concern']
+      Solargraph.logger.debug "Running: #{cmd.inspect}"
+      output, status = Open3.capture2e(*cmd, chdir: metagem.full_path)
+      return if status.success?
+
+      Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
+      Solargraph.logger.info output
     end
 
     # @param metagem [Metagem]
