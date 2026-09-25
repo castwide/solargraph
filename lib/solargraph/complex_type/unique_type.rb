@@ -131,10 +131,6 @@ module Solargraph
         # try to find common types via conformance
         items.each do |ut|
           intersection_type.each do |int_type|
-            # Two branches share a body without sharing a meaning. Merging them
-            # here would be safe, but ComplexType#intersect_with tests the
-            # conformance directions in the opposite order, where it would not
-            # — so both copies keep the same shape.
             # rubocop:disable Lint/DuplicateBranch
             if ut.conforms_to?(api_map, int_type, :assignment)
               types << ut
