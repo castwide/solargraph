@@ -93,9 +93,9 @@ Metrics/PerceivedComplexity:
 RSpec/ExampleLength:
   Max: 310
 
-# CollectionStyle round-trips types through the YARD parser, which drops the
-# container from a Hash key: Hash{Array<T> => V} is flagged, and autocorrect
-# rewrites it to Hash{Array, T => V}. CollectionType alone accepts what we write.
+# CollectionStyle flags Hash{Array<T> => V} and autocorrects it to
+# Hash{Array, T => V}, a different type. CollectionType alone accepts
+# what we write.
 # https://github.com/lsegal/yard/pull/1710
 YARD/CollectionStyle:
   Enabled: false
