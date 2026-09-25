@@ -21,33 +21,36 @@ describe Solargraph::Repo do
 
   context 'with a bundle' do
     let(:directory) { File.join('spec', 'fixtures', 'external_bundled_gem') }
+    let(:repo) { described_class.new(directory) }
+
+    it 'tracks bundles' do
+      expect(repo).to be_bundled
+    end
 
     it 'finds bundled gems by name' do
-      repo = described_class.new(directory)
-      expect(repo).to be_bundle
       meta = repo.find_by_name('backport')
       expect(meta.name).to eq('backport')
     end
 
     it 'finds bundled gems by path' do
-      repo = described_class.new(directory)
-      expect(repo).to be_bundle
       meta = repo.find_by_path('backport/machine')
       expect(meta.name).to eq('backport')
     end
 
     it 'finds path gems by name' do
-      repo = described_class.new(directory)
-      expect(repo).to be_bundle
       meta = repo.find_by_name('gem-with-yard-macros')
       expect(meta.name).to eq('gem-with-yard-macros')
     end
 
     it 'finds path gems by path' do
-      repo = described_class.new(directory)
-      expect(repo).to be_bundle
       meta = repo.find_by_path('gem/with/yard/macros')
       expect(meta.name).to eq('gem-with-yard-macros')
+    end
+
+    it 'finds transitive gem dependencies' do
+      # nokogiri is a transitive dependency of reverse_markdown
+      meta = repo.find_by_name('nokogiri')
+      expect(meta.name).to eq('nokogiri')
     end
   end
 end
