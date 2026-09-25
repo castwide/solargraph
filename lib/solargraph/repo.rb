@@ -80,7 +80,7 @@ module Solargraph
       return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
 
       Solargraph.with_clean_env do
-        cmd = ['ruby', '-e', bundle_script]
+        cmd = ['bundle', 'exec', 'ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
@@ -94,11 +94,9 @@ module Solargraph
 
     def bundle_script
       "
-        require 'bundler'
         require 'json'
 
-        definition = Bundler::Definition.build('Gemfile', 'Gemfile.lock', nil)
-        metagems = definition.specs.map do |spec|
+        metagems = Bundler.definition.specs.map do |spec|
           {
             name: spec.name,
             full_path: spec.full_gem_path,
