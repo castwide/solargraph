@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Solargraph::RbsMap::Gem do
-  before(:all) do
+  before(:all) do # rubocop:disable RSpec/BeforeAfterAll
     spec = Gem::Specification.find_by_name('rbs')
     metagem = Solargraph::Metagem.from_specification(spec)
     @gem = described_class.new(metagem)

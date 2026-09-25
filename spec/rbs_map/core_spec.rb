@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 describe Solargraph::RbsMap::Core do
-  before(:all) { @core = Solargraph::RbsMap::Core.new }
+  before(:all) { @core = described_class.new } # rubocop:disable RSpec/BeforeAfterAll
+
   let(:core) { @core }
 
   it 'maps core Errno classes' do
