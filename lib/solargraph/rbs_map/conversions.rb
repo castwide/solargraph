@@ -754,38 +754,25 @@ module Solargraph
         )
       end
 
-      RBS_TO_YARD_TYPE = {
-        'bool' => 'Boolean',
-        'string' => 'String',
-        'int' => 'Integer',
-        'untyped' => '',
-        'NilClass' => 'nil'
-      }
-      private_constant :RBS_TO_YARD_TYPE
-
       # Extract a ComplexType from a MethodType's return type.
       #
       # This method will convert type aliases to concrete types.
       #
       # @param type [RBS::MethodType]
+      # @param implicit_nil [Boolean]
       # @return [ComplexType]
       def extract_method_type_return_type type, implicit_nil
-          tag = RbsTranslator.to_complex_type(type.type.return_type)
-          return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
-          tag
+        return_type = RbsTranslator.to_complex_type(type.type.return_type)
+        return ComplexType.parse("#{return_type.rooted_tags}, nil") if return_type && implicit_nil
+
+        return_type
       end
 
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [ComplexType::UniqueType]
       def build_type(type_name, type_args = [])
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
-        if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
-        else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
-        end
+        RbsTranslator.build_unique_type(type_name, type_args)
       end
 
       # @param decl [RBS::AST::Declarations::Class, RBS::AST::Declarations::Module]

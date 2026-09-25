@@ -122,7 +122,7 @@ module Solargraph
                                                             source: :parser)
               if method_pin.return_type.defined?
                 pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '',
-                                                                pins.last.return_type.items.map(&:rooted_tags), 'value')
+                                                                pins.last.return_type.unioned_items.map(&:rooted_tags), 'value')
               end
             end
           end

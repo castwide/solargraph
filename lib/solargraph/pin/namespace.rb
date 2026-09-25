@@ -8,7 +8,7 @@ module Solargraph
       # @return [::Symbol] :public or :private
       attr_reader :visibility
 
-      # @return [::Symbol] :class or :module
+      # @return [:class, :module]
       attr_reader :type
 
       # does not assert like super, as a namespace without a closure
@@ -16,7 +16,7 @@ module Solargraph
       # qualified
       attr_reader :closure
 
-      # @param type [::Symbol] :class or :module
+      # @param type [:class, :module]
       # @param visibility [::Symbol] :public or :private
       # @param gates [::Array<String>]
       # @param name [String]

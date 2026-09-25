@@ -124,7 +124,7 @@ module Solargraph
       # @return [Array<Array, String, nil>]
       def full_type_arity
         # @sg-ignore flow sensitive typing needs to handle attrs
-        [return_type ? return_type.items.count.to_s : nil] + type_arity
+        [return_type ? return_type.unioned_items.count.to_s : nil] + type_arity
       end
 
       # @param generics_to_resolve [Enumerable<String>]

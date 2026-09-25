@@ -196,7 +196,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
       def combine_return_type other
         if return_type.undefined?
           other.return_type
@@ -211,14 +211,19 @@ module Solargraph
         elsif other.dodgy_return_type_source? && !dodgy_return_type_source?
           return_type
         else
-          all_items = return_type.items + other.return_type.items
-          if all_items.any?(&:selfy?) && all_items.any? do |item|
-            item.rooted_tag == context.reduce_class_type.rooted_tag
+          self_tags = context.reduce_class_type.rooted_tags
+          return_type.combine_via(other.return_type) do |mine, theirs|
+            # a declaration naming both self and the enclosing class meant self
+            if mine.rooted_tags == theirs.rooted_tags
+              mine
+            elsif mine.selfy? && theirs.rooted_tags == self_tags
+              mine
+            elsif theirs.selfy? && mine.rooted_tags == self_tags
+              theirs
+            else
+              ComplexType.union(mine, theirs)
+            end
           end
-            # assume this was a declaration that should have said 'self'
-            all_items.delete_if { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
-          end
-          ComplexType.new(all_items)
         end
       end
 
@@ -668,8 +673,12 @@ module Solargraph
       # @return [String, nil]
       def type_desc
         rbs = to_rbs
-        # RBS doesn't have a way to represent a Class<x> type
-        rbs = return_type.rooted_tags if return_type.name == 'Class'
+        # RBS cannot write Class<x> or Module<x>, so #to_rbs drops the parameter.
+        # #reduce_class_type spots one anywhere in a union or intersection, where
+        # #name reports only the first member. Compare tags, not types: Equality
+        # demands the same class, and reduction always returns a ComplexType.
+        tags = return_type.rooted_tags
+        rbs = tags if return_type.reduce_class_type.rooted_tags != tags
         if path
           if rbs
             "#{path} #{rbs}"

@@ -126,10 +126,14 @@ jobs:
       BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
     steps:
     - uses: actions/checkout@v3
-    - name: clone https://github.com/lekemula/solargraph-rspec/
+    # Spec-side adaptations this branch needs: more precise Hash and Array
+    # literal inference (https://github.com/lekemula/solargraph-rspec/pull/36)
+    # and ComplexType#items in place of the removed #map.
+    - name: clone apiology/solargraph-rspec tolerate-literal-inference-and-items
       run: |
        cd ..
-       git clone https://github.com/lekemula/solargraph-rspec.git
+       # git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone --branch tolerate-literal-inference-and-items https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1

@@ -358,7 +358,7 @@ module Solargraph
             base = base.base
           end
           all_closest = all_found.map { |pin| pin.typify(api_map) }
-          closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+          closest = ComplexType.new(all_closest)
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
@@ -714,7 +714,7 @@ module Solargraph
           base = base.base
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
-        closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+        closest = ComplexType.new(all_closest)
         return false if !found || closest.defined? || internal?(found)
       end
       true

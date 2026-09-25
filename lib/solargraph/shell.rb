@@ -535,7 +535,7 @@ module Solargraph
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
           type = pin.probe(api_map) if type.undefined?
-          pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
+          pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.unioned_items.map(&:rooted_tags))
           pin.instance_variable_set(:@return_type, type)
         end
       end

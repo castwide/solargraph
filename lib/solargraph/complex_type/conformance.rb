@@ -42,6 +42,7 @@ module Solargraph
         end
 
         return true if ignore_interface?
+        return true if inferred == expected
         return true if conforms_via_reverse_match?
 
         downcast_inferred = inferred.downcast_to_literal_if_possible
@@ -58,8 +59,6 @@ module Solargraph
         return with_new_types(inferred.erase_parameters, expected).conforms_to_unique_type? if only_inferred_parameters?
 
         return conforms_via_stripped_expected_parameters? if can_strip_expected_parameters?
-
-        return true if inferred == expected
 
         return false unless erased_type_conforms?
 
@@ -87,7 +86,7 @@ module Solargraph
       end
 
       def ignore_interface?
-        (expected.any?(&:interface?) && rules.include?(:allow_unmatched_interface)) ||
+        (expected.interface? && rules.include?(:allow_unmatched_interface)) ||
           (inferred.interface? && rules.include?(:allow_unmatched_interface))
       end
 
