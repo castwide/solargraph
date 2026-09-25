@@ -33,7 +33,7 @@ module Solargraph
     def find_by_name name
       return system_find_by_name(name) unless @metagems
 
-      bundled_metagem_name_map[name].first
+      bundled_metagem_name_map[name]&.first
     end
 
     # True if the directory has a bundle definition.
