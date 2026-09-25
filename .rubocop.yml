@@ -93,10 +93,10 @@ Metrics/PerceivedComplexity:
 RSpec/ExampleLength:
   Max: 310
 
-# CollectionType rejects Hash<Key, Value> as ambiguous, so no Hash type
-# satisfies both cops: long style is unwritable for a Hash, and short style
-# would rewrite every Array<T> in the codebase as Array[T]. CollectionType
-# alone already matches what we write - Array<T> and Hash{K => V}.
+# CollectionStyle round-trips types through the YARD parser, which drops the
+# container from a Hash key: Hash{Array<T> => V} is flagged, and autocorrect
+# rewrites it to Hash{Array, T => V}. CollectionType alone accepts what we write.
+# https://github.com/lsegal/yard/pull/1710
 YARD/CollectionStyle:
   Enabled: false
 
