@@ -8,6 +8,9 @@ module Solargraph
   # uses the system gems.
   #
   class Repo
+    # @return [String, nil]
+    attr_reader :directory
+
     # @param directory [String, nil]
     def initialize directory
       @directory = directory
@@ -55,16 +58,16 @@ module Solargraph
 
     # @return [String, nil]
     def gemfile
-      @gemfile ||= File.expand_path('Gemfile', @directory) if @directory
+      @gemfile ||= File.expand_path('Gemfile', directory) if directory
     end
 
     # @return [String, nil]
     def lockfile
-      @lockfile ||= File.expand_path('Gemfile.lock', @directory) if @directory
+      @lockfile ||= File.expand_path('Gemfile.lock', directory) if directory
     end
 
     def bundled_directory?
-      @directory && File.file?(gemfile) && File.file?(lockfile)
+      directory && File.file?(gemfile) && File.file?(lockfile)
     end
 
     # Load metagems from the directory's bundle definition if available.
@@ -78,12 +81,12 @@ module Solargraph
 
       Solargraph.with_clean_env do
         cmd = ['ruby', '-e', bundle_script]
-        o, e, s = Open3.capture3(*cmd, chdir: @directory)
+        o, e, s = Open3.capture3(*cmd, chdir: directory)
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           json.map { |data| Metagem.new(**data) }
         else
-          Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: #{e}"
+          Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
           nil
         end
       end
