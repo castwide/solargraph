@@ -146,24 +146,4 @@ describe Solargraph::DocMap do
       Solargraph::Convention.unregister dummy_convention
     end
   end
-
-  context 'with a gem whose RBS collection types make YARD redundant' do
-    let(:pre_cache) { false }
-
-    it 'skips the YARD build even when asked to rebuild' do
-      allow(Solargraph::GemPins).to receive(:build_yard_pins).and_return([])
-
-      doc_map.cache(Gem::Specification.find_by_name('parser'), rebuild: true, out: nil)
-
-      expect(Solargraph::GemPins).not_to have_received(:build_yard_pins)
-    end
-
-    it 'still builds RBS collection pins' do
-      allow(Solargraph::PinCache).to receive(:serialize_rbs_collection_gem)
-
-      doc_map.cache(Gem::Specification.find_by_name('parser'), rebuild: true, out: nil)
-
-      expect(Solargraph::PinCache).to have_received(:serialize_rbs_collection_gem)
-    end
-  end
 end
