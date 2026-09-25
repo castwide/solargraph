@@ -11,13 +11,17 @@ module Solargraph
       include Logging
     end
 
-    # @param pins [Array<Pin::Method>]
-    # @return [Pin::Method, nil]
-    def self.combine_method_pins(*pins)
-      # @type [Pin::Method, nil]
+    # Pin types whose YARD/RBS pins should merge via #combine_with
+    # instead of one side simply winning.
+    COMBINABLE_PIN_TYPES = [Pin::Method, Pin::Namespace].freeze
+
+    # @param pins [Array<Pin::Base>]
+    # @return [Pin::Base, nil]
+    def self.combine_pins(*pins)
+      # @type [Pin::Base, nil]
       combined_pin = nil
-      # @param memo [Pin::Method, nil]
-      # @param pin [Pin::Method]
+      # @param memo [Pin::Base, nil]
+      # @param pin [Pin::Base]
       out = pins.reduce(combined_pin) do |memo, pin|
         next pin if memo.nil?
         if memo == pin && memo.source != :combined
@@ -28,7 +32,7 @@ module Solargraph
         end
         memo.combine_with(pin)
       end
-      logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
+      logger.debug { "GemPins.combine_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
       out
     end
 
@@ -51,16 +55,15 @@ module Solargraph
       rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
       combined = yard_pins.map do |yard_pin|
         in_yard.add yard_pin.path
-        rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
-        next yard_pin unless rbs_pin && yard_pin.instance_of?(Pin::Method)
+        next yard_pin unless COMBINABLE_PIN_TYPES.any? { |type| yard_pin.instance_of?(type) }
 
+        rbs_pin = rbs_api_map.get_path_pins(yard_pin.path).find { |pin| pin.instance_of?(yard_pin.class) }
         unless rbs_pin
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1114
-          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect} (return_type=#{yard_pin.return_type}; signatures=#{yard_pin.signatures})" }
+          logger.debug { "GemPins.combine: No rbs pin for #{yard_pin.path} - using YARD's '#{yard_pin.inspect}" }
           next yard_pin
         end
 
-        out = combine_method_pins(rbs_pin, yard_pin)
+        out = combine_pins(rbs_pin, yard_pin)
         logger.debug { "GemPins.combine: Combining yard.path=#{yard_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{yard_pin.inspect} into #{out}" }
         out
       end
