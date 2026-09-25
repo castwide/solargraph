@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'set'
+
 module Solargraph
   # @todo This class might need a way to track changes to the repo, e.g.,
   #   bundle or dependency updates
@@ -29,11 +31,11 @@ module Solargraph
     end
 
     def loaded_gems
-      @loaded_gems ||= []
+      @loaded_gems ||= Set.new
     end
 
     def unloaded_gems
-      @unloaded_gems ||= []
+      @unloaded_gems ||= Set.new
     end
 
     def pins
@@ -116,14 +118,12 @@ module Solargraph
     def process_gem metagem
       if metagem.cacheable?
         if Collection::Gem.cached?(metagem)
-          pins.concat Collection::Gem.load(metagem)
-          loaded_gems.push metagem
+          pins.concat(Collection::Gem.load(metagem)) if loaded_gems.add?(metagem)
         else
-          unloaded_gems.push metagem
+          unloaded_gems.add metagem
         end
       else
-        pins.concat Collection::Gem.load(metagem)
-        loaded_gems.push metagem
+        pins.concat(Collection::Gem.load(metagem)) if loaded_gems.add?(metagem)
       end
       load_dependencies metagem
     end

@@ -94,4 +94,10 @@ describe Solargraph::External do
     expect(gem_names).to include('gem-with-yard-macros')
     expect(gem_names).to include('reverse_markdown')
   end
+
+  it 'ignores duplicate gems' do
+    external = described_class.new(directory, ['backport', 'backport/version'])
+    backport_pins = external.pins.select { |pin| pin.path == 'Backport' }
+    expect(backport_pins).to be_one
+  end
 end
