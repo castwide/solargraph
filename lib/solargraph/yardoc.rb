@@ -62,6 +62,10 @@ module Solargraph
       cache metagem
       YARD::Registry.load! path_for(metagem)
       YARD::Registry.all
+    # @todo Ignore missing metagems for now. We need to figure out why this
+    #   happens in GitHub actions.
+    rescue Errno::ENOENT
+      []
     end
   end
 end
