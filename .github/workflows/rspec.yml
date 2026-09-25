@@ -50,6 +50,8 @@ jobs:
       run: echo "gem 'tsort'" >> .Gemfile
     - name: Install bundle
       run: bundle install
+    - name: Force bundler version # @todo Temporary
+      run: gem install bundler --version 2.5.22
     - name: Update gems
       run: |
         bundle update rbs # use latest available for this Ruby version
