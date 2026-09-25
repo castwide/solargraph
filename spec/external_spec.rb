@@ -5,6 +5,17 @@ describe Solargraph::External do
   let(:requires) { ['backport', 'gem/with/yard/macros', 'reverse_markdown'] }
   let(:external) { described_class.new(directory, requires) }
 
+  before(:all) do # rubocop:disable RSpec/BeforeAfterAll
+    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
+    Solargraph.with_clean_env do
+      `cd #{File.join('spec', 'fixtures', 'external_bundled_gem')} && bundle install`
+    end
+  end
+
+  after(:all) do # rubocop:disable RSpec/BeforeAfterAll
+    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
+  end
+
   context 'with uncached sources' do
     let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
 
