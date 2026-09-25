@@ -5,6 +5,11 @@ require 'rbs'
 
 module Solargraph
   module PinCache
+    # Gems whose YARD build costs far more than the pins are worth once
+    # their RBS collection types resolve; `parser` alone takes over a
+    # minute.
+    YARD_SUPPRESSED_GEMS = ['parser'].freeze
+
     class << self
       include Logging
 
@@ -100,6 +105,18 @@ module Solargraph
       # @return [Boolean]
       def has_yard? gemspec
         exist?(yard_gem_path(gemspec))
+      end
+
+      # Whether YARD pins for this gem should be skipped in favor of its
+      # RBS collection pins alone.
+      #
+      # @param gemspec [Gem::Specification, Bundler::LazySpecification]
+      # @param rbs_version_cache_key [String, nil]
+      # @return [Boolean]
+      def suppress_yard_cache? gemspec, rbs_version_cache_key
+        return false unless YARD_SUPPRESSED_GEMS.include?(gemspec.name)
+
+        rbs_version_cache_key != RbsMap::CACHE_KEY_UNRESOLVED
       end
 
       # @param gemspec [Gem::Specification]

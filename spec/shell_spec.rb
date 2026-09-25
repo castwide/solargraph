@@ -144,6 +144,50 @@ describe Solargraph::Shell do
         expect { call }.to output(/not found/).to_stderr
       end
     end
+
+    # Yardoc.load! is the only step on the YARD path that both the DocMap and
+    # the Collection implementations reach unconditionally, so these hold
+    # whichever one is caching the gem.
+    context 'with a gem whose RBS collection types make YARD redundant' do
+      before do
+        # Rebuild, so the decision under test is the suppression rather than
+        # whatever the gem happens to have cached already. Thor reads the
+        # option by symbol, so a plain string-keyed Hash reads back as nil.
+        shell.options = Thor::CoreExt::HashWithIndifferentAccess.new('rebuild' => true)
+        allow(Solargraph::Yardoc).to receive(:load!).and_call_original
+      end
+
+      it 'reads no YARD documentation for the gem' do
+        shell.cache('parser')
+
+        expect(Solargraph::Yardoc).not_to have_received(:load!)
+      end
+
+      it 'still resolves the types the gem RBS declares' do
+        shell.cache('parser')
+        pins = Solargraph::ApiMap.load('.').get_path_pins('Parser::AST::Node#children')
+
+        expect(pins.map { |pin| pin.return_type.to_s }).to include('Array<self>')
+      end
+
+      it 'reads YARD documentation for a gem outside the list' do
+        shell.cache('backport')
+
+        expect(Solargraph::Yardoc).to have_received(:load!)
+      end
+
+      it 'reads no YARD documentation when caching the gem by name' do
+        shell.gems('parser')
+
+        expect(Solargraph::Yardoc).not_to have_received(:load!)
+      end
+
+      it 'reads YARD documentation when caching a gem outside the list by name' do
+        shell.gems('backport')
+
+        expect(Solargraph::Yardoc).to have_received(:load!)
+      end
+    end
   end
 
   # @type cmd [Array<String>]

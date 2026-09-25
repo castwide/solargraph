@@ -107,7 +107,8 @@ module Solargraph
     # @param out [IO, StringIO, nil] output stream for logging
     # @return [void]
     def cache gemspec, rebuild: false, out: nil
-      build_yard = uncached_yard_gemspecs.include?(gemspec) || rebuild
+      build_yard = (uncached_yard_gemspecs.include?(gemspec) || rebuild) &&
+                   !PinCache.suppress_yard_cache?(gemspec, rbs_cache_key(gemspec))
       build_rbs_collection = uncached_rbs_collection_gemspecs.include?(gemspec) || rebuild
       if build_yard || build_rbs_collection
         type = []
@@ -161,6 +162,11 @@ module Solargraph
       self.class.all_combined_pins_in_memory
     end
 
+    # @return [Hash{String => String}] Indexed by gemspec full name
+    def rbs_cache_keys
+      @rbs_cache_keys ||= {}
+    end
+
     # @return [Array<String>]
     def yard_plugins
       @environ.yard_plugins
@@ -212,6 +218,13 @@ module Solargraph
     end
 
     # @param gemspec [Gem::Specification]
+    # @return [String]
+    def rbs_cache_key gemspec
+      rbs_cache_keys[gemspec.full_name] ||=
+        RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path).cache_key
+    end
+
+    # @param gemspec [Gem::Specification]
     # @return [Array<Pin::Base>, nil]
     def deserialize_yard_pin_cache gemspec
       if yard_pins_in_memory.key?([gemspec.name, gemspec.version])
@@ -237,8 +250,7 @@ module Solargraph
         return combined_pins_in_memory[[gemspec.name, gemspec.version]]
       end
 
-      rbs_map = RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path)
-      rbs_version_cache_key = rbs_map.cache_key
+      rbs_version_cache_key = rbs_cache_key(gemspec)
 
       cached = PinCache.deserialize_combined_gem(gemspec, rbs_version_cache_key)
       if cached
@@ -249,11 +261,14 @@ module Solargraph
 
       rbs_collection_pins = deserialize_rbs_collection_cache gemspec, rbs_version_cache_key
 
-      yard_pins = deserialize_yard_pin_cache gemspec
+      # A suppressed gem never gets a YARD cache, so combine against an
+      # empty set rather than treating its absence as a cache miss.
+      suppress_yard = PinCache.suppress_yard_cache?(gemspec, rbs_version_cache_key)
+      yard_pins = deserialize_yard_pin_cache(gemspec) unless suppress_yard
 
-      if !rbs_collection_pins.nil? && !yard_pins.nil?
+      if !rbs_collection_pins.nil? && (suppress_yard || !yard_pins.nil?)
         logger.debug { "Combining pins for #{gemspec.name}:#{gemspec.version}" }
-        combined_pins = GemPins.combine(yard_pins, rbs_collection_pins)
+        combined_pins = GemPins.combine(yard_pins || [], rbs_collection_pins)
         PinCache.serialize_combined_gem(gemspec, rbs_version_cache_key, combined_pins)
         combined_pins_in_memory[[gemspec.name, gemspec.version]] = combined_pins
         logger.info { "Generated #{combined_pins_in_memory[[gemspec.name, gemspec.version]].length} combined pins for #{gemspec.name} #{gemspec.version}" }
