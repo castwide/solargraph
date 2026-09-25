@@ -48,12 +48,10 @@ module Solargraph
 
     def bundle_definition
       @bundle_definition ||= if bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
-        Bundler::Definition.build(gemfile, lockfile, nil)
-      elsif ENV['BUNDLE_GEMFILE']
-        Bundler.definition
-      else
-        nil
-      end
+                               Bundler::Definition.build(gemfile, lockfile, nil)
+                             elsif ENV['BUNDLE_GEMFILE']
+                               Bundler.definition
+                             end
     end
 
     def build_from_directory
