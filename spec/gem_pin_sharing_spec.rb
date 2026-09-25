@@ -2,10 +2,13 @@
 
 require 'tmpdir'
 
-# Two workspace folders open at once should not each pay to deserialize the
-# same gem. Asking for a gem's pins from two workspaces in one process is what
-# an editor does with two folders open, and the pins that come back are the
-# same objects when the work was done once.
+# Two workspace folders open at once get the same pin objects for a gem they
+# share, which is what https://github.com/castwide/solargraph/pull/983 restored
+# after they had become one set per DocMap. Identity is the point rather than
+# equality: a pin memoizes its macros and its namespace, so the second folder
+# indexes pins whose answers are already worked out. Given fresh copies it does
+# that work again, around two and a half times the calls into Pin::Base#macros
+# and ApiMap::Index#path_pin_hash.
 describe Solargraph::ApiMap do
   # @param directory [String]
   # @return [Array<Solargraph::Pin::Base>]
