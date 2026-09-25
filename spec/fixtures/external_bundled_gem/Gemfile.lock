@@ -6,6 +6,11 @@ PATH
 GEM
   specs:
     backport (1.2.0)
+    nokogiri (1.19.4-x64-mingw-ucrt)
+      racc (~> 1.4)
+    racc (1.8.1)
+    reverse_markdown (3.0.2)
+      nokogiri
 
 PLATFORMS
   x64-mingw-ucrt
@@ -13,10 +18,14 @@ PLATFORMS
 DEPENDENCIES
   backport
   gem-with-yard-macros!
+  reverse_markdown
 
 CHECKSUMS
   backport (1.2.0)
   gem-with-yard-macros (0.1.0)
+  nokogiri (1.19.4-x64-mingw-ucrt)
+  racc (1.8.1)
+  reverse_markdown (3.0.2)
 
 BUNDLED WITH
   4.0.6

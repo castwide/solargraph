@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module Solargraph
   # A repository for the gems available in the specified directory. If the
   # directory has a Gemfile, Repo will use its gem definitions. Otherwise it
@@ -46,33 +48,44 @@ module Solargraph
       File.file?(gemfile) && File.file?(lockfile)
     end
 
-    def bundle_definition
-      @bundle_definition ||= if bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
-                               Bundler::Definition.build(gemfile, lockfile, nil)
-                             elsif ENV['BUNDLE_GEMFILE']
-                               Bundler.definition
-                             end
+    # Load metagems from the directory's bundle definition if available.
+    #
+    # This method performs gem collection in a separate process to suppress
+    # output from the `Bundler.definition.specs` call.
+    #
+    def build_from_directory
+      return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
+
+      Solargraph.with_clean_env do
+        cmd = ['ruby', '-e', bundle_script]
+        o, e, s = Open3.capture3(*cmd, chdir: @directory )
+        if s.success?
+          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
+          json.map { |data| Metagem.new(**data) }
+        else
+          Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: #{e}"
+          nil
+        end
+      end
     end
 
-    def build_from_directory
-      return unless bundle_definition
-
-      # @todo Smelly preparation of bundle specs to suppress stdout
-      Diagnostics::RubocopHelpers.redirect_stdout { bundle_definition.specs }
-      bundle_definition.specs.map do |spec|
-        Metagem.new(
-          name: spec.name,
-          full_path: spec.full_gem_path,
-          spec_file: spec.spec_file,
-          source: spec.source.to_s,
-          version: spec.version,
-          require_paths: spec.require_paths,
-          dependencies: spec.dependencies.map(&:name)
-        )
-      end
-    rescue StandardError => e
-      Solargraph.logger.warn "Failed to load gems from bundle at #{@directory}: [#{e.class}] #{e.message}"
-      nil
+    def bundle_script
+      "
+        require 'bundler/setup'
+        require 'json'
+        metagems = Bundler.definition.specs.map do |spec|
+          {
+            name: spec.name,
+            full_path: spec.full_gem_path,
+            spec_file: spec.spec_file,
+            source: spec.source.to_s,
+            version: spec.version,
+            require_paths: spec.require_paths,
+            dependencies: spec.dependencies.map(&:name)
+          }
+        end
+        puts metagems.to_json
+      "
     end
 
     def system_find_by_path path
