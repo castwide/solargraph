@@ -2,20 +2,28 @@
 
 module Solargraph
   class Metagem
+    # @return [String]
     attr_reader :name
 
+    # @return [String]
     attr_reader :full_path
 
+    # @return [String]
     attr_reader :spec_file
 
+    # @return [String]
     attr_reader :source
 
+    # @return [String]
     attr_reader :version
 
+    # @return [Array<String>]
     attr_reader :require_paths
 
+    # @return [Array<String>]
     attr_reader :dependencies
 
+    # @return [String]
     attr_reader :cache_name
 
     def initialize name:, full_path:, spec_file:, source:, version:, require_paths:, dependencies:
