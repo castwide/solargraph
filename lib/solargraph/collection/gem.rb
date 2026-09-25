@@ -11,6 +11,7 @@ module Solargraph
 
       # @param metagem [Metagem]
       def initialize metagem
+        super()
         @metagem = metagem
       end
 
@@ -25,10 +26,10 @@ module Solargraph
 
       def pins
         @pins ||= if metagem.cacheable?
-          cacheable_pins
-        else
-          uncacheable_pins
-        end
+                    cacheable_pins
+                  else
+                    uncacheable_pins
+                  end
       end
 
       def self.cached? metagem

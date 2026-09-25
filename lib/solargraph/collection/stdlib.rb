@@ -9,6 +9,7 @@ module Solargraph
 
       # @param library [String]
       def initialize library
+        super()
         @library = library
       end
 
