@@ -1,0 +1,3 @@
+module Backport
+  def self.prepare_stdio_server: (**untyped) -> Float
+end

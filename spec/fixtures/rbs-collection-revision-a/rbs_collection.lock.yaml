@@ -1,0 +1,10 @@
+path: .gem_rbs_collection
+gems:
+- name: backport
+  version: '1.2'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
