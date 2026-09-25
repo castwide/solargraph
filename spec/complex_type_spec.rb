@@ -264,6 +264,27 @@ describe 'YARD type specifier list parsing' do
       expect(type.to_s).to eq('false')
     end
 
+    describe 'a union offering both boolean cases' do
+      it 'is named Boolean' do
+        expect(Solargraph::ComplexType.parse('true, false').tags).to eq('Boolean')
+      end
+
+      it 'folds in either order, keeping its other members' do
+        expect(Solargraph::ComplexType.parse('String, false, true').tags).to eq('Boolean, String')
+      end
+
+      it 'keeps a union offering only one case as that case' do
+        expect(Solargraph::ComplexType.parse('String, true').tags).to eq('String, true')
+      end
+
+      it 'does not count a case reached through an intersection' do
+        # true & Comparable denotes exactly true, but folding it away
+        # would drop Comparable, so the set does not cover Boolean.
+        expect(Solargraph::ComplexType.parse('true & Comparable, false').tags)
+          .to eq('true & Comparable, false')
+      end
+    end
+
     # See literal details at
     # https://github.com/ruby/rbs/blob/master/docs/syntax.md and
     # https://yardoc.org/types.html
@@ -410,14 +431,13 @@ describe 'YARD type specifier list parsing' do
       expect(types.items.first.subtypes.map(&:tag)).to eq([intersection_tag, 'nil'])
     end
 
-    # Regression: resolve_generics calls transform(name), and an
-    # Intersection's `name` is the synthetic "A & B" string. Forwarding
-    # it renamed every conjunct to the whole intersection, producing a
+    # Regression: a caller passing the whole compound tag as the new
+    # name renamed every conjunct to the whole intersection, producing a
     # tag that no longer parses and raising ComplexTypeError out of
     # ApiMap#get_method_stack.
-    it 'keeps each conjunct name when transformed with the intersection name' do
+    it 'keeps each conjunct name when transformed with the compound tag' do
       intersection = Solargraph::ComplexType.parse(intersection_tag).items.first
-      transformed = intersection.transform(intersection.name) { |t| t }
+      transformed = intersection.transform(intersection.tag) { |t| t }
       expect(transformed.tag).to eq(intersection_tag)
       expect { Solargraph::ComplexType.parse(transformed.tag) }.not_to raise_error
     end
@@ -443,8 +463,24 @@ describe 'YARD type specifier list parsing' do
         expect { intersection.scope }.to raise_error(NotImplementedError)
       end
 
+      it 'refuses to name the compound tag, which is no namespace' do
+        expect { intersection.name }.to raise_error(NotImplementedError)
+      end
+
       it 'has no namespace of its own to report' do
         expect { intersection.namespace }.to raise_error(NotImplementedError)
+      end
+
+      it 'cannot root the compound name the way #rooted_tag roots each conjunct' do
+        intersection = Solargraph::ComplexType.parse('::Comparable & ::Enumerable').items.first
+        expect(intersection.rooted_tag).to eq('::Comparable & ::Enumerable')
+        expect { intersection.rooted_name }.to raise_error(NotImplementedError)
+      end
+
+      it 'refuses to report no parameters while answering that it is generic' do
+        intersection = Solargraph::ComplexType.parse('::Array<generic<T>> & ::Enumerable<generic<T>>').items.first
+        expect(intersection.generic?).to be true
+        expect { intersection.all_params }.to raise_error(NotImplementedError)
       end
     end
 
@@ -481,6 +517,43 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
+    describe '#freeze' do
+      it 'freezes rather than raising, unlike the compound questions' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect { intersection.freeze }.not_to raise_error
+        expect(intersection).to be_frozen
+      end
+
+      it 'still compares equal to a reordered twin once frozen' do
+        frozen = Solargraph::ComplexType.parse('Foo & Bar').items.first.freeze
+        expect(frozen).to eq(Solargraph::ComplexType.parse('Bar & Foo').items.first)
+      end
+    end
+
+    describe '#implicit_union?' do
+      it 'is true when a conjunct treats its parameters as an implicit union' do
+        intersection = Solargraph::ComplexType.parse('Array<String> & Enumerable').items.first
+        expect(intersection.implicit_union?).to be true
+      end
+
+      it 'is false when no conjunct does' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect(intersection.implicit_union?).to be false
+      end
+    end
+
+    describe '#order_nil_last' do
+      it 'moves nil last inside a conjunct that is itself a union' do
+        intersection = Solargraph::ComplexType.parse('Foo & [nil, Bar]').items.first
+        expect(intersection.order_nil_last.tag).to eq('Foo & [Bar, nil]')
+      end
+
+      it 'leaves an intersection with no nil member alone' do
+        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
+        expect(intersection.order_nil_last.tag).to eq('Foo & Bar')
+      end
+    end
+
     describe '#reduce_class_type' do
       it 'reduces every conjunct naming a class object' do
         type = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>')
@@ -500,6 +573,28 @@ describe 'YARD type specifier list parsing' do
       it 'answers for itself when asked directly' do
         intersection = Solargraph::ComplexType.parse('Class<::Foo> & Class<::Baz>').items.first
         expect(intersection.reduce_class_type.tags).to eq('Foo & Baz')
+      end
+    end
+
+    describe '#reduce_object' do
+      it 'unwraps every conjunct written as a parameterized Object' do
+        type = Solargraph::ComplexType.parse('Object<::Foo> & Object<::Baz>')
+        expect(type.reduce_object.tags).to eq('Foo & Baz')
+      end
+
+      it 'unwraps only the conjuncts written that way' do
+        type = Solargraph::ComplexType.parse('Object<::Foo, ::Bar> & ::Qux')
+        expect(type.reduce_object.tags).to eq('[Foo, Bar] & Qux')
+      end
+
+      it 'leaves a conjunct that is a bare Object alone' do
+        type = Solargraph::ComplexType.parse('::Object & ::Qux')
+        expect(type.reduce_object.tags).to eq('Object & Qux')
+      end
+
+      it 'answers for itself when asked directly' do
+        intersection = Solargraph::ComplexType.parse('Object<::Foo> & ::Qux').items.first
+        expect(intersection.reduce_object.tags).to eq('Foo & Qux')
       end
     end
 
@@ -833,6 +928,29 @@ describe 'YARD type specifier list parsing' do
           item = Solargraph::ComplexType.parse('Class<::Foo>').items.first
           expect(item.reduce_class_type.tags).to eq('Foo')
         end
+      end
+    end
+
+    # YARD writes Object<A, B> where the parameters are the whole of
+    # what the tag says; core_fills uses Object<self> for a receiver.
+    describe '#reduce_object' do
+      it 'unwraps each union member' do
+        type = Solargraph::ComplexType.parse('Object<::Foo>, Object<::Baz>')
+        expect(type.reduce_object.tags).to eq('Foo, Baz')
+      end
+
+      it 'leaves a bare Object alone' do
+        expect(Solargraph::ComplexType.parse('Object').reduce_object.tags).to eq('Object')
+      end
+
+      it 'unwraps a conjunct of an intersection sitting in a union' do
+        type = Solargraph::ComplexType.parse('::Bar, Object<::Foo> & ::Qux')
+        expect(type.reduce_object.tags).to eq('Bar, Foo & Qux')
+      end
+
+      it 'answers for a single type asked directly' do
+        item = Solargraph::ComplexType.parse('Object<::Foo>').items.first
+        expect(item.reduce_object.tags).to eq('Foo')
       end
     end
 
@@ -1230,6 +1348,20 @@ describe 'YARD type specifier list parsing' do
       atype = Solargraph::ComplexType.parse('Hash{:a => Integer} & Integer')
       ptype = Solargraph::ComplexType.parse('Hash{:a => Integer} & String')
       expect(atype.conforms_to?(api_map, ptype, :assignment)).to be(false)
+    end
+  end
+
+  context 'when sent a message that no type member defines' do
+    it 'raises NoMethodError on an empty union' do
+      expect { Solargraph::ComplexType.parse.frobnicate }.to raise_error(NoMethodError)
+    end
+
+    it 'raises NoMethodError on a populated union' do
+      expect { Solargraph::ComplexType.parse('String').frobnicate }.to raise_error(NoMethodError)
+    end
+
+    it 'answers nil for a TypeMethods name on an empty union' do
+      expect(Solargraph::ComplexType.parse.undefined?).to be_nil
     end
   end
 end

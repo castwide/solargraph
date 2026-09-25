@@ -20,11 +20,7 @@ module Solargraph
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
-      items = types.flat_map(&:items).uniq(&:rooted_tags)
-      if items.any? { |i| i.name == 'false' } && items.any? { |i| i.name == 'true' }
-        items.delete_if { |i| %w[false true].include?(i.name) }
-        items.unshift(UniqueType::BOOLEAN)
-      end
+      items = fold_boolean_cases(types.flat_map(&:items).uniq(&:rooted_tags))
       # @type [Array<UniqueType>]
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       # @todo shouldn't need this cast - if statement above adds an 'Array' type
@@ -171,9 +167,11 @@ module Solargraph
     # @return [Object, nil]
     # @param [Array<Object>] args
     def method_missing name, *args, &block
+      # Check the name before the emptiness guard, so an unknown name
+      # reaches super and raises even when there are no members.
+      return super unless respond_to_missing?(name)
       return if @items.first.nil?
-      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
-      super
+      @items.first.send(name, *args, &block)
     end
 
     # @param name [Symbol]
@@ -438,6 +436,14 @@ module Solargraph
       ComplexType.new(unioned_items.map(&:reduce_class_type))
     end
 
+    # Each member unwraps on its own, since a value described by any
+    # one of them is described by whatever that member unwraps to.
+    #
+    # @return [ComplexType]
+    def reduce_object
+      ComplexType.new(unioned_items.map(&:reduce_object))
+    end
+
     # every type and subtype in this union have been resolved to be
     # fully qualified
     def all_rooted?
@@ -509,19 +515,6 @@ module Solargraph
       [self.class, items]
     end
 
-    # @return [ComplexType]
-    def reduce_object
-      new_items = items.flat_map do |ut|
-        next [ut] if ut.name != 'Object' || ut.subtypes.empty?
-        ut.subtypes
-      end
-      ComplexType.new(new_items)
-    end
-
-    def bottom?
-      @items.all?(&:bot?)
-    end
-
     # Whether combining these two into an intersection is safe. Only
     # true when at least one side is *positively confirmed* to be a
     # mix-in, since any class can pick up any module. Two concrete
@@ -544,6 +537,21 @@ module Solargraph
     def namespace_kind api_map, unique_type
       pin = api_map.get_path_pins(unique_type.namespace).find { |p| p.is_a?(Pin::Namespace) }
       pin&.type
+    end
+
+    private
+
+    # Boolean is the union of its two cases, so a union offering both
+    # is Boolean. Only the set can answer that, no member can, and it
+    # answers on the member array because @items is not assigned yet.
+    #
+    # @param items [Array<UniqueType>]
+    # @return [Array<UniqueType>]
+    def fold_boolean_cases items
+      cases = UniqueType::BOOLEAN_CASES
+      return items unless (cases - items).empty?
+
+      [UniqueType::BOOLEAN] + (items - cases)
     end
 
     class << self

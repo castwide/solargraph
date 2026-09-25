@@ -151,6 +151,15 @@ module Solargraph
           conjuncts.any?(&:literal?)
         end
 
+        # True when any conjunct gathers its parameters as a union, since
+        # the value is all of them at once. A conjunct is a ComplexType,
+        # which has no #implicit_union?, so its members answer instead.
+        #
+        # @return [Boolean]
+        def implicit_union?
+          each_unique_type.any?(&:implicit_union?)
+        end
+
         # @param other [Object]
         # @return [Boolean]
         def eql? other
@@ -339,6 +348,14 @@ module Solargraph
           self
         end
 
+        # Conjuncts are not a union, so nothing moves at this level; a
+        # conjunct that is one reorders its own members.
+        #
+        # @return [Intersection]
+        def order_nil_last
+          Intersection.new(conjuncts.map(&:order_nil_last))
+        end
+
         # Reduction distributes over conjuncts: Class<A> & Class<B>
         # describes a value that is both an A and a B. #name is the
         # compound tag rather than "Class", so UniqueType cannot do this.
@@ -346,6 +363,15 @@ module Solargraph
         # @return [ComplexType]
         def reduce_class_type
           ComplexType.new([Intersection.new(conjuncts.map(&:reduce_class_type))])
+        end
+
+        # Unwrapping distributes over conjuncts: a value that is both
+        # an Object<A, B> and a C is both an A-or-B and a C. #name is the
+        # compound tag rather than "Object", so UniqueType cannot do this.
+        #
+        # @return [ComplexType]
+        def reduce_object
+          ComplexType.new([Intersection.new(conjuncts.map(&:reduce_object))])
         end
 
         # @return [Array<ComplexType::UniqueType>]
@@ -376,6 +402,41 @@ module Solargraph
         # intersection never populates.
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rooted_namespace(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def rooted_name(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def name(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def can_root_name?(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def key_types(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def subtypes(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def all_params(*, **, &)
+          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        def parameters_type(*, **, &)
           raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
@@ -536,9 +597,14 @@ module Solargraph
 
         protected
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
-        def equality_fields(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+        # The conjunct set #eql? and #hash already answer from, wrapped so
+        # Equality#freeze freezes the set and not each conjunct: freezing
+        # a conjunct ComplexType freezes the ComplexType class itself,
+        # since its own equality_fields lead with self.class.
+        #
+        # @return [Array<Array<ComplexType>>]
+        def equality_fields
+          [sorted_conjuncts]
         end
 
         # Conjunct order is not part of the type. rooted_tags keys the

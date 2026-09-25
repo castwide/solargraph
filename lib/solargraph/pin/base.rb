@@ -673,8 +673,12 @@ module Solargraph
       # @return [String, nil]
       def type_desc
         rbs = to_rbs
-        # RBS doesn't have a way to represent a Class<x> type
-        rbs = return_type.rooted_tags if return_type.name == 'Class'
+        # RBS cannot write Class<x> or Module<x>, so #to_rbs drops the parameter.
+        # #reduce_class_type spots one anywhere in a union or intersection, where
+        # #name reports only the first member. Compare tags, not types: Equality
+        # demands the same class, and reduction always returns a ComplexType.
+        tags = return_type.rooted_tags
+        rbs = tags if return_type.reduce_class_type.rooted_tags != tags
         if path
           if rbs
             "#{path} #{rbs}"
