@@ -46,7 +46,7 @@ module Solargraph
       # @param yield_params [::Array<Parameter>, nil] the yielding method's own block parameters
       #
       # @return [::Array<ComplexType>]
-      # @sg-ignore Adding the splat-detection return path changes the merged return type Solargraph infers for the unchanged tail expression
+      # @sg-ignore Enumerator#with_index with a block infers the Enumerator, not the block results
       def destructure_yield_types yield_types, parameters, yield_params = nil
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
