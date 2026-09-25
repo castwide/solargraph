@@ -92,11 +92,11 @@ module Solargraph
         end
       end
 
-      if bundler_require
-        @repo.bundled.each do |metagem|
-          next if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
-          process_gem metagem
-        end
+      return unless bundler_require
+
+      @repo.bundled.each do |metagem|
+        next if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
+        process_gem metagem
       end
     end
 

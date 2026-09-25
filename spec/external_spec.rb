@@ -19,7 +19,7 @@ describe Solargraph::External do
   end
 
   context 'with cached sources' do
-    before(:all) do
+    before(:all) do # rubocop:disable RSpec/BeforeAfterAll
       %w[backport reverse_markdown nokogiri].each do |name|
         metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name(name))
         Solargraph::Collection::Gem.load(metagem) unless Solargraph::Collection::Gem.cached?(metagem)
@@ -57,7 +57,7 @@ describe Solargraph::External do
 
     it 'combines gem_rbs_collection pins' do
       pin = external.pins.find { |pin| pin.path == 'Addressable::URI.parse' }
-      expect(pin).to be
+      expect(pin).to be_a(Solargraph::Pin::Method)
     end
 
     it 'combines local source pins' do

@@ -19,9 +19,9 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def load
         if File.exist?(cache_file)
-          Marshal.load(File.read(cache_file, mode: 'rb'))
+          Marshal.load(File.read(cache_file, mode: 'rb')) # rubocop:disable Security/MarshalLoad
         else
-          serial = Marshal.dump(pins) # rubocop:disable Security/MarshalLoad
+          serial = Marshal.dump(pins)
           FileUtils.mkdir_p File.dirname(cache_file)
           File.write cache_file, serial, mode: 'wb'
           pins
