@@ -431,14 +431,13 @@ describe 'YARD type specifier list parsing' do
       expect(types.items.first.subtypes.map(&:tag)).to eq([intersection_tag, 'nil'])
     end
 
-    # Regression: resolve_generics calls transform(name), and an
-    # Intersection's `name` is the synthetic "A & B" string. Forwarding
-    # it renamed every conjunct to the whole intersection, producing a
+    # Regression: a caller passing the whole compound tag as the new
+    # name renamed every conjunct to the whole intersection, producing a
     # tag that no longer parses and raising ComplexTypeError out of
     # ApiMap#get_method_stack.
-    it 'keeps each conjunct name when transformed with the intersection name' do
+    it 'keeps each conjunct name when transformed with the compound tag' do
       intersection = Solargraph::ComplexType.parse(intersection_tag).items.first
-      transformed = intersection.transform(intersection.name) { |t| t }
+      transformed = intersection.transform(intersection.tag) { |t| t }
       expect(transformed.tag).to eq(intersection_tag)
       expect { Solargraph::ComplexType.parse(transformed.tag) }.not_to raise_error
     end
@@ -462,6 +461,10 @@ describe 'YARD type specifier list parsing' do
 
       it 'has no scope of its own to report' do
         expect { intersection.scope }.to raise_error(NotImplementedError)
+      end
+
+      it 'refuses to name the compound tag, which is no namespace' do
+        expect { intersection.name }.to raise_error(NotImplementedError)
       end
 
       it 'has no namespace of its own to report' do
