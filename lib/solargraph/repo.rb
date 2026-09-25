@@ -78,7 +78,7 @@ module Solargraph
 
       Solargraph.with_clean_env do
         cmd = ['ruby', '-e', bundle_script]
-        o, e, s = Open3.capture3(*cmd, chdir: @directory )
+        o, e, s = Open3.capture3(*cmd, chdir: @directory)
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           json.map { |data| Metagem.new(**data) }
