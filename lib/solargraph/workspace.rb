@@ -158,10 +158,13 @@ module Solargraph
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
-    # @sg-ignore return type could not be inferred
+    # @raise [InvalidConfigError] if the client configured a non-string commandPath
     # @return [String]
     def command_path
-      server['commandPath'] || 'solargraph'
+      value = server['commandPath']
+      return 'solargraph' if value.nil?
+      return value if value.is_a?(String)
+      raise InvalidConfigError, "Invalid commandPath: must be a string, but was #{value.inspect}"
     end
 
     # @return [String, nil]
