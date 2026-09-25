@@ -206,10 +206,10 @@ describe Solargraph::LanguageServer::Host do
       expect(host.command_path).to eq('/usr/local/bin/solargraph')
     end
 
-    it 'falls back to solargraph when commandPath is not a string' do
+    it 'rejects a commandPath that is not a string' do
       host = described_class.new
       host.configure({ 'commandPath' => true })
-      expect(host.command_path).to eq('solargraph')
+      expect { host.command_path }.to raise_error(Solargraph::InvalidConfigError, /commandPath/)
     end
   end
 

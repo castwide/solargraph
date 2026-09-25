@@ -20,6 +20,7 @@ module Solargraph
   class WorkspaceTooLargeError     < RuntimeError;  end
   class BundleNotFoundError        < StandardError; end
   class InvalidRubocopVersionError < RuntimeError;  end
+  class InvalidConfigError         < RuntimeError;  end
 
   autoload :Position,         'solargraph/position'
   autoload :Range,            'solargraph/range'

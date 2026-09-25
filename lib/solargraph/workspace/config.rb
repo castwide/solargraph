@@ -95,9 +95,9 @@ module Solargraph
       # @return [Hash]
       def formatter
         value = raw_data['formatter']
+        return {} if value.nil?
         return value if value.is_a?(Hash)
-        warn_invalid('formatter', value)
-        {}
+        raise InvalidConfigError, invalid_message('formatter', 'a hash', value)
       end
 
       # An array of plugins to require.
@@ -112,9 +112,9 @@ module Solargraph
       # @return [Integer]
       def max_files
         value = raw_data['max_files']
+        return MAX_FILES if value.nil?
         return value if value.is_a?(Integer)
-        warn_invalid('max_files', value)
-        MAX_FILES
+        raise InvalidConfigError, invalid_message('max_files', 'an integer', value)
       end
 
       # @return [Hash{Symbol => Symbol}]
@@ -128,24 +128,26 @@ module Solargraph
 
       private
 
-      # Read an array-valued .solargraph.yml key, falling back to an
-      # empty array when the value is not actually an array.
+      # Read an array-valued .solargraph.yml key. A key with no value at
+      # all means "none", but a value of the wrong type is a mistake the
+      # user needs to hear about rather than have silently discarded.
       #
       # @param key [String]
+      # @raise [InvalidConfigError] if the value is not an array
       # @return [Array<String>]
       def validated_array key
         value = raw_data[key]
+        return [] if value.nil?
         return value if value.is_a?(Array)
-        warn_invalid(key, value)
-        []
+        raise InvalidConfigError, invalid_message(key, 'an array', value)
       end
 
       # @param key [String]
-      # @param value [Object, nil]
-      # @return [void]
-      def warn_invalid key, value
-        return if value.nil?
-        Solargraph.logger.warn "Invalid .solargraph.yml value for #{key.inspect}: #{value.inspect}"
+      # @param expected [String] a description of the type the key requires
+      # @param value [Object]
+      # @return [String]
+      def invalid_message key, expected, value
+        "Invalid .solargraph.yml: #{key} must be #{expected}, but was #{value.inspect}"
       end
 
       # @return [String]

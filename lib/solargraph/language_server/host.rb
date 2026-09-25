@@ -301,11 +301,13 @@ module Solargraph
         end
       end
 
+      # @raise [InvalidConfigError] if the client configured a non-string commandPath
       # @return [String]
       def command_path
         value = options['commandPath']
+        return 'solargraph' if value.nil?
         return value if value.is_a?(String)
-        'solargraph'
+        raise InvalidConfigError, "Invalid commandPath: must be a string, but was #{value.inspect}"
       end
 
       # Prepare multiple folders.

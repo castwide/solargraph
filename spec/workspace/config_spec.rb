@@ -53,12 +53,12 @@ describe Solargraph::Workspace::Config do
     expect(config.reporters).to include('require_not_found')
   end
 
-  it 'falls back to an empty array when a value should be an array of strings' do
+  it 'rejects a value that should be an array of strings' do
     File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
       file.puts 'domains: not_an_array'
     end
     config = described_class.new(dir_path)
-    expect(config.domains).to eq([])
+    expect { config.domains }.to raise_error(Solargraph::InvalidConfigError, /domains/)
   end
 
   it 'falls back to an empty array when a value is explicitly nil' do
@@ -69,19 +69,19 @@ describe Solargraph::Workspace::Config do
     expect(config.plugins).to eq([])
   end
 
-  it 'falls back to the default max_files when the value is not an integer' do
+  it 'rejects a max_files value that is not an integer' do
     File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
       file.puts 'max_files: not_an_integer'
     end
     config = described_class.new(dir_path)
-    expect(config.max_files).to eq(described_class::MAX_FILES)
+    expect { config.max_files }.to raise_error(Solargraph::InvalidConfigError, /max_files/)
   end
 
-  it 'falls back to an empty hash when formatter is not a hash' do
+  it 'rejects a formatter value that is not a hash' do
     File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
       file.puts 'formatter: not_a_hash'
     end
     config = described_class.new(dir_path)
-    expect(config.formatter).to eq({})
+    expect { config.formatter }.to raise_error(Solargraph::InvalidConfigError, /formatter/)
   end
 end
