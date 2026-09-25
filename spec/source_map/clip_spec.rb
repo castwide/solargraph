@@ -3183,4 +3183,24 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [7, 8])
     expect(clip.infer.tag).to eq('String')
   end
+
+  it 'handles unfinished namespaces before methods' do
+    source = Solargraph::Source.load_string(%(
+      module Top
+        class Foo
+          class Bar
+          end
+        end
+      end
+
+      module Top
+        Foo::
+        attr_reader :quuz
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [9, 13])
+    expect(clip.complete.pins.map(&:path)).to eq(['Top::Foo::Bar'])
+  end
 end
