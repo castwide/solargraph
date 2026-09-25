@@ -311,11 +311,14 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1316
         def super_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] if method_pin.nil?
           pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
-          pins.reject { |p| p.path == name_pin.path }
+          # super dispatches to exactly one method - the nearest ancestor
+          # pin, not every ancestor that happens to share the name.
+          pins.reject { |p| p.path == name_pin.path }.first(1)
         end
 
         # @param api_map [ApiMap]

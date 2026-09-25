@@ -997,5 +997,31 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves super to the nearest override, not every ancestor' do
+      checker = type_checker(%(
+        class GrandParent
+          # @return [String]
+          def foo
+            'hello'
+          end
+        end
+
+        class Parent < GrandParent
+          # @return [Integer]
+          def foo
+            42
+          end
+        end
+
+        class Child < Parent
+          # @return [Integer]
+          def foo
+            super
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
