@@ -47,6 +47,11 @@ describe Solargraph::Repo do
       expect(meta.name).to eq('gem-with-yard-macros')
     end
 
+    it 'adds dependencies to metagems' do
+      meta = repo.find_by_name('reverse_markdown')
+      expect(meta.dependencies).to include('nokogiri')
+    end
+
     it 'finds transitive gem dependencies' do
       # nokogiri is a transitive dependency of reverse_markdown
       meta = repo.find_by_name('nokogiri')

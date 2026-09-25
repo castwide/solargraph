@@ -94,9 +94,11 @@ module Solargraph
 
     def bundle_script
       "
-        require 'bundler/setup'
+        require 'bundler'
         require 'json'
-        metagems = Bundler.definition.specs.map do |spec|
+
+        definition = Bundler::Definition.build('Gemfile', 'Gemfile.lock', nil)
+        metagems = definition.specs.map do |spec|
           {
             name: spec.name,
             full_path: spec.full_gem_path,
