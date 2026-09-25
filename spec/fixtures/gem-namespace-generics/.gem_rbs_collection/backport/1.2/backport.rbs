@@ -1,0 +1,5 @@
+module Backport
+  # The gem source declares this class with no generics; only RBS has them.
+  class Server[T]
+  end
+end
