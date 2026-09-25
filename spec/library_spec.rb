@@ -678,4 +678,31 @@ describe Solargraph::Library do
       expect { library.send(:sync_catalog) }.not_to raise_error
     end
   end
+
+  describe '#cache_next_gemspec' do
+    # `solargraph cache` resolves the gem under its own RBS configuration and
+    # writes the entry under the key that configuration produces. When that
+    # key is not the one this process computes, the run exits 0 and the gem
+    # is still uncached, so the catalog cycle offers it again immediately and
+    # the same subprocess is spawned forever.
+    it 'gives up on a gem whose successful cache run leaves it still uncached' do
+      library = described_class.new
+      api_map = library.send(:api_map)
+      gemspec = instance_double(Gem::Specification, name: 'stuck', version: Gem::Version.new('1.0.0'))
+      allow(api_map).to receive(:catalog)
+      allow(api_map).to receive_messages(uncached_yard_gemspecs: [gemspec], uncached_rbs_collection_gemspecs: [],
+                                         uncached_gemspecs: [gemspec], source_maps: [], pins: [])
+      allow(Solargraph::Yardoc).to receive(:processing?).and_return(false)
+      allow(Open3).to receive(:capture3).and_return(['', '', instance_double(Process::Status, success?: true)])
+      # Run the caching thread inline, and keep it out of the catalog cycle
+      # so the example tests one pass rather than the loop itself.
+      allow(Thread).to receive(:new).and_yield
+      allow(library).to receive(:catalog)
+      allow(library).to receive(:sync_catalog)
+
+      library.send(:cache_next_gemspec)
+
+      expect(library.send(:cache_errors)).to include(gemspec)
+    end
+  end
 end

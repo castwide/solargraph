@@ -4,7 +4,100 @@ require 'pathname' # @todo Required by RBS but not loaded in some use cases
 require 'rbs'
 
 module Solargraph
-  module PinCache
+  class PinCache
+    include Logging
+
+    attr_reader :rbs_collection_path, :rbs_collection_config_path
+
+    # Combined pins already deserialized in this process, shared across
+    # instances and keyed by the RBS cache key as well as the gem, so two
+    # configurations resolving the same gem differently cannot collide.
+    #
+    # @return [Hash{Array(String, Gem::Version, String) => Array<Pin::Base>}]
+    def self.all_combined_pins_in_memory
+      @all_combined_pins_in_memory ||= {}
+    end
+
+    # @param rbs_collection_path [String, nil]
+    # @param rbs_collection_config_path [String, nil]
+    def initialize rbs_collection_path:, rbs_collection_config_path:
+      @rbs_collection_path = rbs_collection_path
+      @rbs_collection_config_path = rbs_collection_config_path
+    end
+
+    # Which RBS source this configuration resolves the gem to, and so which
+    # cache entry it names.
+    #
+    # @param gemspec [Gem::Specification]
+    # @return [String]
+    def cache_key_for gemspec
+      RbsMap.from_gemspec(gemspec, rbs_collection_path, rbs_collection_config_path).cache_key
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Boolean]
+    def cached? gemspec
+      self.class.has_combined?(gemspec, cache_key_for(gemspec))
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>, nil]
+    def deserialize_combined_gem gemspec
+      key = memory_key(gemspec)
+      return self.class.all_combined_pins_in_memory[key] if self.class.all_combined_pins_in_memory.key?(key)
+
+      cached = self.class.deserialize_combined_gem(gemspec, cache_key_for(gemspec))
+      self.class.all_combined_pins_in_memory[key] = cached if cached
+      cached
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @param pins [Array<Pin::Base>]
+    # @return [void]
+    def serialize_combined_gem gemspec, pins
+      key = memory_key(gemspec)
+      self.class.serialize_combined_gem(gemspec, cache_key_for(gemspec), pins)
+      self.class.all_combined_pins_in_memory[key] = pins
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array<Pin::Base>, nil]
+    def deserialize_rbs_collection_gem gemspec
+      self.class.deserialize_rbs_collection_gem(gemspec, cache_key_for(gemspec))
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @param pins [Array<Pin::Base>]
+    # @return [void]
+    def serialize_rbs_collection_gem gemspec, pins
+      self.class.serialize_rbs_collection_gem(gemspec, cache_key_for(gemspec), pins)
+    end
+
+    # @param gemspec [Gem::Specification]
+    # @return [Boolean]
+    def has_rbs_collection? gemspec
+      self.class.has_rbs_collection?(gemspec, cache_key_for(gemspec))
+    end
+
+    # Drops the on-disk entries and the in-memory one, which the class-level
+    # version cannot reach.
+    #
+    # @param gemspec [Gem::Specification]
+    # @param out [IO, StringIO, nil]
+    # @return [void]
+    def uncache_gem gemspec, out: nil
+      self.class.uncache_gem(gemspec, out: out)
+      self.class.all_combined_pins_in_memory.delete(memory_key(gemspec))
+    end
+
+    private
+
+    # @param gemspec [Gem::Specification]
+    # @return [Array(String, Gem::Version, String)]
+    def memory_key gemspec
+      [gemspec.name, gemspec.version, cache_key_for(gemspec)]
+    end
+
     class << self
       include Logging
 
@@ -105,7 +198,7 @@ module Solargraph
       # @param gemspec [Gem::Specification]
       # @param hash [String, nil]
       # @return [String]
-      def rbs_collection_path gemspec, hash
+      def rbs_collection_gem_path gemspec, hash
         File.join(work_dir, 'rbs', "#{gemspec.name}-#{gemspec.version}-#{hash || 0}.ser")
       end
 
@@ -119,7 +212,7 @@ module Solargraph
       # @param hash [String, nil]
       # @return [Array<Pin::Base>, nil]
       def deserialize_rbs_collection_gem gemspec, hash
-        load(rbs_collection_path(gemspec, hash))
+        load(rbs_collection_gem_path(gemspec, hash))
       end
 
       # @param gemspec [Gem::Specification]
@@ -127,7 +220,7 @@ module Solargraph
       # @param pins [Array<Pin::Base>]n
       # @return [void]
       def serialize_rbs_collection_gem gemspec, hash, pins
-        save(rbs_collection_path(gemspec, hash), pins)
+        save(rbs_collection_gem_path(gemspec, hash), pins)
       end
 
       # @param gemspec [Gem::Specification]
@@ -162,7 +255,14 @@ module Solargraph
       # @param hash [String, nil]
       # @return [Boolean]
       def has_rbs_collection? gemspec, hash
-        exist?(rbs_collection_path(gemspec, hash))
+        exist?(rbs_collection_gem_path(gemspec, hash))
+      end
+
+      # @param gemspec [Gem::Specification]
+      # @param hash [String, nil]
+      # @return [Boolean]
+      def has_combined? gemspec, hash
+        exist?(combined_path(gemspec, hash))
       end
 
       # @return [void]
