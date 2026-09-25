@@ -62,7 +62,7 @@ module Solargraph
 
       # An array of domains configured for the workspace.
       # A domain is a namespace that the ApiMap should include in the global
-      # namespace. It is typically used to identify available DSLs.
+      # namespace. It's typically used to identify available DSLs.
       #
       # @return [Array<String>]
       def domains
