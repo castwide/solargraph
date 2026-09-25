@@ -1,6 +1,19 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+
 describe Solargraph::Repo do
+  before(:all) do # rubocop:disable RSpec/BeforeAfterAll
+    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
+    Solargraph.with_clean_env do
+      `cd #{File.join('spec', 'fixtures', 'external_bundled_gem')} && bundle install`
+    end
+  end
+
+  after(:all) do # rubocop:disable RSpec/BeforeAfterAll
+    FileUtils.rm_f File.join('spec', 'fixtures', 'external_bundled_gem', 'Gemfile.lock')
+  end
+
   context 'without a bundle' do
     let(:directory) { File.join('spec', 'fixtures', 'external_required_gem') }
 
