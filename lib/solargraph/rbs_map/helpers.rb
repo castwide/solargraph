@@ -8,7 +8,7 @@ module Solargraph
       # @param  orig_pins [Array<Pin::Base>]
       # @param rbs_pins [Array<Pin::Base>]
       # @return [Array<Pin::Base>]
-      def combine  orig_pins, rbs_pins
+      def combine orig_pins, rbs_pins
         in_orig = Set.new
         # @todo There's gotta be a better way!
         rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)

@@ -8,6 +8,7 @@ module Solargraph
     #
     class Stdlib < Base
       def initialize library
+        super()
         loader.add(library: library) if self.class.has?(library)
       end
 

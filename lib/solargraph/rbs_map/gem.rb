@@ -5,6 +5,7 @@ module Solargraph
     class Gem < Base
       # @param metagem [Metagem]
       def initialize metagem
+        super()
         loader.add path: Pathname.new(metagem.full_path)
       end
     end

@@ -5,6 +5,7 @@ module Solargraph
     class Path < Base
       # @param path [String]
       def initialize path
+        super()
         loader.add path: Pathname.new(path)
       end
     end
