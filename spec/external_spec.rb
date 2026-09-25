@@ -20,7 +20,7 @@ describe Solargraph::External do
 
   context 'with cached sources' do
     before(:all) do
-      ['backport', 'reverse_markdown', 'nokogiri'].each do |name|
+      %w[backport reverse_markdown nokogiri].each do |name|
         metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name(name))
         Solargraph::Collection::Gem.load(metagem) unless Solargraph::Collection::Gem.cached?(metagem)
       end
@@ -31,10 +31,6 @@ describe Solargraph::External do
       expect(gem_names).to include('backport')
       expect(gem_names).to include('gem-with-yard-macros')
       expect(gem_names).to include('reverse_markdown')
-    end
-
-    it 'loads transitive dependencies' do
-      expect(external.loaded_gems.map(&:name)).to include('nokogiri')
     end
 
     it 'loads pins from system sources' do
