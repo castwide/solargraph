@@ -736,6 +736,14 @@ module Solargraph
       store.get_includes(host_ns).map { |inc_tag| inc_tag.type.name }.include?(module_ns)
     end
 
+    # Check whether a namespace is a module rather than a class.
+    #
+    # @param fqns [String] A fully qualified namespace
+    # @return [Boolean]
+    def module? fqns
+      get_namespace_type(fqns) == :module
+    end
+
     # @param pins [Enumerable<Pin::Base>]
     # @param visibility [Enumerable<Symbol>]
     # @return [Array<Pin::Base>]
