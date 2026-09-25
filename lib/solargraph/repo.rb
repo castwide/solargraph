@@ -8,44 +8,63 @@ module Solargraph
   # uses the system gems.
   #
   class Repo
+    # @param directory [String, nil]
     def initialize directory
       @directory = directory
       @metagems = build_from_directory
     end
 
+    # Find a metagem by path from the directory's bundle definition or the
+    # system gems.
+    #
+    # @param path [String]
+    # @return [Metagem, nil]
     def find_by_path path
-      return system_find_by_path(path) unless @metagems
+      return system_find_by_path(path) unless bundled?
 
-      @metagems.find { |mg| mg.require?(path) }
+      bundled_metagem_path_map[path]
     end
 
+    # Find a metagem by name from the directory's bundle definition or the
+    # system gems.
+    #
+    # @param name [String]
+    # @return [Metagem, nil]
     def find_by_name name
       return system_find_by_name(name) unless @metagems
 
-      @metagems.find { |mg| mg.name == name }
+      bundled_metagem_name_map[name].first
     end
 
+    # True if the directory has a bundle definition.
+    #
     def bundled?
       !!@metagems
     end
     alias bundle? bundled?
 
+    # Metagems from the directory's bundle definition, or an empty array if a
+    # bundle definition does not exist.
+    #
+    # @return [Array<Solargraph::Metagem>]
     def bundled
       @metagems || []
     end
 
     private
 
+    # @return [String, nil]
     def gemfile
-      @gemfile ||= File.expand_path('Gemfile', @directory)
+      @gemfile ||= File.expand_path('Gemfile', @directory) if @directory
     end
 
+    # @return [String, nil]
     def lockfile
-      @lockfile ||= File.expand_path('Gemfile.lock', @directory)
+      @lockfile ||= File.expand_path('Gemfile.lock', @directory) if @directory
     end
 
     def bundled_directory?
-      File.file?(gemfile) && File.file?(lockfile)
+      @directory && File.file?(gemfile) && File.file?(lockfile)
     end
 
     # Load metagems from the directory's bundle definition if available.
@@ -53,6 +72,7 @@ module Solargraph
     # This method performs gem collection in a separate process to suppress
     # output from the `Bundler.definition.specs` call.
     #
+    # @return [Array<Metagem>, nil]
     def build_from_directory
       return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
 
@@ -88,16 +108,30 @@ module Solargraph
       "
     end
 
+    # @param path [String]
+    # @return [Metagem, nil]
     def system_find_by_path path
       gem = Gem::Specification.find_by_path(path)
       gem && Metagem.from_specification(gem)
     end
 
+    # @param name [String]
+    # @return [Metagem, nil]
     def system_find_by_name name
       gem = Gem::Specification.find_by_name(name)
       gem && Metagem.from_specification(gem)
     rescue Gem::MissingSpecError => _e
       nil
+    end
+
+    def bundled_metagem_name_map
+      @bundled_metagem_name_map ||= bundled.to_set.classify(&:name)
+    end
+
+    def bundled_metagem_path_map
+      @bundled_metagem_path_map ||= Hash.new do |hash, path|
+        hash[path] = bundled.find { |mg| mg.require?(path) }
+      end
     end
   end
 end
