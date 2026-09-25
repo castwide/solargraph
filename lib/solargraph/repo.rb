@@ -86,7 +86,10 @@ module Solargraph
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           json.map { |data| Metagem.new(**data) }
         else
-          Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
+          msg = "Failed to load gems from bundle at #{directory}: #{e}"
+          raise msg if Solargraph.asserts_on?
+
+          Solargraph.logger.warn msg
           nil
         end
       end
