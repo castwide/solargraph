@@ -172,10 +172,10 @@ module Solargraph
       repo = Solargraph::Repo.new('.')
       if names.empty?
         gems = if repo.bundled?
-          repo.bundled.select(&:cacheable?)
-        else
-          Gem::Specification.to_a.map { |spec| Metagem.from_specification(spec) }
-        end
+                 repo.bundled.select(&:cacheable?)
+               else
+                 Gem::Specification.to_a.map { |spec| Metagem.from_specification(spec) }
+               end
         gems.each { |gem| Collection::Gem.load(gem) }
         puts "Documentation cached for #{gems.count} gems."
       else
