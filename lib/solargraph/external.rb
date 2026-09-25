@@ -5,8 +5,10 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
+    # @return [String]
     attr_reader :directory
 
+    # @return [Array<String>]
     attr_reader :requires
 
     # @param directory [String]
