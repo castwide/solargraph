@@ -29,6 +29,10 @@ module Solargraph
 
       Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
       Solargraph.logger.info output
+    # @todo Ignore missing metagems for now. We need to figure out why this
+    #   happens in GitHub actions.
+    rescue Errno::ENOENT => _e
+      Solargraph.logger.warn "Gem #{metagem.name} #{metagem.version} not found at #{metagem.full_path}"
     end
 
     # @param metagem [Metagem]
@@ -60,12 +64,10 @@ module Solargraph
     # @return [Array<YARD::CodeObjects::Base>]
     def load! metagem
       cache metagem
+      return [] unless cached?(metagem)
+
       YARD::Registry.load! path_for(metagem)
       YARD::Registry.all
-    # @todo Ignore missing metagems for now. We need to figure out why this
-    #   happens in GitHub actions.
-    rescue Errno::ENOENT
-      []
     end
   end
 end
