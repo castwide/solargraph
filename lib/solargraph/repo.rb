@@ -43,7 +43,7 @@ module Solargraph
     # Get an array of metagems by its bundle group name. Returns an empty array
     # if the repo isn't bundled or the group doesn't exist.
     #
-    # @param name [Symbol]
+    # @param group [Symbol]
     # @return [Array<Metagem>]
     def find_by_group group
       return system_find_by_group(group) unless bundled?
@@ -97,7 +97,7 @@ module Solargraph
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          bundled_group_map.replace(json[:groups].to_h { |group, names| [group, names.map { |name| bundled_metagem_name_map[name] }] })
+          @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
           nil
