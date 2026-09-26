@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'json'
 
 module Solargraph
   # A repository for the gems available in the specified directory. If the
@@ -13,8 +14,8 @@ module Solargraph
 
     # @param directory [String, nil]
     def initialize directory
-      @directory = directory
-      @metagems = build_from_directory
+      @directory = File.expand_path(directory) if directory
+      build_from_directory
     end
 
     # Find a metagem by path from the directory's bundle definition or the
@@ -34,9 +35,20 @@ module Solargraph
     # @param name [String]
     # @return [Metagem, nil]
     def find_by_name name
-      return system_find_by_name(name) unless @metagems
+      return system_find_by_name(name) unless bundled?
 
-      bundled_metagem_name_map[name]&.first
+      bundled_metagem_name_map[name]
+    end
+
+    # Get an array of metagems by its bundle group name. Returns an empty array
+    # if the repo isn't bundled or the group doesn't exist.
+    #
+    # @param name [Symbol]
+    # @return [Array<Metagem>]
+    def find_by_group group
+      return system_find_by_group(group) unless bundled?
+
+      bundled_group_map[group] || []
     end
 
     # True if the directory has a bundle definition.
@@ -84,7 +96,8 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          json.map { |data| Metagem.new(**data) }
+          @metagems = json[:metagems].map { |data| Metagem.new(**data) }
+          bundled_group_map.replace(json[:groups].to_h { |group, names| [group, names.map { |name| bundled_metagem_name_map[name] }] })
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
           nil
@@ -107,7 +120,10 @@ module Solargraph
             dependencies: spec.dependencies.map(&:name)
           }
         end
-        puts metagems.to_json
+        groups = Bundler.definition.groups.to_h do |group|
+          [group, Bundler.definition.specs_for([group]).map(&:name)]
+        end
+        puts({ groups: groups, metagems: metagems }.to_json)
       "
     end
 
@@ -127,14 +143,30 @@ module Solargraph
       nil
     end
 
+    # @param group [Symbol]
+    # @return [Array<Metagem>]
+    def system_find_by_group group
+      return [] unless ENV['BUNDLE_GEMFILE']
+
+      Bundler.definition
+             .specs_for([group])
+             .map { |spec| Metagem.from_specification(spec) }
+    end
+
     def bundled_metagem_name_map
-      @bundled_metagem_name_map ||= bundled.to_set.classify(&:name)
+      @bundled_metagem_name_map ||= bundled.to_set
+                                           .classify(&:name)
+                                           .transform_values(&:first)
     end
 
     def bundled_metagem_path_map
       @bundled_metagem_path_map ||= Hash.new do |hash, path|
         hash[path] = bundled.find { |mg| mg.require?(path) }
       end
+    end
+
+    def bundled_group_map
+      @bundled_group_map ||= {}
     end
   end
 end

@@ -96,10 +96,7 @@ module Solargraph
 
       return unless bundler_require
 
-      @repo.bundled.each do |metagem|
-        next if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
-        process_gem metagem
-      end
+      @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
     def load_rbs_collection
@@ -116,15 +113,19 @@ module Solargraph
     end
 
     def process_gem metagem
+      return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
+
       # rubocop:disable Style/IfInsideElse
       if metagem.cacheable?
         if Collection::Gem.cached?(metagem)
-          pins.concat(Collection::Gem.load(metagem)) if loaded_gems.add?(metagem)
+          loaded_gems.add metagem
+          pins.concat Collection::Gem.load(metagem)
         else
           unloaded_gems.add metagem
         end
       else
-        pins.concat(Collection::Gem.load(metagem)) if loaded_gems.add?(metagem)
+        loaded_gems.add metagem
+        pins.concat Collection::Gem.load(metagem)
       end
       # rubocop:enable Style/IfInsideElse
       load_dependencies metagem
