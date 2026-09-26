@@ -9,7 +9,7 @@ module Solargraph
     class Stdlib < Base
       def initialize library
         super()
-        loader.add(library: library) if self.class.has?(library)
+        loader.add(library: library.gsub('/', '-')) if self.class.has?(library)
       end
 
       def repository
@@ -17,7 +17,7 @@ module Solargraph
       end
 
       def self.has? library
-        RBS::Collection::Sources::Stdlib.instance.has?(library, nil)
+        !!RBS::Collection::Sources::Stdlib.instance.has?(library.gsub('/', '-'), nil)
       end
     end
   end

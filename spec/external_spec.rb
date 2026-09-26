@@ -100,4 +100,10 @@ describe Solargraph::External do
     backport_pins = external.pins.select { |pin| pin.path == 'Backport' }
     expect(backport_pins).to be_one
   end
+
+  it 'loads stdlib paths' do
+    external = described_class.new(directory, ['net/http'])
+    pin_paths = external.pins.map(&:path)
+    expect(pin_paths).to include('Net::HTTP')
+  end
 end

@@ -86,7 +86,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
-          Collection::Stdlib.load(path)
+          pins.concat Collection::Stdlib.load(path)
         else
           metagem = @repo.find_by_path(path)
           next unresolved_requires.push(path) unless metagem

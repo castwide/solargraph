@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 describe Solargraph::RbsMap::Stdlib do
+  describe '.has?' do
+    it 'finds stdlib paths' do
+      expect(described_class.has?('cgi')).to be(true)
+    end
+  end
+
   it 'adds overrides' do
     pending 'Pathname not in stdlib?'
     # @todo Unlike the YardMap stdlib, the RBS version reports the correct
