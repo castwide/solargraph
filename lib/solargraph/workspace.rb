@@ -10,7 +10,6 @@ module Solargraph
   #
   class Workspace
     autoload :Config, 'solargraph/workspace/config'
-    autoload :Gemspecs, 'solargraph/workspace/gemspecs'
     autoload :RequirePaths, 'solargraph/workspace/require_paths'
 
     # @return [String]

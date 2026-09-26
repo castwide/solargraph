@@ -15,13 +15,9 @@ module Solargraph
     autoload :Index,          'solargraph/api_map/index'
     autoload :Constants,      'solargraph/api_map/constants'
 
-    # @return [Array<String>]
-    attr_reader :unresolved_requires
+    include Equality
 
-    @@core_map = RbsMap::CoreMap.new
-
-    # @return [Array<String>]
-    attr_reader :missing_docs
+    @@core_pins = Collection::Core.load
 
     # @param pins [Array<Solargraph::Pin::Base>]
     # @param loose_unions [Boolean] if true, a potential type can be
@@ -36,12 +32,6 @@ module Solargraph
       @cache = Cache.new
       @loose_unions = loose_unions
       index pins
-    end
-
-    # @param out [StringIO, IO, nil] output stream for logging
-    # @return [void]
-    def self.reset_core out: nil
-      @@core_map = RbsMap::CoreMap.new
     end
 
     #
@@ -86,7 +76,7 @@ module Solargraph
       @source_map_hash = {}
       conventions_environ.clear
       cache.clear
-      store.update @@core_map.pins, pins
+      store.update @@core_pins, pins
       self
     end
 
@@ -106,6 +96,8 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      @workspace = bench.workspace
       @source_map_hash = bench.source_map_hash
       # @type [Array<Pin::Base>]
       iced_pins = bench.icebox.flat_map(&:pins)
@@ -114,22 +106,23 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
-      unresolved_requires = (bench.external_requires + conventions_environ.requires + bench.workspace.config.required).to_a.compact.uniq
-      recreate_docmap = @unresolved_requires != unresolved_requires ||
-                        # @sg-ignore Unresolved call to rbs_collection_path on Solargraph::Workspace, nil
-                        workspace.rbs_collection_path != bench.workspace.rbs_collection_path ||
-                        @doc_map.uncached_gemspecs.any?
-
-      if recreate_docmap
-        @doc_map = DocMap.new(unresolved_requires, bench.workspace, out: nil) # @todo Implement gem preferences
-        @unresolved_requires = @doc_map.unresolved_requires
-      end
-      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      Solargraph.logger.info 'Cataloging ApiMap started'
-      @cache.clear if store.update(@@core_map.pins, @doc_map.pins, conventions_environ.pins, iced_pins, live_pins) { process_macros }
-      @missing_docs = [] # @todo Implement missing docs
+      external_changed = external.update(bench.external_requires.to_a)
+      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
+    end
+
+    def external
+      @external ||= External.new(workspace&.directory, [])
+    end
+
+    def unresolved_requires
+      external.unresolved_requires
+    end
+
+    def unloaded_gems
+      external.unloaded_gems
     end
 
     # @return [Array<Pin::Base>]
@@ -160,29 +153,9 @@ module Solargraph
       macro_pins
     end
 
-    # @return [DocMap]
-    def doc_map
-      @doc_map ||= DocMap.new([], Workspace.new('.'))
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_gemspecs
-      doc_map.uncached_gemspecs || []
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_rbs_collection_gemspecs
-      @doc_map.uncached_rbs_collection_gemspecs
-    end
-
-    # @return [::Array<Gem::Specification>]
-    def uncached_yard_gemspecs
-      @doc_map.uncached_yard_gemspecs
-    end
-
     # @return [Enumerable<Pin::Base>]
     def core_pins
-      @@core_map.pins
+      @@core_pins
     end
 
     # @param name [String, nil]
@@ -237,21 +210,6 @@ module Solargraph
       api_map
     end
 
-    # @param out [StringIO, IO, nil]
-    # @param rebuild [Boolean] whether to rebuild the pins even if they are cached
-    # @return [void]
-    def cache_all_for_doc_map! out: $stderr, rebuild: false
-      doc_map.cache_all!(out, rebuild: rebuild)
-    end
-
-    # @param gemspec [Gem::Specification]
-    # @param rebuild [Boolean]
-    # @param out [StringIO, IO, nil]
-    # @return [void]
-    def cache_gem gemspec, rebuild: false, out: nil
-      doc_map.cache(gemspec, rebuild: rebuild, out: out)
-    end
-
     class << self
       include Logging
     end
@@ -267,12 +225,12 @@ module Solargraph
     # @return [ApiMap]
     def self.load_with_cache directory, out = $stderr, loose_unions: true
       api_map = load(directory, loose_unions: loose_unions)
-      if api_map.uncached_gemspecs.empty?
-        logger.info { "All gems cached for #{directory}" }
-        return api_map
-      end
+      return api_map if api_map.external.unloaded_gems.empty?
 
-      api_map.cache_all_for_doc_map!(out: out)
+      api_map.external.unloaded_gems.each do |metagem|
+        out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
+        Collection::Gem.load metagem
+      end
       load(directory, loose_unions: loose_unions)
     end
 
@@ -755,7 +713,7 @@ module Solargraph
 
     # @return [Workspace, nil]
     def workspace
-      doc_map.workspace
+      @workspace
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
@@ -1051,8 +1009,7 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     def equality_fields
-      [self.class, @source_map_hash, conventions_environ, @doc_map, @unresolved_requires, @missing_docs,
-       @loose_unions]
+      [@source_map_hash, conventions_environ, @external&.pins, @unresolved_requires, @loose_unions]
     end
   end
 end

@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'backport'
+gem 'gem-with-yard-macros', path: '../gem-with-yard-macros'
+gem 'reverse_markdown'

@@ -25,7 +25,7 @@ jobs:
         #   It currently 404s ("Unavailable version head for ruby"), failing CI:
         #   https://github.com/castwide/solargraph/actions/runs/25863741955/job/76000137015?pr=1187
         ruby-version: ['3.1', '3.2', '3.3', '3.4', '4.0']
-        rbs-version: ['3.10.0', '4.0.0', '4.0.1', '4.0.2']
+        rbs-version: ['3.10.4', '4.0.0', '4.0.1', '4.0.2']
         exclude:
           - ruby-version: '3.1'
             rbs-version: '4.0.0'
@@ -48,6 +48,8 @@ jobs:
     #    starting from Ruby 3.6.0
     - name: Work around legacy rbs deprecation on ruby > 3.4
       run: echo "gem 'tsort'" >> .Gemfile
+    - name: Install bundle
+      run: bundle install
     - name: Update gems
       run: |
         bundle update rbs # use latest available for this Ruby version
