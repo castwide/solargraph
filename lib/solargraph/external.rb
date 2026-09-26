@@ -81,7 +81,7 @@ module Solargraph
     def load_requires
       bundler_require = false
 
-      requires.each do |path|
+      requires.uniq.each do |path|
         if path == 'bundler/require'
           bundler_require = true
         end
