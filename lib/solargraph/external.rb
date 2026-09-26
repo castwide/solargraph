@@ -115,7 +115,6 @@ module Solargraph
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
-      # rubocop:disable Style/IfInsideElse
       if metagem.cacheable?
         if Collection::Gem.cached?(metagem)
           loaded_gems.add metagem
@@ -127,7 +126,6 @@ module Solargraph
         loaded_gems.add metagem
         pins.concat Collection::Gem.load(metagem)
       end
-      # rubocop:enable Style/IfInsideElse
       load_dependencies metagem
     end
 

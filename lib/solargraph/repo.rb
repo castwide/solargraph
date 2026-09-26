@@ -53,6 +53,9 @@ module Solargraph
 
     # True if the directory has a bundle definition.
     #
+    # @note If Solargraph itself is running in this directory's bundled
+    #   environment, `bundled?` is false.
+    #
     def bundled?
       !!@metagems
     end
