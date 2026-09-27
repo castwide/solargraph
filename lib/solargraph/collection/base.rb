@@ -47,7 +47,7 @@ module Solargraph
         serial = Marshal.dump(pins)
         FileUtils.mkdir_p File.dirname(cache_file)
         File.write cache_file, serial, mode: 'wb'
-        pins        
+        pins
       end
     end
   end
