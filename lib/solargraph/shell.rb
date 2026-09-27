@@ -181,7 +181,7 @@ module Solargraph
       else
         names.each do |name|
           if name == 'core'
-            puts "Caching core"
+            puts 'Caching core'
             Collection::Core.load
           else
             puts "Caching #{name}"
