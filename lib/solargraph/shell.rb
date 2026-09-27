@@ -175,7 +175,7 @@ module Solargraph
                  repo.bundled.select(&:cacheable?)
                else
                  Gem::Specification.all_names
-                                   .map { |name| Gem::Specification.find_by_full_name }
+                                   .map { |name| Gem::Specification.find_by_full_name(name) }
                                    .map { |gemspec| Metagem.from_specification(gemspec) }
                end
         gems.each do |gem|
