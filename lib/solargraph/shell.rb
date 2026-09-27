@@ -174,9 +174,14 @@ module Solargraph
         gems = if repo.bundled?
                  repo.bundled.select(&:cacheable?)
                else
-                 Gem::Specification.to_a.map { |spec| Metagem.from_specification(spec) }
+                 Gem::Specification.all_names
+                                   .map { |name| Gem::Specification.find_by_full_name }
+                                   .map { |gemspec| Metagem.from_specification(gemspec) }
                end
-        gems.each { |gem| Collection::Gem.load(gem) }
+        gems.each do |gem|
+          puts "Caching #{gem.name} #{gem.version} (#{gem.cache_name})"
+          Collection::Gem.load(gem)
+        end
         puts "Documentation cached for #{gems.count} gems."
       else
         names.each do |name|
@@ -184,8 +189,8 @@ module Solargraph
             puts 'Caching core'
             Collection::Core.load
           else
-            puts "Caching #{name}"
             metagem = repo.find_by_name(name)
+            puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
             Collection::Gem.load metagem
           end
         end
