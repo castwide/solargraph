@@ -33,7 +33,7 @@ describe Solargraph::Library do
       Solargraph::Shell.new.uncache('backport')
     end
 
-    it 'returns a Completion', time_limit_seconds: 50 do
+    it 'returns a Completion' do
       library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
