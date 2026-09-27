@@ -181,8 +181,10 @@ module Solargraph
       else
         names.each do |name|
           if name == 'core'
+            puts "Caching core"
             Collection::Core.load
           else
+            puts "Caching #{name}"
             metagem = repo.find_by_name(name)
             Collection::Gem.load metagem
           end
