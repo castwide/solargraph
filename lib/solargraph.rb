@@ -51,6 +51,7 @@ module Solargraph
   autoload :Convention,       'solargraph/convention'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
+  autoload :RbsCollection,    'solargraph/rbs_collection'
   autoload :CacheDir,         'solargraph/cache_dir'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
 

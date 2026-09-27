@@ -54,16 +54,21 @@ module Solargraph
 
     # @return [Array<String>]
     def rbs_collection_paths
-      @rbs_collection_paths ||= read_rbs_collection_paths
+      @rbs_collection_paths ||= RbsCollection.paths(directory)
     end
 
     # @return [String, nil]
     def rbs_collection_config_path
-      # @todo Get rid of the '*' case
-      @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
-                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
-                                        yaml_file if File.file?(yaml_file)
-                                      end
+      @rbs_collection_config_path ||= RbsCollection.config_path(directory)
+    end
+
+    # Whether the workspace's collection carries this gem's signatures, which
+    # decides what a cached copy of it holds.
+    #
+    # @param metagem [Metagem]
+    # @return [Boolean]
+    def rbs_collection_carries? metagem
+      RbsCollection.provides?(directory, metagem.name)
     end
 
     private
@@ -75,7 +80,7 @@ module Solargraph
     end
 
     def cache_changed?
-      unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
+      unloaded_gems.any? { |gem| Collection::Gem.cached?(gem, rbs_collection: rbs_collection_carries?(gem)) }
     end
 
     def load_requires
@@ -115,16 +120,17 @@ module Solargraph
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
+      carried = rbs_collection_carries?(metagem)
       if metagem.cacheable?
-        if Collection::Gem.cached?(metagem)
+        if Collection::Gem.cached?(metagem, rbs_collection: carried)
           loaded_gems.add metagem
-          pins.concat Collection::Gem.load(metagem)
+          pins.concat Collection::Gem.load(metagem, rbs_collection: carried)
         else
           unloaded_gems.add metagem
         end
       else
         loaded_gems.add metagem
-        pins.concat Collection::Gem.load(metagem)
+        pins.concat Collection::Gem.load(metagem, rbs_collection: carried)
       end
       load_dependencies metagem
     end
@@ -136,18 +142,6 @@ module Solargraph
         next unresolved_dependencies.push(name) unless metagem
         process_gem metagem
       end
-    end
-
-    # @return [Array<String>]
-    def read_rbs_collection_paths
-      return [] unless rbs_collection_config_path
-
-      yaml = YAML.load_file(rbs_collection_config_path)
-      [File.expand_path(yaml.fetch('path'), directory)].concat(
-        yaml.fetch('sources', [])
-            .select { |source| source['type'] == 'local' && source['path'] }
-            .map { |source| File.expand_path(source['path'], directory) }
-      ).compact
     end
   end
 end

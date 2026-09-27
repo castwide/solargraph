@@ -111,7 +111,7 @@ module Solargraph
       metagem = repo.find_by_name(gem_name)
       if metagem
         Solargraph::Collection::Gem.uncache(metagem) if options[:rebuild]
-        Solargraph::Collection::Gem.load(metagem)
+        Solargraph::Collection::Gem.load(metagem, rbs_collection: rbs_collection?(metagem))
       else
         warn "Gem `#{gem_name}` not found (directory: #{options[:directory].inspect})" unless metagem
       end
@@ -180,7 +180,7 @@ module Solargraph
                end
         gems.each do |gem|
           puts "Caching #{gem.name} #{gem.version} (#{gem.cache_name})"
-          Collection::Gem.load(gem)
+          Collection::Gem.load(gem, rbs_collection: rbs_collection?(gem))
         end
         puts "Documentation cached for #{gems.count} gems."
       else
@@ -191,7 +191,7 @@ module Solargraph
           else
             metagem = repo.find_by_name(name)
             puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-            Collection::Gem.load metagem
+            Collection::Gem.load metagem, rbs_collection: rbs_collection?(metagem)
           end
         end
         puts "Documentation cached for #{names.count} gems."
@@ -533,6 +533,12 @@ module Solargraph
     end
 
     private
+
+    # @param metagem [Metagem]
+    # @return [Boolean]
+    def rbs_collection? metagem
+      Solargraph::RbsCollection.provides?(options[:directory] || '.', metagem.name)
+    end
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]

@@ -27,7 +27,11 @@ module Solargraph
       end
 
       def self.uncache(...)
-        cache_file = new(...).cache_file
+        new(...).uncache
+      end
+
+      # @return [void]
+      def uncache
         FileUtils.rm_rf cache_file
         Collection.mem_cache.delete cache_file
       end
