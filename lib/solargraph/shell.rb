@@ -98,7 +98,7 @@ module Solargraph
     # @return [void]
     def clear
       puts 'Deleting all cached documentation (gems, core and stdlib)'
-      Solargraph::CacheDir.delete
+      Solargraph::CacheDir.clear
     end
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
