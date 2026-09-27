@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Mapper
       autoload :ToMethod, 'solargraph/yard_map/mapper/to_method'
       autoload :ToNamespace, 'solargraph/yard_map/mapper/to_namespace'
