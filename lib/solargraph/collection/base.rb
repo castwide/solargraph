@@ -18,14 +18,7 @@ module Solargraph
     class Base
       # @return [Array<Pin::Base>]
       def load
-        if File.exist?(cache_file)
-          Marshal.load(File.read(cache_file, mode: 'rb')) # rubocop:disable Security/MarshalLoad
-        else
-          serial = Marshal.dump(pins)
-          FileUtils.mkdir_p File.dirname(cache_file)
-          File.write cache_file, serial, mode: 'wb'
-          pins
-        end
+        mem_cache_pins || file_cache_pins || generate_pin_caches
       end
 
       # @return [Array<Pin::Base>]
@@ -34,7 +27,27 @@ module Solargraph
       end
 
       def self.uncache(...)
-        FileUtils.rm_rf new(...).cache_file
+        cache_file = new(...).cache_file
+        FileUtils.rm_rf cache_file
+        Collection.mem_cache.delete cache_file
+      end
+
+      private
+
+      def mem_cache_pins
+        Collection.mem_cache[cache_file]
+      end
+
+      def file_cache_pins
+        Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
+      end
+
+      def generate_pin_caches
+        Collection.mem_cache[cache_file] = pins
+        serial = Marshal.dump(pins)
+        FileUtils.mkdir_p File.dirname(cache_file)
+        File.write cache_file, serial, mode: 'wb'
+        pins        
       end
     end
   end

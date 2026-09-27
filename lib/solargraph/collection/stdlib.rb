@@ -14,7 +14,7 @@ module Solargraph
       end
 
       def pins
-        RbsMap::Stdlib.pins(library)
+        @pins ||= RbsMap::Stdlib.pins(library)
       end
 
       def cache_file

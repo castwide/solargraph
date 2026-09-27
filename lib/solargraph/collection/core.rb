@@ -10,7 +10,7 @@ module Solargraph
       end
 
       def pins
-        RbsMap::Core.pins
+        @pins ||= RbsMap::Core.pins
       end
     end
   end
