@@ -11,6 +11,15 @@ describe Solargraph::Yardoc do
     it 'saves yardoc caches from metagems' do
       described_class.cache(metagem)
       expect(File.exist?(described_class.path_for(metagem))).to be(true)
+      expect(described_class.cached?(metagem)).to be(true)
+    end
+  end
+
+  describe '.uncache' do
+    it 'deletes yardoc caches' do
+      described_class.uncache(metagem)
+      expect(File.exist?(described_class.path_for(metagem))).to be(false)
+      expect(described_class.cached?(metagem)).to be(false)
     end
   end
 
