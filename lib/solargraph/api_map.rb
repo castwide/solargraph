@@ -106,7 +106,7 @@ module Solargraph
       source_map_hash.each_value do |map|
         conventions_environ.merge map.conventions_environ
       end
-      external_changed = external.update(bench.external_requires.to_a)
+      external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires)
       store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) { process_macros }
       @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
