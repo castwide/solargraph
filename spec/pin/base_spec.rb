@@ -52,7 +52,6 @@ describe Solargraph::Pin::Base do
   end
 
   it 'deals well with known closure combination issue' do
-    Solargraph::Shell.new.uncache('yard')
     api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     # @todo Some environments get more than one pin
