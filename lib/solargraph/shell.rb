@@ -156,6 +156,7 @@ module Solargraph
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
+    # @param [Array<Object>] gem_names
     def cache *gem_names
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
@@ -167,7 +168,7 @@ module Solargraph
                                        .map { |gemspec| Metagem.from_specification(gemspec) }
                    end
                  else
-                   gem_names.each_with_object([]) do |result, name|
+                   gem_names.each_with_object([]) do |name, result|
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
@@ -183,7 +184,6 @@ module Solargraph
                          warn "Gem #{name} not found"
                        end
                      end
-                     result
                    end
                  end
       metagems.each do |metagem|
