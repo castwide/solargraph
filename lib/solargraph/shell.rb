@@ -180,7 +180,7 @@ module Solargraph
                        if found
                          result.push found
                        else
-                         Solargraph.logger.warn "Gem #{name} not found"
+                         warn "Gem #{name} not found"
                        end
                      end
                      result
