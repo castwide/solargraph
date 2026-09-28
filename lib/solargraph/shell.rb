@@ -170,34 +170,33 @@ module Solargraph
     # @return [void]
     def gems *names
       repo = Solargraph::Repo.new('.')
-      if names.empty?
-        gems = if repo.bundled?
-                 repo.bundled.select(&:cacheable?)
-               else
-                 Gem::Specification.all_names
-                                   .map { |name| Gem::Specification.find_by_full_name(name) }
-                                   .map { |gemspec| Metagem.from_specification(gemspec) }
-               end
-        gems.each do |gem|
-          puts "Caching #{gem.name} #{gem.version} (#{gem.cache_name})"
-          Collection::Gem.load(gem)
-        end
-        puts "Documentation cached for #{gems.count} gems."
-      else
-        names.each do |name|
-          if name == 'core'
-            puts 'Caching core'
-            Collection::Core.load
-          else
-            # @todo Quick and dirty hack for solargraph-rspec require bug
-            #   (see https://github.com/lekemula/solargraph-rspec/pull/38)
-            metagem = repo.find_by_name(name) || repo.find_by_path(name)
-            puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-            Collection::Gem.load metagem
-          end
-        end
-        puts "Documentation cached for #{names.count} gems."
+      metagems = if names.empty?
+                   if repo.bundled?
+                     repo.bundled.select(&:cacheable?)
+                   else
+                     Gem::Specification.all_names
+                                       .map { |name| Gem::Specification.find_by_full_name(name) }
+                                       .map { |gemspec| Metagem.from_specification(gemspec) }
+                   end
+                 else
+                   names.reduce([]).each do |result, name|
+                     if name == 'core'
+                       puts 'Caching core'
+                       Collection::Core.load
+                     else
+                       # @todo Quick and dirty hack for solargraph-rspec require bug
+                       #   (see https://github.com/lekemula/solargraph-rspec/pull/38)
+                       #   TL;DR: `repo.find_by_path` should not be necessary
+                       found = repo.find_by_name(name) || repo.find_by_path(name)
+                       result.push found
+                     end
+                   end
+                 end
+      metagems.each do |metagem|
+        puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
+        Collection::Gem.load(gem)
       end
+      puts "Documentation cached for #{metagems.count} gems."
     end
 
     desc 'reporters', 'Get a list of diagnostics reporters'
