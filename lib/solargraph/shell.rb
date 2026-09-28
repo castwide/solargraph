@@ -189,7 +189,9 @@ module Solargraph
             puts 'Caching core'
             Collection::Core.load
           else
-            metagem = repo.find_by_name(name)
+            # @todo Quick and dirty hack for solargraph-rspec require bug
+            #   (see https://github.com/lekemula/solargraph-rspec/pull/38)
+            metagem = repo.find_by_name(name) || repo.find_by_path(name)
             puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
             Collection::Gem.load metagem
           end
