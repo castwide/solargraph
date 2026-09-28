@@ -167,7 +167,7 @@ module Solargraph
                                        .map { |gemspec| Metagem.from_specification(gemspec) }
                    end
                  else
-                   gem_names.reduce([]) do |result, name|
+                   gem_names.each_with_object([]) do |result, name|
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
