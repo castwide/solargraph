@@ -42,6 +42,11 @@ module Solargraph
       @pins ||= []
     end
 
+    # @return [Integer] incremented whenever the external pin set is rebuilt
+    def generation
+      @generation ||= 0
+    end
+
     # @param new_requires [Array<String>]
     # @return [Boolean]
     def update new_requires
@@ -69,6 +74,7 @@ module Solargraph
     private
 
     def update!
+      @generation = generation + 1
       clear_all
       load_requires
       load_rbs_collection
