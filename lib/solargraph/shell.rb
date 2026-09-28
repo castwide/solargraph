@@ -103,26 +103,13 @@ module Solargraph
     map 'clear-cache' => :clear
     map 'clear-cores' => :clear
 
-    desc 'cache GEM', 'Cache a gem', hide: true
-    option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
-    option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    def cache gem_name
-      repo = Solargraph::Repo.new(options[:directory])
-      metagem = repo.find_by_name(gem_name)
-      if metagem
-        Solargraph::Collection::Gem.uncache(metagem) if options[:rebuild]
-        Solargraph::Collection::Gem.load(metagem)
-      else
-        warn "Gem `#{gem_name}` not found (directory: #{options[:directory].inspect})" unless metagem
-      end
-    end
-
     desc 'uncache GEM [...GEM]', 'Delete specific cached gem documentation'
     long_desc %(
       Specify one or more gem names to clear. 'core' or 'stdlib' may
       also be specified to clear cached system documentation.
       Documentation will be regenerated as needed.
     )
+    option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
     # @param gems [Array<String>]
     # @return [void]
     def uncache *gems
@@ -141,7 +128,7 @@ module Solargraph
       end
     end
 
-    desc 'gems [GEM[=VERSION]...] [STDLIB...] [core]', 'Cache documentation for
+    desc 'cache GEM_NAME [...GEM_NAME] [core]', 'Cache documentation for
          installed libraries'
     long_desc %( This command will cache the
     generated type documentation for the specified libraries.  While
@@ -165,12 +152,13 @@ module Solargraph
         Cached documentation is stored in #{CacheDir.base_dir}, which
         can be stored between CI runs.
     )
+    option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
     # @param names [Array<String>]
     # @return [void]
-    def gems *names
-      repo = Solargraph::Repo.new('.')
-      metagems = if names.empty?
+    def cache *gem_names
+      repo = Solargraph::Repo.new(options[:directory])
+      metagems = if gem_names.empty?
                    if repo.bundled?
                      repo.bundled.select(&:cacheable?)
                    else
@@ -179,8 +167,9 @@ module Solargraph
                                        .map { |gemspec| Metagem.from_specification(gemspec) }
                    end
                  else
-                   names.reduce([]).each do |result, name|
+                   gem_names.reduce([]).each do |result, name|
                      if name == 'core'
+                       Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
                        Collection::Core.load
                      else
@@ -193,11 +182,13 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
+        Collection::Gem.uncache(metagem) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
         Collection::Gem.load(gem)
       end
       puts "Documentation cached for #{metagems.count} gems."
     end
+    map 'gems' => :cache
 
     desc 'reporters', 'Get a list of diagnostics reporters'
     # @return [void]
