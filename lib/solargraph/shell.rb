@@ -167,7 +167,7 @@ module Solargraph
                                        .map { |gemspec| Metagem.from_specification(gemspec) }
                    end
                  else
-                   gem_names.reduce([]).each do |result, name|
+                   gem_names.reduce([]) do |result, name|
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
@@ -177,8 +177,13 @@ module Solargraph
                        #   (see https://github.com/lekemula/solargraph-rspec/pull/38)
                        #   TL;DR: `repo.find_by_path` should not be necessary
                        found = repo.find_by_name(name) || repo.find_by_path(name)
-                       result.push found
+                       if found
+                         result.push found
+                       else
+                         Solargraph.logger.warn "Gem #{name} not found"
+                       end
                      end
+                     result
                    end
                  end
       metagems.each do |metagem|
