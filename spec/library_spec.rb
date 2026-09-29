@@ -690,10 +690,9 @@ describe Solargraph::Library do
     it 'gives up on a gem whose successful cache run leaves it still uncached' do
       library = described_class.new
       api_map = library.send(:api_map)
-      gemspec = instance_double(Gem::Specification, name: 'stuck', version: Gem::Version.new('1.0.0'))
+      gemspec = instance_double(Solargraph::Metagem, name: 'stuck', version: Gem::Version.new('1.0.0'))
       allow(api_map).to receive(:catalog)
-      allow(api_map).to receive_messages(uncached_yard_gemspecs: [gemspec], uncached_rbs_collection_gemspecs: [],
-                                         uncached_gemspecs: [gemspec], source_maps: [], pins: [])
+      allow(api_map).to receive_messages(unloaded_gems: Set[gemspec], source_maps: [], pins: [])
       allow(Solargraph::Yardoc).to receive(:processing?).and_return(false)
       allow(Open3).to receive(:capture3).and_return(['', '', instance_double(Process::Status, success?: true)])
       # Run the caching thread inline, and keep it out of the catalog cycle
