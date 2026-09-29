@@ -1,16 +1,8 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class RbsMap
-    # Ruby core pins
-    #
-    class CoreMap
-      include Logging
-
-      def resolved?
-        true
-      end
-
+  module RbsMap
+    class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
       # Like FILLS_DIRECTORY, but a declaration here *replaces* the core
@@ -18,28 +10,28 @@ module Solargraph
       # alongside it.
       OVERRIDES_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'overrides'))
 
-      def initialize; end
-
-      # @param out [IO, nil] output stream for logging
-      # @return [Enumerable<Pin::Base>]
-      def pins out: $stderr
-        return @pins if @pins
-        @pins = cache_core(out: out)
+      def pins
+        @pins ||= generate_pins
       end
 
-      # @param out [StringIO, IO, nil] output stream for logging
+      # @return [RBS::EnvironmentLoader]
+      def loader
+        @loader ||= RBS::EnvironmentLoader.new(repository: repository)
+      end
+
+      def repository
+        @repository ||= RBS::Repository.new(no_stdlib: false)
+      end
+
+      private
+
       # @return [Array<Pin::Base>]
-      def cache_core out: $stderr
-        # @type [Array<Pin::Base>]
-        new_pins = []
-        cache = PinCache.deserialize_core
-        return cache if cache
-        new_pins.concat conversions.pins
+      def generate_pins
+        new_pins = RbsMap::Conversions.new(loader: loader).pins
 
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
         fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
-        out&.puts 'Caching RBS pins for Ruby core'
         fill_conversions = Conversions.new(loader: fill_loader)
         new_pins.concat fill_conversions.pins
 
@@ -57,23 +49,9 @@ module Solargraph
 
         # process overrides, then remove any which couldn't be resolved
         processed = ApiMap::Store.new(new_pins).pins.reject { |p| p.is_a?(Solargraph::Pin::Reference::Override) }
-        new_pins.replace processed
-
-        PinCache.serialize_core new_pins
-
-        new_pins
-      end
-
-      private
-
-      # @return [RBS::EnvironmentLoader]
-      def loader
-        @loader ||= RBS::EnvironmentLoader.new(repository: RBS::Repository.new(no_stdlib: false))
-      end
-
-      # @return [Conversions]
-      def conversions
-        @conversions ||= Conversions.new(loader: loader)
+        # serial = Marshal.dump(processed)
+        # File.write cache_file, serial, mode: 'wb'
+        processed
       end
     end
   end

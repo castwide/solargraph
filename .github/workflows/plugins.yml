@@ -132,7 +132,9 @@ jobs:
     - name: clone apiology/solargraph-rspec tolerate-literal-inference-and-items
       run: |
        cd ..
-       # git clone https://github.com/lekemula/solargraph-rspec.git
+       # Points at a fork branch that tolerates this branch making
+       # Intersection#items raise; it is 1 commit behind
+       # castwide fix-action-mailer-require-path.
        git clone --branch tolerate-literal-inference-and-items https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
     - name: Set up Ruby
