@@ -40,6 +40,11 @@ module Solargraph
 
       # The first method pin at a path wins, matching what an ApiMap returns.
       #
+      # Aliases are left out. MethodAlias subclasses Method, and combining one
+      # in place of its target gives a pin whose closure is an alias rather
+      # than a method. Resolving it needs an ApiMap, so the original pin is
+      # kept instead.
+      #
       # @param pins [Enumerable<Pin::Base>]
       # @return [Hash{String => Pin::Method}]
       def method_pins_by_path pins
@@ -47,6 +52,7 @@ module Solargraph
         by_path = {}
         pins.each do |pin|
           next unless pin.is_a?(Pin::Method)
+          next if pin.is_a?(Pin::MethodAlias)
 
           path = pin.path
           next if path.nil? || by_path.key?(path)
