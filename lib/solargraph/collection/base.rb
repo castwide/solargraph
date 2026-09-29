@@ -18,7 +18,7 @@ module Solargraph
     class Base
       # @return [Array<Pin::Base>]
       def load
-        mem_cache_pins || file_cache_pins || generate_pin_caches
+        Collection.cached(cache_file) { file_cache_pins || generate_pin_caches }
       end
 
       # @return [Array<Pin::Base>]
@@ -37,10 +37,6 @@ module Solargraph
       end
 
       private
-
-      def mem_cache_pins
-        Collection.mem_cache[cache_file]
-      end
 
       def file_cache_pins
         Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad

@@ -1011,7 +1011,11 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     def equality_fields
-      [@source_map_hash, conventions_environ, @external&.pins, @unresolved_requires, @loose_unions]
+      # External is compared by identity and generation instead of by its pins:
+      # Chain#infer hashes the ApiMap on every inference, and Array#hash would
+      # walk every gem pin on each of those calls.
+      [@source_map_hash, conventions_environ, @external, @external&.generation,
+       @unresolved_requires, @loose_unions]
     end
   end
 end
