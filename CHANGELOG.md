@@ -1,3 +1,13 @@
+## 0.60.4 - August 30, 2026
+- Fix @yieldparam type lost on multi-overload block-form methods (#1289) (#1290)
+- Read inline RBS superclass params only on the class line (#1301)
+- Stop recording YARD's implicit Object superclass (#1315)
+- Improve overload resolution and macro handling in Chain::Call (#1247)
+- Fix Chain#nullable? leaking nil from earlier &. into later calls (#1271)
+- Handle YARD bug with open singleton classes (#1279)
+- Fix duck_types_match? to check the inferred type's own duck interface (#1295)
+- Use the original repo (run_solargraph_rspec_specs job) (#1291)
+
 ## 0.60.3 - August 5, 2026
 - Pin rdoc to ~> 7.0 (#1216)
 - (tag: v0.60.2) Release 0.60.2 (rdoc fix)
