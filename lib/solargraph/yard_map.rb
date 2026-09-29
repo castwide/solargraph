@@ -7,7 +7,7 @@ module Solargraph
   # The YardMap provides access to YARD documentation for the Ruby core, the
   # stdlib, and gems.
   #
-  class YardMap
+  module YardMap
     class NoYardocError < StandardError; end
 
     autoload :Cache,       'solargraph/yard_map/cache'
