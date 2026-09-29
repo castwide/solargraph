@@ -149,17 +149,5 @@ module Solargraph
         process_gem metagem
       end
     end
-
-    # @return [Array<String>]
-    def read_rbs_collection_paths
-      return [] unless rbs_collection_config_path
-
-      yaml = YAML.load_file(rbs_collection_config_path)
-      [File.expand_path(yaml.fetch('path'), directory)].concat(
-        yaml.fetch('sources', [])
-            .select { |source| source['type'] == 'local' && source['path'] }
-            .map { |source| File.expand_path(source['path'], directory) }
-      ).compact
-    end
   end
 end
