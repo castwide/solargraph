@@ -2,6 +2,8 @@
 
 module Solargraph
   class Metagem
+    include Equality
+
     # @return [String]
     attr_reader :name
 
@@ -56,6 +58,15 @@ module Solargraph
 
     alias full_gem_path full_path
 
+    # @return [Array]
+    def equality_fields
+      # A version arrives as a String from a bundle definition and as a
+      # Gem::Version from a specification, so compare its string form.
+      [name, version.to_s, full_path, source]
+    end
+
+    # @param gem [Gem::Specification]
+    # @return [Metagem]
     def self.from_specification gem
       Metagem.new(name: gem.name,
                   full_path: gem.full_gem_path,
