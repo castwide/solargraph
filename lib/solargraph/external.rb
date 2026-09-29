@@ -38,6 +38,10 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    def loaded_stdlibs
+      @loaded_stdlibs ||= Set.new
+    end
+
     def pins
       @pins ||= []
     end
@@ -105,9 +109,17 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    def rbs_collection
+      @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
+    end
+
+    def rbs_collection_lockfile
+      lockfile = File.join(directory, 'rbs_collection.lock.yaml')
+      lockfile if File.file?(lockfile)
+    end
+
     def load_rbs_collection
-      rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
-      pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
+      loaded_gems.each { |metagem| pins.concat rbs_collection.load(metagem) }
     end
 
     def clear_all
@@ -142,18 +154,6 @@ module Solargraph
         next unresolved_dependencies.push(name) unless metagem
         process_gem metagem
       end
-    end
-
-    # @return [Array<String>]
-    def read_rbs_collection_paths
-      return [] unless rbs_collection_config_path
-
-      yaml = YAML.load_file(rbs_collection_config_path)
-      [File.expand_path(yaml.fetch('path'), directory)].concat(
-        yaml.fetch('sources', [])
-            .select { |source| source['type'] == 'local' && source['path'] }
-            .map { |source| File.expand_path(source['path'], directory) }
-      ).compact
     end
   end
 end
