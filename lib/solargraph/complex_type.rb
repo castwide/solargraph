@@ -289,6 +289,9 @@ module Solargraph
       end
     end
 
+    # @deprecated A duck expectation routes through
+    #   UniqueType#satisfied_by? to #provides_duck_method? instead.
+    #
     # @param api_map [ApiMap]
     # @param expected [ComplexType, UniqueType]
     # @param inferred [ComplexType, UniqueType]
