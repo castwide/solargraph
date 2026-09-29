@@ -201,15 +201,16 @@ describe Solargraph::Shell do
       end
     end
 
-    context 'with mocked workspace' do
-      let(:workspace) { instance_double(Solargraph::Workspace) }
+    context 'with mocked repo' do
+      let(:repo) { instance_double(Solargraph::Repo) }
 
       before do
-        allow(Solargraph::Workspace).to receive(:new).and_return(workspace)
+        allow(Solargraph::Repo).to receive(:new).and_return(repo)
       end
 
       it 'reports a gem whose lookup resolves to no gemspec' do
-        allow(workspace).to receive(:find_gem).with('no-gemspec').and_return(nil)
+        allow(repo).to receive(:find_by_name).with('no-gemspec').and_return(nil)
+        allow(repo).to receive(:find_by_path).with('no-gemspec').and_return(nil)
 
         output = capture_both do
           shell.gems('no-gemspec')
@@ -218,8 +219,25 @@ describe Solargraph::Shell do
         expect(output).to include("Gem 'no-gemspec' not found")
       end
 
+      # bin/solargraph sets $VERBOSE to nil, which turns Kernel#warn into a
+      # no-op, so a warn-based message would never reach the user.
+      it 'reports an unresolvable gem even with Ruby warnings disabled' do
+        allow(repo).to receive(:find_by_name).with('no-gemspec').and_return(nil)
+        allow(repo).to receive(:find_by_path).with('no-gemspec').and_return(nil)
+
+        old_verbose = $VERBOSE
+        $VERBOSE = nil
+        begin
+          output = capture_both { shell.gems('no-gemspec') }
+        ensure
+          $VERBOSE = old_verbose
+        end
+
+        expect(output).to include("Gem 'no-gemspec' not found")
+      end
+
       it 'reports a gem that raises Gem::MissingSpecError' do
-        allow(workspace).to receive(:find_gem).with('flaky-gem').and_raise(Gem::MissingSpecError.new('flaky-gem', '1.0'))
+        allow(repo).to receive(:find_by_name).with('flaky-gem').and_raise(Gem::MissingSpecError.new('flaky-gem', '1.0'))
 
         output = capture_both do
           shell.gems('flaky-gem')
@@ -229,7 +247,7 @@ describe Solargraph::Shell do
       end
 
       it 'reports a gem that raises Gem::Requirement::BadRequirementError' do
-        allow(workspace).to receive(:find_gem).with('bad-gem').and_raise(Gem::Requirement::BadRequirementError, 'bad requirement string')
+        allow(repo).to receive(:find_by_name).with('bad-gem').and_raise(Gem::Requirement::BadRequirementError, 'bad requirement string')
 
         output = capture_both do
           shell.gems('bad-gem')
@@ -254,24 +272,6 @@ describe Solargraph::Shell do
         # capture stderr output
         expect { call }.to output(/not found/).to_stderr
       end
-    end
-  end
-
-  describe 'do_cache' do
-    it 'complains when the gemspec is nil, even with Ruby warnings disabled' do
-      # bin/solargraph sets $VERBOSE = nil, which turns Kernel#warn into a
-      # no-op - a warn-based message would never reach the user.
-      old_verbose = $VERBOSE
-      $VERBOSE = nil
-      begin
-        output = capture_both do
-          shell.send(:do_cache, nil)
-        end
-      ensure
-        $VERBOSE = old_verbose
-      end
-
-      expect(output).to include("Gem '' not found")
     end
   end
 

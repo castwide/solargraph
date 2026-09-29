@@ -192,9 +192,22 @@ module Solargraph
             # @todo Quick and dirty hack for solargraph-rspec require bug
             #   (see https://github.com/lekemula/solargraph-rspec/pull/38)
             metagem = repo.find_by_name(name) || repo.find_by_path(name)
+            # $stderr.puts, not warn: bin/solargraph sets $VERBOSE to nil,
+            # which makes Kernel#warn a no-op, so the reason a gem was
+            # skipped would never reach anyone.
+            if metagem.nil?
+              $stderr.puts "Gem '#{name}' not found"
+              next
+            end
+
             puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
             Collection::Gem.load metagem
           end
+        rescue Gem::MissingSpecError
+          $stderr.puts "Gem '#{name}' not found"
+        rescue Gem::Requirement::BadRequirementError => e
+          $stderr.puts "Gem '#{name}' failed while loading"
+          $stderr.puts e.message
         end
         puts "Documentation cached for #{names.count} gems."
       end
