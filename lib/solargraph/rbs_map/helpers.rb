@@ -10,18 +10,14 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def combine orig_pins, rbs_pins
         in_orig = Set.new
-        # @todo There's gotta be a better way!
-        rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
+        rbs_methods = method_pins_by_path(rbs_pins)
         combined =  orig_pins.map do |orig_pin|
           in_orig.add orig_pin.path
-          rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+          # An ApiMap answers this too, but it indexes the core pins ahead of
+          # the pins it was given, and building one per call costs far more
+          # than the lookups save. Core first preserves which one it picks.
+          rbs_pin = core_method_pins[orig_pin.path] || rbs_methods[orig_pin.path]
           next orig_pin unless rbs_pin && orig_pin.instance_of?(Pin::Method)
-
-          unless rbs_pin
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1114
-            Solargraph.logger.debug { "GemPins.combine: No rbs pin for #{orig_pin.path} - using YARD's '#{orig_pin.inspect} (return_type=#{orig_pin.return_type}; signatures=#{orig_pin.signatures})" }
-            next orig_pin
-          end
 
           out = combine_method_pins(rbs_pin, orig_pin)
           Solargraph.logger.debug { "GemPins.combine: Combining yard.path=#{orig_pin.path} - rbs=#{rbs_pin.inspect} with yard=#{orig_pin.inspect} into #{out}" }
@@ -33,6 +29,31 @@ module Solargraph
         out = combined + in_rbs_only
         Solargraph.logger.debug { "GemPins#combine: Returning #{out.length} combined pins" }
         out
+      end
+
+      # The core pins never change, so index them once for every caller.
+      #
+      # @return [Hash{String => Pin::Method}]
+      def core_method_pins
+        @core_method_pins ||= method_pins_by_path(Collection::Core.load)
+      end
+
+      # The first method pin at a path wins, matching what an ApiMap returns.
+      #
+      # @param pins [Enumerable<Pin::Base>]
+      # @return [Hash{String => Pin::Method}]
+      def method_pins_by_path pins
+        # @type [Hash{String => Pin::Method}]
+        by_path = {}
+        pins.each do |pin|
+          next unless pin.is_a?(Pin::Method)
+
+          path = pin.path
+          next if path.nil? || by_path.key?(path)
+
+          by_path[path] = pin
+        end
+        by_path
       end
 
       # @param pins [Array<Pin::Method>]
