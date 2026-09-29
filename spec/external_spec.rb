@@ -97,8 +97,8 @@ describe Solargraph::External do
 
   it 'ignores duplicate gems' do
     external = described_class.new(directory, ['backport', 'backport/version'])
-    backport_pins = external.pins.select { |pin| pin.path == 'Backport' }
-    expect(backport_pins).to be_one
+    backport_method_pins = external.pins.select { |pin| pin.path == 'Backport.prepare_stdio_server' }
+    expect(backport_method_pins).to be_one
   end
 
   it 'loads stdlib paths' do
