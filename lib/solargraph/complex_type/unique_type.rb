@@ -551,26 +551,24 @@ module Solargraph
       # @param context_type [UniqueType, ComplexType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
-      # @return [Array<ComplexType>]
+      # @return [Array<ComplexType, ComplexType::UniqueType>]
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
-        types.each_with_index.flat_map do |ct, i|
-          # both branches yield an array: flat_map asks a bare block
-          # result for to_ary
-          ct.items.flat_map do |ut|
-            context_params = yield context_type if context_type
-            if context_params && context_params[i]
-              type_arg = context_params[i]
-              type_arg.items.map do |new_unique_context_type|
-                ut.resolve_generics_from_context generics_to_resolve, new_unique_context_type,
-                                                 resolved_generic_values: resolved_generic_values
-              end
-            else
-              [ut.resolve_generics_from_context(generics_to_resolve, nil,
-                                                resolved_generic_values: resolved_generic_values)]
+        context_params = yield context_type if context_type
+        resolved = []
+        types.each_with_index do |ct, i|
+          # A parameter is a union, a named type or an intersection, and
+          # only the first has members to take apart.
+          ComplexType.flatten_unions([ct]).each do |ut|
+            type_arg = context_params && context_params[i]
+            contexts = type_arg ? ComplexType.flatten_unions([type_arg]) : [nil]
+            contexts.each do |context|
+              resolved.push ut.resolve_generics_from_context(generics_to_resolve, context,
+                                                             resolved_generic_values: resolved_generic_values)
             end
           end
         end
+        resolved
       end
 
       # Probe the concrete type for each of the generic type
