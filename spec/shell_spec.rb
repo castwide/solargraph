@@ -160,7 +160,7 @@ describe Solargraph::Shell do
       it 'complains when gem does not exist' do
         skip 'WIP'
         output = capture_both do
-          shell.gems('nonexistentgem')
+          shell.cache('nonexistentgem')
         end
 
         expect(output).to include("Gem 'nonexistentgem' not found")
@@ -173,7 +173,7 @@ describe Solargraph::Shell do
         $VERBOSE = nil
         begin
           output = capture_both do
-            shell.gems('nonexistentgem')
+            shell.cache('nonexistentgem')
           end
         ensure
           $VERBOSE = old_verbose
@@ -194,7 +194,7 @@ describe Solargraph::Shell do
       it 'gives sensible error for gem that does not exist' do
         skip 'WIP'
         output = capture_both do
-          shell.gems('solargraph123')
+          shell.cache('solargraph123')
         end
 
         expect(output).to include("Gem 'solargraph123' not found")
@@ -213,7 +213,7 @@ describe Solargraph::Shell do
         allow(repo).to receive(:find_by_path).with('no-gemspec').and_return(nil)
 
         output = capture_both do
-          shell.gems('no-gemspec')
+          shell.cache('no-gemspec')
         end
 
         expect(output).to include("Gem 'no-gemspec' not found")
@@ -228,7 +228,7 @@ describe Solargraph::Shell do
         old_verbose = $VERBOSE
         $VERBOSE = nil
         begin
-          output = capture_both { shell.gems('no-gemspec') }
+          output = capture_both { shell.cache('no-gemspec') }
         ensure
           $VERBOSE = old_verbose
         end
@@ -240,7 +240,7 @@ describe Solargraph::Shell do
         allow(repo).to receive(:find_by_name).with('flaky-gem').and_raise(Gem::MissingSpecError.new('flaky-gem', '1.0'))
 
         output = capture_both do
-          shell.gems('flaky-gem')
+          shell.cache('flaky-gem')
         end
 
         expect(output).to include("Gem 'flaky-gem' not found")
@@ -250,7 +250,7 @@ describe Solargraph::Shell do
         allow(repo).to receive(:find_by_name).with('bad-gem').and_raise(Gem::Requirement::BadRequirementError, 'bad requirement string')
 
         output = capture_both do
-          shell.gems('bad-gem')
+          shell.cache('bad-gem')
         end
 
         expect(output).to include("Gem 'bad-gem' failed while loading")
