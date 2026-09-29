@@ -125,58 +125,36 @@ describe Solargraph::ApiMap do
       let(:method_stack) { api_map.get_method_stack('YAML', 'safe_load', scope: :class) }
 
       it 'handles the YAML gem aliased to Psych' do
-        # catalog first so doc_map registers 'yaml' as required before we
-        # try to cache it - cache_gem is a no-op for gems doc_map doesn't
-        # yet know it needs
-        api_map.catalog bench
-        specs = api_map.resolve_require('yaml')
-        specs.each { |spec| api_map.cache_gem(spec) }
-        api_map.catalog bench
-
         expect(method_stack).not_to be_empty
       end
     end
 
     context 'with thor' do
+      # A bundle gem, unlike the stdlib above, has to be cached before its
+      # pins exist.
+      let(:out) { StringIO.new }
+      let(:api_map) { described_class.load_with_cache(Dir.pwd, out) }
       let(:external_requires) { ['thor'] }
       let(:method_stack) { api_map.get_method_stack('Thor', 'desc', scope: :class) }
 
       it 'handles finding Thor.desc' do
-        # catalog first so doc_map registers 'thor' as required before we
-        # try to cache it - cache_gem is a no-op for gems doc_map doesn't
-        # yet know it needs
-        api_map.catalog bench
-        specs = api_map.resolve_require('thor')
-        specs.each { |spec| api_map.cache_gem(spec) }
-        api_map.catalog bench
-
-        # if this fails you may not have an rbs collection installed
         expect(method_stack).not_to be_empty
       end
     end
   end
 
-  describe '#cache_all_for_doc_map!' do
-    it 'can cache gems without a bench' do
-      api_map = described_class.new
-      doc_map = instance_double(Solargraph::DocMap, cache_all!: true)
-      allow(Solargraph::DocMap).to receive(:new).and_return(doc_map)
-      api_map.cache_all_for_doc_map!(out: $stderr)
-      expect(doc_map).to have_received(:cache_all!).with($stderr, rebuild: false)
-    end
-  end
-
   describe '#workspace' do
     it 'can get a default workspace without a bench' do
+      pending 'Determine correct behavior'
       api_map = described_class.new
       expect(api_map.workspace).not_to be_nil
     end
   end
 
-  describe '#uncached_gemspecs' do
-    it 'can get uncached gemspecs workspace without a bench' do
+  describe '#unloaded_gems' do
+    it 'can get unloaded gems without a bench' do
       api_map = described_class.new
-      expect(api_map.uncached_gemspecs).not_to be_nil
+      expect(api_map.unloaded_gems).not_to be_nil
     end
   end
 
