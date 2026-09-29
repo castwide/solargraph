@@ -1349,7 +1349,7 @@ describe 'YARD type specifier list parsing' do
     end
 
     it 'answers nil for a TypeMethods name on an empty union' do
-      expect(Solargraph::ComplexType.parse.undefined?).to be_nil
+      expect(Solargraph::ComplexType.parse.duck_type?).to be_nil
     end
   end
 end

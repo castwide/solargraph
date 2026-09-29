@@ -400,6 +400,27 @@ module Solargraph
       @items.any?(&:nullable?)
     end
 
+    # A value of the union may be the void member, so one void member
+    # leaves the whole union with nothing usable to say.
+    #
+    # @return [Boolean]
+    def void?
+      @items.any?(&:void?)
+    end
+
+    # A value of the union may be the member we failed to resolve, so one
+    # undefined member makes the whole union undefined.
+    #
+    # @return [Boolean]
+    def undefined?
+      @items.any?(&:undefined?)
+    end
+
+    # @return [Boolean]
+    def defined?
+      !undefined?
+    end
+
     # @return [ComplexType]
     def without_nil
       new_items = @items.reject(&:nullable?)
