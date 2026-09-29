@@ -109,7 +109,7 @@ module Solargraph
 
     def rbs_collection_lockfile
       lockfile = File.join(directory, 'rbs_collection.lock.yaml')
-      return lockfile if File.file?(lockfile)
+      lockfile if File.file?(lockfile)
     end
 
     def load_rbs_collection

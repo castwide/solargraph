@@ -33,7 +33,7 @@ module Solargraph
       full_key = "#{metagem.name}-#{metagem.version}."
       zero_key = "#{metagem.name}-0"
       found = gem_path_map.find { |key, _| full_key.start_with?("#{key}.") } ||
-        gem_path_map.find { |key, _| key == zero_key }
+              gem_path_map.find { |key, _| key == zero_key }
       found&.first
     end
 
@@ -52,10 +52,10 @@ module Solargraph
     # @return [Hash]
     def raw_data
       @raw_data ||= if lockfile && File.file?(lockfile)
-        YAML.load_file(lockfile, symbolize_names: true)
-      else
-        { gems: [] }
-      end
+                      YAML.load_file(lockfile, symbolize_names: true)
+                    else
+                      { gems: [] }
+                    end
     end
   end
 end
