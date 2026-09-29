@@ -581,6 +581,7 @@ module Solargraph
       def resolve_generics definitions, context_type
         return self if definitions.nil? || definitions.generics.empty?
 
+        context_type = declaring_conjunct(definitions, context_type)
         transform(name) do |t|
           if t.name == GENERIC_TAG_NAME
             generic_name = t.subtypes.first&.name
@@ -606,6 +607,23 @@ module Solargraph
           end
         end
       end
+
+      # The part of +context_type+ holding the values for the generics
+      # +definitions+ declares.  An intersection has one parameter list
+      # per conjunct, and only the conjunct naming that namespace holds
+      # them; anything else is already the one list there is.
+      #
+      # @param definitions [Pin::Namespace, Pin::Method]
+      # @param context_type [ComplexType, ComplexType::UniqueType]
+      # @return [ComplexType, ComplexType::UniqueType]
+      def declaring_conjunct definitions, context_type
+        member = ComplexType.flatten_unions([context_type]).first
+        return context_type unless member.is_a?(Intersection)
+
+        declaring = definitions.namespace.empty? ? definitions.path : definitions.namespace
+        member.conjuncts.find { |conjunct| conjunct.namespace == declaring } || ComplexType::UNDEFINED
+      end
+      private :declaring_conjunct
 
       # @return [Array<ComplexType::UniqueType>]
       def unioned_items
