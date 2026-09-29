@@ -4,9 +4,6 @@ source 'https://rubygems.org'
 
 gemspec name: 'solargraph'
 
-# Test fixture gems
-gem 'gem-with-yard-macros', path: 'spec/fixtures/gem-with-yard-macros'
-
 # rubocop-yard 1.3 fixes YARD CollectionStyle crashes under yard 0.9.44
 # but requires Ruby >= 3.3, and a gemspec cannot express that condition.
 # Specs run on 3.1 and 3.2, which keep 1.0.x.

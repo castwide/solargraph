@@ -52,7 +52,7 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     expect(message.result.first[:uri]).to eq(other_uri)
   end
 
-  it 'finds definitions of require paths', time_limit_seconds: 120 do
+  it 'finds definitions of require paths' do
     path = File.absolute_path('spec/fixtures/workspace')
     host = Solargraph::LanguageServer::Host.new
     host.prepare(path)

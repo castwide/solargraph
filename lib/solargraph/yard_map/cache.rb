@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Cache
       def initialize
         # @type [Hash{String => Array<Solargraph::Pin::Base>}]
