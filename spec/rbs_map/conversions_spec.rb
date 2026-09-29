@@ -100,8 +100,9 @@ describe Solargraph::RbsMap::Conversions do
       @api_map = Solargraph::ApiMap.load('.')
       gems = %w[parser ast open3]
       bench = Solargraph::Bench.new(workspace: @api_map.workspace, external_requires: gems)
-      @api_map.catalog(bench)
-      @api_map.cache_all_for_doc_map!
+      # One catalog is enough: it caches the gems it needs on the way
+      # through, so naming only these three still costs far less than
+      # load_with_cache, which builds the whole bundle.
       @api_map.catalog(bench)
     end
 
