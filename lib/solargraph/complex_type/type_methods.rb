@@ -216,15 +216,7 @@ module Solargraph
         @namespace ||= lambda do
           return 'Object' if duck_type?
           return 'NilClass' if nil_type?
-          return name unless %w[Class Module].include?(name)
-
-          # Only a parameter naming one type can stand in as the
-          # namespace; an intersection names several at once.
-          stand_in = ComplexType.flatten_unions(subtypes.take(1)).first
-          return name if stand_in.nil?
-          return name unless stand_in.instance_of?(ComplexType::UniqueType)
-
-          stand_in.name
+          %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end
 
