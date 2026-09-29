@@ -667,8 +667,10 @@ module Solargraph
           new_key_types = @key_types
           new_subtypes = @subtypes
         else
-          new_key_types = @key_types.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
-          new_subtypes = @subtypes.flat_map { |ct| ct.items.map { |ut| ut.transform(&transform_type) } }
+          # Each parameter transforms itself, so a union stays one
+          # parameter and an intersection keeps its conjuncts.
+          new_key_types = @key_types.map { |type| type.transform(&transform_type) }
+          new_subtypes = @subtypes.map { |type| type.transform(&transform_type) }
         end
         new_type = recreate(new_name: new_name || name, new_key_types: new_key_types, new_subtypes: new_subtypes,
                             make_rooted: @rooted)

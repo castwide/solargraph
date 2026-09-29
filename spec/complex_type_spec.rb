@@ -530,18 +530,6 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
-    describe '#implicit_union?' do
-      it 'is true when a conjunct treats its parameters as an implicit union' do
-        intersection = Solargraph::ComplexType.parse('Array<String> & Enumerable').items.first
-        expect(intersection.implicit_union?).to be true
-      end
-
-      it 'is false when no conjunct does' do
-        intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
-        expect(intersection.implicit_union?).to be false
-      end
-    end
-
     describe '#order_nil_last' do
       it 'moves nil last inside a conjunct that is itself a union' do
         intersection = Solargraph::ComplexType.parse('Foo & [nil, Bar]').items.first

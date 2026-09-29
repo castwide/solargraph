@@ -20,7 +20,7 @@ module Solargraph
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
-      items = fold_boolean_cases(types.flat_map(&:items).uniq(&:rooted_tags))
+      items = fold_boolean_cases(ComplexType.flatten_unions(types).uniq(&:rooted_tags))
       # @type [Array<UniqueType>]
       items = [UniqueType::UNDEFINED] if items.any?(&:undefined?)
       # @todo shouldn't need this cast - if statement above adds an 'Array' type
@@ -397,12 +397,12 @@ module Solargraph
     end
 
     def nullable?
-      @items.any?(&:nil_type?)
+      @items.any?(&:nullable?)
     end
 
     # @return [ComplexType]
     def without_nil
-      new_items = @items.reject(&:nil_type?)
+      new_items = @items.reject(&:nullable?)
       return ComplexType::UNDEFINED if new_items.empty?
       ComplexType.new(new_items)
     end
@@ -412,9 +412,7 @@ module Solargraph
     #
     # @return [ComplexType]
     def order_nil_last
-      nils, rest = unioned_items.partition(&:nil_type?)
-      return self if nils.empty?
-
+      nils, rest = unioned_items.map(&:order_nil_last).partition(&:nil_type?)
       ComplexType.new(rest + nils)
     end
 
@@ -712,8 +710,9 @@ module Solargraph
       # @param types [Array<ComplexType, ComplexType::UniqueType>]
       # @return [ComplexType, ComplexType::UniqueType]
       def union *types
-        items = types.flat_map(&:items).uniq(&:rooted_tags)
+        items = flatten_unions(types).uniq(&:rooted_tags)
         return items.fetch(0) if items.length == 1
+
         ComplexType.new(items)
       end
 
@@ -724,6 +723,16 @@ module Solargraph
       rescue ComplexTypeError => e
         Solargraph.logger.info "Error parsing complex type `#{strings.join(', ')}`: #{e.message}"
         ComplexType::UNDEFINED
+      end
+
+      # The items a union of +types+ would hold: a ComplexType
+      # contributes its own items, anything else - an intersection
+      # included - contributes itself.
+      #
+      # @param types [Array<ComplexType, ComplexType::UniqueType>]
+      # @return [Array<ComplexType::UniqueType>]
+      def flatten_unions types
+        types.flat_map { |type| type.instance_of?(ComplexType) ? type.unioned_items : [type] }
       end
 
       private
