@@ -295,8 +295,14 @@ module Solargraph
         name.start_with?('_') || name.include?('::_')
       end
 
+      # Only a named type can be this type with its parameters dropped,
+      # so anything else - an intersection included - is not one.
+      #
       # @param other [UniqueType]
+      # @return [Boolean]
       def erased_version_of? other
+        return false unless other.instance_of?(UniqueType)
+
         name == other.name && (all_params.empty? || all_params.all?(&:undefined?))
       end
 

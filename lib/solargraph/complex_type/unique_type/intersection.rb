@@ -487,9 +487,18 @@ module Solargraph
           raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
-        def erased_version_of?(*, **, &)
-          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
+        # Erasure drops parameters conjunct by conjunct, so this holds
+        # only against another intersection lining up one for one. A
+        # named type is not this type with its parameters dropped.
+        #
+        # @param other [ComplexType, ComplexType::UniqueType]
+        # @return [Boolean]
+        def erased_version_of? other
+          return false unless other.is_a?(Intersection)
+          return false unless conjuncts.length == other.conjuncts.length
+
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          conjuncts.zip(other.conjuncts).all? { |mine, theirs| mine.erased_version_of?(theirs) }
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
