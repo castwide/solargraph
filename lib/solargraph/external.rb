@@ -106,8 +106,35 @@ module Solargraph
     end
 
     def load_rbs_collection
-      rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
-      pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
+      # Merging every gem pin against its collection counterpart costs more
+      # than loading either side, and each ApiMap builds its own External, so
+      # the result is kept for whatever else loads the same gems.
+      combined = Collection.cached(combined_pins_key) do
+        rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
+        RbsMap::Helpers.combine(pins, rbs_collection_pins)
+      end
+      pins.replace combined
+    end
+
+    # Names what pins is about to be built from: the gems that loaded, the
+    # ones still waiting on a cache, and the collections on top of them.
+    # cache_name is nil for path and system sources, so it cannot be used.
+    #
+    # @return [String]
+    def combined_pins_key
+      [
+        'external-combined',
+        requires.sort.join(','),
+        gem_key(loaded_gems),
+        gem_key(unloaded_gems),
+        rbs_collection_paths.sort.join(',')
+      ].join('|')
+    end
+
+    # @param gems [Enumerable<Metagem>]
+    # @return [String]
+    def gem_key gems
+      gems.map { |gem| "#{gem.name}:#{gem.version}:#{gem.full_path}" }.sort.join(',')
     end
 
     def clear_all
