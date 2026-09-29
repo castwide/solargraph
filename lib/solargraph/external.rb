@@ -16,7 +16,7 @@ module Solargraph
     # @param directory [String]
     # @param requires [Array<String>]
     def initialize directory, requires
-      @repo = Repo.new(directory)
+      @repo = Repo.load(directory)
       @directory = directory
       @requires = requires
       update!

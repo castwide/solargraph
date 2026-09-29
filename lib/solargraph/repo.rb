@@ -18,6 +18,21 @@ module Solargraph
       build_from_directory
     end
 
+    # Building a repo shells out to Bundler, which costs about a second, and
+    # every ApiMap wants one for the same directory. A repo is only read from
+    # after it is built, so one per lockfile state serves all of them.
+    #
+    # @param directory [String, nil]
+    # @return [Repo]
+    def self.load directory
+      path = File.expand_path(directory) if directory
+      lock = File.join(path, 'Gemfile.lock') if path
+      stamp = File.mtime(lock).to_i if lock && File.file?(lock)
+      # @type [Hash{Array => Repo}]
+      repos = (@repos ||= {})
+      repos[[path, stamp]] ||= new(directory)
+    end
+
     # Find a metagem by path from the directory's bundle definition or the
     # system gems.
     #
