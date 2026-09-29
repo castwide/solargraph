@@ -34,9 +34,11 @@ module Solargraph
         # a name and parameters every Intersection reader raises on.
         #
         # @param conjuncts [Array<UniqueType, Intersection, ComplexType>]
+        # rubocop:disable Lint/MissingSuper
         def initialize conjuncts
           @conjuncts = conjuncts
         end
+        # rubocop:enable Lint/MissingSuper
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         # @return [String]
