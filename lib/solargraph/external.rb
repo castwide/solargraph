@@ -42,6 +42,11 @@ module Solargraph
       @pins ||= []
     end
 
+    # @return [Integer] incremented whenever the external pin set is rebuilt
+    def generation
+      @generation ||= 0
+    end
+
     # @param new_requires [Array<String>]
     # @return [Boolean]
     def update new_requires
@@ -69,6 +74,7 @@ module Solargraph
     private
 
     def update!
+      @generation = generation + 1
       clear_all
       load_requires
       load_rbs_collection
@@ -100,7 +106,7 @@ module Solargraph
     end
 
     def load_rbs_collection
-      rbs_collection_pins = rbs_collection_paths.flat_map { |path| RbsMap::Path.pins(path) }
+      rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
       pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
     end
 
