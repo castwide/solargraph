@@ -74,7 +74,7 @@ module Solargraph
                   source: gem.source.to_s,
                   version: gem.version,
                   require_paths: gem.require_paths,
-                  dependencies: gem.dependencies.map(&:name))
+                  dependencies: gem.runtime_dependencies.map(&:name))
     end
   end
 end
