@@ -757,14 +757,14 @@ describe Solargraph::Pin::Method do
 
         # `&` binds tighter than a union's `,`, so the grouped conjunct
         # keeps its brackets and re-parses to the same structure.
-        expect(original.tag).to eq('[String, Integer] & Comparable')
-        reparsed = Solargraph::ComplexType.parse(original.tag)
+        expect(original.tags).to eq('[String, Integer] & Comparable')
+        reparsed = Solargraph::ComplexType.parse(original.tags)
         expect(reparsed.items.length).to eq(1)
         expect(reparsed.items.first.conjuncts.map(&:tags)).to eq(['String, Integer', 'Comparable'])
 
-        # rooted_tag keeps the `::` prefixes that tag drops, so it is
+        # rooted_tags keeps the `::` prefixes that tags drops, so it is
         # the form that round-trips to an identical RBS rendering.
-        expect(Solargraph::ComplexType.parse(original.rooted_tag).to_rbs).to eq(original.to_rbs)
+        expect(Solargraph::ComplexType.parse(original.rooted_tags).to_rbs).to eq(original.to_rbs)
 
         # to_rbs uses RBS's own grouping syntax and round-trips through
         # RBS's parser rather than Solargraph's tag parser.

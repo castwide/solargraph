@@ -397,7 +397,7 @@ describe 'YARD type specifier list parsing' do
       types = Solargraph::ComplexType.parse('String & Comparable')
       expect(types.items.length).to eq(1)
       expect(types.items.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
-      expect(types.items.first.tag).to eq('String & Comparable')
+      expect(types.items.first.tags).to eq('String & Comparable')
       expect(types.to_rbs).to eq('String & Comparable')
     end
 
@@ -410,7 +410,7 @@ describe 'YARD type specifier list parsing' do
     it 'distinguishes intersections from unions in the same list' do
       types = Solargraph::ComplexType.parse('String & Comparable, Integer')
       expect(types.items.length).to eq(2)
-      expect(types.items[0].tag).to eq('String & Comparable')
+      expect(types.items[0].tags).to eq('String & Comparable')
       expect(types.items[1].tag).to eq('Integer')
     end
 
@@ -428,18 +428,18 @@ describe 'YARD type specifier list parsing' do
     it 'parses a four-way record intersection with a trailing nil union member' do
       types = Solargraph::ComplexType.parse(detail_tag)
       expect(types.items.first.tag).to eq(detail_tag)
-      expect(types.items.first.subtypes.map(&:tag)).to eq([intersection_tag, 'nil'])
+      expect(types.items.first.subtypes.map(&:tags)).to eq([intersection_tag, 'nil'])
     end
 
-    # Regression: a caller passing the whole compound tag as the new
-    # name renamed every conjunct to the whole intersection, producing a
-    # tag that no longer parses and raising ComplexTypeError out of
+    # Regression: a caller passing the whole intersection's tag as the new
+    # name renamed every conjunct to that whole string, producing a tag that
+    # no longer parses and raising ComplexTypeError out of
     # ApiMap#get_method_stack.
-    it 'keeps each conjunct name when transformed with the compound tag' do
+    it 'keeps each conjunct name when transformed with the intersection tag' do
       intersection = Solargraph::ComplexType.parse(intersection_tag).items.first
-      transformed = intersection.transform(intersection.tag) { |t| t }
-      expect(transformed.tag).to eq(intersection_tag)
-      expect { Solargraph::ComplexType.parse(transformed.tag) }.not_to raise_error
+      transformed = intersection.transform(intersection.tags) { |t| t }
+      expect(transformed.tags).to eq(intersection_tag)
+      expect { Solargraph::ComplexType.parse(transformed.tags) }.not_to raise_error
     end
 
     it 'resolves generics on a record intersection without mangling it' do
@@ -447,7 +447,7 @@ describe 'YARD type specifier list parsing' do
       hash_pin = api_map.get_path_pins('Hash').first
       type = Solargraph::ComplexType.parse(intersection_tag).items.first
       resolved = type.resolve_generics(hash_pin, Solargraph::ComplexType.parse('Hash{Symbol => String}'))
-      expect { Solargraph::ComplexType.parse(resolved.tag) }.not_to raise_error
+      expect { Solargraph::ComplexType.parse(resolved.tags) }.not_to raise_error
     end
 
     it 'parses intersections nested in subtypes' do
@@ -471,15 +471,15 @@ describe 'YARD type specifier list parsing' do
         expect { intersection.namespace }.to raise_error(NotImplementedError)
       end
 
-      it 'cannot root the compound name the way #rooted_tag roots each conjunct' do
+      it 'roots each conjunct through #rooted_tags, having no single name to root' do
         intersection = Solargraph::ComplexType.parse('::Comparable & ::Enumerable').items.first
-        expect(intersection.rooted_tag).to eq('::Comparable & ::Enumerable')
+        expect(intersection.rooted_tags).to eq('::Comparable & ::Enumerable')
         expect { intersection.rooted_name }.to raise_error(NotImplementedError)
       end
 
-      it 'refuses to report no parameters while answering that it is generic' do
+      it 'answers #any_generic? while refusing to report one set of parameters' do
         intersection = Solargraph::ComplexType.parse('::Array<generic<T>> & ::Enumerable<generic<T>>').items.first
-        expect(intersection.generic?).to be true
+        expect(intersection.any_generic?).to be true
         expect { intersection.all_params }.to raise_error(NotImplementedError)
       end
     end
@@ -545,12 +545,12 @@ describe 'YARD type specifier list parsing' do
     describe '#order_nil_last' do
       it 'moves nil last inside a conjunct that is itself a union' do
         intersection = Solargraph::ComplexType.parse('Foo & [nil, Bar]').items.first
-        expect(intersection.order_nil_last.tag).to eq('Foo & [Bar, nil]')
+        expect(intersection.order_nil_last.tags).to eq('Foo & [Bar, nil]')
       end
 
       it 'leaves an intersection with no nil member alone' do
         intersection = Solargraph::ComplexType.parse('Foo & Bar').items.first
-        expect(intersection.order_nil_last.tag).to eq('Foo & Bar')
+        expect(intersection.order_nil_last.tags).to eq('Foo & Bar')
       end
     end
 
@@ -610,7 +610,7 @@ describe 'YARD type specifier list parsing' do
       it 'binds & tighter than , when & comes first' do
         types = Solargraph::ComplexType.parse('A & B, C')
         expect(types.items.length).to eq(2)
-        expect(types.items[0].tag).to eq('A & B')
+        expect(types.items[0].tags).to eq('A & B')
         expect(types.items[1].tag).to eq('C')
       end
 
@@ -618,14 +618,14 @@ describe 'YARD type specifier list parsing' do
         types = Solargraph::ComplexType.parse('A, B & C')
         expect(types.items.length).to eq(2)
         expect(types.items[0].tag).to eq('A')
-        expect(types.items[1].tag).to eq('B & C')
+        expect(types.items[1].tags).to eq('B & C')
       end
 
       it 'handles multiple intersections in the same union' do
         types = Solargraph::ComplexType.parse('A & B, C & D')
         expect(types.items.length).to eq(2)
-        expect(types.items[0].tag).to eq('A & B')
-        expect(types.items[1].tag).to eq('C & D')
+        expect(types.items[0].tags).to eq('A & B')
+        expect(types.items[1].tags).to eq('C & D')
       end
 
       it 'handles intersections of different sizes in the same union' do
@@ -677,7 +677,7 @@ describe 'YARD type specifier list parsing' do
       it 'binds looser than &' do
         types = Solargraph::ComplexType.parse('A & B | C')
         expect(types.items.length).to eq(2)
-        expect(types.items[0].tag).to eq('A & B')
+        expect(types.items[0].tags).to eq('A & B')
         expect(types.items[1].tag).to eq('C')
       end
 
@@ -685,7 +685,7 @@ describe 'YARD type specifier list parsing' do
         types = Solargraph::ComplexType.parse('A | B & C')
         expect(types.items.length).to eq(2)
         expect(types.items[0].tag).to eq('A')
-        expect(types.items[1].tag).to eq('B & C')
+        expect(types.items[1].tags).to eq('B & C')
       end
 
       it 'groups multiple types into a single positional slot of a fixed tuple' do
@@ -752,21 +752,21 @@ describe 'YARD type specifier list parsing' do
       ].each do |tag|
         it "round-trips #{tag} through its tag" do
           original = Solargraph::ComplexType.parse(tag)
-          reparsed = Solargraph::ComplexType.parse(original.tag)
-          expect(reparsed.tag).to eq(original.tag)
+          reparsed = Solargraph::ComplexType.parse(original.tags)
+          expect(reparsed.tags).to eq(original.tags)
           expect(reparsed.to_rbs).to eq(original.to_rbs)
         end
       end
 
       it 'brackets a grouped conjunct when generating a tag' do
         types = Solargraph::ComplexType.parse('[Foo | Bar] & Baz')
-        expect(types.tag).to eq('[Foo, Bar] & Baz')
+        expect(types.tags).to eq('[Foo, Bar] & Baz')
         expect(types.to_rbs).to eq('(Foo | Bar) & Baz')
       end
 
       it 'leaves a single-type conjunct unbracketed' do
         types = Solargraph::ComplexType.parse('Foo & Baz')
-        expect(types.tag).to eq('Foo & Baz')
+        expect(types.tags).to eq('Foo & Baz')
       end
     end
 
@@ -1016,13 +1016,13 @@ describe 'YARD type specifier list parsing' do
     context 'when allowing users to define their own generic types' do
       it 'recognizes param types' do
         type = Solargraph::ComplexType.parse('generic<Variable>')
-        expect(type).to be_generic
+        expect(type).to be_any_generic
         expect(type.to_rbs).to eq('Variable')
       end
 
       it 'recognizes generic parameters' do
         type = Solargraph::ComplexType.parse('Array<generic<Variable>>')
-        expect(type).to be_generic
+        expect(type).to be_any_generic
         expect(type.to_rbs).to eq('Array[Variable]')
       end
 
@@ -1076,7 +1076,7 @@ describe 'YARD type specifier list parsing' do
             resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
             resolved_type = unique_type.resolve_generics_from_context(expected_output_map.keys, context_type,
                                                                       resolved_generic_values: resolved_generic_values)
-            expect(resolved_type.tag).to eq(expected_tag)
+            expect(resolved_type.tags).to eq(expected_tag)
             expect(resolved_generic_values.transform_values(&:tag)).to eq(expected_output_map)
           end
         end

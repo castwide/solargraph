@@ -321,9 +321,6 @@ module Solargraph
                        variance: erased_variance(situation)
         return true if undefined? && rules.include?(:allow_undefined)
 
-        # @todo teach this to validate duck types as inferred type
-        return true if duck_type?
-
         expected.satisfied_by?(self, api_map, situation, rules, variance: variance)
       end
 
@@ -340,6 +337,10 @@ module Solargraph
       # @return [Boolean]
       def satisfied_by? inferred, api_map, situation, rules = [],
                         variance: inferred.erased_variance(situation)
+        # A duck-typed expectation is structural: the inferred type has only
+        # to provide the method the '#' names.
+        return inferred.provides_duck_method?(api_map, to_s[1..] || '') if duck_type?
+
         inferred.conforms_to_unique?(self, api_map, situation, rules, variance: variance)
       end
 
@@ -490,7 +491,12 @@ module Solargraph
       end
 
       def generic?
-        name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
+        name == GENERIC_TAG_NAME || all_params.any?(&:any_generic?)
+      end
+
+      # @return [Boolean]
+      def any_generic?
+        generic?
       end
 
       def nullable?

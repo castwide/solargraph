@@ -104,7 +104,7 @@ module Solargraph
           NodeChainer.load_string(*args)
         end
 
-        # @return [Array(Array<Pin::Base>, Array<Pin::Base>)]
+        # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>, Array<Pin::InstanceVariable>)]
         def process_node *args
           Solargraph::Parser::NodeProcessor.process(*args)
         end

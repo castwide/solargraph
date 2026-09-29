@@ -36,24 +36,26 @@ module Solargraph
           super(intersection_tag(:tags), rooted: conjuncts.all?(&:rooted?))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         # @return [String]
-        def tag
-          @tag ||= intersection_tag(:tags)
+        def tag(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         # @return [String]
-        def rooted_tag
-          @rooted_tag ||= intersection_tag(:rooted_tags)
+        def rooted_tag(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @return [String]
         def tags
-          tag
+          @tags ||= intersection_tag(:tags)
         end
 
         # @return [String]
         def rooted_tags
-          rooted_tag
+          @rooted_tags ||= intersection_tag(:rooted_tags)
         end
 
         # @return [String]
@@ -69,13 +71,13 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         # @return [String]
         def namespace
-          raise NotImplementedError, "Intersection #{tag} has no single namespace - resolve each conjunct instead"
+          raise NotImplementedError, 'Intersection has no single namespace - resolve each conjunct instead'
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         # @return [::Symbol]
         def scope
-          raise NotImplementedError, "Intersection #{tag} has no single scope - resolve each conjunct instead"
+          raise NotImplementedError, 'Intersection has no single scope - resolve each conjunct instead'
         end
 
         # Pins from the conjuncts defining the method - one is enough -
@@ -95,27 +97,40 @@ module Solargraph
           return nil if resolved.empty?
 
           # @param p [Pin::Base]
-          resolved.flatten.uniq { |p| [p.path, p.return_type.tag] }
+          resolved.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
         end
 
-        def generic?
-          conjuncts.any?(&:generic?)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        # @return [Boolean]
+        def generic?(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
-        def rooted?
-          conjuncts.all?(&:rooted?)
+        # @return [Boolean]
+        def any_generic?
+          conjuncts.any?(&:any_generic?)
+        end
+
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        # @return [Boolean]
+        def rooted?(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         def all_rooted?
           conjuncts.all?(&:all_rooted?)
         end
 
-        def duck_type?
-          false
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        # @return [Boolean]
+        def duck_type?(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
-        def interface?
-          false
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+        # @return [Boolean]
+        def interface?(*, **, &)
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @return [Boolean]
@@ -402,197 +417,197 @@ module Solargraph
         # intersection never populates.
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rooted_namespace(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rooted_name(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def name(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def can_root_name?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def key_types(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def subtypes(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def all_params(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def parameters_type(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def namespace_type(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def recreate(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def erased_version_of?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def value_types(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def parameters?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def list_parameters?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def fixed_parameters?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def hash_parameters?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def substring(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rooted_substring(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def generate_substring_from(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def parameters_as_rbs(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def resolve_param_generics_from_context(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rbs_name(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def non_literal_name(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def determine_non_literal_name(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def nullable?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def expand(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def without_nil(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def narrow_with(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def erase_generics(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def simplify_literals(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def force_rooted(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def self_to_type(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def exclude(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def desc(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def parameter_variance(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def simplifyable_literal?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def tuple?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def downcast_to_literal_if_possible(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def rbs_union(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         protected
@@ -620,12 +635,12 @@ module Solargraph
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def mixin_pairing?(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1277
         def namespace_kind(*, **, &)
-          raise NotImplementedError, "Intersection #{tag} cannot answer ##{__method__} - resolve each conjunct instead"
+          raise NotImplementedError, "Intersection cannot answer ##{__method__} - resolve each conjunct instead"
         end
 
         # Renders conjuncts as a tag, bracketing multi-item ones since

@@ -268,7 +268,7 @@ module Solargraph
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
-            if type.generic?
+            if type.any_generic?
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument

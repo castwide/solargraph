@@ -64,7 +64,7 @@ module Solargraph
       # Dedup on path *and* return type: alternatives can share a
       # path (e.g. same generic method on different instantiations).
       # @param p [Pin::Base]
-      pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.tag] }
+      pin_groups.compact.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
@@ -72,7 +72,7 @@ module Solargraph
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
-      return self unless generic?
+      return self unless any_generic?
 
       ComplexType.new(@items.map do |i|
         i.resolve_generics_from_context(generics_to_resolve, context_type,
@@ -181,12 +181,12 @@ module Solargraph
     end
 
     def to_s
-      items.map(&:tag).join(', ')
+      items.map(&:tags).join(', ')
     end
 
     # @return [String]
     def tags
-      items.map(&:tag).join(', ')
+      items.map(&:tags).join(', ')
     end
 
     # @return [String]
@@ -238,8 +238,6 @@ module Solargraph
       expected = expected.downcast_to_literal_if_possible
       inferred = downcast_to_literal_if_possible
 
-      return duck_types_match?(api_map, expected, inferred, rules) if expected.duck_type?
-
       if rules.include? :allow_any_match
         inferred.items.any? do |inf|
           inf.conforms_to?(api_map, expected, situation, rules,
@@ -264,10 +262,6 @@ module Solargraph
     # @return [Boolean]
     def satisfied_by? inferred, api_map, situation, rules = [],
                       variance: inferred.erased_variance(situation)
-      # A duck-typed expectation is structural, so it is checked against
-      # the inferred type as a whole rather than member by member.
-      return duck_types_match?(api_map, self, inferred, rules) if duck_type?
-
       unioned_items.any? do |item|
         inferred.conforms_to?(api_map, item, situation, rules, variance: variance)
       end
@@ -353,15 +347,16 @@ module Solargraph
 
     # @return [String]
     def rooted_tags
-      items.map(&:rooted_tag).join(', ')
+      items.map(&:rooted_tags).join(', ')
     end
 
     def selfy?
       @items.any?(&:selfy?)
     end
 
-    def generic?
-      items.any?(&:generic?)
+    # @return [Boolean]
+    def any_generic?
+      items.any?(&:any_generic?)
     end
 
     # @return [self]

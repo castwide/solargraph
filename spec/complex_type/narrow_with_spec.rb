@@ -21,7 +21,7 @@ describe Solargraph::ComplexType do
       learned = described_class.parse('M')
       narrowed = declared.narrow_with(learned, api_map)
       expect(narrowed.items.first).to be_a(Solargraph::ComplexType::UniqueType::Intersection)
-      expect(narrowed.tag).to eq('T & M')
+      expect(narrowed.tags).to eq('T & M')
     end
 
     it 'lets the narrowed intersection satisfy either original fact' do

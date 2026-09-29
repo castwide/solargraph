@@ -22,20 +22,18 @@ module Solargraph
         @rules = rules
         @variance = variance
         # :nocov:
-        unless expected.is_a?(UniqueType)
-          # @sg-ignore This should never happen and the typechecker is angry about it
+        unless expected.instance_of?(UniqueType)
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
         # :nocov:
-        return if inferred.is_a?(UniqueType)
+        return if inferred.instance_of?(UniqueType)
         # :nocov:
-        # @sg-ignore This should never happen and the typechecker is angry about it
         raise "Inferred type must be a UniqueType, got #{inferred.class} in #{inferred.inspect}"
         # :nocov:
       end
 
       def conforms_to_unique_type?
-        unless expected.is_a?(UniqueType)
+        unless expected.instance_of?(UniqueType)
           # :nocov:
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
           # :nocov:
@@ -149,17 +147,42 @@ module Solargraph
 
         return true if inferred.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
 
-        return true if inferred.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
-
-        return true if expected.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
-
         return false if inferred.subtypes.empty?
+
+        return union_subtypes_conform? if inferred.implicit_union? || expected.implicit_union?
+
+        positional_subtypes_conform?
+      end
+
+      # Element types gathered as a union are unordered and need not match in
+      # count, so the two lists are compared as whole unions.
+      def union_subtypes_conform?
+        if rules.include?(:allow_unresolved_generic) &&
+           (inferred.subtypes.any?(&:any_generic?) || expected.subtypes.any?(&:any_generic?))
+          return true
+        end
 
         ComplexType.new(inferred.subtypes).conforms_to?(api_map,
                                                         ComplexType.new(expected.subtypes),
                                                         situation,
                                                         rules,
                                                         variance: inferred.parameter_variance(situation))
+      end
+
+      # Fixed parameters line up by position, so each slot is compared against
+      # its counterpart and a differing count cannot conform.
+      def positional_subtypes_conform?
+        return false unless inferred.subtypes.length == expected.subtypes.length
+
+        variance = inferred.parameter_variance(situation)
+        inferred.subtypes.zip(expected.subtypes).all? do |inferred_subtype, expected_subtype|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          unresolved = inferred_subtype.any_generic? || expected_subtype.any_generic?
+          next true if rules.include?(:allow_unresolved_generic) && unresolved
+
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          inferred_subtype.conforms_to?(api_map, expected_subtype, situation, rules, variance: variance)
+        end
       end
 
       # @return [self]

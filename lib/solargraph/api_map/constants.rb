@@ -80,11 +80,11 @@ module Solargraph
       # @return [ComplexType, nil] A new rooted ComplexType
       def qualify_type type, *gates
         return nil if type.nil?
-        return type if type.selfy? || type.literal? || type.tag == 'nil' || type.interface? ||
-                       type.tag == 'Boolean'
 
         gates.push '' unless gates.include?('')
         type.qualify_parts do |named_type|
+          next named_type unless resolvable_name?(named_type)
+
           fqns = resolve(named_type.rooted_namespace, *gates)
           next nil unless fqns
 
@@ -98,6 +98,16 @@ module Solargraph
           end
           named_type.recreate(new_name: fqns, make_rooted: true)
         end
+      end
+
+      # Whether this type's name is a constant to look up, rather than self, a
+      # literal, nil, an RBS interface, or Boolean.
+      #
+      # @param named_type [ComplexType::UniqueType]
+      # @return [Boolean]
+      def resolvable_name? named_type
+        !named_type.selfy? && !named_type.literal? && !named_type.nil_type? &&
+          !named_type.interface? && named_type.name != 'Boolean'
       end
 
       # @return [void]

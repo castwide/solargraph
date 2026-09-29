@@ -76,7 +76,7 @@ describe Solargraph::ComplexType::UniqueType do
         narrowing = Solargraph::ComplexType.parse('M')
         narrowed = type.narrow_with(narrowing, api_map)
         expect(narrowed.items.first).to be_a(described_class::Intersection)
-        expect(narrowed.tag).to eq('T & M')
+        expect(narrowed.tags).to eq('T & M')
       end
     end
   end

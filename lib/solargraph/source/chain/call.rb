@@ -140,8 +140,15 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] = arg.infer(api_map, arg_name_pin, locals)
+            # Overloads are selected here and generics bound afterwards, so a
+            # parameter still naming a type variable is not decidable yet; a
+            # restarg gathers the remaining arguments rather than matching this
+            # one. Neither can rule the overload out.
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+            next if param.restarg? || param.typify(api_map).any_generic?
+
             # @sg-ignore flow sensitive typing should handle is_a? and next
-            return nil unless param.compatible_arg?(atype, api_map) || param.restarg?
+            return nil unless param.compatible_arg?(atype, api_map)
           end
           atypes
         end

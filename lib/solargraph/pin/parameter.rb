@@ -227,11 +227,10 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
-        return true if atype.conforms_to?(api_map,
-                                          ptype,
-                                          :method_call,
-                                          %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        atype.conforms_to?(api_map,
+                           ptype,
+                           :method_call,
+                           %i[allow_empty_params allow_undefined])
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs
