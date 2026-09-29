@@ -211,6 +211,7 @@ module Solargraph
               result.concat api_map.get_constants('', cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates) # .select { |pin| pin.name.start_with?(full) }
             end
           else
+            type = type.qualify(api_map, *gates)
             result.concat api_map.get_constants(type.namespace,
                                                 cursor.start_of_constant? ? '' : context_pin.full_context.namespace, *gates)
           end
