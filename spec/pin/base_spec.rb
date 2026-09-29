@@ -52,18 +52,8 @@ describe Solargraph::Pin::Base do
   end
 
   it 'deals well with known closure combination issue' do
-    # if this fails you might not have an rbs collection installed
-    api_map = Solargraph::ApiMap.load ''
-
-    # catalog first so doc_map registers 'yard' as required before we
-    # try to cache it - cache_gem is a no-op for gems doc_map doesn't
-    # yet know it needs
     bench = Solargraph::Bench.new(external_requires: ['yard'])
-    api_map.catalog bench
-    spec = Gem::Specification.find_by_name('yard')
-    api_map.cache_gem(spec)
-    api_map.catalog bench
-
+    api_map = Solargraph::ApiMap.new.catalog(bench)
     pins = api_map.get_method_stack('YARD::Docstring', 'parser', scope: :class)
     # @todo Some environments get more than one pin
     expect(pins.length).to be_positive
@@ -78,7 +68,8 @@ describe Solargraph::Pin::Base do
   describe '#typify' do
     it 'resolves RBS type aliases' do
       skip 'This test fails on CI but not locally'
-      api_map = Solargraph::ApiMap.load_with_cache('.', $stderr)
+      bench = Solargraph::Bench.new(external_requires: ['rbs'])
+      api_map = Solargraph::ApiMap.new.catalog(bench)
       pin = api_map.get_path_pins('RBS::MethodType#type').first
       expect(pin.typify(api_map).to_s).to eq('RBS::Types::Function, RBS::Types::UntypedFunction')
     end
