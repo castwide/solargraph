@@ -539,6 +539,7 @@ module Solargraph
           return resolved_generic_values[type_param] || self
         end
 
+        context_type = same_named_conjunct(context_type)
         # @todo typechecking should complain when the method being called has no @yieldparam tag
         new_key_types = resolve_param_generics_from_context(generics_to_resolve, context_type, resolved_generic_values,
                                                             &:key_types)
@@ -607,6 +608,24 @@ module Solargraph
           end
         end
       end
+
+      # The part of +context_type+ whose parameters line up with this
+      # type's, which is the conjunct naming the same type.  Pairing
+      # parameters by position only says anything between two of the
+      # same type, and nothing lines up with the rest of an
+      # intersection.
+      #
+      # @param context_type [ComplexType, ComplexType::UniqueType, nil]
+      # @return [ComplexType, ComplexType::UniqueType, nil]
+      def same_named_conjunct context_type
+        return context_type if context_type.nil?
+
+        member = ComplexType.flatten_unions([context_type]).first
+        return context_type unless member.is_a?(Intersection)
+
+        member.conjuncts.find { |conjunct| conjunct.namespace == name }
+      end
+      private :same_named_conjunct
 
       # The part of +context_type+ holding the values for the generics
       # +definitions+ declares.  An intersection has one parameter list

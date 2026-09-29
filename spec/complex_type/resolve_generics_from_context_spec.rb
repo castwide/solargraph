@@ -6,7 +6,7 @@
 describe Solargraph::ComplexType do
   def bind tag, context
     described_class.parse(tag).items.first
-                   .resolve_generics_from_context(['E'], described_class.parse(context)).tags
+                   .resolve_generics_from_context(%w[E K V], described_class.parse(context)).tags
   end
 
   it 'binds a generic in a plain parameter' do
@@ -23,5 +23,24 @@ describe Solargraph::ComplexType do
   it 'binds through an intersection parameter under an intersection' do
     expect(bind('::Array<[generic<E> & ::Comparable]> & ::Enumerable', '::Array<::String>'))
       .to eq('Array<String & Comparable> & Enumerable')
+  end
+
+  # The values come from the context's parameters, and an intersection has
+  # one set per conjunct. Pairing them by position only says anything
+  # between two of the same type.
+  context 'when the context is an intersection' do
+    it 'reads the parameters of the conjunct naming the same type' do
+      expect(bind('::Array<generic<E>>', '::Array<::String> & ::Enumerable')).to eq('Array<String>')
+    end
+
+    it 'reads key and value parameters from that conjunct' do
+      expect(bind('::Hash{generic<K> => generic<V>}', '::Hash{::Symbol => ::String} & ::Enumerable'))
+        .to eq('Hash{Symbol => String}')
+    end
+
+    it 'binds an intersection receiver from an intersection context' do
+      expect(bind('::Array<generic<E>> & ::Enumerable', '::Array<::String> & ::Enumerable'))
+        .to eq('Array<String> & Enumerable')
+    end
   end
 end
