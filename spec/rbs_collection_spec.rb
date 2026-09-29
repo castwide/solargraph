@@ -6,7 +6,7 @@ describe Solargraph::RbsCollection do
 
   describe '#gem_keys' do
     it 'returns keys from gem_rbs_collection' do
-      expect(rbs_collection.gem_keys).to include('addressable-2.8')
+      expect(rbs_collection.gem_keys).to include('addressable-0')
     end
   end
 

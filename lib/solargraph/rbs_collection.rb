@@ -11,9 +11,9 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [Array<Pin::Base>]
     def load metagem
-      path = gem_path_map["#{metagem.name}-#{metagem.version}"] || approximate_key_path(metagem)
-      return [] unless path
-      RbsMap::Path.pins(path)
+      key = best_key(metagem)
+      return [] unless key
+      RbsMap::Path.pins gem_path_map[key]
     end
 
     def gem_keys
@@ -26,12 +26,15 @@ module Solargraph
       @gem_path_map ||= raw_data[:gems].to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }
     end
 
-    def approximate_key_path metagem
+    def best_key metagem
+      key = "#{metagem.name}-#{metagem.version}"
+      return key if gem_path_map.key?(key)
+
       full_key = "#{metagem.name}-#{metagem.version}."
       zero_key = "#{metagem.name}-0"
-      found = gem_path_map.keys.find { |key, _| full_key.start_with?("#{key}.") } ||
+      found = gem_path_map.find { |key, _| full_key.start_with?("#{key}.") } ||
         gem_path_map.find { |key, _| key == zero_key }
-      gem_path_map[found]
+      found&.first
     end
 
     # @param gem_hash [Hash]

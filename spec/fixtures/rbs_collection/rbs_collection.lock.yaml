@@ -2,7 +2,7 @@
 path: ".gem_rbs_collection"
 gems:
 - name: addressable
-  version: '2.8'
+  version: '0'
   source:
     type: git
     name: ruby/gem_rbs_collection
