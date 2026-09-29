@@ -55,7 +55,6 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
@@ -125,7 +124,6 @@ module Solargraph
           # @todo It shouldn't be necessary to choose either generics or macros
           # @sg-ignore Need to add nil check here
           new_return_type = if new_signature_pin.return_type.defined?
-                              # @sg-ignore Need to add nil check here
                               new_signature_pin.return_type
                             else
                               # @sg-ignore Need to add nil check here
@@ -192,11 +190,9 @@ module Solargraph
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
               result = process_directive(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
               next result unless result.return_type.undefined?
             end
             p
@@ -301,7 +297,6 @@ module Solargraph
         def find_method_pin name_pin
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Need to support this in flow sensitive typing
             method_pin = method_pin.closure
             return if method_pin.nil?
           end
