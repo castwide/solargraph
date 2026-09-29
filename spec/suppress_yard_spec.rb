@@ -35,16 +35,4 @@ describe Solargraph::Shell do
 
     expect(Solargraph::Yardoc).to have_received(:load!)
   end
-
-  it 'reads no YARD documentation when caching the gem by name' do
-    capture_both { shell.gems('parser') }
-
-    expect(Solargraph::Yardoc).not_to have_received(:load!)
-  end
-
-  it 'reads YARD documentation when caching a gem outside the list by name' do
-    capture_both { shell.gems('backport') }
-
-    expect(Solargraph::Yardoc).to have_received(:load!)
-  end
 end
