@@ -34,7 +34,7 @@ module Solargraph
     # Get a hash of the position. This representation is suitable for use in
     # the language server protocol.
     #
-    # @return [Hash]
+    # @return [Hash{Symbol => Integer}]
     def to_hash
       {
         line: line,
@@ -121,6 +121,7 @@ module Solargraph
     # @return [Position]
     def self.normalize object
       return object if object.is_a?(Position)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       return Position.new(object[0], object[1]) if object.is_a?(Array)
       raise ArgumentError, "Unable to convert #{object.class} to Position"
     end

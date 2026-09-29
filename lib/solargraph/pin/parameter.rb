@@ -227,13 +227,10 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
-        # :allow_unmatched_interface lets an RBS-interface-typed
-        # parameter (e.g. Hash#fetch's `_Key`) accept an argument not
-        # nominally included in that interface via CoreFills::INCLUDES.
         return true if atype.conforms_to?(api_map,
                                           ptype,
                                           :method_call,
-                                          %i[allow_empty_params allow_undefined allow_unmatched_interface])
+                                          %i[allow_empty_params allow_undefined])
         ptype.generic?
       end
 
