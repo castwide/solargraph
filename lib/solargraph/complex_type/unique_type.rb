@@ -757,9 +757,15 @@ module Solargraph
         ComplexType.new(subtypes)
       end
 
+      # Every type and subtype below this one is fully qualified. Each
+      # parameter answers for its own parameters, so a nested unrooted
+      # name counts and an intersection parameter is not asked #rooted?.
+      #
+      # @return [Boolean]
       def all_rooted?
         return true if name == GENERIC_TAG_NAME
-        rooted? && all_params.all?(&:rooted?)
+
+        rooted? && all_params.all?(&:all_rooted?)
       end
 
       def rooted?

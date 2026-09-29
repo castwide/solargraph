@@ -494,6 +494,18 @@ describe 'YARD type specifier list parsing' do
         intersection = Solargraph::ComplexType.parse('::String & Comparable').items.first
         expect(intersection.all_rooted?).to be false
       end
+
+      it 'answers for an intersection held in a parameter' do
+        expect(Solargraph::ComplexType.parse('::Array<[::String & ::Comparable]>').all_rooted?).to be true
+        expect(Solargraph::ComplexType.parse('::Array<[::String & Comparable]>').all_rooted?).to be false
+      end
+
+      # The name says every type and subtype, so a parameter's own
+      # parameters count too.
+      it 'reaches below the first level of parameters' do
+        expect(Solargraph::ComplexType.parse('::Array<::Array<::String>>').all_rooted?).to be true
+        expect(Solargraph::ComplexType.parse('::Array<::Array<String>>').all_rooted?).to be false
+      end
     end
 
     describe '#each_unique_type' do
