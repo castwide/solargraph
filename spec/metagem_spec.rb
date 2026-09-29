@@ -33,6 +33,7 @@ describe Solargraph::Metagem do
   it 'equates a string version with a Gem::Version' do
     expect(metagem).to eq(described_class.new(**attributes, version: Gem::Version.new('1.0.0')))
   end
+
   describe '.from_specification' do
     let(:specification) do
       Gem::Specification.new do |spec|
