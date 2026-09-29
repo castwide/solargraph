@@ -95,7 +95,9 @@ module Solargraph
           candidates = block_given? ? yield(conjuncts) : conjuncts
           resolved = candidates.filter_map do |conjunct|
             pins = conjunct.method_stack_pins(word, api_map, &narrow_conjuncts)
-            pins.empty? ? nil : pins
+            # A conjunct that is itself an intersection answers nil rather
+            # than [], the same as this method does.
+            pins if pins&.any?
           end
           return nil if resolved.empty?
 
