@@ -9,6 +9,8 @@ module Solargraph
 
       attr_reader :metagem
 
+      @@path_source_cache = {}
+
       # @param metagem [Metagem]
       def initialize metagem
         super()
@@ -20,8 +22,8 @@ module Solargraph
       end
 
       def load
-        return pins unless metagem.cacheable?
-        super
+        return super if metagem.cacheable?
+        @@path_source_cache[metagem.full_path] ||= pins
       end
 
       def pins
