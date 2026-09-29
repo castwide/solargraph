@@ -67,6 +67,8 @@ describe Solargraph::External do
     let(:requires) { ['addressable'] }
 
     it 'combines gem_rbs_collection pins' do
+      external.unloaded_gems.each { |metagem| Solargraph::Collection::Gem.load(metagem) }
+      external.update(requires)
       pin = external.pins.find { |pin| pin.path == 'Addressable::URI.parse' }
       expect(pin).to be_a(Solargraph::Pin::Method)
     end
