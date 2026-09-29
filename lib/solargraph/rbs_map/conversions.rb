@@ -347,17 +347,14 @@ module Solargraph
       #
       # @return [Solargraph::Pin::Constant]
       def create_constant fqns, type, comments, decl, base = nil
-        parts = fqns.split('::')
-        if parts.length > 1
-          fqns = parts.last
-          # @sg-ignore Need to add nil check here
-          closure = pins.select { |pin| pin && pin.path == parts[0..-2].join('::') }.first
-        else
-          fqns = parts.first
-          closure = Solargraph::Pin::ROOT_PIN
-        end
+        closure_path, _, name = fqns.rpartition('::')
+        closure = if closure_path.empty?
+                    Solargraph::Pin::ROOT_PIN
+                  else
+                    pins.find { |pin| pin && pin.path == closure_path }
+                  end
         constant_pin = Solargraph::Pin::Constant.new(
-          name: fqns,
+          name: name,
           closure: closure,
           type_location: location_decl_to_pin_location(decl.location),
           comments: comments,
