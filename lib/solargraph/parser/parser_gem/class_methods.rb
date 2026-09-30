@@ -146,6 +146,11 @@ module Solargraph
           end
           # @sg-ignore Translate to something flow sensitive typing understands
           if node.type == :dstr && node.children.last.nil?
+            # :nocov:
+            # Dead under the parser gem: it never emits a dstr whose last child is
+            # a literal nil, so last is only ever nil here and no range is pushed.
+            # The shape comes from RubyVM::AbstractSyntaxTree, whose DSTR nodes do
+            # carry a trailing nil child.
             # @sg-ignore Translate to something flow sensitive typing understands
             last = node.children[-2]
             # @sg-ignore Need to add nil check here
@@ -154,6 +159,7 @@ module Solargraph
               pos = Position.new(rng.ending.line, rng.ending.column - 1)
               result.push Range.new(pos, pos)
             end
+            # :nocov:
           end
           result
         end
