@@ -15,6 +15,10 @@ describe Solargraph::Collection::Base do
 
   let(:base) { klass.new }
 
+  # Collection::Base memoizes in Collection.mem_cache, so the file has to be
+  # the only source left for the load below to be proving anything.
+  before { Solargraph::Collection.clear_mem_cache }
+
   it 'saves caches' do
     base.pins = [pin]
     base.load
