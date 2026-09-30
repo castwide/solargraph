@@ -790,6 +790,27 @@ describe Solargraph::Source::Chain::Call do
     end
   end
 
+  it 'matches positional arguments after a splat against the splat, not keyword parameters' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo')
+    method = Solargraph::Pin::Method.new(name: 'create', closure: closure, signatures: [])
+    { 'Integer' => ':post', 'String' => ':user' }.each do |klass, name|
+      sig = Solargraph::Pin::Signature.new(generics: [], parameters: [], closure: method,
+                                           return_type: Solargraph::ComplexType.parse(klass))
+      sig.parameters << Solargraph::Pin::Parameter.new(name: 'name', closure: sig,
+                                                       return_type: Solargraph::ComplexType.parse(name))
+      sig.parameters << Solargraph::Pin::Parameter.new(name: 'traits', closure: sig, decl: :restarg,
+                                                       return_type: Solargraph::ComplexType.parse('Symbol'))
+      sig.parameters << Solargraph::Pin::Parameter.new(name: 'title', closure: sig, decl: :kwoptarg,
+                                                       return_type: Solargraph::ComplexType.parse('String'))
+      method.signatures << sig
+    end
+    api_map = Solargraph::ApiMap.new(pins: [closure, method])
+    args = %w[:post :published :pinned].map { |code| Solargraph::Parser.chain(Solargraph::Parser.parse(code)) }
+    chain = Solargraph::Source::Chain.new([described_class.new('create', nil, args)])
+
+    expect(chain.infer(api_map, closure, []).to_s).to eq('Integer')
+  end
+
   it 'matches literal-typed parameters on signatures built in code' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo')
     method = Solargraph::Pin::Method.new(name: 'create', closure: closure, signatures: [])

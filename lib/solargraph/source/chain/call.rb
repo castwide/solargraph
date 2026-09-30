@@ -90,10 +90,14 @@ module Solargraph
 
           match = true
           atypes = []
+          # keyword arguments arrive as a trailing hash, so only positional
+          # parameters line up with arguments by index
+          positional_params = overload.parameters.reject { |p| p.keyword? || p.kwrestarg? || p.block? }
+          restarg = positional_params.find(&:restarg?)
           arguments.each_with_index do |arg, idx|
-            param = overload.parameters[idx]
+            param = positional_params[idx] || restarg
             if param.nil?
-              match = overload.parameters.any?(&:restarg?)
+              match = arg.links.last.is_a?(Chain::Hash) && overload.parameters.any? { |p| p.keyword? || p.kwrestarg? }
               break
             end
             arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
