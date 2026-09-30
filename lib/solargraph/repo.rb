@@ -59,6 +59,7 @@ module Solargraph
     #
     # @sg-ignore keywords supplied by a ** splat are not matched against the signature
     def bundled?
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       !!@metagems
     end
     alias bundle? bundled?
@@ -102,7 +103,7 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore multiple assignment types every target as tuple element 0
         if s.success?
-          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : { metagems: [], groups: {} }
+          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           # @sg-ignore keywords supplied by a ** splat are not matched against the signature
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
           # @sg-ignore keywords supplied by a ** splat are not matched against the signature
