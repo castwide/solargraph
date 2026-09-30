@@ -46,12 +46,14 @@ module Solargraph
       !!@cache_name
     end
 
+    # @param path [String]
     def require? path
       require_paths.any? do |req|
         File.file?(File.join(full_path, req, "#{path}.rb"))
       end
     end
 
+    # @return [Gem::Specification, nil]
     def to_specification
       Gem::Specification.load(spec_file)
     end

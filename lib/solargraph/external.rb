@@ -22,22 +22,27 @@ module Solargraph
       update!
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       @unresolved_requires ||= []
     end
 
+    # @return [Array<String>]
     def unresolved_dependencies
       @unresolved_dependencies ||= []
     end
 
+    # @return [Set<Metagem>]
     def loaded_gems
       @loaded_gems ||= Set.new
     end
 
+    # @return [Set<Metagem>]
     def unloaded_gems
       @unloaded_gems ||= Set.new
     end
 
+    # @return [Array<Pin::Base>]
     def pins
       @pins ||= []
     end
@@ -73,6 +78,7 @@ module Solargraph
 
     private
 
+    # @return [void]
     def update!
       @generation = generation + 1
       clear_all
@@ -84,6 +90,7 @@ module Solargraph
       unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
     end
 
+    # @return [void]
     def load_requires
       bundler_require = false
 
@@ -105,11 +112,13 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    # @return [void]
     def load_rbs_collection
       rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
       pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
     end
 
+    # @return [void]
     def clear_all
       pins.clear
       unresolved_requires.clear
@@ -118,6 +127,8 @@ module Solargraph
       unloaded_gems.clear
     end
 
+    # @param metagem [Metagem]
+    # @return [void]
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
@@ -135,6 +146,8 @@ module Solargraph
       load_dependencies metagem
     end
 
+    # @param parent [Metagem]
+    # @return [void]
     def load_dependencies parent
       parent.dependencies.each do |name|
         next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)

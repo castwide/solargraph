@@ -116,14 +116,17 @@ module Solargraph
       self
     end
 
+    # @return [External]
     def external
       @external ||= External.new(workspace&.directory, [])
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       external.unresolved_requires
     end
 
+    # @return [Set<Metagem>]
     def unloaded_gems
       external.unloaded_gems
     end

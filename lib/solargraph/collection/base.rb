@@ -26,6 +26,7 @@ module Solargraph
         new(...).load
       end
 
+      # @return [void]
       def self.uncache(...)
         cache_file = new(...).cache_file
         FileUtils.rm_rf cache_file
@@ -34,10 +35,12 @@ module Solargraph
 
       private
 
+      # @return [Array<Pin::Base>, nil]
       def file_cache_pins
         Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
       end
 
+      # @return [Array<Pin::Base>]
       def generate_pin_caches
         Collection.mem_cache[cache_file] = pins
         serial = Marshal.dump(pins)

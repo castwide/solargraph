@@ -3,6 +3,7 @@
 module Solargraph
   module RbsMap
     class Base
+      # @return [Array<Pin::Base>]
       def pins
         @pins ||= RbsMap::Conversions.new(loader: loader).pins
       end
@@ -23,6 +24,7 @@ module Solargraph
         pins.select { |p| p.path == path }
       end
 
+      # @return [Array<Pin::Base>]
       def self.pins(...)
         new(...).pins
       end

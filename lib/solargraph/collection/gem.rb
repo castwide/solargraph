@@ -32,12 +32,14 @@ module Solargraph
                   end
       end
 
+      # @param metagem [Metagem]
       def self.cached? metagem
         metagem.cacheable? && File.exist?(new(metagem).cache_file)
       end
 
       private
 
+      # @return [Array<Pin::Base>]
       def cacheable_pins
         code_objects = Yardoc.load!(metagem)
         yard_pins = YardMap::Mapper.new(code_objects, metagem).map
@@ -45,6 +47,7 @@ module Solargraph
         RbsMap::Helpers.combine(yard_pins, rbs_pins)
       end
 
+      # @return [Array<Pin::Base>]
       def uncacheable_pins
         files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }

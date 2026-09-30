@@ -51,6 +51,7 @@ module Solargraph
       File.join(base_dir, "yard-#{YARD::VERSION}", "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}")
     end
 
+    # @return [void]
     def clear
       FileUtils.rm_rf base_dir
     end

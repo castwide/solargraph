@@ -9,6 +9,8 @@ module Solargraph
   module Yardoc
     module_function
 
+    # @param metagem [Metagem]
+    # @return [String]
     def path_for metagem
       File.join(CacheDir.yard_dir, "#{metagem.cache_name}.yardoc")
     end

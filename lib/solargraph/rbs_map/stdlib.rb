@@ -7,6 +7,7 @@ module Solargraph
     # Ruby stdlib pins
     #
     class Stdlib < Base
+      # @param library [String]
       def initialize library
         super()
         loader.add(library: library.gsub('/', '-')) if self.class.has?(library)
@@ -16,6 +17,7 @@ module Solargraph
         @repository ||= RBS::Repository.new(no_stdlib: false)
       end
 
+      # @param library [String]
       def self.has? library
         !!RBS::Collection::Sources::Stdlib.instance.has?(library.gsub('/', '-'), nil)
       end
