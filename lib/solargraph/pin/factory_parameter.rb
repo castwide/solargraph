@@ -27,7 +27,7 @@ module Solargraph
       attr_reader :param_name
       # @return [::String, ::Symbol] The literal value
       attr_reader :value
-      # @return decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
+      # @return [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       attr_reader :decl
       # @return [Location, nil]
       attr_reader :location
