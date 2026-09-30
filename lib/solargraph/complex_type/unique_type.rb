@@ -114,8 +114,15 @@ module Solargraph
       def exclude exclude_types, api_map
         return self if exclude_types.nil?
 
-        types = items - exclude_types.items
-        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        # see ComplexType#exclude: matches by conformance, not equality
+        types = items.reject do |ut|
+          exclude_types.any? { |exclude_type| ut.conforms_to?(api_map, exclude_type, :assignment) }
+        end
+        if types.empty?
+          # Exhausting every excluded type means the code here is unreachable, not
+          # a type error - `bot` keeps calls on it vacuously valid, not unresolved.
+          types = [ComplexType::UniqueType::BOT]
+        end
         ComplexType.new(types)
       end
 
