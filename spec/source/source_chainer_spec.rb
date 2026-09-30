@@ -82,7 +82,7 @@ describe Solargraph::Source::SourceChainer do
     expect(cursor.chain).to be_undefined
   end
 
-  it "recognizes method literal parameters" do
+  it 'recognizes method literal parameters' do
     source = Solargraph::Source.load_string(<<~RUBY)
       SomeClass
         .instance
