@@ -44,7 +44,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'ostruct', '~> 0.6'
   s.add_dependency 'parser', '~> 3.0'
   s.add_dependency 'prism', '~> 1.4'
-  s.add_dependency 'rbs', '>= 3.10.0'
+  s.add_dependency 'rbs', '>= 3.10.4'
   s.add_dependency 'rdoc', '~> 7.0'
   s.add_dependency 'reverse_markdown', '~> 3.0'
   s.add_dependency 'rubocop', '~> 1.76'
@@ -65,7 +65,7 @@ Gem::Specification.new do |s|
   #
   # even more specific on RuboCop itself, which is written into _todo
   # file.
-  s.add_development_dependency 'overcommit', '~> 0.68.0'
+  s.add_development_dependency 'overcommit', '~> 0.71.0'
   s.add_development_dependency 'rubocop', '~> 1.80.0.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     module Directives
       autoload :AttributeDirective, 'solargraph/yard_map/directives/attribute_directive'
       autoload :MethodDirective, 'solargraph/yard_map/directives/method_directive'

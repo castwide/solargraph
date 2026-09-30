@@ -79,4 +79,23 @@ describe Solargraph::Parser::NodeProcessor do
 
     expect(map.pins.last.type.to_s).to eq('Array<String>')
   end
+
+  it 'ignores bracketed comments in the class body' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo < Array
+        # [:b, { c: :d }]
+      end
+    ), 'test.rb')
+
+    expect(map.pins.last.type.to_s).to eq('Array')
+  end
+
+  it 'ignores a bracketed comment separated from the hash' do
+    map = Solargraph::SourceMap.load_string(%(
+      class Foo < Array # [String]
+      end
+    ), 'test.rb')
+
+    expect(map.pins.last.type.to_s).to eq('Array')
+  end
 end

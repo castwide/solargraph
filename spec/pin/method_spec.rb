@@ -118,6 +118,16 @@ describe Solargraph::Pin::Method do
     expect(pin.return_type).to be_undefined
   end
 
+  it 'combines many non-mergeable same-type-arity signatures without exponential blowup' do
+    pin = described_class.new(name: 'foo')
+    signatures = (1..8).map { |_i| instance_double(Solargraph::Pin::Signature, type_arity: ['same']) }
+    signatures.each do |sig|
+      allow(sig).to receive(:combine_with).and_return(instance_double(Solargraph::Pin::Signature, type_arity: ['different']))
+    end
+    result = pin.send(:combine_same_type_arity_signatures, signatures)
+    expect(result.length).to eq(signatures.length)
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
@@ -303,6 +313,32 @@ describe Solargraph::Pin::Method do
     kwrestarg_overload = pin.overloads.last
     expect(restarg_overload.parameters.first.decl).to eq(:restarg)
     expect(kwrestarg_overload.parameters.first.decl).to eq(:kwrestarg)
+  end
+
+  it 'applies yieldparam tags from the matching overload only' do
+    pin = described_class.new(name: 'build', comments: %(
+@overload build
+  @return [String]
+@overload build
+  @yieldparam widget [String]
+  @return [void]
+    ))
+    expect(pin.signatures.length).to eq(2)
+    plain, block_form = pin.signatures
+    expect(plain.block).to be_nil
+    expect(block_form.block).not_to be_nil
+    expect(block_form.block.parameters.first.return_type.tag).to eq('String')
+  end
+
+  it 'does not leak a method-level yieldparam into an overload that declares no block' do
+    pin = described_class.new(name: 'foo', comments: %(
+@yieldparam bing [Integer]
+@overload foo(bar)
+  @param bar [Integer]
+  @return [String]
+    ))
+    expect(pin.signatures.length).to eq(1)
+    expect(pin.signatures.first.block).to be_nil
   end
 
   it 'infers from nil return nodes' do

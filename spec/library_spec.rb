@@ -2,6 +2,7 @@
 
 require 'tmpdir'
 require 'yard'
+require 'timeout'
 
 describe Solargraph::Library do
   it 'does not open created files in the workspace' do
@@ -30,10 +31,11 @@ describe Solargraph::Library do
 
   context 'with a require from a not-yet-cached external gem' do
     before do
-      Solargraph::Shell.new.uncache('backport')
+      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
+      Solargraph::Collection::Gem.uncache(metagem)
     end
 
-    it 'returns a Completion', time_limit_seconds: 50 do
+    it 'returns a Completion' do
       library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
@@ -44,18 +46,19 @@ describe Solargraph::Library do
           adapter.remo
         end
       ), 'file.rb', 0)
-      # give Solargraph time to cache the gem
-      while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
-        sleep 0.25
+      Timeout.timeout 60 do
+        # give Solargraph time to cache the gem
+        sleep 0.25 while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+        expect(completion).to be_a(Solargraph::SourceMap::Completion)
+        expect(completion.pins.map(&:name)).to include('remote')
       end
-      expect(completion).to be_a(Solargraph::SourceMap::Completion)
-      expect(completion.pins.map(&:name)).to include('remote')
     end
   end
 
   context 'with a require from an already-cached external gem' do
     before do
-      Solargraph::Shell.new.gems('backport')
+      metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
+      Solargraph::Collection::Gem.load(metagem) unless Solargraph::Collection::Gem.cached?(metagem)
     end
 
     it 'returns a Completion' do
@@ -655,6 +658,27 @@ describe Solargraph::Library do
           library.definitions_at(bad_file, 0, 0)
         end.to raise_error(Solargraph::FileNotFoundError)
       end
+    end
+  end
+
+  describe '#sync_catalog' do
+    # Regression test for https://github.com/castwide/solargraph/issues/1111
+    #
+    # When the first cacheable gemspec is already being cached by another
+    # process, cache_next_gemspec enqueues it and, if other gemspecs are
+    # still pending, recurses to try the next one. That recursion must not
+    # go back through sync_catalog's own mutex, or it deadlocks with a
+    # ThreadError on the thread that is already inside the mutex.
+    it 'does not deadlock when the next cacheable gemspec is already being processed elsewhere' do
+      library = described_class.new
+      api_map = library.send(:api_map)
+      gemspecs = (1..3).map { |i| instance_double(Gem::Specification, name: "gem_#{i}", version: Gem::Version.new('1.0.0')) }
+      allow(api_map).to receive(:catalog)
+      allow(api_map).to receive_messages(uncached_yard_gemspecs: gemspecs, uncached_rbs_collection_gemspecs: [], uncached_gemspecs: gemspecs, source_maps: [], pins: [])
+      allow(Solargraph::Yardoc).to receive(:processing?).and_return(true)
+
+      library.catalog
+      expect { library.send(:sync_catalog) }.not_to raise_error
     end
   end
 end

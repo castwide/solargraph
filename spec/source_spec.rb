@@ -309,4 +309,26 @@ y = 1 #foo
     comments = "@overload\n@return [String]"
     expect { described_class.parse_docstring(comments) }.not_to raise_error
   end
+
+  it 'disconnects comment blocks' do
+    source = described_class.load_string(%(
+      # Exclude from Foo
+      #-
+      class Foo; end
+
+      # Exclude from Bar
+      #-
+      # Include with Bar
+      class Bar; end
+    ))
+
+    foo_node = source.node_at(3, 6)
+    foo_comments = source.comments_for(foo_node)
+    expect(foo_comments).to be_empty
+
+    bar_node = source.node_at(8, 6)
+    bar_comments = source.comments_for(bar_node)
+    expect(bar_comments).not_to include('Exclude from Bar')
+    expect(bar_comments).to include('Include with Bar')
+  end
 end

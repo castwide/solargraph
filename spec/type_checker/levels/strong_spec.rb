@@ -6,6 +6,39 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.load_string(code, 'test.rb', :strong)
     end
 
+    it 'requires strict return tags for attributes when nil is involved' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [String, nil]
+          def initialize(bar = nil)
+            @bar = bar
+          end
+
+          # The tag is [String] but @bar can be nil per the constructor
+          #
+          # @return [String]
+          attr_reader :bar
+        end
+      ))
+      expect(checker.problems).to be_one
+      expect(checker.problems.first.message).to include('does not match inferred type')
+    end
+
+    it 'does not flag attributes whose declared type already allows nil' do
+      checker = type_checker(%(
+        class Foo
+          # @param bar [String, nil]
+          def initialize(bar = nil)
+            @bar = bar
+          end
+
+          # @return [String, nil]
+          attr_reader :bar
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'requires strict return tags when nil is involved and used second in a ternary' do
       checker = type_checker(%(
         class Foo
@@ -90,6 +123,58 @@ describe Solargraph::TypeChecker do
         def global_config_path
           ENV['SOLARGRAPH_GLOBAL_CONFIG'] ||
               File.join(Dir.home, '.config', 'solargraph', 'config.yml')
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not leak nil from an earlier &. into an unrelated later call in the same chain' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [Boolean]
+          def process(x)
+            x&.to_s == '1'
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'still flags a chain ending in a safe navigation call as nullable' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [String]
+          def process(x)
+            x&.to_s
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to be_empty
+    end
+
+    it 'still flags nil leaking through a self-returning call after an earlier &.' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [String]
+          def process(x)
+            x&.to_s.itself
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).not_to be_empty
+    end
+
+    it 'does not flag a call after &. whose result on NilClass is a fixed non-nil type' do
+      checker = type_checker(%(
+        class Repro
+          # @param x [String, nil]
+          # @return [Integer]
+          def process(x)
+            x&.to_s.to_i
+          end
         end
       ))
       expect(checker.problems.map(&:message)).to be_empty
@@ -184,6 +269,26 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq(['#quux return type could not be inferred',
                                                      'Unresolved call to upcase on String, nil'])
+    end
+
+    it 'applies a yieldparam type declared on a block-form @overload' do
+      checker = type_checker(%(
+        # @overload build
+        #   @return [String]
+        # @overload build
+        #   @yieldparam widget [String]
+        #   @return [void]
+        def build
+          return 'hi' unless block_given?
+
+          yield 'hi'
+        end
+
+        build do |w|
+          w.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'does not complain on array dereference' do
