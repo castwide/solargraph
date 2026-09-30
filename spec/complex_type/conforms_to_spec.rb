@@ -255,6 +255,7 @@ describe Solargraph::ComplexType do
       expect(match).to be(false)
     end
   end
+
   context 'with a module reached through the ancestry' do
     let(:source) do
       Solargraph::Source.load_string(%(
