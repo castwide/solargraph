@@ -709,4 +709,101 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  context 'with overloads distinguished by literal-typed parameters' do
+    let(:api_map) do
+      source = Solargraph::Source.load_string(%(
+        class User; end
+        class Post; end
+        class Tag; end
+        module Factory
+          # @overload create(name, *traits, **overrides)
+          #   @param name [:post]
+          #   @return [Post]
+          # @overload create(name, *traits, **overrides)
+          #   @param name [:user, :person]
+          #   @return [User]
+          # @overload create(name, *traits, **overrides)
+          #   @param name ['post']
+          #   @return [Post]
+          # @overload create(name, *traits, **overrides)
+          #   @param name ['tag']
+          #   @return [Tag]
+          def self.create(name, *traits, **overrides); end
+
+          # @overload pick(value)
+          #   @param value [Symbol]
+          #   @return [User]
+          # @overload pick(value)
+          #   @param value [:post]
+          #   @return [Post]
+          def self.pick(value); end
+        end
+        some_var = 'x'.to_sym
+        a = Factory.create(:user)
+        b = Factory.create(:person)
+        c = Factory.create(:post)
+        d = Factory.create(:person, :trait, title: 'x')
+        e = Factory.create('tag')
+        f = Factory.create(some_var)
+        g = Factory.pick(:post)
+        a
+        b
+        c
+        d
+        e
+        f
+        g
+      ), 'test.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.map source
+      api_map
+    end
+
+    def infer_at line
+      api_map.clip_at('test.rb', [line, 9]).infer.to_s
+    end
+
+    it 'picks the overload whose symbol literal matches the argument' do
+      expect(infer_at(35)).to eq('User')
+      expect(infer_at(37)).to eq('Post')
+    end
+
+    it 'matches any member of a literal union' do
+      expect(infer_at(36)).to eq('User')
+    end
+
+    it 'matches with trailing splat and keyword arguments' do
+      expect(infer_at(38)).to eq('User')
+    end
+
+    it 'matches string literals' do
+      expect(infer_at(39)).to eq('Tag')
+    end
+
+    it 'falls back to the first arity match for non-literal arguments' do
+      expect(infer_at(40)).to eq('Post')
+    end
+
+    it 'does not filter overloads with non-literal parameter types' do
+      expect(infer_at(41)).to eq('User')
+    end
+  end
+
+  it 'matches literal-typed parameters on signatures built in code' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo')
+    method = Solargraph::Pin::Method.new(name: 'create', closure: closure, signatures: [])
+    { 'String' => %w[:user :person], 'Integer' => %w[:post] }.each do |klass, names|
+      sig = Solargraph::Pin::Signature.new(generics: [], parameters: [], closure: method,
+                                           return_type: Solargraph::ComplexType.parse(klass))
+      sig.parameters << Solargraph::Pin::Parameter.new(name: 'name', closure: sig,
+                                                       return_type: Solargraph::ComplexType.parse(*names))
+      method.signatures << sig
+    end
+    api_map = Solargraph::ApiMap.new(pins: [closure, method])
+    arg = Solargraph::Parser.chain(Solargraph::Parser.parse(':post'))
+    chain = Solargraph::Source::Chain.new([described_class.new('create', nil, [arg])])
+
+    expect(chain.infer(api_map, closure, []).to_s).to eq('Integer')
+  end
 end

@@ -101,6 +101,12 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+            last_link = arg.links.last
+            # @sg-ignore flow sensitive typing should handle is_a? and next
+            if !param.restarg? && last_link.is_a?(Chain::Literal) && last_link.literal_mismatch?(param.return_type)
+              match = false
+              break
+            end
             # @sg-ignore flow sensitive typing should handle is_a? and next
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
