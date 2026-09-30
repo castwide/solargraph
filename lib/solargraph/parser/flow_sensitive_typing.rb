@@ -24,10 +24,8 @@ module Solargraph
       def process_and and_node, true_ranges = [], false_ranges = []
         return unless and_node.type == :and
 
-        # @type [Parser::AST::Node]
-        lhs = and_node.children[0]
-        # @type [Parser::AST::Node]
-        rhs = and_node.children[1]
+        lhs = and_node.children.fetch(0)
+        rhs = and_node.children.fetch(1)
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
@@ -50,10 +48,8 @@ module Solargraph
       def process_or or_node, true_ranges = [], false_ranges = []
         return unless or_node.type == :or
 
-        # @type [Parser::AST::Node]
-        lhs = or_node.children[0]
-        # @type [Parser::AST::Node]
-        rhs = or_node.children[1]
+        lhs = or_node.children.fetch(0)
+        rhs = or_node.children.fetch(1)
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
