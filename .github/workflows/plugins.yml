@@ -127,9 +127,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: clone solargraph-rspec
+      # a branch until https://github.com/lekemula/solargraph-rspec/pull/40 merges
       run: |
        cd ..
-       git clone https://github.com/lekemula/solargraph-rspec.git
+       git clone --branch drop-complextype-map https://github.com/apiology/solargraph-rspec.git
        cd solargraph-rspec
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
