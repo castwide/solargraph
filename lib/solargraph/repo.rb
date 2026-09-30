@@ -23,6 +23,7 @@ module Solargraph
     #
     # @param path [String]
     # @return [Metagem, nil]
+    # @sg-ignore a ternary nil branch infers NilClass, which will not match a declared nil
     def find_by_path path
       return system_find_by_path(path) unless bundled?
 
@@ -56,6 +57,7 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
+    # @sg-ignore keywords supplied by a ** splat are not matched against the signature
     def bundled?
       !!@metagems
     end
@@ -65,6 +67,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
+    # @sg-ignore keywords supplied by a ** splat are not matched against the signature
     def bundled
       @metagems || []
     end

@@ -171,6 +171,7 @@ module Solargraph
                    end
                  else
                    gem_names.each_with_object([]) do |name, result|
+                     # @sg-ignore each_with_object yields an untyped accumulator and element
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
@@ -181,6 +182,7 @@ module Solargraph
                        #   TL;DR: `repo.find_by_path` should not be necessary
                        found = repo.find_by_name(name) || repo.find_by_path(name)
                        if found
+                         # @sg-ignore each_with_object yields an untyped accumulator and element
                          result.push found
                        else
                          warn "Gem #{name} not found"

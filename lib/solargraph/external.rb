@@ -7,13 +7,13 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
-    # @return [String]
+    # @return [String, nil]
     attr_reader :directory
 
     # @return [Array<String>]
     attr_reader :requires
 
-    # @param directory [String]
+    # @param directory [String, nil]
     # @param requires [Array<String>]
     def initialize directory, requires
       @repo = Repo.new(directory)
@@ -70,6 +70,7 @@ module Solargraph
     # @return [String, nil]
     def rbs_collection_config_path
       # @todo Get rid of the '*' case
+      # @sg-ignore a nil? guard does not narrow a method call, only a local
       @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)
@@ -168,6 +169,7 @@ module Solargraph
       [File.expand_path(yaml.fetch('path'), directory)].concat(
         yaml.fetch('sources', [])
             .select { |source| source['type'] == 'local' && source['path'] }
+            # @sg-ignore YAML.safe_load yields untyped members
             .map { |source| File.expand_path(source['path'], directory) }
       ).compact
     end

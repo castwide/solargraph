@@ -26,7 +26,7 @@ module Solargraph
       # yard-activesupport-concern pulls methods inside
       # 'class_methods' blocks into main class visible from YARD
       #
-      # @param _doc_map [DocMap]
+      # @param _doc_map [Object]
       def global _doc_map
         Environ.new(yard_plugins: ['activesupport-concern'])
       end
