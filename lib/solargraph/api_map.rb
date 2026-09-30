@@ -238,6 +238,7 @@ module Solargraph
 
       api_map.external.unloaded_gems.each do |metagem|
         out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.load metagem
       end
       load(directory, loose_unions: loose_unions)
@@ -1022,8 +1023,7 @@ module Solargraph
     protected
 
     # @todo need to model type def statement in chains as a symbol so
-    #   that this overload of 'protected' will typecheck @sg-ignore
-    # @sg-ignore Missing @return tag
+    #   that this overload of 'protected' will typecheck
     def equality_fields
       # External is compared by identity and generation instead of by its pins:
       # Chain#infer hashes the ApiMap on every inference, and Array#hash would

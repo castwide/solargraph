@@ -14,6 +14,7 @@ module Solargraph
       end
 
       def pins
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         @pins ||= RbsMap::Stdlib.pins(library)
       end
 

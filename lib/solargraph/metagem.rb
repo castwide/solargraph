@@ -54,6 +54,7 @@ module Solargraph
     end
 
     # @return [Gem::Specification, nil]
+    # @sg-ignore a singleton .load with no declared return falls back to Kernel#load
     def to_specification
       Gem::Specification.load(spec_file)
     end

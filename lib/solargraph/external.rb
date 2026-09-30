@@ -99,6 +99,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1108
           pins.concat Collection::Stdlib.load(path)
         else
           metagem = @repo.find_by_path(path)
@@ -135,12 +136,14 @@ module Solargraph
       if metagem.cacheable?
         if Collection::Gem.cached?(metagem)
           loaded_gems.add metagem
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1108
           pins.concat Collection::Gem.load(metagem)
         else
           unloaded_gems.add metagem
         end
       else
         loaded_gems.add metagem
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         pins.concat Collection::Gem.load(metagem)
       end
       load_dependencies metagem

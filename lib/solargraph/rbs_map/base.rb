@@ -25,7 +25,9 @@ module Solargraph
       end
 
       # @return [Array<Pin::Base>]
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1108
       def self.pins(...)
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         new(...).pins
       end
     end

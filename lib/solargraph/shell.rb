@@ -120,9 +120,11 @@ module Solargraph
         if gem == 'core'
           Solargraph::Collection::Core.uncache
         elsif gem == 'stdlib'
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1255
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1108
           Solargraph::Collection::Gem.uncache(metagem) if metagem
         end
       end
@@ -187,8 +189,10 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.uncache(metagem) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         Collection::Gem.load(metagem)
       end
       puts "Documentation cached for #{metagems.count} gems."
@@ -416,6 +420,7 @@ module Solargraph
       begin
         puts 'Parsing and mapping source files...'
         prepare_start = Time.now
+        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: parse_path, hooks: hooks) do
           puts 'Mapping libraries'
           host.prepare(directory)
@@ -425,6 +430,7 @@ module Solargraph
 
         puts 'Building the catalog...'
         catalog_start = Time.now
+        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: catalog_path, hooks: hooks) do
           host.catalog
         end
@@ -452,6 +458,7 @@ module Solargraph
         puts "Position: line #{options[:line]}, column #{options[:column]}"
 
         definition_start = Time.now
+        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: definition_path, hooks: hooks) do
           message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
             host, {

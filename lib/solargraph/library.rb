@@ -279,7 +279,6 @@ module Solargraph
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
           found.map! do |loc|
-            # @sg-ignore Unresolved call to []
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
@@ -418,7 +417,6 @@ module Solargraph
           name = args.shift
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
-          # @sg-ignore Hash errors
           repargs[reporter] ||= []
           # @sg-ignore Hash errors
           repargs[reporter].concat args
@@ -443,7 +441,6 @@ module Solargraph
         source_maps: source_map_hash.values,
         workspace: workspace,
         external_requires: external_requires,
-        # @sg-ignore OK if @current.filename is nil
         live_map: @current ? source_map_hash[@current.filename] : nil
       )
     end
@@ -485,7 +482,6 @@ module Solargraph
         Logging.logger.debug "Mapping #{src.filename}"
         # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename]
       else
         false
@@ -619,6 +615,7 @@ module Solargraph
           cmd = [workspace.command_path, 'cache', spec.name]
           cmd.push('--directory', workspace.directory) if workspace.directory
           _o, e, s = Open3.capture3(*cmd)
+          # @sg-ignore multiple assignment types every target as tuple element 0
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else

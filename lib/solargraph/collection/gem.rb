@@ -19,6 +19,7 @@ module Solargraph
         File.join CacheDir.gem_dir, "#{metagem.cache_name}.ser"
       end
 
+      # @sg-ignore a singleton .load with no declared return falls back to Kernel#load
       def load
         return pins unless metagem.cacheable?
         super
@@ -43,6 +44,7 @@ module Solargraph
       def cacheable_pins
         code_objects = Yardoc.load!(metagem)
         yard_pins = YardMap::Mapper.new(code_objects, metagem).map
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         rbs_pins = RbsMap::Gem.pins(metagem)
         RbsMap::Helpers.combine(yard_pins, rbs_pins)
       end
@@ -52,6 +54,7 @@ module Solargraph
         files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
         source_pins = source_maps.flat_map(&:pins)
+        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
         rbs_pins = RbsMap::Gem.pins(metagem)
         RbsMap::Helpers.combine(source_pins, rbs_pins)
       end
