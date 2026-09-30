@@ -811,6 +811,29 @@ describe Solargraph::Source::Chain::Call do
     expect(chain.infer(api_map, closure, []).to_s).to eq('Integer')
   end
 
+  it 'defines the matched overload at its own location with its own docs' do
+    closure = Solargraph::Pin::Namespace.new(name: 'Foo')
+    method = Solargraph::Pin::Method.new(name: 'create', closure: closure, signatures: [])
+    { 'String' => [':user', 'A user', 1], 'Integer' => [':post', 'A post', 5] }.each do |klass, (name, doc, line)|
+      sig = Solargraph::Pin::Signature.new(
+        generics: [], parameters: [], closure: method, comments: doc,
+        location: Solargraph::Location.new('factories.rb', Solargraph::Range.from_to(line, 0, line, 10)),
+        return_type: Solargraph::ComplexType.parse(klass)
+      )
+      sig.parameters << Solargraph::Pin::Parameter.new(name: 'name', closure: sig,
+                                                       return_type: Solargraph::ComplexType.parse(name))
+      method.signatures << sig
+    end
+    api_map = Solargraph::ApiMap.new(pins: [closure, method])
+    arg = Solargraph::Parser.chain(Solargraph::Parser.parse(':post'))
+    chain = Solargraph::Source::Chain.new([described_class.new('create', nil, [arg])])
+
+    pin = chain.define(api_map, closure, []).first
+
+    expect(pin.location.range.start.line).to eq(5)
+    expect(pin.documentation).to start_with('A post')
+  end
+
   it 'matches literal-typed parameters on signatures built in code' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo')
     method = Solargraph::Pin::Method.new(name: 'create', closure: closure, signatures: [])
