@@ -299,15 +299,6 @@ module Solargraph
           t.recreate(new_name: fqns, make_rooted: true)
         end
       end
-
-      # @yieldparam [UniqueType]
-      # @return [void]
-      # @overload each_unique_type()
-      #   @return [Enumerator<UniqueType>]
-      def each_unique_type &block
-        return enum_for(__method__) unless block_given?
-        yield self
-      end
     end
   end
 end

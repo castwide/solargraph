@@ -204,15 +204,6 @@ module Solargraph
           [self.class, sorted_conjuncts].hash
         end
 
-        # @yieldparam [UniqueType]
-        # @return [void]
-        # @overload each_unique_type()
-        #   @return [Enumerator<UniqueType>]
-        def each_unique_type &block
-          return enum_for(__method__) unless block_given?
-          conjuncts.each { |conjunct| conjunct.each_unique_type(&block) }
-        end
-
         # Substituting one type for another where this one is expected
         # is safe only where it is safe for every conjunct, so the
         # variance is whatever the conjuncts agree on - and invariant

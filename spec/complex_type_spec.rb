@@ -508,20 +508,6 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
-    describe '#each_unique_type' do
-      it 'yields the unique type from every conjunct' do
-        intersection = Solargraph::ComplexType.parse('String & Comparable').items.first
-        yielded = []
-        intersection.each_unique_type { |ut| yielded << ut.tag }
-        expect(yielded).to eq(%w[String Comparable])
-      end
-
-      it 'returns an enumerator when no block is given' do
-        intersection = Solargraph::ComplexType.parse('String & Comparable').items.first
-        expect(intersection.each_unique_type.map(&:tag)).to eq(%w[String Comparable])
-      end
-    end
-
     describe '#erase_parameters' do
       it 'returns itself unchanged' do
         intersection = Solargraph::ComplexType.parse('Hash{"a" => String} & Comparable').items.first

@@ -97,18 +97,6 @@ module Solargraph
       end
     end
 
-    # @yieldparam [UniqueType]
-    # @return [void]
-    # @overload each_unique_type()
-    #   @return [Enumerator<UniqueType>]
-    def each_unique_type &block
-      return enum_for(__method__) unless block_given?
-
-      @items.each do |item|
-        item.each_unique_type(&block)
-      end
-    end
-
     # @param new_name [String, nil]
     # @param make_rooted [Boolean, nil]
     # @param new_key_types [Array<ComplexType>, nil]
