@@ -32,8 +32,13 @@ module Solargraph
 
       private
 
+      # Ruby core, indexed for the conflict check below. Collection::Core
+      # caches the pins for the process; RbsMap::Core does not, and a Mapper
+      # is built per gem, so going direct parses all of core once per gem.
+      #
+      # @return [ApiMap::Store]
       def core_store
-        @core_store ||= ApiMap::Store.new(RbsMap::Core.new.pins)
+        @core_store ||= ApiMap::Store.new(Collection::Core.load)
       end
 
       # @param code_object [YARD::CodeObjects::Base]
