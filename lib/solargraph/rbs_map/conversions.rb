@@ -336,6 +336,25 @@ module Solargraph
         add_mixins decl, module_pin.closure
       end
 
+      # The first pin already converted at this path, the way a scan over
+      # pins would find it. Constants are looked up once each against an
+      # array that grows as conversion proceeds, so indexing incrementally
+      # keeps that from being quadratic.
+      #
+      # @param path [String]
+      # @return [Pin::Base, nil]
+      def pin_by_path path
+        # @type [Hash{String => Pin::Base}]
+        by_path = (@pins_by_path ||= {})
+        @pins_indexed ||= 0
+        while @pins_indexed < pins.length
+          pin = pins[@pins_indexed]
+          by_path[pin.path] ||= pin if pin
+          @pins_indexed += 1
+        end
+        by_path[path]
+      end
+
       # @param fqns [String]
       # @param type [ComplexType, ComplexType::UniqueType]
       # @param comments [String, nil]
@@ -351,7 +370,7 @@ module Solargraph
         closure = if closure_path.empty?
                     Solargraph::Pin::ROOT_PIN
                   else
-                    pins.find { |pin| pin && pin.path == closure_path }
+                    pin_by_path(closure_path)
                   end
         constant_pin = Solargraph::Pin::Constant.new(
           name: name,
