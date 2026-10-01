@@ -5,10 +5,14 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class OrasgnNode < Parser::NodeProcessor::Base
+          on_node_pattern_enter '(or_asgn $_ $_)', :process
+
+          # @param asgn [::Parser::AST::Node]
+          # @param value [::Parser::AST::Node]
           # @return [void]
-          def process
-            new_node = node.updated(node.children[0].type, node.children[0].children + [node.children[1]])
-            NodeProcessor.process(new_node, region, pins, locals, ivars)
+          def process asgn, value
+            skip_children
+            walk node.updated(asgn.type, asgn.children + [value])
           end
         end
       end

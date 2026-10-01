@@ -7,9 +7,9 @@ module Solargraph
         class AndNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
-          def process
-            process_children
+          on_node_type_leave :and, :process
 
+          def process
             FlowSensitiveTyping.new(locals,
                                     ivars,
                                     enclosing_breakable_pin,

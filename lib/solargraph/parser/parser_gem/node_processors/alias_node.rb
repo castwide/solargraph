@@ -5,17 +5,21 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class AliasNode < Parser::NodeProcessor::Base
-          def process
+          on_node_pattern_enter '(alias (_ $_) (_ $_))', :process
+
+          # @param name [Symbol]
+          # @param original [Symbol]
+          # @return [void]
+          def process name, original
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].children[0].to_s,
-              original: node.children[1].children[0].to_s,
+              name: name.to_s,
+              original: original.to_s,
               scope: region.scope || :instance,
               source: :parser
             )
-            process_children
           end
         end
       end

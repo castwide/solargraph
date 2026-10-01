@@ -3,37 +3,23 @@
 module Solargraph
   module Parser
     module NodeProcessor
-      class Base
-        # @return [Parser::AST::Node]
-        attr_reader :node
-
-        # @return [Region]
-        attr_reader :region
-
+      class Base < Walker::BaseProcessor
         # @return [Array<Pin::Base>]
-        attr_reader :pins
-
-        # @return [Array<Pin::LocalVariable>]
-        attr_reader :locals
-
-        # @return [Array<Pin::InstanceVariable>]
-        attr_reader :ivars
-
-        # @param node [Parser::AST::Node]
-        # @param region [Region]
-        # @param pins [Array<Pin::Base>]
-        # @param locals [Array<Pin::LocalVariable>]
-        # @param ivars [Array<Pin::InstanceVariable>]
-        def initialize node, region, pins, locals, ivars
-          @node = node
-          @region = region
-          @pins = pins
-          @locals = locals
-          @ivars = ivars
-          @processed_children = false
+        def pins
+          walker.pins
         end
 
-        # Subclasses should override this method to generate new pins.
+        # @return [Array<Pin::LocalVariable>]
+        def locals
+          walker.locals
+        end
+
+        # @return [Array<Pin::InstanceVariable>]
+        def ivars
+          walker.ivars
+        end
+
+        # Processors registered with {NodeProcessor.register} override this method to generate new pins.
         #
         # @return [Boolean] continue processing the next processor of the same node type.
         # @return [void] In case there is only one processor registered for the node type, it can be void.
@@ -41,6 +27,11 @@ module Solargraph
           process_children
 
           true
+        end
+
+        # @return [void]
+        def process_or_halt
+          walker.halt unless process
         end
 
         private
@@ -65,17 +56,6 @@ module Solargraph
         # @return [Solargraph::Pin::CompoundStatement, nil]
         def enclosing_compound_statement_pin
           pins.select { |pin| pin.is_a?(Pin::CompoundStatement) && pin.location&.range&.contain?(position) }.last
-        end
-
-        # @param subregion [Region]
-        # @return [void]
-        def process_children subregion = region
-          return if @processed_children
-          @processed_children = true
-          node.children.each do |child|
-            next unless Parser.is_ast_node?(child)
-            NodeProcessor.process(child, subregion, pins, locals, ivars)
-          end
         end
 
         # @param node [Parser::AST::Node]

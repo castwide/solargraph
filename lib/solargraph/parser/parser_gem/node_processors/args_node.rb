@@ -5,6 +5,10 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class ArgsNode < Parser::NodeProcessor::Base
+          on_node_type :args, :process
+          on_node_type :forward_args, :process
+
+          # @return [void]
           def process
             callable = region.closure
             if callable.is_a? Pin::Callable
