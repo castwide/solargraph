@@ -1,0 +1,110 @@
+# frozen_string_literal: true
+
+module Solargraph
+  module YardMap
+    module Directives
+      # Implements YARD's @!scope directive.
+      #
+      # As described in YARD::Tags::ScopeDirective, a @!scope directive that
+      # appears in a docstring attached to a method definition applies only to
+      # that method. Anywhere else it applies to all of the methods that follow
+      # it within the namespace it was defined in.
+      #
+      #   class Example
+      #     # @!scope class
+      #     def foo; end  # => Example.foo
+      #
+      #     def bar; end  # => Example#bar
+      #   end
+      #
+      #   class Other
+      #     # @!scope class
+      #
+      #     def foo; end  # => Other.foo
+      #
+      #     def bar; end  # => Other.bar
+      #   end
+      #
+      module ScopeDirective
+        module_function
+
+        VALID_SCOPES = %i[class instance].freeze
+
+        # @param source [Solargraph::Source]
+        # @param pins [Array<Solargraph::Pin::Base>]
+        # @param source_position [Position]
+        # @param comment_position [Position]
+        # @param directive [YARD::Tags::Directive]
+        # @return [Array<Solargraph::Pin::Base>]
+        def process_directive source, pins, source_position, comment_position, directive
+          kind = parse_scope directive
+          return [] if kind.nil?
+
+          attached = attached_method pins, source_position
+          if attached && no_empty_lines?(source.code, comment_position.line, source_position.line)
+            attached.scope = kind
+          else
+            apply_to_namespace pins, kind, source_position
+          end
+
+          []
+        end
+
+        # @param directive [YARD::Tags::Directive]
+        # @return [::Symbol, nil] :class, :instance, or nil if the directive is malformed
+        def parse_scope directive
+          kind = directive.tag.text.to_s.strip.downcase.to_sym
+          VALID_SCOPES.include?(kind) ? kind : nil
+        end
+
+        # Applies the scope to each method that follows the directive within
+        # the namespace the directive appears in. Methods in nested namespaces
+        # are excluded, since the directive only affects its own namespace.
+        #
+        # @param pins [Array<Solargraph::Pin::Base>]
+        # @param kind [::Symbol] :class or :instance
+        # @param source_position [Position]
+        # @return [void]
+        def apply_to_namespace pins, kind, source_position
+          namespace = namespace_at pins, source_position
+          return if namespace.nil?
+
+          pins.each do |pin|
+            next unless pin.is_a?(Pin::Method)
+            next unless pin.namespace == namespace.path
+            next if pin.location.nil? || pin.location.range.start.line < source_position.line
+
+            pin.scope = kind
+          end
+        end
+
+        # The method defined on the line the comment is attached to, if any.
+        #
+        # @param pins [Array<Solargraph::Pin::Base>]
+        # @param source_position [Position]
+        # @return [Pin::Method, nil]
+        def attached_method pins, source_position
+          pins.select { |pin| pin.is_a?(Pin::Method) && pin.location&.range&.contain?(source_position) }.last
+        end
+
+        # @param pins [Array<Solargraph::Pin::Base>]
+        # @param position [Position]
+        # @return [Pin::Namespace, nil]
+        def namespace_at pins, position
+          pins.select { |pin| pin.is_a?(Pin::Namespace) && pin.location&.range&.contain?(position) }.last
+        end
+
+        # @param code [String]
+        # @param line1 [Integer]
+        # @param line2 [Integer]
+        # @return [Boolean]
+        def no_empty_lines? code, line1, line2
+          lines = code.lines[line1..line2]
+          return false if lines.nil?
+
+          lines.none? { |line| line.strip.empty? }
+        end
+      end
+    end
+  end
+end
