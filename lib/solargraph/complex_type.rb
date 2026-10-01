@@ -125,18 +125,6 @@ module Solargraph
       @items.first
     end
 
-    # @deprecated Call #items instead.  Kept because plugins released
-    #   against earlier versions call it.
-    # @yieldparam [UniqueType]
-    # @yieldreturn [UniqueType]
-    # @return [Array<UniqueType>]
-    # @sg-ignore Declared return type
-    #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
-    #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
-    def map &block
-      @items.map(&block)
-    end
-
     # Pairs this union up with another type member by member, yields
     # each pair, and reassembles the results into one union.
     #
