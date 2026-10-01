@@ -119,6 +119,7 @@ module Solargraph
         m.return_type = signature.return_type
         m.block = signature.block
         m.signatures = [signature]
+        m.adopt_signature_details signature
         m
       end
 
@@ -454,6 +455,19 @@ module Solargraph
       end
 
       protected
+
+      # Signatures built by plugins (e.g. one per factory) can carry their own
+      # docs and location, which then describe the call better than the method's
+      #
+      # @param signature [Pin::Signature]
+      # @return [void]
+      def adopt_signature_details signature
+        @location = signature.location if signature.location
+        return if signature.docstring.blank?
+
+        self.docstring = signature.docstring
+        @documentation = nil
+      end
 
       attr_writer :block, :signature_help, :documentation, :return_type
 

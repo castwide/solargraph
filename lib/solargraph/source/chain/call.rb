@@ -90,10 +90,14 @@ module Solargraph
 
           match = true
           atypes = []
+          # keyword arguments arrive as a trailing hash, so only positional
+          # parameters line up with arguments by index
+          positional_params = overload.parameters.reject { |p| p.keyword? || p.kwrestarg? || p.block? }
+          restarg = positional_params.find(&:restarg?)
           arguments.each_with_index do |arg, idx|
-            param = overload.parameters[idx]
+            param = positional_params[idx] || restarg
             if param.nil?
-              match = overload.parameters.any?(&:restarg?)
+              match = arg.links.last.is_a?(Chain::Hash) && overload.parameters.any? { |p| p.keyword? || p.kwrestarg? }
               break
             end
             arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
@@ -101,6 +105,12 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
+            last_link = arg.links.last
+            # @sg-ignore flow sensitive typing should handle is_a? and next
+            if !param.restarg? && last_link.is_a?(Chain::Literal) && last_link.literal_mismatch?(param.return_type)
+              match = false
+              break
+            end
             # @sg-ignore flow sensitive typing should handle is_a? and next
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
@@ -153,9 +163,11 @@ module Solargraph
           # qualify(), however, happens in the namespace where
           # the docs were written - from the method pin.
           # @todo Need to add nil check here
-          if new_return_type.defined?
-            type = with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
-          end
+          type = if new_return_type.defined?
+                   with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
+                 else
+                   inferr_from_factory_parameters(api_map, pin)
+                 end
           type ||= ComplexType::UNDEFINED
           [type, new_signature_pin]
         end
@@ -217,6 +229,27 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # @param api_map [ApiMap]
+        # @param method_pin [Pin::Method]
+        # @return [ComplexType, nil]
+        def inferr_from_factory_parameters api_map, method_pin
+          factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
+            method_pin.parameters.each_with_index.find do |param, index|
+              current_argument = arguments[index]
+              next unless current_argument&.literal?
+              # @type [Solargraph::Source::Chain::Literal]
+              last_link = current_argument.links.last
+              argument_value = last_link.value
+
+              param.name == factory_param.param_name && argument_value == factory_param.value
+            end
+          end
+
+          return nil if factory_parameter.nil?
+
+          factory_parameter.return_type.qualify(api_map, method_pin.namespace)
         end
 
         # @param pin [Pin::Base]

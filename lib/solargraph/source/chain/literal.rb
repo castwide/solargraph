@@ -6,29 +6,36 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        attr_reader :word, :value
+        attr_reader :word
+
+        # @return [::String, ::Symbol]
+        attr_reader :value
+
+        # @return [Parser::AST::Node]
+        attr_reader :node
 
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
           super("<#{type}>")
+          @node = node
 
           # @todo We might be able to do some light inference from literals and
           #   tuples as long as literal values are intransitive.
 
-          # if node.is_a?(::Parser::AST::Node)
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-          #   if node.type == :true
-          #     @value = true
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-          #   elsif node.type == :false
-          #     @value = false
-          #   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-          #   elsif %i[int sym].include?(node.type)
-          #     # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-          #     @value = node.children.first
-          #   end
-          # end
+          if node.is_a?(::Parser::AST::Node)
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            if node.type == :true
+              @value = true
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            elsif node.type == :false
+              @value = false
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            elsif %i[int sym str].include?(node.type)
+              # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+              @value = node.children.first
+            end
+          end
           @type = type
           # @literal_type = ComplexType.try_parse(@value.inspect)
           @literal_type = ComplexType::UNDEFINED
@@ -39,6 +46,19 @@ module Solargraph
         protected def equality_fields
           # @sg-ignore literal arrays in this module turn into ::Solargraph::Source::Chain::Array
           super + [@value, @type, @literal_type, @complex_type]
+        end
+
+        # True if the declared type is made up only of literal types (e.g.
+        # `:user, :person` or `'foo'`) and none of them equals this literal's
+        # value. Always false when the value or the type is not a literal.
+        #
+        # @param type [ComplexType]
+        def literal_mismatch? type
+          return false if @value.nil? || type.undefined?
+          return false unless type.items.all? { |t| t.name != 'nil' && t.non_literal_name != t.name }
+
+          names = @value.is_a?(::String) ? [@value.inspect, "'#{@value}'"] : [@value.inspect]
+          type.items.none? { |t| names.include?(t.name) }
         end
 
         def resolve api_map, name_pin, locals
