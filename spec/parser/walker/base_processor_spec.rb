@@ -94,6 +94,22 @@ describe Solargraph::Parser::Walker::BaseProcessor do
       end
     end
 
+    context 'with send patterns limited to method names' do
+      let(:processor_class) do
+        captured = events
+        Class.new(described_class) do
+          on_node_pattern_enter('(send nil? ${:foo :bar})') { |name| captured << [:named, name] }
+          on_node_pattern_enter('(send nil? $_)') { |name| captured << [:any, name] }
+        end
+      end
+
+      it 'matches only the sends with those method names' do
+        processor_class
+        walk('foo; baz; bar')
+        expect(events).to eq([%i[named foo], %i[any foo], %i[any baz], %i[named bar], %i[any bar]])
+      end
+    end
+
     context 'with a pattern that matches any node type' do
       let(:processor_class) do
         captured = events

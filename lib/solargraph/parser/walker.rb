@@ -9,6 +9,9 @@ module Solargraph
     class Walker
       autoload :BaseProcessor, 'solargraph/parser/walker/base_processor'
 
+      SEND_TYPES = %i[send csend].freeze
+      private_constant :SEND_TYPES
+
       class Handler
         # @return [Class<BaseProcessor>]
         attr_reader :processor_class
@@ -28,13 +31,18 @@ module Solargraph
           @callback = callback
           @pattern = pattern && RuboCop::AST::NodePattern.new(pattern)
           @types = @pattern ? root_types(@pattern.ast) : [type]
+          @method_names = @pattern && method_names(@pattern.ast)
         end
 
         # @param type [Symbol]
+        # @param method_name [Symbol, nil] the method name of a send node
         # @return [Boolean]
-        def applies_to? type
+        def applies_to? type, method_name
           node_types = types
-          node_types.nil? || node_types.include?(type)
+          return false unless node_types.nil? || node_types.include?(type)
+
+          names = @method_names
+          names.nil? || names.include?(method_name)
         end
 
         # @param node [::Parser::AST::Node]
@@ -62,6 +70,32 @@ module Solargraph
             types.flatten if types.all?
           end
         end
+
+        # The method names a send pattern is limited to, so other sends skip the match
+        #
+        # @param ast [RuboCop::AST::NodePattern::Node]
+        # @return [Array<Symbol>, nil]
+        def method_names ast
+          return unless ast.type == :sequence && SEND_TYPES.include?(ast.children.fetch(0).child)
+
+          method = ast.children[2]
+          literal_symbols(method) if method
+        end
+
+        # @param ast [RuboCop::AST::NodePattern::Node]
+        # @return [Array<Symbol>, nil]
+        def literal_symbols ast
+          case ast.type
+          when :symbol
+            [ast.child]
+          when :capture
+            literal_symbols(ast.child)
+          when :set, :union
+            # @type [Array<Array<Symbol>, nil>]
+            symbols = ast.children.map { |branch| literal_symbols(branch) }
+            symbols.flatten if symbols.all?
+          end
+        end
       end
       private_constant :Handler
 
@@ -85,15 +119,15 @@ module Solargraph
           @region = region
           @children_processed = false
           @halted = false
-          # @type [Hash{Class<BaseProcessor> => BaseProcessor}]
-          @processors = {}
         end
 
         # @param processor_class [Class<BaseProcessor>]
         # @param walker [Walker]
         # @return [BaseProcessor]
         def processor processor_class, walker
-          @processors[processor_class] ||= processor_class.new(walker)
+          # @type [Hash{Class<BaseProcessor> => BaseProcessor}]
+          processors = (@processors ||= {})
+          processors[processor_class] ||= processor_class.new(walker)
         end
       end
       private_constant :Frame
@@ -121,11 +155,15 @@ module Solargraph
         end
 
         # @param event [Symbol]
-        # @param type [Symbol]
+        # @param node [::Parser::AST::Node]
         # @return [Array<Handler>]
-        def handlers_for event, type
-          table = dispatch_tables[event] ||= {}
-          table[type] ||= handlers_of(event).select { |handler| handler.applies_to?(type) }
+        def handlers_for event, node
+          type = node.type
+          # @sg-ignore The method name of a send node is a Symbol child
+          # @type [Symbol, nil]
+          method_name = node.children[1] if SEND_TYPES.include?(type)
+          table = (dispatch_tables[event] ||= {})[type] ||= {}
+          table[method_name] ||= handlers_of(event).select { |handler| handler.applies_to?(type, method_name) }
         end
 
         private
@@ -141,7 +179,7 @@ module Solargraph
           handlers[event] || []
         end
 
-        # @return [Hash{Symbol => Hash{Symbol => Array<Handler>}}]
+        # @return [Hash{Symbol => Hash{Symbol => Hash{Symbol, nil => Array<Handler>}}}]
         def dispatch_tables
           @dispatch_tables ||= {}
         end
@@ -195,11 +233,15 @@ module Solargraph
       def walk node, region = self.region
         return if node.nil?
 
+        enter = Walker.handlers_for(:enter, node)
+        leave = Walker.handlers_for(:leave, node)
+        return walk_children(node, region) if enter.empty? && leave.empty?
+
         frame = Frame.new(node, region)
         @frames.push frame
-        dispatch :enter, frame
+        dispatch enter, frame
         process_children unless frame.children_processed
-        dispatch :leave, frame
+        dispatch leave, frame, halts: false
         @frames.pop
       end
 
@@ -222,7 +264,7 @@ module Solargraph
         return if frame.children_processed
 
         frame.children_processed = true
-        frame.node.children.each { |child| walk(child, subregion) if child.is_a?(::Parser::AST::Node) }
+        walk_children(frame.node, subregion)
       end
 
       # @return [void]
@@ -249,12 +291,20 @@ module Solargraph
         @after_walk_handlers ||= []
       end
 
-      # @param event [Symbol]
+      # @param node [::Parser::AST::Node]
+      # @param region [Region]
+      # @return [Array]
+      def walk_children node, region
+        node.children.each { |child| walk(child, region) if child.is_a?(::Parser::AST::Node) }
+      end
+
+      # @param handlers [Array<Handler>]
       # @param frame [Frame]
+      # @param halts [Boolean] whether Walker#halt stops the remaining handlers
       # @return [void]
-      def dispatch event, frame
-        Walker.handlers_for(event, frame.node.type).each do |handler|
-          break if event == :enter && frame.halted
+      def dispatch handlers, frame, halts: true
+        handlers.each do |handler|
+          break if halts && frame.halted
 
           captures = handler.match(frame.node)
           next unless captures
