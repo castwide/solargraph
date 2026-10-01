@@ -202,7 +202,7 @@ describe Solargraph::SourceMap do
   end
 
   it 'applies scope directives to direct attachments' do
-    source_map = Solargraph::Source.load_string(%(
+    source_map = Solargraph::SourceMap.load_string(%(
       class Example
         # @!scope class
         def foo; end
@@ -210,13 +210,13 @@ describe Solargraph::SourceMap do
         def bar; end
       end
     ), 'test.rb')
-    paths = source_map.map(&:path)
+    paths = source_map.pins.map(&:path)
     expect(paths).to include('Example.foo')
     expect(paths).to include('Example#bar')
   end
 
   it 'applies scope directives to future objects' do
-    source_map = Solargraph::Source.load_string(%(
+    source_map = Solargraph::SourceMap.load_string(%(
       class Example
         # @!scope class
 
@@ -227,7 +227,7 @@ describe Solargraph::SourceMap do
         def bar; end
       end
     ), 'test.rb')
-    paths = source_map.map(&:path)
+    paths = source_map.pins.map(&:path)
     expect(paths).to include('Example.foo')
     expect(paths).to include('Example.bar')
   end
