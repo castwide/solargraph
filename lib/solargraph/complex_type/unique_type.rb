@@ -114,8 +114,15 @@ module Solargraph
       def exclude exclude_types, api_map
         return self if exclude_types.nil?
 
-        types = items - exclude_types.items
-        types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+        # see ComplexType#exclude: matches by conformance, not equality
+        types = items.reject do |ut|
+          exclude_types.any? { |exclude_type| ut.conforms_to?(api_map, exclude_type, :assignment) }
+        end
+        if types.empty?
+          # Exhausting every excluded type means the code here is unreachable, not
+          # a type error - `bot` keeps calls on it vacuously valid, not unresolved.
+          types = [ComplexType::UniqueType::BOT]
+        end
         ComplexType.new(types)
       end
 
@@ -253,6 +260,11 @@ module Solargraph
       # @param variance [:invariant, :covariant, :contravariant]
       def conforms_to? api_map, expected, situation, rules = [],
                        variance: erased_variance(situation)
+        # bot is a subtype of every type - not a leniency knob like
+        # :allow_undefined, but a type-theoretic fact (e.g., the return
+        # type of `raise` or `abort`)
+        return true if bot?
+
         return true if undefined? && rules.include?(:allow_undefined)
 
         # @todo teach this to validate duck types as inferred type
@@ -559,7 +571,7 @@ module Solargraph
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
-          next t if t.duck_type? || t.void? || t.undefined? || t.literal?
+          next t if t.duck_type? || t.void? || t.undefined? || t.literal? || t.bot?
           open = t.rooted? ? [''] : gates
           fqns = api_map.qualify(t.non_literal_name, *open)
           if fqns.nil?
@@ -621,6 +633,11 @@ module Solargraph
       end
 
       UNDEFINED = UniqueType.new('undefined', rooted: false)
+      # #eql? and #hash read the raw @rooted ivar, while #rooted?
+      # reports true for any lowercase name regardless of it. rooted:
+      # true is therefore required for BOT to compare equal to - and
+      # hash alongside - ComplexType::BOT.first.
+      BOT = UniqueType.new('bot', rooted: true)
       BOOLEAN = UniqueType.new('Boolean', rooted: true)
       TRUE = UniqueType.new('true', rooted: true)
       FALSE = UniqueType.new('false', rooted: true)

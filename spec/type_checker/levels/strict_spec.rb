@@ -855,6 +855,24 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'resolves a call on an exhaustively-excluded (bot-typed) receiver' do
+      checker = type_checker(%(
+        class Box
+          # @return [Integer]
+          def length
+            0
+          end
+        end
+
+        # @param subs [Box]
+        # @return [void]
+        def check(subs)
+          return unless !subs.is_a?(Box) && subs.length == 2
+        end
+      ))
+      expect(checker.problems).to be_empty
+    end
+
     it 'interprets self references correctly' do
       checker = type_checker(%(
         class Bar
