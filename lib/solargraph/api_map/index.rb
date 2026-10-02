@@ -5,10 +5,10 @@ module Solargraph
     class Index
       include Logging
 
-      # @return [Array<String>]
+      # @return [Set<String>]
       attr_reader :macro_method_names
 
-      # @return [Hash{String => Array<Pin::Method>}]
+      # @return [Hash{String => Set<Pin::Method>}]
       attr_reader :macro_method_name_pins
 
       # @param pins [Array<Pin::Base>]
@@ -167,38 +167,120 @@ module Solargraph
 
       # @return [void]
       def map_overrides
-        # @todo should complain when type for 'ovr' is not provided
-        # @param ovr [Pin::Reference::Override]
         pins_by_class(Pin::Reference::Override).each do |ovr|
-          logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
-          pins = path_pin_hash[ovr.name]
-          logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
-          pins.each do |pin|
-            new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
-            (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-              # @sg-ignore Wrong argument type for
-              #   YARD::Docstring#delete_tags: name expected String,
-              #   received String, Symbol - delete_tags is ok with a
-              #   _ToS, but we should fix anyway
-              pin.docstring.delete_tags tag
-              new_pin&.docstring&.delete_tags tag
-            end
-            ovr.tags.each do |tag|
-              pin.docstring.add_tag(tag)
-              redefine_return_type pin, tag
-              pin.reset_generated!
-
-              next unless new_pin
-
-              new_pin.docstring.add_tag(tag)
-              redefine_return_type new_pin, tag
-              new_pin.reset_generated!
-            end
+          # Iterate a copy: applying an override rewrites this array.
+          (path_pin_hash[ovr.name] || []).dup.each do |pin|
+            new_pin = ((path_pin_hash[pin.path.sub('#initialize', '.new')] || []).first if pin.path.end_with?('#initialize'))
+            apply_override pin, ovr
+            apply_override new_pin, ovr if new_pin
           end
         end
       end
 
-      # @param pin [Pin::Method]
+      # Join the override onto the pin as the higher-authority side and swap
+      # the result in, rather than mutating a pin other structures still hold.
+      #
+      # @param pin [Pin::Base]
+      # @param ovr [Pin::Reference::Override]
+      # @return [void]
+      def apply_override pin, ovr
+        combined = pin.combine_with(override_pin_for(pin, ovr))
+        # combined belongs to us alone, so deleting from it touches nothing shared.
+        ovr.delete.each { |name| combined.docstring.delete_tags(name.to_s) }
+        ovr.tags.each { |tag| redefine_return_type combined, tag }
+        rebind_parameters combined
+        combined.reset_generated!
+        replace_pin pin, combined
+      end
+
+      # A Parameter reads its type from its closure's docstring, so the
+      # combined pin needs copies pointing at itself; the originals still
+      # point at the pin it replaces, which no longer carries the override.
+      #
+      # @param pin [Pin::Base]
+      # @return [void]
+      def rebind_parameters pin
+        return nil unless pin.is_a?(Pin::Method)
+
+        pin.parameters = rebound_parameters(pin, pin.parameters)
+        pin.signatures.each { |sig| sig.parameters = rebound_parameters(pin, sig.parameters) }
+        nil
+      end
+
+      # @param closure [Pin::Base]
+      # @param parameters [::Array<Pin::Parameter>]
+      # @return [::Array<Pin::Parameter>]
+      def rebound_parameters closure, parameters
+        parameters.map do |param|
+          rebound = param.dup
+          rebound.closure = closure
+          rebound
+        end
+      end
+
+      # A pin carrying only what the override says, ranked above the pin it
+      # targets so its tags win the combine.
+      #
+      # @param pin [Pin::Base]
+      # @param ovr [Pin::Reference::Override]
+      # @return [Pin::Base]
+      def override_pin_for pin, ovr
+        docstring = YARD::Docstring.new('')
+        ovr.tags.each { |tag| docstring.add_tag(tag) }
+        attrs = { name: pin.name, closure: pin.closure, docstring: docstring,
+                  combine_priority: 1, source: :override }
+        if pin.is_a?(Pin::Method)
+          attrs[:scope] = pin.scope
+          # Without these, choose picks the empty array as the lesser of the two
+          # and the combined pin loses its parameters.
+          attrs[:parameters] = pin.parameters
+        end
+        pin.class.new(**attrs)
+      end
+
+      # macro_method_name_pins is built before overrides are applied, and
+      # process_macros matches against it by pin equality. A replaced pin left
+      # here stops matching, and its @!macro directives stop expanding.
+      #
+      # @param old_pin [Pin::Base]
+      # @param new_pin [Pin::Base]
+      # @return [void]
+      def swap_macro_pin old_pin, new_pin
+        pin_set = macro_method_name_pins[old_pin.name]
+        return nil if pin_set.nil?
+        return nil unless pin_set.include?(old_pin)
+
+        pin_set.delete old_pin
+        pin_set.add new_pin
+        nil
+      end
+
+      # @param collection [::Array<Pin::Base>, nil]
+      # @param old_pin [Pin::Base]
+      # @param new_pin [Pin::Base]
+      # @return [void]
+      def swap_pin collection, old_pin, new_pin
+        return nil if collection.nil?
+
+        collection.map! { |pin| pin.equal?(old_pin) ? new_pin : pin }
+        nil
+      end
+
+      # @param old_pin [Pin::Base]
+      # @param new_pin [Pin::Base]
+      # @return [void]
+      def replace_pin old_pin, new_pin
+        swap_macro_pin old_pin, new_pin
+        swap_pin pins, old_pin, new_pin
+        swap_pin namespace_hash[old_pin.namespace], old_pin, new_pin
+        swap_pin pin_class_hash[old_pin.class], old_pin, new_pin
+        swap_pin path_pin_hash[old_pin.path], old_pin, new_pin
+        # Rebuilt lazily from pin_class_hash, which just changed.
+        @pin_select_cache.clear
+        nil
+      end
+
+      # @param pin [Pin::Method, nil]
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag

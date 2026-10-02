@@ -816,8 +816,10 @@ module Solargraph
 
     # @param pin [Pin::Method]
     def abstract? pin
-      pin.docstring.has_tag?('abstract') ||
-        pin.closure&.docstring&.has_tag?('abstract')
+      return true if pin.abstract?
+      return true if pin.closure&.abstract?
+
+      false
     end
 
     # @param pin [Pin::Method]

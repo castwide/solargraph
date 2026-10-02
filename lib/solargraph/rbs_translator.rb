@@ -12,7 +12,7 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # @param type [RBS::Types::Bases::Base]
+    # @param type [RBS::Types::t]
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
@@ -123,7 +123,7 @@ module Solargraph
     class << self
       private
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [RBS::Types::t]
       # @return [String]
       def type_to_tag type
         case type
