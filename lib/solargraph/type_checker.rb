@@ -327,7 +327,7 @@ module Solargraph
         chain = Solargraph::Parser.chain(call, filename)
         # @sg-ignore Need to add nil check here
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
-        if call.type == :block
+        if %i[block numblock].include?(call.type)
           # blocks in the AST include the method call as well, so the
           # node returned by #call_nodes_from needs to be backed out
           # one closure
