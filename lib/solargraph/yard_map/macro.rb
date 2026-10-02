@@ -3,7 +3,13 @@
 module Solargraph
   module YardMap
     class Macro
-      PROCESSABLE_DIRECTIVES = %w[method attribute parse].freeze
+      PROCESSABLE_DIRECTIVES = %w[method attribute parse scope].freeze
+
+      # Directives whose text is a value rather than a definition. The comments
+      # attached to the macro's call site belong to the objects the macro
+      # generates, but adding them to one of these directives would invalidate
+      # its content.
+      VALUE_DIRECTIVES = %w[parse scope].freeze
 
       class << self
         # @param directive [YARD::Tags::Directive]
@@ -73,13 +79,34 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def generate_pins_from chain, pin, source_map
         call_location = Solargraph::Location.from_node(chain.node)
+        return [] unless call_location
+
+        # A @!scope directive in a macro applies to the objects the macro
+        # generates after it, the same way it applies to the objects that
+        # follow it in a namespace. Its effect ends with the macro.
+        #
+        # @type [::Symbol, nil]
+        inherited_scope = nil
+
         # @param generated_pins [Array<Pin::Base>]
         generate_yardoc_from(chain, source_map).reduce([]) do |generated_pins, directive|
+          # @sg-ignore flow sensitive typing confuses this block variable with the #directive attr reader
+          if directive.tag.tag_name == 'scope'
+            inherited_scope = Directives::ScopeDirective.parse_scope(directive) || inherited_scope
+            next generated_pins
+          end
           directive_processor = YardMap::Directives.for(directive)
-          next generated_pins unless directive_processor && call_location
-          generated_pins + directive_processor.process_directive(
+          next generated_pins unless directive_processor
+          new_pins = directive_processor.process_directive(
             source_map.source, source_map.pins, call_location.range.start, call_location.range.start, directive
           )
+          if Directives::ScopeDirective.scopes_directive?(directive)
+            # A @!scope directive nested in another directive's text applies
+            # only to the object that directive defines.
+            scope = Directives::ScopeDirective.nested_scope(directive) || inherited_scope
+            Directives::ScopeDirective.apply_scope new_pins, scope
+          end
+          generated_pins + new_pins
         end
       end
 
@@ -101,9 +128,11 @@ module Solargraph
           PROCESSABLE_DIRECTIVES.include?(directive.tag.tag_name)
         end
         directives.each do |directive|
+          next if VALUE_DIRECTIVES.include? directive.tag.tag_name
+
           # @sg-ignore chain.node is assumed to exist
           comments = source_map.source.comments_for(chain.node)
-          if comments&.length&.positive? && directive.tag.tag_name != 'parse'
+          if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"
           end
         end
