@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      DIRECTIVE_REGEXP = /(@!method|@!attribute|@!visibility|@!domain|@!macro|@!parse|@!override)/
+      DIRECTIVE_REGEXP = /(@!method|@!attribute|@!visibility|@!scope|@!domain|@!macro|@!parse|@!override)/
 
       # Generate the data.
       #
@@ -104,9 +104,13 @@ module Solargraph
         directive_processor = YardMap::Directives.for(directive)
         return unless directive_processor
 
-        @pins += directive_processor.process_directive(
+        new_pins = directive_processor.process_directive(
           @source, @pins, source_position, comment_position, directive
         )
+        # A @!scope directive in the indented text of another directive applies
+        # only to the object that directive defines.
+        YardMap::Directives::ScopeDirective.apply_nested directive, new_pins
+        @pins += new_pins
       end
 
       # @param comment [String]

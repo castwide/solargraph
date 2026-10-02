@@ -6,12 +6,19 @@ module Solargraph
   class Source
     class Chain
       class Literal < Link
-        attr_reader :word, :value
+        attr_reader :word
+
+        # @return [::String, ::Symbol]
+        attr_reader :value
+
+        # @return [Parser::AST::Node]
+        attr_reader :node
 
         # @param type [String]
         # @param node [Parser::AST::Node, Object]
         def initialize type, node
           super("<#{type}>")
+          @node = node
 
           if node.is_a?(::Parser::AST::Node)
             # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
