@@ -156,9 +156,8 @@ module Solargraph
     )
     option :directory, type: :string, desc: 'Workspace directory', default: Dir.pwd
     option :rebuild, type: :boolean, desc: 'Rebuild existing documentation', default: false
-    # @param names [Array<String>]
+    # @param gem_names [Array<String>]
     # @return [void]
-    # @param [Array<Object>] gem_names
     def cache *gem_names
       repo = Solargraph::Repo.new(options[:directory])
       metagems = if gem_names.empty?
@@ -422,7 +421,6 @@ module Solargraph
       begin
         puts 'Parsing and mapping source files...'
         prepare_start = Time.now
-        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: parse_path, hooks: hooks) do
           puts 'Mapping libraries'
           host.prepare(directory)
@@ -432,26 +430,15 @@ module Solargraph
 
         puts 'Building the catalog...'
         catalog_start = Time.now
-        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: catalog_path, hooks: hooks) do
           host.catalog
         end
         catalog_time = Time.now - catalog_start
 
-        # Determine test file
-        if file
-          test_file = File.join(directory, file)
-        else
-          test_file = File.join(directory, 'lib', 'other.rb')
-          unless File.exist?(test_file)
-            # Fallback to any Ruby file in the workspace
-            workspace = Solargraph::Workspace.new(directory)
-            test_file = workspace.filenames.find { |f| f.end_with?('.rb') }
-            unless test_file
-              puts 'No Ruby files found in workspace'
-              return
-            end
-          end
+        test_file = profile_test_file(directory, file)
+        unless test_file
+          puts 'No Ruby files found in workspace'
+          return
         end
 
         file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
@@ -460,7 +447,6 @@ module Solargraph
         puts "Position: line #{options[:line]}, column #{options[:column]}"
 
         definition_start = Time.now
-        # @sg-ignore vernier is an optional dependency required at runtime
         Vernier.profile(out: definition_path, hooks: hooks) do
           message = Solargraph::LanguageServer::Message::TextDocument::Definition.new(
             host, {
@@ -541,6 +527,22 @@ module Solargraph
     end
 
     private
+
+    # The file to profile go-to-definition against: the given file,
+    # lib/other.rb, or any Ruby file in the workspace.
+    #
+    # @param directory [String]
+    # @param file [String, nil]
+    # @return [String, nil]
+    def profile_test_file directory, file
+      return File.join(directory, file) if file
+
+      test_file = File.join(directory, 'lib', 'other.rb')
+      return test_file if File.exist?(test_file)
+
+      workspace = Solargraph::Workspace.new(directory)
+      workspace.filenames.find { |f| f.end_with?('.rb') }
+    end
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]

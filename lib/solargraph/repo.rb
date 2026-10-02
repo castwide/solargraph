@@ -103,7 +103,8 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore multiple assignment types every target as tuple element 0
         if s.success?
-          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
+          last_line = o.strip.split("\n").last
+          json = last_line ? JSON.parse(last_line, symbolize_names: true) : []
           # @sg-ignore keywords supplied by a ** splat are not matched against the signature
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
           # @sg-ignore keywords supplied by a ** splat are not matched against the signature

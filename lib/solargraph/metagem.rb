@@ -78,7 +78,6 @@ module Solargraph
     # @param gem [Gem::Specification]
     # @return [Metagem]
     def self.from_specification gem
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       Metagem.new(name: gem.name,
                   full_path: gem.full_gem_path,
                   spec_file: gem.spec_file,
