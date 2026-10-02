@@ -1084,4 +1084,19 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [5, 20])
     expect(clip.infer.to_s).to eq('Object')
   end
+
+  it 'narrows the other side when self is the right-hand side of the class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          other.class == self.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
 end
