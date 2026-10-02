@@ -5,10 +5,10 @@ module Solargraph
     class Block < Callable
       include Breakable
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :receiver
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
@@ -45,6 +45,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
+      # @sg-ignore Need better handling of Enumerator#with_index
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
