@@ -1025,4 +1025,63 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'narrows the other side of a self.class == other.class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          self.class == other.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows the other side of a self.class == other.class guard past a return-unless' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def ==(other)
+          return false unless self.class == other.class
+          name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 18])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'leaves the declared type in place without a self.class == other.class guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def eql?(other)
+          name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 18])
+    expect(clip.infer.to_s).to eq('Object')
+  end
+
+  it 'does not narrow other via self.class == other.class in a class method' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param other [Object]
+        def self.same?(other)
+          self.class == other.class &&
+            name == other.name
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 20])
+    expect(clip.infer.to_s).to eq('Object')
+  end
 end
