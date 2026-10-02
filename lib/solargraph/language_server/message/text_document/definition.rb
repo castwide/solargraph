@@ -29,7 +29,10 @@ module Solargraph
 
           # @return [Array<Hash>, nil]
           def require_location
-            # @todo Terrible hack
+            # @todo Terrible hack - move this logic to [Solargraph::Source::Chain::Parameter]
+            #   @example
+            #     require 'click_me'
+            #             ^^^^^^^^^^
             lib = host.library_for(params['textDocument']['uri'])
             rloc = Solargraph::Location.new(uri_to_file(params['textDocument']['uri']),
                                             Solargraph::Range.from_to(@line, @column, @line, @column))
