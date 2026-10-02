@@ -49,6 +49,83 @@ describe Solargraph::ApiMap::Store do
     expect(store.get_path_pins('Bar')).to eq([bar_pin])
   end
 
+  describe '#get_methods' do
+    it 'combines pins for the same method path from different sources' do
+      plain_impl = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def bar; end
+        end
+      ), 'plain.rb')
+      override = Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @return [String]
+          def bar; end
+        end
+      ), 'override.rb')
+      store = described_class.new(plain_impl.pins + override.pins)
+      pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'bar' }
+      expect(pins.length).to eq(1)
+      expect(pins.first.return_type.tag).to eq('String')
+    end
+
+    it 'does not combine a method alias with a regular method sharing its path' do
+      # A combined alias pin can't be traced back to its original
+      # target, which #resolve_method_alias needs to work.
+      regular = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def bar; end
+        end
+      ), 'regular.rb')
+      aliased = Solargraph::SourceMap.load_string(%(
+        class Foo
+          def baz; end
+          alias bar baz
+        end
+      ), 'aliased.rb')
+      store = described_class.new(regular.pins + aliased.pins)
+      pins = []
+      expect { pins = store.get_methods('Foo', scope: :instance) }.not_to raise_error
+      bar_pins = pins.select { |p| p.name == 'bar' }
+      expect(bar_pins.length).to eq(2)
+      expect(bar_pins).to include(an_instance_of(Solargraph::Pin::MethodAlias))
+    end
+
+    it 'does not combine two delegated methods sharing a path' do
+      # DelegatedMethod#initialize requires exactly one of :method /
+      # :receiver, so a merged pin can't hold both delegation targets.
+      closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
+      delegated = lambda do |receiver_name|
+        chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new(receiver_name, nil)])
+        Solargraph::Pin::DelegatedMethod.new(closure: closure, scope: :instance, name: 'bar', receiver: chain)
+      end
+      store = described_class.new([closure, delegated.call('one'), delegated.call('two')])
+      pins = []
+      expect { pins = store.get_methods('Foo', scope: :instance) }.not_to raise_error
+      bar_pins = pins.select { |p| p.name == 'bar' }
+      expect(bar_pins.length).to eq(2)
+      expect(bar_pins).to all(be_an_instance_of(Solargraph::Pin::DelegatedMethod))
+    end
+
+    it 'combines many same-path pins into a single pin' do
+      maps = (1..30).map do |i|
+        Solargraph::SourceMap.load_string(%(
+          class Foo
+            # @param other [Type#{i}]
+            # @return [Type#{i}]
+            def bar(other); end
+          end
+        ), "source#{i}.rb")
+      end
+      store = described_class.new(maps.flat_map(&:pins))
+
+      bar_pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'bar' }
+      expect(bar_pins.length).to eq(1)
+      # The regression is combinatorial blowup, not a specific merge
+      # outcome, so bound the size rather than assert exact merges.
+      expect(bar_pins.first.signatures.length).to be <= maps.length
+    end
+  end
+
   # @todo This will become #get_superclass
   describe '#get_superclass' do
     it 'returns simple superclasses' do
