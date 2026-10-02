@@ -501,6 +501,14 @@ describe 'YARD type specifier list parsing' do
         expect(type.tag).to eq('Array<String>')
       end
 
+      it 'leaves a trailing generic param unresolved instead of undefined when referenced with no type args' do
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Box', comments: "@generic K\n@generic V")
+        context_type = Solargraph::ComplexType.parse('Box')
+        type = Solargraph::ComplexType.parse('generic<V>').first
+        resolved = type.resolve_generics(generic_class, context_type)
+        expect(resolved.tag).to eq('generic<V>')
+      end
+
       UNIQUE_METHOD_GENERIC_TESTS = [
         # tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map
         ['String', 'String', {}, 'String', {}],
