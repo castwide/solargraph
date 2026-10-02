@@ -14,14 +14,14 @@ module Solargraph
         closure_pin = closure
         if closure_pin.is_a?(Pin::Block) && closure_pin.receiver &&
            # @sg-ignore Range.from_node can return nil for a node with no location, though a real receiver always has one
-           !Solargraph::Range.from_node(closure_pin.receiver).contain?(cursor.range.start)
+           !Solargraph::Range.from_node(closure_pin.receiver)&.contain?(cursor.range.start)
           closure_pin.rebind(api_map)
         end
       end
 
       # @return [Array<Pin::Base>] Relevant pins for infering the type of the Cursor's position
       def define
-        return [] if cursor.comment? || cursor.chain.literal?
+        return [] if cursor.comment? || cursor.chain.literal? || cursor.chain.require_parameter?
         result = cursor.chain.define(api_map, closure, locals)
         result.concat file_global_methods
         if result.empty?
@@ -41,7 +41,8 @@ module Solargraph
       # @return [Completion]
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
-        if cursor.chain.literal? && cursor.chain.links.last.word == '<Symbol>'
+        # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
+        if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
           return package_completions(api_map.get_symbols)
         end
         return Completion.new([], cursor.range) if cursor.chain.literal?
