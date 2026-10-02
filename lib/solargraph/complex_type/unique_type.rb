@@ -131,11 +131,19 @@ module Solargraph
         # try to find common types via conformance
         items.each do |ut|
           intersection_type.each do |int_type|
+            # rubocop:disable Lint/DuplicateBranch
             if ut.conforms_to?(api_map, int_type, :assignment)
               types << ut
             elsif int_type.conforms_to?(api_map, ut, :assignment)
               types << int_type
+            elsif api_map.module?(int_type.name) || api_map.module?(ut.name)
+              # Two classes are disjoint under single inheritance, so a member
+              # failing the guard is dropped. A module on either side is not:
+              # a subclass can mix it in. Keeping the guard is the closest sound
+              # answer available without an intersection type.
+              types << int_type
             end
+            # rubocop:enable Lint/DuplicateBranch
           end
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
