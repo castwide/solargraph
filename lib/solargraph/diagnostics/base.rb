@@ -20,8 +20,9 @@ module Solargraph
       #
       # @param source [Solargraph::Source]
       # @param api_map [Solargraph::ApiMap]
+      # @param workspace [Solargraph::Workspace, nil]
       # @return [Array<Hash>]
-      def diagnose source, api_map
+      def diagnose source, api_map, workspace: nil
         []
       end
     end
