@@ -533,6 +533,54 @@ describe 'YARD type specifier list parsing' do
           end
         end
       end
+
+      # Exercises resolve_generics_from_context against unions of more than one member.
+      UNION_COMPLEX_TYPE_GENERIC_TESTS = {
+        # tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_rooted_tags, expected_output_map
+        discriminating_two_member_union: ['generic<A>, nil', 'String, nil', {}, %w[A], 'String, nil', { 'A' => 'String' }],
+        discriminating_three_member_union: ['generic<A>, nil, Symbol', 'String, nil, Symbol', {}, %w[A],
+                                            'String, nil, Symbol', { 'A' => 'String' }],
+        non_discriminating_single_member_context: ['generic<A>, nil', 'String', {}, %w[A], 'String, nil',
+                                                   { 'A' => 'String' }],
+        non_discriminating_nested_array_generic: ['Array<generic<A>>, nil', 'Array<String>, nil', {}, %w[A],
+                                                  'Array<String>, nil', { 'A' => 'String' }],
+        non_discriminating_nested_hash_generic: ['Hash{generic<K> => generic<V>}, nil', 'Hash{String => Integer}, nil',
+                                                 {}, %w[K V], 'Hash{String => Integer}, nil',
+                                                 { 'K' => 'String', 'V' => 'Integer' }],
+        non_discriminating_preserves_already_resolved_generic: ['generic<A>, nil', 'String, nil', { 'A' => 'Integer' },
+                                                                %w[A], 'Integer, nil', { 'A' => 'Integer' }],
+        discriminating_reordered_context_members: ['generic<A>, nil', 'nil, String', {}, %w[A], 'String, nil',
+                                                   { 'A' => 'String' }]
+      }.freeze
+
+      # The concrete members cover the whole context, so no value can reach the
+      # generic: it binds to bot, which the union then absorbs.
+      UNION_COMPLEX_TYPE_GENERIC_BOT_TESTS = {
+        context_covered_by_one_member: ['generic<A>, nil', 'nil', {}, %w[A], 'nil', { 'A' => 'bot' }],
+        context_covered_by_two_members: ['generic<A>, String, nil', 'String, nil', {}, %w[A], 'String, nil',
+                                         { 'A' => 'bot' }]
+      }.freeze
+
+      BOT_TYPE_PR = 'https://github.com/castwide/solargraph/pull/1277'
+
+      union_generic_cases = UNION_COMPLEX_TYPE_GENERIC_TESTS.map { |name, row| [name, row, nil] } +
+                            UNION_COMPLEX_TYPE_GENERIC_BOT_TESTS.map { |name, row| [name, row, BOT_TYPE_PR] }
+
+      union_generic_cases.each do |name, (tag, context_type_tag, unfrozen_input_map, generics_to_resolve, expected_rooted_tags, expected_output_map), pending_url|
+        context "when resolving #{name}: union #{tag} with context #{context_type_tag} and existing resolved generics #{unfrozen_input_map}" do
+          let(:complex_type) { Solargraph::ComplexType.parse(tag) }
+          let(:context_type) { Solargraph::ComplexType.parse(context_type_tag) }
+
+          it "resolves to #{expected_rooted_tags} with updated map #{expected_output_map}" do
+            pending pending_url if pending_url
+            resolved_generic_values = unfrozen_input_map.transform_values { |tag| Solargraph::ComplexType.parse(tag) }
+            resolved_type = complex_type.resolve_generics_from_context(generics_to_resolve, context_type,
+                                                                       resolved_generic_values: resolved_generic_values)
+            expect(resolved_type.rooted_tags).to eq(expected_rooted_tags)
+            expect(resolved_generic_values.transform_values(&:rooted_tags)).to eq(expected_output_map)
+          end
+        end
+      end
     end
   end
 
