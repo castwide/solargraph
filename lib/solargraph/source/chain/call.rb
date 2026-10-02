@@ -74,7 +74,7 @@ module Solargraph
         # @return [::Array<Pin::Base>]
         def method_pins_for_binder binder_type, api_map, name_pin, locals
           pins = binder_type.method_stack_pins(word, api_map) do |conjuncts|
-            argument_verified_conjuncts(conjuncts, api_map, name_pin, locals)
+            argument_verified_candidates(conjuncts, api_map, name_pin, locals)
           end
           pins || []
         end
@@ -83,31 +83,31 @@ module Solargraph
         # the call arguments conform to. Left unfiltered when any
         # conjunct resolves no signature to judge against.
         #
-        # @param conjuncts [::Array<ComplexType>]
+        # @param candidates [::Array<ComplexType>]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [::Array<ComplexType>]
-        def argument_verified_conjuncts conjuncts, api_map, name_pin, locals
-          return conjuncts if arguments.empty?
+        def argument_verified_candidates candidates, api_map, name_pin, locals
+          return candidates if arguments.empty?
 
-          accepts = conjuncts.map { |c| conjunct_accepts_arguments(c, api_map, name_pin, locals) }
-          return conjuncts if accepts.any?(&:nil?)
+          accepts = candidates.map { |c| candidate_accepts_arguments(c, api_map, name_pin, locals) }
+          return candidates if accepts.any?(&:nil?)
 
-          matching = conjuncts.zip(accepts).select { |(_c, matched)| matched }.map(&:first)
-          matching.empty? ? conjuncts : matching
+          matching = candidates.zip(accepts).select { |(_c, matched)| matched }.map(&:first)
+          matching.empty? ? candidates : matching
         end
 
         # Whether any signature of the method this conjunct resolves
         # accepts the call arguments; nil when none resolves.
         #
-        # @param conjunct [ComplexType]
+        # @param candidate [ComplexType]
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Boolean, nil]
-        def conjunct_accepts_arguments conjunct, api_map, name_pin, locals
-          pins = method_pins_for_binder(conjunct, api_map, name_pin, locals)
+        def candidate_accepts_arguments candidate, api_map, name_pin, locals
+          pins = method_pins_for_binder(candidate, api_map, name_pin, locals)
           return nil if pins.empty?
 
           signatures = pins.flat_map(&:signatures)
