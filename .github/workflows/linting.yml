@@ -40,9 +40,9 @@ jobs:
           echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile
           bundle install
 
-      - name: Restore cache of gem annotations
+      - name: Cache gem annotations
         id: dot-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           key: |
             2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
@@ -70,6 +70,7 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
+          cache-version: 2026-01-11
       - uses: reviewdog/action-rubocop@fcb74ba274da10b18d038d0bcddaae3518739634 # v2.21.2
         with:
           reporter: github-pr-check
@@ -90,7 +91,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4
-        bundler-cache: false
+        bundler-cache: true
+        cache-version: 2026-01-11
 
     - name: Install gems
       run: bundle install
@@ -109,7 +111,8 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4
-        bundler-cache: false
+        bundler-cache: true
+        cache-version: 2026-01-11
 
     - name: Install gems
       run: bundle install
