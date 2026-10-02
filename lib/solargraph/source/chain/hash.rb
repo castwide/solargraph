@@ -16,7 +16,11 @@ module Solargraph
           @word ||= "<#{@type}>"
         end
 
-        def resolve api_map, name_pin, locals
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::Base>]
+        # @param _receiver_path [::Array<String>, nil]
+        def resolve api_map, name_pin, locals, _receiver_path = nil
           [Pin::ProxyType.anonymous(@complex_type, source: :chain)]
         end
 

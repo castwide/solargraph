@@ -293,6 +293,13 @@ module Solargraph
       # @return [Range]
       attr_writer :presence
 
+      # Downcast pins share name/location/closure; must differ by narrowing facts too.
+      #
+      # @return [::Array]
+      def equality_fields
+        super + [presence, intersection_return_type, exclude_return_type]
+      end
+
       private
 
       # @param api_map [ApiMap]

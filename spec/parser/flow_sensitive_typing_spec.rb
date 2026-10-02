@@ -1025,4 +1025,101 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor after a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      def bundled_filename(pin)
+        return nil unless pin.location
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [13, 32])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+
+    clip = api_map.clip_at('test.rb', [14, 14])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+  end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor after a .nil? guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      def bundled_filename(pin)
+        return nil if pin.location.nil?
+        pin.location.filename
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [14, 23])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor rooted in an ivar' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Bundler
+        # @param pin [Pin]
+        def initialize(pin)
+          @pin = pin
+        end
+
+        def bundled_filename
+          return nil unless @pin.location
+          @pin.location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [19, 26])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'uses is_a? with a fully-qualified type name to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def verify_repro(x)
+        if x.is_a?(::Integer)
+          x
+        else
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Object')
+  end
 end
