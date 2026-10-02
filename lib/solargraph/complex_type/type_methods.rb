@@ -27,6 +27,78 @@ module Solargraph
       # @!method can_root_name?(name_to_check = nil)
       #   @param name_to_check [String, nil]
 
+      # Member pairing shared by ComplexType#combine_via and
+      # Intersection#combine_via. ComplexType does not include this
+      # mixin, so these are module methods rather than instance ones.
+      class << self
+        # Pairs two member lists and yields each pair: a lone member
+        # on either side takes on the whole of the other; otherwise
+        # members both sides carry pair off first and the rest zip up.
+        #
+        # @param mine [Array<ComplexType, UniqueType>]
+        # @param theirs [Array<ComplexType, UniqueType>]
+        # @param gather [Proc] gathers several members into one type
+        # @yieldparam mine_member [ComplexType, UniqueType]
+        # @yieldparam theirs_member [ComplexType, UniqueType]
+        # @yieldreturn [ComplexType, UniqueType]
+        # @return [Array<ComplexType, UniqueType>] a result per pair, plus anything left unpaired
+        def combine_members mine, theirs, gather, &block
+          return [block.call(gather.call(mine), gather.call(theirs))] if mine.length == 1 || theirs.length == 1
+
+          mine_rest = mine.dup
+          theirs_rest = theirs.dup
+          matched = pair_identical_members(mine_rest, theirs_rest, &block)
+          zipped = pair_remaining_members(mine_rest, theirs_rest, gather, &block)
+          matched + zipped + mine_rest + theirs_rest
+        end
+
+        # Yields each member both sides carry, matched on rooted tag
+        # and in any order, removing it from both lists.
+        #
+        # @param mine [Array<ComplexType, UniqueType>] matched members are removed
+        # @param theirs [Array<ComplexType, UniqueType>] matched members are removed
+        # @yieldparam mine_member [ComplexType, UniqueType]
+        # @yieldparam theirs_member [ComplexType, UniqueType]
+        # @yieldreturn [ComplexType, UniqueType]
+        # @return [Array<ComplexType, UniqueType>]
+        def pair_identical_members mine, theirs
+          results = []
+          mine.delete_if do |member|
+            index = theirs.index { |other| other.rooted_tags == member.rooted_tags }
+            next false if index.nil?
+
+            results.push(yield(member, theirs.delete_at(index)))
+            true
+          end
+          results
+        end
+
+        # Zips both lists from the front, yielding each pair and
+        # removing it. The shorter side runs out first, so its last
+        # member takes on everything left of the other.
+        #
+        # @param mine [Array<ComplexType, UniqueType>] paired members are removed
+        # @param theirs [Array<ComplexType, UniqueType>] paired members are removed
+        # @param gather [Proc] gathers several members into one type
+        # @yieldparam mine_member [ComplexType, UniqueType]
+        # @yieldparam theirs_member [ComplexType, UniqueType]
+        # @yieldreturn [ComplexType, UniqueType]
+        # @return [Array<ComplexType, UniqueType>]
+        def pair_remaining_members mine, theirs, gather
+          results = []
+          until mine.empty? || theirs.empty?
+            if mine.length == 1 || theirs.length == 1
+              results.push(yield(gather.call(mine.dup), gather.call(theirs.dup)))
+              mine.clear
+              theirs.clear
+            else
+              results.push(yield(mine.shift, theirs.shift))
+            end
+          end
+          results
+        end
+      end
+
       # @return [String]
       attr_reader :name
 

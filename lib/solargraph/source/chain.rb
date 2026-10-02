@@ -276,7 +276,7 @@ module Solargraph
           type = pin.typify(api_map)
           @@inference_stack.pop
           if type.defined?
-            if type.generic?
+            if type.any_generic?
               # @todo even at strong, no typechecking complaint
               #   happens when a [Pin::Base,nil] is passed into a method
               #   that accepts only [Pin::Namespace] as an argument
@@ -308,11 +308,8 @@ module Solargraph
         type = if types.empty?
                  ComplexType::UNDEFINED
                elsif types.length > 1
-                 # Move nil to the end by convention
-
-                 # @param a [ComplexType::UniqueType]
-                 sorted = types.flat_map(&:items).sort { |a, _| a.tag == 'nil' ? 1 : 0 }
-                 ComplexType.new(sorted.uniq)
+                 # Only a union we assembled ourselves gets reordered.
+                 ComplexType.new(types).order_nil_last
                else
                  ComplexType.new(types)
                end
@@ -329,7 +326,7 @@ module Solargraph
       def maybe_nil type, api_map
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?(api_map)
-        ComplexType.new(type.items + [ComplexType::NIL])
+        ComplexType.new([type, ComplexType::NIL])
       end
 
       protected

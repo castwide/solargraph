@@ -22,13 +22,14 @@ module Solargraph
       # @param level [Symbol]
       # @param overrides [Hash{Symbol => Symbol}]
       def initialize level, overrides
-        @rank = if LEVELS.key?(level)
-                  LEVELS[level]
-                else
-                  Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
-                  0
-                end
-        @level = LEVELS[LEVELS.values.index(@rank)]
+        if LEVELS.key?(level)
+          @rank = LEVELS.fetch(level)
+          @level = level
+        else
+          Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
+          @rank = 0
+          @level = :normal
+        end
         @overrides = overrides
       end
 
@@ -75,20 +76,20 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (96):
+      # flow sensitive typing could handle (98):
       #
-      # @todo 36: flow sensitive typing needs to handle attrs
+      # @todo 30: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
       # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
-      # @todo 8: flow sensitive typing should support .class == .class
+      # @todo 10: flow sensitive typing ought to be able to handle 'when ClassName'
+      # @todo 9: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
       # @todo 4: nil? support in flow sensitive typing
-      # @todo 3: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 2: downcast output of Enumerable#select
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
@@ -96,9 +97,10 @@ module Solargraph
       # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
-      # @todo 2: Need to handle duck-typed method calls on union types
+      # @todo 2: flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
       # @todo 2: Need better handling of #compact
       # @todo 2: flow sensitive typing should allow shadowing of Kernel#caller
+      # @todo 1: Need to handle duck-typed method calls on union types
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
       # @todo 1: flow sensitive typing needs to handle "if foo.nil?"
@@ -150,7 +152,7 @@ module Solargraph
       # @param type [Symbol]
       # @param level [Symbol]
       def report? type, level
-        rank >= LEVELS[@overrides.fetch(type, level)]
+        rank >= LEVELS.fetch(@overrides.fetch(type, level))
       end
     end
   end

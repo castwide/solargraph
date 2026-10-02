@@ -95,7 +95,7 @@ module Solargraph
 
       # @return [String]
       def type_arity_decl
-        arity_decl + return_type.items.count.to_s
+        arity_decl + return_type.unioned_items.count.to_s
       end
 
       def arg?
@@ -227,11 +227,10 @@ module Solargraph
         ptype = typify api_map
         return true if ptype.undefined?
 
-        return true if atype.conforms_to?(api_map,
-                                          ptype,
-                                          :method_call,
-                                          %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        atype.conforms_to?(api_map,
+                           ptype,
+                           :method_call,
+                           %i[allow_empty_params allow_undefined])
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs
