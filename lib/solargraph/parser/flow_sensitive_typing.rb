@@ -5,15 +5,26 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
+      # `kind_of?` is an alias of `is_a?`, with the same semantics on
+      # both paths: a true result proves class membership, and a false
+      # result rules out the class and every subclass of it. Both are
+      # handled by #parse_isa.
+      ISA_METHOD_NAMES = %i[is_a? kind_of?].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param closure [Solargraph::Pin::Closure] Closure the guarded
+      #   code lives in. Needed to synthesize a pin for an instance
+      #   variable that has no assignment anywhere in scope (see
+      #   #process_instance_variable_defined).
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -80,8 +91,12 @@ module Solargraph
         return unless node.type == :send
 
         process_isa(node, true_presences, false_presences)
+        process_instance_of(node, true_presences, false_presences)
+        process_instance_variable_defined(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
+        process_eq(node, true_presences, false_presences)
+        process_neq(node, true_presences, false_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -284,11 +299,13 @@ module Solargraph
       # @param isa_node [Parser::AST::Node]
       # @return [Array(String, String), nil]
       def parse_isa isa_node
-        call_type_name, variable_name = parse_call(isa_node, :is_a?)
+        ISA_METHOD_NAMES.each do |method_name|
+          call_type_name, variable_name = parse_call(isa_node, method_name)
 
-        return unless call_type_name
+          return [call_type_name, variable_name] if call_type_name
+        end
 
-        [call_type_name, variable_name]
+        nil
       end
 
       # @param variable_name [String]
@@ -331,6 +348,220 @@ module Solargraph
         if_false = {}
         if_false[pin] ||= []
         if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
+        process_facts(if_false, false_presences)
+      end
+
+      # A true `x.instance_of?(T)` proves x is a T on the guarded path,
+      # so the same positive fact `is_a?` asserts applies.
+      #
+      # The false path is deliberately left alone. `is_a?` can assert
+      # `not_type: T` when false, because `!x.is_a?(T)` rules out T and
+      # every subclass of T. `instance_of?` compares `x.class` to T by
+      # identity, so `!x.instance_of?(T)` is also satisfied by a
+      # subclass instance - which is still a T as far as the declared
+      # type is concerned. Asserting `not_type: T` there would remove an
+      # arm that can still be present, so no false-path fact is
+      # recorded.
+      #
+      # Narrowing to exactly T (excluding subclasses of T) on the true
+      # path is a separate, harder problem and is not attempted: the
+      # narrowed type may still include a subclass arm, which is a sound
+      # upper bound of the real value.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param _false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_instance_of node, true_presences, _false_presences
+        instance_of_type_name, variable_name = parse_call(node, :instance_of?)
+        return if instance_of_type_name.nil? || variable_name.nil? || variable_name.empty?
+
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(node).start
+
+        pin = find_var(variable_name, position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = { pin => [{ type: ComplexType.parse(instance_of_type_name) }] }
+        process_facts(if_true, true_presences)
+      end
+
+      # A true `instance_variable_defined?(:@ivar)` proves `@ivar` has
+      # been given some value, even when nothing in this closure's own
+      # lexical scope ever assigns it (e.g. a mixin reading an ivar
+      # the including class is expected to set). There is no existing
+      # pin to narrow in that case - #find_var has nothing to find -
+      # so a new pin is synthesized instead, one per guarded presence
+      # range, typed as a generic non-nil `Object` and scoped to that
+      # range the same way .downcast scopes a narrowed copy of a real
+      # pin. Once it exists, the other guard processors narrow it
+      # further via #find_var the same way they narrow any other
+      # variable - and outside the guarded presence, #find_var still
+      # finds nothing, so an unguarded read of the ivar elsewhere is
+      # still correctly reported as unresolved.
+      #
+      # The false path is left alone: `instance_variable_defined?`
+      # returning false only means no assignment has happened yet, not
+      # that one can never happen, so there is no fact to assert on
+      # the guarded-false branch.
+      #
+      # Ruby also returns true for an ivar explicitly set to `nil`, so
+      # asserting non-nil here is a sound-in-practice approximation,
+      # not a proof - the same category of tradeoff #process_instance_of
+      # documents for its own true path.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param _false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_instance_variable_defined node, true_presences, _false_presences
+        return unless node.children[1] == :instance_variable_defined?
+        # only handle the implicit-self form; an explicit receiver
+        # isn't the mixin-reads-its-own-ivar shape this exists for
+        return unless node.children[0].nil?
+
+        arg = node.children[2]
+        return unless arg&.type == :sym
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        ivar_name = arg.children[0].to_s
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        return unless ivar_name.start_with?('@')
+
+        # @sg-ignore Need to add nil check here
+        position = Range.from_node(node).start
+        pin = find_var(ivar_name, position)
+
+        if pin
+          # already has a real assignment somewhere in scope; just
+          # narrow it like any other guard would
+          process_facts({ pin => [{ not_type: ComplexType::NIL }] }, true_presences)
+          return
+        end
+
+        true_presences.each do |presence|
+          ivars.push(Pin::InstanceVariable.new(
+                       name: ivar_name,
+                       closure: closure,
+                       location: closure.location,
+                       return_type: ComplexType.parse('Object'),
+                       source: :flow_sensitive_typing,
+                       presence: presence
+                     ))
+        end
+      end
+
+      # @param node [Parser::AST::Node, nil]
+      # @return [String, nil] YARD/RBS-style literal type tag (e.g., ':foo', '"foo"', '1', 'true')
+      def literal_type_name node
+        case node&.type
+        when :sym
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          ":#{node.children[0]}"
+        when :str
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          node.children[0].inspect
+        when :int
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          node.children[0].to_s
+        when :true # rubocop:disable Lint/BooleanSymbol -- Parser::AST::Node#type for `true` literal
+          'true'
+        when :false # rubocop:disable Lint/BooleanSymbol -- Parser::AST::Node#type for `false` literal
+          'false'
+        end
+      end
+
+      # @param op_node [Parser::AST::Node]
+      # @param method_name [Symbol]
+      # @return [Array(String, String), nil] Tuple of literal type name
+      #   the variable is being compared against, then the variable name
+      def parse_literal_comparison op_node, method_name
+        return unless op_node&.type == :send && op_node.children[1] == method_name
+
+        receiver = op_node.children[0]
+        arg = op_node.children[2]
+
+        # variable on the left, literal on the right: `foo == :bar`
+        if %i[lvar ivar].include?(receiver&.type)
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          literal_type = literal_type_name(arg)
+          return unless literal_type
+
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          [literal_type, receiver.children[0].to_s]
+        # literal on the left, variable on the right: `:bar == foo`
+        elsif %i[lvar ivar].include?(arg&.type)
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          literal_type = literal_type_name(receiver)
+          return unless literal_type
+
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          [literal_type, arg.children[0].to_s]
+        end
+      end
+
+      # @param eq_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_eq eq_node, true_presences, false_presences
+        literal_type_name, variable_name = parse_literal_comparison(eq_node, :==)
+        return if variable_name.nil? || variable_name.empty?
+
+        literal_type = ComplexType.try_parse(literal_type_name)
+        return if literal_type.undefined?
+
+        # @sg-ignore Need to add nil check here
+        eq_position = Range.from_node(eq_node).start
+
+        pin = find_var(variable_name, eq_position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { type: literal_type }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { not_type: literal_type }
+        process_facts(if_false, false_presences)
+      end
+
+      # @param neq_node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_neq neq_node, true_presences, false_presences
+        literal_type_name, variable_name = parse_literal_comparison(neq_node, :!=)
+        return if variable_name.nil? || variable_name.empty?
+
+        literal_type = ComplexType.try_parse(literal_type_name)
+        return if literal_type.undefined?
+
+        # @sg-ignore Need to add nil check here
+        neq_position = Range.from_node(neq_node).start
+
+        pin = find_var(variable_name, neq_position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { not_type: literal_type }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { type: literal_type }
         process_facts(if_false, false_presences)
       end
 
@@ -465,7 +696,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :closure
     end
   end
 end
