@@ -36,6 +36,13 @@ module Solargraph
                               source: :core_fill),
         Override.from_comment('Module#module_exec', '@yieldreceiver [::Module<self>]',
                               source: :core_fill),
+        # RBS records this binding only on Class#initialize's block
+        # ([self: Class] in rbs >= 4.1), not on Class#new, which is the
+        # method resolved for `Class.new { ... }`. The runtime type is
+        # parameterized by the superclass argument, which @yieldreceiver
+        # can't reference, so this matches RBS's own unparameterized Class.
+        Override.from_comment('Class#new', '@yieldreceiver [::Class]',
+                              source: :core_fill),
         # RBS does not define Class with a generic, so all calls to
         # generic() return an 'untyped'.  We can do better:
         Override.method_return('Class#allocate', 'self', source: :core_fill)
