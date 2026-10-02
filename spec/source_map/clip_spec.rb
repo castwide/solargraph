@@ -1917,6 +1917,25 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('undefined')
   end
 
+  it 'resolves generics from an inline RBS parameter on a prepended module' do
+    source = Solargraph::Source.load_string(%(
+      # @generic T
+      module Mixin
+        # @return [generic<T>]
+        def value; end
+      end
+      class Foo
+        prepend Mixin #[Integer]
+      end
+      a = Foo.new.value
+      a
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 6])
+    type = clip.infer
+    expect(type.to_s).to eq('Integer')
+  end
+
   it 'uses simple return value of block to infer return value of Enumerable#map' do
     source = Solargraph::Source.load_string(%(
       a = ['a'].map { 123 }
