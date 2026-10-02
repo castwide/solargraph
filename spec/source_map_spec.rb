@@ -202,7 +202,7 @@ describe Solargraph::SourceMap do
   end
 
   it 'applies scope directives to direct attachments' do
-    source_map = Solargraph::SourceMap.load_string(%(
+    source_map = described_class.load_string(%(
       class Example
         # @!scope class
         def foo; end
@@ -216,7 +216,7 @@ describe Solargraph::SourceMap do
   end
 
   it 'applies scope directives to future objects' do
-    source_map = Solargraph::SourceMap.load_string(%(
+    source_map = described_class.load_string(%(
       class Example
         # @!scope class
 
