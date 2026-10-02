@@ -123,8 +123,7 @@ jobs:
     - name: clone https://github.com/lekemula/solargraph-rspec/
       run: |
        cd ..
-       # Using a development branch pending https://github.com/lekemula/solargraph-rspec/pull/38
-       git clone https://github.com/castwide/solargraph-rspec.git --branch fix-action-mailer-require-path
+       git clone https://github.com/lekemula/solargraph-rspec/
        cd solargraph-rspec
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
