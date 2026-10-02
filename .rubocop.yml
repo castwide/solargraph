@@ -92,6 +92,10 @@ Metrics/PerceivedComplexity:
   Max: 40
 RSpec/ExampleLength:
   Max: 310
+# Autocorrect mangles short-style Hash tags with nested generics/parens
+# (e.g. Hash{Array(String, Array<String>) => String}) into invalid syntax.
+YARD/CollectionStyle:
+  Enabled: false
 
 plugins:
   - rubocop-rspec
