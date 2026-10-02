@@ -93,6 +93,137 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    # https://github.com/castwide/solargraph/issues/1255
+    context 'with a type alias used as a parameter type' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type path = String | Integer
+
+          class Foo
+            def bar: (path src) -> void
+          end
+        RBS
+      end
+
+      it 'expands the alias to its underlying union instead of a nominal tag' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::Integer')
+      end
+    end
+
+    # https://github.com/castwide/solargraph/issues/1255
+    context 'with a type alias declared after the class that references it' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: (path src) -> void
+          end
+
+          type path = String | Integer
+        RBS
+      end
+
+      it 'still expands the alias to its underlying union' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::Integer')
+      end
+    end
+
+    # https://github.com/castwide/solargraph/pull/1281#issuecomment-5270350329
+    context 'with a type alias that references a name declared only in RBS core' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type wrapped_path = ::path
+
+          class Foo
+            def bar: (wrapped_path src) -> void
+          end
+        RBS
+      end
+
+      it 'expands the alias instead of falling back to a self-referential nominal tag' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::_ToStr, ::_ToPath')
+      end
+    end
+
+    # https://github.com/castwide/solargraph/issues/1255
+    context 'with a recursive type alias' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type json = String | Array[json]
+
+          class Foo
+            def bar: (json src) -> void
+          end
+        RBS
+      end
+
+      it 'does not crash expanding it' do
+        expect { conversions.pins }.not_to raise_error
+      end
+
+      it 'falls back to the nominal alias tag once a cycle is detected' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::Array<json>')
+      end
+    end
+
+    # https://github.com/castwide/solargraph/issues/1255
+    context 'with a generic type alias' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type box[T] = Array[T] | nil
+
+          class Foo
+            def bar: (box[String] src) -> void
+          end
+        RBS
+      end
+
+      it 'falls back to the nominal alias tag instead of leaking an unbound generic' do
+        expect(parameter.return_type.rooted_tags).not_to include('generic<')
+      end
+    end
+
+    context 'with a prepended module' do
+      subject(:prepend_pin) do
+        conversions.pins.find { |pin| pin.is_a?(Solargraph::Pin::Reference::Prepend) && pin.namespace == 'Foo' }
+      end
+
+      let(:rbs) do
+        <<~RBS
+          module Bar
+            def baz: () -> String
+          end
+
+          class Foo
+            prepend Bar
+          end
+        RBS
+      end
+
+      it 'generates a prepend reference naming the module' do
+        expect(prepend_pin.name).to eq('Bar')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
