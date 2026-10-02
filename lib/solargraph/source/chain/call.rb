@@ -374,9 +374,26 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
-          block_pins = api_map.get_block_pins
-          # @sg-ignore Need to add nil check here
-          block_pins.find { |pin| pin.location.contain?(node_location) }
+
+          # block.node is the block's body, so an enclosing block contains it
+          # too; locate_closure_pin picks the innermost, which is this block.
+          position = node_location.range.start
+          closure = api_map.source_map(node_location.filename)
+                           .locate_closure_pin(position.line, position.character)
+          closure if closure.is_a?(Pin::Block)
+        end
+
+        # The block's own parameters. The block declares them, so they are
+        # absent from the caller's locals, and the body cannot resolve without
+        # them.
+        #
+        # @param api_map [ApiMap]
+        # @return [::Array<Pin::Parameter>]
+        def block_parameters api_map
+          block_pin = find_block_pin(api_map)
+          return [] if block_pin.nil?
+
+          block_pin.parameters
         end
 
         # @param api_map [ApiMap]
@@ -391,7 +408,7 @@ module Solargraph
           # here will only be defined inside the block itself and we
           # need to be able to see them
           # @sg-ignore Need to add nil check here
-          block.infer(api_map, block_pin, locals)
+          block.infer(api_map, block_pin, locals.union(block_parameters(api_map)))
         end
 
         protected
