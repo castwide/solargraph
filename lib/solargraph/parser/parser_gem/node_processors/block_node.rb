@@ -7,11 +7,23 @@ module Solargraph
         class BlockNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :block, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::BlockNode]
+
+          # @!method class_eval_receiver(node)
+          #   @param node [::Parser::AST::Node]
+          #   @return [::Parser::AST::Node, nil]
+          def_node_matcher :class_eval_receiver, '(block (send ${cbase const} :class_eval ...) ...)'
+
+          # @return [void]
           def process
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
-            if other_class_eval?
-              clazz_name = unpack_name(node.children[0].children[0])
+            evaluated_class = class_eval_receiver(node)
+            if evaluated_class
+              clazz_name = unpack_name(evaluated_class)
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
@@ -22,21 +34,13 @@ module Solargraph
               closure: region.closure,
               node: node,
               context: context,
-              receiver: node.children[0],
+              receiver: node.send_node,
               comments: comments_for(node),
               scope: scope,
               source: :parser
             )
             pins.push block_pin
             process_children region.update(closure: block_pin)
-          end
-
-          private
-
-          def other_class_eval?
-            node.children[0].type == :send &&
-              node.children[0].children[1] == :class_eval &&
-              %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end
       end

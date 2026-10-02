@@ -7,12 +7,18 @@ module Solargraph
         class IfNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
-          def process
+          on_node_pattern_enter '(if $_ $_ $_)', :process
+
+          # @param condition_node [::Parser::AST::Node, nil]
+          # @param then_node [::Parser::AST::Node, nil]
+          # @param else_node [::Parser::AST::Node, nil]
+          # @return [void]
+          def process condition_node, then_node, else_node
+            skip_children
             FlowSensitiveTyping.new(locals,
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_if(node)
-            condition_node = node.children[0]
             if condition_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(condition_node),
@@ -20,9 +26,8 @@ module Solargraph
                 node: condition_node,
                 source: :parser
               )
-              NodeProcessor.process(condition_node, region, pins, locals, ivars)
+              walk(condition_node)
             end
-            then_node = node.children[1]
             if then_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(then_node),
@@ -30,21 +35,17 @@ module Solargraph
                 node: then_node,
                 source: :parser
               )
-              NodeProcessor.process(then_node, region, pins, locals, ivars)
+              walk(then_node)
             end
 
-            else_node = node.children[2]
-            if else_node
-              pins.push Solargraph::Pin::CompoundStatement.new(
-                location: get_node_location(else_node),
-                closure: region.closure,
-                node: else_node,
-                source: :parser
-              )
-              NodeProcessor.process(else_node, region, pins, locals, ivars)
-            end
-
-            true
+            return unless else_node
+            pins.push Solargraph::Pin::CompoundStatement.new(
+              location: get_node_location(else_node),
+              closure: region.closure,
+              node: else_node,
+              source: :parser
+            )
+            walk(else_node)
           end
         end
       end

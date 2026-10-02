@@ -7,6 +7,12 @@ module Solargraph
         class LvasgnNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :lvasgn, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::AsgnNode]
+
+          # @return [void]
           def process
             here = get_node_start_position(node)
             # @sg-ignore Need to add nil check here
@@ -15,13 +21,12 @@ module Solargraph
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].to_s,
-              assignment: node.children[1],
+              name: node.name.to_s,
+              assignment: node.expression,
               comments: comments_for(node),
               presence: presence,
               source: :parser
             )
-            process_children
           end
         end
       end
