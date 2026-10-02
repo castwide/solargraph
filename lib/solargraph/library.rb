@@ -628,6 +628,11 @@ module Solargraph
           end
           end_cache_progress
           catalog
+          # A run can exit cleanly and still leave the gem uncached, because
+          # it writes under the cache key its own RBS configuration produces
+          # rather than ours. Retrying reruns the same subprocess forever, so
+          # treat that like any other cache failure.
+          cache_errors.add spec if api_map.unloaded_gems.include?(spec)
           sync_catalog
         end
       end
