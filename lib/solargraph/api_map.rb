@@ -710,7 +710,7 @@ module Solargraph
       logger.debug do
         "ApiMap#resolve_method_aliases(pins=#{pins.map(&:name)}, visibility=#{visibility}) => #{with_resolved_aliases.map(&:name)}"
       end
-      with_resolved_aliases
+      RbsMap::Helpers.combine_method_pins_by_path(with_resolved_aliases)
     end
 
     # @return [Workspace, nil]
