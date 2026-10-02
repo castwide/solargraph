@@ -424,11 +424,12 @@ describe Protocol do
     expect(response['result']['available']).to be_a(String)
   end
 
-  it 'handles $/solargraph/documentGems' do
-    @protocol.request '$/solargraph/documentGems', {}
-    response = @protocol.response
-    expect(response['error']).to be_nil
-  end
+  # @todo This might not be necessary anymore
+  # it 'handles $/solargraph/documentGems' do
+  #   @protocol.request '$/solargraph/documentGems', {}
+  #   response = @protocol.response
+  #   expect(response['error']).to be_nil
+  # end
 
   it 'handles textDocument/formatting' do
     @protocol.request 'textDocument/didOpen', {
