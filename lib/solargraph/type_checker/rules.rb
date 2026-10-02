@@ -28,8 +28,8 @@ module Solargraph
                   Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
                   0
                 end
-        @level = LEVELS[LEVELS.values.index(@rank)]
-        @overrides = overrides
+        @level = LEVELS.key(@rank)
+        @overrides = recognized_overrides(overrides)
       end
 
       def ignore_all_undefined?
@@ -151,6 +151,19 @@ module Solargraph
       # @param level [Symbol]
       def report? type, level
         rank >= LEVELS[@overrides.fetch(type, level)]
+      end
+
+      # Keeps nil out of the rank comparison in #report?.
+      #
+      # @param overrides [Hash{Symbol => Symbol}]
+      # @return [Hash{Symbol => Symbol}]
+      def recognized_overrides overrides
+        overrides.select do |type, level|
+          next true if LEVELS.key?(level)
+
+          Solargraph.logger.warn "Unrecognized TypeChecker level #{level} for #{type}, ignoring"
+          false
+        end
       end
     end
   end
