@@ -17,18 +17,20 @@ module Solargraph
       attr_reader :level
 
       # @return [Integer]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1266
       attr_reader :rank
 
       # @param level [Symbol]
       # @param overrides [Hash{Symbol => Symbol}]
       def initialize level, overrides
-        @rank = if LEVELS.key?(level)
-                  LEVELS[level]
-                else
-                  Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
-                  0
-                end
-        @level = LEVELS[LEVELS.values.index(@rank)]
+        if LEVELS.key?(level)
+          @rank = LEVELS.fetch(level)
+          @level = level
+        else
+          Solargraph.logger.warn "Unrecognized TypeChecker level #{level}, assuming normal"
+          @rank = 0
+          @level = :normal
+        end
         @overrides = overrides
       end
 
@@ -150,7 +152,8 @@ module Solargraph
       # @param type [Symbol]
       # @param level [Symbol]
       def report? type, level
-        rank >= LEVELS[@overrides.fetch(type, level)]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1266
+        rank >= LEVELS.fetch(@overrides.fetch(type, level))
       end
     end
   end
