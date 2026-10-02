@@ -314,6 +314,22 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
+  it 'keeps a definite reassignment visible inside a subsequent if-guard' do
+    source = Solargraph::Source.load_string(%(
+      def m
+        x = nil
+        x = 1
+        if x
+          y = x * 2
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 14])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
+
   it 'skips is_a? without a receiver' do
     source = Solargraph::Source.load_string(%(
     if is_a? Object
@@ -897,6 +913,30 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [10, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'does not extend a ||= body guard to a variable other than the assignment target' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @param qux [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil, qux: nil)
+          baz ||= begin
+            return if qux.nil?
+            qux
+          end
+          qux
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    # skipping the body means baz was truthy, which says nothing
+    # about qux, so the guard does not survive the ||=
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
   end
 
   it 'uses .nil? in a return if() in a try / rescue / ensure to refine types using nil checks' do

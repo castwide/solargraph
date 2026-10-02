@@ -118,7 +118,6 @@ module Solargraph
       end
 
       # @return [String]
-      # @sg-ignore Need to add nil check here
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)

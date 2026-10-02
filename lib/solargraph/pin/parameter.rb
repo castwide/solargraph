@@ -208,6 +208,13 @@ module Solargraph
 
       # @param api_map [ApiMap]
       def typify api_map
+        if definite
+          # reassigned by an assignment guaranteed to have run, so the
+          # reassigned type wins over the declared @param type
+          reassigned_type = probe(api_map)
+          return reassigned_type if reassigned_type.defined?
+        end
+
         new_type = super
         return new_type if new_type.defined?
 
