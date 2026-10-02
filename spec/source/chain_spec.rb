@@ -435,4 +435,35 @@ describe Solargraph::Source::Chain do
     type = chain.infer(api_map, obj_fn_pin, api_map.source_map('test.rb').locals)
     expect(type.to_s).to eq('String')
   end
+
+  describe '#first_undefined_link' do
+    it 'returns nil for a fully defined chain' do
+      api_map = Solargraph::ApiMap.new
+      chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'),
+                                   Solargraph::Source::Chain::Call.new('new', nil),
+                                   Solargraph::Source::Chain::Call.new('upcase', nil)])
+      expect(chain.first_undefined_link(api_map, Solargraph::Pin::ROOT_PIN, [])).to be_nil
+    end
+
+    it 'reports the first failing link, not the last' do
+      api_map = Solargraph::ApiMap.new
+      chain = described_class.new([Solargraph::Source::Chain::Constant.new('String'),
+                                   Solargraph::Source::Chain::Call.new('no_such_method', nil),
+                                   Solargraph::Source::Chain::Call.new('upcase', nil)])
+      failure = chain.first_undefined_link(api_map, Solargraph::Pin::ROOT_PIN, [])
+      expect(failure).not_to be_nil
+      expect(failure.link.word).to eq('no_such_method')
+      expect(failure.index).to eq(1)
+      expect(failure.total).to eq(3)
+      expect(failure.pin_count).to eq(0)
+      expect(failure.receiver_type.to_s).to include('String')
+    end
+  end
+
+  it 'chains a numbered-parameter block like an ordinary block' do
+    pending 'https://github.com/castwide/solargraph/pull/1320'
+    node = Solargraph::Parser.parse('[1].map { _1.to_s }.compact')
+    chain = Solargraph::Parser.chain(node, 'test.rb')
+    expect(chain.links.map(&:word)).to eq(%w[map compact])
+  end
 end
