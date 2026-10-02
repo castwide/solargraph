@@ -954,6 +954,74 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'resolves an ivar type when it is assigned only in an ancestor class method' do
+      checker = type_checker(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type when it is assigned and read within the same class' do
+      checker = type_checker(%(
+        class Widget
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type across files when it is assigned only in an ancestor class method' do
+      base = Solargraph::Source.load_string(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+      ), 'widget_base.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ), 'widget.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('widget.rb', api_map: api_map, level: :strong)
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
