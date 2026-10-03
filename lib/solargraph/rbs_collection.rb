@@ -13,7 +13,7 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
-      RbsMap::Path.pins gem_path_map[key]
+      mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
     end
 
     def gem_keys
@@ -56,6 +56,10 @@ module Solargraph
                     else
                       { gems: [] }
                     end
+    end
+
+    def mem_cache
+      @mem_cache ||= {}
     end
   end
 end
