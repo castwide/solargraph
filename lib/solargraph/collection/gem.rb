@@ -40,7 +40,7 @@ module Solargraph
         code_objects = Yardoc.load!(metagem)
         yard_pins = YardMap::Mapper.new(code_objects, metagem).map
         rbs_pins = RbsMap::Gem.pins(metagem)
-        combined_pins = RbsMap::Helpers.combine(yard_pins, rbs_pins)
+        RbsMap::Helpers.combine(yard_pins, rbs_pins)
       end
 
       def without_yard
