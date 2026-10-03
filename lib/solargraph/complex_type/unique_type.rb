@@ -103,7 +103,7 @@ module Solargraph
       # @return [self]
       def simplify_literals
         transform do |t|
-          next t unless t.literal?
+          next t unless t.simplifyable_literal?
           t.recreate(new_name: t.non_literal_name)
         end
       end
@@ -147,13 +147,17 @@ module Solargraph
       end
 
       def literal?
-        return false
         non_literal_name != name
       end
 
       # @return [String]
       def non_literal_name
         @non_literal_name ||= determine_non_literal_name
+      end
+
+      # @return [self]
+      def non_literal_type
+        recreate(new_name: non_literal_name)
       end
 
       # @return [self]
@@ -229,11 +233,11 @@ module Solargraph
         #   covariant
         # contravariant?: Proc - can be changed, so we can pass
         #   in less specific super types
-        # if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
-        #   :covariant
-        # else
-        default
-        # end
+        if %w[Hash Tuple Array Set Enumerable].include?(name) && fixed_parameters?
+          :covariant
+        else
+          default
+        end
       end
 
       # Whether this is an RBS interface like _ToAry or Hash::_Key.
@@ -375,7 +379,6 @@ module Solargraph
 
       # @return [UniqueType]
       def downcast_to_literal_if_possible
-        return self
         SINGLE_SUBTYPE.fetch(rooted_tag, self)
       end
 
@@ -458,10 +461,20 @@ module Solargraph
               else
                 next ComplexType::UNDEFINED
               end
-            # @todo Treating parameterized classes and tuples the same for now
-            # elsif context_type.all?(&:implicit_union?) || true
-            elsif idx.zero? && !context_type.all_params.empty?
-              ComplexType.new(context_type.all_params)
+            elsif context_type.all?(&:implicit_union?)
+              if idx.zero? && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
+              end
+            elsif context_type.all_params[idx]
+              context_type.all_params[idx]
+            elsif definitions.generic_defaults[generic_name]
+              # Tuples declare later positional generics (e.g. C, D, ...)
+              # as defaults in terms of earlier ones (e.g. C = A | B).
+              # Resolve those defaults against the same context instead of
+              # returning them as unresolved generic placeholders.
+              definitions.generic_defaults[generic_name].resolve_generics(definitions, context_type)
             else
               ComplexType::UNDEFINED
             end
