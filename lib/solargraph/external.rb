@@ -119,7 +119,12 @@ module Solargraph
     end
 
     def load_rbs_collection
-      loaded_gems.each { |metagem| pins.concat rbs_collection.load(metagem) }
+      loaded_gems.each do |metagem|
+        rbsc_pins = rbs_collection.load(metagem)
+        # @todo Combining the pins is necessary because concatenating them
+        #   breaks deep type inference in some cases
+        pins.replace(RbsMap::Helpers.combine(pins, rbsc_pins)) unless rbsc_pins.empty?
+      end
     end
 
     def clear_all
