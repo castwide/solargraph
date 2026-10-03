@@ -25,6 +25,7 @@ module Solargraph
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
+      # @sg-ignore literal symbols  in this module turn into ::Solargraph::Source::Chain::Symbol
       # @return [::String, ::Symbol] The literal value
       attr_reader :value
       # @return [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
@@ -58,6 +59,7 @@ module Solargraph
         @return_type = return_type
       end
 
+      # @sg-ignore Need to add nil check here
       def name
         param_name
       end
@@ -68,8 +70,6 @@ module Solargraph
 
       # @return [String]
       def method_path
-        # @sg-ignore false failure on method_scope "Wrong argument type for Solargraph::Pin::Base#==: other expected
-        # Solargraph::Pin::Base, received :instance"
         @method_path ||= "#{method_namespace}#{method_scope == :instance ? '#' : '.'}#{method_name}"
       end
 

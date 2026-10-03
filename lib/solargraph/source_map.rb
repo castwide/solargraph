@@ -213,6 +213,7 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
+    # @sg-ignore flow sensitive typing should support ivars
     def convention_pins= pins
       # unmemoizing the document_symbols in case it was called from any of conventions
       @document_symbols = nil

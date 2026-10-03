@@ -220,6 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
+          # @sg-ignore Need to add nil check here
           factory_parameter_hash[fp.method_path] << fp
         end
       end

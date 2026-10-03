@@ -12,7 +12,6 @@ module Solargraph
         @api_map = api_map
         @cursor = cursor
         closure_pin = closure
-        # @sg-ignore Need to add nil check here
         if closure_pin.is_a?(Pin::Block) && !Solargraph::Range.from_node(closure_pin.receiver)&.contain?(cursor.range.start)
           closure_pin.rebind(api_map)
         end
@@ -41,6 +40,7 @@ module Solargraph
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
         # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
+        # @sg-ignore Need to add nil check here
         if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
           return package_completions(api_map.get_symbols)
         end

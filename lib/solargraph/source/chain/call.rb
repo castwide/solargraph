@@ -229,9 +229,11 @@ module Solargraph
               current_argument = arguments[index]
               next unless current_argument&.literal?
               # @type [Solargraph::Source::Chain::Literal]
+              # @sg-ignore Need to add nil check here
               last_link = current_argument.links.last
               argument_value = last_link.value
 
+              # @sg-ignore Need to add nil check here
               param.name == factory_param.param_name && argument_value == factory_param.value
             end
           end

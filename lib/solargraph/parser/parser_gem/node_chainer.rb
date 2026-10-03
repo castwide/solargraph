@@ -168,6 +168,7 @@ module Solargraph
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
             lit = infer_literal_node_type(n)
             if lit
+              # @sg-ignore Need to add nil check here
               method_call_chain = NodeChainer.chain(send_node, @filename, nil, [])
               literal = Chain::Literal.new(lit, n)
               result.push Chain::Parameter.new(literal, method_call_chain)
@@ -185,7 +186,9 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
+        # @sg-ignore Parser::AST::Node's superclass is not itself
         def send_node
+          # @sg-ignore Parser::AST::Node's superclass is not itself
           @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
