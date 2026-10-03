@@ -9,6 +9,7 @@ module Solargraph
     include Comparable
 
     # @return [String]
+    # @sg-ignore Need to add nil check here
     attr_reader :filename
 
     # @return [Solargraph::Range]

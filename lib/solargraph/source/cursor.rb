@@ -35,14 +35,14 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore String/Array Range slice relies on valid bounds
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
           match = source.code[0..(offset - 1)].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore String/Array Range slice relies on valid bounds
           if source.code[0..(offset - result.length - 1)].end_with?(':') && !source.code[0..(offset - result.length - 1)].end_with?('::')
             result = ":#{result}"
           end
@@ -54,7 +54,7 @@ module Solargraph
       # `foo.bar`, the end_of_word at position (0,6) is `r`.
       #
       # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore MatchData relies on regex always matching
       def end_of_word
         @end_of_word ||= begin
           match = source.code[offset..].to_s.match(end_word_pattern)
@@ -112,6 +112,7 @@ module Solargraph
       # as an argument.
       #
       # @return [Cursor, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def recipient
         @recipient ||= begin
           node = recipient_node
@@ -138,10 +139,10 @@ module Solargraph
       # @return [Position]
       def node_position
         @node_position ||= if start_of_word.empty?
-                             # @sg-ignore Need to add nil check here
+                             # @sg-ignore MatchData relies on regex always matching
                              match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
                              if match
-                               # @sg-ignore Need to add nil check here
+                               # @sg-ignore MatchData relies on regex always matching
                                Position.from_offset(source.code, offset - match[0].length)
                              else
                                position

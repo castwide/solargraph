@@ -76,7 +76,7 @@ module Solargraph
       def resolve_method api_map
         return if @resolved_method
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
@@ -85,7 +85,7 @@ module Solargraph
           return
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         receiver_type = resolver.return_type
 
         # @sg-ignore Need to add nil check here
@@ -103,7 +103,7 @@ module Solargraph
             [receiver_type.to_s, :instance]
           end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
       end

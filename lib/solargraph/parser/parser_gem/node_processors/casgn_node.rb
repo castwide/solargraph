@@ -24,6 +24,7 @@ module Solargraph
           # @return [String]
           def const_name
             if node.children[0]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
             else
               node.children[1].to_s

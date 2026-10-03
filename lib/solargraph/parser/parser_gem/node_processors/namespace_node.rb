@@ -8,6 +8,7 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             name = unpack_name(node.children[0])
             comments = comments_for(node)
 
@@ -57,13 +58,17 @@ module Solargraph
             match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
             return unless match
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             code = match[1].strip
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return if code.empty?
 
             "<#{code}>"
           end
 
+          # @return [String, nil]
           def type_from_node
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             unpack_name(node.children[1]) if node.children[1]&.type == :const
           end
         end

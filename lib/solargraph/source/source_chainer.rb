@@ -13,7 +13,7 @@ module Solargraph
       private_class_method :new
 
       class << self
-        # @param source [Source]
+        # @param source [Solargraph::Source]
         # @param position [Position, Array(Integer, Integer)]
         # @return [Source::Chain]
         def chain source, position
@@ -21,7 +21,7 @@ module Solargraph
         end
       end
 
-      # @param source [Source]
+      # @param source [Solargraph::Source]
       # @param position [Position]
       def initialize source, position
         @source = source
@@ -60,15 +60,20 @@ module Solargraph
       # @return [Array(Parser::AST::Node, Parser::AST::Node, Array<Parser::AST::Node>)]
       #   parent node, child node, and the tree at the position
       def node_from_position
+        # @type [Parser::AST::Node, nil]
         node = nil
+        # @type [Parser::AST::Node, nil]
         parent = nil
+        # @type [Array<Parser::AST::Node>, nil]
         tree = nil
 
         if source.parsed? && !source.repaired? && source.synchronized?
           tree = source.tree_at(position.line, position.column)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           node, parent = tree[0..2]
         elsif source.parsed? && source.repaired? && end_of_phrase == '.'
           tree = source.tree_at(fixed_position.line, fixed_position.column)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           node, parent = tree[0..2]
           # provide filename and line so that we can look up local variables there later
           node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
@@ -79,6 +84,7 @@ module Solargraph
         else
           unless source.error_ranges.any? { |r| r.nil? || r.include?(fixed_position) }
             tree = source.tree_at(fixed_position.line, fixed_position.column)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             node, parent = tree[0..2]
           end
           # Exception for positions that chain literal nodes in unsynchronized sources
@@ -96,13 +102,13 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore String/Array Range slice relies on valid bounds
       # @return [String]
       def phrase
         @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore String/Array Range slice relies on valid bounds
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
@@ -114,7 +120,7 @@ module Solargraph
       end
 
       # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore MatchData relies on regex always matching
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)
@@ -168,12 +174,12 @@ module Solargraph
           if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore String/Array Range slice relies on valid bounds
             if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
               @source.code[(index + 1)..]
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               @source.code[(index + 1)..].lstrip
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore String/Array Range slice relies on valid bounds
               index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
               break
             end

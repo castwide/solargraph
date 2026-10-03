@@ -99,7 +99,7 @@ module Solargraph
             @fetched ||= false
           end
 
-          # @return [String, nil]
+          # @return [String, Hash, nil]
           attr_reader :error
         end
       end

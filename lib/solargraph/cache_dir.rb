@@ -10,6 +10,7 @@ module Solargraph
     # The base directory for cached YARD documentation and serialized pins.
     #
     # @return [String]
+    # @sg-ignore a nil-valued operand mid-chain is not eliminated by ||
     def base_dir
       ENV['SOLARGRAPH_CACHE'] ||
         (ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') : nil) ||
@@ -51,7 +52,9 @@ module Solargraph
       File.join(base_dir, "yard-#{YARD::VERSION}", "yard-activesupport-concern-#{YARD::ActiveSupport::Concern::VERSION}")
     end
 
+    # @return [void]
     def clear
+      # @sg-ignore https://github.com/castwide/solargraph/issues/1255
       FileUtils.rm_rf base_dir
     end
   end

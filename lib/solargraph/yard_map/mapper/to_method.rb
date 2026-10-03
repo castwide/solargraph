@@ -26,12 +26,12 @@ module Solargraph
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore pin.closure relies on closure always resolved
           if closure.path == 'Kernel' && Kernel.private_method_defined?(name.to_sym, false)
             final_visibility ||= :private
           end
@@ -108,19 +108,25 @@ module Solargraph
 
           # @param a [Array<String>]
           # @return [String]
+          # @sg-ignore Array#[] integer index relies on fixed arity
           def arg_name a
+            # @sg-ignore Array#[] integer index relies on fixed arity
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array]
           # @return [::Symbol]
           def arg_type a
+            # @sg-ignore Array#[] integer index relies on fixed arity
             if a[0].start_with?('**')
               :kwrestarg
+            # @sg-ignore Array#[] integer index relies on fixed arity
             elsif a[0].start_with?('*')
               :restarg
+            # @sg-ignore Array#[] integer index relies on fixed arity
             elsif a[0].start_with?('&')
               :blockarg
+            # @sg-ignore Array#[] integer index relies on fixed arity
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]

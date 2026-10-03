@@ -57,6 +57,7 @@ module Solargraph
     end
 
     # @return [UniqueType]
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def first
       @items.first
     end
@@ -133,6 +134,7 @@ module Solargraph
 
     # @param index [Integer]
     # @return [UniqueType]
+    # @sg-ignore Need to add nil check here
     def [] index
       @items[index]
     end
@@ -311,6 +313,8 @@ module Solargraph
       ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
+    # @param named_types [Hash{String => ComplexType::UniqueType}]
+    # @return [ComplexType]
     def expand named_types
       ComplexType.new(map { |ut| ut.expand(named_types) })
     end
@@ -342,7 +346,9 @@ module Solargraph
     end
 
     # @return [Array<ComplexType>]
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def all_params
+      # @sg-ignore Array#first/#last relies on non-empty invariant
       @items.first.all_params || []
     end
 
@@ -367,6 +373,7 @@ module Solargraph
     def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
+      # @sg-ignore Array#first/#last relies on non-empty invariant
       @items.first.erased_version_of?(other.items.first)
     end
 
@@ -480,7 +487,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore String/Array Range slice relies on valid bounds
                 types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being

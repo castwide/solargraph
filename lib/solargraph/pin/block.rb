@@ -6,9 +6,11 @@ module Solargraph
       include Breakable
 
       # @return [Parser::AST::Node]
+      # @sg-ignore Need to add nil check here
       attr_reader :receiver
 
       # @return [Parser::AST::Node]
+      # @sg-ignore Need to add nil check here
       attr_reader :node
 
       # @param receiver [Parser::AST::Node, nil]
@@ -45,10 +47,12 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
           yield_type = yield_types.first
+          # @sg-ignore Need to add nil check here
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
         parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
@@ -58,30 +62,35 @@ module Solargraph
       # @return [::Array<ComplexType>]
       def typify_parameters api_map
         chain = Parser.chain(receiver, filename, node)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.closure relies on closure always resolved
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
         # @param meth [Pin::Method]
         meths.each do |meth|
           next if meth.block.nil?
 
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           yield_types = meth.block.parameters.map(&:return_type)
           # 'arguments' is what the method says it will yield to the
           # block; 'parameters' is what the block accepts
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
             param = parameters[idx]
+            # @sg-ignore Need to add nil check here
             param_type = chain.base.infer(api_map, param, locals)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             unless arg_type.nil?
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               if arg_type.generic? && param_type.defined?
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore Array#first/#last relies on non-empty invariant
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
+                # @sg-ignore Need to add nil check here
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end
@@ -98,11 +107,11 @@ module Solargraph
       def maybe_rebind api_map
         return ComplexType::UNDEFINED unless receiver
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         chain = Parser.chain(receiver, location.filename, node)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore pin.location relies on location always resolved
         locals = api_map.source_map(location.filename).locals_at(location)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 
@@ -116,7 +125,7 @@ module Solargraph
                    chain.base.infer(api_map, name_pin, locals)
                  else
                    # if not, any self there must be the context of our closure
-                   # @sg-ignore Need to add nil check here
+                   # @sg-ignore pin.closure relies on closure always resolved
                    closure.full_context
                  end
 

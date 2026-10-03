@@ -55,7 +55,7 @@ module Solargraph
         private
 
         # @todo '?' methods should type like RBS 'boolish' rather than a strict true or false
-        # @sg-ignore
+        # @sg-ignore need boolish support for ? methods
         def support_workspace_folders?
           params['capabilities'] &&
             params['capabilities']['workspace'] &&
@@ -182,7 +182,7 @@ module Solargraph
         # @param capability [String]
         # @todo Need support for RBS' boolish "type", which doesn't
         #   enforce strict true/false-ness
-        # @sg-ignore
+        # @sg-ignore need boolish support for ? methods
         def dynamic_registration_for? section, capability
           result = params['capabilities'] &&
                    params['capabilities'][section] &&

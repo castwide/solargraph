@@ -5,6 +5,7 @@ module Solargraph
     class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
+      # @return [Array<Pin::Base>]
       def pins
         @pins ||= generate_pins
       end

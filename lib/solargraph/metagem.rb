@@ -28,6 +28,13 @@ module Solargraph
     # @return [String]
     attr_reader :cache_name
 
+    # @param name [String]
+    # @param full_path [String]
+    # @param spec_file [String]
+    # @param source [String]
+    # @param version [String]
+    # @param require_paths [Array<String>]
+    # @param dependencies [Array<String>]
     def initialize name:, full_path:, spec_file:, source:, version:, require_paths:, dependencies:
       @name = name
       @full_path = full_path
@@ -46,12 +53,15 @@ module Solargraph
       !!@cache_name
     end
 
+    # @param path [String]
     def require? path
       require_paths.any? do |req|
         File.file?(File.join(full_path, req, "#{path}.rb"))
       end
     end
 
+    # @return [Gem::Specification, nil]
+    # @sg-ignore a singleton .load with no declared return falls back to Kernel#load
     def to_specification
       Gem::Specification.load(spec_file)
     end
@@ -68,6 +78,7 @@ module Solargraph
     # @param gem [Gem::Specification]
     # @return [Metagem]
     def self.from_specification gem
+      # @sg-ignore Wrong argument type for Solargraph::Metagem.new: version expected String, received String, Gem::Version
       Metagem.new(name: gem.name,
                   full_path: gem.full_gem_path,
                   spec_file: gem.spec_file,

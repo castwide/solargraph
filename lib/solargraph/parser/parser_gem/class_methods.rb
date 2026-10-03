@@ -53,11 +53,12 @@ module Solargraph
         # @return [Array<Location>]
         def references source, name
           if name.end_with?('=')
+            # @sg-ignore String/Array Range slice relies on valid bounds
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore MatchData relies on regex always matching
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
@@ -68,7 +69,7 @@ module Solargraph
           end
           inner_node_references(name, source.node).map do |n|
             rng = Range.from_node(n)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Range.from_node result assumed always present
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
             Location.new(
@@ -89,6 +90,7 @@ module Solargraph
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
+            # @sg-ignore node.children[] relies on grammar-guaranteed arity
             top.children.each { |c| result.concat inner_node_references(name, c) }
           end
           result
@@ -149,10 +151,10 @@ module Solargraph
           if node.type == :dstr && node.children.last.nil?
             # @sg-ignore Translate to something flow sensitive typing understands
             last = node.children[-2]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Range.from_node result assumed always present
             unless last.nil?
               rng = Range.from_node(last)
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore Range.from_node result assumed always present
               pos = Position.new(rng.ending.line, rng.ending.column - 1)
               result.push Range.new(pos, pos)
             end
