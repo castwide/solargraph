@@ -47,7 +47,7 @@ module Solargraph
         files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
-        # @Generating an ApiMap is necessary for processing macros
+        # Generating an ApiMap is necessary for processing macros
         bench = Bench.new(source_maps: source_maps)
         source_pins = ApiMap.new.catalog(bench).pins.select { |pin| files.include?(pin.filename) }
 
