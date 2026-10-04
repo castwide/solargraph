@@ -18,4 +18,40 @@ describe Solargraph::RbsCollection do
       expect(addressable_uri_pins.length).to be_positive
     end
   end
+
+  describe '#stdlib_names' do
+    let(:lockfile) { File.join('spec', 'fixtures', 'rbs_collection_stdlib', 'rbs_collection.lock.yaml') }
+
+    it 'returns the names of stdlib signature sets in the lockfile' do
+      expect(rbs_collection.stdlib_names).to eq(['date'])
+    end
+
+    it 'is empty when the lockfile has no stdlib entries' do
+      expect(described_class.new(
+        File.join('spec', 'fixtures', 'rbs_collection', 'rbs_collection.lock.yaml')
+      ).stdlib_names).to be_empty
+    end
+  end
+
+  describe 'version matching' do
+    let(:lockfile) { File.join('spec', 'fixtures', 'rbs_collection_versions', 'rbs_collection.lock.yaml') }
+
+    it 'selects the highest collection version that does not exceed the gem' do
+      metagem = instance_double(Solargraph::Metagem, name: 'collection_version_fixture', version: '7.0.10')
+      pins = rbs_collection.load(metagem)
+      expect(pins.map(&:path)).to include('CollectionVersionFixture#from_six')
+    end
+
+    it 'selects a newer collection version for a newer gem' do
+      metagem = instance_double(Solargraph::Metagem, name: 'collection_version_fixture', version: '7.2.1')
+      pins = rbs_collection.load(metagem)
+      expect(pins.map(&:path)).to include('CollectionVersionFixture#from_seven_one')
+    end
+
+    it 'falls back to the lowest collection version for an older gem' do
+      metagem = instance_double(Solargraph::Metagem, name: 'collection_version_fixture', version: '5.2.0')
+      pins = rbs_collection.load(metagem)
+      expect(pins.map(&:path)).to include('CollectionVersionFixture#from_six')
+    end
+  end
 end

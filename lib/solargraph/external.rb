@@ -114,11 +114,27 @@ module Solargraph
     end
 
     def rbs_collection_lockfile
+      return if directory.nil? || directory.empty? || directory == '*'
       lockfile = File.join(directory, 'rbs_collection.lock.yaml')
       lockfile if File.file?(lockfile)
     end
 
+    # Signature sets for the Ruby stdlib are part of a collection's lockfile
+    # but are not associated with any gem in the bundle, so the gem lookup in
+    # #load_rbs_collection never finds them. Load them from the rbs gem.
+    #
+    # @return [void]
+    def load_collection_stdlibs
+      rbs_collection.stdlib_names.each do |library|
+        next if loaded_stdlibs.include? library
+        next unless RbsMap::Stdlib.has? library
+        loaded_stdlibs.add library
+        pins.concat Collection::Stdlib.load(library)
+      end
+    end
+
     def load_rbs_collection
+      load_collection_stdlibs
       loaded_gems.each do |metagem|
         rbsc_pins = rbs_collection.load(metagem)
         # @todo Combining the pins is necessary because concatenating them
@@ -133,6 +149,7 @@ module Solargraph
       unresolved_dependencies.clear
       loaded_gems.clear
       unloaded_gems.clear
+      loaded_stdlibs.clear
     end
 
     def process_gem metagem
