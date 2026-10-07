@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class YardMap
+  module YardMap
     class Mapper
       module ToNamespace
         extend YardMap::Helpers
