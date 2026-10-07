@@ -112,13 +112,10 @@ def simplecov_collate
 
   SimpleCov.collate(Dir['coverage/{next-failure,full,ad-hoc}/.resultset.json']) do
     cname = 'combined'
-    # @sg-ignore Unresolved call to command_name
     command_name cname
     new_dir = File.join('coverage', cname)
-    # @sg-ignore Unresolved call to coverage_dir
     coverage_dir new_dir
 
-    # @sg-ignore Unresolved call to formatter
     formatter \
       SimpleCov::Formatter::MultiFormatter
         .new([
