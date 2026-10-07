@@ -321,10 +321,8 @@ module Solargraph
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')
-          # @sg-ignore flow sensitive typing needs to handle attrs
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
         else
-          # @sg-ignore flow sensitive typing needs to handle attrs
           locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
       end
@@ -339,11 +337,11 @@ module Solargraph
       # @param position [Position]
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def chain_pin chain_words, node, position
-        # @sg-ignore chain_words is never empty - callers already checked
-        return find_var(chain_words.first, position) if chain_words.length == 1
+        root_word = chain_words.first
+        return unless root_word
 
-        # @sg-ignore chain_words is never empty - callers already checked
-        root_pin = find_var(chain_words.first, position)
+        root_pin = find_var(root_word, position)
+        return root_pin if chain_words.length == 1
         return unless root_pin
 
         Pin::LocalVariable.new(

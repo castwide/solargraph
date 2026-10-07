@@ -206,7 +206,6 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def virtual_pin? pin
-      # @sg-ignore Need to add nil check here
       pin.location && source.comment_at?(pin.location.range.ending)
     end
 
@@ -672,7 +671,6 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore flow sensitive typing needs to handle attrs
       pin.location && api_map.bundled?(pin.location.filename)
     end
 
