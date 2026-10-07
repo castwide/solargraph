@@ -53,6 +53,33 @@ describe Solargraph::ComplexType do
     end
   end
 
+  context 'when narrowing a union whose members relate to the mix-in differently' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+        module M; end
+        class A; end
+        class B; end
+        class A_with_M < A; include M; end
+        class B_with_M < B; include M; end
+      ))
+    end
+
+    let(:declared) { described_class.parse('A, B_with_M').qualify(api_map, '') }
+    let(:guard) { described_class.parse('M').qualify(api_map, '') }
+
+    before { api_map.map source }
+
+    it 'intersects only the member the guard neither implies nor is implied by' do
+      expect(declared.narrow_with(guard, api_map).rooted_tags).to eq('::A & ::M, ::B_with_M')
+    end
+
+    it 'keeps admitting a subclass of A that mixes in M' do
+      narrowed = declared.narrow_with(guard, api_map)
+      inhabitant = described_class.parse('A_with_M').qualify(api_map, '')
+      expect(inhabitant.conforms_to?(api_map, narrowed, :assignment)).to be(true)
+    end
+  end
+
   context 'when narrowing a class with a duck type' do
     let(:source) do
       Solargraph::Source.load_string(%(
