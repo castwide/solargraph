@@ -252,7 +252,7 @@ module Solargraph
       # would let a literal-typed overload always win over the safe
       # catch-all for any argument merely assignable to it, not just literals.
       #
-      # @param ptype [ComplexType]
+      # @param ptype [ComplexType, ComplexType::UniqueType]
       # @param atype [ComplexType]
       # @return [Boolean]
       def literal_arg_matches? ptype, atype
