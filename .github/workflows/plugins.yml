@@ -25,6 +25,7 @@ jobs:
       with:
         ruby-version: 4.0 # keep same as typecheck.yml
         bundler-cache: true
+        cache-version: 2026-01-11
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -36,6 +37,17 @@ jobs:
         # Add optional gem to be able to typecheck related code
         echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile
         bundle install
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Configure to use plugins
       run: |
         bundle exec solargraph config
@@ -61,6 +73,7 @@ jobs:
         # See https://github.com/castwide/solargraph/actions/runs/19000135777/job/54265647107?pr=1119
         rubygems: latest
         bundler-cache: false
+        cache-version: 2026-01-11
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -76,6 +89,17 @@ jobs:
       run: |
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rails"]' .solargraph.yml
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
@@ -94,6 +118,7 @@ jobs:
       with:
         ruby-version: 3.4 # keep same as typecheck.yml
         bundler-cache: false
+        cache-version: 2026-01-11
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
         packages: yq
@@ -109,6 +134,17 @@ jobs:
       run: |
         bundle exec solargraph config
         yq -yi '.plugins += ["solargraph-rspec"]' .solargraph.yml
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Install gem types
       run: bundle exec rbs collection update
     - name: Ensure typechecking still works
@@ -193,11 +229,23 @@ jobs:
         # This job uses 3.2 due to a problem compiling sqlite3 in earlier versions
         ruby-version: '3.2'
         bundler-cache: false
+        cache-version: 2026-01-11
         # https://github.com/apiology/solargraph/actions/runs/19400815835/job/55508092473?pr=17
         rubygems: latest
         bundler: latest
       env:
         MATRIX_RAILS_VERSION: "7.0"
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Install gems
       run: |
        set -x

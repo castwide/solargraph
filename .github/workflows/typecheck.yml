@@ -28,12 +28,24 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 4.0
-        bundler-cache: false
+        bundler-cache: true
+        cache-version: 2026-01-11
     - name: Install gems
       run: |
         # Add optional gem to be able to typecheck related code
         echo "gem 'vernier', '>1.0', '<2'" >> .Gemfile
         bundle install
+    - name: Cache gem annotations
+      id: dot-cache-restore
+      uses: actions/cache@v4
+      with:
+        key: |
+          2025-06-26-09-${{ runner.os }}-dot-cache-${{ hashFiles('Gemfile.lock') }}
+        restore-keys: |
+          2025-06-26-09-${{ runner.os }}-dot-cache
+          2025-06-26-09-${{ runner.os }}-dot-cache-
+        path: |
+          /home/runner/.cache/solargraph
     - name: Install gem types
       run: bundle exec rbs collection install
     - name: Typecheck self
