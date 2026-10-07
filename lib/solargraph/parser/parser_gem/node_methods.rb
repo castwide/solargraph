@@ -206,16 +206,13 @@ module Solargraph
           if node.type == :block
             result.push node
             if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
-              # @sg-ignore Need to add nil check here
-              node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }
+              node.children.fetch(0).children.drop(2).each { |child| result.concat call_nodes_from(child) }
             end
-            # @sg-ignore Need to add nil check here
-            node.children[1..].each { |child| result.concat call_nodes_from(child) }
+            node.children.drop(1).each { |child| result.concat call_nodes_from(child) }
           elsif node.type == :send
             result.push node
             result.concat call_nodes_from(node.children.first)
-            # @sg-ignore Need to add nil check here
-            node.children[2..].each { |child| result.concat call_nodes_from(child) }
+            node.children.drop(2).each { |child| result.concat call_nodes_from(child) }
           elsif %i[super zsuper].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
@@ -481,8 +478,7 @@ module Solargraph
               if COMPOUND_STATEMENTS.include?(node.type)
                 result.concat from_value_position_compound_statement node
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                # @sg-ignore Need to add nil check here
-                result.concat reduce_to_value_nodes(node.children[1..])
+                result.concat reduce_to_value_nodes(node.children.drop(1))
                 # result.push NIL_NODE unless node.children[2]
               elsif ONLY_ONE_CHILD.include?(node.type)
                 result.concat reduce_to_value_nodes([node.children[0]])
@@ -495,14 +491,15 @@ module Solargraph
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
                 if include_explicit_returns
-                  result.concat explicit_return_values_from_compound_statement(node.children[2])
+                  result.concat explicit_return_values_from_compound_statement(node.children.fetch(2))
                 end
               elsif CASE_STATEMENT.include?(node.type)
-                # @sg-ignore Need to add nil check here
-                node.children[1..].each do |cc|
+                node.children.drop(1).each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
+                  # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
                   elsif cc.type == :when
+                    # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
                     result.concat reduce_to_value_nodes([cc.children.last])
                   else
                     # else clause in case
@@ -535,12 +532,12 @@ module Solargraph
               nodes = parent.children.select { |n| n.is_a?(AST::Node) }
               nodes.each_with_index do |node, idx|
                 if node.type == :block
-                  result.concat explicit_return_values_from_compound_statement(node.children[2])
+                  result.concat explicit_return_values_from_compound_statement(node.children.fetch(2))
                 elsif node.type == :rescue
                   # body statements
-                  result.concat from_value_position_statement(node.children[0])
+                  result.concat from_value_position_statement(node.children.fetch(0))
                   # rescue statements
-                  result.concat from_value_position_statement(node.children[1])
+                  result.concat from_value_position_statement(node.children.fetch(1))
                 elsif SKIPPABLE.include?(node.type)
                   next
                 elsif node.type == :resbody

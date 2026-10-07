@@ -401,4 +401,27 @@ describe Solargraph::Parser::NodeMethods do
       expect(calls.length).to eq(2)
     end
   end
+
+  describe 'drill_signature' do
+    it 'returns the signature unchanged for a non-AST node' do
+      expect(described_class.drill_signature(nil, 'unchanged')).to eq 'unchanged'
+    end
+
+    it 'builds a dotted path through nested constants' do
+      ast = parse('Foo::Bar')
+      expect(described_class.drill_signature(ast, '')).to eq 'Foo::Bar'
+    end
+
+    it 'builds a dotted path through a variable-rooted method call' do
+      ast = parse("x = 1
+x.foo")
+      send_node = ast.children[1]
+      expect(described_class.drill_signature(send_node, '')).to eq 'x.foo'
+    end
+
+    it 'builds a dotted path for a bare ivar' do
+      ast = parse('@ivar')
+      expect(described_class.drill_signature(ast, '')).to eq '@ivar'
+    end
+  end
 end

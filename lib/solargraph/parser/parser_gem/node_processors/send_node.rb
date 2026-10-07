@@ -38,7 +38,7 @@ module Solargraph
                 process_autoload
               elsif method_name == :private_constant
                 process_private_constant
-              elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
+              elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children.fetch(2).type == :sym && node.children[3] && node.children.fetch(3).type == :sym
                 process_alias_method
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
@@ -58,8 +58,7 @@ module Solargraph
           # @return [void]
           def process_visibility
             if node.children.length > 2
-              # @sg-ignore Need to add nil check here
-              node.children[2..].each do |child|
+              node.children.drop(2).each do |child|
                 # @sg-ignore Variable type could not be inferred for method_name
                 # @type [Symbol]
                 visibility = node.children[1]
@@ -129,10 +128,9 @@ module Solargraph
 
           # @return [void]
           def process_include
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            return unless node.children[2].is_a?(AST::Node) && node.children.fetch(2).type == :const
             cp = region.closure
-            # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            node.children.drop(2).each do |i|
               type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
               pins.push type.new(
                 location: get_node_location(i),
@@ -145,10 +143,9 @@ module Solargraph
 
           # @return [void]
           def process_prepend
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
+            return unless node.children[2].is_a?(AST::Node) && node.children.fetch(2).type == :const
             cp = region.closure
-            # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            node.children.drop(2).each do |i|
               pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
                 closure: cp,
@@ -160,8 +157,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
-            # @sg-ignore Need to add nil check here
-            node.children[2..].each do |i|
+            node.children.drop(2).each do |i|
               loc = get_node_location(node)
               if i.type == :self
                 pins.push Pin::Reference::Extend.new(
@@ -183,15 +179,15 @@ module Solargraph
 
           # @return [void]
           def process_require
-            return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-            path = node.children[2].children[0].to_s
+            return unless node.children[2].is_a?(AST::Node) && node.children.fetch(2).type == :str
+            path = node.children.fetch(2).children.fetch(0).to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_autoload
-            return unless node.children[3].is_a?(AST::Node) && node.children[3].type == :str
-            path = node.children[3].children[0].to_s
+            return unless node.children[3].is_a?(AST::Node) && node.children.fetch(3).type == :str
+            path = node.children.fetch(3).children.fetch(0).to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
@@ -200,9 +196,8 @@ module Solargraph
             if node.children[2].nil?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            elsif %i[sym str].include?(node.children[2].type)
-              # @sg-ignore Need to add nil check here
-              node.children[2..].each do |x|
+            elsif %i[sym str].include?(node.children.fetch(2).type)
+              node.children.drop(2).each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
@@ -251,15 +246,15 @@ module Solargraph
                   )
                 end
               end
-            elsif node.children[2].type == :def
-              NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
+            elsif node.children.fetch(2).type == :def
+              NodeProcessor.process node.children.fetch(2), region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 
           # @return [void]
           def process_private_constant
-            return unless node.children[2] && %i[sym str].include?(node.children[2].type)
-            cn = node.children[2].children[0].to_s
+            return unless node.children[2] && %i[sym str].include?(node.children.fetch(2).type)
+            cn = node.children.fetch(2).children.fetch(0).to_s
             ref = pins.select do |p|
               [Solargraph::Pin::Namespace,
                Solargraph::Pin::Constant].include?(p.class) && p.namespace == region.closure.full_context.namespace && p.name == cn
@@ -274,8 +269,8 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
-              name: node.children[2].children[0].to_s,
-              original: node.children[3].children[0].to_s,
+              name: node.children.fetch(2).children.fetch(0).to_s,
+              original: node.children.fetch(3).children.fetch(0).to_s,
               scope: region.scope || :instance,
               source: :parser
             )
@@ -283,9 +278,9 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            if %i[sym str].include?(node.children[2].type)
+            if %i[sym str].include?(node.children.fetch(2).type)
               ref = pins.select do |p|
-                p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
+                p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children.fetch(2).children.fetch(0).to_s
               end.first
               # HACK: Smelly instance variable access
               ref&.instance_variable_set(:@visibility, :private)

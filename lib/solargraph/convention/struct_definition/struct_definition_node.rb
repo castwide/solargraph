@@ -30,7 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
-            struct_definition_node?(node.children[1])
+            struct_definition_node?(node.children.fetch(1))
           end
 
           private
@@ -41,7 +41,7 @@ module Solargraph
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
             return false unless struct_node.children[0]&.type == :const
-            return false unless struct_node.children[0].children[1] == :Struct
+            return false unless struct_node.children.fetch(0).children[1] == :Struct
             return false unless struct_node.children[1] == :new
 
             true
@@ -68,18 +68,18 @@ module Solargraph
 
         def keyword_init?
           keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
-            struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
-              struct_def_param.children[0].children[0].children[0] == :keyword_init
+            struct_def_param.type == :hash && struct_def_param.children.fetch(0).type == :pair &&
+              struct_def_param.children.fetch(0).children.fetch(0).children[0] == :keyword_init
           end
 
           return false if keyword_init_param.nil?
 
-          keyword_init_param.children[0].children[1].type == :true
+          keyword_init_param.children.fetch(0).children.fetch(1).type == :true
         end
 
         # @return [Parser::AST::Node]
         def body_node
-          node.children[2]
+          node.children.fetch(2)
         end
 
         private
@@ -89,13 +89,12 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          node.children[1]
+          node.children.fetch(1)
         end
 
-        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
-          struct_node.children[2..-1]
+          struct_node.children.drop(2)
         end
       end
     end
