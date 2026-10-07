@@ -315,8 +315,7 @@ module Solargraph
       def process_isa isa_node, true_presences, false_presences
         isa_type_name, variable_name = parse_isa(isa_node)
         return if variable_name.nil? || variable_name.empty?
-        # @sg-ignore Need to add nil check here
-        isa_position = Range.from_node(isa_node).start
+        isa_position = Range.from_node!(isa_node).start
 
         pin = find_var(variable_name, isa_position)
         return unless pin
@@ -352,8 +351,7 @@ module Solargraph
         # we're looking for and typechecking will cover any invalid
         # ones
         return unless nilp_arg.nil?
-        # @sg-ignore Need to add nil check here
-        nilp_position = Range.from_node(nilp_node).start
+        nilp_position = Range.from_node!(nilp_node).start
 
         pin = find_var(variable_name, nilp_position)
         return unless pin
@@ -414,8 +412,7 @@ module Solargraph
         variable_name = parse_variable(node)
         return if variable_name.nil?
 
-        # @sg-ignore Need to add nil check here
-        var_position = Range.from_node(node).start
+        var_position = Range.from_node!(node).start
 
         pin = find_var(variable_name, var_position)
         return unless pin

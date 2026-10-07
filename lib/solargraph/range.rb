@@ -86,6 +86,18 @@ module Solargraph
       from_expr(node.loc.expression)
     end
 
+    # Like .from_node, but raises instead of returning nil. Only two kinds of
+    # node lack a location: an empty, unparenthesized :args and NodeMethods::NIL_NODE.
+    #
+    # @param node [::Parser::AST::Node]
+    # @return [Range]
+    # @sg-ignore flow sensitive typing needs to handle 'raise if'
+    def self.from_node! node
+      rng = from_node(node)
+      raise ArgumentError, "Node #{node.inspect} has no location" if rng.nil?
+      rng
+    end
+
     # Get a range from a Parser range, usually found in
     # Parser::AST::Node#location#expression.
     #

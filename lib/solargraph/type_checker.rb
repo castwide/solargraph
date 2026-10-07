@@ -300,12 +300,10 @@ module Solargraph
       return [] unless rules.validate_consts?
       result = []
       Solargraph::Parser::NodeMethods.const_nodes_from(source.node).each do |const|
-        rng = Solargraph::Range.from_node(const)
+        rng = Solargraph::Range.from_node!(const)
         chain = Solargraph::Parser.chain(const, filename)
-        # @sg-ignore Need to add nil check here
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         closure_pin.rebind(api_map)
-        # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, closure_pin, locals)
@@ -321,11 +319,9 @@ module Solargraph
     def call_problems
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
-        rng = Solargraph::Range.from_node(call)
-        # @sg-ignore Need to add nil check here
+        rng = Solargraph::Range.from_node!(call)
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
-        # @sg-ignore Need to add nil check here
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         if call.type == :block
           # blocks in the AST include the method call as well, so the
@@ -337,7 +333,6 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         closure_pin.rebind(api_map)
-        # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         # @sg-ignore Need to add nil check here
@@ -694,11 +689,9 @@ module Solargraph
 
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       # @sg-ignore flow sensitive typing needs to handle attrs
-      rng = Solargraph::Range.from_node(pin.assignment)
-      # @sg-ignore Need to add nil check here
+      rng = Solargraph::Range.from_node!(pin.assignment)
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
-      location = Location.new(filename, Range.from_node(pin.assignment))
+      location = Location.new(filename, rng)
       locals = source_map.locals_at(location)
       type = chain.infer(api_map, closure_pin, locals)
       if type.undefined? && !rules.ignore_all_undefined?
