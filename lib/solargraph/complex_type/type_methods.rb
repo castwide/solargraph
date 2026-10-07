@@ -75,6 +75,14 @@ module Solargraph
         name == 'undefined'
       end
 
+      # @return [Boolean] True if this type is RBS's bottom type - an
+      #   expression that never produces a value (e.g., the return type
+      #   of `raise` or `abort`). A bottom type is a subtype of every
+      #   other type.
+      def bot?
+        name == 'bot'
+      end
+
       # Variance of the type ignoring any type parameters
       # @return [Symbol]
       # @param situation [Symbol] The situation in which the variance is being considered.

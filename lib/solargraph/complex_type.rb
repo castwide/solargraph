@@ -36,7 +36,7 @@ module Solargraph
     def qualify api_map, *gates
       red = reduce_object
       types = red.items.map do |t|
-        next t if %w[nil void undefined].include?(t.name)
+        next t if %w[nil void undefined bot].include?(t.name)
         next t if ['::Boolean'].include?(t.rooted_name)
         api_map.unalias(t.name) || t.qualify(api_map, *gates)
       end
@@ -384,8 +384,17 @@ module Solargraph
     def exclude exclude_types, api_map
       return self if exclude_types.nil?
 
-      types = items - exclude_types.items
-      types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
+      # excludes by conformance, not equality: excluding Array also
+      # removes Array<Symbol, Array> (every Array<Symbol, Array> is an
+      # Array), but excluding Array<Integer> leaves plain Array alone.
+      types = items.reject do |ut|
+        exclude_types.any? { |exclude_type| ut.conforms_to?(api_map, exclude_type, :assignment) }
+      end
+      if types.empty?
+        # Exhausting every excluded type means the code here is unreachable, not
+        # a type error - `bot` keeps calls on it vacuously valid, not unresolved.
+        types = [ComplexType::UniqueType::BOT]
+      end
       ComplexType.new(types)
     end
 
