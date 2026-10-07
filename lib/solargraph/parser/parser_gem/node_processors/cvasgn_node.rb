@@ -5,17 +5,22 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class CvasgnNode < Parser::NodeProcessor::Base
+          on_node_type :cvasgn, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::AsgnNode]
+
+          # @return [void]
           def process
             loc = get_node_location(node)
             pins.push Solargraph::Pin::ClassVariable.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].to_s,
+              name: node.name.to_s,
               comments: comments_for(node),
-              assignment: node.children[1],
+              assignment: node.expression,
               source: :parser
             )
-            process_children
           end
         end
       end

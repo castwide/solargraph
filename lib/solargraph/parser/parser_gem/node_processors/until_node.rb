@@ -7,6 +7,9 @@ module Solargraph
         class UntilNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :until, :process
+
+          # @return [void]
           def process
             location = get_node_location(node)
             # Note - this should not be considered a block, as the

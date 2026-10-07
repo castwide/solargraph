@@ -7,26 +7,32 @@ module Solargraph
         class CasgnNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :casgn, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::CasgnNode]
+
+          # @return [void]
           def process
             pins.push Solargraph::Pin::Constant.new(
               location: get_node_location(node),
               closure: region.closure,
               name: const_name,
               comments: comments_for(node),
-              assignment: node.children[2],
+              assignment: node.expression,
               source: :parser
             )
-            process_children
           end
 
           private
 
           # @return [String]
           def const_name
-            if node.children[0]
-              Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
+            namespace = node.namespace
+            if namespace
+              Parser::NodeMethods.unpack_name(namespace) + "::#{node.name}"
             else
-              node.children[1].to_s
+              node.name.to_s
             end
           end
         end

@@ -7,29 +7,17 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class OpasgnNode < Parser::NodeProcessor::Base
-          # @return [void]
-          def process
-            target = node.children[0]
-            operator = node.children[1]
-            argument = node.children[2]
-            if target.type == :send
-              # @sg-ignore Need a downcast here
-              process_send_target(target, operator, argument)
-            elsif target.type.to_s.end_with?('vasgn')
-              # @sg-ignore Need a downcast here
-              process_vasgn_target(target, operator, argument)
-            else
-              Solargraph.assert_or_log(:opasgn_unknown_target,
-                                       "Unexpected op_asgn target type: #{target.type}")
-            end
-          end
+          on_node_pattern_enter '(op_asgn $send $_ $_)', :process_send_target
+          on_node_pattern_enter '(op_asgn ${lvasgn ivasgn cvasgn gvasgn} $_ $_)', :process_vasgn_target
+          on_node_pattern_enter '(op_asgn $[!send !lvasgn !ivasgn !cvasgn !gvasgn] ...)', :process_unknown_target
 
-          # @param call [Parser::AST::Node] the target of the assignment
+          # @param call [RuboCop::AST::SendNode] the target of the assignment
           # @param operator [Symbol] the operator, e.g. :+
           # @param argument [Parser::AST::Node] the argument of the operation
           #
           # @return [void]
           def process_send_target call, operator, argument
+            skip_children
             # if target is a call:
             # [10] pry(main)> Parser::CurrentRuby.parse("Foo.bar += baz")
             # => s(:op_asgn,
@@ -39,8 +27,8 @@ module Solargraph
             #      :+, # operator
             #      s(:send, nil, :baz)) # argument
             # [11] pry(main)>
-            callee = call.children[0]
-            call_method = call.children[1]
+            callee = call.receiver
+            call_method = call.method_name
             asgn_method = :"#{call_method}="
 
             # [8] pry(main)> Parser::CurrentRuby.parse("Foo.bar = Foo.bar + baz")
@@ -57,22 +45,22 @@ module Solargraph
                                     [callee,
                                      asgn_method,
                                      node.updated(:send, [call, operator, argument])])
-            NodeProcessor.process(new_send, region, pins, locals, ivars)
+            walk new_send
           end
 
-          # @param asgn [Parser::AST::Node] the target of the assignment
+          # @param asgn [RuboCop::AST::AsgnNode] the target of the assignment
           # @param operator [Symbol] the operator, e.g. :+
           # @param argument [Parser::AST::Node] the argument of the operation
           #
           # @return [void]
           def process_vasgn_target asgn, operator, argument
+            skip_children
             # => s(:op_asgn,
             #      s(:lvasgn, :a), # asgn
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @type [Parser::AST::Node]
-            variable_name = asgn.children[0]
+            variable_name = asgn.name
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
@@ -89,7 +77,15 @@ module Solargraph
             ]
             send_node = node.updated(:send, send_children)
             new_asgn = node.updated(asgn.type, [variable_name, send_node])
-            NodeProcessor.process(new_asgn, region, pins, locals, ivars)
+            walk new_asgn
+          end
+
+          # @param target [Parser::AST::Node]
+          # @return [void]
+          def process_unknown_target target
+            skip_children
+            Solargraph.assert_or_log(:opasgn_unknown_target,
+                                     "Unexpected op_asgn target type: #{target.type}")
           end
         end
       end
