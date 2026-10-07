@@ -190,7 +190,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(16, 15))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
-    expect(type.tag).to eq('Hash<String, Baz<String>>')
+    expect(type.tag).to eq('Hash{String => Baz<String>}')
   end
 
   it 'infers generic-class method return values with self reference through RBS definition' do
