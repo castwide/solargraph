@@ -96,7 +96,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
-          pins.concat Collection::Stdlib.load(path)
+          pins.concat Collection::Stdlib.load(path) if loaded_stdlibs.add?(path)
         else
           metagem = @repo.find_by_path(path)
           next unresolved_requires.push(path) unless metagem
@@ -142,6 +142,12 @@ module Solargraph
         else
           pins.concat RbsMap::Helpers.combine(base_pins, rbsc_pins)
         end
+        # Gems might not declare stdlib dependencies as gem dependencies
+        # (e.g., `activesupport` requires `date`)
+        base_pins.select { |pin| pin.is_a?(Pin::Reference::Require) && RbsMap::Stdlib.has?(pin.name) }
+                 .each do |pin|
+                   pins.concat Collection::Stdlib.load(pin.name) if loaded_stdlibs.add?(pin.name)
+                 end
       end
       load_dependencies metagem
     end
