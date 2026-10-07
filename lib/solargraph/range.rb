@@ -86,8 +86,8 @@ module Solargraph
       from_expr(node.loc.expression)
     end
 
-    # Like .from_node, but raises instead of returning nil. Only two nodes lack
-    # a location: an empty, unparenthesized :args and NodeMethods::NIL_NODE.
+    # Like .from_node, but raises instead of returning nil. Only two kinds of
+    # node lack a location: an empty, unparenthesized :args and NodeMethods::NIL_NODE.
     #
     # @param node [::Parser::AST::Node]
     # @return [Range]
