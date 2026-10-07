@@ -4,7 +4,7 @@ module Solargraph
   module Convention
     class Gemfile < Base
       def local source_map
-        return EMPTY_ENVIRON unless File.basename(source_map.filename) == 'Gemfile'
+        return EMPTY_ENVIRON unless File.basename(source_map.filename.to_s) == 'Gemfile'
         @local ||= Environ.new(
           requires: ['bundler'],
           domains: ['Bundler::Dsl']

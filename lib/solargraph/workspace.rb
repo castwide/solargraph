@@ -233,6 +233,7 @@ module Solargraph
     def read_rbs_collection_path
       return unless rbs_collection_config_path
 
+      # @sg-ignore Translate to something flow sensitive typing understands
       path = YAML.load_file(rbs_collection_config_path)&.fetch('path')
       # make fully qualified
       File.expand_path(path, directory)
