@@ -119,30 +119,6 @@ module Solargraph
       lockfile if File.file?(lockfile)
     end
 
-    # Signature sets for the Ruby stdlib are part of a collection's lockfile
-    # but are not associated with any gem in the bundle, so the gem lookup in
-    # #load_rbs_collection never finds them. Load them from the rbs gem.
-    #
-    # @return [void]
-    # def load_collection_stdlibs
-    #   rbs_collection.stdlib_names.each do |library|
-    #     next if loaded_stdlibs.include? library
-    #     next unless RbsMap::Stdlib.has? library
-    #     loaded_stdlibs.add library
-    #     pins.concat Collection::Stdlib.load(library)
-    #   end
-    # end
-
-    # def load_rbs_collection
-    #   load_collection_stdlibs
-    #   loaded_gems.each do |metagem|
-    #     rbsc_pins = rbs_collection.load(metagem)
-    #     # @todo Combining the pins is necessary because concatenating them
-    #     #   breaks deep type inference in some cases
-    #     pins.replace(RbsMap::Helpers.combine(pins, rbsc_pins)) unless rbsc_pins.empty?
-    #   end
-    # end
-
     def clear_all
       pins.clear
       unresolved_requires.clear
