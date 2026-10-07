@@ -480,8 +480,8 @@ module Solargraph
         location || type_location
       end
 
-      # Only Namespace, Reference::Require/Override and parentless RBS Constant
-      # pins lack a closure, and no #closure! call site receives one unguarded.
+      # Only Namespace, FactoryParameter, Reference::Require/Override and parentless
+      # RBS Constant pins lack a closure; no #closure! call site receives one unguarded.
       #
       # @sg-ignore flow ensitive typing should understand raise
       # @return [Pin::Closure]
