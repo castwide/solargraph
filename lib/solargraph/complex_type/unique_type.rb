@@ -476,7 +476,7 @@ module Solargraph
               # as defaults in terms of earlier ones (e.g. C = A | B).
               # Resolve those defaults against the same context instead of
               # returning them as unresolved generic placeholders.
-              definitions.generic_defaults[generic_name].resolve_generics(definitions, context_type)
+              definitions.generic_defaults.fetch(generic_name).resolve_generics(definitions, context_type)
             else
               ComplexType::UNDEFINED
             end
