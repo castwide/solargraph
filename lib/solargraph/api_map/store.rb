@@ -44,7 +44,7 @@ module Solargraph
                                       @indexes[changed + idx - 1].merge(pins)
                                     end
         end
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         # @type [Index]
         @index = @indexes.last.clone
         # @sg-ignore Need to add nil check here

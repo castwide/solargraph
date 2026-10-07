@@ -57,7 +57,7 @@ module Solargraph
     end
 
     # @return [UniqueType]
-    # @sg-ignore Array#first/#last relies on non-empty invariant
+    # @sg-ignore Need to add nil check here
     def first
       @items.first
     end
@@ -346,9 +346,9 @@ module Solargraph
     end
 
     # @return [Array<ComplexType>]
-    # @sg-ignore Array#first/#last relies on non-empty invariant
+    # @sg-ignore Need to add nil check here
     def all_params
-      # @sg-ignore Array#first/#last relies on non-empty invariant
+      # @sg-ignore Need to add nil check here
       @items.first.all_params || []
     end
 
@@ -373,7 +373,7 @@ module Solargraph
     def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
-      # @sg-ignore Array#first/#last relies on non-empty invariant
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1392
       @items.first.erased_version_of?(other.items.first)
     end
 

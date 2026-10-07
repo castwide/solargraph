@@ -58,7 +58,7 @@ module Solargraph
       end
 
       def to_rbs
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore Need to add nil check here
         "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 

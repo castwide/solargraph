@@ -195,7 +195,7 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
-          # @sg-ignore Array#first/#last relies on non-empty invariant
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
                    cursor.chain.base.infer(api_map, context_pin, locals)

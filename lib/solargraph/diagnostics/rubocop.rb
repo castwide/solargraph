@@ -50,7 +50,7 @@ module Solargraph
       # Extracts the rubocop version from _args_
       #
       # @return [String]
-      # @sg-ignore Array#first/#last relies on non-empty invariant
+      # @sg-ignore Need to add nil check here
       def rubocop_version
         args.find { |a| a =~ /version=/ }.to_s.split('=').last
       end

@@ -213,7 +213,7 @@ module Solargraph
         detail += if signatures.length > 1
                     '(*) '
                   else
-                    # @sg-ignore Array#first/#last relies on non-empty invariant
+                    # @sg-ignore Need to add nil check here
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
         # @sg-ignore Need to add nil check here
@@ -404,7 +404,7 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
-              # @sg-ignore Array#first/#last relies on non-empty invariant
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1392
               name, decl = parse_overload_param(src.first)
               # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               Pin::Parameter.new(
@@ -414,7 +414,7 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location&.range,
-                # @sg-ignore Array#first/#last relies on non-empty invariant
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
               )
@@ -639,13 +639,13 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore Need to add nil check here
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Array#first/#last relies on non-empty invariant
+          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

@@ -322,13 +322,13 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore Need to add nil check here
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore Array#first/#last relies on non-empty invariant
+          # @sg-ignore Need to add nil check here
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

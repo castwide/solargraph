@@ -74,7 +74,7 @@ module Solargraph
     # @param line [Integer]
     # @param column [Integer]
     # @return [AST::Node]
-    # @sg-ignore Array#first/#last relies on non-empty invariant
+    # @sg-ignore Need to add nil check here
     def node_at line, column
       tree_at(line, column).first
     end
