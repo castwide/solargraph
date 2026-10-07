@@ -342,7 +342,7 @@ module Solargraph
       # @return [String]
       def rbs_union types
         if types.length == 1
-          types.first.to_rbs
+          types.fetch(0).to_rbs
         else
           "(#{types.map(&:to_rbs).join(' | ')})"
         end

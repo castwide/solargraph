@@ -194,7 +194,7 @@ module Solargraph
         result = []
         result.concat complete_keyword_parameters
         if cursor.chain.constant? || cursor.start_of_constant?
-          full = cursor.chain.links.first.word
+          full = cursor.chain.links.fetch(0).word
           type = if cursor.chain.undefined?
                    cursor.chain.base.infer(api_map, context_pin, locals)
                  elsif full.include?('::') && cursor.chain.links.length == 1
