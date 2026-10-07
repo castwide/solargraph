@@ -997,5 +997,36 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'still reports too few arguments through a Class<Foo<generic<T>>> receiver' do
+      checker = type_checker(%(
+        # @generic T
+        class Box
+          # @param a [generic<T>]
+          # @return [void]
+          def initialize(a); end
+        end
+
+        # @generic T
+        # @param k [Class<Box<generic<T>>>]
+        # @return [Box<generic<T>>]
+        def build(k)
+          k.new
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Not enough arguments to Box.new'])
+    end
+
+    it 'checks arity against the receiver class initialize, not Class#initialize' do
+      checker = type_checker(%(
+        # @generic T
+        # @param k [Class<Array<generic<T>>>]
+        # @return [Array<generic<T>>]
+        def build(k)
+          k.new(1, 2, 3, 4)
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Too many arguments to Array.new'])
+    end
   end
 end
