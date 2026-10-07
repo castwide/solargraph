@@ -17,7 +17,7 @@ module Solargraph
       # Generate the data.
       #
       # @param source [Source]
-      # @return [Array]
+      # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
       def map source
         @source = source
         @filename = source.filename
@@ -37,7 +37,7 @@ module Solargraph
 
       # @param filename [String]
       # @param code [String]
-      # @return [Array]
+      # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
       def unmap filename, code
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
@@ -47,7 +47,7 @@ module Solargraph
 
       class << self
         # @param source [Source]
-        # @return [Array]
+        # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
           # @sg-ignore Need to add nil check here
           return new.unmap(source.filename, source.code) unless source.parsed?
