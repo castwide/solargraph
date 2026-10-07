@@ -191,6 +191,44 @@ describe Solargraph::Library do
     expect(pins.map(&:path)).to include('Foo#bar')
   end
 
+  describe '#code_lenses' do
+    let(:lens_convention) do
+      Class.new(Solargraph::Convention::Base) do
+        def local source_map
+          lens = Solargraph::CodeLens.new(
+            range: Solargraph::Range.from_to(0, 0, 0, 0),
+            command: Solargraph::Command.new(title: 'Run', command: 'run', arguments: [source_map.filename])
+          )
+          Solargraph::Environ.new(code_lenses: [lens])
+        end
+      end
+    end
+
+    before { Solargraph::Convention.register lens_convention }
+
+    after { Solargraph::Convention.unregister lens_convention }
+
+    it 'returns the code lenses that conventions provide for an attached file' do
+      library = described_class.new
+      library.attach Solargraph::Source.load_string('class Foo; end', 'file.rb', 0)
+
+      expect(library.code_lenses('file.rb').map { |lens| lens.command.arguments }).to eq([['file.rb']])
+    end
+
+    it 'maps files outside the workspace on demand' do
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, 'outside_spec.rb')
+        File.write(path, 'class Foo; end')
+
+        expect(described_class.new.code_lenses(path).map { |lens| lens.command.arguments }).to eq([[path]])
+      end
+    end
+
+    it 'returns nothing for missing files' do
+      expect(described_class.new.code_lenses('/missing/file.rb')).to eq([])
+    end
+  end
+
   describe '#references_from' do
     it 'collects references to a new method on a constant from assignment of Class.new' do
       workspace = Solargraph::Workspace.new('*')

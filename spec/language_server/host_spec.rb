@@ -150,6 +150,40 @@ describe Solargraph::LanguageServer::Host do
     expect(json['params']['diagnostics']).to be_empty
   end
 
+  describe '#code_lenses' do
+    let(:lens_convention) do
+      Class.new(Solargraph::Convention::Base) do
+        def local source_map
+          lens = Solargraph::CodeLens.new(
+            range: Solargraph::Range.from_to(0, 0, 0, 0),
+            command: Solargraph::Command.new(title: 'Run', command: 'run', arguments: [source_map.filename])
+          )
+          Solargraph::Environ.new(code_lenses: [lens])
+        end
+      end
+    end
+
+    before { Solargraph::Convention.register lens_convention }
+
+    after { Solargraph::Convention.unregister lens_convention }
+
+    it 'returns code lenses for unopened files excluded from the workspace' do
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, '.solargraph.yml'), "exclude:\n  - spec/**/*\n")
+        FileUtils.mkdir_p(File.join(dir, 'spec'))
+        spec_path = File.join(dir, 'spec', 'thing_spec.rb')
+        File.write(spec_path, 'class Thing; end')
+        host = described_class.new
+        host.prepare(dir)
+
+        lenses = host.code_lenses(Solargraph::LanguageServer::UriHelpers.file_to_uri(spec_path))
+                     .select { |lens| lens.command.command == 'run' }
+
+        expect(lenses.map { |lens| lens.command.arguments }).to eq([[spec_path]])
+      end
+    end
+  end
+
   it 'rescues runtime errors from messages' do
     host = described_class.new
     message_class = Class.new(Solargraph::LanguageServer::Message::Base) do
