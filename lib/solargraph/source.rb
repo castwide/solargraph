@@ -479,7 +479,7 @@ module Solargraph
     # @return [Boolean]
     attr_writer :parsed
 
-    # @return [Hash{Integer => String}
+    # @return [Hash{Integer => Solargraph::Parser::Snippet}]
     attr_writer :comments
 
     # @return [Boolean]
