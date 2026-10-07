@@ -94,7 +94,7 @@ module Solargraph
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
       #
-      # flow sensitive typing could handle (161):
+      # flow sensitive typing could handle (162):
       #
       # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
@@ -126,6 +126,7 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: Need to handle duck-typed method calls on union types
       # @todo 1: flow sensitive typing needs to remove literal with
+      # @todo 1: Array#flatten returns a bare Array
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end
