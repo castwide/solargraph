@@ -87,4 +87,20 @@ describe Solargraph::Source::Chain::Or do
     pin = or_link.resolve(api_map, nil, []).first
     expect(pin.return_type.tag).to eq('undefined')
   end
+
+  it 'keeps nil when both sides may be nil' do
+    source = Solargraph::Source.load_string(%(
+      # @param a [Integer, nil]
+      # @param b [Integer, nil]
+      def foo(a, b)
+        c = a || b
+        c
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [5, 8])
+    expect(clip.infer.simplify_literals.rooted_tags).to eq('::Integer, nil')
+  end
 end
