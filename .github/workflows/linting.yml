@@ -97,8 +97,6 @@ jobs:
 
     - name: Run rbs validate
       run: bundle exec rbs validate
-      # @todo Temporary, expect to revert in 0.60
-      continue-on-error: true
   rubocop_todo:
     name: .rubocop_todo.yml
     runs-on: ubuntu-latest
