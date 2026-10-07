@@ -313,6 +313,7 @@ module Solargraph
         @indexes = []
         pinsets.each do |pins|
           if @indexes.last && pins.empty?
+            # @sg-ignore flow sensitive typing needs to handle attrs
             @indexes.push @indexes.last
           else
             @indexes.push(@indexes.last&.merge(pins) || Solargraph::ApiMap::Index.new(pins))

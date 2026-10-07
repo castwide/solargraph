@@ -256,6 +256,7 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           if param.default_type
+            # @sg-ignore flow sensitive typing needs to handle attrs
             complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
             generic_defaults[param.name.to_s] = complex_type
           end
