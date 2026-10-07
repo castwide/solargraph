@@ -2,6 +2,7 @@
 
 require 'parser'
 require 'ast'
+require 'rbs'
 
 # https://github.com/whitequark/parser
 # rubocop:disable Metrics/ModuleLength
@@ -79,6 +80,44 @@ module Solargraph
         # @return [Position]
         def get_node_end_position node
           Position.new(node.loc.last_line, node.loc.last_column)
+        end
+
+        # A trailing inline RBS type argument list, e.g. the `#[String]` in
+        # `include Enumerable #[String]`. The inner group recurses so that a
+        # nested `Hash[String, Integer]` is not cut short at its first `]`.
+        TRAILING_TYPE_ARGS = /\A\s*\#(?<outer>\[(?<body>(?:[^\[\]]++|\g<outer>)*)\])/
+
+        # Type arguments from an inline RBS annotation directly after +node+,
+        # as in `class Foo < Array #[String]` or `include Enumerable #[String]`.
+        # RBS requires no space between the hash mark and the bracket; with one,
+        # this is an ordinary comment.
+        #
+        # @param node [Parser::AST::Node] the node the annotation follows
+        # @param code [String] source the node was parsed from
+        # @return [Array<String>]
+        def trailing_rbs_type_args node, code
+          pos = get_node_end_position(node)
+          offset = Position.line_char_to_offset(code, pos.line, pos.character)
+          eol = code.index("\n", offset) || code.length
+          match = code[offset...eol].to_s.match(TRAILING_TYPE_ARGS)
+          return [] unless match
+
+          parse_rbs_type_args match[:body].to_s
+        end
+
+        # Parse an RBS type argument list by wrapping it in a throwaway
+        # generic, which lets RBS split the arguments and gives each one to
+        # RbsTranslator for conversion to Solargraph's own type syntax.
+        #
+        # @param code [String]
+        # @return [Array<String>]
+        def parse_rbs_type_args code
+          type = RBS::Parser.parse_type("Object[#{code}]")
+          return [] unless type.is_a?(RBS::Types::ClassInstance)
+
+          type.args.map { |arg| RbsTranslator.to_complex_type(arg).rooted_tags }
+        rescue RBS::ParsingError
+          []
         end
 
         # @param node [Parser::AST::Node]
