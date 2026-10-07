@@ -293,7 +293,8 @@ module Solargraph
         # @sg-ignore Translate to something flow sensitive typing understands
         range = Range.from_node(top)
         # @sg-ignore Need to add nil check here
-        if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
+        if range && (result.empty? || range.start.line > result.last.start.line) &&
+           range.ending.line - range.start.line >= 2
           result.push range
         end
       end

@@ -322,10 +322,9 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
-        # @sg-ignore Need to add nil check here
+        next if rng.nil?
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
-        # @sg-ignore Need to add nil check here
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         if call.type == :block
           # blocks in the AST include the method call as well, so the
@@ -337,7 +336,6 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         closure_pin.rebind(api_map)
-        # @sg-ignore Need to add nil check here
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         # @sg-ignore Need to add nil check here
