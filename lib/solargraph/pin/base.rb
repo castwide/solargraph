@@ -480,10 +480,8 @@ module Solargraph
         location || type_location
       end
 
-      # #closure, for callers who know from the pin provenance (e.g. it
-      # was just built from a parsed AST node, or fetched from an
-      # already-cataloged workspace) that it must be set. Raises instead
-      # of silently propagating nil if that assumption is ever wrong.
+      # Only Namespace, Reference::Require/Override and parentless RBS Constant
+      # pins lack a closure, and no #closure! call site receives one unguarded.
       #
       # @sg-ignore flow ensitive typing should understand raise
       # @return [Pin::Closure]
