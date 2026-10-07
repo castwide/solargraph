@@ -76,16 +76,14 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
-        # @return [Parser::AST::Node, nil]
+        # @return [Parser::AST::Node]
         def data_node
-          node.children[1]
+          node.children.fetch(1)
         end
 
-        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
-          # @sg-ignore Need to add nil check here
-          data_node.children[2..]
+          data_node.children.drop(2)
         end
       end
     end

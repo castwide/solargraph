@@ -106,8 +106,8 @@ module Solargraph
             # s(:or_asgn,
             #   s(:ivasgn, :@bar),
             #   s(:int, 123))
-            lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
-            rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
+            lhs_chain = NodeChainer.chain n.children.fetch(0) # s(:ivasgn, :@bar)
+            rhs_chain = NodeChainer.chain n.children.fetch(1) # s(:int, 123)
             or_link = Chain::Or.new([lhs_chain, rhs_chain])
             # this is just for a call chain, so we don't need to record the assignment
             result.push(or_link)
@@ -118,7 +118,7 @@ module Solargraph
             result.concat generate_links(n.children.last)
           elsif n.type == :or
             result.push Chain::Or.new([NodeChainer.chain(n.children.fetch(0), @filename),
-                                       NodeChainer.chain(n.children[1], @filename, n)])
+                                       NodeChainer.chain(n.children.fetch(1), @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]
                             NodeChainer.chain(n.children.fetch(1), @filename, n)

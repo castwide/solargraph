@@ -260,7 +260,7 @@ module Solargraph
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
         #
-        call_receiver = call_node.children[0]
+        call_receiver = call_node.children.fetch(0)
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:

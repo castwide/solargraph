@@ -79,7 +79,7 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def body_node
-          node.children[2]
+          node.children.fetch(2)
         end
 
         private
@@ -89,13 +89,12 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          node.children[1]
+          node.children.fetch(1)
         end
 
-        # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
-          struct_node.children[2..-1]
+          struct_node.children.drop(2)
         end
       end
     end
