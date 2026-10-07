@@ -65,11 +65,9 @@ module Solargraph
                                                                      source: :yard_map)
             end
           end
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           code_object.class_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Extend.new(closure: nspin, name: m.path, source: :yard_map)
           end
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           code_object.instance_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Include.new(
               closure: nspin, # @todo Fix this
@@ -80,7 +78,6 @@ module Solargraph
         when YARD::CodeObjects::MethodObject
           closure = @namespace_pins[code_object.namespace.to_s]
           macros_for_method_object(code_object)
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
             result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec)

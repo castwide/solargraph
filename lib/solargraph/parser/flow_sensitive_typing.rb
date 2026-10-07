@@ -209,10 +209,8 @@ module Solargraph
         # [4] pry(main)>
         subject_node = case_node.children[0]
         return if subject_node.nil?
-        # @sg-ignore Need to add nil check here
         return unless %i[lvar ivar].include?(subject_node.type)
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
         variable_name = parse_variable(subject_node)
         return if variable_name.nil?
 
