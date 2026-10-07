@@ -190,10 +190,12 @@ module Solargraph
       end
     end
 
-    private
-
     # @return [Array<Pin::Base>]
-    attr_writer :convention_pins
+    def convention_pins
+      @convention_pins || []
+    end
+
+    private
 
     # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
@@ -206,9 +208,12 @@ module Solargraph
       @data ||= Data.new(source)
     end
 
+    # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
-    def convention_pins
-      @convention_pins || []
+    def convention_pins= pins
+      # unmemoizing the document_symbols in case it was called from any of conventions
+      @document_symbols = nil
+      @convention_pins = pins
     end
 
     # @generic T
