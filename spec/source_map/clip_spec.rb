@@ -2726,6 +2726,45 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Integer')
   end
 
+  it 'resolves a self-reference in a reassignment to the earlier value' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Foo, nil]
+        def parent; end
+      end
+      foo = Foo.new
+      if bar
+        foo = foo.parent
+      end
+      foo
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 15])
+    expect(clip.infer.to_s).to eq('Foo')
+
+    clip = api_map.clip_at('test.rb', [9, 6])
+    expect(clip.infer.to_s).to eq('Foo, nil')
+  end
+
+  it 'resolves a self-reference inside a block in the assigned value to the new value' do
+    source = Solargraph::Source.load_string(%(
+      handler = proc { handler }
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [1, 24])
+    expect(clip.infer.to_s).to eq('Proc')
+  end
+
+  it 'keeps the earlier value for a self-reference inside a block run during the assignment' do
+    source = Solargraph::Source.load_string(%(
+      x = 'a'
+      x = [1].map { x }
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [2, 20])
+    expect(clip.infer.simplify_literals.items.map(&:name)).to include('String')
+  end
+
   it 'expands nil type with conditional reassignments' do
     source = Solargraph::Source.load_string(%(
       bar = nil

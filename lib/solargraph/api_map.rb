@@ -389,6 +389,12 @@ module Solargraph
         !pin.visible_at?(closure, location) && !pin.starts_at?(location)
       end
 
+      # Same-scope code in the value sees only the old value. A block in it may
+      # run before or after the assignment, so it keeps both pins.
+      vars_at_location.reject! do |pin|
+        pin.closure == closure && pin.assigned_within?(location) && !pin.starts_at?(location)
+      end
+
       vars_at_location.inject(&:combine_with)
     end
 

@@ -273,6 +273,20 @@ module Solargraph
           presence.start == other_loc.range.start
       end
 
+      # Whether other_loc is inside one of this variable's assigned values,
+      # e.g. the right-hand `a` in `a = a.next`, which still sees the old value.
+      #
+      # @param other_loc [Location]
+      # @return [Boolean]
+      def assigned_within? other_loc
+        return false unless location&.filename == other_loc.filename
+
+        assignments.any? do |node|
+          range = Range.from_node(node)
+          !range.nil? && range.contain?(other_loc.range.start)
+        end
+      end
+
       # Narrow the presence range to the intersection of both.
       #
       # @param other [self]
