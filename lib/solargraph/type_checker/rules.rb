@@ -71,7 +71,7 @@ module Solargraph
       #
       # pending code fixes (277):
       #
-      # @todo 212: Need to add nil check here
+      # @todo 281: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
