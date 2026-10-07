@@ -395,6 +395,30 @@ describe Solargraph::Source::Chain::Call do
     expect(type.rooted_tags).to eq('::String, ::Symbol')
   end
 
+  it 'resolves self in a union return type separately for each union member' do
+    source = Solargraph::Source.load_string(%(
+      class Base
+        # @return [String, self]
+        def pick; end
+      end
+
+      class Alpha < Base; end
+      class Beta < Base; end
+
+      # @type [Alpha, Beta]
+      thing = alpha_or_beta
+      thing.pick
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 13))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    # One inherited pin serves both members, and `self` is not the first member of the
+    # return union, so dedup must compare every member rather than only the first.
+    expect(type.rooted_tags).to eq('::String, ::Alpha, ::Beta')
+  end
+
   it 'resolves a YARD @return [self] to the union member that supplied the method' do
     source = Solargraph::Source.load_string(%(
       class Alpha
