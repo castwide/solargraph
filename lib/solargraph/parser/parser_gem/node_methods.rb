@@ -497,7 +497,9 @@ module Solargraph
                 node.children.drop(1).each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
+                  # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
                   elsif cc.type == :when
+                    # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
                     result.concat reduce_to_value_nodes([cc.children.last])
                   else
                     # else clause in case
