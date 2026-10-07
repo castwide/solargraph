@@ -637,15 +637,11 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
-      # @sg-ignore Wrong argument type for Integer#>: arg_0 expected Numeric, received Integer, nil
       @total = pending if pending > @total
-      # @sg-ignore Unresolved call to - on Integer, nil
       finished = @total - pending
-      # @sg-ignore @total should always be an Integer
       pct = if @total.zero?
               0
             else
-              # @sg-ignore Unresolved call to to_f
               ((finished.to_f / @total) * 100).to_i
             end
       message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
