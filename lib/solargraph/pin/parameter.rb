@@ -250,7 +250,7 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params = closure.docstring.tags(:param)
         # @sg-ignore Need to add nil check here
         params.each do |p|
@@ -272,7 +272,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
         meths.each do |meth|
@@ -289,7 +289,7 @@ module Solargraph
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
-                                                               # @sg-ignore pin.closure relies on closure always resolved
+                                                               # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                                                                *meth.closure.gates)
           end
         end

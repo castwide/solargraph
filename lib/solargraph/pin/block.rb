@@ -65,7 +65,7 @@ module Solargraph
         # @sg-ignore pin.location relies on location always resolved
         clip = api_map.clip_at(location.filename, location.range.start)
         locals = clip.locals - [self]
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures
         # @param meth [Pin::Method]
@@ -125,7 +125,7 @@ module Solargraph
                    chain.base.infer(api_map, name_pin, locals)
                  else
                    # if not, any self there must be the context of our closure
-                   # @sg-ignore pin.closure relies on closure always resolved
+                   # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                    closure.full_context
                  end
 

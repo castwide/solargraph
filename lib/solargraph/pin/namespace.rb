@@ -41,7 +41,7 @@ module Solargraph
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
                            ''
                          else
-                           # @sg-ignore pin.closure relies on closure always resolved
+                           # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                            "#{closure.full_context.namespace}::"
                          end
           closure_name += parts.join('::')

@@ -164,7 +164,7 @@ module Solargraph
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            # @sg-ignore pin.closure relies on closure always resolved
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1393
             result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
@@ -317,13 +317,13 @@ module Solargraph
         # if we're declared at top level, we can't be seen from within
         # methods declared tere
 
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         return false if viewing_closure.is_a?(Pin::Method) && closure.context.tags == 'Class<>'
 
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         return true if viewing_closure.binder.namespace == closure.binder.namespace
 
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         return true if viewing_closure.return_type == closure.context
 
         # classes and modules can't see local variables declared

@@ -6,9 +6,9 @@ module Solargraph
       # A Superclass reference pin.
       #
       class Superclass < Reference
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         def reference_gates
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           @reference_gates ||= closure.gates - [closure.path]
         end
       end

@@ -28,10 +28,10 @@ module Solargraph
         super
       end
 
-      # @sg-ignore pin.closure relies on closure always resolved
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [String]
       def method_namespace
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         closure.namespace
       end
 
@@ -177,11 +177,11 @@ module Solargraph
         end
       end
 
-      # @sg-ignore pin.closure relies on closure always resolved
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [String]
       def method_name
         raise "closure was nil in #{inspect}" if closure.nil?
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         @method_name ||= closure.name
       end
 
