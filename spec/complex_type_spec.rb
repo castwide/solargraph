@@ -80,6 +80,21 @@ describe 'YARD type specifier list parsing' do
       expect(types.to_rbs).to eq('untyped')
     end
 
+    it 'renders an unparameterized generic as untyped in RBS' do
+      types = Solargraph::ComplexType.parse('generic')
+      expect(types.length).to eq(1)
+      expect(types.to_rbs).to eq('untyped')
+    end
+
+    it 'does not render a bare arrow for a signature returning an unparameterized generic' do
+      sig = Solargraph::Pin::Signature.new(generics: [], parameters: [],
+                                           return_type: Solargraph::ComplexType.parse('generic'))
+      method_pin = Solargraph::Pin::Method.new(name: 'to_a',
+                                               closure: Solargraph::Pin::Namespace.new(name: 'NodeSet'),
+                                               signatures: [sig])
+      expect(method_pin.to_rbs).to eq('def to_a: () -> untyped')
+    end
+
     #
     # Note that the type specifier list is always an optional field and
     # can be omitted when present in a tag signature. This is the reason
