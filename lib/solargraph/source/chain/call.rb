@@ -191,7 +191,13 @@ module Solargraph
           return nil unless arguments.empty? && !with_block?
 
           composite_name = (receiver_path + [word]).join('.')
-          api_map.var_at_location(locals, composite_name, name_pin, location)
+          pin = api_map.var_at_location(locals, composite_name, name_pin, location)
+          return nil if pin.nil?
+
+          # An uninferrable narrowed pin would shadow the method lookup
+          type = pin.typify(api_map)
+          type = pin.probe(api_map) if type.undefined?
+          type.defined? ? pin : nil
         end
 
         # @param pins [::Enumerable<Pin::Base>]

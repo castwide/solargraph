@@ -997,5 +997,27 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'does not flag calls on a guarded accessor of an unresolved generic' do
+      checker = type_checker(%(
+        class Store
+          # @yieldparam [generic<Elem>]
+          # @return [void]
+          def foos; end
+        end
+
+        class Bar
+          # @param store [Store]
+          # @return [void]
+          def run store
+            store.foos do |pin|
+              next if pin.path.nil? || pin.path.empty?
+              pin.path.upcase
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
