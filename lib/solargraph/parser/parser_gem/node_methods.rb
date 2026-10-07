@@ -610,10 +610,6 @@ module Solargraph
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[0]])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                elsif node.type == :or
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat reduce_to_value_nodes(node.children)
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
