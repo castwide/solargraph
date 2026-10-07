@@ -55,6 +55,7 @@ module Solargraph
       register :gvasgn,       ParserGem::NodeProcessors::GvasgnNode
       register :casgn,        Convention::StructDefinition::NodeProcessors::StructNode
       register :casgn,        Convention::DataDefinition::NodeProcessors::DataNode
+      register :casgn,        Convention::ClassDefinition::NodeProcessors::ClassNode
       register :casgn,        ParserGem::NodeProcessors::CasgnNode
       register :masgn,        ParserGem::NodeProcessors::MasgnNode
       register :alias,        ParserGem::NodeProcessors::AliasNode
