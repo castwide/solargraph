@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'timeout'
+
 describe Solargraph::LanguageServer::Message::TextDocument::Rename do
   it 'renames a symbol' do
     host = Solargraph::LanguageServer::Host.new
@@ -9,7 +11,9 @@ describe Solargraph::LanguageServer::Message::TextDocument::Rename do
       end
       foo = Foo.new
     ), 1)
-    sleep 0.01 until host.libraries.all?(&:mapped?)
+    Timeout.timeout 60 do
+      sleep 0.01 until host.libraries.all?(&:mapped?)
+    end
     rename = described_class.new(host, {
                                    'id' => 1,
                                    'method' => 'textDocument/rename',
