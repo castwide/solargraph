@@ -1025,4 +1025,64 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'uses is_a? in an || to narrow to the union of both checked types' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param e [Array<Symbol>, String]
+        # @return [void]
+        def eval_function_call(e); end
+
+        # @param e [Array<Symbol>, String, Integer]
+        # @return [void]
+        def eval(e)
+          if e.is_a?(Array) || e.is_a?(String)
+            e
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 12])
+    expect(clip.infer.to_s).to eq('Array<Symbol>, String')
+  end
+
+  it 'does not narrow via || when only one side of the check is is_a? (negative control)' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param e [Array<Symbol>, String]
+        # @return [void]
+        def eval_function_call(e); end
+
+        # @param e [Array<Symbol>, String, Integer]
+        # @return [void]
+        def eval(e)
+          if e.is_a?(Array)
+            e
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 12])
+    expect(clip.infer.to_s).to eq('Array<Symbol>')
+  end
+
+  it 'does not invent a narrowing across || when the two is_a? checks test different variables (soundness control)' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @param x [Array<Symbol>, Integer]
+        # @param y [String, Integer]
+        # @return [void]
+        def eval(x, y)
+          if x.is_a?(Array) || y.is_a?(String)
+            x
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 12])
+    expect(clip.infer.to_s).to eq('Array<Symbol>, Integer')
+  end
 end
