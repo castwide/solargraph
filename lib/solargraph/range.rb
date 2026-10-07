@@ -86,8 +86,8 @@ module Solargraph
       from_expr(node.loc.expression)
     end
 
-    # Get a range from a node known to carry real source location
-    # info (i.e. parsed from actual source, not synthesized).
+    # Like .from_node, but raises instead of returning nil. Only two nodes lack
+    # a location: an empty, unparenthesized :args and NodeMethods::NIL_NODE.
     #
     # @param node [::Parser::AST::Node]
     # @return [Range]
