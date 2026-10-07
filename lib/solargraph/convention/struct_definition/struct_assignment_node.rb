@@ -53,11 +53,11 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         def struct_node
-          # @sg-ignore node.children[] relies on grammar-guaranteed arity
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1391
           if node.children[2].type == :block
-            # @sg-ignore node.children[] relies on grammar-guaranteed arity
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             node.children[2].children[0]
           else
             node.children[2]

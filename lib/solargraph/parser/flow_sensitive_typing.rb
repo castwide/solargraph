@@ -25,10 +25,10 @@ module Solargraph
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -53,10 +53,10 @@ module Solargraph
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         lhs = or_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         rhs = or_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)

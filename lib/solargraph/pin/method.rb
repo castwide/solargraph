@@ -659,9 +659,9 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         return node.children[1].children.last if node.type == :DEFN
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
         return node.children[3] if node.type == :defs

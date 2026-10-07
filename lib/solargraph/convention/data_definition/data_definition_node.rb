@@ -30,7 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
-            # @sg-ignore node.children[] relies on grammar-guaranteed arity
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             data_definition_node?(node.children[1])
           end
 
@@ -83,10 +83,10 @@ module Solargraph
           node.children[1]
         end
 
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
-          # @sg-ignore node.children[] relies on grammar-guaranteed arity
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1391
           data_node.children[2..]
         end
       end
