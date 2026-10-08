@@ -9,7 +9,6 @@ module Solargraph
         if presence_certain? && return_type&.defined?
           # flow sensitive typing has already figured out this type
           # has been downcast - use the type it figured out
-          # @sg-ignore flow sensitive typing should support ivars
           return adjust_type api_map, return_type.qualify(api_map, *gates)
         end
 
