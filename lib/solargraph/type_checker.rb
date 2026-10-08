@@ -253,41 +253,82 @@ module Solargraph
 
     # @return [Array<Problem>]
     def variable_type_tag_problems
-      result = []
-      all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
-        if pin.return_type.defined?
-          declared = pin.typify(api_map)
-          next if declared.duck_type?
-          if declared.defined? && pin.assignment
-            if rules.validate_tags?
-              inferred = pin.probe(api_map)
-              if inferred.undefined?
-                next if rules.ignore_all_undefined?
-                if declared_externally?(pin)
-                  ignored_pins.push pin
-                else
-                  result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
-                end
-              else
-                unless assignment_conforms_to?(inferred, declared)
-                  result.push Problem.new(pin.location,
-                                          "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}", pin: pin)
-                end
-              end
-            elsif declared_externally?(pin)
-              ignored_pins.push pin
-            end
-          elsif !pin.is_a?(Pin::Parameter) && !resolved_constant?(pin)
-            result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}",
-                                    pin: pin)
-          end
-        elsif pin.assignment
-          inferred = pin.probe(api_map)
-          ignored_pins.push pin if inferred.undefined? && declared_externally?(pin)
-        end
+      all_variables.flat_map { |pin| variable_problems_for(pin) }
+    end
+
+    # Every problem one variable's type tag produces, plus the pins it adds
+    # to ignored_pins, which suppresses later unresolved-call reports.
+    #
+    # @param pin [Pin::BaseVariable]
+    # @return [Array<Problem>]
+    def variable_problems_for pin
+      # @sg-ignore Need to add nil check here
+      unless pin.return_type.defined?
+        ignore_external_uninferred(pin) if pin.assignment
+        return []
       end
-      result
+
+      declared = pin.typify(api_map)
+      return undeclarable_problems(pin) unless declared.defined? && pin.assignment
+
+      unless rules.validate_tags?
+        ignored_pins.push pin if declared_externally?(pin)
+        return []
+      end
+
+      assignment_problems_for(pin, declared)
+    end
+
+    # Reports a declared type that resolved to nothing, which a parameter -
+    # typed by its caller - and a resolved constant are exempt from.
+    #
+    # @param pin [Pin::BaseVariable]
+    # @return [Array<Problem>]
+    def undeclarable_problems pin
+      return [] if pin.is_a?(Pin::Parameter) || resolved_constant?(pin)
+
+      [Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}", pin: pin)]
+    end
+
+    # Compares a resolved declared type against the type the assignment
+    # actually produces.
+    #
+    # @param pin [Pin::BaseVariable]
+    # @param declared [ComplexType, ComplexType::UniqueType]
+    # @return [Array<Problem>]
+    def assignment_problems_for pin, declared
+      inferred = pin.probe(api_map)
+      return uninferred_assignment_problems(pin) if inferred.undefined?
+      return [] if assignment_conforms_to?(inferred, declared)
+
+      [Problem.new(pin.location,
+                   "Declared type #{declared} does not match inferred type #{inferred} for variable #{pin.name}",
+                   pin: pin)]
+    end
+
+    # Decides what to do about an assignment whose own type could not be
+    # inferred: report it, ignore it, or say nothing.
+    #
+    # @param pin [Pin::BaseVariable]
+    # @return [Array<Problem>]
+    def uninferred_assignment_problems pin
+      return [] if rules.ignore_all_undefined?
+
+      if declared_externally?(pin)
+        ignored_pins.push pin
+        return []
+      end
+
+      [Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)]
+    end
+
+    # Marks an undeclared variable as ignored when nothing can be inferred
+    # from its assignment and its type comes from outside the workspace.
+    #
+    # @param pin [Pin::BaseVariable]
+    # @return [void]
+    def ignore_external_uninferred pin
+      ignored_pins.push pin if pin.probe(api_map).undefined? && declared_externally?(pin)
     end
 
     # @return [Array<Pin::BaseVariable>]
@@ -358,9 +399,15 @@ module Solargraph
             base = base.base
           end
           all_closest = all_found.map { |pin| pin.typify(api_map) }
-          closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+          closest = ComplexType.new(all_closest)
+          no_pin_found = found.nil?
+          found_a_variable = found.is_a?(Pin::BaseVariable)
           # @todo remove the internal_or_core? check at a higher-than-strict level
-          if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
+          checkable_receiver = !found.nil? && closest.defined? && internal_or_core?(found)
+          receiver_undecided = closest.any_generic?
+          pin_ignored = ignored_pins.include?(found)
+
+          if (no_pin_found || found_a_variable || checkable_receiver) && !receiver_undecided && !pin_ignored
             if closest.defined?
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
@@ -714,7 +761,7 @@ module Solargraph
           base = base.base
         end
         all_closest = all_found.map { |pin| pin.typify(api_map) }
-        closest = ComplexType.new(all_closest.flat_map(&:items).uniq)
+        closest = ComplexType.new(all_closest)
         return false if !found || closest.defined? || internal?(found)
       end
       true

@@ -5,6 +5,11 @@ module Solargraph
     class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
+      # Like FILLS_DIRECTORY, but a declaration here *replaces* the core
+      # definition of the same method path rather than adding an overload
+      # alongside it.
+      OVERRIDES_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'overrides'))
+
       def pins
         @pins ||= generate_pins
       end
@@ -29,6 +34,14 @@ module Solargraph
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
         fill_conversions = Conversions.new(loader: fill_loader)
         new_pins.concat fill_conversions.pins
+
+        override_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+        override_loader.add(path: Pathname(OVERRIDES_DIRECTORY))
+        override_pins = Conversions.new(loader: override_loader).pins
+        # An override replaces what core declared for that path.
+        overridden = override_pins.grep(Pin::Method).to_set(&:path)
+        new_pins.reject! { |pin| pin.is_a?(Pin::Method) && overridden.include?(pin.path) }
+        new_pins.concat override_pins
 
         # add some overrides
         new_pins.concat RbsMap::CoreFills::ALL
