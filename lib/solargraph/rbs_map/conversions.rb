@@ -3,7 +3,7 @@
 require 'rbs'
 
 module Solargraph
-  class RbsMap
+  module RbsMap
     # Functions for converting RBS declarations to Solargraph pins
     #
     class Conversions
@@ -59,6 +59,8 @@ module Solargraph
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
+      rescue RBS::DuplicatedDeclarationError => e
+        Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
       end
 
       # A non-core RbsMap omits core so its pins do not re-declare CoreMap's,
