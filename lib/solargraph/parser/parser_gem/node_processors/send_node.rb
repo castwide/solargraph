@@ -38,7 +38,7 @@ module Solargraph
                 process_autoload
               elsif method_name == :private_constant
                 process_private_constant
-              # @sg-ignore Translate to something flow sensitive typing understands
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
@@ -130,7 +130,7 @@ module Solargraph
 
           # @return [void]
           def process_include
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
             # @sg-ignore https://github.com/castwide/solargraph/pull/1391
@@ -147,7 +147,7 @@ module Solargraph
 
           # @return [void]
           def process_prepend
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
             # @sg-ignore https://github.com/castwide/solargraph/pull/1391
@@ -186,18 +186,18 @@ module Solargraph
 
           # @return [void]
           def process_require
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             path = node.children[2].children[0].to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_autoload
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return unless node.children[3].is_a?(AST::Node) && node.children[3].type == :str
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             path = node.children[3].children[0].to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
@@ -207,9 +207,9 @@ module Solargraph
             if node.children[2].nil?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             elsif %i[sym str].include?(node.children[2].type)
-              # @sg-ignore Translate to something flow sensitive typing understands
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
               node.children[2..].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]
@@ -259,18 +259,18 @@ module Solargraph
                   )
                 end
               end
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             elsif node.children[2].type == :def
-              # @sg-ignore Translate to something flow sensitive typing understands
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
               NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 
           # @return [void]
           def process_private_constant
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return unless node.children[2] && %i[sym str].include?(node.children[2].type)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             cn = node.children[2].children[0].to_s
             ref = pins.select do |p|
               [Solargraph::Pin::Namespace,

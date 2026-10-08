@@ -88,7 +88,7 @@ module Solargraph
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
           if %i[const cbase].include?(node.type)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '::' unless signature.empty?
             signature += node.children[1].to_s
@@ -96,7 +96,7 @@ module Solargraph
             signature += '.' unless signature.empty?
             signature += node.children[0].to_s
           elsif node.type == :send
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '.' unless signature.empty?
             signature += node.children[1].to_s
@@ -150,17 +150,17 @@ module Solargraph
         # @return [Hash{Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           return convert_hash(node.children[0]) if node.type == :kwsplat
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
           if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1396
             return convert_hash(node.children[0])
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           return {} unless node.type == :hash
           result = {}
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           node.children.each do |pair|
             result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
           end

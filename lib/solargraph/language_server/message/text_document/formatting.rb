@@ -102,7 +102,7 @@ module Solargraph
           # @return [String, nil]
           def cop_list value
             # @type [String]
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore flow sensitive typing needs to expand types after respond_to?
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value
@@ -125,7 +125,7 @@ module Solargraph
                      else
                        {
                          line: original.lines.length - 1,
-                         # @sg-ignore Translate to something flow sensitive typing understands
+                         # @sg-ignore flow sensitive typing needs to handle empty? guards
                          character: original.lines.last.length
                        }
                      end

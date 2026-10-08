@@ -183,11 +183,11 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
-    # @sg-ignore Translate to something flow sensitive typing understands
+    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -637,7 +637,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -656,7 +656,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 

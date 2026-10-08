@@ -490,18 +490,18 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         instance_of?(other.class) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           name == other.name &&
           # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           (comments == other.comments ||
-           # @sg-ignore Translate to something flow sensitive typing understands
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
            (((maybe_directives? == false && other.maybe_directives? == false) ||
              compare_directives(directives,
-                                # @sg-ignore Translate to something flow sensitive typing understands
+                                # @sg-ignore https://github.com/castwide/solargraph/pull/1367
                                 other.directives)) &&
-             # @sg-ignore Translate to something flow sensitive typing understands
+             # @sg-ignore https://github.com/castwide/solargraph/pull/1367
              compare_docstring_tags(docstring, other.docstring))
           )
       end

@@ -11,7 +11,7 @@ module Solargraph
             s_visi = region.visibility
             s_visi = :public if s_visi == :module_function || region.scope != :class
             loc = get_node_location(node)
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             closure = if node.children[0].is_a?(AST::Node) && node.children[0].type == :self
                         region.closure
                       else

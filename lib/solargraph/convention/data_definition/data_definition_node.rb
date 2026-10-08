@@ -42,7 +42,7 @@ module Solargraph
             return false unless data_node.is_a?(::Parser::AST::Node)
             return false unless data_node&.type == :send
             return false unless data_node.children[0]&.type == :const
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             return false unless data_node.children[0].children[1] == :Data
             return false unless data_node.children[1] == :define
 

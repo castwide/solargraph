@@ -251,9 +251,9 @@ module Solargraph
       def to_rbs
         return nil if signatures.empty?
 
-        # @sg-ignore Translate to something flow sensitive typing understands
+        # @sg-ignore flow sensitive typing needs to handle empty? guards
         rbs = "def #{name}: #{signatures.first.to_rbs}"
-        # @sg-ignore Translate to something flow sensitive typing understands
+        # @sg-ignore flow sensitive typing needs to handle empty? guards
         signatures[1..].each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))

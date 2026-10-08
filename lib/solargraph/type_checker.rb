@@ -771,7 +771,7 @@ module Solargraph
         if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = parameters.count(&:keyword?)
         else
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore flow sensitive typing needs to handle empty? guards
           kwargs = convert_hash(unchecked.last.node)
           if parameters.any? { |param| %i[kwarg kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
@@ -811,7 +811,7 @@ module Solargraph
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore flow sensitive typing needs to handle empty? guards
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
         # See https://github.com/castwide/solargraph/issues/418

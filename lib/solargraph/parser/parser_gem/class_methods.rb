@@ -141,15 +141,15 @@ module Solargraph
         def string_ranges node
           return [] unless is_ast_node?(node)
           result = []
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           result.push Range.from_node(node) if node.type == :str
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           node.children.each do |child|
             result.concat string_ranges(child)
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           if node.type == :dstr && node.children.last.nil?
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1396
             last = node.children[-2]
             # @sg-ignore Range.from_node result assumed always present
             unless last.nil?

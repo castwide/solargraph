@@ -20,7 +20,7 @@ module Solargraph
                     comments: comments_for(node),
                     name: u.children[0].to_s,
                     assignment: u.children[1],
-                    # @sg-ignore Translate to something flow sensitive typing understands
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1391
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                     # @sg-ignore pin.location relies on location always resolved
                     presence: callable.location.range,
