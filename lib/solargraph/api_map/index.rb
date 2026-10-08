@@ -193,7 +193,6 @@ module Solargraph
         combined = pin.combine_with(override_pin_for(pin, ovr))
         # combined belongs to us alone, so deleting from it touches nothing shared.
         ovr.delete.each { |name| combined.docstring.delete_tags(name.to_s) }
-        ovr.tags.each { |tag| redefine_return_type combined, tag }
         rebind_parameters combined
         combined.reset_generated!
         replace_pin pin, combined
@@ -284,19 +283,6 @@ module Solargraph
         # Rebuilt lazily from pin_class_hash, which just changed.
         @pin_select_cache.clear
         nil
-      end
-
-      # @param pin [Pin::Method, nil]
-      # @param tag [YARD::Tags::Tag]
-      # @return [void]
-      def redefine_return_type pin, tag
-        # @todo can this be made to not mutate existing pins and use
-        #   proxy() / proxy_with_signatures() instead?
-        return unless pin && tag.tag_name == 'return'
-        pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
-        pin.signatures.each do |sig|
-          sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
-        end
       end
 
       # @return [void]

@@ -246,6 +246,18 @@ describe Solargraph::ApiMap::Index do
         expect(method_pin.return_type.tag).to eq('Benchmark::Tms')
       end
     end
+
+    context 'when the @return tag lists more than one type' do
+      let(:measure_override) do
+        Solargraph::Pin::Reference::Override.from_comment('Benchmark.measure', '@return [Benchmark::Tms, nil]')
+      end
+
+      it 'keeps every listed type, not just the first' do
+        method_pin = output_pins.find { |pin| pin.path == 'Benchmark.measure' }
+        expect(method_pin.return_type.to_s).to eq('Benchmark::Tms, nil')
+        expect(method_pin.signatures.map { |sig| sig.return_type.to_s }).to eq(['Benchmark::Tms, nil'])
+      end
+    end
   end
 
   # The signatures of an RBS-sourced method live only on the pin -- the
