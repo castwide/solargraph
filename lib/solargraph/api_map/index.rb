@@ -23,22 +23,22 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
-        # @param h [String]
-        # @param k [Array<Pin::Namespace>]
+        # @param h [Hash{String => Array<Pin::Namespace>}]
+        # @param k [String]
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def pin_class_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{String => Array<Pin::Base>}]
+        # @param k [String]
         @pin_class_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def path_pin_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{String => Array<Pin::Base>}]
+        # @param k [String]
         @path_pin_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
