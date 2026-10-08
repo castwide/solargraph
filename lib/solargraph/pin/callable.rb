@@ -45,7 +45,9 @@ module Solargraph
         return other.block if block.nil? ||
                               (!other.block.nil? && block.parameters.length < other.block.parameters.length)
         return block if other.block.nil? || (block.parameters.length > other.block.parameters.length)
-        return block.combine_with(other.block) if block.arity == other.block.arity
+        # RBS closes a block over its method, YARD over its signature; those cannot be combined
+        return block.combine_with(other.block) if block.arity == other.block.arity &&
+                                                  block.closure&.name == other.block.closure&.name
 
         # @type [Pin::Signature, nil]
         choose_pin_attr(other, :block)

@@ -182,6 +182,28 @@ describe Solargraph::Pin::Method do
     expect(method.signatures.first.block.parameters.map(&:name)).to eq(%w[a b])
   end
 
+  it 'combines RBS and YARD pins whose blocks have differently named closures' do
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+    location = Solargraph::Location.new('dsl.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    void = Solargraph::ComplexType.parse('void')
+    namespace = Solargraph::Pin::Namespace.new(name: 'Dsl', type: :module, source: :rbs, location: location)
+    # RBS conversions close a block over its method; YARD closes it over its signature
+    rbs_pin = described_class.new(name: 'file', closure: namespace, source: :rbs, location: location)
+    rbs_block = Solargraph::Pin::Signature.new(closure: rbs_pin, source: :rbs, location: location, return_type: void)
+    rbs_pin.signatures = [Solargraph::Pin::Signature.new(block: rbs_block, closure: rbs_pin, source: :rbs,
+                                                         location: location, return_type: void)]
+    yard_pin = described_class.new(name: 'file', closure: namespace, source: :yardoc, location: location,
+                                   parameters: [])
+    yard_pin.parameters = [Solargraph::Pin::Parameter.new(name: 'block', decl: :blockarg, closure: yard_pin,
+                                                          source: :yardoc, location: location)]
+
+    combined = rbs_pin.combine_with(yard_pin)
+    expect(combined.signatures.map { |sig| sig.block&.parameters }).to eq([[]])
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
