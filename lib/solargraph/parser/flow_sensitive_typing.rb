@@ -366,11 +366,11 @@ module Solargraph
       # A guard like "self.class == other.class" (or
       # "self.class.eql?(other.class)" or "instance_of?(other.class)")
       # guarantees other has the same runtime class as self. The
-      # runtime class of self is
-      # always a subtype of the declared instance type of the
-      # enclosing method, so the runtime class of other is too --
-      # narrowing other to that declared type is a sound upper
-      # bound, the same tradeoff #process_isa documents for is_a?.
+      # runtime class of self is always a subtype of the declared
+      # instance type of the enclosing method, so the runtime class
+      # of other is too -- narrowing other to that declared type is
+      # a sound upper bound, the same tradeoff #process_isa
+      # documents for is_a?.
       # Only sound when self is an actual instance: a class methods
       # self is the class object itself, whose .class is always
       # ::Class rather than the enclosing type, so scope: :class is
