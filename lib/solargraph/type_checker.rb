@@ -568,7 +568,7 @@ module Solargraph
     # @param locals [Array<Pin::LocalVariable>]
     # @param location [Location]
     # @param pin [Pin::Method]
-    # @param params [Hash{String => nil, Hash}]
+    # @param params [Hash{String => Hash{Symbol => undefined}}]
     # @param kwargs [Hash{Symbol => Source::Chain}]
     # @return [Array<Problem>]
     def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
