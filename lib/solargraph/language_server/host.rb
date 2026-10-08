@@ -112,7 +112,7 @@ module Solargraph
           message
         elsif request['id']
           if requests[request['id']]
-            # @sg-ignore Hash#[] relies on key always being present
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -708,7 +708,7 @@ module Solargraph
       # @return [Boolean]
       # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -865,7 +865,7 @@ module Solargraph
       # @return [Boolean]
       # @sg-ignore need boolish support for ? methods
       def prepare_rename?
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
