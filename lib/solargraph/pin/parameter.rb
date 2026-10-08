@@ -235,7 +235,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?

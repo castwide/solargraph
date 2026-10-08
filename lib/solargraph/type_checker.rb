@@ -689,7 +689,7 @@ module Solargraph
     # @param pin [Pin::Base]
     def internal? pin
       return false if pin.nil?
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       pin.location && api_map.bundled?(pin.location.filename)
     end
 

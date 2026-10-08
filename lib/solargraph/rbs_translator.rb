@@ -93,7 +93,7 @@ module Solargraph
       parameters = to_parameter_pins(method_type, closure, parameter_names)
       return_type = to_complex_type(method_type.type.return_type)
       block = if method_type.block
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         block_parameters = to_parameter_pins(method_type.block, closure)
         block_return_type = to_complex_type(method_type.block.type.return_type)
         Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
@@ -140,18 +140,18 @@ module Solargraph
       def type_to_tag type
         case type
         when RBS::Types::Optional
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
         when RBS::Types::Tuple
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.literal.inspect
         when RBS::Types::Union
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -161,7 +161,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -169,7 +169,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
           'Proc'
@@ -181,11 +181,11 @@ module Solargraph
           # `Interface represents a mix-in module which can be considered a
           # subtype of a consumer of it
           #
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name, type.args)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1241
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return

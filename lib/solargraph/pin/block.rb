@@ -72,7 +72,7 @@ module Solargraph
         meths.each do |meth|
           next if meth.block.nil?
 
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           yield_types = meth.block.parameters.map(&:return_type)
           # 'arguments' is what the method says it will yield to the
           # block; 'parameters' is what the block accepts
