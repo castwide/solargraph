@@ -90,7 +90,8 @@ module Solargraph
         def match_overload_type overload, pin, api_map, name_pin, locals, type, new_signature_pin
           return [type, new_signature_pin] unless overload.arity_matches?(arguments, with_block?)
 
-          positional_arguments, keyword_argument = split_keyword_argument(arguments, overload)
+          keyword_argument = trailing_keyword_argument(arguments, overload)
+          positional_arguments = keyword_argument.nil? ? arguments : arguments.take(arguments.length - 1)
           atypes = []
           match = positional_arguments_match?(positional_arguments, overload, api_map, name_pin, locals, atypes)
           match &&= keyword_argument_matches?(keyword_argument, overload, api_map, name_pin, locals) if match
@@ -215,15 +216,12 @@ module Solargraph
         #
         # @param arguments [::Array<Chain>]
         # @param overload [Pin::Signature]
-        # @return [::Array(::Array<Chain>, Chain, nil)]
-        def split_keyword_argument arguments, overload
+        # @return [Chain, nil]
+        def trailing_keyword_argument arguments, overload
           keyword_params = overload.parameters.select { |param| param.keyword? || param.kwrestarg? }
           last_argument = arguments.last
-          if !keyword_params.empty? && last_argument.is_a?(Chain) && last_argument.links.last.is_a?(Chain::Hash)
-            [arguments[0..-2], last_argument]
-          else
-            [arguments, nil]
-          end
+          return if keyword_params.empty?
+          last_argument if last_argument.is_a?(Chain) && last_argument.links.last.is_a?(Chain::Hash)
         end
 
         # @param positional_arguments [::Array<Chain>]
