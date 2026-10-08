@@ -186,6 +186,7 @@ module Solargraph
         #   multiple assignments
         unless @mass_assignment.nil?
           mass_node, index, splat = @mass_assignment
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           types = return_types_from_node(mass_node, api_map)
           # rubocop:disable Style/ConditionalAssignment
           if splat
