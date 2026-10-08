@@ -1401,5 +1401,30 @@ describe Solargraph::TypeChecker do
                   'for Factory#use'])
       end
     end
+
+    context 'with a declared variable whose assignment cannot be inferred' do
+      # @param call [String]
+      def checker_for call
+        type_checker(%(
+          class Foo
+            # @return [void]
+            def bar
+              # @type [Integer]
+              x = #{call}
+              x
+            end
+          end
+        ))
+      end
+
+      it 'reports it when the call is unresolved' do
+        expect(checker_for('undefined_thing').problems.map(&:message))
+          .to include('Variable type could not be inferred for x')
+      end
+
+      it 'trusts the declaration when the call is defined outside the workspace' do
+        expect(checker_for("Kernel.eval('1')").problems.map(&:message)).to be_empty
+      end
+    end
   end
 end

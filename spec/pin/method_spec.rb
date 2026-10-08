@@ -890,4 +890,11 @@ describe Solargraph::Pin::Method do
       expect { pin.signatures }.not_to raise_error
     end
   end
+
+  describe '#full_type_arity' do
+    it 'leads with the number of members in the return type' do
+      pin = described_class.new(name: 'foo', comments: '@return [String, Integer]')
+      expect(pin.full_type_arity.first).to eq('2')
+    end
+  end
 end

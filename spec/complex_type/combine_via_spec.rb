@@ -78,4 +78,18 @@ describe Solargraph::ComplexType do
       end
     end
   end
+
+  describe 'UniqueType#combine_via' do
+    it 'pairs a lone type with the whole of the other' do
+      type = described_class.parse('A').items.first
+      other = described_class.parse('B, C')
+      expect(type.combine_via(other) { |mine, theirs| [mine, theirs] }).to eq([type, other])
+    end
+  end
+
+  describe '#recreate' do
+    it 'rebuilds every member of a union' do
+      expect(described_class.parse('A, B').recreate(make_rooted: true).rooted_tags).to eq('::A, ::B')
+    end
+  end
 end

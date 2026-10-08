@@ -381,4 +381,41 @@ describe Solargraph::ComplexType do
       expect(match).to be(false)
     end
   end
+
+  describe '#conforms_to_unique?' do
+    let(:string) { described_class.parse('String').items.first }
+
+    it 'accepts a union when any member conforms under allow_any_match' do
+      union = described_class.parse('String, Integer')
+      expect(union.conforms_to_unique?(string, api_map, :method_call, [:allow_any_match])).to be(true)
+    end
+
+    it 'rejects a union with a non-conforming member otherwise' do
+      union = described_class.parse('String, Integer')
+      expect(union.conforms_to_unique?(string, api_map, :method_call)).to be(false)
+    end
+  end
+
+  describe '#duck_types_match?' do
+    let(:quack) { described_class.parse('#upcase') }
+
+    it 'matches when every inferred member answers the method' do
+      expect(quack.duck_types_match?(api_map, quack, described_class.parse('String'))).to be(true)
+    end
+
+    it 'rejects a union with a member that does not answer it' do
+      expect(quack.duck_types_match?(api_map, quack, described_class.parse('String, Integer'))).to be(false)
+    end
+
+    it 'accepts that union under allow_any_match' do
+      inferred = described_class.parse('String, Integer')
+      expect(quack.duck_types_match?(api_map, quack, inferred, [:allow_any_match])).to be(true)
+    end
+  end
+
+  it 'lets unresolved generic element types conform under allow_unresolved_generic' do
+    inf = described_class.parse('Array<generic<T>>')
+    exp = described_class.parse('Array<String>')
+    expect(inf.conforms_to?(api_map, exp, :method_call, [:allow_unresolved_generic])).to be(true)
+  end
 end
