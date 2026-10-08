@@ -536,8 +536,6 @@ module Solargraph
       pin&.type
     end
 
-    private
-
     # Boolean is the union of its two cases, so a union offering both
     # is Boolean. Only the set can answer that, no member can, and it
     # answers on the member array because @items is not assigned yet.
@@ -550,6 +548,7 @@ module Solargraph
 
       [UniqueType::BOOLEAN] + (items - cases)
     end
+    private :fold_boolean_cases
 
     class << self
       # Parse type strings into a ComplexType.

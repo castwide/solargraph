@@ -94,7 +94,6 @@ module Solargraph
       # @todo 2: flow sensitive typing should handle return nil if location&.name.nil?
       # @todo 2: flow sensitive typing should handle is_a? and next
       # @todo 2: Need to look at Tuple#include? handling
-      # @todo 2: Should better support meaning of '&' in RBS
       # @todo 2: (*) flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
