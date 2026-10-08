@@ -408,19 +408,6 @@ module Solargraph
           closure if closure.is_a?(Pin::Block)
         end
 
-        # The block's own parameters. The block declares them, so they are
-        # absent from the caller's locals, and the body cannot resolve without
-        # them.
-        #
-        # @param api_map [ApiMap]
-        # @return [::Array<Pin::Parameter>]
-        def block_parameters api_map
-          block_pin = find_block_pin(api_map)
-          return [] if block_pin.nil?
-
-          block_pin.parameters
-        end
-
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::LocalVariable>]
@@ -429,11 +416,16 @@ module Solargraph
           return nil unless with_block?
 
           block_pin = find_block_pin(api_map)
+          # The body needs the block's own parameters, which the caller's
+          # locals lack. Typifying one of them lands back here; skip the body.
+          params = block_pin&.parameters || []
+          return nil if params.any? { |param| Chain.inferring?(param) }
+
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
           # @sg-ignore Need to add nil check here
-          block.infer(api_map, block_pin, locals.union(block_parameters(api_map)))
+          block.infer(api_map, block_pin, locals.union(params))
         end
 
         protected
