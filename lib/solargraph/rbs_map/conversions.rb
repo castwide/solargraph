@@ -58,6 +58,7 @@ module Solargraph
           # @sg-ignore Wrong argument type for Hash#[]=: value expected RBS::AST::Declarations::TypeAlias, received generic<D>
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
+        # @sg-ignore Need a downcast here
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
       rescue RBS::DuplicatedDeclarationError => e
         Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
