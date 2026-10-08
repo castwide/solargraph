@@ -211,6 +211,7 @@ module Solargraph
     #
     # @param variance [:invariant, :covariant, :contravariant]
     # @return [Boolean]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1397
     def conforms_to? api_map, expected,
                      situation,
                      rules = [],
