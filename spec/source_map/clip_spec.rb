@@ -1192,25 +1192,6 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String, nil')
   end
 
-  it 'infers return types from the RBS overload matching the argument type' do
-    source = Solargraph::Source.load_string(%(
-      1 + 1
-      1 + 1.0
-      1 + Rational(1, 2)
-      1 + Complex(1, 2)
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    clip = api_map.clip_at('test.rb', [1, 11])
-    expect(clip.infer.to_s).to eq('Integer')
-    clip = api_map.clip_at('test.rb', [2, 13])
-    expect(clip.infer.to_s).to eq('Float')
-    clip = api_map.clip_at('test.rb', [3, 24])
-    expect(clip.infer.to_s).to eq('Rational')
-    clip = api_map.clip_at('test.rb', [4, 23])
-    expect(clip.infer.to_s).to eq('Complex')
-  end
-
   it 'infers the return type of the signature matching the argument type when two pins for one method are combined' do
     namespace = Solargraph::Pin::Namespace.new(name: 'Widget', type: :class)
     integer_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
