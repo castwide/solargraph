@@ -74,7 +74,6 @@ module Solargraph
       # @todo 281: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
-      # @todo 1: Parser::AST::Node#children is declared Array<Node>, but an :int node's child is a literal Integer
       #
       # flow sensitive typing could handle (96):
       #
