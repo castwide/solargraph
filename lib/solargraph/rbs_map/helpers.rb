@@ -10,11 +10,19 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def combine orig_pins, rbs_pins
         in_orig = Set.new
-        # @todo There's gotta be a better way!
-        rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins)
-        combined =  orig_pins.map do |orig_pin|
+        # Index these pins rather than looking them up through an ApiMap,
+        # which also loads Ruby core: for a method a gem adds to a core
+        # class, core's pin would be found instead of the gem's, and the
+        # gem's signature dropped.
+        rbs_methods_by_path = rbs_pins.select { |pin| pin.is_a?(Pin::Method) }.group_by(&:path)
+        # Resolving an alias needs the ancestors only an ApiMap knows
+        rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins) if rbs_pins.any?(Pin::MethodAlias)
+        combined = orig_pins.map do |orig_pin|
           in_orig.add orig_pin.path
-          rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).filter { |pin| pin.is_a? Pin::Method }.first
+          rbs_pin = rbs_methods_by_path[orig_pin.path]&.first
+          if rbs_pin.is_a?(Pin::MethodAlias) && rbs_api_map
+            rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).find { |pin| pin.is_a?(Pin::Method) }
+          end
           next orig_pin unless rbs_pin && orig_pin.instance_of?(Pin::Method)
 
           unless rbs_pin
@@ -35,6 +43,19 @@ module Solargraph
         out
       end
 
+      # Combine method pins sharing a path. Core and a gem that reopens a
+      # core class are cached separately, so a method described by both
+      # only meets here.
+      #
+      # @param pins [Array<Pin::Base>]
+      # @return [Array<Pin::Base>]
+      def combine_method_pins_by_path pins
+        method_pins, other_pins = pins.partition { |pin| pin.instance_of?(Pin::Method) }
+        by_path = method_pins.group_by(&:path)
+        by_path.transform_values! { |same_path| combine_method_pins(*same_path) }
+        by_path.values + other_pins
+      end
+
       # @param pins [Array<Pin::Method>]
       # @return [Pin::Method, nil]
       def combine_method_pins(*pins)
@@ -44,7 +65,7 @@ module Solargraph
         # @param pin [Pin::Method]
         out = pins.reduce(combined_pin) do |memo, pin|
           next pin if memo.nil?
-          if memo == pin && memo.source != :combined
+          if memo == pin && memo.to_rbs == pin.to_rbs && memo.source != :combined
             # @todo we should track down situations where we are handled
             #   the same pin from the same source here and eliminate them -
             #   this is an efficiency workaround for now

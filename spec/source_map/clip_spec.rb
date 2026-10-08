@@ -1192,6 +1192,56 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String, nil')
   end
 
+  it 'infers the return type of an overload a gem adds to a core class' do
+    directory = File.join('spec', 'fixtures', 'gem-core-method')
+    # A kept cache entry would reflect whatever code built it
+    Solargraph::Shell.new.uncache('bigdecimal')
+    api_map = Solargraph::ApiMap.load_with_cache(directory, nil)
+    clip = api_map.clip_at(File.expand_path(File.join(directory, 'app.rb')), [3, 0])
+    expect(clip.infer.to_s).to eq('BigDecimal')
+  end
+
+  it 'infers the return type of the signature matching the argument type when two pins for one method are combined' do
+    namespace = Solargraph::Pin::Namespace.new(name: 'Widget', type: :class)
+    integer_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [Integer]
+  @return [Symbol]
+    ))
+    float_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [Float]
+  @return [String]
+    ))
+    source = Solargraph::Source.load_string('Widget.new.scan(1.5)', 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+    api_map = Solargraph::ApiMap.new
+    api_map.index([namespace, integer_pin.combine_with(float_pin)] + source_map.pins)
+    api_map.send(:source_map_hash)['test.rb'] = source_map
+    expect(api_map.clip_at('test.rb', [0, 12]).infer.to_s).to eq('String')
+  end
+
+  it 'offers one signature help entry when a rooted and an unrooted spelling of one parameter type are combined, since both signatures describe the same overload' do
+    namespace = Solargraph::Pin::Namespace.new(name: 'Widget', type: :class)
+    rooted_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [::Integer]
+  @return [::String]
+    ))
+    unrooted_pin = Solargraph::Pin::Method.new(closure: namespace, name: 'scan', scope: :instance, comments: %(
+@overload scan(count)
+  @param count [Integer]
+  @return [String]
+    ))
+    source = Solargraph::Source.load_string('Widget.new.scan()', 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+    api_map = Solargraph::ApiMap.new
+    api_map.index([namespace, rooted_pin.combine_with(unrooted_pin)] + source_map.pins)
+    api_map.send(:source_map_hash)['test.rb'] = source_map
+    clip = api_map.clip_at('test.rb', [0, 16])
+    expect(clip.signify.flat_map(&:signature_help).map { |help| help[:label] }).to eq(['scan(count)'])
+  end
+
   it 'infers overloads with splats' do
     source = Solargraph::Source.load_string(%(
       class Foo
