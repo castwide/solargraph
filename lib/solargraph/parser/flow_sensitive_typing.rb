@@ -364,8 +364,9 @@ module Solargraph
       end
 
       # A guard like "self.class == other.class" (or
-      # "self.class.eql?(other.class)") guarantees other has the
-      # same runtime class as self. The runtime class of self is
+      # "self.class.eql?(other.class)" or "instance_of?(other.class)")
+      # guarantees other has the same runtime class as self. The
+      # runtime class of self is
       # always a subtype of the declared instance type of the
       # enclosing method, so the runtime class of other is too --
       # narrowing other to that declared type is a sound upper
@@ -381,12 +382,17 @@ module Solargraph
       #
       # @return [void]
       def process_class_eq node, true_presences, _false_presences
-        return unless node.type == :send && %i[== eql?].include?(node.children[1])
+        return unless node.type == :send && %i[== eql? instance_of?].include?(node.children[1])
 
         enclosing = closure
         return unless enclosing && enclosing.scope == :instance
 
-        lhs = parse_class_call(node.children[0])
+        lhs = if node.children[1] == :instance_of?
+                # x.instance_of?(y.class) compares x itself; no receiver means self
+                node.children[0] || ::Parser::AST::Node.new(:self)
+              else
+                parse_class_call(node.children[0])
+              end
         return unless lhs
 
         rhs = parse_class_call(node.children[2])
