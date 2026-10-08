@@ -462,10 +462,12 @@ module Solargraph
             # elsif context_type.all?(&:implicit_union?) || true
             elsif idx.zero? && !context_type.all_params.empty?
               ComplexType.new(context_type.all_params)
-            else
+            elsif context_type.all_params.empty?
               # No concrete value was supplied; leave unbound rather than untyped,
               # matching a direct (non-substituted) lookup on the declaring class.
               t
+            else
+              ComplexType::UNDEFINED
             end
           else
             t
