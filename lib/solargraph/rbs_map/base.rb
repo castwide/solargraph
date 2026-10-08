@@ -9,7 +9,7 @@ module Solargraph
 
       # @return [RBS::Repository]
       def repository
-        @repository ||= RBS::Repository.new(no_stdlib: false)
+        @repository ||= RBS::Repository.new(no_stdlib: true)
       end
 
       # @return [RBS::EnvironmentLoader]
