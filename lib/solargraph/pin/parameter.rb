@@ -243,6 +243,13 @@ module Solargraph
 
       private
 
+      # @return [void]
+      def preassign_ivars
+        super
+        @asgn_code = nil
+        @decl = :arg
+      end
+
       def generate_complex_type
         nil
       end

@@ -66,6 +66,14 @@ module Solargraph
 
       private
 
+      # @return [void]
+      def preassign_ivars
+        super
+        @receiver_chain = nil
+        @receiver_method_name = nil
+        @resolved_method = nil
+      end
+
       # Resolves the receiver chain and method name to a method pin, resetting any previously resolution.
       #
       # @param api_map [ApiMap]

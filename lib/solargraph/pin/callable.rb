@@ -270,6 +270,18 @@ module Solargraph
       protected
 
       attr_writer :block
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @block = nil
+        # @type [::Array<Pin::Parameter>]
+        @parameters = []
+        @method_name = nil
+        @parameter_names = nil
+      end
     end
   end
 end
