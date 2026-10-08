@@ -287,17 +287,17 @@ module Solargraph
     # @param parent [Symbol, nil]
     # @return [void]
     def inner_folding_ranges top, result = [], parent = nil
-      return unless Parser.is_ast_node?(top)
-      # @sg-ignore Translate to something flow sensitive typing understands
+      return unless top.is_a?(::Parser::AST::Node)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       if FOLDING_NODE_TYPES.include?(top.type)
-        # @sg-ignore Translate to something flow sensitive typing understands
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         range = Range.from_node(top)
         # @sg-ignore Need to add nil check here
         if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
           result.push range
         end
       end
-      # @sg-ignore Translate to something flow sensitive typing understands
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       top.children.each do |child|
         inner_folding_ranges(child, result, top.type)
       end
@@ -373,12 +373,12 @@ module Solargraph
     # @return [Array<Parser::AST::Node>]
     def string_nodes_in n
       result = []
-      if Parser.is_ast_node?(n)
-        # @sg-ignore Translate to something flow sensitive typing understands
+      if n.is_a?(::Parser::AST::Node)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         if %i[str dstr STR DSTR].include?(n.type)
           result.push n
         else
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           n.children.each { |c| result.concat string_nodes_in(c) }
         end
       end

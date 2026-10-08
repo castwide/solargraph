@@ -137,19 +137,19 @@ module Solargraph
         # @param node [Parser::AST::Node, nil]
         # @return [Array<Range>]
         def string_ranges node
-          return [] unless is_ast_node?(node)
+          return [] unless node.is_a?(::Parser::AST::Node)
           result = []
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           result.push Range.from_node(node) if node.type == :str
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           node.children.each do |child|
             result.concat string_ranges(child)
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if node.type == :dstr && node.children.last.nil?
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             last = node.children[-2]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             unless last.nil?
               rng = Range.from_node(last)
               # @sg-ignore Need to add nil check here
