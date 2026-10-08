@@ -154,7 +154,7 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
-      # @sg-ignore Hash#[] relies on key always being present
+      # @sg-ignore Need to add nil check here
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 
