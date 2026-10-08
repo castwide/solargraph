@@ -527,6 +527,8 @@ module Solargraph
         if_true[pin] << { type: literal_type }
         process_facts(if_true, true_presences)
 
+        return unless excludable_literal?(pin, literal_type)
+
         # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
         if_false = {}
         if_false[pin] ||= []
@@ -552,17 +554,35 @@ module Solargraph
         pin = find_var(variable_name, neq_position)
         return unless pin
 
-        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
-        if_true = {}
-        if_true[pin] ||= []
-        if_true[pin] << { not_type: literal_type }
-        process_facts(if_true, true_presences)
+        if excludable_literal?(pin, literal_type)
+          # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+          if_true = {}
+          if_true[pin] ||= []
+          if_true[pin] << { not_type: literal_type }
+          process_facts(if_true, true_presences)
+        end
 
         # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
         if_false = {}
         if_false[pin] ||= []
         if_false[pin] << { type: literal_type }
         process_facts(if_false, false_presences)
+      end
+
+      # Excluding a literal type excludes its whole class, since literals
+      # qualify to it (`:a` to `::Symbol`). Only safe when the declared
+      # type has that literal as its sole member of the class.
+      #
+      # @param pin [Pin::BaseVariable]
+      # @param literal_type [ComplexType]
+      # @return [Boolean]
+      def excludable_literal? pin, literal_type
+        declared = pin.return_type
+        return false unless declared
+
+        literal = literal_type.first
+        declared.items.include?(literal) &&
+          declared.items.one? { |t| t.non_literal_name == literal.non_literal_name }
       end
 
       # @param nilp_node [Parser::AST::Node]

@@ -752,6 +752,23 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'keeps the declared class after a failed literal-equality guard' do
+      checker = type_checker(%(
+        # @param char [String]
+        # @param sym [Symbol]
+        # @return [void]
+        def eq_guard(char, sym)
+          if char == '='
+            puts 1
+          elsif char == '<'
+            puts 2
+          end
+          puts 3 if sym != :a && sym == :b
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'does not complain on adding nil to types via return value' do
       checker = type_checker(%(
         # @param bar [Integer]
