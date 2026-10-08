@@ -59,7 +59,7 @@ module Solargraph
       # @return [Array<Hash>]
       def make_array resp
         diagnostics = []
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         resp['files'].each do |file|
           file['offenses'].each do |off|
             diagnostics.push offense_to_diagnostic(off)
@@ -92,18 +92,18 @@ module Solargraph
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_start_position off
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         Position.new(off['location']['start_line'] - 1, off['location']['start_column'] - 1)
       end
 
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_ending_position off
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         if off['location']['start_line'] == off['location']['last_line']
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           start_line = off['location']['start_line'] - 1
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           # @type [Integer]
           last_column = off['location']['last_column']
           line = @source.code.lines[start_line]
@@ -117,7 +117,7 @@ module Solargraph
             start_line, last_column - col_off
           )
         else
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           Position.new(off['location']['start_line'], 0)
         end
       end

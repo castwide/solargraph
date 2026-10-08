@@ -317,7 +317,7 @@ module Solargraph
       def prepare_folders array
         return if array.nil?
         array.each do |folder|
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
