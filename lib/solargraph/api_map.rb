@@ -139,17 +139,15 @@ module Solargraph
         method_candidates.each do |node|
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
-          if node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-            match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
-              get_complex_type_methods(closure.return_type).include?(pin)
-            end
-            if match
-              match.macros.each do |macro|
-                macro_pins.concat macro.generate_pins_from(chain, match, source_map)
-              end
-              next
-            end
+          next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+          match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
+            get_complex_type_methods(closure.return_type).include?(pin)
           end
+          next unless match
+          match.macros.each do |macro|
+            macro_pins.concat macro.generate_pins_from(chain, match, source_map)
+          end
+          next
         end
       end
       macro_pins
@@ -246,6 +244,21 @@ module Solargraph
     # @return [Enumerable<Solargraph::Pin::Keyword>]
     def keyword_pins
       store.pins_by_class(Pin::Keyword)
+    end
+
+    # An array of pins based on factory parameters.
+    #
+    # @return [Enumerable<Solargraph::Pin::FactoryParameter>]
+    def factory_parameter_pins
+      store.pins_by_class(Pin::FactoryParameter)
+    end
+
+    # Get factory parameters for a method pin.
+    #
+    # @param method_pin [Solargraph::Pin::Method]
+    # @return [Array<Solargraph::Pin::FactoryParameter>]
+    def factory_parameters_for_method method_pin
+      store.factory_parameters_for_method(method_pin)
     end
 
     # @param name [String]
@@ -569,6 +582,9 @@ module Solargraph
     end
 
     # Get an array of pins that match the specified path.
+    #
+    # @example
+    #   api_map.get_pins_by_path('String#split')
     #
     # @param path [String]
     # @return [Array<Pin::Base>]
@@ -1009,7 +1025,11 @@ module Solargraph
     #   that this overload of 'protected' will typecheck @sg-ignore
     # @sg-ignore
     def equality_fields
-      [@source_map_hash, conventions_environ, @external&.pins, @unresolved_requires, @loose_unions]
+      # External is compared by identity and generation instead of by its pins:
+      # Chain#infer hashes the ApiMap on every inference, and Array#hash would
+      # walk every gem pin on each of those calls.
+      [@source_map_hash, conventions_environ, @external, @external&.generation,
+       @unresolved_requires, @loose_unions]
     end
   end
 end
