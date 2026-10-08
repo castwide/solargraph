@@ -486,7 +486,6 @@ module Solargraph
 
         # variable on the left, literal on the right: `foo == :bar`
         if %i[lvar ivar].include?(receiver&.type)
-          # @sg-ignore flow sensitive typing needs to handle attrs
           literal_type = literal_type_name(arg)
           return unless literal_type
 
@@ -494,7 +493,6 @@ module Solargraph
           [literal_type, receiver.children[0].to_s]
         # literal on the left, variable on the right: `:bar == foo`
         elsif %i[lvar ivar].include?(arg&.type)
-          # @sg-ignore flow sensitive typing needs to handle attrs
           literal_type = literal_type_name(receiver)
           return unless literal_type
 
