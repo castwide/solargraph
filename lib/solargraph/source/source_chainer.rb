@@ -108,7 +108,7 @@ module Solargraph
         @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
-      # @sg-ignore String/Array Range slice relies on valid bounds
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1395
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]

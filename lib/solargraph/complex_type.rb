@@ -487,7 +487,7 @@ module Solargraph
               elsif base.end_with?('=')
                 raise ComplexTypeError, 'Invalid hash thing' unless key_types.nil?
                 # types.push ComplexType.new([UniqueType.new(base[0..-2].strip)])
-                # @sg-ignore String/Array Range slice relies on valid bounds
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1395
                 types.push UniqueType.parse(base[0..-2].strip, subtype_string)
                 # @todo this should either expand key_type's type
                 #   automatically or complain about not being
