@@ -48,6 +48,7 @@ module Solargraph
         super(other, new_attrs.merge(attrs))
       end
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def combine_return_type other
         out = super
         if out&.undefined?
