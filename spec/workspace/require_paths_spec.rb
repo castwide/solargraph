@@ -77,6 +77,21 @@ describe Solargraph::Workspace::RequirePaths do
     end
   end
 
+  context 'with a gemspec that prints only blank lines' do
+    let(:dir_path) { File.realpath(Dir.mktmpdir) }
+
+    before do
+      File.write(File.join(dir_path, 'blank.gemspec'), 'Gem::Specification.new')
+      allow(Open3).to receive(:capture3).and_return(["\n", '', instance_double(Process::Status, success?: true)])
+      allow(Solargraph.logger).to receive(:warn)
+    end
+
+    it 'does not log an error' do
+      paths
+      expect(Solargraph.logger).not_to have_received(:warn)
+    end
+  end
+
   context 'with no gemspec file' do
     let(:dir_path) { File.realpath(Dir.mktmpdir) }
 
