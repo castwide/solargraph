@@ -576,7 +576,7 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         next unless params.key?(pname.to_s)
-        # @sg-ignore Hash#[] relies on key always being present
+        # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)

@@ -379,7 +379,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore Hash#[] relies on key always being present
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]
