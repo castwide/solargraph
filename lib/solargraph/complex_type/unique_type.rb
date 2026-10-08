@@ -443,6 +443,9 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
+        # Method-scoped generics bind per call site via
+        # resolve_generics_from_context, not against a receiver's type params.
+        return self if definitions.is_a?(Pin::Callable)
         return self if definitions.nil? || definitions.generics.empty?
 
         transform(name) do |t|

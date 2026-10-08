@@ -91,7 +91,8 @@ module Solargraph
         block_return_type = to_complex_type(method_type.block.type.return_type)
         Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
       end
-      Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: :rbs, type_location: closure.location, closure: closure)
+      Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block,
+                         block_required: method_type.block&.required || false, source: :rbs, type_location: closure.location, closure: closure)
     end
 
     # @param type_name [RBS::TypeName]
