@@ -167,10 +167,10 @@ module Solargraph
       # @return [Completion]
       def tag_complete
         result = []
-        # @sg-ignore MatchData relies on regex always matching
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1395
         match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
-          # @sg-ignore MatchData relies on regex always matching
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           full = match[1]
           # @sg-ignore Need to add nil check here
           if full.include?('::')

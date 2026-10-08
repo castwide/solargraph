@@ -269,7 +269,7 @@ module Solargraph
           position = cursor.position
           offset = cursor.offset
           tree = if source.synchronized?
-                   # @sg-ignore MatchData relies on regex always matching
+                   # @sg-ignore https://github.com/castwide/solargraph/pull/1395
                    match = source.code[0..(offset - 1)].match(/,\s*\z/)
                    if match
                      # @sg-ignore MatchData relies on regex always matching
