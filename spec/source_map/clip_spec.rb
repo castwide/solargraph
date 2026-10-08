@@ -1192,23 +1192,13 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('String, nil')
   end
 
-  it 'infers return types from the RBS overload matching the argument type' do
-    source = Solargraph::Source.load_string(%(
-      1 + 1
-      1 + 1.0
-      1 + Rational(1, 2)
-      1 + Complex(1, 2)
-    ), 'test.rb')
-    api_map = Solargraph::ApiMap.new
-    api_map.map source
-    clip = api_map.clip_at('test.rb', [1, 11])
-    expect(clip.infer.to_s).to eq('Integer')
-    clip = api_map.clip_at('test.rb', [2, 13])
-    expect(clip.infer.to_s).to eq('Float')
-    clip = api_map.clip_at('test.rb', [3, 24])
-    expect(clip.infer.to_s).to eq('Rational')
-    clip = api_map.clip_at('test.rb', [4, 23])
-    expect(clip.infer.to_s).to eq('Complex')
+  it 'infers the return type of an overload a gem adds to a core class' do
+    directory = File.join('spec', 'fixtures', 'gem-core-method')
+    # A kept cache entry would reflect whatever code built it
+    Solargraph::Shell.new.uncache('bigdecimal')
+    api_map = Solargraph::ApiMap.load_with_cache(directory, nil)
+    clip = api_map.clip_at(File.expand_path(File.join(directory, 'app.rb')), [3, 0])
+    expect(clip.infer.to_s).to eq('BigDecimal')
   end
 
   it 'infers the return type of the signature matching the argument type when two pins for one method are combined' do

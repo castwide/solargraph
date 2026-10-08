@@ -1,3 +1,4 @@
 require 'bigdecimal'
 
-1 + BigDecimal('2')
+sum = 1 + BigDecimal('2')
+sum
