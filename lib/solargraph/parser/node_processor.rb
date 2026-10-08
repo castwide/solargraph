@@ -30,7 +30,7 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
-          # @sg-ignore Hash#[] relies on key always being present
+          # @sg-ignore Need to add nil check here
           @@processors[type].delete(cls)
         end
       end
