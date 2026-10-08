@@ -562,6 +562,7 @@ module Solargraph
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
     # @return [Solargraph::Source]
+    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
     def read filename
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
