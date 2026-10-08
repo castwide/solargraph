@@ -706,7 +706,7 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore Hash#[] relies on key always being present
+      # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
         # @sg-ignore Hash#[] relies on key always being present
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
@@ -863,7 +863,7 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore Hash#[] relies on key always being present
+      # @sg-ignore need boolish support for ? methods
       def prepare_rename?
         # @sg-ignore Hash#[] relies on key always being present
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
