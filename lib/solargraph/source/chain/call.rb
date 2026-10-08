@@ -152,11 +152,10 @@ module Solargraph
           #
           # qualify(), however, happens in the namespace where
           # the docs were written - from the method pin.
-          # @todo Need to add nil check here
-          type = if new_return_type.defined?
-                   with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
-                 else
+          type = if new_return_type.nil? || !new_return_type.defined?
                    inferr_from_factory_parameters(api_map, pin)
+                 else
+                   with_params(new_return_type.self_to_type(self_type), self_type).qualify(api_map, *pin.gates)
                  end
           type ||= ComplexType::UNDEFINED
           [type, new_signature_pin]
