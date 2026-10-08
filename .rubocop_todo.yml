@@ -67,6 +67,7 @@ Lint/BinaryOperatorWithIdenticalOperands:
 Lint/BooleanSymbol:
   Exclude:
     - 'lib/solargraph/convention/struct_definition/struct_definition_node.rb'
+    - 'lib/solargraph/source/chain/literal.rb'
 
 # Configuration parameters: AllowedMethods.
 # AllowedMethods: enums
