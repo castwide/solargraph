@@ -49,7 +49,7 @@ module Solargraph
                 end
                 next
               end
-              # @sg-ignore flow sensitive typing needs to infer Enumerable#find's block return type from an is_a? check
+              # @sg-ignore Need a downcast here
               pin.mass_assignment = [mass_rhs, i]
             end
           end
