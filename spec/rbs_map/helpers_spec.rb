@@ -22,4 +22,21 @@ describe Solargraph::RbsMap::Helpers do
     types = combined.signatures.map { |sig| sig.parameters.first.return_type.to_s }
     expect(types).to contain_exactly('BigDecimal', 'Integer')
   end
+
+  it 'combines a method with the RBS alias of the same path' do
+    yard_pin = Solargraph::Pin::Method.new(closure: closure, name: 'original_dup', scope: :instance, comments: '@return [Foo]',
+                                           source: :yardoc, type_location: location)
+    rbs_pins = [
+      closure,
+      Solargraph::Pin::Method.new(closure: closure, name: 'dup', scope: :instance, comments: '@return [Foo]',
+                                  source: :rbs, type_location: location),
+      Solargraph::Pin::MethodAlias.new(closure: closure, name: 'original_dup', original: 'dup',
+                                       comments: '@return [Foo]', source: :rbs, type_location: location)
+    ]
+    allow(Solargraph).to receive(:asserts_on?).and_return(true)
+
+    combined = described_class.combine([yard_pin], rbs_pins).find { |pin| pin.path == 'Foo#original_dup' }
+
+    expect(combined.return_type.to_s).to eq('Foo')
+  end
 end

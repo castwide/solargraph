@@ -15,9 +15,14 @@ module Solargraph
         # class, core's pin would be found instead of the gem's, and the
         # gem's signature dropped.
         rbs_methods_by_path = rbs_pins.select { |pin| pin.is_a?(Pin::Method) }.group_by(&:path)
+        # Resolving an alias needs the ancestors only an ApiMap knows
+        rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins) if rbs_pins.any?(Pin::MethodAlias)
         combined = orig_pins.map do |orig_pin|
           in_orig.add orig_pin.path
           rbs_pin = rbs_methods_by_path[orig_pin.path]&.first
+          if rbs_pin.is_a?(Pin::MethodAlias) && rbs_api_map
+            rbs_pin = rbs_api_map.get_path_pins(orig_pin.path).find { |pin| pin.is_a?(Pin::Method) }
+          end
           next orig_pin unless rbs_pin && orig_pin.instance_of?(Pin::Method)
 
           unless rbs_pin
