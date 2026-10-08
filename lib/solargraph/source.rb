@@ -134,29 +134,29 @@ module Solargraph
       return false if Position.to_offset(code, position) >= code.length
       string_nodes.each do |node|
         range = Range.from_node(node)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         next if range.ending.line < position.line
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         break if range.ending.line > position.line
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         return true if node.type == :str && range.include?(position) && range.start != position
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         return true if %i[STR str].include?(node.type) && range.include?(position) && range.start != position
         if node.type == :dstr
           inner = node_at(position.line, position.column)
           next if inner.nil?
           inner_range = Range.from_node(inner)
-          # @sg-ignore Range.from_node result assumed always present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1394
           next unless range.include?(inner_range.ending)
           return true if inner.type == :str
-          # @sg-ignore Range.from_node result assumed always present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1394
           inner_code = at(Solargraph::Range.new(inner_range.start, position))
-          # @sg-ignore Range.from_node result assumed always present
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1394
           return true if (inner.type == :dstr && inner_range.ending.character <= position.character && !inner_code.end_with?('}')) ||
-                         # @sg-ignore Range.from_node result assumed always present
+                         # @sg-ignore https://github.com/castwide/solargraph/pull/1394
                          (inner.type != :dstr && inner_range.ending.line == position.line && position.character <= inner_range.ending.character && inner_code.end_with?('}'))
         end
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         break if range.ending.line > position.line
       end
       false
@@ -193,9 +193,9 @@ module Solargraph
     # @return [String]
     def code_for node
       rng = Range.from_node(node)
-      # @sg-ignore Range.from_node result assumed always present
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       b = Position.line_char_to_offset(code, rng.start.line, rng.start.column)
-      # @sg-ignore Range.from_node result assumed always present
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       e = Position.line_char_to_offset(code, rng.ending.line, rng.ending.column)
       frag = code[b..(e - 1)].to_s
       frag.strip.gsub(/,$/, '')
@@ -206,9 +206,9 @@ module Solargraph
     # @return [String, nil]
     def comments_for node
       rng = Range.from_node(node)
-      # @sg-ignore Range.from_node result assumed always present
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       stringified_comments[rng.start.line] ||= begin
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         buff = associated_comments[rng.start.line]
         stringify_comment_array(buff)
       end

@@ -304,10 +304,10 @@ module Solargraph
       Solargraph::Parser::NodeMethods.const_nodes_from(source.node).each do |const|
         rng = Solargraph::Range.from_node(const)
         chain = Solargraph::Parser.chain(const, filename)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         closure_pin.rebind(api_map)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         pins = chain.define(api_map, closure_pin, locals)
@@ -324,10 +324,10 @@ module Solargraph
       result = []
       Solargraph::Parser::NodeMethods.call_nodes_from(source.node).each do |call|
         rng = Solargraph::Range.from_node(call)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         next if @marked_ranges.any? { |d| d.contain?(rng.start) }
         chain = Solargraph::Parser.chain(call, filename)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
         if call.type == :block
           # blocks in the AST include the method call as well, so the
@@ -339,7 +339,7 @@ module Solargraph
         end
         # @sg-ignore Need to add nil check here
         closure_pin.rebind(api_map)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         location = Location.new(filename, rng)
         locals = source_map.locals_at(location)
         # @sg-ignore Need to add nil check here
@@ -712,7 +712,7 @@ module Solargraph
       chain = Solargraph::Parser.chain(pin.assignment, filename)
       # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       rng = Solargraph::Range.from_node(pin.assignment)
-      # @sg-ignore Range.from_node result assumed always present
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
       # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
       location = Location.new(filename, Range.from_node(pin.assignment))

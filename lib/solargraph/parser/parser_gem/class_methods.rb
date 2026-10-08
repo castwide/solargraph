@@ -69,7 +69,7 @@ module Solargraph
           end
           inner_node_references(name, source.node).map do |n|
             rng = Range.from_node(n)
-            # @sg-ignore Range.from_node result assumed always present
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1394
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
             Location.new(
@@ -154,7 +154,7 @@ module Solargraph
             # @sg-ignore Range.from_node result assumed always present
             unless last.nil?
               rng = Range.from_node(last)
-              # @sg-ignore Range.from_node result assumed always present
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1394
               pos = Position.new(rng.ending.line, rng.ending.column - 1)
               result.push Range.new(pos, pos)
             end
