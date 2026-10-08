@@ -1153,5 +1153,23 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to include(match(/could not be inferred/))
       expect(checker.problems.map(&:message)).not_to include(match(/does not match inferred/))
     end
+
+    it 'resolves public Kernel methods on void and unresolved generic receivers' do
+      checker = type_checker(%(
+        # @generic T
+        class Box
+          # @return [void]
+          def nothing; end
+
+          # @param value [generic<T>]
+          # @return [Boolean]
+          def same?(value)
+            nothing.inspect
+            value == value
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

@@ -82,6 +82,8 @@ module Solargraph
         # @return [::Array<Symbol>]
         def visibility_for api_map, context, name_pin
           return %i[private protected public] if head?
+          # void and generic<T> have no ancestors; ApiMap#get_methods gives them Kernel's public methods only when private is asked.
+          return %i[private protected public] if context.void? || context.generic?
 
           from = name_pin.context.namespace
           to = context.namespace
