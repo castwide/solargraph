@@ -27,14 +27,9 @@ describe Solargraph::RbsTranslator do
   end
 
   context 'with RBS 4.1+ structural key interfaces' do
-    it 'stubs Hash::_Key in as the class\'s own K' do
-      expect(translate('Hash::_Key').tag).to eq('generic<K>')
-    end
-
-    it 'leaves an unqualified _Key alone' do
-      # the stub is keyed on the well-known qualified name, so an
-      # unrelated interface that happens to be called _Key is untouched
-      expect(translate('_Key').tag).to eq('_Key')
+    it 'leaves Hash::_Key as the interface outside Hash' do
+      # Set#include? and Array#uniq take Hash::_Key too, and have no K to bind
+      expect(translate('Hash::_Key').tag).to eq('Hash::_Key')
     end
 
     it 'leaves other interfaces alone' do

@@ -40,7 +40,6 @@ module Solargraph
         override_pins = Conversions.new(loader: override_loader).pins
         # An override replaces what core declared for that path.
         overridden = override_pins.grep(Pin::Method).to_set(&:path)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1266
         new_pins.reject! { |pin| pin.is_a?(Pin::Method) && overridden.include?(pin.path) }
         new_pins.concat override_pins
 

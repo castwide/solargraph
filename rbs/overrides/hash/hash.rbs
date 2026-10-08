@@ -8,7 +8,23 @@
 # `K`. Remove this once Solargraph can resolve a structural interface
 # to the receiver's corresponding type parameter.
 class Hash[unchecked out K, unchecked out V]
+  def []: %a{implicitly-returns-nil} (K arg0) -> V
+
+  def default: (?K arg0) -> V?
+
+  def delete: (K arg0) -> V?
+            | [U] (K arg0) { (K arg0) -> U } -> (U | V)
+
+  def dig: (K, *untyped) -> untyped
+
+  def except: (*K) -> ::Hash[K, V]
+
   def fetch: (K arg0) -> V
            | [X] (K arg0, X arg1) -> (V | X)
            | [X] (K arg0) { (K arg0) -> X } -> (V | X)
+
+  def fetch_values: (*K) -> ::Array[V]
+                  | [X] (*K) { (K) -> X } -> ::Array[V | X]
+
+  def values_at: (*K arg0) -> ::Array[V?]
 end

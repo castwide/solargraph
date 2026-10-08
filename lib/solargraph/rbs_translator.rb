@@ -12,17 +12,6 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # Solargraph resolves interfaces by name, so Hash's `_Key` lookups
-    # (`#[]`, `#fetch`, `#dig`, `#delete`) are stubbed to the type
-    # parameter they stand in for.
-    #
-    # https://github.com/castwide/solargraph/pull/1266
-    #
-    # @type [Hash{String => String}]
-    RBS_INTERFACE_TO_GENERIC = {
-      'Hash::_Key' => 'K'
-    }.freeze
-
     # @param type [RBS::Types::Bases::Base]
     # @return [ComplexType]
     def self.to_complex_type(type)
@@ -114,9 +103,6 @@ module Solargraph
     # @return [ComplexType::UniqueType]
     def self.build_unique_type(type_name, type_args = [])
       name = type_name.relative!.to_s
-      generic = RBS_INTERFACE_TO_GENERIC[name]
-      return ComplexType::UniqueType.parse(ComplexType::GENERIC_TAG_NAME, "<#{generic}>") if generic
-
       base = RBS_TO_YARD_TYPE[name] || name
       params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
       if base == 'Hash' && params.length == 2
