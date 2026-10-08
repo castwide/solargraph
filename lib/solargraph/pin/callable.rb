@@ -90,7 +90,6 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Need to add nil check here
       # @return [Array<Pin::Parameter>]
       def blockless_parameters
         if parameters.last&.block?

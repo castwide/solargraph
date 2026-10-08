@@ -102,7 +102,6 @@ module Solargraph
         @phrase ||= source.code[signature_data..(offset - 1)]
       end
 
-      # @sg-ignore Need to add nil check here
       # @return [String]
       def fixed_phrase
         @fixed_phrase ||= phrase[0..-(end_of_phrase.length + 1)]
