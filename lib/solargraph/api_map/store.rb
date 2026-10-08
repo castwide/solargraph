@@ -315,11 +315,13 @@ module Solargraph
       def combine_duplicate_method_pins pins
         result = []
         pins.group_by(&:path).each_value do |group|
-          if group.length == 1 || group.any? { |pin| pin.is_a?(Pin::MethodAlias) || pin.is_a?(Pin::DelegatedMethod) }
+          # A pin indexed in more than one pinset recurs as the same object; combining it with itself reorders its signatures
+          distinct = group.uniq(&:object_id)
+          if distinct.length == 1 || group.any? { |pin| pin.is_a?(Pin::MethodAlias) || pin.is_a?(Pin::DelegatedMethod) }
             result.concat(group)
           else
             # @sg-ignore group is never empty here (group_by never yields an empty group)
-            combined = group[1..].reduce(group.first) { |memo, pin| memo.combine_with(pin) }
+            combined = distinct[1..].reduce(distinct.first) { |memo, pin| memo.combine_with(pin) }
             result.push(combined)
           end
         end

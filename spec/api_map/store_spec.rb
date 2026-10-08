@@ -106,6 +106,28 @@ describe Solargraph::ApiMap::Store do
       expect(bar_pins).to all(be_an_instance_of(Solargraph::Pin::DelegatedMethod))
     end
 
+    it 'returns a pin indexed in two pinsets as is, not combined with itself' do
+      source = Solargraph::SourceMap.load_string(%(
+        class Foo
+          # @overload bar(index)
+          #   @param index [Integer]
+          #   @return [String]
+          # @overload bar(start, length)
+          #   @param start [Integer]
+          #   @param length [Integer]
+          #   @return [Array<String>]
+          # @overload bar(range)
+          #   @param range [Range<Integer>]
+          #   @return [Array<String>]
+          def bar(*args); end
+        end
+      ), 'foo.rb')
+      store = described_class.new(source.pins, source.pins)
+
+      bar_pins = store.get_methods('Foo', scope: :instance).select { |p| p.name == 'bar' }
+      expect(bar_pins).to all(equal(source.pins.find { |p| p.name == 'bar' }))
+    end
+
     it 'combines many same-path pins into a single pin' do
       maps = (1..30).map do |i|
         Solargraph::SourceMap.load_string(%(
