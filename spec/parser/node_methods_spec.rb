@@ -181,6 +181,37 @@ describe Solargraph::Parser::NodeMethods do
     expect(rets.map(&:type)).to eq(%i[block lvar])
   end
 
+  it 'collects a block value after an explicit return' do
+    node = parse(%(
+      return array.map { |item| item }
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq(%i[block])
+  end
+
+  it 'collects a block value in a conditional branch' do
+    node = parse(%(
+      if foo
+        array.map { |item| item }
+      else
+        1
+      end
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq(%i[block int])
+  end
+
+  it 'collects both a returned block value and returns inside it' do
+    node = parse(%(
+      return array.map { |item|
+        return item if foo
+        item
+      }
+    ))
+    rets = described_class.returns_from_method_body(node)
+    expect(rets.map(&:type)).to eq(%i[block lvar])
+  end
+
   it 'finds correct return node line in begin expressions' do
     node = parse(%(
       begin

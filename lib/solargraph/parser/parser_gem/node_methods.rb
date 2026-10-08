@@ -615,11 +615,14 @@ module Solargraph
                   result.concat reduce_to_value_nodes(node.children)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
+                  # the block itself is a first class value that could be returned
+                  result.push node
+                  # a return inside the block returns from the enclosing method,
+                  # so those values are possible here as well
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[2]])
                 else
                   result.push node
