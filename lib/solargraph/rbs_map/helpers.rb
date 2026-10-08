@@ -60,7 +60,7 @@ module Solargraph
         # @param pin [Pin::Method]
         out = pins.reduce(combined_pin) do |memo, pin|
           next pin if memo.nil?
-          if memo == pin && memo.source != :combined
+          if memo == pin && memo.to_rbs == pin.to_rbs && memo.source != :combined
             # @todo we should track down situations where we are handled
             #   the same pin from the same source here and eliminate them -
             #   this is an efficiency workaround for now
