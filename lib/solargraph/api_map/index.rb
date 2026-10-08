@@ -28,10 +28,10 @@ module Solargraph
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Base>}]
+      # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
       def pin_class_hash
-        # @param h [Hash{String => Array<Pin::Base>}]
-        # @param k [String]
+        # @param h [Hash{Class<Pin::Base> => Array<Pin::Base>}]
+        # @param k [Class<Pin::Base>]
         @pin_class_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
@@ -133,7 +133,7 @@ module Solargraph
         @pin_select_cache = {}
         pins.concat new_pins
         set = new_pins.to_set
-        # @param k [String]
+        # @param k [Class<Pin::Base>]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
            # @sg-ignore Hash#[] relies on key always being present
