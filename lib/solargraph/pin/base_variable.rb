@@ -212,7 +212,7 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
-      # @return [ComplexType, nil]
+      # @return [ComplexType]
       def return_type
         generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
       end

@@ -213,11 +213,8 @@ module Solargraph
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
-              # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
-              # @sg-ignore Need to add nil check here
               selfy = pin.return_type.self_to_type(name_pin.binder)
-              # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end

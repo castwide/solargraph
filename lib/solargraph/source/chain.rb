@@ -238,7 +238,6 @@ module Solargraph
           next unless link.is_a?(Chain::Call)
 
           pin = api_map.get_method_stack('NilClass', link.word, scope: :instance).first
-          # @sg-ignore Need to add nil check here
           currently_nullable = pin.nil? || pin.return_type.tag == 'self'
         end
         currently_nullable

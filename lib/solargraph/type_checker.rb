@@ -144,7 +144,6 @@ module Solargraph
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.gates)
       if declared.undefined?
-        # @sg-ignore Need to add nil check here
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
             inferred = pin.probe(api_map).self_to_type(pin.full_context)
@@ -155,7 +154,6 @@ module Solargraph
           else
             result.push Problem.new(pin.location, "Missing @return tag for #{pin.path}", pin: pin)
           end
-          # @sg-ignore Need to add nil check here
         elsif pin.return_type.defined? && !resolved_constant?(pin)
           result.push Problem.new(pin.location, "Unresolved return type #{pin.return_type} for #{pin.path}", pin: pin)
         elsif rules.must_tag_or_infer? && pin.probe(api_map).undefined?
@@ -256,7 +254,6 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
