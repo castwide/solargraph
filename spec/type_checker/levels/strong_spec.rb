@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 describe Solargraph::TypeChecker do
   context 'with level set to strong' do
     def type_checker code
@@ -95,6 +97,35 @@ describe Solargraph::TypeChecker do
           def a b
             c = b["123"]
             return if c.nil?
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'does not leak an unbound generic from an unmatched Hash#fetch overload' do
+      # Hash#fetch only takes its key as the _Key interface (rather than
+      # the generic K) as of RBS 4.1.0 - see ruby/rbs core/hash.rbs.
+      pending 'https://github.com/castwide/solargraph/pull/1266' if Gem::Version.new(RBS::VERSION) >= Gem::Version.new('4.1.0')
+      checker = type_checker(%(
+        class A
+          # @param b [Hash{String => Integer}]
+          # @return [Integer]
+          def a b
+            b.fetch('x')
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'infers nil as part of Hash#[] on a plainly-typed Hash' do
+      checker = type_checker(%(
+        class A
+          # @param b [Hash{String => Integer}]
+          # @return [Integer, nil]
+          def a b
+            b['x']
           end
         end
       ))
