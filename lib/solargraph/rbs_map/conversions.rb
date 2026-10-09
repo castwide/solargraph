@@ -547,7 +547,7 @@ module Solargraph
         # rubocop:enable Style/SafeNavigationChainLength
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
-          # @sg-ignore Need a downcast here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1281
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)

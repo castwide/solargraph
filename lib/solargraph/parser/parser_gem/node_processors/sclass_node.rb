@@ -28,7 +28,7 @@ module Solargraph
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                 names << sclass.children[1].to_s
               else
-                # @sg-ignore https://github.com/castwide/solargraph/issues/1251
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                 names.push NodeMethods.unpack_name(sclass.children[0]), sclass.children[1].to_s
               end
               name = names.reject(&:empty?).join('::')

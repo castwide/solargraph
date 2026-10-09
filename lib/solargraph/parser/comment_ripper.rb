@@ -50,7 +50,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @comments[result[2][0]] =
           Snippet.new(
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             Range.from_to(result[2][0] || 0, result[2][1] || 0, result[2][0] || 0,
                           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                           (result[2][1] || 0) + chomped.length), chomped

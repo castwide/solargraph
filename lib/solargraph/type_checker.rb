@@ -204,7 +204,7 @@ module Solargraph
 
     # @param pin [Pin::Base]
     def virtual_pin? pin
-      # @sg-ignore pin.location relies on location always resolved
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       pin.location && source.comment_at?(pin.location.range.ending)
     end
 

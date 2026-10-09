@@ -85,7 +85,7 @@ module Solargraph
               if arg_type.generic? && param_type.defined?
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                # @sg-ignore nil false alarm
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1223

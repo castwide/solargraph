@@ -120,7 +120,7 @@ module Solargraph
       end
 
       # @return [String]
-      # @sg-ignore MatchData relies on regex always matching
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       def end_of_phrase
         @end_of_phrase ||= begin
           match = phrase.match(/\s*(\.{1}|::)\s*$/)

@@ -484,7 +484,7 @@ module Solargraph
     attr_writer :parsed
 
     # @return [Hash{Integer => Solargraph::Parser::Snippet}]
-    # @sg-ignore flow sensitive typing doesn't track tuple destructuring assignment
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     attr_writer :comments
 
     # @return [Boolean]

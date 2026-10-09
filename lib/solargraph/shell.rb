@@ -518,7 +518,7 @@ module Solargraph
           rel_dir = File.join('sig', options[:filename])
           puts "Writing #{rel_dir}..."
           target = File.join(work_dir, rel_dir)
-          # @sg-ignore Need a downcast here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1281
           FileUtils.mkdir_p(File.join(work_dir, 'sig'))
           `sord #{target} --rbs --no-regenerate`
         end
@@ -551,7 +551,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       desc = if pin.path.nil? || pin.path.empty?
                if pin.closure
-                 # @sg-ignore nil false alarm
+                 # @sg-ignore https://github.com/castwide/solargraph/pull/1258
                  "#{pin.closure.path} | #{pin.name}"
                else
                  "#{pin.context.namespace} | #{pin.name}"
@@ -559,7 +559,7 @@ module Solargraph
              else
                pin.path
              end
-      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end
