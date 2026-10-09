@@ -262,6 +262,7 @@ module Solargraph
 
       # @return [String]
       def parameters_to_rbs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         "#{rbs_generics}(#{parameters.map(&:to_rbs).join(', ')}) #{"{ #{block.to_rbs} } " unless block.nil?}"
       end
 

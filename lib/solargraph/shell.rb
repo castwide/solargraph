@@ -546,7 +546,9 @@ module Solargraph
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1258
     def pin_description pin
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       desc = if pin.path.nil? || pin.path.empty?
                if pin.closure
                  # @sg-ignore Need to add nil check here

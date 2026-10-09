@@ -662,7 +662,9 @@ module Solargraph
         return node.children[1].children.last if node.type == :DEFN
         # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         return node.children[2].children.last if node.type == :DEFS
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return node.children[2] if %i[def DEFS].include?(node.type)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return node.children[3] if node.type == :defs
         nil
       end

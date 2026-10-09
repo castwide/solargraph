@@ -111,6 +111,7 @@ module Solargraph
           return [type, new_signature_pin] unless match
 
           if overload.block && with_block?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             block_atypes = overload.block.parameters.map(&:return_type)
             # @todo Need to add nil check here
             # @sg-ignore Need to add nil check here

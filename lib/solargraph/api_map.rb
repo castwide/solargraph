@@ -610,6 +610,7 @@ module Solargraph
     def search query
       pins.map(&:path)
           .compact
+          # @sg-ignore Need better handling of #compact
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
