@@ -30,11 +30,11 @@ module Solargraph
       end
 
       def typify api_map
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         if return_type.defined?
           # @sg-ignore pin.closure relies on closure always resolved
           qualified = return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -47,11 +47,11 @@ module Solargraph
         method_stack.each do |pin|
           sig = pin.signatures.find { |s| s.arity == arity }
           next unless sig
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           next if sig.return_type.undefined?
           # @sg-ignore pin.closure relies on closure always resolved
           qualified = sig.return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
