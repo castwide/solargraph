@@ -51,7 +51,7 @@ module Solargraph
     end
 
     # @param range [Solargraph::Range]
-    # @return [String]
+    # @return [String, nil]
     def at range
       from_to range.start.line, range.start.character, range.ending.line, range.ending.character
     end
@@ -292,7 +292,6 @@ module Solargraph
       return unless Parser.is_ast_node?(top)
       # @sg-ignore https://github.com/castwide/solargraph/pull/1396
       if FOLDING_NODE_TYPES.include?(top.type)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1396
         range = Range.from_node(top)
         # @sg-ignore Range.from_node result assumed always present
         if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2

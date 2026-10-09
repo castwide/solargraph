@@ -269,6 +269,7 @@ module Solargraph
         end
         if pin.path == 'Class#new'
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
+          # @sg-ignore probably nil false alarm
           if caller.defined?
             # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             found.select! do |loc|

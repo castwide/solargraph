@@ -15,6 +15,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           namespace = closure_at(pins, source_position) || pins.first
 
+          # @sg-ignore Array#first/#last relies on non-empty invariant
           namespace = closure_at(pins, comment_position) if namespace.location&.range&.start&.line&.< comment_position.line # rubocop:disable Style/SafeNavigationChainLength
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", source.filename)

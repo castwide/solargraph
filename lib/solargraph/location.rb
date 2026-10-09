@@ -33,7 +33,9 @@ module Solargraph
       end
     end
 
+    # @sg-ignore nil false alarm
     def rbs?
+      # @sg-ignore nil false alarm
       filename.end_with?('.rbs')
     end
 

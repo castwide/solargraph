@@ -155,6 +155,7 @@ module Solargraph
           end
         end
         if callable.block?
+          # @sg-ignore nil false alarm
           callable.block = block.resolve_generics_from_context(generics_to_resolve,
                                                                yield_arg_types,
                                                                yield_return_type_context,
@@ -231,6 +232,7 @@ module Solargraph
       def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         callable = super(&transform)
+        # @sg-ignore nil false alarm
         callable.block = block.transform_types(&transform) if block?
         callable.parameters = parameters.map do |param|
           param.transform_types(&transform)

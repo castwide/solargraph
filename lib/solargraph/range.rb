@@ -79,10 +79,11 @@ module Solargraph
 
     # Get a range from a node.
     #
-    # @param node [::Parser::AST::Node]
+    # @param node [::Parser::AST::Node, nil]
     # @return [Range, nil]
     def self.from_node node
       return unless node&.loc&.expression
+      # @sg-ignore flow sensitive typing needs to handle &. comparisons
       from_expr(node.loc.expression)
     end
 

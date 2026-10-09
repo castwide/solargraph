@@ -706,7 +706,6 @@ module Solargraph
       raise 'No assignment found' if pin.assignment.nil?
 
       chain = Solargraph::Parser.chain(pin.assignment, filename)
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
       rng = Solargraph::Range.from_node(pin.assignment)
       # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)

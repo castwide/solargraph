@@ -261,6 +261,7 @@ module Solargraph
         rbs
       end
 
+      # @return [String]
       def path
         @path ||= "#{namespace}#{scope == :instance ? '#' : '.'}#{name}"
       end

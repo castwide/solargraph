@@ -668,7 +668,7 @@ module Solargraph
 
     # Get a source map by filename.
     #
-    # @param filename [String]
+    # @param filename [String, nil]
     # @return [SourceMap]
     # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
     def source_map filename
