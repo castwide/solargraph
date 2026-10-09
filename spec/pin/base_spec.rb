@@ -90,4 +90,16 @@ describe Solargraph::Pin::Base do
       expect { pin1.nearly?(pin2) }.not_to raise_error
     end
   end
+
+  describe '#location!' do
+    it 'returns the location when one is set' do
+      pin = described_class.new(location: zero_location, name: 'Foo', source: :parser)
+      expect(pin.location!).to eq(zero_location)
+    end
+
+    it 'raises when the pin has no location' do
+      pin = described_class.new(name: 'Foo')
+      expect { pin.location! }.to raise_error(RuntimeError, /No location set/)
+    end
+  end
 end
