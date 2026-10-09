@@ -23,22 +23,22 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
-        # @param h [String]
-        # @param k [Array<Pin::Namespace>]
+        # @param h [Hash{String => Array<Pin::Namespace>}]
+        # @param k [String]
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def pin_class_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{String => Array<Pin::Base>}]
+        # @param k [String]
         @pin_class_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def path_pin_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{String => Array<Pin::Base>}]
+        # @param k [String]
         @path_pin_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
@@ -59,36 +59,36 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_references
-        # @param h [String]
-        # @param k [Array<String>]
+        # @param h [Hash{String => Array<Pin::Reference::Include>}]
+        # @param k [String]
         @include_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Reference::Include>}]
       def include_reference_pins
-        # @param h [String]
-        # @param k [Array<Pin::Reference::Include>]
+        # @param h [Hash{String => Array<Pin::Reference::Include>}]
+        # @param k [String]
         @include_reference_pins ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
-        # @param h [String]
-        # @param k [Array<String>]
+        # @param h [Hash{String => Array<Pin::Reference::Extend>}]
+        # @param k [String]
         @extend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Reference::Prepend>}]
       def prepend_references
-        # @param h [String]
-        # @param k [Array<String>]
+        # @param h [Hash{String => Array<Pin::Reference::Prepend>}]
+        # @param k [String]
         @prepend_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
-        # @param h [String]
-        # @param k [Array<String>]
+        # @param h [Hash{String => Array<Pin::Reference::Superclass>}]
+        # @param k [String]
         @superclass_references ||= Hash.new { |h, k| h[k] = [] }
       end
 

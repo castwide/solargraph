@@ -4,7 +4,7 @@ module Solargraph
   module Convention
     class Gemspec < Base
       def local source_map
-        return Convention::Base::EMPTY_ENVIRON unless File.basename(source_map.filename).end_with?('.gemspec')
+        return Convention::Base::EMPTY_ENVIRON unless File.basename(source_map.filename.to_s).end_with?('.gemspec')
         @local ||= Environ.new(
           requires: ['rubygems'],
           pins: [
