@@ -147,11 +147,11 @@ module Solargraph
                                                 resolved_generic_values: resolved_generic_values)
           end
         end
-        if callable.block?
-          callable.block = block.resolve_generics_from_context(generics_to_resolve,
-                                                               yield_arg_types,
-                                                               yield_return_type_context,
-                                                               resolved_generic_values: resolved_generic_values)
+        if callable.block
+          callable.block = callable.block.resolve_generics_from_context(generics_to_resolve,
+                                                                        yield_arg_types,
+                                                                        yield_return_type_context,
+                                                                        resolved_generic_values: resolved_generic_values)
         end
         callable
       end
