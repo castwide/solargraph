@@ -480,8 +480,8 @@ module Solargraph
         location || type_location
       end
 
-      # Only Namespace, FactoryParameter, Reference::Require/Override and parentless
-      # RBS Constant pins lack a closure; no #closure! call site receives one unguarded.
+      # Only Namespace, FactoryParameter, DuckMethod, Reference::Require/Override and
+      # parentless RBS Constant pins lack a closure; no #closure! call site receives one unguarded.
       #
       # @sg-ignore flow ensitive typing should understand raise
       # @return [Pin::Closure]
@@ -739,6 +739,11 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # @return [Pin::Closure, nil]
+      def raw_closure
+        @closure
+      end
 
       # @return [void]
       def parse_comments

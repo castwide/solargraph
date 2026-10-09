@@ -257,7 +257,7 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        params = closure!.docstring.tags(:param)
+        params = closure.docstring.tags(:param)
         params.each do |p|
           return p if p.name == name
         end
@@ -269,7 +269,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
-        block_pin = closure!
+        block_pin = closure
         idx = index
         return block_pin.typify_parameters(api_map)[idx] if block_pin.is_a?(Pin::Block) && block_pin.receiver && idx
         ComplexType::UNDEFINED
@@ -278,7 +278,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        meths = api_map.get_method_stack(closure!.full_context.tag, closure!.name, scope: closure!.scope)
+        meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         idx = index
         # meths.shift # Ignore the first one
         meths.each do |meth|

@@ -6,8 +6,10 @@ module Solargraph
       # A Superclass reference pin.
       #
       class Superclass < Reference
+        include ClosureRequired
+
         def reference_gates
-          @reference_gates ||= closure!.gates - [closure!.path]
+          @reference_gates ||= closure.gates - [closure.path]
         end
       end
     end

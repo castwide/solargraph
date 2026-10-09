@@ -3,14 +3,16 @@
 module Solargraph
   module Pin
     class InstanceVariable < BaseVariable
+      include ClosureRequired
+
       # @return [ComplexType, ComplexType::UniqueType]
       def binder
-        closure!.binder
+        closure.binder
       end
 
       # @return [::Symbol]
       def scope
-        closure!.binder.scope
+        closure.binder.scope
       end
 
       # @return [ComplexType]
