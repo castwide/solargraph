@@ -28,7 +28,7 @@ describe Solargraph::Diagnostics::Rubocop do
       YAML
       example.run
     ensure
-      FileUtils.rm_f(config_file)
+      FileUtils.rm_rf(config_file)
     end
 
     it 'handles validation errors' do
