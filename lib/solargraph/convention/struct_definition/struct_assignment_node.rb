@@ -53,6 +53,8 @@ module Solargraph
         # @return [Parser::AST::Node]
         def struct_node
           assignment_node = node.children[2]
+          return nil if assignment_node.nil?
+
           if assignment_node.type == :block
             assignment_node.children[0]
           else
