@@ -227,9 +227,9 @@ module Solargraph
           factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
             method_pin.parameters.each_with_index.find do |param, index|
               current_argument = arguments[index]
-              next unless current_argument&.literal?
-              # @type [Solargraph::Source::Chain::Literal]
+              next if current_argument.nil? || !current_argument.literal?
               last_link = current_argument.links.last
+              next unless last_link.is_a?(Chain::Literal)
               argument_value = last_link.value
 
               param.name == factory_param.param_name && argument_value == factory_param.value

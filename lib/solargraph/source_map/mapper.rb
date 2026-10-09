@@ -126,8 +126,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore Need to add nil check here
-            num = cur if cur < num
+            num = cur if cur && num && cur < num
           end
           ctxt += p[num..].to_s if started
         end
