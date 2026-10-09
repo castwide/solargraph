@@ -16,8 +16,7 @@ module Solargraph
       end
 
       # @param path [String]
-      # @return [Array<Solargraph::Pin::Base>]
-      # @sg-ignore Need to add nil check here
+      # @return [Array<Solargraph::Pin::Base>, nil]
       def get_path_pins path
         @path_pins[path]
       end

@@ -109,8 +109,7 @@ module Solargraph
     end
 
     # @param path [String]
-    # @return [Pin::Base]
-    # @sg-ignore Need to add nil check here
+    # @return [Pin::Base, nil]
     def first_pin path
       pins.select { |p| p.path == path }.first
     end

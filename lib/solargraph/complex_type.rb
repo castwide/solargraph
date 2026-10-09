@@ -56,8 +56,7 @@ module Solargraph
       end)
     end
 
-    # @return [UniqueType]
-    # @sg-ignore Need to add nil check here
+    # @return [UniqueType, nil]
     def first
       @items.first
     end
@@ -133,8 +132,7 @@ module Solargraph
     end
 
     # @param index [Integer]
-    # @return [UniqueType]
-    # @sg-ignore Need to add nil check here
+    # @return [UniqueType, nil]
     def [] index
       @items[index]
     end

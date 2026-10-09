@@ -49,8 +49,7 @@ module Solargraph
 
       # Extracts the rubocop version from _args_
       #
-      # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @return [String, nil]
       def rubocop_version
         args.find { |a| a =~ /version=/ }.to_s.split('=').last
       end

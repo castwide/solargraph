@@ -9,8 +9,7 @@ module Solargraph
       # @return [Pin::Closure]
       attr_reader :closure
 
-      # @return [Symbol]
-      # @sg-ignore Need to add nil check here
+      # @return [Symbol, nil]
       attr_reader :scope
 
       # @return [Symbol]

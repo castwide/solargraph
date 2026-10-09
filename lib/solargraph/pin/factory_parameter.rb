@@ -59,7 +59,7 @@ module Solargraph
         @return_type = return_type
       end
 
-      # @sg-ignore Need to add nil check here
+      # @return [String, nil]
       def name
         param_name
       end

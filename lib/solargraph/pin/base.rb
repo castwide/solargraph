@@ -22,8 +22,7 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @return [String]
-      # @sg-ignore Need to add nil check here
+      # @return [String, nil]
       attr_reader :path
 
       # @return [::Symbol, nil]

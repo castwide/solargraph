@@ -61,8 +61,7 @@ module Solargraph
     # @param l2 [Integer]
     # @param c2 [Integer]
     #
-    # @sg-ignore Need to add nil check here
-    # @return [String]
+    # @return [String, nil]
     def from_to l1, c1, l2, c2
       b = Solargraph::Position.line_char_to_offset(code, l1, c1)
       e = Solargraph::Position.line_char_to_offset(code, l2, c2)
@@ -73,8 +72,7 @@ module Solargraph
     #
     # @param line [Integer]
     # @param column [Integer]
-    # @return [AST::Node]
-    # @sg-ignore Need to add nil check here
+    # @return [AST::Node, nil]
     def node_at line, column
       tree_at(line, column).first
     end

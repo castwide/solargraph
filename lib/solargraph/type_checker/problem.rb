@@ -14,8 +14,7 @@ module Solargraph
       attr_reader :message
 
       # @todo Missed nil violation
-      # @return [Pin::Base]
-      # @sg-ignore Need to add nil check here
+      # @return [Pin::Base, nil]
       attr_reader :pin
 
       # @return [String, nil]

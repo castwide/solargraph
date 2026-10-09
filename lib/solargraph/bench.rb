@@ -10,8 +10,7 @@ module Solargraph
     # @return [Workspace]
     attr_reader :workspace
 
-    # @return [SourceMap]
-    # @sg-ignore Need to add nil check here
+    # @return [SourceMap, nil]
     attr_reader :live_map
 
     # @return [Set<String>]

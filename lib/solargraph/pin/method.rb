@@ -12,8 +12,7 @@ module Solargraph
 
       attr_writer :signatures
 
-      # @return [Parser::AST::Node]
-      # @sg-ignore Need to add nil check here
+      # @return [Parser::AST::Node, nil]
       attr_reader :node
 
       # @param visibility [::Symbol] :public, :protected, or :private
