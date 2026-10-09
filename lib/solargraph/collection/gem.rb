@@ -11,7 +11,8 @@ module Solargraph
 
       @@path_source_cache = {}
 
-      # Engines autoload app/ rather than requiring it; YARD maps it by default too.
+      # Rails engines keep code under app/, loaded by Zeitwerk rather than require;
+      # YARD maps it by default too.
       AUTOLOAD_DIRS = ['app'].freeze
 
       # @param metagem [Metagem]
