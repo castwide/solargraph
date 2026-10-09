@@ -137,6 +137,18 @@ describe Solargraph::Source do
     expect(refs.map { |r| source.at(r.range) }).to eq(['[]'])
   end
 
+  it 'skips references to a setter called without spelling its name' do
+    source = described_class.load_string(%(
+      class Foo
+        def []=(index, value)
+        end
+      end
+      Foo.new[0] = 1
+    ))
+    refs = source.references('[]=')
+    expect(refs.map { |r| source.at(r.range) }).to eq(['[]='])
+  end
+
   it 'allows escape sequences incompatible with UTF-8' do
     source = described_class.new('
       x = " Un bUen café \x92"

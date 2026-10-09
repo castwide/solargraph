@@ -57,8 +57,10 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
+            extract_offset = lambda do |code, offset|
+              match = reg.match(code, offset)
+              match ? match.offset(0) : [nil, nil]
+            end
           else
             # @param code [String]
             # @param offset [Integer]
