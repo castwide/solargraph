@@ -78,11 +78,11 @@ module Solargraph
             obj.add_file pin.location.filename, pin.location.range.start.line
           end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           method_object.docstring = pin.docstring
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           method_object.visibility = pin.visibility || :public
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           method_object.parameters = pin.parameters.map do |p|
             [p.full_name, p.asgn_code]
           end
