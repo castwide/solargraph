@@ -149,7 +149,7 @@ module Solargraph
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
-          # @sg-ignore nil false alarm
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end
