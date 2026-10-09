@@ -475,6 +475,21 @@ module Solargraph
 
       private
 
+      # `@overloads` is absent: #overloads returns the ivar itself, so a nil
+      # here widens its inferred return type past the declared one, and the
+      # only literal that typechecks would be truthy and defeat the `||=`.
+      #
+      # @return [void]
+      def preassign_ivars
+        super
+        @visibility = :public
+        @explicit = false
+        @attribute = false
+        @signatures = nil
+        @anon_splat = false
+        @resolved_ref_tag = false
+      end
+
       # @param other [Pin::Method]
       # @return [Array<Pin::Signature>]
       def combine_signatures other

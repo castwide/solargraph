@@ -37,6 +37,14 @@ module Solargraph
       def path
         @path ||= namespace + (scope == :instance ? '#' : '.') + name
       end
+
+      private
+
+      # @return [void]
+      def preassign_ivars
+        super
+        @original = nil
+      end
     end
   end
 end

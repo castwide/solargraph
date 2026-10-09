@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'json'
+require 'objspace'
+
 describe Solargraph::Pin::Base do
   let(:zero_location) { Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 0, 0)) }
   let(:one_location) { Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 0, 1, 0)) }
@@ -88,6 +91,65 @@ describe Solargraph::Pin::Base do
       pin1.closure = pin1
       pin2 = Solargraph::Pin::Base.new(name: 'foo', closure: pin1)
       expect { pin1.nearly?(pin2) }.not_to raise_error
+    end
+  end
+
+  describe '#preassign_ivars' do
+    let(:mapped_pins) do
+      source = Solargraph::Source.load_string(<<~RUBY, 'shapes.rb')
+        module Outer
+          CONST = 1
+          class Thing
+            include Comparable
+            extend Kernel
+            prepend Comparable
+            # @return [String]
+            attr_reader :label
+            def initialize(a, b = 2, *rest, kw:, kwo: 3, **opts, &blk)
+              @label = a.to_s
+              @@count = 0
+              $registry = self
+              list = [a, b]
+              list.each { |item| item.to_s }
+              while a
+                break
+              end
+              until a
+                break
+              end
+              :done
+            end
+            def run(*); end
+            alias go run
+            class << self
+              def build; end
+            end
+          end
+          module Mod; end
+        end
+      RUBY
+      api_map = Solargraph::ApiMap.new
+      api_map.map(source)
+      map = Solargraph::SourceMap.map(source)
+      pins = map.pins + map.locals
+      pins.each { |pin| pin.typify(api_map) }
+      pins
+    end
+
+    it 'gives every instance of a pin class the same ivars in the same order' do
+      ivars = mapped_pins.group_by(&:class).transform_values do |pins|
+        pins.map(&:instance_variables).uniq
+      end
+
+      expect(ivars.select { |_klass, lists| lists.length > 1 }).to be_empty
+    end
+
+    it 'keeps every pin out of the per-object ivar table Ruby falls back to' do
+      spilled = mapped_pins.select do |pin|
+        JSON.parse(ObjectSpace.dump(pin)).fetch('too_complex_shape', false)
+      end
+
+      expect(spilled.map(&:class).uniq).to be_empty
     end
   end
 end
