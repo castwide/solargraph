@@ -11,6 +11,9 @@ module Solargraph
 
       @@path_source_cache = {}
 
+      # Engines autoload app/ rather than requiring it; YARD maps it by default too.
+      AUTOLOAD_DIRS = ['app'].freeze
+
       # @param metagem [Metagem]
       def initialize metagem
         super()
@@ -44,7 +47,8 @@ module Solargraph
       end
 
       def without_yard
-        files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
+        dirs = (metagem.require_paths + AUTOLOAD_DIRS).uniq
+        files = dirs.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
         # Generating an ApiMap is necessary for processing macros
