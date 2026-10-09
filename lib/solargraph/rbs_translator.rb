@@ -22,7 +22,7 @@ module Solargraph
     # @param param_type [RBS::Types::Function::Param]
     # @param name [String]
     # @param decl [Symbol]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @return [Pin::Parameter]
     def self.to_parameter_pin(param_type, name, decl, closure)
       return_type = if decl == :restarg
@@ -36,7 +36,7 @@ module Solargraph
     end
 
     # @param method_type [RBS::MethodType]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @param parameter_names [Array<String>]
     # @return [Array<Pin::Parameter>]
     def self.to_parameter_pins method_type, closure, parameter_names = []
@@ -75,7 +75,7 @@ module Solargraph
     end
 
     # @param method_type [RBS::MethodType]
-    # @param closure [Pin::Closure]
+    # @param closure [Pin::Callable]
     # @param parameter_names [Array<String>]
     # @return [Pin::Signature]
     def self.to_signature method_type, closure, parameter_names = []
