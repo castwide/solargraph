@@ -4,6 +4,8 @@ module Solargraph
   module Pin
     class Reference
       class TypeAlias < Reference
+        include ClosureRequired
+
         # @param return_type [ComplexType]
         # @param [Hash{Symbol => Object}] splat
         def initialize return_type:, **splat

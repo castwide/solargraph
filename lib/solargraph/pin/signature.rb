@@ -3,6 +3,8 @@
 module Solargraph
   module Pin
     class Signature < Callable
+      include ClosureRequired
+
       # allow signature to be created before method pin, then set this
       # to the method pin
       attr_writer :closure

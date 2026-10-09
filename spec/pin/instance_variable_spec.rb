@@ -13,4 +13,9 @@ describe Solargraph::Pin::InstanceVariable do
     pin = described_class.new(name: '@bar')
     expect(pin.link_documentation).to eq('@bar')
   end
+
+  it 'raises on a missing closure' do
+    pin = described_class.new(name: '@bar', source: :spec)
+    expect { pin.closure }.to raise_error(RuntimeError, /closure/i)
+  end
 end
