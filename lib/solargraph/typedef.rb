@@ -4,7 +4,7 @@ module Solargraph
   module Typedef
     autoload :Path,       'solargraph/typedef/path'
     autoload :Token,      'solargraph/typedef/token'
-    autoload :Concrete,    'solargraph/typedef/concrete'
+    autoload :Concrete,   'solargraph/typedef/concrete'
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memoizer,   'solargraph/typedef/memoizer'
     autoload :Dictionary, 'solargraph/typedef/dictionary'

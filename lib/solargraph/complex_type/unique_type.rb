@@ -634,10 +634,10 @@ module Solargraph
           Typedef::Concrete.new(base)
         else
           params = if name == 'Hash'
-            all_params.map(&:to_typedef_typeset)
-          else
-            [Typedef::Union.new([all_params.map(&:to_typedef_typeset)])]
-          end
+                     all_params.map(&:to_typedef_typeset)
+                   else
+                     [Typedef::Union.new([all_params.map(&:to_typedef_typeset)])]
+                   end
           Typedef::Union.new([Typedef::Concrete.new(base, *params)])
         end
       end
