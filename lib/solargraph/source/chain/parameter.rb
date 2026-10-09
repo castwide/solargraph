@@ -42,10 +42,10 @@ module Solargraph
           end
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         # @return [Boolean] true if this is a parameter of Kernel#require
         def require_parameter?
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           method_call_chain.links.last.word == 'require'
         end
 
