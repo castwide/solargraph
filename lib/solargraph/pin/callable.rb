@@ -244,7 +244,7 @@ module Solargraph
       def arity_matches? arguments, with_block
         argcount = arguments.length
         parcount = mandatory_positional_param_count
-        # @sg-ignore flow sensitive typing needs to handle empty? guards
+        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>' once castwide PR 1258 merges
         parcount -= 1 if !parameters.empty? && parameters.last.block?
         return false if block? && !with_block
         # @todo this and its caller should be changed so that this can
