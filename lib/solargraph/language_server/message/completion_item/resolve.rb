@@ -22,10 +22,10 @@ module Solargraph
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
             result = params
                      .transform_keys(&:to_sym)
-                     # @sg-ignore flow sensitive typing needs to handle empty? guards
+                     # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
                      .merge(pins.first.resolve_completion_item)
                      .merge(documentation: markup_content(join_docs(docs)))
-            # @sg-ignore flow sensitive typing needs to handle empty? guards
+            # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
             result[:detail] = pins.first.detail
             result
           end
