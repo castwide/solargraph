@@ -16,10 +16,10 @@ describe Solargraph::Collection::Gem do
     described_class.new(fixture_gem('engine_gem')).pins.map(&:path)
   end
 
-  context 'with a convention that names gem directories' do
+  context 'with a convention that names extra source paths' do
     let(:app_convention) do
       Class.new(Solargraph::Convention::Base) do
-        def gem_directories _metagem
+        def extra_source_paths _metagem
           ['app/models', 'app/models/concerns']
         end
       end
@@ -29,11 +29,11 @@ describe Solargraph::Collection::Gem do
 
     after { Solargraph::Convention.unregister app_convention }
 
-    it 'maps the named directories' do
+    it 'maps the extra source paths' do
       expect(mapped_paths).to include('EngineGem::Broadcastable#broadcast')
     end
 
-    it 'maps a file under overlapping directories once' do
+    it 'maps a file under overlapping paths once' do
       expect(mapped_paths.count('EngineGem::Broadcastable#broadcast')).to eq(1)
     end
   end

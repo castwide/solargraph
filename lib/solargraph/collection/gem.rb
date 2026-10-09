@@ -44,7 +44,7 @@ module Solargraph
       end
 
       def without_yard
-        dirs = metagem.require_paths + Convention.gem_directories(metagem)
+        dirs = metagem.require_paths + Convention.extra_source_paths(metagem)
         files = dirs.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }.uniq
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 

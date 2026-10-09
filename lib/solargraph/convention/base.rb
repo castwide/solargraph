@@ -46,13 +46,11 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
-      # Directories, relative to the gem's root, to map alongside its
-      # require paths when the gem is mapped from source.
-      # Subclasses can override this method.
+      # Paths inside one gem, relative to its root, to map in addition to its require_paths.
       #
       # @param metagem [Metagem]
       # @return [Array<String>]
-      def gem_directories metagem
+      def extra_source_paths metagem
         []
       end
     end
