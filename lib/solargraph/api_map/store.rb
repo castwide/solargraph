@@ -35,7 +35,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return catalog(pinsets) if changed.zero?
 
-        # @sg-ignore String/Array Range slice relies on valid bounds
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         pinsets[changed..].each_with_index do |pins, idx|
           @pinsets[changed + idx] = pins
           @indexes[changed + idx] = if pins.empty?
