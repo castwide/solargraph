@@ -272,7 +272,7 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
-        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
+        # @sg-ignore Need to add nil check here
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:

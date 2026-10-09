@@ -83,14 +83,13 @@ module Solargraph
         end
 
         # @param name [String]
-        # @param top [AST::Node]
+        # @param top [AST::Node, Object, nil]
         # @return [Array<AST::Node>]
         def inner_node_references name, top
           # @type [Array<AST::Node>]
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
-            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
             top.children.each { |c| result.concat inner_node_references(name, c) }
           end
           result
