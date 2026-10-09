@@ -136,14 +136,20 @@ describe Solargraph::Pin::Base do
       pins
     end
 
-    it 'leaves every instance of a pin class on one Ruby object shape, so none spills to an ivar hash' do
-      skip 'Ruby below 3.2 has no object shapes' if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.2')
-
-      shapes = mapped_pins.group_by(&:class).transform_values do |pins|
-        pins.map { |pin| JSON.parse(ObjectSpace.dump(pin)).fetch('shape_id') }.uniq
+    it 'gives every instance of a pin class the same ivars in the same order' do
+      ivars = mapped_pins.group_by(&:class).transform_values do |pins|
+        pins.map(&:instance_variables).uniq
       end
 
-      expect(shapes.select { |_klass, ids| ids.length > 1 }).to be_empty
+      expect(ivars.select { |_klass, lists| lists.length > 1 }).to be_empty
+    end
+
+    it 'keeps every pin out of the per-object ivar table Ruby falls back to' do
+      spilled = mapped_pins.select do |pin|
+        JSON.parse(ObjectSpace.dump(pin)).fetch('too_complex_shape', false)
+      end
+
+      expect(spilled.map(&:class).uniq).to be_empty
     end
   end
 end
