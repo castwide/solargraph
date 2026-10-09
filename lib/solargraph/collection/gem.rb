@@ -11,10 +11,6 @@ module Solargraph
 
       @@path_source_cache = {}
 
-      # Rails engines keep code under app/, loaded by Zeitwerk rather than require;
-      # YARD maps it by default too.
-      AUTOLOAD_DIRS = ['app'].freeze
-
       # @param metagem [Metagem]
       def initialize metagem
         super()
@@ -48,8 +44,8 @@ module Solargraph
       end
 
       def without_yard
-        dirs = (metagem.require_paths + AUTOLOAD_DIRS).uniq
-        files = dirs.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
+        dirs = metagem.require_paths + Convention.gem_directories(metagem)
+        files = dirs.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }.uniq
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
         # Generating an ApiMap is necessary for processing macros

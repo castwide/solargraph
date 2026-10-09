@@ -12,6 +12,7 @@ module Solargraph
     autoload :StructDefinition, 'solargraph/convention/struct_definition'
     autoload :DataDefinition,   'solargraph/convention/data_definition'
     autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
+    autoload :RailsEngine, 'solargraph/convention/rails_engine'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
@@ -72,9 +73,16 @@ module Solargraph
       result
     end
 
+    # @param metagem [Metagem]
+    # @return [Array<String>]
+    def self.gem_directories metagem
+      @@conventions.flat_map { |conv| conv.gem_directories(metagem) }.uniq
+    end
+
     register Gemfile
     register Gemspec
     register Rakefile
     register ActiveSupportConcern
+    register RailsEngine
   end
 end

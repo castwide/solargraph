@@ -45,6 +45,16 @@ module Solargraph
                  deep, skip, no_core
         EMPTY_ENVIRON
       end
+
+      # Directories, relative to the gem's root, to map alongside its
+      # require paths when the gem is mapped from source.
+      # Subclasses can override this method.
+      #
+      # @param metagem [Metagem]
+      # @return [Array<String>]
+      def gem_directories metagem
+        []
+      end
     end
   end
 end
