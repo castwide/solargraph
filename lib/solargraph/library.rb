@@ -423,7 +423,7 @@ module Solargraph
         else
           args = line.split(':').map(&:strip)
           name = args.shift
-          # @sg-ignore Array#shift relies on the non-empty invariant String#split guarantees
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []
