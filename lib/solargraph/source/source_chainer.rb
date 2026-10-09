@@ -102,7 +102,7 @@ module Solargraph
       # @return [Solargraph::Source]
       attr_reader :source
 
-      # @sg-ignore String/Array Range slice relies on valid bounds
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [String]
       def phrase
         @phrase ||= source.code[signature_data..(offset - 1)]
@@ -174,12 +174,12 @@ module Solargraph
           if brackets.zero? && parens.zero? && squares.zero? && [' ', "\r", "\n", "\t"].include?(char)
             in_whitespace = true
           else
-            # @sg-ignore String/Array Range slice relies on valid bounds
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             if brackets.zero? && parens.zero? && squares.zero? && in_whitespace && !((char == '.') || @source.code[(index + 1)..].strip.start_with?('.'))
               @source.code[(index + 1)..]
-              # @sg-ignore String/Array Range slice relies on valid bounds
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               @source.code[(index + 1)..].lstrip
-              # @sg-ignore String/Array Range slice relies on valid bounds
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               index += (@source.code[(index + 1)..].length - @source.code[(index + 1)..].lstrip.length)
               break
             end
