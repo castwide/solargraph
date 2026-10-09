@@ -186,7 +186,7 @@ module Solargraph
             instance_accessor = boolean_option options, 'instance_accessor', true
             instance_reader = reader && instance_accessor && boolean_option(options, 'instance_reader', true)
             instance_writer = writer && instance_accessor && boolean_option(options, 'instance_writer', true)
-            node.children[2..].each do |a|
+            node.children.drop(2).each do |a|
               next unless Parser.is_ast_node?(a) && %i[sym str].include?(a.type)
               name = a.children[0].to_s
               next unless MODULE_ATTRIBUTE_NAME.match?(name)
