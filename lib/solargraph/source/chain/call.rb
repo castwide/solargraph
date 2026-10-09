@@ -288,18 +288,18 @@ module Solargraph
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
             txt = named.tag.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
