@@ -302,9 +302,9 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Need to validate config
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1366
       # @return [String]
-      # @sg-ignore Need to validate config
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1366
       def command_path
         # @type [String]
         options['commandPath'] || 'solargraph'
