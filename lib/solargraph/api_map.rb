@@ -236,7 +236,7 @@ module Solargraph
 
       api_map.external.unloaded_gems.each do |metagem|
         out&.puts "Caching gem #{metagem.name} (#{metagem.cache_name})"
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         Collection::Gem.load metagem
       end
       load(directory, loose_unions: loose_unions)

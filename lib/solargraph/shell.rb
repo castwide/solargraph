@@ -124,7 +124,7 @@ module Solargraph
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1108
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
           Solargraph::Collection::Gem.uncache(metagem) if metagem
         end
       end
@@ -190,10 +190,10 @@ module Solargraph
                    end
                  end
       metagems.each do |metagem|
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         Collection::Gem.uncache(metagem) if options[:rebuild]
         puts "Caching #{metagem.name} #{metagem.version} (#{metagem.cache_name})"
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1108
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         Collection::Gem.load(metagem)
       end
       puts "Documentation cached for #{metagems.count} gems."
