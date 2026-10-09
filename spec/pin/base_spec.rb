@@ -102,21 +102,4 @@ describe Solargraph::Pin::Base do
       expect { pin.location! }.to raise_error(RuntimeError, /No location set/)
     end
   end
-
-  describe '#best_location!' do
-    it 'returns the location when one is set' do
-      pin = described_class.new(location: zero_location, name: 'Foo', source: :parser)
-      expect(pin.best_location!).to eq(zero_location)
-    end
-
-    it 'falls back to the type location when there is no location' do
-      pin = described_class.new(type_location: zero_location, name: 'Foo')
-      expect(pin.best_location!).to eq(zero_location)
-    end
-
-    it 'raises when the pin has neither a location nor a type location' do
-      pin = described_class.new(name: 'Foo')
-      expect { pin.best_location! }.to raise_error(RuntimeError, /No location or type_location set/)
-    end
-  end
 end

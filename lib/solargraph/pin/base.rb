@@ -480,25 +480,13 @@ module Solargraph
         location || type_location
       end
 
-      # #location, for callers who know from the pin provenance (e.g. it
-      # was just built from a parsed AST node, or fetched from an
-      # already-cataloged workspace) that it must be set. Raises instead
-      # of silently propagating nil if that assumption is ever wrong.
+      # RBS, convention and synthesized pins may lack a location; every
+      # #location! call site receives a pin built from parsed source.
       #
-      # @sg-ignore tool-limitation:issue-1254
-      #   https://github.com/castwide/solargraph/issues/1254
+      # @sg-ignore flow ensitive typing should understand raise
       # @return [Location]
       def location!
         location || raise("No location set on #{inner_desc}")
-      end
-
-      # #best_location, with the same non-nil guarantee as #location!.
-      #
-      # @sg-ignore tool-limitation:issue-1254
-      #   https://github.com/castwide/solargraph/issues/1254
-      # @return [Location]
-      def best_location!
-        best_location || raise("No location or type_location set on #{inner_desc}")
       end
 
       # True if the specified pin is a near match to this one. A near match

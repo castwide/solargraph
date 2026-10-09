@@ -669,12 +669,10 @@ module Solargraph
           rng = Range.from_node(n)
           next unless rng
           clip = api_map.clip_at(
-            # @sg-ignore Need to add nil check here
-            location.filename,
+            location!.filename,
             rng.ending
           )
-          # @sg-ignore Need to add nil check here
-          chain = Solargraph::Parser.chain(n, location.filename)
+          chain = Solargraph::Parser.chain(n, location!.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
         end

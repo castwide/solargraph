@@ -58,8 +58,7 @@ module Solargraph
       # @return [::Array<ComplexType>]
       def typify_parameters api_map
         chain = Parser.chain(receiver, filename, node)
-        # @sg-ignore Need to add nil check here
-        clip = api_map.clip_at(location.filename, location.range.start)
+        clip = api_map.clip_at(location!.filename, location!.range.start)
         locals = clip.locals - [self]
         # @sg-ignore Need to add nil check here
         meths = chain.define(api_map, closure, locals)
@@ -98,10 +97,8 @@ module Solargraph
       def maybe_rebind api_map
         return ComplexType::UNDEFINED unless receiver
 
-        # @sg-ignore Need to add nil check here
-        chain = Parser.chain(receiver, location.filename, node)
-        # @sg-ignore Need to add nil check here
-        locals = api_map.source_map(location.filename).locals_at(location)
+        chain = Parser.chain(receiver, location!.filename, node)
+        locals = api_map.source_map(location!.filename).locals_at(location!)
         # @sg-ignore Need to add nil check here
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
