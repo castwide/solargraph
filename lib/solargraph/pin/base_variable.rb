@@ -263,14 +263,14 @@ module Solargraph
           return closure || other.closure
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         if closure.location.nil? || other.closure.location.nil?
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
           return closure.location.nil? ? other.closure : closure
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         return closure if closure.location <= other.closure.location
 
         other.closure
