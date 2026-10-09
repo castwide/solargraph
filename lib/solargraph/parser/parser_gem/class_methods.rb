@@ -90,7 +90,7 @@ module Solargraph
           result = []
           if top.is_a?(AST::Node) && top.to_s.include?(":#{name}")
             result.push top if top.children.any? { |c| c.to_s == name }
-            # @sg-ignore node.children[] relies on grammar-guaranteed arity
+            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
             top.children.each { |c| result.concat inner_node_references(name, c) }
           end
           result

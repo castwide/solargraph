@@ -12,11 +12,11 @@ module Solargraph
             target = node.children[0]
             operator = node.children[1]
             argument = node.children[2]
-            # @sg-ignore nil false alarm
+            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
             if target.type == :send
               # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
-            # @sg-ignore nil false alarm
+            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
             elsif target.type.to_s.end_with?('vasgn')
               # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)

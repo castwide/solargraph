@@ -156,7 +156,7 @@ module Solargraph
                                     get_node_end_position(else_clause))
         end
 
-        # @sg-ignore nil false alarm
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -192,7 +192,7 @@ module Solargraph
                                    get_node_end_position(do_clause))
         end
 
-        # @sg-ignore nil false alarm
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -272,20 +272,20 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          # @sg-ignore node.children[] relies on grammar-guaranteed arity
+          # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
           variable_name = call_receiver.children[1].to_s
         end
         # or like this:
         # (lvar :repr)
-        # @sg-ignore node.children[] relies on grammar-guaranteed arity
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
@@ -403,7 +403,7 @@ module Solargraph
         receiver = bang_node.children[0]
 
         # swap the two presences
-        # @sg-ignore nil false alarm
+        # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
         process_expression(receiver, false_presences, true_presences)
       end
 

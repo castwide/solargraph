@@ -90,7 +90,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            # @sg-ignore node.children[] relies on grammar-guaranteed arity
+            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
             node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure
