@@ -732,4 +732,13 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  it 'treats a macro tag without text as an empty macro' do
+    api_map = Solargraph::ApiMap.new
+    tag = YARD::Tags::Tag.new(:macro, nil, nil, 'empty_macro')
+    macro = YARD::Tags::MacroDirective.new(tag, nil)
+    call = described_class.new('foo')
+    pin = Solargraph::Pin::ROOT_PIN
+    expect { call.send(:inner_process_macro, pin, macro, api_map, pin.binder, []) }.not_to raise_error
+  end
 end
