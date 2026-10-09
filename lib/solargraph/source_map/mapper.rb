@@ -86,8 +86,7 @@ module Solargraph
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
         return start unless start < comment.lines.length
-        # @sg-ignore Need to add nil check here
-        num = comment.lines[start..].find_index do |line|
+        num = comment.lines.drop(start).find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning
           line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
