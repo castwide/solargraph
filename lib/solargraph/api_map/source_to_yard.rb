@@ -69,7 +69,7 @@ module Solargraph
             next
           end
 
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           # @param obj [YARD::CodeObjects::RootObject]
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
             code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope

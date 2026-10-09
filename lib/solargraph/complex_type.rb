@@ -344,9 +344,9 @@ module Solargraph
     end
 
     # @return [Array<ComplexType>]
-    # @sg-ignore Need to add nil check here
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def all_params
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       @items.first.all_params || []
     end
 

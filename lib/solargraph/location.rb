@@ -62,7 +62,7 @@ module Solargraph
       # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
       filename = nil if filename.empty?
       range = Range.from_node(node)
-      # @sg-ignore nil false alarm
+      # @sg-ignore Range.from_node result assumed always present
       new(filename, range)
     end
 

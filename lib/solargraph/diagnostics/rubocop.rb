@@ -25,7 +25,7 @@ module Solargraph
       def diagnose source, _api_map
         @source = source
         require_rubocop(rubocop_version)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore OK if source.filename is nil
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)

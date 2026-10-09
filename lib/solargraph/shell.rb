@@ -338,7 +338,7 @@ module Solargraph
         exit 1
       when Pin::Namespace
         if options[:references]
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
           references[:superclass] = superclass_pin if superclass_pin
@@ -559,7 +559,7 @@ module Solargraph
              else
                pin.path
              end
-      # @sg-ignore nil false alarm
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end

@@ -213,7 +213,7 @@ module Solargraph
         detail += if signatures.length > 1
                     '(*) '
                   else
-                    # @sg-ignore nil false alarm
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
         unless return_type.undefined?

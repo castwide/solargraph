@@ -58,7 +58,7 @@ module Solargraph
       end
 
       def to_rbs
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 

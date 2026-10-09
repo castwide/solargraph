@@ -30,7 +30,7 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @@processors[type].delete(cls)
         end
       end

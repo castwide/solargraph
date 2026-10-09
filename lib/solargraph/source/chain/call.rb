@@ -127,10 +127,10 @@ module Solargraph
           # @todo It shouldn't be necessary to choose either generics or macros
           # @sg-ignore nil false alarm
           new_return_type = if new_signature_pin.return_type.defined?
-                              # @sg-ignore nil false alarm
+                              # @sg-ignore https://github.com/castwide/solargraph/pull/1338
                               new_signature_pin.return_type
                             else
-                              # @sg-ignore Need to add nil check here
+                              # @sg-ignore nil false alarm
                               named_types = pin.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
                               pin.typify(api_map).expand(named_types)
                             end
@@ -288,18 +288,18 @@ module Solargraph
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore nil false alarm
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
             txt = named.tag.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+            # @sg-ignore nil false alarm
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore nil false alarm
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?

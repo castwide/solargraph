@@ -55,7 +55,7 @@ module Solargraph
               source: :yardoc
             )
           else
-            # @sg-ignore nil false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             pin = Pin::Method.new(
               location: location,
               closure: closure,

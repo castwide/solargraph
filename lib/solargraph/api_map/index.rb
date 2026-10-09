@@ -220,7 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
-          # @sg-ignore nil false alarm
+          # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
           factory_parameter_hash[fp.method_path] << fp
         end
       end

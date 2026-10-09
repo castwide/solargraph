@@ -108,7 +108,7 @@ module Solargraph
 
       # @return [SourceMap]
       def source_map
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore OK if source.filename is nil
         @source_map ||= api_map.source_map(cursor.filename)
       end
 

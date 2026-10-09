@@ -42,7 +42,7 @@ module Solargraph
         # @param source [Source]
         # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           pins, locals, ivars = NodeProcessor.process(source.node, Region.new(source: source))
           pins.concat(ivars)
           [pins, locals]
@@ -58,13 +58,13 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore MatchData relies on regex always matching
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
           end
           inner_node_references(name, source.node).map do |n|

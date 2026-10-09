@@ -77,7 +77,7 @@ module Solargraph
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
             param = parameters[idx]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Use fetch(i) for an index already bounds-checked
             param_type = chain.base.infer(api_map, param, locals)
             # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             unless arg_type.nil?

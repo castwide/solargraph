@@ -144,7 +144,7 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-          # @sg-ignore nil false alarm
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
@@ -850,7 +850,7 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
             in_tag = dereference(ref)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore probably nil false alarm
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
           end
