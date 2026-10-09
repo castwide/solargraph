@@ -46,4 +46,14 @@ describe Solargraph::Typedef::Concrete do
       expect(plain_type.all_generic?).to eq(plain_type.any_generic?)
     end
   end
+
+  describe '#instance?' do
+    it 'is true for a non-Class/Module base' do
+      expect(described_class.new('String')).to be_instance
+    end
+
+    it 'is false for a Class base' do
+      expect(described_class.new('Class', 'String')).not_to be_instance
+    end
+  end
 end
