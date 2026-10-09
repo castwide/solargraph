@@ -275,7 +275,7 @@ module Solargraph
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
-            macro = Solargraph::YardMap::Macro.from_directive(directive, self)
+            macro = Solargraph::YardMap::Macro.from_directive(directive.directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
             docstring.tags(:return).flat_map(&:types)
