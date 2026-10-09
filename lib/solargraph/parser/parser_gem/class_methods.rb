@@ -42,7 +42,6 @@ module Solargraph
         # @param source [Source]
         # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
-          # @sg-ignore nil false alarm
           pins, locals, ivars = NodeProcessor.process(source.node, Region.new(source: source))
           pins.concat(ivars)
           [pins, locals]

@@ -500,7 +500,7 @@ module Solargraph
         store.method_pins.each do |pin|
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
-          # @sg-ignore nil false alarm
+          # @sg-ignore Need better generic inference here
           type = pin.probe(api_map) if type.undefined?
           # @sg-ignore Need to add nil check here
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))

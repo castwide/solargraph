@@ -182,7 +182,7 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
-          # @sg-ignore nil false alarm
+          # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|

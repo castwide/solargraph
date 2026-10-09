@@ -261,7 +261,6 @@ module Solargraph
               end
             # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             elsif node.children[2].type == :def
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
               NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
             end
           end

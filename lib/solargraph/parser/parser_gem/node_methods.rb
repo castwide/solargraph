@@ -105,20 +105,23 @@ module Solargraph
         end
 
         # Convert a DSL method call argument with directly inferrable simple params.
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 
+          # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
           case node.type
           when :const
             unpack_name(node)
           when :str, :dstr, :int, :float, :sym, true, false
+            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
             node.children[0]
           when :array
+            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
             simple_convert_array(node)
           when :hash
+            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
             simple_convert_hash(node)
           else
             Solargraph::Parser.chain(node)

@@ -250,17 +250,17 @@ module Solargraph
       def param_tag
         # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params = closure.docstring.tags(:param)
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params.each do |p|
           return p if p.name == name
         end
-        # @sg-ignore nil false alarm
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      # @sg-ignore pin.closure relies on closure always resolved
+      # @sg-ignore Use fetch(i) for an index already bounds-checked
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -326,7 +326,7 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
