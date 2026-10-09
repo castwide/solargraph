@@ -31,7 +31,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)
-        # @sg-ignore String/Array Range slice relies on valid bounds
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
 
         flat = gates.flatten
@@ -214,7 +214,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          # @sg-ignore String/Array Range slice relies on valid bounds
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           inner_qualify(namespace[2..], '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)

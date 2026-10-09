@@ -776,7 +776,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                # @sg-ignore String/Array Range slice relies on valid bounds
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 .map { |line| line[2..].strip }
                 .join("\n")
       end
