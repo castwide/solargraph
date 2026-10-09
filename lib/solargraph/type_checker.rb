@@ -255,7 +255,6 @@ module Solargraph
     def variable_type_tag_problems
       result = []
       all_variables.each do |pin|
-        # @sg-ignore Need to add nil check here
         if pin.return_type.defined?
           declared = pin.typify(api_map)
           next if declared.duck_type?
@@ -816,8 +815,10 @@ module Solargraph
 
     # @param pin [Pin::Method]
     def abstract? pin
-      pin.docstring.has_tag?('abstract') ||
-        pin.closure&.docstring&.has_tag?('abstract')
+      return true if pin.abstract?
+      return true if pin.closure&.abstract?
+
+      false
     end
 
     # @param pin [Pin::Method]
