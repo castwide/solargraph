@@ -39,4 +39,30 @@ describe Solargraph::Pin::DelegatedMethod do
 
     expect(pin.return_type.to_s).to eq('String')
   end
+
+  it 'resolves a class method when the receiver is the class' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Class1
+        # @return [String]
+        def self.label; end
+      end
+    ))
+    api_map.map source
+
+    class1 = api_map.get_path_pins('Class1').first
+
+    # delegate :label, to: :class
+    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('class', nil)])
+    pin = described_class.new(
+      closure: class1,
+      scope: :instance,
+      name: 'label',
+      receiver: chain
+    )
+
+    pin.probe(api_map)
+
+    expect(pin.return_type.to_s).to eq('String')
+  end
 end

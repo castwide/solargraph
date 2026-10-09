@@ -91,21 +91,21 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         return if receiver_type.undefined?
 
-        receiver_path, method_scope =
-          # @sg-ignore Need to add nil check here
-          if @receiver_chain.constant?
-            # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
-            # the arguments `"Whatever"` and `scope: :class`.
-            # @sg-ignore Need to add nil check here
-            [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
-          else
-            # @sg-ignore Need to add nil check here
-            [receiver_type.to_s, :instance]
-          end
+        receiver_path, method_scope = lookup_target(receiver_type)
 
         # @sg-ignore Need to add nil check here
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
+      end
+
+      # A Class<Whatever> receiver, from a constant or `to: :class`, means Whatever's class methods.
+      #
+      # @param receiver_type [ComplexType]
+      # @return [Array(String, Symbol)] the namespace and scope to look the method up in
+      def lookup_target receiver_type
+        return [receiver_type.namespace, :class] if receiver_type.scope == :class
+
+        [receiver_type.to_s, :instance]
       end
 
       # helper to print a source chain as code, probably not 100% correct.
