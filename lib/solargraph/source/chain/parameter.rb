@@ -61,8 +61,8 @@ module Solargraph
           @method_name ||= method_call.word
         end
 
-        # @sg-ignore Need a downcast here
-        # @return [Chain::Call]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        # @return [Chain::Link]
         def method_call
           @method_call_chain.links.last
         end
