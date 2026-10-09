@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             here = get_node_start_position(node)
-            # @sg-ignore pin.closure relies on closure always resolved
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             presence = Range.new(here, region.closure.location.range.ending)
             loc = get_node_location(node)
             locals.push Solargraph::Pin::LocalVariable.new(

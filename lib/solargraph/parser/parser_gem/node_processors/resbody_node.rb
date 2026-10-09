@@ -12,7 +12,7 @@ module Solargraph
             if node.children[1] # Exception local variable name
               # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               here = get_node_start_position(node.children[1])
-              # @sg-ignore pin.closure relies on closure always resolved
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1399
               presence = Range.new(here, region.closure.location.range.ending)
               # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               loc = get_node_location(node.children[1])
