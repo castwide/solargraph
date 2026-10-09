@@ -12,7 +12,6 @@ module Solargraph
     autoload :StructDefinition, 'solargraph/convention/struct_definition'
     autoload :DataDefinition,   'solargraph/convention/data_definition'
     autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
-    autoload :RailsEngine, 'solargraph/convention/rails_engine'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
@@ -83,6 +82,5 @@ module Solargraph
     register Gemspec
     register Rakefile
     register ActiveSupportConcern
-    register RailsEngine
   end
 end
