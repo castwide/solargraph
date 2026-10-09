@@ -229,7 +229,7 @@ module Solargraph
               current_argument = arguments[index]
               next unless current_argument&.literal?
               # @type [Solargraph::Source::Chain::Literal]
-              # @sg-ignore nil false alarm
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               last_link = current_argument.links.last
               argument_value = last_link.value
 

@@ -126,7 +126,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore nil false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             num = cur if cur < num
           end
           ctxt += p[num..].to_s if started
