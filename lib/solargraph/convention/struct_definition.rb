@@ -124,7 +124,7 @@ module Solargraph
           # @return [YARD::Docstring]
           def parse_comments
             struct_comments = comments_for(node) || ''
-            # @sg-ignore nil false alarm
+            # @sg-ignore Use &. to suppress false alarm
             struct_definition_node.attributes.each do |attr_node, attr_name|
               comment = comments_for(attr_node)
               next if comment.nil?
