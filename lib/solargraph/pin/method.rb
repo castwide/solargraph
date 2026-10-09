@@ -624,7 +624,8 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
-        if parts.first.empty? || parts.one?
+        first = parts.first
+        if first.nil? || first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, *gates)

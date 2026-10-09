@@ -798,4 +798,17 @@ describe Solargraph::Pin::Method do
       expect { pin.signatures }.not_to raise_error
     end
   end
+
+  it 'typifies a method documented with an empty (see) reference' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # (see )
+        def bar; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first
+    expect { pin.typify(api_map) }.not_to raise_error
+  end
 end

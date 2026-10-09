@@ -540,4 +540,17 @@ describe Solargraph::Pin::Parameter do
       expect(clip.infer.rooted_tags).to eq('::A::B::Method')
     end
   end
+
+  it 'typifies a parameter that refers to a class with (see)' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz (see String)
+        def bar baz; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('Foo#bar').first.parameters.first
+    expect { pin.typify(api_map) }.not_to raise_error
+  end
 end
