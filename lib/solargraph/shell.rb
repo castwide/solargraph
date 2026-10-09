@@ -290,7 +290,7 @@ module Solargraph
           exit 1
         end
       end
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore nil false alarm
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
@@ -338,7 +338,7 @@ module Solargraph
         exit 1
       when Pin::Namespace
         if options[:references]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
           references[:superclass] = superclass_pin if superclass_pin
@@ -500,7 +500,7 @@ module Solargraph
         store.method_pins.each do |pin|
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           type = pin.probe(api_map) if type.undefined?
           # @sg-ignore Need to add nil check here
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
@@ -551,7 +551,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       desc = if pin.path.nil? || pin.path.empty?
                if pin.closure
-                 # @sg-ignore Need to add nil check here
+                 # @sg-ignore nil false alarm
                  "#{pin.closure.path} | #{pin.name}"
                else
                  "#{pin.context.namespace} | #{pin.name}"
@@ -559,7 +559,7 @@ module Solargraph
              else
                pin.path
              end
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore nil false alarm
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end

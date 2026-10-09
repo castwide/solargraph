@@ -37,7 +37,7 @@ module Solargraph
 
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         def select path
           if method_map.key?(path)
             method_map[path]

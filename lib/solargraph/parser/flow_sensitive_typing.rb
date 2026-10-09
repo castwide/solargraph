@@ -156,7 +156,7 @@ module Solargraph
                                     get_node_end_position(else_clause))
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -192,7 +192,7 @@ module Solargraph
                                    get_node_end_position(do_clause))
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
@@ -403,7 +403,7 @@ module Solargraph
         receiver = bang_node.children[0]
 
         # swap the two presences
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         process_expression(receiver, false_presences, true_presences)
       end
 

@@ -35,7 +35,7 @@ module Solargraph
                           node.children[2]
                         end
 
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             data_definition_node?(data_node)
           end
         end

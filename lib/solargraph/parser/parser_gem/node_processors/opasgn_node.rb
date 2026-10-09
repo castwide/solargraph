@@ -12,11 +12,11 @@ module Solargraph
             target = node.children[0]
             operator = node.children[1]
             argument = node.children[2]
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             if target.type == :send
               # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             elsif target.type.to_s.end_with?('vasgn')
               # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)

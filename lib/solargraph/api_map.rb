@@ -144,12 +144,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end
@@ -732,7 +732,7 @@ module Solargraph
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact

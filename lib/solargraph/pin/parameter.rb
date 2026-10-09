@@ -250,11 +250,11 @@ module Solargraph
       def param_tag
         # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params = closure.docstring.tags(:param)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         params.each do |p|
           return p if p.name == name
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 

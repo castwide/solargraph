@@ -19,7 +19,7 @@ module Solargraph
             base = word
             gates = name_pin.gates
           end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           fqns = api_map.resolve(base, gates)
           api_map.get_path_pins(fqns)
         end

@@ -213,7 +213,7 @@ module Solargraph
         detail += if signatures.length > 1
                     '(*) '
                   else
-                    # @sg-ignore Need to add nil check here
+                    # @sg-ignore nil false alarm
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
         unless return_type.undefined?
@@ -640,7 +640,7 @@ module Solargraph
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

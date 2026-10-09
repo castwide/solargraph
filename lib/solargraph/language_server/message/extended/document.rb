@@ -14,7 +14,7 @@ module Solargraph
             )
           rescue StandardError => e
             Solargraph.logger.warn "Error processing document: [#{e.class}] #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             Solargraph.logger.debug e.backtrace.join("\n")
           end
         end

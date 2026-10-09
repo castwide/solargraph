@@ -383,7 +383,7 @@ module Solargraph
       # @param context_type [ComplexType, UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore nil false alarm
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name

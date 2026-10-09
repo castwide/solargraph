@@ -80,7 +80,7 @@ module Solargraph
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
@@ -88,18 +88,18 @@ module Solargraph
         # @sg-ignore Array#first/#last relies on non-empty invariant
         receiver_type = resolver.return_type
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             [receiver_type.to_s, :instance]
           end
 

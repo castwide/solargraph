@@ -37,7 +37,7 @@ module Solargraph
             next false unless fp.value == literal_value
 
             # a splat takes every argument from its position on
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
           end
         end
@@ -45,7 +45,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         # @return [Boolean] true if this is a parameter of Kernel#require
         def require_parameter?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           method_call_chain.links.last.word == 'require'
         end
 

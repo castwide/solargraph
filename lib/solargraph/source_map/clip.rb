@@ -40,7 +40,7 @@ module Solargraph
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
         # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore nil false alarm
         if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
           return package_completions(api_map.get_symbols)
         end
@@ -199,7 +199,7 @@ module Solargraph
           full = cursor.chain.links.first.word
           type = if cursor.chain.undefined?
                    cursor.chain.base.infer(api_map, context_pin, locals)
-                 # @sg-ignore Need to add nil check here
+                 # @sg-ignore nil false alarm
                  elsif full.include?('::') && cursor.chain.links.length == 1
                    # @sg-ignore MatchData relies on regex always matching
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
@@ -209,7 +209,7 @@ module Solargraph
                    ComplexType::UNDEFINED
                  end
           if type.undefined?
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             if full.include?('::')
               result.concat api_map.get_constants(full, *gates)
             else

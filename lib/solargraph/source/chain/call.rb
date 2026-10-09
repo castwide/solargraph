@@ -114,7 +114,7 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             block_atypes = overload.block.parameters.map(&:return_type)
             # @todo Need to add nil check here
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             blocktype = if block.links.map(&:class) == [BlockSymbol]
                           # like the bar in foo(&:bar)
                           block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
@@ -125,9 +125,9 @@ module Solargraph
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
                                                                                     blocktype)
           # @todo It shouldn't be necessary to choose either generics or macros
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           new_return_type = if new_signature_pin.return_type.defined?
-                              # @sg-ignore Need to add nil check here
+                              # @sg-ignore nil false alarm
                               new_signature_pin.return_type
                             else
                               # @sg-ignore Need to add nil check here
@@ -229,7 +229,7 @@ module Solargraph
               current_argument = arguments[index]
               next unless current_argument&.literal?
               # @type [Solargraph::Source::Chain::Literal]
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore nil false alarm
               last_link = current_argument.links.last
               argument_value = last_link.value
 
@@ -379,7 +379,7 @@ module Solargraph
         def block_symbol_call_type api_map, context, block_parameter_types, locals
           # Ruby's shorthand for sending the passed in method name
           # to the first yield parameter with no arguments
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           block_symbol_name = block.links.first.word
           block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
           callee = api_map.get_path_pins(block_symbol_call_path).first
@@ -387,7 +387,7 @@ module Solargraph
           # @todo: Figure out why we get unresolved generics at
           #   this point and need to assume method return types
           #   based on the generic type
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
           return_type || ComplexType::UNDEFINED
         end
@@ -395,7 +395,7 @@ module Solargraph
         # @param api_map [ApiMap]
         # @return [Pin::Block, nil]
         def find_block_pin api_map
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
@@ -414,7 +414,7 @@ module Solargraph
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           block.infer(api_map, block_pin, locals)
         end
 

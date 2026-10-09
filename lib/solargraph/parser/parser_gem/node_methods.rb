@@ -285,9 +285,9 @@ module Solargraph
           tree.each do |node|
             if node.type == :send
               args = node.children[2..]
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore nil false alarm
               if !args.empty?
-                # @sg-ignore Need to add nil check here
+                # @sg-ignore nil false alarm
                 return node if prev && args.include?(prev)
               elsif source.synchronized?
                 return node if source.code[0..(offset - 1)] =~ /\(\s*\z/ && source.code[offset..] =~ /^\s*\)/

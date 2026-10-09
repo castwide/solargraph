@@ -38,7 +38,7 @@ module Solargraph
             end
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             Logging.logger.warn e.backtrace.join("\n")
             set_result empty_result
           end

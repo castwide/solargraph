@@ -182,7 +182,7 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
@@ -220,7 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore nil false alarm
           factory_parameter_hash[fp.method_path] << fp
         end
       end

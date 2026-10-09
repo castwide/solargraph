@@ -55,7 +55,7 @@ module Solargraph
               source: :yardoc
             )
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore nil false alarm
             pin = Pin::Method.new(
               location: location,
               closure: closure,
