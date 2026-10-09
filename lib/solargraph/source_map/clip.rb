@@ -142,7 +142,7 @@ module Solargraph
             next unless param.keyword?
             result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
-          # @sg-ignore flow sensitive typing needs to handle empty? guards
+          # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
           next unless !pin.parameters.empty? && pin.parameters.last.kwrestarg?
           pin.docstring.tags(:param).each do |tag|
             next if done.include?(tag.name)
