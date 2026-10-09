@@ -7,6 +7,15 @@ module Solargraph
         class SendNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          MODULE_ATTRIBUTE_METHODS = %i[
+            mattr_reader mattr_writer mattr_accessor
+            cattr_reader cattr_writer cattr_accessor
+            config_accessor
+          ].freeze
+
+          # Attribute names ActiveSupport accepts; it raises NameError on others.
+          MODULE_ATTRIBUTE_NAME = /\A[_A-Za-z]\w*\z/
+
           # @sg-ignore @override is adding, not overriding
           def process
             # @sg-ignore Variable type could not be inferred for method_name
@@ -28,6 +37,8 @@ module Solargraph
                 process_attribute
               elsif method_name == :class_attribute
                 process_class_attribute
+              elsif MODULE_ATTRIBUTE_METHODS.include?(method_name)
+                process_module_attribute
               elsif method_name == :include
                 process_include
               elsif method_name == :extend
@@ -161,6 +172,36 @@ module Solargraph
             end
           end
 
+          # Process an ActiveSupport +mattr_*+/+cattr_*+ or +config_accessor+
+          # declaration. Both define their accessors with a string
+          # +module_eval+, so they are public, and both refuse singleton classes.
+          #
+          # @return [void]
+          def process_module_attribute
+            return if region.scope == :class
+            macro = node.children[1].to_s
+            reader = !macro.end_with?('_writer')
+            writer = !macro.end_with?('_reader')
+            options = class_attribute_options
+            instance_accessor = boolean_option options, 'instance_accessor', true
+            instance_reader = reader && instance_accessor && boolean_option(options, 'instance_reader', true)
+            instance_writer = writer && instance_accessor && boolean_option(options, 'instance_writer', true)
+            node.children[2..].each do |a|
+              next unless Parser.is_ast_node?(a) && %i[sym str].include?(a.type)
+              name = a.children[0].to_s
+              next unless MODULE_ATTRIBUTE_NAME.match?(name)
+              if reader
+                pins.push build_class_attribute_pin name, scope: :class, visibility: :public
+                pins.push build_class_attribute_pin name, scope: :instance, visibility: :public if instance_reader
+              end
+              next unless writer
+              pins.push build_class_attribute_pin "#{name}=", scope: :class, writer: true, visibility: :public
+              if instance_writer
+                pins.push build_class_attribute_pin "#{name}=", scope: :instance, writer: true, visibility: :public
+              end
+            end
+          end
+
           # The literal keyword arguments passed to a +class_attribute+ call.
           # Values which cannot be evaluated statically are ignored.
           #
@@ -193,15 +234,16 @@ module Solargraph
           # @param name [String]
           # @param scope [Symbol] :class or :instance
           # @param writer [Boolean]
+          # @param visibility [Symbol]
           # @return [Pin::Method]
-          def build_class_attribute_pin name, scope:, writer: false
+          def build_class_attribute_pin name, scope:, writer: false, visibility: region.visibility
             pin = Pin::Method.new(
               location: get_node_location(node),
               closure: region.closure,
               name: name,
               comments: comments_for(node),
               scope: scope,
-              visibility: region.visibility,
+              visibility: visibility,
               attribute: true,
               source: :parser
             )
