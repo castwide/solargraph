@@ -229,11 +229,11 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       def starts_at? other_loc
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           presence.start == other_loc.range.start
       end
 
@@ -245,7 +245,7 @@ module Solargraph
       def combine_presence other
         return presence || other.presence if presence.nil? || other.presence.nil?
 
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
       end
 
@@ -281,7 +281,7 @@ module Solargraph
       def visible_at? other_closure, other_loc
         # @sg-ignore https://github.com/castwide/solargraph/issues/1249
         location.filename == other_loc.filename &&
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end

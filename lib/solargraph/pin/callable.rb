@@ -125,7 +125,7 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 

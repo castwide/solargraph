@@ -31,11 +31,11 @@ module Solargraph
         if nullable && !range.nil? && new_text.match(/[.\[{(@$:]$/)
           [':', '@'].each do |dupable|
             next unless new_text == dupable
-            # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             offset = Position.to_offset(text, range.start)
             if text[offset - 1] == dupable
               p = Position.from_offset(text, offset - 1)
-              # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1258
               r = Change.new(Range.new(p, range.start), ' ')
               text = r.write(text)
             end

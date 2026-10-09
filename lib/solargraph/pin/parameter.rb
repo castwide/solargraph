@@ -64,7 +64,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         decl == :kwrestarg || (assignment && %i[HASH hash].include?(assignment.type))
       end
 
