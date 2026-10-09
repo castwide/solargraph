@@ -44,6 +44,8 @@ module Solargraph
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
+            elsif included_hook_parameter?(node.children[0])
+              process_included_hook_mixin method_name
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
               pins.push Pin::Reference::Require.new(
                 Solargraph::Location.new(region.filename,
@@ -178,6 +180,50 @@ module Solargraph
                   source: :parser
                 )
               end
+            end
+          end
+
+          # @param receiver [::Parser::AST::Node, nil]
+          # @return [Boolean] whether receiver is the parameter of a module's
+          #   +self.included(base)+ hook
+          def included_hook_parameter? receiver
+            hook = region.closure
+            return false if receiver.nil? || receiver.type != :lvar
+            return false unless hook.is_a?(Pin::Method) && hook.scope == :class && hook.name == 'included'
+            hook.parameters.first&.name == receiver.children[0].to_s
+          end
+
+          # Map +base.extend ClassMethods+, +base.send(:include, Helpers)+
+          # and similar calls in a +self.included(base)+ hook, which apply to
+          # every class that includes the hook's module
+          #
+          # @param method_name [::Symbol]
+          # @return [void]
+          def process_included_hook_mixin method_name
+            args = node.children[2..] || []
+            if %i[send public_send].include?(method_name)
+              keyword = args.first
+              return unless Parser.is_ast_node?(keyword) && keyword.type == :sym
+              method_name = keyword.children[0]
+              args = args.drop(1)
+            end
+            return unless %i[include extend prepend].include?(method_name)
+            hook = region.closure
+            args.each do |arg|
+              next unless Parser.is_ast_node?(arg)
+              name = if arg.type == :self
+                       hook.namespace
+                     elsif arg.type == :const
+                       unpack_name(arg)
+                     end
+              next if name.nil? || name.empty?
+              pins.push Pin::Reference::IncludedMixin.new(
+                location: get_node_location(arg),
+                closure: hook.closure,
+                name: name,
+                keyword: method_name,
+                source: :parser
+              )
             end
           end
 
