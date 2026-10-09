@@ -155,7 +155,7 @@ module Solargraph
           end
         end
         if callable.block?
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           callable.block = block.resolve_generics_from_context(generics_to_resolve,
                                                                yield_arg_types,
                                                                yield_return_type_context,
