@@ -95,7 +95,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def named_path_pin position
           pins.select do |pin|
-            # @sg-ignore pin.location relies on location always resolved
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)
           end.last
         end

@@ -235,9 +235,9 @@ module Solargraph
         next if pin.is_a?(Pin::Method) && pin.attribute?
         found = pin if (klasses.empty? || klasses.any? do |kls|
           pin.is_a?(kls)
-          # @sg-ignore pin.location relies on location always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
         end) && pin.location.range.contain?(position)
-        # @sg-ignore pin.location relies on location always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1399
         break if pin.location.range.start.line > line
       end
       # Assuming the root pin is always valid

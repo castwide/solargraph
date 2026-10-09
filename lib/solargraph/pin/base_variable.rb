@@ -159,7 +159,7 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
-            # @sg-ignore pin.location relies on location always resolved
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             clip = api_map.clip_at(location.filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.

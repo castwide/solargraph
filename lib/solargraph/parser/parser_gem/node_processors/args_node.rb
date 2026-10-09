@@ -22,7 +22,7 @@ module Solargraph
                     assignment: u.children[1],
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1391
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
-                    # @sg-ignore pin.location relies on location always resolved
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1399
                     presence: callable.location.range,
                     decl: get_decl(u),
                     source: :parser

@@ -24,7 +24,7 @@ module Solargraph
         result.concat file_global_methods
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
-            # @sg-ignore pin.location relies on location always resolved
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             p.name == cursor.word && p.location.range.contain?(cursor.position)
           end)
         end
