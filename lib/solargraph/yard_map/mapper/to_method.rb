@@ -108,25 +108,25 @@ module Solargraph
 
           # @param a [Array<String>]
           # @return [String]
-          # @sg-ignore Array#[] integer index relies on fixed arity
+          # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
           def arg_name a
-            # @sg-ignore Array#[] integer index relies on fixed arity
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array]
           # @return [::Symbol]
           def arg_type a
-            # @sg-ignore Array#[] integer index relies on fixed arity
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             if a[0].start_with?('**')
               :kwrestarg
-            # @sg-ignore Array#[] integer index relies on fixed arity
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].start_with?('*')
               :restarg
-            # @sg-ignore Array#[] integer index relies on fixed arity
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].start_with?('&')
               :blockarg
-            # @sg-ignore Array#[] integer index relies on fixed arity
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]
