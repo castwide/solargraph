@@ -9,11 +9,14 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param closure [Solargraph::Pin::Closure, nil] receiver of bare,
+      #   implicit-self calls like 'location'
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -327,9 +330,10 @@ module Solargraph
         end
       end
 
-      # Finds (single var) or builds (chain, e.g. ['pin', 'location'])
-      # the pin narrowing facts get recorded on. A built pin probes its
-      # type lazily from `node`, so it can't see its own new facts.
+      # Finds (single var) or builds (chain, e.g. ['pin', 'location'], or
+      # bare self call, e.g. 'location') the pin narrowing facts get
+      # recorded on. A built pin probes its type lazily from `node`, so it
+      # can't see its own new facts.
       #
       # @param chain_words [::Array<String>]
       # @param node [Parser::AST::Node] the receiver expression, e.g. the
@@ -341,13 +345,31 @@ module Solargraph
         return unless root_word
 
         root_pin = find_var(root_word, position)
-        return root_pin if chain_words.length == 1
+        return root_pin || self_call_pin(node) if chain_words.length == 1
         return unless root_pin
 
         Pin::LocalVariable.new(
           location: Location.from_node(node),
           closure: root_pin.closure,
           name: chain_words.join('.'),
+          assignment: node,
+          source: :flow_sensitive_typing
+        )
+      end
+
+      # Builds a pin for a bare self call, e.g. 'location', named
+      # 'self.location' so it never shadows a local; Chain::Call consults it
+      # only when the call is an attr_reader.
+      #
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Pin::LocalVariable, nil]
+      def self_call_pin node
+        return unless closure && node.type == :send && node.children[0].nil?
+
+        Pin::LocalVariable.new(
+          location: Location.from_node(node),
+          closure: closure,
+          name: "self.#{node.children[1]}",
           assignment: node,
           source: :flow_sensitive_typing
         )
@@ -482,7 +504,8 @@ module Solargraph
       end
 
       # Handles a truthy check on a call chain, e.g. 'pin.location' in
-      # 'return nil unless pin.location'; bare vars go to #process_variable.
+      # 'return nil unless pin.location', or on a bare self call, e.g.
+      # 'location'; bare vars go to #process_variable.
       #
       # @param node [Parser::AST::Node]
       # @param true_presences [Array<Range>]
@@ -496,7 +519,7 @@ module Solargraph
         return if %i[nil? !].include?(node.children[1])
 
         chain_words = parse_receiver_chain(node)
-        return if chain_words.nil? || chain_words.length < 2
+        return if chain_words.nil? || chain_words.empty?
 
         # @sg-ignore Need to add nil check here
         position = Range.from_node(node).start
@@ -552,7 +575,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :closure
     end
   end
 end

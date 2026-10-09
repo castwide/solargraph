@@ -52,7 +52,8 @@ module Solargraph
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          found ||= narrowed_call_pin(api_map, name_pin, locals, receiver_path) unless head?
+          # a head call with no local of its name is an implicit-self call
+          found ||= narrowed_call_pin(api_map, name_pin, locals, head? ? ['self'] : receiver_path)
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           pins = method_pins(api_map, name_pin)

@@ -1104,6 +1104,50 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::String')
   end
 
+  it 'narrows a repeated bare, implicit-self attr_reader call after a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+
+        def bundled_filename
+          return nil unless location
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+
+    clip = api_map.clip_at('test.rb', [12, 22])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'does not narrow a repeated bare, implicit-self call to a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @return [Location, nil]
+        def next_token; end
+
+        def scan
+          return nil unless next_token
+          next_token
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
   it 'does not narrow a repeated call to a method that is not an attr_reader' do
     source = Solargraph::Source.load_string(%(
       class Location; end
