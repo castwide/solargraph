@@ -41,6 +41,13 @@ describe Solargraph::Workspace do
     expect(workspace.source(file_path)).to eq(updated)
   end
 
+  it 'ignores synchronizing a file outside the workspace' do
+    updater = Solargraph::Source::Updater.new(File.join(dir_path, 'other.rb'), 1, [])
+
+    expect { workspace.synchronize!(updater) }.not_to raise_error
+    expect(workspace.filenames).to eq([file_path])
+  end
+
   it 'removes deleted sources' do
     expect(workspace.filenames).to include(file_path)
 
