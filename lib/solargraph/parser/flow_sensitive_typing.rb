@@ -103,7 +103,7 @@ module Solargraph
         #   s(:send, nil, :foo),
         #   s(:send, nil, :bar))
         # [4] pry(main)>
-        conditional_node = if_node.children[0]
+        conditional_node = if_node.children.fetch(0)
         # @type [Parser::AST::Node, nil]
         then_clause = if_node.children[1]
         # @type [Parser::AST::Node, nil]
@@ -173,7 +173,7 @@ module Solargraph
         #     s(:send, nil, :b),
         #     s(:send, nil, :c)))
         # [4] pry(main)>
-        conditional_node = while_node.children[0]
+        conditional_node = while_node.children.fetch(0)
         # @type [Parser::AST::Node, nil]
         do_clause = while_node.children[1]
 
@@ -270,12 +270,12 @@ module Solargraph
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          variable_name = call_receiver.children[1].to_s
+        if call_receiver&.type == :send && call_receiver.children.fetch(0).nil? && call_receiver.children.fetch(1).is_a?(Symbol)
+          variable_name = call_receiver.children.fetch(1).to_s
         end
         # or like this:
         # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
+        variable_name = call_receiver.children.fetch(0).to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
         [call_arg, variable_name]
@@ -389,7 +389,7 @@ module Solargraph
         #       end
         return unless bang_node.type == :send && bang_node.children[1] == :!
 
-        receiver = bang_node.children[0]
+        receiver = bang_node.children.fetch(0)
 
         # swap the two presences
         process_expression(receiver, false_presences, true_presences)

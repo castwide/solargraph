@@ -276,10 +276,8 @@ module Solargraph
           prev = nil
           tree.each do |node|
             if node.type == :send
-              args = node.children[2..]
-              # @sg-ignore Need to add nil check here
+              args = node.children.drop(2)
               if !args.empty?
-                # @sg-ignore Need to add nil check here
                 return node if prev && args.include?(prev)
               elsif source.synchronized?
                 return node if source.code[0..(offset - 1)] =~ /\(\s*\z/ && source.code[offset..] =~ /^\s*\)/
