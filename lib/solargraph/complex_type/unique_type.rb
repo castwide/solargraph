@@ -11,6 +11,33 @@ module Solargraph
 
       attr_reader :all_params, :subtypes, :key_types
 
+      # Canonical instances, keyed by the identity of each type's construction
+      # fields. A child is interned before its parent is built, so a child's
+      # identity stands in for its value and a lookup never walks the tree.
+      #
+      # Process-global and never evicted, as ComplexType.parse's cache is.
+      #
+      # @type [Hash{::Array => UniqueType}]
+      @intern = {}
+
+      # The canonical instance for the type these arguments describe, adopting
+      # a newly built one the first time that type is seen.
+      #
+      # @param name [String]
+      # @param key_types [::Array<ComplexType, UniqueType>]
+      # @param subtypes [::Array<ComplexType, UniqueType>]
+      # @param rooted [Boolean]
+      # @param parameters_type [Symbol, nil]
+      # @return [UniqueType]
+      def self.intern name, key_types = [], subtypes = [], rooted:, parameters_type: nil
+        fresh = new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
+        key = fresh.intern_key
+        canonical = @intern[key]
+        return canonical unless canonical.nil?
+
+        @intern[key] = fresh
+      end
+
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
       # for the type `Array<String>`, the name is `Array` and the substring is
@@ -61,7 +88,7 @@ module Solargraph
           end
         end
         # @sg-ignore Need to add nil check here
-        new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
+        intern(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
       # @param name [String]
@@ -276,9 +303,20 @@ module Solargraph
         [self.class, @name, @key_types, @subtypes, @rooted, @all_params, @parameters_type].hash
       end
 
+      # The identity of this type's construction fields. Parameters are already
+      # canonical, so their identity stands in for their value, and @key_types'
+      # length marks where key types end and subtypes begin.
+      #
+      # @return [::Array]
+      def intern_key
+        key = [self.class, @name, @rooted, @parameters_type, @key_types.length]
+        @all_params.each { |param| key.push param.object_id }
+        key
+      end
+
       # @return [self]
       def erase_parameters
-        UniqueType.new(name, rooted: rooted?, parameters_type: parameters_type)
+        UniqueType.intern(name, rooted: rooted?, parameters_type: parameters_type)
       end
 
       # @return [Array<UniqueType>]
@@ -504,7 +542,8 @@ module Solargraph
         new_subtypes ||= @subtypes
         make_rooted = @rooted if make_rooted.nil?
         # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
-        UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
+        UniqueType.intern(new_name, new_key_types, new_subtypes,
+                          rooted: make_rooted, parameters_type: parameters_type)
       end
 
       # @return [String]
@@ -620,11 +659,13 @@ module Solargraph
         !name.empty? && name != name.downcase
       end
 
-      UNDEFINED = UniqueType.new('undefined', rooted: false)
-      BOOLEAN = UniqueType.new('Boolean', rooted: true)
-      TRUE = UniqueType.new('true', rooted: true)
-      FALSE = UniqueType.new('false', rooted: true)
-      NIL = UniqueType.new('nil', rooted: true)
+      # Interned like every other type, so recreating an equal type hands back
+      # the constant itself.
+      UNDEFINED = intern('undefined', rooted: false)
+      BOOLEAN = intern('Boolean', rooted: true)
+      TRUE = intern('true', rooted: true)
+      FALSE = intern('false', rooted: true)
+      NIL = intern('nil', rooted: true)
       # @type [Hash{String => UniqueType}]
       SINGLE_SUBTYPE = {
         '::TrueClass' => UniqueType::TRUE,
