@@ -176,10 +176,10 @@ module Solargraph
           if full.include?('::')
             # @sg-ignore Need to add nil check here
             if full.end_with?('::')
-              # @sg-ignore String/Array Range slice relies on valid bounds
+              # @sg-ignore MatchData relies on regex always matching
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
-              # @sg-ignore String/Array Range slice relies on valid bounds
+              # @sg-ignore MatchData relies on regex always matching
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
             end
           else
@@ -201,7 +201,7 @@ module Solargraph
                    cursor.chain.base.infer(api_map, context_pin, locals)
                  # @sg-ignore Need to add nil check here
                  elsif full.include?('::') && cursor.chain.links.length == 1
-                   # @sg-ignore String/Array Range slice relies on valid bounds
+                   # @sg-ignore MatchData relies on regex always matching
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
                  elsif cursor.chain.links.length > 1
                    ComplexType.try_parse(full)

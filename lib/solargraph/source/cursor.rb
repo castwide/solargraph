@@ -35,14 +35,14 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
-      # @sg-ignore String/Array Range slice relies on valid bounds
+      # @sg-ignore MatchData relies on regex always matching
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
           match = source.code[0..(offset - 1)].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
-          # @sg-ignore String/Array Range slice relies on valid bounds
+          # @sg-ignore MatchData relies on regex always matching
           if source.code[0..(offset - result.length - 1)].end_with?(':') && !source.code[0..(offset - result.length - 1)].end_with?('::')
             result = ":#{result}"
           end
