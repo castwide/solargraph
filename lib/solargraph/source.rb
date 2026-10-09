@@ -462,6 +462,7 @@ module Solargraph
     end
 
     # @return [Parser::AST::Node, nil]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     attr_writer :node
 
     # @return [Array<Range>]
