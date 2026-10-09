@@ -536,6 +536,7 @@ module Solargraph
     def pin_description pin
       desc = if pin.path.nil? || pin.path.empty?
                if pin.closure
+                 # @sg-ignore Need to add nil check here
                  "#{pin.closure.path} | #{pin.name}"
                else
                  "#{pin.context.namespace} | #{pin.name}"
