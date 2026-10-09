@@ -13,6 +13,37 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
+    # Canonical instances, keyed by the identity of their items, which are
+    # themselves canonical. Process-global and never evicted, as .parse's
+    # cache is.
+    #
+    # @type [Hash{::Array => ComplexType}]
+    @intern = {}
+
+    # The canonical instance for the given types, adopting a newly built one
+    # the first time that type is seen. #initialize cannot substitute another
+    # object, so the allocator is the only place this lookup can live.
+    #
+    # @param types [Array<UniqueType, ComplexType>]
+    # @return [ComplexType]
+    def self.new types = [UniqueType::UNDEFINED]
+      fresh = super
+      key = fresh.intern_key
+      canonical = @intern[key]
+      return canonical unless canonical.nil?
+
+      @intern[key] = fresh
+    end
+
+    # The identity of this type's items, which are already canonical.
+    #
+    # @return [::Array]
+    def intern_key
+      key = [self.class]
+      @items.each { |item| key.push item.object_id }
+      key
+    end
+
     # @param types [Array<UniqueType, ComplexType>]
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
