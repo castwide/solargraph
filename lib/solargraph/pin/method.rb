@@ -763,7 +763,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                .map { |line| line[2..].strip }
+                .map { |line| line.delete_prefix(': ').strip }
                 .join("\n")
       end
     end
