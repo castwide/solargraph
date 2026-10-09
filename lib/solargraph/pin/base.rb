@@ -488,18 +488,12 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         instance_of?(other.class) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
           (comments == other.comments ||
-           # @sg-ignore Translate to something flow sensitive typing understands
            (((maybe_directives? == false && other.maybe_directives? == false) ||
              compare_directives(directives,
-                                # @sg-ignore Translate to something flow sensitive typing understands
                                 other.directives)) &&
-             # @sg-ignore Translate to something flow sensitive typing understands
              compare_docstring_tags(docstring, other.docstring))
           )
       end
