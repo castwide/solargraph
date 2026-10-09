@@ -8,9 +8,6 @@ module Solargraph
 
       attr_accessor :parameters
 
-      # @return [ComplexType, nil]
-      attr_reader :return_type
-
       # @param block [Signature, nil]
       # @param return_type [ComplexType, nil]
       # @param parameters [::Array<Pin::Parameter>]
@@ -123,7 +120,6 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        # @sg-ignore flow sensitive typing needs to handle attrs
         [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 
