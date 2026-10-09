@@ -176,6 +176,16 @@ describe Solargraph::Library do
     expect(result.to_s).to include('rubocop')
   end
 
+  it 'rejects a diagnostics reporter entry with no name' do
+    config = instance_double(Solargraph::Workspace::Config)
+    allow(config).to receive_messages(plugins: [], required: [], reporters: [':'])
+    workspace = Solargraph::Workspace.new '', config
+    library = described_class.new workspace
+    library.attach Solargraph::Source.load_string('puts 1', 'file.rb', 0)
+    expect { library.diagnose 'file.rb' }
+      .to raise_error(Solargraph::DiagnosticsError, 'Invalid diagnostics reporter entry ":"')
+  end
+
   it 'documents symbols' do
     library = described_class.new
     src = Solargraph::Source.load_string(%(
