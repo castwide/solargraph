@@ -14,7 +14,7 @@ module Solargraph
             )
           rescue StandardError => e
             Solargraph.logger.warn "Error processing document: [#{e.class}] #{e.message}"
-            # @sg-ignore nil false alarm
+            # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
             Solargraph.logger.debug e.backtrace.join("\n")
           end
         end
