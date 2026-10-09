@@ -381,7 +381,7 @@ module Solargraph
           # Ruby's shorthand for sending the passed in method name
           # to the first yield parameter with no arguments
           # @sg-ignore Need to add nil check here
-          block_symbol_name = block.links.first.word
+          block_symbol_name = block.links.fetch(0).word
           block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
           callee = api_map.get_path_pins(block_symbol_call_path).first
           return_type = callee&.return_type
@@ -389,7 +389,7 @@ module Solargraph
           #   this point and need to assume method return types
           #   based on the generic type
           # @sg-ignore Need to add nil check here
-          return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
+          return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.fetch(0).word}").first&.return_type
           return_type || ComplexType::UNDEFINED
         end
 

@@ -44,7 +44,7 @@ module Solargraph
                                     end
         end
         # @type [Index]
-        @index = @indexes.last.clone
+        @index = @indexes.fetch(-1).clone
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear

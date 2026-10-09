@@ -116,7 +116,7 @@ module Solargraph
       # @param [SourceMap] source_map
       # @return [Array<YARD::Tags::Directive>]
       def generate_yardoc_from chain, source_map
-        name = chain.links.last.word
+        name = chain.links.fetch(-1).word
         # @sg-ignore chain.links.last is assumed to be a Chain::Call
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
         # @sg-ignore chain.node is assumed to exist

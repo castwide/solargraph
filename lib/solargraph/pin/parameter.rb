@@ -325,7 +325,7 @@ module Solargraph
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
           # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + ref[parts.fetch(0).length] + parts.fetch(-1)
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|

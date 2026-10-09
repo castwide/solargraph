@@ -400,7 +400,7 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
-              name, decl = parse_overload_param(src.first)
+              name, decl = parse_overload_param(src.fetch(0))
               Pin::Parameter.new(
                 location: location,
                 closure: self,
@@ -408,7 +408,7 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location&.range,
-                return_type: param_type_from_name(tag, src.first),
+                return_type: param_type_from_name(tag, src.fetch(0)),
                 source: :overloads
               )
             end,
@@ -634,7 +634,7 @@ module Solargraph
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
           # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + ref[parts.fetch(0).length] + parts.fetch(-1)
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|
