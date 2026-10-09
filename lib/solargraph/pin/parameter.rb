@@ -198,11 +198,11 @@ module Solargraph
 
       # The parameter's zero-based location in the block's signature.
       #
-      # @sg-ignore pin.closure relies on closure always resolved
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [Integer]
       def index
         method_pin = closure
-        # @sg-ignore pin.closure relies on closure always resolved
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         method_pin.parameter_names.index(name)
       end
 
