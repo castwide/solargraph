@@ -278,7 +278,7 @@ module Solargraph
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
-            # @sg-ignore Need a downcast here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             macro = Solargraph::YardMap::Macro.from_directive(directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
