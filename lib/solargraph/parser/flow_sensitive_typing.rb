@@ -580,10 +580,10 @@ module Solargraph
         chain_words = parse_receiver_chain(node)
         return if chain_words.nil? || chain_words.empty?
 
-        # @sg-ignore Need to add nil check here
-        position = Range.from_node(node).start
+        range = Range.from_node(node)
+        return unless range
 
-        pin = chain_pin(chain_words, node, position)
+        pin = chain_pin(chain_words, node, range.start)
         return unless pin
 
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
