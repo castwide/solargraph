@@ -44,8 +44,8 @@ module Solargraph
           # @param corrections [String]
           # @return [void]
           def log_corrections corrections
-            corrections = corrections&.strip
-            return if corrections&.empty?
+            corrections = corrections.strip
+            return if corrections.empty?
 
             Solargraph.logger.info('Formatting result:')
             corrections.each_line do |line|

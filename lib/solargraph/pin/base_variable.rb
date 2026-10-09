@@ -14,6 +14,28 @@ module Solargraph
       # @return [Range, nil]
       attr_reader :presence
 
+      # @return [Boolean]
+      attr_accessor :definite
+
+      # Self, or a definite copy of it when the assignment dominates
+      # `location` - see #definite_reaches?.
+      #
+      # @param location [Location, nil]
+      # @return [self]
+      def definite_at location
+        return self if definite || !definite_reaches?(location)
+
+        result = dup
+        result.definite = true
+        result
+      end
+
+      # The CompoundStatement this assignment was made within. Used by
+      # #definite_reaches? to decide whether it dominates a reference.
+      #
+      # @return [Pin::CompoundStatement, nil]
+      attr_reader :compound_statement
+
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
@@ -45,10 +67,18 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param definite [Boolean] True if the assignment is guaranteed to
+      #   have run by its presence start, so its type may override rather
+      #   than union with earlier ones.
+      # @param compound_statement [Pin::CompoundStatement, nil] Where the
+      #   assignment was made; lets a non-definite one still override
+      #   within its own range - see #definite_reaches?.
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
+                     definite: true,
+                     compound_statement: nil,
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
@@ -58,6 +88,8 @@ module Solargraph
         @intersection_return_type = intersection_return_type
         @exclude_return_type = exclude_return_type
         @presence = presence
+        @definite = definite
+        @compound_statement = compound_statement
       end
 
       # @param presence [Range]
@@ -82,20 +114,47 @@ module Solargraph
         super
       end
 
+      # @param other [self]
+      # @param attrs [Hash]
       def combine_with other, attrs = {}
+        superseded = override_assignments?(other)
+        # Facts expire only when a *different* assignment overwrote the
+        # value they describe.  Two flow-sensitive downcasts of the same
+        # assignment - e.g. the one per operand that `a.nil? ||
+        # a.empty? || a == 'x'` produces - are additional facts about
+        # one value, and must accumulate rather than replace each other.
+        facts_superseded = superseded && !same_assignment_sites?(other)
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
                                   # default values don't exist in RBS parameters; it just
                                   # tells you if the arg is optional or not.  Prefer a
                                   # provided value if we have one here since we can't rely on
                                   # it from RBS so we can infer from it and typecheck on it.
-                                  assignment: choose(other, :assignment),
+                                  #
+                                  # Skipped when #combine_assignments supersedes: the
+                                  # constructor would re-add the dropped node.
+                                  assignment: superseded ? nil : choose(other, :assignment),
                                   assignments: new_assignments,
                                   mass_assignment: combine_mass_assignment(other),
                                   return_type: combine_return_type(other),
-                                  intersection_return_type: combine_types(other, :intersection_return_type),
-                                  exclude_return_type: combine_types(other, :exclude_return_type),
-                                  presence: combine_presence(other)
+                                  # Narrowing recorded against the old value expires
+                                  # when that value is definitely overwritten, so when
+                                  # `other`'s assignment supersedes ours, keep only the
+                                  # facts asserted about the new value.
+                                  intersection_return_type: if facts_superseded
+                                                              other.intersection_return_type
+                                                            else
+                                                              combine_types(other, :intersection_return_type)
+                                                            end,
+                                  exclude_return_type: if facts_superseded
+                                                         other.exclude_return_type
+                                                       else
+                                                         combine_types(other, :exclude_return_type)
+                                                       end,
+                                  presence: combine_presence(other),
+                                  # a guaranteed assignment on either side may
+                                  # override, not just union with, the rest
+                                  definite: definite || other.definite || superseded
                                 })
         super(other, new_attrs)
       end
@@ -109,15 +168,32 @@ module Solargraph
         mass_assignment || other.mass_assignment
       end
 
+      # True when `other`'s assignments are the very same ones as ours,
+      # identified by source position.  Structural node equality is not
+      # usable here - two textually identical assignments on different
+      # lines compare equal, and telling those apart is the whole point.
+      #
+      # @param other [self]
+      # @return [Boolean]
+      def same_assignment_sites? other
+        assignment_sites == other.assignment_sites
+      end
+
+      # @return [::Array<Solargraph::Range, nil>]
+      def assignment_sites
+        assignments.map { |node| Solargraph::Range.from_node(node) }
+      end
+
       # @return [Parser::AST::Node, nil]
       def assignment
         @assignment ||= assignments.last
       end
 
       # @param other [self]
-      #
       # @return [::Array<Parser::AST::Node>]
       def combine_assignments other
+        return other.assignments.dup if override_assignments?(other)
+
         (other.assignments + assignments).uniq
       end
 
@@ -283,6 +359,7 @@ module Solargraph
         location.filename == other_loc.filename &&
           # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
+          !within_own_assignment?(other_loc) &&
           visible_in_closure?(other_closure)
       end
 
@@ -293,7 +370,95 @@ module Solargraph
       # @return [Range]
       attr_writer :presence
 
+      public
+
+      # True if `other_loc` sits inside one of our own assignment value
+      # nodes - the receiver `x` in `x = x.length`. Such a reference must
+      # resolve against our other assignments, not the value being derived.
+      #
+      # @param other_loc [Location]
+      # @return [Boolean]
+      def within_own_assignment? other_loc
+        return false unless location&.filename == other_loc.filename
+
+        assignments.any? do |assignment_node|
+          next false unless assignment_node.respond_to?(:loc)
+
+          rng = Range.from_node(assignment_node)
+          next false if rng.nil?
+
+          # The new value is visible from the node end onward, so exclude
+          # only positions strictly inside it.
+          rng.contain?(other_loc.range.start) && other_loc.range.start != rng.ending
+        end
+      end
+
       private
+
+      # True if `other` supersedes us rather than unioning: it reassigns
+      # the same variable in the same scope, guaranteed to have run.
+      # Excludes self-referential reassignments (`x = x.foo`), whose RHS
+      # needs our assignments as the base case.
+      #
+      # @param other [self]
+      # @return [Boolean]
+      def override_assignments? other
+        other.definite && other.closure == closure &&
+          other.assignments.none? { |node| references_name?(node) }
+      end
+
+      public
+
+      # True if this assignment, though not globally definite, still
+      # dominates `location`: `location` falls inside the branch body it
+      # was made in. Nesting needs no walk - inner ranges are subranges.
+      #
+      # @param location [Location, nil]
+      # @return [Boolean]
+      def definite_reaches? location
+        cs = compound_statement
+        return false unless location && cs&.location&.range
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        cs.location.filename == location.filename &&
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          cs.location.range.contain?(location.range.start)
+      end
+
+      private
+
+      # @param node [Parser::AST::Node, nil]
+      # @return [Boolean]
+      def references_name? node
+        return false unless node.is_a?(::AST::Node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
+        return true if %i[lvar ivar].include?(node.type) && node.children[0].to_s == name
+
+        # A block parameter of the same name shadows us for the whole
+        # block, so any mention inside the body is the parameter, not
+        # this variable.  The receiver (children[0]) is evaluated
+        # outside the block, so it still counts.
+        # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
+        return references_name?(node.children[0]) if shadowed_by_block_parameter?(node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
+        node.children.any? { |child| references_name?(child) }
+      end
+
+      # @param node [::AST::Node]
+      # @return [Boolean]
+      def shadowed_by_block_parameter? node
+        return false unless node.type == :block
+
+        args = node.children[1]
+        return false unless args.is_a?(::AST::Node)
+
+        # @sg-ignore flow sensitive typing doesn't narrow `args` past the guard above
+        args.children.any? do |arg|
+          arg.is_a?(::AST::Node) && arg.children[0].to_s == name
+        end
+      end
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]

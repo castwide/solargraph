@@ -389,7 +389,8 @@ module Solargraph
         !pin.visible_at?(closure, location) && !pin.starts_at?(location)
       end
 
-      vars_at_location.inject(&:combine_with)
+      definite_vars = vars_at_location.map { |pin| pin.definite_at(location) }
+      definite_vars.inject { |acc, pin| acc.combine_with(pin) }
     end
 
     # Get an array of class variable pins for a namespace.
@@ -682,14 +683,12 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
-      # @sg-ignore flow-sensitive typing should be able to handle redefinition
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
       sup = sup.simplify_literals.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
+      # @sg-ignore flow sensitive typing should be able to handle redefinition
       while (sc = store.get_superclass(sc_fqns))
         # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
         sc_new = store.constants.dereference(sc)
