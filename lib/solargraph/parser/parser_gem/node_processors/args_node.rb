@@ -43,7 +43,7 @@ module Solargraph
             locals.push Solargraph::Pin::Parameter.new(
               location: loc,
               closure: callable,
-              # @sg-ignore pin.closure relies on closure always resolved
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1399
               presence: region.closure.location.range,
               decl: get_decl(node),
               source: :parser
