@@ -61,4 +61,13 @@ describe Solargraph::Pin::BaseVariable do
     checker = Solargraph::TypeChecker.load_string(code, 'test.rb', :alpha)
     expect(checker.problems.map(&:message)).to eq([])
   end
+
+  it 'infers assignments in files the ApiMap has no source map for' do
+    gem_map = Solargraph::SourceMap.load_string(%(
+      $output = String.new
+    ), 'gem.rb')
+    api_map = Solargraph::ApiMap.new(pins: gem_map.pins)
+    pin = gem_map.pins.find { |p| p.is_a?(Solargraph::Pin::GlobalVariable) }
+    expect(pin.probe(api_map).tag).to eq('String')
+  end
 end

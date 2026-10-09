@@ -159,13 +159,12 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
-            # @sg-ignore Need to add nil check here
-            clip = api_map.clip_at(location.filename, pos)
+            locals = visible_locals(api_map, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
             # @sg-ignore Need to add nil check here
-            result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = chain.infer(api_map, closure, locals).self_to_type(closure.context)
             types.push result unless result.undefined?
           end
         end
@@ -294,6 +293,20 @@ module Solargraph
       attr_writer :presence
 
       private
+
+      # Locals at a position in this pin's file. Gem pins are mapped from
+      # files the ApiMap holds no source for, e.g. a gem's global variable
+      # assignment, so they get none.
+      #
+      # @param api_map [ApiMap]
+      # @param position [Position]
+      # @return [::Array<Pin::LocalVariable>]
+      def visible_locals api_map, position
+        # @sg-ignore Need to add nil check here
+        api_map.clip_at(location.filename, position).locals
+      rescue FileNotFoundError
+        []
+      end
 
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
