@@ -1104,6 +1104,51 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::String')
   end
 
+  it 'does not narrow a repeated call to a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @return [Location, nil]
+        def next_token; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil unless lexer.next_token
+        lexer.next_token
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'does not narrow an attr_reader reached through a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Lexer
+        # @return [Pin]
+        def next_pin; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil if lexer.next_pin.location.nil?
+        lexer.next_pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 25])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]

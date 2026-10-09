@@ -55,6 +55,17 @@ module Solargraph
           found ||= narrowed_call_pin(api_map, name_pin, locals, receiver_path) unless head?
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
+          pins = method_pins(api_map, name_pin)
+          return [] if pins.empty?
+          inferred_pins(pins, api_map, name_pin, locals)
+        end
+
+        private
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Pin::Method>] the methods this call dispatches to
+        def method_pins api_map, name_pin
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
@@ -72,12 +83,8 @@ module Solargraph
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           # Several union members can end up with the same pin and return type.
           # @sg-ignore Array#flatten returns a bare Array
-          pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin, locals)
+          pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
         end
-
-        private
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded
@@ -176,10 +183,9 @@ module Solargraph
         # after a 'return unless pin.location' guard, consulted here while
         # resolving the 'location' call in a later 'pin.location.filename'.
         #
-        # Only applies to simple, argument-less, blockless calls whose
-        # entire receiver chain is itself simple -- the same shape
-        # FlowSensitiveTyping tracks facts against (see
-        # Chain#next_receiver_path).
+        # Only applies to argument-less attr_reader calls whose receiver
+        # chain is variables and attr_readers (see Chain#next_receiver_path):
+        # other methods aren't known to return the same value twice.
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
@@ -193,6 +199,9 @@ module Solargraph
           composite_name = (receiver_path + [word]).join('.')
           pin = api_map.var_at_location(locals, composite_name, name_pin, location)
           return nil if pin.nil?
+
+          readers = method_pins(api_map, name_pin)
+          return nil if readers.empty? || !readers.all?(&:attribute?)
 
           # An uninferrable narrowed pin would shadow the method lookup
           type = pin.typify(api_map)
