@@ -273,7 +273,7 @@ module Solargraph
       end
 
       def hash
-        [self.class, @name, @key_types, @sub_types, @rooted, @all_params, @parameters_type].hash
+        [self.class, @name, @key_types, @subtypes, @rooted, @all_params, @parameters_type].hash
       end
 
       # @return [self]
