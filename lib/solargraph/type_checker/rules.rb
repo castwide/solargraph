@@ -84,6 +84,7 @@ module Solargraph
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
       # @todo 6: flow sensitive typing needs better handling of ||= on lvars
+      # @todo 6: Tuple#first types as every element plus nil instead of the first
       # @todo 5: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 5: flow sensitive typing needs to handle 'raise if'
       # @todo 4: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
