@@ -37,7 +37,7 @@ module Solargraph
             next false unless fp.value == literal_value
 
             # a splat takes every argument from its position on
-            # @sg-ignore nil false alarm
+            # @sg-ignore Use fetch(i) for an index already bounds-checked
             method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
           end
         end
