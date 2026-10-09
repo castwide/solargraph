@@ -83,4 +83,12 @@ describe Solargraph::LanguageServer::Message::TextDocument::Definition do
     expect(message.result.first[:uri]).to eq(Solargraph::LanguageServer::UriHelpers.file_to_uri(File.join(path, 'lib',
                                                                                                           'thing.rb')))
   end
+
+  it 'returns no locations when the file is not mapped yet' do
+    library = instance_double(Solargraph::Library, locate_ref: nil)
+    host = instance_double(Solargraph::LanguageServer::Host, definitions_at: nil, library_for: library)
+    message = described_class.new(host, { 'params' => { 'textDocument' => { 'uri' => 'file:///unmapped.rb' }, 'position' => { 'line' => 0, 'character' => 0 } } })
+    message.process
+    expect(message.result).to eq([])
+  end
 end
