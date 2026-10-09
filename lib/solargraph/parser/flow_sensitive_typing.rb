@@ -411,10 +411,10 @@ module Solargraph
         variable_name = parse_variable_name(other_side)
         return unless variable_name
 
-        # @sg-ignore Need to add nil check here
-        position = Range.from_node(node).start
+        range = Range.from_node(node)
+        return unless range
 
-        pin = find_var(variable_name, position)
+        pin = find_var(variable_name, range.start)
         return unless pin
 
         if_true = { pin => [{ type: self_type }] }
