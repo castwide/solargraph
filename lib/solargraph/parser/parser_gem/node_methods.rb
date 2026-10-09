@@ -620,7 +620,7 @@ module Solargraph
                 if !node.is_a?(::Parser::AST::Node)
                   result.push nil
                 elsif COMPOUND_STATEMENTS.include?(node.type)
-                  # @sg-ignore https://github.com/castwide/solargraph/issues/1251
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                   result.concat from_value_position_compound_statement(node)
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                   result.concat reduce_to_value_nodes(node.children[1..])

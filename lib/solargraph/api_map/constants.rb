@@ -131,7 +131,7 @@ module Solargraph
           if resolved
             base = [resolved]
           else
-            # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             return resolve(name, first) unless first.empty?
           end
         end

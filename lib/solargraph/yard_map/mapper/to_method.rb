@@ -26,12 +26,12 @@ module Solargraph
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if closure.path == 'Kernel' && Kernel.private_method_defined?(name.to_sym, false)
             final_visibility ||= :private
           end
