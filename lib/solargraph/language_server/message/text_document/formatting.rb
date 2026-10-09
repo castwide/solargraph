@@ -75,7 +75,6 @@ module Solargraph
             ]
 
             %w[except only].each do |arg|
-              # @sg-ignore Need to add nil check here
               cops = cop_list(config[arg])
               args += ["--#{arg}", cops] if cops
             end
@@ -97,7 +96,7 @@ module Solargraph
             end
           end
 
-          # @param value [Array, String]
+          # @param value [Array, String, nil]
           #
           # @return [String, nil]
           def cop_list value

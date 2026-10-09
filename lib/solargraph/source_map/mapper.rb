@@ -35,7 +35,7 @@ module Solargraph
         #   [[], []]
       end
 
-      # @param filename [String]
+      # @param filename [String, nil]
       # @param code [String]
       # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
       def unmap filename, code
@@ -49,7 +49,6 @@ module Solargraph
         # @param source [Source]
         # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
-          # @sg-ignore Need to add nil check here
           return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source
         end

@@ -582,7 +582,7 @@ module Solargraph
     #
     # @deprecated Use #get_path_pins instead.
     #
-    # @param path [String] The path to find
+    # @param path [String, nil] The path to find
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
@@ -594,7 +594,7 @@ module Solargraph
     # @example
     #   api_map.get_pins_by_path('String#split')
     #
-    # @param path [String]
+    # @param path [String, nil]
     # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
@@ -748,7 +748,7 @@ module Solargraph
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    # @param namespace_pin [Pin::Base, nil] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
     # @param type [ComplexType] The type which is having its
     #   methods supplemented from fq_reference_tag
@@ -775,7 +775,6 @@ module Solargraph
         reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
         # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
         methods = methods.map do |method_pin|
-          # @sg-ignore Need to add nil check here
           method_pin.resolve_generics(reference_pin, resolved_reference_type)
         end
       end
@@ -857,7 +856,6 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, no_core)
           end
@@ -871,7 +869,6 @@ module Solargraph
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
           unless rooted_sc_tag.nil?
-            # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, true)
           end

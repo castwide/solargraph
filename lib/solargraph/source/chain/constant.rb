@@ -21,7 +21,6 @@ module Solargraph
           end
           # @sg-ignore Need to add nil check here
           fqns = api_map.resolve(base, gates)
-          # @sg-ignore Need to add nil check here
           api_map.get_path_pins(fqns)
         end
       end

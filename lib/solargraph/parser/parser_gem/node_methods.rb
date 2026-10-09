@@ -11,13 +11,13 @@ module Solargraph
       module NodeMethods
         module_function
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String]
         def unpack_name node
           pack_name(node).join('::')
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Array<String>]
         def pack_name node
           # @type [Array<String>]

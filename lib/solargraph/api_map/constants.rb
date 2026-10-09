@@ -88,7 +88,6 @@ module Solargraph
         return unless fqns
         pin = store.get_path_pins(fqns).first
         if pin.is_a?(Pin::Constant)
-          # @sg-ignore Need to add nil check here
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
           fqns = resolve(const, *pin.gates)
@@ -174,7 +173,6 @@ module Solargraph
         here = "#{gate}::#{name}".sub(/^::/, '').sub(/::$/, '')
         pin = store.get_path_pins(here).first
         if pin.is_a?(Pin::Constant) && internal
-          # @sg-ignore Need to add nil check here
           const = Solargraph::Parser::NodeMethods.unpack_name(pin.assignment)
           return unless const
           resolve(const, pin.gates)
