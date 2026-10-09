@@ -125,7 +125,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Method,Pin::Namespace]
-    # @sg-ignore Need a downcast here
+    # @sg-ignore Need better generic inference here
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
     end
@@ -133,7 +133,7 @@ module Solargraph
     # @param line [Integer]
     # @param character [Integer]
     # @return [Pin::Closure]
-    # @sg-ignore Need a downcast here
+    # @sg-ignore Need better generic inference here
     def locate_closure_pin line, character
       _locate_pin line, character, Pin::Closure
     end

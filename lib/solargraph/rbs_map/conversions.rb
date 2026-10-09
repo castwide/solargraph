@@ -141,7 +141,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore Need better generic inference here
       def rooted_name type_name
         name = type_name.to_s
         RBS_TO_CLASS.fetch(name, name)
@@ -153,7 +153,7 @@ module Solargraph
       # @param type_name [RBS::TypeName]
       #
       # @return [String]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+      # @sg-ignore Need better generic inference here
       def fqns type_name
         unless type_name.absolute?
           Solargraph.assert_or_log(:rbs_fqns, "Received unexpected unqualified type name: #{type_name}")
