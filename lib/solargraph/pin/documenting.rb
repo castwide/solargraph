@@ -105,7 +105,7 @@ module Solargraph
         left = text.lines.map do |line|
           match = line.match(/^ +/)
           next 0 unless match
-          # @sg-ignore MatchData relies on regex always matching
+          # @sg-ignore Add a MatchData#[] (0 index) -> String RBS fill once castwide PRs 1223 and 1385 merge
           match[0].length
         end.min
         return text if left.nil? || left.zero?
