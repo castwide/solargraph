@@ -2,12 +2,12 @@
 
 module Solargraph
   module Convention
-    # Maps the accessors ActiveSupport's +mattr_*+, +cattr_*+ and
-    # +config_accessor+ macros define at run time.
+    # Maps the accessors ActiveSupport's +class_attribute+, +mattr_*+,
+    # +cattr_*+ and +config_accessor+ macros define at run time.
     module ActiveSupportAccessors
       module NodeProcessors
         class AccessorNode < Parser::NodeProcessor::Base
-          MACROS = %i[
+          MODULE_MACROS = %i[
             mattr_reader mattr_writer mattr_accessor
             cattr_reader cattr_writer cattr_accessor
             config_accessor
@@ -18,39 +18,72 @@ module Solargraph
 
           # @return [Boolean] continue processing the next processor of the same node.
           def process
-            return true unless node.children[0].nil? && MACROS.include?(node.children[1])
+            return true unless node.children[0].nil?
 
-            # Both macros refuse singleton classes.
-            process_attributes unless region.scope == :class
+            if node.children[1] == :class_attribute
+              process_class_attribute
+            elsif MODULE_MACROS.include?(node.children[1])
+              # Module attribute macros refuse singleton classes.
+              process_module_attribute unless region.scope == :class
+            else
+              return true
+            end
             process_children
             false
           end
 
           private
 
-          # Both macros define their accessors with a string +module_eval+,
-          # so the accessors are public regardless of the enclosing visibility.
+          # +class_attribute :name+ generates a singleton reader, writer and
+          # predicate plus, unless disabled by options, an instance reader,
+          # writer and predicate.
           #
           # @return [void]
-          def process_attributes
+          def process_class_attribute
+            instance_accessor = boolean_option 'instance_accessor', true
+            instance_reader = boolean_option 'instance_reader', instance_accessor
+            instance_writer = boolean_option 'instance_writer', instance_accessor
+            instance_predicate = boolean_option 'instance_predicate', true
+            attribute_names.each do |name|
+              next if name.empty?
+              pins.push build_pin(name, scope: :class)
+              pins.push build_pin("#{name}=", scope: :class, writer: true)
+              pins.push build_pin("#{name}?", scope: :class) if instance_predicate
+              if instance_reader
+                pins.push build_pin(name, scope: :instance)
+                pins.push build_pin("#{name}?", scope: :instance) if instance_predicate
+              end
+              pins.push build_pin("#{name}=", scope: :instance, writer: true) if instance_writer
+            end
+          end
+
+          # Module attribute macros define their accessors with a string
+          # +module_eval+, so the accessors are public regardless of the
+          # enclosing visibility.
+          #
+          # @return [void]
+          def process_module_attribute
             macro = node.children[1].to_s
             reader = !macro.end_with?('_writer')
             writer = !macro.end_with?('_reader')
-            instance_accessor = boolean_option 'instance_accessor'
-            instance_reader = reader && instance_accessor && boolean_option('instance_reader')
-            instance_writer = writer && instance_accessor && boolean_option('instance_writer')
-            node.children.drop(2).each do |a|
-              next unless %i[sym str].include?(a.type)
-              name = a.children[0].to_s
+            instance_accessor = boolean_option 'instance_accessor', true
+            instance_reader = reader && instance_accessor && boolean_option('instance_reader', true)
+            instance_writer = writer && instance_accessor && boolean_option('instance_writer', true)
+            attribute_names.each do |name|
               next unless ATTRIBUTE_NAME.match?(name)
               if reader
-                pins.push build_pin(name, scope: :class)
-                pins.push build_pin(name, scope: :instance) if instance_reader
+                pins.push build_pin(name, scope: :class, visibility: :public)
+                pins.push build_pin(name, scope: :instance, visibility: :public) if instance_reader
               end
               next unless writer
-              pins.push build_pin("#{name}=", scope: :class, writer: true)
-              pins.push build_pin("#{name}=", scope: :instance, writer: true) if instance_writer
+              pins.push build_pin("#{name}=", scope: :class, writer: true, visibility: :public)
+              pins.push build_pin("#{name}=", scope: :instance, writer: true, visibility: :public) if instance_writer
             end
+          end
+
+          # @return [Array<String>] the literal symbol and string arguments
+          def attribute_names
+            node.children.drop(2).select { |a| %i[sym str].include?(a.type) }.map { |a| a.children[0].to_s }
           end
 
           # The literal keyword arguments passed to the macro. Values which
@@ -71,26 +104,31 @@ module Solargraph
           end
 
           # @param name [String]
-          # @return [Boolean] false only for a literal +false+ option
-          def boolean_option name
+          # @param default [Boolean]
+          # @return [Boolean] the literal +true+ or +false+ option, else the default
+          def boolean_option name, default
             value = options[name]
-            # rubocop:disable Lint/BooleanSymbol -- an AST node type
-            value.nil? || value.type != :false
+            return default if value.nil?
+            # rubocop:disable Lint/BooleanSymbol -- AST node types
+            return true if value.type == :true
+            return false if value.type == :false
             # rubocop:enable Lint/BooleanSymbol
+            default
           end
 
           # @param name [String]
           # @param scope [Symbol] :class or :instance
           # @param writer [Boolean]
+          # @param visibility [Symbol]
           # @return [Pin::Method]
-          def build_pin name, scope:, writer: false
+          def build_pin name, scope:, writer: false, visibility: region.visibility
             pin = Pin::Method.new(
               location: get_node_location(node),
               closure: region.closure,
               name: name,
               comments: comments_for(node),
               scope: scope,
-              visibility: :public,
+              visibility: visibility,
               attribute: true,
               source: :active_support_accessors
             )

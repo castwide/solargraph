@@ -15,6 +15,94 @@ describe Solargraph::Convention::ActiveSupportAccessors do
     pins.map { |pin| [pin.name, pin.context.scope] }.sort
   end
 
+  it 'generates accessors for class_attribute' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar
+      end
+    )
+    expect(accessors(pins)).to eq([
+                                    ['bar', :class],
+                                    ['bar', :instance],
+                                    ['bar=', :class],
+                                    ['bar=', :instance],
+                                    ['bar?', :class],
+                                    ['bar?', :instance]
+                                  ])
+  end
+
+  it 'generates accessors for multiple attributes' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar, :baz
+      end
+    )
+    expect(pins.count { |pin| pin.name.start_with?('bar') }).to eq(6)
+    expect(pins.count { |pin| pin.name.start_with?('baz') }).to eq(6)
+  end
+
+  it 'omits instance accessors when instance_accessor is false' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar, instance_accessor: false
+      end
+    )
+    expect(accessors(pins)).to eq([
+                                    ['bar', :class],
+                                    ['bar=', :class],
+                                    ['bar?', :class]
+                                  ])
+  end
+
+  it 'omits instance writers when instance_writer is false' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar, instance_writer: false
+      end
+    )
+    expect(accessors(pins)).to eq([
+                                    ['bar', :class],
+                                    ['bar', :instance],
+                                    ['bar=', :class],
+                                    ['bar?', :class],
+                                    ['bar?', :instance]
+                                  ])
+  end
+
+  it 'omits predicates when instance_predicate is false' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar, instance_predicate: false
+      end
+    )
+    expect(accessors(pins)).to eq([
+                                    ['bar', :class],
+                                    ['bar', :instance],
+                                    ['bar=', :class],
+                                    ['bar=', :instance]
+                                  ])
+  end
+
+  it 'marks generated accessors as attributes' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar
+      end
+    )
+    expect(pins.all?(&:attribute?)).to be(true)
+  end
+
+  it 'gives class attribute writers a single parameter' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar
+      end
+    )
+    writers = pins.select { |pin| pin.name == 'bar=' }
+    expect(writers.size).to eq(2)
+    expect(writers.all? { |pin| pin.parameters.map(&:name) == ['value'] }).to be(true)
+  end
+
   it 'generates module and instance accessors for mattr_accessor' do
     pins = method_pins_for 'Foo', %(
       module Foo
