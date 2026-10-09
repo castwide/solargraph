@@ -34,18 +34,23 @@ module Solargraph
         closure.namespace
       end
 
+      # A block documented with fewer yielded parameters says less
+      # about what it yields than a sibling with more, so it loses to
+      # that sibling rather than being picked between arbitrarily.
+      #
       # @param other [self]
       #
       # @return [Pin::Signature, nil]
       def combine_blocks other
-        if block.nil?
-          other.block
-        elsif other.block.nil?
-          block
-        else
-          # @type [Pin::Signature, nil]
-          choose_pin_attr(other, :block)
-        end
+        return other.block if block.nil? ||
+                              (!other.block.nil? && block.parameters.length < other.block.parameters.length)
+        return block if other.block.nil? || (block.parameters.length > other.block.parameters.length)
+        # RBS closes a block over its method, YARD over its signature; those cannot be combined
+        return block.combine_with(other.block) if block.arity == other.block.arity &&
+                                                  block.closure&.name == other.block.closure&.name
+
+        # @type [Pin::Signature, nil]
+        choose_pin_attr(other, :block)
       end
 
       # @param other [self]
