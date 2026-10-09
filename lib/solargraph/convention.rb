@@ -72,12 +72,13 @@ module Solargraph
       result
     end
 
-    # Paths inside one gem, relative to its root, to map in addition to its require_paths.
-    #
-    # @param metagem [Metagem]
-    # @return [Array<String>]
-    def self.extra_source_paths metagem
-      @@conventions.flat_map { |conv| conv.extra_source_paths(metagem) }.uniq
+    # @param root [String] the gem's root directory
+    # @param require_paths [Array<String>] the gem's require paths, relative to root
+    # @return [Array<String>] paths inside the gem, relative to root, to map beyond require_paths
+    def self.extra_source_paths root:, require_paths:
+      @@conventions.flat_map do |conv|
+        conv.extra_source_paths(root: root, require_paths: require_paths)
+      end.uniq
     end
 
     register Gemfile

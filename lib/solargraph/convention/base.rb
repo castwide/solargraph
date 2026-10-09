@@ -46,11 +46,10 @@ module Solargraph
         EMPTY_ENVIRON
       end
 
-      # Paths inside one gem, relative to its root, to map in addition to its require_paths.
-      #
-      # @param metagem [Metagem]
-      # @return [Array<String>]
-      def extra_source_paths metagem
+      # @param root [String] the gem's root directory
+      # @param require_paths [Array<String>] the gem's require paths, relative to root
+      # @return [Array<String>] paths inside the gem, relative to root, to map beyond require_paths
+      def extra_source_paths(root:, require_paths:, **)
         []
       end
     end

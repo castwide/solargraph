@@ -19,7 +19,9 @@ describe Solargraph::Collection::Gem do
   context 'with a convention that names extra source paths' do
     let(:app_convention) do
       Class.new(Solargraph::Convention::Base) do
-        def extra_source_paths _metagem
+        def extra_source_paths(root:, require_paths:, **)
+          return [] unless root.end_with?('engine_gem') && require_paths == ['lib']
+
           ['app/models', 'app/models/concerns']
         end
       end
