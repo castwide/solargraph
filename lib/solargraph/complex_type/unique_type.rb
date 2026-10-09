@@ -73,16 +73,16 @@ module Solargraph
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring}"
             end
-            key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
+            key_types.concat(subs[0].map { |u| ComplexType.intern([u]) })
+            subtypes.concat(subs[1].map { |u| ComplexType.intern([u]) })
           elsif parameters_type == :list && name == 'Hash'
             # Treat Hash<A, B> as Hash{A => B}
             if subs.length != 2
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring} - must have exactly two parameters"
             end
-            key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
+            key_types.concat(subs[0].map { |u| ComplexType.intern([u]) })
+            subtypes.concat(subs[1].map { |u| ComplexType.intern([u]) })
           else
             subtypes.concat subs
           end
@@ -143,7 +143,7 @@ module Solargraph
 
         types = items - exclude_types.items
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-        ComplexType.new(types)
+        ComplexType.intern(types)
       end
 
       # @see https://en.wikipedia.org/wiki/Intersection_type
@@ -166,7 +166,7 @@ module Solargraph
           end
         end
         types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-        ComplexType.new(types)
+        ComplexType.intern(types)
       end
 
       def simplifyable_literal?
@@ -310,7 +310,7 @@ module Solargraph
       # @return [::Array]
       def intern_key
         key = [self.class, @name, @rooted, @parameters_type, @key_types.length]
-        @all_params.each { |param| key.push param.object_id }
+        all_params.each { |param| key.push param.__id__ }
         key
       end
 
@@ -490,16 +490,16 @@ module Solargraph
             next t if idx.nil?
             if context_type.parameters_type == :hash
               if idx.zero?
-                next ComplexType.new(context_type.key_types)
+                next ComplexType.intern(context_type.key_types)
               elsif idx == 1
-                next ComplexType.new(context_type.subtypes)
+                next ComplexType.intern(context_type.subtypes)
               else
                 next ComplexType::UNDEFINED
               end
             # @todo Treating parameterized classes and tuples the same for now
             # elsif context_type.all?(&:implicit_union?) || true
             elsif idx.zero? && !context_type.all_params.empty?
-              ComplexType.new(context_type.all_params)
+              ComplexType.intern(context_type.all_params)
             else
               ComplexType::UNDEFINED
             end
@@ -636,7 +636,7 @@ module Solargraph
 
           type.all_params
         end
-        ComplexType.new(new_items)
+        ComplexType.intern(new_items)
       end
 
       def all_rooted?

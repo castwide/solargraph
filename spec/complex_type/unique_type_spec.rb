@@ -46,4 +46,40 @@ describe Solargraph::ComplexType::UniqueType do
       expect(described_class.parse('::Array')).not_to be(described_class.parse('Array'))
     end
   end
+
+  describe '#exclude' do
+    let(:api_map) { Solargraph::ApiMap.new }
+
+    it 'returns the receiver untouched when there is nothing to exclude' do
+      type = described_class.parse('String')
+      expect(type.exclude(nil, api_map)).to be(type)
+    end
+
+    it 'falls back to undefined once excluding leaves nothing behind' do
+      type = described_class.parse('String')
+      result = type.exclude(Solargraph::ComplexType.parse('String'), api_map)
+      expect(result.tag).to eq('undefined')
+    end
+  end
+
+  describe '#intersect_with' do
+    let(:api_map) { Solargraph::ApiMap.new }
+
+    it 'returns the receiver untouched when there is nothing to intersect' do
+      type = described_class.parse('String')
+      expect(type.intersect_with(nil, api_map)).to be(type)
+    end
+
+    it 'keeps the type that conforms when both sides name it' do
+      type = described_class.parse('String')
+      result = type.intersect_with(Solargraph::ComplexType.parse('String'), api_map)
+      expect(result.tag).to eq('String')
+    end
+
+    it 'falls back to undefined when neither side conforms to the other' do
+      type = described_class.parse('String')
+      result = type.intersect_with(Solargraph::ComplexType.parse('Integer'), api_map)
+      expect(result.tag).to eq('undefined')
+    end
+  end
 end
