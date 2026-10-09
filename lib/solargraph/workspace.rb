@@ -222,11 +222,7 @@ module Solargraph
 
     # @return [void]
     def require_plugins
-      config.plugins.each do |plugin|
-        require plugin
-      rescue LoadError
-        Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
-      end
+      config.require_plugins
     end
 
     # @return [String, nil]
