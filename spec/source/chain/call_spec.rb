@@ -167,6 +167,19 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('Array<String>')
   end
 
+  it 'infers generic parameterized types through module inclusion via RBS definition of module' do
+    source = Solargraph::Source.load_string(%(
+      foo = ['bar'].to_set
+
+      foo
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 9))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
+    expect(type.tag).to eq('Set<String>')
+  end
+
   it 'infers generic-class method return values with self reference' do
     source = Solargraph::Source.load_string(%(
       # @generic GenericTypeParam
@@ -194,7 +207,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'infers generic-class method return values with self reference through RBS definition' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       a = ['bar']
       # @param item [String]
@@ -479,7 +491,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'does not infer undefined types when declared ones exist' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       # @return [Array<String>]
       def other; end
@@ -499,7 +510,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'understands types in an Array#+ scenario' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       module A
         class B
@@ -525,7 +535,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'qualifies types in an Array#+ scenario' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       module A
         class B
@@ -551,7 +560,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'handles subclass and superclass issues in Array#+' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       module A
         class B; end
@@ -593,7 +601,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'qualifies types in a second Array#+' do
-    pending 'https://github.com/castwide/solargraph/pull/1223'
     source = Solargraph::Source.load_string(%(
       module A1
         class B1
@@ -693,7 +700,7 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
 
     clip = api_map.clip_at('test.rb', [3, 8])
-    expect(clip.infer.rooted_tags).to eq('::String')
+    expect(clip.infer.rooted_tags).to eq('"UTF-8"')
   end
 
   it 'sends proper gates in ProxyType' do

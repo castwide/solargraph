@@ -23,7 +23,7 @@ module Solargraph
 
       def on_comment *args
         # @sg-ignore
-        # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
+        # @type [Array(Symbol, String, Array(Integer, Integer))]
         result = super
         # @sg-ignore Need to add nil check here
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
@@ -38,7 +38,7 @@ module Solargraph
         result
       end
 
-      # @param result [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
+      # @param result [Array(Symbol, String, Array(Integer, Integer))]
       # @return [void]
       def create_snippet result
         chomped = result[1].chomp

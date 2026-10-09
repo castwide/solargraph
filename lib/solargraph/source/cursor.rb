@@ -122,6 +122,7 @@ module Solargraph
             if rng
               Cursor.new(source, rng.ending)
             else
+              # @sg-ignore Translate to something flow sensitive typing understands
               pos = Position.new(position.line, [position.column - 1, 0].max)
               Cursor.new(source, pos)
             end

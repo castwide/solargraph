@@ -55,7 +55,6 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
           # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
@@ -186,6 +185,9 @@ module Solargraph
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
+            # A literal-typed overload (tuple's `(0 index) -> A`) rejects a
+            # non-literal argument (#literal_arg_matches?), so the loop
+            # below falls through to the next overload instead of stopping.
             # @sg-ignore flow sensitive typing should handle is_a? and next
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
@@ -326,7 +328,6 @@ module Solargraph
         def find_method_pin name_pin
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Need to support this in flow sensitive typing
             method_pin = method_pin.closure
             return if method_pin.nil?
           end

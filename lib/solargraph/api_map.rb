@@ -389,6 +389,12 @@ module Solargraph
         !pin.visible_at?(closure, location) && !pin.starts_at?(location)
       end
 
+      # Same-scope code in the value sees only the old value. A block in it may
+      # run before or after the assignment, so it keeps both pins.
+      vars_at_location.reject! do |pin|
+        pin.closure == closure && pin.assigned_within?(location) && !pin.starts_at?(location)
+      end
+
       vars_at_location.inject(&:combine_with)
     end
 
@@ -423,6 +429,11 @@ module Solargraph
     # @param deep [Boolean] True to include superclasses, mixins, etc.
     # @return [Array<Solargraph::Pin::Method>]
     def get_methods rooted_tag, scope: :instance, visibility: [:public], deep: true
+      if rooted_tag.start_with? 'Array('
+        # Array() are really tuples - use our fill, as the RBS repo
+        # does not give us definitions for it
+        rooted_tag = "Solargraph::Fills::Tuple(#{rooted_tag[6..-2]})"
+      end
       rooted_type = ComplexType.try_parse(rooted_tag)
       fqns = rooted_type.namespace
       namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
