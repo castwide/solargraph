@@ -248,13 +248,6 @@ module Solargraph
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
-            # @todo 'Wrong argument type for
-            #   Solargraph::Source::Chain::Call#inner_process_macro:
-            #   macro expected YARD::Tags::MacroDirective, received
-            #   generic<Elem>' is because we lose 'rooted' information
-            #   in the 'Chain::Array' class internally, leaving
-            #   ::Array#each shadowed when it shouldn't be.
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -270,7 +263,6 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -278,26 +270,23 @@ module Solargraph
         end
 
         # @param pin [Pin::Base]
-        # @param macro [YARD::Tags::MacroDirective]
+        # @param macro [YardMap::Macro]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
-          txt = macro.tag.text.clone
-          # @sg-ignore Need to add nil check here
+          txt = macro.text.clone
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
-            txt = named.tag.text.clone if named
+            txt = named.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore Need to add nil check here
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore Need to add nil check here
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
