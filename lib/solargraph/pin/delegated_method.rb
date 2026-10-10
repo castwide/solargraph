@@ -76,11 +76,11 @@ module Solargraph
       def resolve_method api_map
         return if @resolved_method
 
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
@@ -92,7 +92,7 @@ module Solargraph
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
