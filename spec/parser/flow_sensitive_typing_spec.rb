@@ -1025,4 +1025,309 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor after a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      def bundled_filename(pin)
+        return nil unless pin.location
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [13, 32])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+
+    clip = api_map.clip_at('test.rb', [14, 14])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+  end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor after a .nil? guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      def bundled_filename(pin)
+        return nil if pin.location.nil?
+        pin.location.filename
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [14, 23])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'narrows a repeated call to the same attr_reader-style accessor rooted in an ivar' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Bundler
+        # @param pin [Pin]
+        def initialize(pin)
+          @pin = pin
+        end
+
+        def bundled_filename
+          return nil unless @pin.location
+          @pin.location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [19, 26])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'narrows a repeated bare, implicit-self attr_reader call after a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String]
+        def filename; end
+      end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+
+        def bundled_filename
+          return nil unless location
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location')
+
+    clip = api_map.clip_at('test.rb', [12, 22])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'narrows a bare, implicit-self attr_reader call after a .nil? guard' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil if steps.nil?
+          steps.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
+  end
+
+  it 'narrows a bare, implicit-self attr_reader call assigned into a fresh local variable' do
+    source = Solargraph::Source.load_string(%(
+      class Repro
+        # @return [Array<Hash>, nil]
+        attr_reader :steps
+
+        def identify
+          return nil if steps.nil?
+
+          local = steps
+          local.empty?
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 15])
+    expect(clip.infer.rooted_tags).to eq('::Array<::Hash>')
+  end
+
+  it 'does not narrow a repeated bare, implicit-self call to a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @return [Location, nil]
+        def next_token; end
+
+        def scan
+          return nil unless next_token
+          next_token
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'does not narrow a repeated call to a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Lexer
+        # @return [Location, nil]
+        def next_token; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil unless lexer.next_token
+        lexer.next_token
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [11, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'does not narrow an attr_reader reached through a method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Lexer
+        # @return [Pin]
+        def next_pin; end
+      end
+
+      # @param lexer [Lexer]
+      def scan(lexer)
+        return nil if lexer.next_pin.location.nil?
+        lexer.next_pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [16, 25])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'drops attr_reader narrowing once the receiver is reassigned' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      # @param other [Pin]
+      def scan(pin, other)
+        return nil unless pin.location
+        pin = other
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [13, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'drops attr_reader narrowing once the attribute is written' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_accessor :location
+      end
+
+      # @param pin [Pin]
+      def scan(pin)
+        return nil unless pin.location
+        pin.location = nil
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'drops bare attr_reader narrowing once the attribute is written through self' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_accessor :location
+
+        def scan
+          return nil unless location
+          self.location = nil
+          location
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'drops bare attr_reader narrowing once its instance variable is assigned' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+
+        def scan
+          return nil unless location
+          @location = nil
+          location
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'uses is_a? with a fully-qualified type name to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def verify_repro(x)
+        if x.is_a?(::Integer)
+          x
+        else
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Object')
+  end
 end

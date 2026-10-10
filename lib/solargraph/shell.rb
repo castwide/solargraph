@@ -544,7 +544,6 @@ module Solargraph
              else
                pin.path
              end
-      # @sg-ignore Need to add nil check here
       desc += " (#{pin.location.filename} #{pin.location.range.start.line})" if pin.location
       desc
     end

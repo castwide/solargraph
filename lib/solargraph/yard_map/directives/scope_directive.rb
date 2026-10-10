@@ -139,7 +139,6 @@ module Solargraph
           pins.each do |pin|
             next unless pin.is_a?(Pin::Method)
             next unless pin.namespace == namespace.path
-            # @sg-ignore flow sensitive typing should narrow location after the nil check
             next if pin.location.nil? || pin.location.range.start.line < source_position.line
 
             pin.scope = kind

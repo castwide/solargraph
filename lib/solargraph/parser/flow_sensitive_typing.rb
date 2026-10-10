@@ -9,11 +9,14 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
+      # @param closure [Solargraph::Pin::Closure, nil] receiver of bare,
+      #   implicit-self calls like 'location'
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -227,10 +230,11 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
+          pin_presences = clip_at_writes(pin, presences)
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
-            presences.each do |presence|
+            pin_presences.each do |presence|
               add_downcast_var(pin,
                                presence: presence,
                                downcast_type: downcast_type,
@@ -238,6 +242,64 @@ module Solargraph
             end
           end
         end
+      end
+
+      # Ends each presence of a call-chain pin, e.g. 'pin.location' or
+      # 'self.location', at the first write that can change what the chain
+      # returns, e.g. 'pin = other' or 'pin.location = nil'.
+      #
+      # @param pin [Pin::BaseVariable]
+      # @param presences [Array<Range>]
+      # @return [Array<Range>]
+      def clip_at_writes pin, presences
+        return presences unless pin.name.include?('.')
+        # without the enclosing body, writes can't be ruled out
+        return [] if enclosing_compound_statement_pin&.node.nil?
+
+        writes = []
+        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes)
+        presences.map do |presence|
+          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut ? Range.new(presence.start, cut) : presence
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>] e.g. ['pin', 'location']
+      # @param writes [::Array<Position>] start positions found so far
+      # @return [void]
+      def collect_writes node, words, writes
+        range = Range.from_node(node)
+        writes << range.start if range && write_to?(node, words)
+        node.children.each do |child|
+          collect_writes(child, words, writes) if child.is_a?(::Parser::AST::Node)
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>]
+      # @return [Boolean]
+      def write_to? node, words
+        # e.g. 'pin.location ||= x' wraps a reader call in an or_asgn
+        wrapped = %i[op_asgn or_asgn and_asgn].include?(node.type)
+        target = wrapped ? node.children[0] : node
+        return false unless target.is_a?(::Parser::AST::Node)
+
+        variable = target.children[0].to_s
+        # an attr_reader on self reads its same-named instance variable
+        self_ivar = words.first == 'self' && variable == "@#{words[1]}"
+        return variable == words.first || self_ivar if target.type == :ivasgn
+        return words.first == variable if target.type == :lvasgn
+        return false unless target.type == :send
+
+        name = target.children[1].to_s
+        return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
+
+        receiver = target.children[0]
+        receiver_words = receiver.nil? || receiver.type == :self ? ['self'] : parse_receiver_chain(receiver)
+        return false if receiver_words.nil? || receiver_words.length >= words.length
+
+        receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
       end
 
       # @param expression_node [Parser::AST::Node]
@@ -250,13 +312,43 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+        process_call_chain(expression_node, true_ranges, false_ranges)
+      end
+
+      # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
+      # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
+      # calls/variables rooted in a local, ivar, or unresolved name.
+      #
+      # @param node [Parser::AST::Node, nil]
+      # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
+      #   'location'], or nil if `node` doesn't have this shape.
+      def parse_receiver_chain node
+        return unless node.is_a?(::Parser::AST::Node)
+        return [node.children[0].to_s] if %i[lvar ivar].include?(node.type)
+        return unless node.type == :send
+        # no arguments -- children[2..] is only nil (rather than [])
+        # if the start index is out of bounds, which can't happen here
+        return unless (node.children[2..] || []).empty?
+
+        method_name = node.children[1]
+        return unless method_name.is_a?(Symbol)
+
+        receiver = node.children[0]
+        # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
+        # 'foo' could be a local variable or a 0-arg method on self
+        return [method_name.to_s] if receiver.nil?
+
+        base = parse_receiver_chain(receiver)
+        return unless base
+
+        base + [method_name.to_s]
       end
 
       # @param call_node [Parser::AST::Node]
       # @param method_name [Symbol]
-      # @return [Array(String, String), nil] Tuple of rgument to
-      #   function, then receiver of function if it's a variable,
-      #   otherwise nil if no simple variable receiver
+      # @return [Array(String, ::Array<String>), nil] Tuple of argument to
+      #   function, then dotted-word chain for the receiver, otherwise nil
+      #   if the receiver isn't a simple chain (see #parse_receiver_chain)
       def parse_call call_node, method_name
         return unless call_node&.type == :send && call_node.children[1] == method_name
         # Check if conditional node follows this pattern:
@@ -267,28 +359,20 @@ module Solargraph
         call_receiver = call_node.children[0]
         call_arg = type_name(call_node.children[2])
 
-        # check if call_receiver looks like this:
-        #  s(:send, nil, :foo)
-        # and set variable_name to :foo
-        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          variable_name = call_receiver.children[1].to_s
-        end
-        # or like this:
-        # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
-        return unless variable_name
+        chain_words = parse_receiver_chain(call_receiver)
+        return unless chain_words
 
-        [call_arg, variable_name]
+        [call_arg, chain_words]
       end
 
       # @param isa_node [Parser::AST::Node]
-      # @return [Array(String, String), nil]
+      # @return [Array(String, ::Array<String>), nil]
       def parse_isa isa_node
-        call_type_name, variable_name = parse_call(isa_node, :is_a?)
+        call_type_name, chain_words = parse_call(isa_node, :is_a?)
 
         return unless call_type_name
 
-        [call_type_name, variable_name]
+        [call_type_name, chain_words]
       end
 
       # @param variable_name [String]
@@ -299,12 +383,55 @@ module Solargraph
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')
-          # @sg-ignore flow sensitive typing needs to handle attrs
           ivars.find { |ivar| ivar.name == variable_name && (!ivar.presence || ivar.presence.include?(position)) }
         else
-          # @sg-ignore flow sensitive typing needs to handle attrs
           locals.find { |pin| pin.name == variable_name && (!pin.presence || pin.presence.include?(position)) }
         end
+      end
+
+      # Finds (single var) or builds (chain, e.g. ['pin', 'location'], or
+      # bare self call, e.g. 'location') the pin narrowing facts get
+      # recorded on. A built pin probes its type lazily from `node`, so it
+      # can't see its own new facts.
+      #
+      # @param chain_words [::Array<String>]
+      # @param node [Parser::AST::Node] the receiver expression, e.g. the
+      #   node for 'pin.location'
+      # @param position [Position]
+      # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
+      def chain_pin chain_words, node, position
+        root_word = chain_words.first
+        return unless root_word
+
+        root_pin = find_var(root_word, position)
+        return root_pin || self_call_pin(node) if chain_words.length == 1
+        return unless root_pin
+
+        Pin::LocalVariable.new(
+          location: Location.from_node(node),
+          closure: root_pin.closure,
+          name: chain_words.join('.'),
+          assignment: node,
+          source: :flow_sensitive_typing
+        )
+      end
+
+      # Builds a pin for a bare self call, e.g. 'location', named
+      # 'self.location' so it never shadows a local; Chain::Call consults it
+      # only when the call is an attr_reader.
+      #
+      # @param node [Parser::AST::Node]
+      # @return [Solargraph::Pin::LocalVariable, nil]
+      def self_call_pin node
+        return unless closure && node.type == :send && node.children[0].nil?
+
+        Pin::LocalVariable.new(
+          location: Location.from_node(node),
+          closure: closure,
+          name: "self.#{node.children[1]}",
+          assignment: node,
+          source: :flow_sensitive_typing
+        )
       end
 
       # @param isa_node [Parser::AST::Node]
@@ -313,12 +440,13 @@ module Solargraph
       #
       # @return [void]
       def process_isa isa_node, true_presences, false_presences
-        isa_type_name, variable_name = parse_isa(isa_node)
-        return if variable_name.nil? || variable_name.empty?
+        isa_type_name, chain_words = parse_isa(isa_node)
+        return if chain_words.nil? || chain_words.empty?
         # @sg-ignore Need to add nil check here
         isa_position = Range.from_node(isa_node).start
 
-        pin = find_var(variable_name, isa_position)
+        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        pin = chain_pin(chain_words, isa_node.children[0], isa_position)
         return unless pin
 
         # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
@@ -335,7 +463,7 @@ module Solargraph
       end
 
       # @param nilp_node [Parser::AST::Node]
-      # @return [Array(String, String), nil]
+      # @return [Array(String, ::Array<String>), nil]
       def parse_nilp nilp_node
         parse_call(nilp_node, :nil?)
       end
@@ -346,8 +474,8 @@ module Solargraph
       #
       # @return [void]
       def process_nilp nilp_node, true_presences, false_presences
-        nilp_arg, variable_name = parse_nilp(nilp_node)
-        return if variable_name.nil? || variable_name.empty?
+        nilp_arg, chain_words = parse_nilp(nilp_node)
+        return if chain_words.nil? || chain_words.empty?
         # if .nil? got an argument, move on, this isn't the situation
         # we're looking for and typechecking will cover any invalid
         # ones
@@ -355,7 +483,8 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         nilp_position = Range.from_node(nilp_node).start
 
-        pin = find_var(variable_name, nilp_position)
+        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        pin = chain_pin(chain_words, nilp_node.children[0], nilp_position)
         return unless pin
 
         # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
@@ -433,6 +562,43 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
+      # Handles a truthy check on a call chain, e.g. 'pin.location' in
+      # 'return nil unless pin.location', or on a bare self call, e.g.
+      # 'location'; bare vars go to #process_variable.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      # @param false_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_call_chain node, true_presences, false_presences
+        return unless node.type == :send
+        # already handled (with inverted true/false semantics) by
+        # process_nilp/process_bang
+        return if %i[nil? !].include?(node.children[1])
+
+        chain_words = parse_receiver_chain(node)
+        return if chain_words.nil? || chain_words.empty?
+
+        range = Range.from_node(node)
+        return unless range
+
+        pin = chain_pin(chain_words, node, range.start)
+        return unless pin
+
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { not_type: ComplexType::NIL }
+        process_facts(if_true, true_presences)
+
+        # @type Hash{Pin::LocalVariable => Array<Hash{Symbol => ComplexType}>}
+        if_false = {}
+        if_false[pin] ||= []
+        if_false[pin] << { type: ComplexType.parse('nil, false') }
+        process_facts(if_false, false_presences)
+      end
+
       # @param node [Parser::AST::Node]
       #
       # @return [String, nil]
@@ -446,6 +612,9 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name
@@ -465,7 +634,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :closure
     end
   end
 end
