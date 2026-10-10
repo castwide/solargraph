@@ -33,9 +33,9 @@ module Solargraph
       end
     end
 
-    # @sg-ignore nil false alarm
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def rbs?
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       filename.end_with?('.rbs')
     end
 
