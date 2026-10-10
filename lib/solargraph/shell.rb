@@ -290,7 +290,7 @@ module Solargraph
           exit 1
         end
       end
-      # @sg-ignore nil false alarm
+      # @sg-ignore Use &. to suppress false alarm
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 
