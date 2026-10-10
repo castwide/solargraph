@@ -623,15 +623,13 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
-        parts = ref.split(/[.#]/)
-        first = parts.first
-        if first.nil? || first.empty? || parts.one?
+        prefix, separator, name = ref.rpartition(/[.#]/)
+        if prefix.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, *gates)
+          fqns = api_map.qualify(prefix, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + separator + name
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|
