@@ -40,7 +40,7 @@ module Solargraph
             return nil if dloc.nil?
             [
               {
-                # @sg-ignore nil false alarm
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 uri: file_to_uri(dloc.filename),
                 range: dloc.range.to_hash
               }
