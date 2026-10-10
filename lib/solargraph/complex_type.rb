@@ -13,6 +13,37 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
+    # Canonical instances, keyed by the identity of their items, which are
+    # themselves canonical. Process-global and never evicted, as .parse's
+    # cache is.
+    #
+    # @type [Hash{::Array => ComplexType}]
+    @intern = {}
+
+    # The canonical instance for the given types, adopting a newly built one
+    # the first time that type is seen. Named rather than overriding .new so
+    # that it has a real constructor to call, as UniqueType.intern does.
+    #
+    # @param types [Array<UniqueType, ComplexType>]
+    # @return [ComplexType]
+    def self.intern types = [UniqueType::UNDEFINED]
+      fresh = new(types)
+      key = fresh.intern_key
+      canonical = @intern[key]
+      return canonical unless canonical.nil?
+
+      @intern[key] = fresh
+    end
+
+    # The identity of this type's items, which are already canonical.
+    #
+    # @return [::Array]
+    def intern_key
+      key = [self.class]
+      @items.each { |item| key.push item.__id__ }
+      key
+    end
+
     # @param types [Array<UniqueType, ComplexType>]
     def initialize types = [UniqueType::UNDEFINED]
       # @todo @items here should not need an annotation
@@ -40,7 +71,7 @@ module Solargraph
         next t if ['::Boolean'].include?(t.rooted_name)
         api_map.unalias(t.name) || t.qualify(api_map, *gates)
       end
-      ComplexType.new(types).reduce_object
+      ComplexType.intern(types).reduce_object
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
@@ -50,7 +81,7 @@ module Solargraph
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
       return self unless generic?
 
-      ComplexType.new(@items.map do |i|
+      ComplexType.intern(@items.map do |i|
         i.resolve_generics_from_context(generics_to_resolve, context_type,
                                         resolved_generic_values: resolved_generic_values)
       end)
@@ -113,7 +144,7 @@ module Solargraph
     # @param new_subtypes [Array<ComplexType>, nil]
     # @return [self]
     def recreate new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil
-      ComplexType.new(map do |ut|
+      ComplexType.intern(map do |ut|
                         ut.recreate(new_name: new_name,
                                     make_rooted: make_rooted,
                                     new_key_types: new_key_types,
@@ -297,7 +328,7 @@ module Solargraph
 
     # @return [self]
     def simplify_literals
-      ComplexType.new(map(&:simplify_literals))
+      ComplexType.intern(map(&:simplify_literals))
     end
 
     # @param new_name [String, nil]
@@ -308,11 +339,11 @@ module Solargraph
       if new_name&.start_with?('::')
         raise "Please remove leading :: and set rooted with recreate() instead - #{new_name}"
       end
-      ComplexType.new(map { |ut| ut.transform(new_name, &transform_type) })
+      ComplexType.intern(map { |ut| ut.transform(new_name, &transform_type) })
     end
 
     def expand named_types
-      ComplexType.new(map { |ut| ut.expand(named_types) })
+      ComplexType.intern(map { |ut| ut.expand(named_types) })
     end
 
     # @return [self]
@@ -327,7 +358,7 @@ module Solargraph
     # @return [ComplexType]
     def resolve_generics definitions, context_type
       result = @items.map { |i| i.resolve_generics(definitions, context_type) }
-      ComplexType.new(result)
+      ComplexType.intern(result)
     end
 
     def nullable?
@@ -338,7 +369,7 @@ module Solargraph
     def without_nil
       new_items = @items.reject(&:nil_type?)
       return ComplexType::UNDEFINED if new_items.empty?
-      ComplexType.new(new_items)
+      ComplexType.intern(new_items)
     end
 
     # @return [Array<ComplexType>]
@@ -354,7 +385,7 @@ module Solargraph
 
         type.all_params
       end
-      ComplexType.new(new_items)
+      ComplexType.intern(new_items)
     end
 
     # every type and subtype in this union have been resolved to be
@@ -386,7 +417,7 @@ module Solargraph
 
       types = items - exclude_types.items
       types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-      ComplexType.new(types)
+      ComplexType.intern(types)
     end
 
     # @see https://en.wikipedia.org/wiki/Intersection_type
@@ -409,7 +440,7 @@ module Solargraph
         end
       end
       types = [ComplexType::UniqueType::UNDEFINED] if types.empty?
-      ComplexType.new(types)
+      ComplexType.intern(types)
     end
 
     protected
@@ -424,7 +455,7 @@ module Solargraph
         next [ut] if ut.name != 'Object' || ut.subtypes.empty?
         ut.subtypes
       end
-      ComplexType.new(new_items)
+      ComplexType.intern(new_items)
     end
 
     def bottom?
@@ -535,7 +566,7 @@ module Solargraph
           return key_types if types.empty?
           return [key_types, types]
         end
-        result = partial ? types : ComplexType.new(types)
+        result = partial ? types : ComplexType.intern(types)
         @cache[strings] = result unless partial
         result
       end

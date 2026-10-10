@@ -784,9 +784,9 @@ module Solargraph
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
         params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
         if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+          ComplexType::UniqueType.intern(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
+          ComplexType::UniqueType.intern(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
         end
       end
 
