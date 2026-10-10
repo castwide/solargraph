@@ -85,10 +85,10 @@ module Solargraph
           return
         end
 
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         receiver_type = resolver.return_type
 
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
@@ -96,10 +96,10 @@ module Solargraph
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
-            # @sg-ignore nil false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
-            # @sg-ignore nil false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             [receiver_type.to_s, :instance]
           end
 
