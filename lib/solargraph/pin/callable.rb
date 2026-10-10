@@ -8,9 +8,6 @@ module Solargraph
 
       attr_accessor :parameters
 
-      # @return [ComplexType, nil]
-      attr_reader :return_type
-
       # @param block [Signature, nil]
       # @param return_type [ComplexType, nil]
       # @param parameters [::Array<Pin::Parameter>]
@@ -123,7 +120,6 @@ module Solargraph
       #
       # @return [Array<Array, String, nil>]
       def full_type_arity
-        # @sg-ignore flow sensitive typing needs to handle attrs
         [return_type ? return_type.items.count.to_s : nil] + type_arity
       end
 
@@ -151,11 +147,11 @@ module Solargraph
                                                 resolved_generic_values: resolved_generic_values)
           end
         end
-        if callable.block?
-          callable.block = block.resolve_generics_from_context(generics_to_resolve,
-                                                               yield_arg_types,
-                                                               yield_return_type_context,
-                                                               resolved_generic_values: resolved_generic_values)
+        if callable.block
+          callable.block = callable.block.resolve_generics_from_context(generics_to_resolve,
+                                                                        yield_arg_types,
+                                                                        yield_return_type_context,
+                                                                        resolved_generic_values: resolved_generic_values)
         end
         callable
       end
@@ -227,7 +223,7 @@ module Solargraph
       def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         callable = super(&transform)
-        callable.block = block.transform_types(&transform) if block?
+        callable.block = callable.block.transform_types(&transform) if callable.block
         callable.parameters = parameters.map do |param|
           param.transform_types(&transform)
         end

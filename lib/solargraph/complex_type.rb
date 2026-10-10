@@ -343,7 +343,7 @@ module Solargraph
 
     # @return [Array<ComplexType>]
     def all_params
-      @items.first.all_params || []
+      @items.first&.all_params || []
     end
 
     # @return [ComplexType]

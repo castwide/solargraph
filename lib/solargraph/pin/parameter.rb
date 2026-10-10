@@ -281,6 +281,7 @@ module Solargraph
             found = p
             break
           end
+          # @sg-ignore missing flow-sensitive typing on array elements
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
@@ -318,14 +319,13 @@ module Solargraph
       def resolve_reference ref, api_map, skip
         return nil if skip.include?(ref)
         skip.push ref
-        parts = ref.split(/[.#]/)
-        if parts.first.empty?
+        prefix, separator, name = ref.rpartition(/[.#]/)
+        if prefix.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, namespace)
+          fqns = api_map.qualify(prefix, namespace)
           return nil if fqns.nil?
-          # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + separator + name
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|

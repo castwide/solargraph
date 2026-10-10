@@ -416,6 +416,8 @@ module Solargraph
         else
           args = line.split(':').map(&:strip)
           name = args.shift
+          raise DiagnosticsError, "Invalid diagnostics reporter entry #{line.inspect}" if name.nil?
+
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           # @sg-ignore Hash errors
@@ -485,8 +487,6 @@ module Solargraph
         Logging.logger.debug "Mapping #{src.filename}"
         # @sg-ignore OK if src.filename is nil
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
-        source_map_hash[src.filename]
       else
         false
       end

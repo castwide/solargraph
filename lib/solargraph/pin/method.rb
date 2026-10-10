@@ -214,7 +214,6 @@ module Solargraph
                   else
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
-        # @sg-ignore Need to add nil check here
         unless return_type.undefined?
           detail += "=#{if probed?
                           '~'
@@ -270,14 +269,13 @@ module Solargraph
 
       def typify api_map
         logger.debug do
-          # @sg-ignore Need to add nil check here
           "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
         end
         decl = if macro_names?
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
-            macro = Solargraph::YardMap::Macro.from_directive(directive, self)
+            macro = Solargraph::YardMap::Macro.from_directive(directive.directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
             docstring.tags(:return).flat_map(&:types)
@@ -461,7 +459,6 @@ module Solargraph
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
         # inside 'class << self' blocks, but YARD did OK at it
-        # @sg-ignore Need to add nil check here
         (source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined?) ||
           # YARD's RBS generator seems to miss a lot of should-be protected instance methods
           (source == :rbs && scope == :instance && namespace.start_with?('YARD::')) ||
@@ -617,7 +614,6 @@ module Solargraph
         stack = rest_of_stack api_map
         return nil if stack.empty?
         stack.each do |pin|
-          # @sg-ignore Need to add nil check here
           return pin.return_type unless pin.return_type.undefined?
         end
         nil
@@ -627,14 +623,13 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
-        parts = ref.split(/[.#]/)
-        if parts.first.empty? || parts.one?
+        prefix, separator, name = ref.rpartition(/[.#]/)
+        if prefix.empty?
           path = "#{namespace}#{ref}"
         else
-          fqns = api_map.qualify(parts.first, *gates)
+          fqns = api_map.qualify(prefix, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
-          path = fqns + ref[parts.first.length] + parts.last
+          path = fqns + separator + name
         end
         pins = api_map.get_path_pins(path)
         pins.each do |pin|
@@ -730,6 +725,8 @@ module Solargraph
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        return nil if method_type.nil?
+
         RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
@@ -738,6 +735,8 @@ module Solargraph
       # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        return signatures_from_yard if method_type.nil?
+
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard
@@ -759,7 +758,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
-                .map { |line| line[2..].strip }
+                .map { |line| line.delete_prefix(': ').strip }
                 .join("\n")
       end
     end

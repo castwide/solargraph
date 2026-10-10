@@ -213,11 +213,8 @@ module Solargraph
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
-              # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
-              # @sg-ignore Need to add nil check here
               selfy = pin.return_type.self_to_type(name_pin.binder)
-              # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -230,9 +227,9 @@ module Solargraph
           factory_parameter = api_map.factory_parameters_for_method(method_pin).find do |factory_param|
             method_pin.parameters.each_with_index.find do |param, index|
               current_argument = arguments[index]
-              next unless current_argument&.literal?
-              # @type [Solargraph::Source::Chain::Literal]
+              next if current_argument.nil? || !current_argument.literal?
               last_link = current_argument.links.last
+              next unless last_link.is_a?(Chain::Literal)
               argument_value = last_link.value
 
               param.name == factory_param.param_name && argument_value == factory_param.value
@@ -251,13 +248,6 @@ module Solargraph
         # @return [Pin::Base]
         def process_macro pin, api_map, context, locals
           pin.macros.each do |macro|
-            # @todo 'Wrong argument type for
-            #   Solargraph::Source::Chain::Call#inner_process_macro:
-            #   macro expected YARD::Tags::MacroDirective, received
-            #   generic<Elem>' is because we lose 'rooted' information
-            #   in the 'Chain::Array' class internally, leaving
-            #   ::Array#each shadowed when it shouldn't be.
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -273,7 +263,6 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -281,26 +270,23 @@ module Solargraph
         end
 
         # @param pin [Pin::Base]
-        # @param macro [YARD::Tags::MacroDirective]
+        # @param macro [YardMap::Macro]
         # @param api_map [ApiMap]
         # @param context [ComplexType, ComplexType::UniqueType]
         # @param locals [::Array<Pin::LocalVariable, Pin::Parameter>]
         # @return [Pin::ProxyType]
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
-          txt = macro.tag.text.clone
-          # @sg-ignore Need to add nil check here
+          txt = macro.text.clone
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
-            txt = named.tag.text.clone if named
+            txt = named.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore Need to add nil check here
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore Need to add nil check here
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
@@ -352,7 +338,6 @@ module Solargraph
 
           # @param signature_pin [Pin::Signature]
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
-            # @sg-ignore Need to add nil check here
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
           end

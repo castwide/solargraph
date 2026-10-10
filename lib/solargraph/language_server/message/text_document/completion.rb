@@ -12,10 +12,11 @@ module Solargraph
             col = params['position']['character']
             begin
               completion = host.completions_at(params['textDocument']['uri'], line, col)
+              return set_result(empty_result) unless completion
+
               items = []
               last_context = nil
               idx = -1
-              # @sg-ignore Need to add nil check here
               completion.pins.each do |pin|
                 idx += 1 if last_context != pin.context
                 items.push pin.completion_item.merge({

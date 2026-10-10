@@ -10,6 +10,14 @@ describe Solargraph::Pin::DelegatedMethod do
     expect(delegation_pin.return_type.to_s).to eq('Hash{String => String}')
   end
 
+  it 'requires a name when constructed from a receiver source' do
+    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('collaborator', nil)])
+
+    expect do
+      described_class.new(receiver: chain, receiver_method_name: 'name', scope: :instance)
+    end.to raise_error(ArgumentError)
+  end
+
   it 'can be constructed from a receiver source and method name' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
