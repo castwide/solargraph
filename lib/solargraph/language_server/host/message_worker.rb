@@ -66,7 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           handler = @host.receive(message)
           handler&.send_response
         end

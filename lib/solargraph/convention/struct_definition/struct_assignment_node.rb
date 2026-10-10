@@ -28,12 +28,15 @@ module Solargraph
             return false unless node&.type == :casgn
             return false if node.children[2].nil?
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             struct_node = if node.children[2].type == :block
+                            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                             node.children[2].children[0]
                           else
                             node.children[2]
                           end
 
+            # @sg-ignore Use &. to suppress false alarm
             struct_definition_node?(struct_node)
           end
         end
@@ -49,8 +52,11 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         def struct_node
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1391
           if node.children[2].type == :block
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
             node.children[2].children[0]
           else
             node.children[2]

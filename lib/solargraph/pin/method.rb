@@ -12,7 +12,7 @@ module Solargraph
 
       attr_writer :signatures
 
-      # @return [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil]
       attr_reader :node
 
       # @param visibility [::Symbol] :public, :protected, or :private
@@ -142,6 +142,7 @@ module Solargraph
         attribute? ? Solargraph::LanguageServer::SymbolKinds::PROPERTY : LanguageServer::SymbolKinds::METHOD
       end
 
+      # @return [ComplexType]
       def return_type
         @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
       end
@@ -212,9 +213,9 @@ module Solargraph
         detail += if signatures.length > 1
                     '(*) '
                   else
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                     "(#{signatures.first.parameters.map(&:full).join(', ')}) " unless signatures.first.parameters.empty?
                   end.to_s
-        # @sg-ignore Need to add nil check here
         unless return_type.undefined?
           detail += "=#{if probed?
                           '~'
@@ -249,8 +250,9 @@ module Solargraph
       def to_rbs
         return nil if signatures.empty?
 
+        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
         rbs = "def #{name}: #{signatures.first.to_rbs}"
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
         signatures[1..].each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))
@@ -259,6 +261,7 @@ module Solargraph
         rbs
       end
 
+      # @return [String]
       def path
         @path ||= "#{namespace}#{scope == :instance ? '#' : '.'}#{name}"
       end
@@ -270,13 +273,13 @@ module Solargraph
 
       def typify api_map
         logger.debug do
-          # @sg-ignore Need to add nil check here
           "Method#typify(self=#{self}, binder=#{binder}, closure=#{closure}, context=#{context.rooted_tags}, return_type=#{return_type.rooted_tags}) - starting"
         end
         decl = if macro_names?
           types = macro_names.flat_map do |mac|
             directive = api_map.named_macro(mac)
             next unless directive
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             macro = Solargraph::YardMap::Macro.from_directive(directive, self)
             expanded = macro.macro_object.expand([name, *parameter_names])
             docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
@@ -295,7 +298,7 @@ module Solargraph
         type = see_reference(api_map) || typify_from_super(api_map)
         logger.debug { "Method#typify(self=#{self}) - type=#{type&.rooted_tags.inspect}" }
         unless type.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified = type.qualify(api_map, *closure.gates)
           logger.debug { "Method#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
@@ -400,7 +403,9 @@ module Solargraph
             generics: generics,
             # @param src [Array(String, String)]
             parameters: tag.parameters.map do |src|
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1392
               name, decl = parse_overload_param(src.first)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               Pin::Parameter.new(
                 location: location,
                 closure: self,
@@ -408,6 +413,7 @@ module Solargraph
                 name: name,
                 decl: decl,
                 presence: location&.range,
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                 return_type: param_type_from_name(tag, src.first),
                 source: :overloads
               )
@@ -455,13 +461,14 @@ module Solargraph
 
       protected
 
+      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
       attr_writer :block, :signature_help, :documentation, :return_type
 
+      # @return [Boolean]
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
         # e.g. activesupport did not understand 'private' markings
         # inside 'class << self' blocks, but YARD did OK at it
-        # @sg-ignore Need to add nil check here
         (source == :rbs && scope == :class && type_location&.filename&.include?('generated') && return_type.undefined?) ||
           # YARD's RBS generator seems to miss a lot of should-be protected instance methods
           (source == :rbs && scope == :instance && namespace.start_with?('YARD::')) ||
@@ -497,6 +504,7 @@ module Solargraph
         by_type_arity = {}
         signature_pins.each do |signature_pin|
           by_type_arity[signature_pin.type_arity] ||= []
+          # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
           by_type_arity[signature_pin.type_arity] << signature_pin
         end
 
@@ -602,7 +610,7 @@ module Solargraph
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Use .to_s on a MatchData capture that always participates
         resolve_reference match[1], api_map
       end
 
@@ -617,7 +625,6 @@ module Solargraph
         stack = rest_of_stack api_map
         return nil if stack.empty?
         stack.each do |pin|
-          # @sg-ignore Need to add nil check here
           return pin.return_type unless pin.return_type.undefined?
         end
         nil
@@ -628,12 +635,13 @@ module Solargraph
       # @return [ComplexType, ComplexType::UniqueType, nil]
       def resolve_reference ref, api_map
         parts = ref.split(/[.#]/)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         if parts.first.empty? || parts.one?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, *gates)
           return ComplexType::UNDEFINED if fqns.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)
@@ -647,9 +655,13 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         return node.children[1].children.last if node.type == :DEFN
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         return node.children[2].children.last if node.type == :DEFS
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return node.children[2] if %i[def DEFS].include?(node.type)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         return node.children[3] if node.type == :defs
         nil
       end
@@ -669,11 +681,11 @@ module Solargraph
           rng = Range.from_node(n)
           next unless rng
           clip = api_map.clip_at(
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             location.filename,
             rng.ending
           )
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           chain = Solargraph::Parser.chain(n, location.filename)
           type = chain.infer(api_map, self, clip.locals)
           result.push type unless type.undefined?
@@ -730,6 +742,7 @@ module Solargraph
       def return_type_from_inline_rbs
         return nil if inline_rbs.empty?
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         RbsTranslator.to_complex_type(method_type.type.return_type)
       rescue RBS::ParsingError
         nil
@@ -738,6 +751,7 @@ module Solargraph
       # @return [Array<Pin::Signature>]
       def signatures_from_inline_rbs
         method_type = RBS::Parser.parse_method_type(inline_rbs)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         [RbsTranslator.to_signature(method_type, self, parameter_names)]
       rescue RBS::ParsingError
         signatures_from_yard
@@ -759,6 +773,7 @@ module Solargraph
       def inline_rbs
         comments.lines
                 .select { |line| line.start_with?(': ') }
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 .map { |line| line[2..].strip }
                 .join("\n")
       end

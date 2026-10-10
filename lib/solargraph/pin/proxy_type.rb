@@ -27,7 +27,7 @@ module Solargraph
       def self.anonymous context, closure: nil, binder: nil, **kwargs
         unless closure
           parts = context.namespace.split('::')
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           namespace = parts[0..-2].join('::').to_s
           closure = Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type)
         end

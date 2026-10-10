@@ -26,12 +26,12 @@ module Solargraph
           return_type = ComplexType::SELF if name == 'new'
           comments = code_object.docstring ? code_object.docstring.all.to_s : ''
           final_scope = scope || code_object.scope
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           override_key = [closure.path, final_scope, name]
           final_visibility = VISIBILITY_OVERRIDE[override_key]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           final_visibility ||= VISIBILITY_OVERRIDE[[closure.path, final_scope]]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if closure.path == 'Kernel' && Kernel.private_method_defined?(name.to_sym, false)
             final_visibility ||= :private
           end
@@ -55,7 +55,7 @@ module Solargraph
               source: :yardoc
             )
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             pin = Pin::Method.new(
               location: location,
               closure: closure,
@@ -108,19 +108,25 @@ module Solargraph
 
           # @param a [Array<String>]
           # @return [String]
+          # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
           def arg_name a
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array]
           # @return [::Symbol]
           def arg_type a
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             if a[0].start_with?('**')
               :kwrestarg
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].start_with?('*')
               :restarg
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].start_with?('&')
               :blockarg
+            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]

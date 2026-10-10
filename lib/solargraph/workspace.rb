@@ -110,7 +110,7 @@ module Solargraph
     # Get a source by its filename.
     #
     # @param filename [String]
-    # @return [Solargraph::Source]
+    # @return [Solargraph::Source, nil]
     def source filename
       source_hash[filename]
     end
@@ -154,6 +154,7 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 

@@ -26,6 +26,7 @@ module Solargraph
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           # @type [Pin::Method]
+          # @sg-ignore Need to add nil check here
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
           return [] unless method_pin
 
@@ -36,12 +37,15 @@ module Solargraph
             next false unless fp.value == literal_value
 
             # a splat takes every argument from its position on
+            # @sg-ignore Use fetch(i) for an index already bounds-checked
             method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
           end
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         # @return [Boolean] true if this is a parameter of Kernel#require
         def require_parameter?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           method_call_chain.links.last.word == 'require'
         end
 
@@ -49,7 +53,7 @@ module Solargraph
 
         # @return [Chain::Literal]
         attr_reader :literal
-        # @ return [Chain]
+        # @return [Chain]
         attr_reader :method_call_chain
 
         # @return [String] The name of the method that this parameter belongs to
@@ -57,13 +61,15 @@ module Solargraph
           @method_name ||= method_call.word
         end
 
-        # @return [Chain::Call]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
+        # @return [Chain::Link]
         def method_call
           @method_call_chain.links.last
         end
 
         # The index of the literal in the method call chain.
         # @return [Integer]
+        # @sg-ignore Need to add nil check here
         def current_index
           @current_index ||= method_call_chain.node.children[2..].index(literal.node)
         end

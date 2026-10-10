@@ -105,13 +105,14 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message
         elsif request['id']
           if requests[request['id']]
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -301,9 +302,9 @@ module Solargraph
         end
       end
 
-      # @sg-ignore Need to validate config
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1366
       # @return [String]
-      # @sg-ignore Need to validate config
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1366
       def command_path
         # @type [String]
         options['commandPath'] || 'solargraph'
@@ -316,6 +317,7 @@ module Solargraph
       def prepare_folders array
         return if array.nil?
         array.each do |folder|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           prepare uri_to_file(folder['uri']), folder['name']
         end
       end
@@ -546,7 +548,7 @@ module Solargraph
         library.completions_at uri_to_file(uri), line, column
       end
 
-      # @return [Bool] if has pending completion request
+      # @return [Boolean] if has pending completion request
       def pending_completions?
         message_worker.messages.reverse_each.any? { |req| req['method'] == 'textDocument/completion' }
       end
@@ -597,6 +599,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end
@@ -702,7 +705,10 @@ module Solargraph
         @client_capabilities ||= {}
       end
 
+      # @return [Boolean]
+      # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -746,6 +752,7 @@ module Solargraph
         changes = []
         params['contentChanges'].each do |recvd|
           chng = check_diff(params['textDocument']['uri'], recvd)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           changes.push Solargraph::Source::Change.new(
             (if chng['range'].nil?
                nil
@@ -772,7 +779,9 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
+        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)
@@ -853,7 +862,10 @@ module Solargraph
         }
       end
 
+      # @return [Boolean]
+      # @sg-ignore need boolish support for ? methods
       def prepare_rename?
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 

@@ -16,9 +16,9 @@ module Solargraph
           # @return [Array<Hash>, nil]
           def code_location
             suggestions = host.definitions_at(params['textDocument']['uri'], @line, @column)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return nil if suggestions.empty?
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore pin.location relies on location always resolved
             suggestions.reject { |pin| pin.best_location.nil? || pin.best_location.filename.nil? }.map do |pin|
               {
                 uri: file_to_uri(pin.best_location.filename),
@@ -40,6 +40,7 @@ module Solargraph
             return nil if dloc.nil?
             [
               {
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 uri: file_to_uri(dloc.filename),
                 range: dloc.range.to_hash
               }

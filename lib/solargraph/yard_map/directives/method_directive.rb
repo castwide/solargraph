@@ -15,6 +15,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           namespace = closure_at(pins, source_position) || pins.first
 
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           namespace = closure_at(pins, comment_position) if namespace.location&.range&.start&.line&.< comment_position.line # rubocop:disable Style/SafeNavigationChainLength
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", source.filename)
@@ -41,7 +42,7 @@ module Solargraph
 
         # @param [Array<Pin::Base>] pins
         # @param [Position] position
-        # @return [Pin::Closure]
+        # @return [Pin::Closure, nil]
         def closure_at pins, position
           pins.select { |pin| pin.is_a?(Pin::Closure) and pin.location&.range&.contain?(position) }.last
         end

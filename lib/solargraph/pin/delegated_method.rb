@@ -18,7 +18,7 @@ module Solargraph
       # @param [Hash{Symbol => Object}] splat
       def initialize(method: nil, receiver: nil, name: method&.name, receiver_method_name: name, **splat)
         raise ArgumentError, 'either :method or :receiver is required' if (method && receiver) || (!method && !receiver)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         super(name: name, **splat)
 
         @receiver_chain = receiver
@@ -76,34 +76,34 @@ module Solargraph
       def resolve_method api_map
         return if @resolved_method
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         resolver = @receiver_chain.define(api_map, self, []).first
 
         unless resolver
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
           return
         end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         receiver_type = resolver.return_type
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if @receiver_chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             [receiver_type.to_s.sub(/^Class<(.+)>$/, '\1'), :class]
           else
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             [receiver_type.to_s, :instance]
           end
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Array#first/#last relies on non-empty invariant
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
       end

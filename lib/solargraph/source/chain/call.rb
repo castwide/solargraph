@@ -55,9 +55,8 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
           pin_groups = binder.each_unique_type.map do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
             stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
@@ -112,9 +111,10 @@ module Solargraph
           return [type, new_signature_pin] unless match
 
           if overload.block && with_block?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             block_atypes = overload.block.parameters.map(&:return_type)
             # @todo Need to add nil check here
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore Use &. to suppress false alarm
             blocktype = if block.links.map(&:class) == [BlockSymbol]
                           # like the bar in foo(&:bar)
                           block_symbol_call_type(api_map, name_pin.context, block_atypes, locals)
@@ -125,12 +125,11 @@ module Solargraph
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
                                                                                     blocktype)
           # @todo It shouldn't be necessary to choose either generics or macros
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore flow sensitive typing should be able to handle redefinition
           new_return_type = if new_signature_pin.return_type.defined?
-                              # @sg-ignore Need to add nil check here
+                              # @sg-ignore https://github.com/castwide/solargraph/pull/1338
                               new_signature_pin.return_type
                             else
-                              # @sg-ignore Need to add nil check here
                               named_types = pin.parameter_names.zip(arguments.map { |arg| ComplexType.try_parse(simple_convert(arg.node).to_s) }).to_h
                               pin.typify(api_map).expand(named_types)
                             end
@@ -213,11 +212,8 @@ module Solargraph
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
             else
-              # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
-              # @sg-ignore Need to add nil check here
               selfy = pin.return_type.self_to_type(name_pin.binder)
-              # @sg-ignore Need to add nil check here
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
@@ -232,9 +228,11 @@ module Solargraph
               current_argument = arguments[index]
               next unless current_argument&.literal?
               # @type [Solargraph::Source::Chain::Literal]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               last_link = current_argument.links.last
               argument_value = last_link.value
 
+              # @sg-ignore Need to add nil check here
               param.name == factory_param.param_name && argument_value == factory_param.value
             end
           end
@@ -257,7 +255,7 @@ module Solargraph
             #   generic<Elem>' is because we lose 'rooted' information
             #   in the 'Chain::Array' class internally, leaving
             #   ::Array#each shadowed when it shouldn't be.
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -273,7 +271,7 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -289,18 +287,18 @@ module Solargraph
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
             txt = named.tag.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
@@ -352,15 +350,15 @@ module Solargraph
 
           # @param signature_pin [Pin::Signature]
           method_pin.signatures.map(&:block).compact.map do |signature_pin|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return_type = signature_pin.return_type.qualify(api_map, *name_pin.gates)
             signature_pin.proxy(return_type)
           end
         end
 
-        # @param type [ComplexType]
+        # @param type [ComplexType, ComplexType::UniqueType]
         # @param context [ComplexType, ComplexType::UniqueType]
-        # @return [ComplexType]
+        # @return [ComplexType, ComplexType::UniqueType]
         def with_params type, context
           return type unless type.to_s.include?('$')
           ComplexType.try_parse(type.to_s.gsub('$', context.value_types.map(&:rooted_tag).join(', ')).gsub('<>', ''))
@@ -380,7 +378,7 @@ module Solargraph
         def block_symbol_call_type api_map, context, block_parameter_types, locals
           # Ruby's shorthand for sending the passed in method name
           # to the first yield parameter with no arguments
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Use &. to suppress false alarm
           block_symbol_name = block.links.first.word
           block_symbol_call_path = "#{block_parameter_types.first}##{block_symbol_name}"
           callee = api_map.get_path_pins(block_symbol_call_path).first
@@ -388,7 +386,7 @@ module Solargraph
           # @todo: Figure out why we get unresolved generics at
           #   this point and need to assume method return types
           #   based on the generic type
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Use &. to suppress false alarm
           return_type ||= api_map.get_path_pins("#{context.subtypes.first}##{block.links.first.word}").first&.return_type
           return_type || ComplexType::UNDEFINED
         end
@@ -396,11 +394,11 @@ module Solargraph
         # @param api_map [ApiMap]
         # @return [Pin::Block, nil]
         def find_block_pin api_map
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Use &. to suppress false alarm
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
           block_pins = api_map.get_block_pins
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1399
           block_pins.find { |pin| pin.location.contain?(node_location) }
         end
 
@@ -415,7 +413,7 @@ module Solargraph
           # We use the block pin as the closure, as the parameters
           # here will only be defined inside the block itself and we
           # need to be able to see them
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore Use &. to suppress false alarm
           block.infer(api_map, block_pin, locals)
         end
 

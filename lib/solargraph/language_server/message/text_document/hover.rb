@@ -13,9 +13,12 @@ module Solargraph
             last_link = nil
             suggestions&.each do |pin|
               parts = []
+              # @sg-ignore https://github.com/apiology/solargraph/pull/139
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               parts.push this_link if !this_link.nil? && this_link != last_link
+              # @sg-ignore https://github.com/apiology/solargraph/pull/139
               parts.push "`#{pin.detail}`" unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
+              # @sg-ignore https://github.com/apiology/solargraph/pull/139
               parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               unless parts.empty?
                 data = parts.join("\n\n")
@@ -29,8 +32,9 @@ module Solargraph
             )
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
             Logging.logger.warn e.backtrace.join("\n")
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             set_result nil
           end
 

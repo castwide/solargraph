@@ -18,8 +18,10 @@ module Solargraph
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
         # @return [Array<Class<NodeProcessor::Base>>]
+        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
         def register type, cls
           @@processors[type] ||= []
+          # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
           @@processors[type] << cls
         end
 
@@ -28,11 +30,12 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @@processors[type].delete(cls)
         end
       end
 
-      # @param node [Parser::AST::Node]
+      # @param node [Parser::AST::Node, nil]
       # @param region [Region]
       # @param pins [Array<Pin::Base>]
       # @param locals [Array<Pin::LocalVariable>]
@@ -47,9 +50,11 @@ module Solargraph
           )
         end
         return [pins, locals, ivars] unless Parser.is_ast_node?(node)
+        # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
         node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
         node_processor_classes.each do |klass|
+          # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
           processor = klass.new(node, region, pins, locals, ivars)
           process_next = processor.process
 

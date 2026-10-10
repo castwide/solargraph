@@ -6,7 +6,7 @@ module Solargraph
       # @return [::Symbol]
       attr_reader :decl
 
-      # @return [String]
+      # @return [String, nil]
       attr_reader :asgn_code
 
       # allow this to be set to the method after the method itself has
@@ -63,7 +63,7 @@ module Solargraph
       end
 
       def kwrestarg?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         decl == :kwrestarg || (assignment && %i[HASH hash].include?(assignment.type))
       end
 
@@ -174,14 +174,13 @@ module Solargraph
                     end
       end
 
-      # @sg-ignore super always sets @return_type to something
       # @return [ComplexType]
       def return_type
         if @return_type.nil?
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
           if @return_type.undefined?
             case decl
             when :restarg
@@ -198,11 +197,11 @@ module Solargraph
 
       # The parameter's zero-based location in the block's signature.
       #
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1393
       # @return [Integer]
       def index
         method_pin = closure
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         method_pin.parameter_names.index(name)
       end
 
@@ -234,7 +233,7 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle attrs
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?
@@ -249,18 +248,19 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params = closure.docstring.tags(:param)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         params.each do |p|
           return p if p.name == name
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
+      # @sg-ignore Use fetch(i) for an index already bounds-checked
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
@@ -270,7 +270,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1393
         meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
         # meths.shift # Ignore the first one
         meths.each do |meth|
@@ -281,12 +281,13 @@ module Solargraph
             found = p
             break
           end
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
             found = params[index]
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
-                                                               # @sg-ignore Need to add nil check here
+                                                               # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                                                                *meth.closure.gates)
           end
         end
@@ -319,12 +320,13 @@ module Solargraph
         return nil if skip.include?(ref)
         skip.push ref
         parts = ref.split(/[.#]/)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         if parts.first.empty?
           path = "#{namespace}#{ref}"
         else
           fqns = api_map.qualify(parts.first, namespace)
           return nil if fqns.nil?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           path = fqns + ref[parts.first.length] + parts.last
         end
         pins = api_map.get_path_pins(path)

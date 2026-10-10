@@ -72,7 +72,7 @@ module Solargraph
           attr_reader :current
 
           # @return [Gem::Version]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           def available
             if !@available && !@fetched
               @fetched = true
@@ -99,7 +99,7 @@ module Solargraph
             @fetched ||= false
           end
 
-          # @return [String, nil]
+          # @return [String, Hash, nil]
           attr_reader :error
         end
       end

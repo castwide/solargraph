@@ -39,14 +39,15 @@ module Solargraph
         parameters_type = nil
         unless substring.empty?
           subs = ComplexType.parse(substring[1..-2], partial: true)
-          # @sg-ignore Need to add nil check here
           parameters_type = PARAMETERS_TYPE_BY_STARTING_TAG.fetch(substring[0])
           if parameters_type == :hash
             unless !subs.is_a?(ComplexType) && (subs.length == 2) && !subs[0].is_a?(UniqueType) && !subs[1].is_a?(UniqueType)
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring}"
             end
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           elsif parameters_type == :list && name == 'Hash'
             # Treat Hash<A, B> as Hash{A => B}
@@ -54,13 +55,15 @@ module Solargraph
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring} - must have exactly two parameters"
             end
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           else
             subtypes.concat subs
           end
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Need better generic inference here
         new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
@@ -342,6 +345,7 @@ module Solargraph
       # @return [String]
       def rbs_union types
         if types.length == 1
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           types.first.to_rbs
         else
           "(#{types.map(&:to_rbs).join(' | ')})"
@@ -383,11 +387,11 @@ module Solargraph
       # @param context_type [ComplexType, UniqueType, nil]
       # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
       # @return [UniqueType, ComplexType]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1309
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
           return self unless generics_to_resolve.include? type_param
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
             # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
@@ -395,11 +399,11 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               complex_type.resolve_generics_from_context(generics_to_resolve, nil,
                                                          resolved_generic_values: resolved_generic_values)
             end
           end
-          # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
           return resolved_generic_values[type_param] || self
         end
 
@@ -419,6 +423,7 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]
@@ -439,7 +444,7 @@ module Solargraph
       # parameters used in this type, and return a new type if
       # possible.
       #
-      # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
+      # @param definitions [Pin::Namespace, Pin::Method, nil] The module/class/method which uses generic types
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
@@ -547,6 +552,8 @@ module Solargraph
         yield new_type
       end
 
+      # @param named_types [Hash{String => UniqueType}]
+      # @return [UniqueType]
       def expand named_types
         named_types[name] || self
       end

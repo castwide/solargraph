@@ -10,6 +10,7 @@ module Solargraph
                                         params['position']['character'], strip: true)
             changes = {}
             locs.each do |loc|
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               uri = file_to_uri(loc.filename)
               changes[uri] ||= []
               changes[uri].push({

@@ -22,10 +22,10 @@ module Solargraph
       # @return [String]
       attr_reader :name
 
-      # @return [String]
+      # @return [String, nil]
       attr_reader :path
 
-      # @return [::Symbol]
+      # @return [::Symbol, nil]
       attr_accessor :source
 
       # @type [::Numeric, nil] A priority for determining if pins should be combined or not
@@ -42,7 +42,7 @@ module Solargraph
       # @param closure [Solargraph::Pin::Closure, nil]
       # @param name [String]
       # @param comments [String, nil]
-      # @param source [Symbol, nil]
+      # @param source [::Symbol, nil]
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
@@ -134,7 +134,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_longer other, attr
         # @type [undefined]
@@ -157,6 +157,7 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_closure other
         choose_pin_attr_with_same_name(other, :closure)
       end
@@ -235,7 +236,7 @@ module Solargraph
       # @param other [Pin::Base]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined, nil]
       def choose other, attr
         results = [self, other].map(&attr).compact
@@ -251,7 +252,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_node other, attr
         if other.object_id < attr.object_id
@@ -263,7 +264,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def prefer_rbs_location other, attr
         if rbs_location? && !other.rbs_location?
@@ -305,7 +306,7 @@ module Solargraph
         values1 = arr1.map(&)
         # @type [undefined]
         values2 = arr2.map(&)
-        # @sg-ignore
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         return arr1 if values1 == values2
         Solargraph.assert_or_log(:"combine_with_#{attr}",
                                  "Inconsistent #{attr.inspect} values between \nself =#{inspect} and \nother=#{other.inspect}:\n\n self values = #{values1}\nother values =#{attr} = #{values2}")
@@ -332,7 +333,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def assert_same other, attr
         if other.nil?
@@ -350,7 +351,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore
+      # @sg-ignore Missing @return tag
       # @return [undefined]
       def choose_pin_attr_with_same_name other, attr
         # @type [Pin::Base, nil]
@@ -431,7 +432,7 @@ module Solargraph
       # parameters used in this method based on the parameters passed
       # into the its class and return a new method pin.
       #
-      # @param definitions [Pin::Namespace] The module/class which uses generic types
+      # @param definitions [Pin::Namespace, nil] The module/class which uses generic types
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
@@ -452,7 +453,7 @@ module Solargraph
       # @return [String, nil]
       def filename
         return nil if location.nil?
-        # @sg-ignore flow sensitive typing needs to handle attrs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         location.filename
       end
 
@@ -488,18 +489,18 @@ module Solargraph
       # @return [Boolean]
       def nearly? other
         instance_of?(other.class) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           name == other.name &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           (comments == other.comments ||
-           # @sg-ignore Translate to something flow sensitive typing understands
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
            (((maybe_directives? == false && other.maybe_directives? == false) ||
              compare_directives(directives,
-                                # @sg-ignore Translate to something flow sensitive typing understands
+                                # @sg-ignore https://github.com/castwide/solargraph/pull/1367
                                 other.directives)) &&
-             # @sg-ignore Translate to something flow sensitive typing understands
+             # @sg-ignore https://github.com/castwide/solargraph/pull/1367
              compare_docstring_tags(docstring, other.docstring))
           )
       end
@@ -539,6 +540,7 @@ module Solargraph
         @macros ||= collect_macros
       end
 
+      # @return [Array<String>]
       def macro_names
         parse_comments unless @macro_names
         @macro_names ||= collect_macro_names
@@ -757,6 +759,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
+          # @sg-ignore Use fetch(i) for an index already bounds-checked
           return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
@@ -768,6 +771,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
+          # @sg-ignore Use fetch(i) for an index already bounds-checked
           return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true
@@ -793,6 +797,7 @@ module Solargraph
         end
       end
 
+      # @return [Array<String>]
       def collect_macro_names
         "#{comments}\n".scan(/\s*?@macro +(\S+).*?[\n]/).map { |match| match[0] }
       end

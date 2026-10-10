@@ -7,13 +7,13 @@ module Solargraph
   #   bundle or dependency updates
   #
   class External
-    # @return [String]
+    # @return [String, nil]
     attr_reader :directory
 
     # @return [Array<String>]
     attr_reader :requires
 
-    # @param directory [String]
+    # @param directory [String, nil]
     # @param requires [Array<String>]
     def initialize directory, requires
       @repo = Repo.new(directory)
@@ -22,22 +22,27 @@ module Solargraph
       update!
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       @unresolved_requires ||= []
     end
 
+    # @return [Array<String>]
     def unresolved_dependencies
       @unresolved_dependencies ||= []
     end
 
+    # @return [Set<Metagem>]
     def loaded_gems
       @loaded_gems ||= Set.new
     end
 
+    # @return [Set<Metagem>]
     def unloaded_gems
       @unloaded_gems ||= Set.new
     end
 
+    # @return [Array<Pin::Base>]
     def pins
       @pins ||= []
     end
@@ -65,6 +70,7 @@ module Solargraph
     # @return [String, nil]
     def rbs_collection_config_path
       # @todo Get rid of the '*' case
+      # @sg-ignore a nil? guard does not narrow a method call, only a local
       @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)
@@ -73,6 +79,7 @@ module Solargraph
 
     private
 
+    # @return [void]
     def update!
       @generation = generation + 1
       clear_all
@@ -84,6 +91,7 @@ module Solargraph
       unloaded_gems.any? { |gem| Collection::Gem.cached?(gem) }
     end
 
+    # @return [void]
     def load_requires
       bundler_require = false
 
@@ -92,6 +100,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
           pins.concat Collection::Stdlib.load(path)
         else
           metagem = @repo.find_by_path(path)
@@ -105,11 +114,13 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    # @return [void]
     def load_rbs_collection
       rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
       pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
     end
 
+    # @return [void]
     def clear_all
       pins.clear
       unresolved_requires.clear
@@ -118,23 +129,29 @@ module Solargraph
       unloaded_gems.clear
     end
 
+    # @param metagem [Metagem]
+    # @return [void]
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
       if metagem.cacheable?
         if Collection::Gem.cached?(metagem)
           loaded_gems.add metagem
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
           pins.concat Collection::Gem.load(metagem)
         else
           unloaded_gems.add metagem
         end
       else
         loaded_gems.add metagem
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         pins.concat Collection::Gem.load(metagem)
       end
       load_dependencies metagem
     end
 
+    # @param parent [Metagem]
+    # @return [void]
     def load_dependencies parent
       parent.dependencies.each do |name|
         next if loaded_gems.map(&:name).include?(name) || unloaded_gems.map(&:name).include?(name)
@@ -152,6 +169,7 @@ module Solargraph
       [File.expand_path(yaml.fetch('path'), directory)].concat(
         yaml.fetch('sources', [])
             .select { |source| source['type'] == 'local' && source['path'] }
+            # @sg-ignore YAML.safe_load yields untyped members
             .map { |source| File.expand_path(source['path'], directory) }
       ).compact
     end

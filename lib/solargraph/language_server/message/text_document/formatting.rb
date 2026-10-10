@@ -84,11 +84,10 @@ module Solargraph
           end
 
           # @param config [Hash{String => String}]
-          # @sg-ignore
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore
+              # @sg-ignore Unresolved constant BlankRubocopFormatter
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])
@@ -97,12 +96,12 @@ module Solargraph
             end
           end
 
-          # @param value [Array, String]
+          # @param value [Array, String, nil]
           #
           # @return [String, nil]
           def cop_list value
             # @type [String]
-            # @sg-ignore Translate to something flow sensitive typing understands
+            # @sg-ignore flow sensitive typing needs to expand types after respond_to?
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value
@@ -125,6 +124,7 @@ module Solargraph
                      else
                        {
                          line: original.lines.length - 1,
+                         # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
                          character: original.lines.last.length
                        }
                      end

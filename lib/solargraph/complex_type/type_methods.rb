@@ -144,6 +144,7 @@ module Solargraph
         @namespace ||= lambda do
           return 'Object' if duck_type?
           return 'NilClass' if nil_type?
+          # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
           %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end

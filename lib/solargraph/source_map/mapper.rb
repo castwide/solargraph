@@ -17,7 +17,7 @@ module Solargraph
       # Generate the data.
       #
       # @param source [Source]
-      # @return [Array]
+      # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
       def map source
         @source = source
         @filename = source.filename
@@ -35,9 +35,9 @@ module Solargraph
         #   [[], []]
       end
 
-      # @param filename [String]
+      # @param filename [String, nil]
       # @param code [String]
-      # @return [Array]
+      # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
       def unmap filename, code
         s = Position.new(0, 0)
         e = Position.from_offset(code, code.length)
@@ -47,9 +47,8 @@ module Solargraph
 
       class << self
         # @param source [Source]
-        # @return [Array]
+        # @return [Array(Array<Pin::Base>, Array<Pin::LocalVariable>)]
         def map source
-          # @sg-ignore Need to add nil check here
           return new.unmap(source.filename, source.code) unless source.parsed?
           new.map source
         end
@@ -86,7 +85,7 @@ module Solargraph
       def find_directive_line_number comment, tag, start
         # Avoid overruning the index
         return start unless start < comment.lines.length
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         num = comment.lines[start..].find_index do |line|
           # Legacy method directives might be `@method` instead of `@!method`
           # @todo Legacy syntax should probably emit a warning
@@ -127,7 +126,7 @@ module Solargraph
             started = true
           elsif started && !p.strip.empty?
             cur = p.index(/[^ ]/)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             num = cur if cur < num
           end
           ctxt += p[num..].to_s if started
@@ -139,6 +138,8 @@ module Solargraph
       def process_comment_directives
         return unless @code.encode('UTF-8', invalid: :replace, replace: '?') =~ DIRECTIVE_REGEXP
         code_lines = @code.lines
+        # @param line [Integer]
+        # @param comments [Array<String>]
         @source.associated_comments.each do |line, comments|
           src_pos = if line
                       Position.new(line,
@@ -148,7 +149,6 @@ module Solargraph
                         code_lines.length, 0
                       )
                     end
-          # @sg-ignore Need to add nil check here
           com_pos = Position.new(line + 1 - comments.length, 0)
           process_comment(src_pos, com_pos, comments.join(''))
         end

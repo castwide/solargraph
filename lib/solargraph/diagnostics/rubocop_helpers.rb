@@ -25,7 +25,7 @@ module Solargraph
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
-                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
+                "did find: [#{specs.map { |s| s.version.to_s }.join(', ')}]"
         end
         require 'rubocop'
       end
@@ -39,7 +39,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore
+        # @sg-ignore Unresolved call to []=
         options[:stdin] = code
         [options, paths]
       end
@@ -51,7 +51,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         path[0].upcase + path[1..]
       end
 

@@ -37,6 +37,7 @@ module Solargraph
 
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
+        # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
         def select path
           if method_map.key?(path)
             method_map[path]

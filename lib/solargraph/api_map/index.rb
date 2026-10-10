@@ -5,10 +5,10 @@ module Solargraph
     class Index
       include Logging
 
-      # @return [Array<String>]
+      # @return [Set<String>]
       attr_reader :macro_method_names
 
-      # @return [Hash{String => Array<Pin::Method>}]
+      # @return [Hash{String => Set<Pin::Method>}]
       attr_reader :macro_method_name_pins
 
       # @param pins [Array<Pin::Base>]
@@ -23,22 +23,22 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Namespace>}]
       def namespace_hash
-        # @param h [String]
-        # @param k [Array<Pin::Namespace>]
+        # @param h [Hash{String => Array<Pin::Namespace>}]
+        # @param k [String]
         @namespace_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      # @return [Hash{String => Array<Pin::Base>}]
+      # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
       def pin_class_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{Class<Pin::Base> => Array<Pin::Base>}]
+        # @param k [Class<Pin::Base>]
         @pin_class_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
       # @return [Hash{String => Array<Pin::Base>}]
       def path_pin_hash
-        # @param h [String]
-        # @param k [Array<Pin::Base>]
+        # @param h [Hash{String => Array<Pin::Base>}]
+        # @param k [String]
         @path_pin_hash ||= Hash.new { |h, k| h[k] = [] }
       end
 
@@ -133,17 +133,20 @@ module Solargraph
         @pin_select_cache = {}
         pins.concat new_pins
         set = new_pins.to_set
-        # @param k [String]
+        # @param k [Class<Pin::Base>]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
+           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
+           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
+           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
@@ -179,13 +182,10 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
+          # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
-              # @sg-ignore Wrong argument type for
-              #   YARD::Docstring#delete_tags: name expected String,
-              #   received String, Symbol - delete_tags is ok with a
-              #   _ToS, but we should fix anyway
               pin.docstring.delete_tags tag
               new_pin&.docstring&.delete_tags tag
             end
@@ -220,6 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
+          # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
           factory_parameter_hash[fp.method_path] << fp
         end
       end

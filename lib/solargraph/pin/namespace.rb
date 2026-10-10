@@ -14,6 +14,8 @@ module Solargraph
       # does not assert like super, as a namespace without a closure
       # may be the root level namespace, or it may not yet be
       # qualified
+      # @return [Solargraph::Pin::Closure, nil]
+      # @sg-ignore flow sensitive typing needs better handling of reassignment in #initialize
       attr_reader :closure
 
       # @param type [::Symbol] :class or :module
@@ -39,7 +41,7 @@ module Solargraph
           closure_name = if [Solargraph::Pin::ROOT_PIN, nil].include?(closure)
                            ''
                          else
-                           # @sg-ignore Need to add nil check here
+                           # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                            "#{closure.full_context.namespace}::"
                          end
           closure_name += parts.join('::')
@@ -56,6 +58,7 @@ module Solargraph
       end
 
       def to_rbs
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         "#{@type} #{return_type.all_params.first.to_rbs}#{rbs_generics}".strip
       end
 
