@@ -255,7 +255,7 @@ module Solargraph
             #   generic<Elem>' is because we lose 'rooted' information
             #   in the 'Chain::Array' class internally, leaving
             #   ::Array#each shadowed when it shouldn't be.
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -271,7 +271,7 @@ module Solargraph
           pin.directives.each do |dir|
             macro = api_map.named_macro(dir.tag.name)
             next if macro.nil?
-            # @sg-ignore macro is Solargraph::YardMap::Macro, wraps a YARD::Tags::MacroDirective
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result = inner_process_macro(pin, macro, api_map, context, locals)
             return result unless result.return_type.undefined?
           end
@@ -287,18 +287,18 @@ module Solargraph
         def inner_process_macro pin, macro, api_map, context, locals
           vals = arguments.map { |c| Pin::ProxyType.anonymous(c.infer(api_map, pin, locals), source: :chain) }
           txt = macro.tag.text.clone
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if txt.empty? && macro.tag.name
             named = api_map.named_macro(macro.tag.name)
             txt = named.tag.text.clone if named
           end
           i = 1
           vals.each do |v|
-            # @sg-ignore nil false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             txt.gsub!(/\$#{i}/, v.context.namespace)
             i += 1
           end
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           docstring = Solargraph::Source.parse_docstring(txt).to_docstring
           tag = docstring.tag(:return)
           unless tag.nil? || tag.types.nil?
