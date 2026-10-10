@@ -73,14 +73,13 @@ module Solargraph
       #   does not match inferred type nil, false for
       #   Solargraph::Pin::DelegatedMethod#resolve_method
       def resolve_method api_map
-        return if @resolved_method
+        chain = @receiver_chain
+        return if @resolved_method || chain.nil?
 
-        # @sg-ignore Need to add nil check here
-        resolver = @receiver_chain.define(api_map, self, []).first
+        resolver = chain.define(api_map, self, []).first
 
         unless resolver
-          # @sg-ignore Need to add nil check here
-          Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(@receiver_chain)}'"
+          Solargraph.logger.warn "Delegated receiver for #{path} was resolved to nil from `#{print_chain(chain)}'"
           return
         end
 
@@ -91,8 +90,7 @@ module Solargraph
         return if receiver_type.undefined?
 
         receiver_path, method_scope =
-          # @sg-ignore Need to add nil check here
-          if @receiver_chain.constant?
+          if chain.constant?
             # HACK: the `return_type` of a constant is Class<Whatever>, but looking up a method expects
             # the arguments `"Whatever"` and `scope: :class`.
             # @sg-ignore Need to add nil check here
