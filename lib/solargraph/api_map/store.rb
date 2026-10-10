@@ -47,7 +47,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         # @type [Index]
         @index = @indexes.last.clone
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1104
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
