@@ -223,7 +223,7 @@ module Solargraph
       def transform_types &transform
         # @todo 'super' alone should work here I think, but doesn't typecheck at level typed
         callable = super(&transform)
-        callable.block = block.transform_types(&transform) if block?
+        callable.block = callable.block.transform_types(&transform) if callable.block
         callable.parameters = parameters.map do |param|
           param.transform_types(&transform)
         end
