@@ -19,7 +19,7 @@ module Solargraph
           region = Parser::Region.new(source: src, closure: ns)
           # @todo These pins may need to be marked not explicit
           old_pins_index = pins.length
-          # @sg-ignore nil false alarm
+          # @sg-ignore Use fetch(i) for an index already bounds-checked
           loff = if source.code.lines[comment_position.line].strip.end_with?('@!parse')
                    comment_position.line + 1
                  else
