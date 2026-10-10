@@ -111,6 +111,19 @@ module Solargraph
         raw_data['plugins']
       end
 
+      # Require the configured plugins, recording each one that loads in
+      # the gem cache key.
+      #
+      # @return [void]
+      def require_plugins
+        plugins.each do |plugin|
+          require plugin
+          CacheDir.add_plugin plugin
+        rescue LoadError
+          Solargraph.logger.warn "Failed to load plugin '#{plugin}'"
+        end
+      end
+
       # The maximum number of files to parse from the workspace.
       #
       # @sg-ignore Need to validate config

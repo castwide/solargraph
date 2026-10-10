@@ -66,7 +66,7 @@ describe Solargraph::Workspace do
     calculated = Array.new(Solargraph::Workspace::Config::MAX_FILES + 1) { gemspec_file }
     # @todo Mock reveals tight coupling
     config = instance_double(Solargraph::Workspace::Config, calculated: calculated, max_files: 0, allow?: true,
-                                                            require_paths: [], plugins: [])
+                                                            require_paths: [], require_plugins: nil)
     expect do
       described_class.new('.', config)
     end.not_to raise_error
@@ -140,7 +140,7 @@ describe Solargraph::Workspace do
 
   it 'rescues errors loading files into sources' do
     config = instance_double(Solargraph::Workspace::Config, directory: './path',
-                                                            calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], plugins: [])
+                                                            calculated: ['./path/does_not_exist.rb'], max_files: 5000, require_paths: [], require_plugins: nil)
     expect do
       described_class.new('./path', config)
     end.not_to raise_error
