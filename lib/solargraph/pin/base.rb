@@ -435,6 +435,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
+        definitions = declaring_definitions(definitions)
         transform_types { |t| t&.resolve_generics(definitions, context_type) }
       end
 
@@ -730,6 +731,19 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # Declarations of a reopened generic may spell its parameters
+      # differently, so bind by position against this pin's own one.
+      #
+      # @param definitions [Pin::Namespace, nil]
+      # @return [Pin::Namespace, nil]
+      def declaring_definitions definitions
+        own = closure
+        return definitions unless definitions.is_a?(Pin::Namespace) && own.is_a?(Pin::Namespace)
+        return definitions unless own.path == definitions.path && own.generics.length == definitions.generics.length
+
+        own
+      end
 
       # @return [void]
       def parse_comments

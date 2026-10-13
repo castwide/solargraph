@@ -93,6 +93,50 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    context 'with a module reopened under a differently spelled type parameter' do
+      subject(:method_pin) { api_map.get_method_stack('StringBox', 'declared_second').first }
+
+      let(:rbs) do
+        <<~RBS
+          module Boxy[unchecked out E]
+            def declared_first: () -> ::Array[E]
+          end
+
+          module Boxy[unchecked out Elem]
+            def declared_second: () -> ::Array[Elem]
+          end
+
+          class StringBox
+            include Boxy[::String]
+          end
+        RBS
+      end
+
+      it 'binds the parameter by position' do
+        expect(method_pin.return_type.tag).to eq('Array<String>')
+      end
+    end
+
+    context 'with a class reopened under a differently spelled type parameter' do
+      subject(:method_pin) { api_map.get_method_stack('Box<String>', 'declared_second').first }
+
+      let(:rbs) do
+        <<~RBS
+          class Box[unchecked out E]
+            def declared_first: () -> ::Array[E]
+          end
+
+          class Box[unchecked out Elem]
+            def declared_second: () -> ::Array[Elem]
+          end
+        RBS
+      end
+
+      it 'binds the parameter by position' do
+        expect(method_pin.return_type.tag).to eq('Array<String>')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
