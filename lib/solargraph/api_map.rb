@@ -144,12 +144,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
-          # @sg-ignore flow sensitive typing needs better guard support
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
-          # @sg-ignore flow sensitive typing needs better guard support
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end
@@ -183,11 +183,11 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
-    # @sg-ignore flow sensitive typing needs better guard support
+    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -638,7 +638,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -657,7 +657,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
@@ -670,7 +670,7 @@ module Solargraph
     #
     # @param filename [String, nil]
     # @return [SourceMap]
-    # @sg-ignore flow sensitive typing needs better guard support
+    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
