@@ -93,7 +93,6 @@ module Solargraph
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
-        # @sg-ignore Array#first/#last relies on non-empty invariant
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 

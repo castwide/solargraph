@@ -44,7 +44,6 @@ module Solargraph
               obj.add_file(pin.location.filename, pin.location.range.start.line, !pin.comments.empty?)
             end
           end
-          # @sg-ignore flow sensitive typing needs better handling of ||= on Hash elements
           code_object_map[pin.path].docstring = pin.docstring
           store.get_includes(pin.path).each do |ref|
             include_object = code_object_at(pin.path, YARD::CodeObjects::ClassObject)

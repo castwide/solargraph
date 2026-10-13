@@ -6,6 +6,7 @@ module Solargraph
   class RbsCollection
     attr_reader :lockfile
 
+    # @param lockfile [String, nil]
     def initialize lockfile
       @lockfile = File.expand_path(lockfile) if lockfile
     end
@@ -18,6 +19,7 @@ module Solargraph
       mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
     end
 
+    # @return [Array<String>]
     def gem_keys
       gem_path_map.keys
     end
@@ -36,6 +38,7 @@ module Solargraph
 
     private
 
+    # @return [Hash{String => String, nil}]
     def gem_path_map
       @gem_path_map ||= raw_data[:gems].to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }
     end
@@ -48,6 +51,8 @@ module Solargraph
                                            .transform_values { |gems| gems.map { |gem| gem[:version].to_s } }
     end
 
+    # @param metagem [Metagem]
+    # @return [String, nil]
     def best_key metagem
       key = "#{metagem.name}-#{metagem.version}"
       return key if gem_path_map.key?(key)
@@ -92,6 +97,7 @@ module Solargraph
     end
 
     # @param gem_hash [Hash]
+    # @return [String, nil]
     def gem_source_path gem_hash
       root_path = gem_hash.dig(:source, :path) || raw_data[:path]
       return unless root_path
@@ -99,6 +105,7 @@ module Solargraph
       File.expand_path(gem_path, File.dirname(lockfile))
     end
 
+    # @return [String, nil]
     def gem_rbs_collection_path
       @gem_rbs_collection_path ||= File.expand_path(raw_data[:path]) if raw_data[:path]
     end
@@ -112,6 +119,7 @@ module Solargraph
                     end
     end
 
+    # @return [Hash{String => Array<Pin::Base>}]
     def mem_cache
       @mem_cache ||= {}
     end

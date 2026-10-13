@@ -154,7 +154,6 @@ module Solargraph
     # @param updater [Source::Updater]
     # @return [void]
     def synchronize! updater
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       source_hash[updater.filename] = source_hash[updater.filename].synchronize(updater)
     end
 

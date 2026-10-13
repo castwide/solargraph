@@ -61,7 +61,6 @@ module Solargraph
   CHDIR_MUTEX = Mutex.new
 
   def self.asserts_on?
-    # @sg-ignore flow sensitive typing needs to handle repeated pure calls
     if ENV['SOLARGRAPH_ASSERTS'].nil? || ENV['SOLARGRAPH_ASSERTS'].empty?
       false
     elsif ENV['SOLARGRAPH_ASSERTS'] == 'on'

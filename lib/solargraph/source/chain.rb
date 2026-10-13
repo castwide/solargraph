@@ -130,9 +130,7 @@ module Solargraph
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
         end
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         links.last.last_context = working_pin
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         links.last.resolve(api_map, working_pin, locals)
       end
 
@@ -170,7 +168,6 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
@@ -189,7 +186,6 @@ module Solargraph
       # @return [Boolean]
       # @sg-ignore false "return type could not be inferred"
       def require_parameter?
-        # @sg-ignore false "Unresolved call to require_parameter? on Solargraph::Source::Chain::Link"
         links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
       end
 

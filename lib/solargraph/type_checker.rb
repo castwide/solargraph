@@ -361,10 +361,8 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1392
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1392
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
             end
             @marked_ranges.push rng
@@ -766,7 +764,6 @@ module Solargraph
         if any_splatted_call?(unchecked.map(&:node))
           settled_kwargs = parameters.count(&:keyword?)
         else
-          # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
           kwargs = convert_hash(unchecked.last.node)
           if parameters.any? { |param| %i[kwarg kwoptarg].include?(param.decl) || param.kwrestarg? }
             if kwargs.empty?
@@ -779,7 +776,6 @@ module Solargraph
                   kwargs.delete param.name.to_sym
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                   last_arg_last_link = arguments.last.links.last
                   # @sg-ignore https://github.com/castwide/solargraph/issues/1251
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
@@ -806,7 +802,6 @@ module Solargraph
         end
         return [] if arguments.length - req == parameters.select { |p| %i[optarg kwoptarg].include?(p.decl) }.length
         return [Problem.new(location, "Too many arguments to #{pin.path}")]
-      # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
       elsif unchecked.length < req - settled_kwargs && (arguments.empty? || (!arguments.last.splat? && !arguments.last.links.last.is_a?(Solargraph::Source::Chain::Hash)))
         # HACK: Kernel#raise signature is incorrect in Ruby 2.7 core docs.
         # See https://github.com/castwide/solargraph/issues/418

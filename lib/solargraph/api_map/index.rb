@@ -136,17 +136,14 @@ module Solargraph
         # @param k [Class<Pin::Base>]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
-           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
-           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
-           # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
@@ -220,7 +217,6 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
-          # @sg-ignore Hash#[] on a Hash.new default-block hash never returns nil
           factory_parameter_hash[fp.method_path] << fp
         end
       end

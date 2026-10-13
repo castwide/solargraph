@@ -124,7 +124,6 @@ module Solargraph
                      else
                        {
                          line: original.lines.length - 1,
-                         # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
                          character: original.lines.last.length
                        }
                      end
