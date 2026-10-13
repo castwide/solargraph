@@ -14,6 +14,20 @@ describe Solargraph::Source::Chain::Call do
     expect(type.tag).to eq('String')
   end
 
+  it 'recognizes that the count overload of a core method is not nilable' do
+    pending 'https://github.com/castwide/solargraph/pull/1316'
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      # @type [Array<String>]
+      arr = []
+      arr.first(1)
+    ))
+    api_map.map source
+    chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
+    type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map(nil).locals)
+    expect(type.rooted_tags).to eq('::Array<::String>')
+  end
+
   it 'recognizes core methods that return self' do
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
