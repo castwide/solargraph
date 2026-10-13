@@ -37,7 +37,6 @@ module Solargraph
       # @param other [self]
       #
       # @return [Pin::Signature, nil]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_blocks other
         if block.nil?
           other.block

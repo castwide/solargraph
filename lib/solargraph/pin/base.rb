@@ -157,7 +157,6 @@ module Solargraph
 
       # @param other [self]
       # @return [Pin::Closure, nil]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def combine_closure other
         choose_pin_attr_with_same_name(other, :closure)
       end
@@ -351,8 +350,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore Missing @return tag
-      # @return [undefined]
+      # @return [Pin::Base, nil]
       def choose_pin_attr_with_same_name other, attr
         # @type [Pin::Base, nil]
         val1 = send(attr)
@@ -372,8 +370,8 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore Missing @return tag for Solargraph::Pin::Base#choose_pin_attr
-      # @return [undefined]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+      # @return [Pin::Base, nil]
       def choose_pin_attr other, attr
         # @type [Pin::Base, nil]
         val1 = send(attr)
@@ -715,7 +713,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore def should infer as symbol - "Not enough arguments to Module#protected"
+      # @return [Array]
       def equality_fields
         [name, location, type_location, closure, source]
       end
