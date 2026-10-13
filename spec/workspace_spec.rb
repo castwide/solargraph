@@ -48,6 +48,15 @@ describe Solargraph::Workspace do
     expect(workspace.filenames).to eq([file_path])
   end
 
+  it 'synchronizes a file in the workspace' do
+    original = workspace.source(file_path)
+    change = Solargraph::Source::Change.new(nil, 'puts "updated"')
+    updater = Solargraph::Source::Updater.new(file_path, original.version + 1, [change])
+    workspace.synchronize!(updater)
+
+    expect(workspace.source(file_path).code).to eq('puts "updated"')
+  end
+
   it 'removes deleted sources' do
     expect(workspace.filenames).to include(file_path)
 

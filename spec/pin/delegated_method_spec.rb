@@ -47,4 +47,50 @@ describe Solargraph::Pin::DelegatedMethod do
 
     expect(pin.return_type.to_s).to eq('String')
   end
+
+  it 'resolves a class method on a constant receiver' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Class1
+        # @return [String]
+        def self.make; end
+      end
+
+      class Class2; end
+    ))
+    api_map.map source
+
+    class2 = api_map.get_path_pins('Class2').first
+
+    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Constant.new('Class1')])
+    pin = described_class.new(
+      closure: class2,
+      scope: :class,
+      name: 'make',
+      receiver: chain
+    )
+
+    expect(pin.resolvable?(api_map)).to be(true)
+    expect(pin.return_type.to_s).to eq('String')
+  end
+
+  it 'is not resolvable when its receiver cannot be resolved' do
+    api_map = Solargraph::ApiMap.new
+    source = Solargraph::Source.load_string(%(
+      class Class2; end
+    ))
+    api_map.map source
+
+    class2 = api_map.get_path_pins('Class2').first
+
+    chain = Solargraph::Source::Chain.new([Solargraph::Source::Chain::Call.new('missing_collaborator', nil)])
+    pin = described_class.new(
+      closure: class2,
+      scope: :instance,
+      name: 'name',
+      receiver: chain
+    )
+
+    expect(pin.resolvable?(api_map)).to be(false)
+  end
 end
