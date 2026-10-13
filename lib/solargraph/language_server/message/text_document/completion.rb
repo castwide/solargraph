@@ -38,7 +38,7 @@ module Solargraph
             end
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore nil false alarm
+            # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
             Logging.logger.warn e.backtrace.join("\n")
             set_result empty_result
           end

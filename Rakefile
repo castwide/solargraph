@@ -69,7 +69,7 @@ def undercover
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore nil false alarm
+  # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'
