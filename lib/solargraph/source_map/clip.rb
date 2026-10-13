@@ -171,7 +171,7 @@ module Solargraph
         match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           # @sg-ignore Need to add nil check here
-          full = match[1]
+          full = match[1].to_s
           # @sg-ignore Need to add nil check here
           if full.include?('::')
             # @sg-ignore Need to add nil check here
