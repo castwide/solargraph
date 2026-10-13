@@ -36,7 +36,7 @@ module Solargraph
                             node.children[2]
                           end
 
-            # @sg-ignore Use &. to suppress false alarm
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             struct_definition_node?(struct_node)
           end
         end

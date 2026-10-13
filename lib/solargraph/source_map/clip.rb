@@ -169,18 +169,18 @@ module Solargraph
         if match
           # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           full = match[1]
-          # @sg-ignore Use .to_s on a MatchData capture that always participates
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if full.include?('::')
-            # @sg-ignore Use .to_s on a MatchData capture that always participates
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             if full.end_with?('::')
-              # @sg-ignore Use .to_s on a MatchData capture that always participates
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               result.concat api_map.get_constants(full[0..-3], *gates)
             else
-              # @sg-ignore Use .to_s on a MatchData capture that always participates
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               result.concat api_map.get_constants(full.split('::')[0..-2].join('::'), *gates)
             end
           else
-            # @sg-ignore Use .to_s on a MatchData capture that always participates
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result.concat api_map.get_constants('', full.end_with?('::') ? '' : context_pin.full_context.namespace, *gates) # .select { |pin| pin.name.start_with?(full) }
           end
         end

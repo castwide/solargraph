@@ -332,7 +332,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore Fix "Not enough arguments to Module#protected"
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def equality_fields
         [links, node]
       end
