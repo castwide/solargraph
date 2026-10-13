@@ -53,7 +53,7 @@ module Solargraph
         # @param [Integer] line1
         # @param [Integer] line2
         # @return [Boolean]
-        # @sg-ignore return type could not be inferred
+        # @sg-ignore nil false alarm
         def no_empty_lines? code, line1, line2
           # @sg-ignore Need better generic inference here
           code.lines[line1..line2].none? { |line| line.strip.empty? }

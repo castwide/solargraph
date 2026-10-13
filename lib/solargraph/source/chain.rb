@@ -187,7 +187,7 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore return type could not be inferred
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       def require_parameter?
         # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
