@@ -373,9 +373,9 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore Need better generic inference here
       def namespace_children name
-        index.namespace_hash.fetch(name, [])
+        return [] unless index.namespace_hash.key?(name)
+        index.namespace_hash[name]
       end
 
       # @return [Enumerable<Pin::InstanceVariable>]
