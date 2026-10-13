@@ -67,7 +67,7 @@ module Solargraph
       # @return [ComplexType]
       def infer
         result = cursor.chain.infer(api_map, closure, locals)
-        if result.tag == 'Class'
+        if result.tags == 'Class'
           # HACK: Exception to return BasicObject from Class#new
           dfn = cursor.chain.define(api_map, closure, locals).first
           return ComplexType.try_parse('::BasicObject') if dfn && dfn.path == 'Class#new'
@@ -218,7 +218,7 @@ module Solargraph
           end
         else
           type = cursor.chain.base.infer(api_map, closure, locals)
-          result.concat api_map.get_complex_type_methods(type, closure.binder.namespace, cursor.chain.links.length == 1)
+          result.concat type.candidate_methods_from(api_map, closure.binder.namespace, cursor.chain.links.length == 1)
           if cursor.chain.links.length == 1
             if cursor.word.start_with?('@@')
               return package_completions(api_map.get_class_variable_pins(context_pin.full_context.namespace))

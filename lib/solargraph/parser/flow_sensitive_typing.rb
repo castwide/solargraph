@@ -206,7 +206,7 @@ module Solargraph
       # @return [void]
       def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
-                               intersection_return_type: downcast_type,
+                               narrowed_return_type: downcast_type,
                                source: :flow_sensitive_typing,
                                presence: presence)
         if pin.is_a?(Pin::LocalVariable)
