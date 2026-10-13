@@ -219,7 +219,7 @@ module Solargraph
         params = param_details_from_stack(sig, stack)
         if rules.require_type_tags?
           sig.parameters.each do |par|
-            break if %i[restarg kwrestarg blockarg].include?(par.decl)
+            break if %i[restarg kwrestarg blockarg forward_args].include?(par.decl)
             unless params[par.name]
               if pin.attribute?
                 inferred = pin.probe(api_map).self_to_type(pin.full_context)
@@ -388,6 +388,7 @@ module Solargraph
       return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
       arguments = last_base_link.arguments
+      return [] if any_forwarded_args?(arguments.map(&:node))
 
       pins = base.define(api_map, closure_pin, locals)
 

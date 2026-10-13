@@ -197,6 +197,18 @@ module Solargraph
           nodes.any? { |n| splatted_call?(n) }
         end
 
+        # Anonymous `*`, `**` and `...` arguments pass on whatever the
+        # enclosing method received, so neither count nor types are known.
+        #
+        # @param nodes [Enumerable<Parser::AST::Node>]
+        def any_forwarded_args? nodes
+          nodes.any? do |n|
+            next false unless Parser.is_ast_node?(n)
+            next true if %i[forwarded_args forwarded_restarg].include?(n.type)
+            n.type == :hash && n.children.any? { |c| Parser.is_ast_node?(c) && c.type == :forwarded_kwrestarg }
+          end
+        end
+
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         # @param node [Parser::AST::Node]
         # @return [Array<Parser::AST::Node>]
