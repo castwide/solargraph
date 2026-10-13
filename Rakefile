@@ -69,6 +69,7 @@ def undercover
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
+  # @sg-ignore nil false alarm
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'

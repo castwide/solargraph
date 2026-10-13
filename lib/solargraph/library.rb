@@ -190,6 +190,7 @@ module Solargraph
         # @type [MatchData, nil]
         rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
+          # @sg-ignore nil false alarm
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -426,6 +427,7 @@ module Solargraph
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []
+          # @sg-ignore flow sensitive typing needs to track reassignment
           repargs[reporter].concat args
         end
       end

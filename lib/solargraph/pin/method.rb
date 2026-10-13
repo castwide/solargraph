@@ -503,6 +503,7 @@ module Solargraph
         by_type_arity = {}
         signature_pins.each do |signature_pin|
           by_type_arity[signature_pin.type_arity] ||= []
+          # @sg-ignore flow sensitive typing needs to track reassignment
           by_type_arity[signature_pin.type_arity] << signature_pin
         end
 

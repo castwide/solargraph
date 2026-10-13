@@ -105,12 +105,14 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
+            # @sg-ignore nil false alarm
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
           end
           message
         elsif request['id']
           if requests[request['id']]
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -706,6 +708,7 @@ module Solargraph
       # @return [Boolean]
       # @sg-ignore need boolish support for ? methods
       def client_supports_progress?
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -862,6 +865,7 @@ module Solargraph
       # @return [Boolean]
       # @sg-ignore need boolish support for ? methods
       def prepare_rename?
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 

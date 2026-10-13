@@ -105,6 +105,7 @@ module Solargraph
         left = text.lines.map do |line|
           match = line.match(/^ +/)
           next 0 unless match
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1385
           match[0].length
         end.min
         return text if left.nil? || left.zero?

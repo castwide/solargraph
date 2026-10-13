@@ -21,6 +21,7 @@ module Solargraph
         # @sg-ignore flow sensitive typing needs to track reassignment
         def register type, cls
           @@processors[type] ||= []
+          # @sg-ignore flow sensitive typing needs to track reassignment
           @@processors[type] << cls
         end
 
@@ -29,6 +30,7 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @@processors[type].delete(cls)
         end
       end

@@ -136,14 +136,17 @@ module Solargraph
         # @param k [Class<Pin::Base>]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
+           # @sg-ignore nil false alarm
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
+           # @sg-ignore nil false alarm
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
+           # @sg-ignore nil false alarm
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
@@ -217,6 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
+          # @sg-ignore nil false alarm
           factory_parameter_hash[fp.method_path] << fp
         end
       end

@@ -57,6 +57,7 @@ module Solargraph
             match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
             return unless match
 
+            # @sg-ignore nil false alarm
             code = match[1].strip
             # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return if code.empty?

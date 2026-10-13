@@ -40,6 +40,7 @@ module Solargraph
       def complete
         return package_completions([]) if !source_map.source.parsed? || cursor.string?
         # TODO: Improve magic word comparsion == '<::Symbol>', too fragile
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         if cursor.chain.literal? && cursor.chain.links.last.word == '<::Symbol>'
           return package_completions(api_map.get_symbols)
         end
@@ -140,6 +141,7 @@ module Solargraph
             next unless param.keyword?
             result.push Pin::KeywordParam.new(pin.location, "#{param.name}:")
           end
+          # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
           next unless !pin.parameters.empty? && pin.parameters.last.kwrestarg?
           pin.docstring.tags(:param).each do |tag|
             next if done.include?(tag.name)
@@ -164,6 +166,7 @@ module Solargraph
       # @return [Completion]
       def tag_complete
         result = []
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1395
         match = source_map.code[0..(cursor.offset - 1)].match(/[\[<, ]([a-z0-9_:]*)\z/i)
         if match
           # @sg-ignore https://github.com/castwide/solargraph/pull/1395

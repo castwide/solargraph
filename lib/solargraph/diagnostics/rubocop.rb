@@ -58,8 +58,8 @@ module Solargraph
       # @return [Array<Hash>]
       def make_array resp
         diagnostics = []
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         resp['files'].each do |file|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           file['offenses'].each do |off|
             diagnostics.push offense_to_diagnostic(off)
           end
@@ -91,13 +91,16 @@ module Solargraph
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_start_position off
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         Position.new(off['location']['start_line'] - 1, off['location']['start_column'] - 1)
       end
 
       # @param off [Hash{String => Hash{String => Integer}}]
       # @return [Position]
       def offense_ending_position off
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1398
         if off['location']['start_line'] == off['location']['last_line']
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           start_line = off['location']['start_line'] - 1
           # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           # @type [Integer]
@@ -113,6 +116,7 @@ module Solargraph
             start_line, last_column - col_off
           )
         else
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           Position.new(off['location']['start_line'], 0)
         end
       end
