@@ -733,6 +733,32 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
+  it 'finds Module singleton methods on Class' do
+    source = Solargraph::Source.load_string(%(
+      class Module
+        class << self
+          attr_accessor :naming_format
+        end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Class', scope: :class)
+    expect(pins.map(&:path)).to include('Module.naming_format', 'Module.naming_format=')
+  end
+
+  it 'finds Object singleton methods on its subclasses' do
+    source = Solargraph::Source.load_string(%(
+      class Object
+        def self.object_singleton_method; end
+      end
+
+      class Example; end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Example', scope: :class)
+    expect(pins.map(&:path)).to include('Object.object_singleton_method')
+  end
+
   it 'finds class methods in nested class << Example' do
     source = Solargraph::Source.load_string(%(
       module Container
