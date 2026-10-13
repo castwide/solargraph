@@ -44,13 +44,12 @@ module Solargraph
         # @param pin [Pin::Method]
         out = pins.reduce(combined_pin) do |memo, pin|
           next pin if memo.nil?
-          # @todo Maybe wrong now. External runs multiple rounds of combinations
-          # if memo == pin && memo.source != :combined
-          #   # @todo we should track down situations where we are handled
-          #   #   the same pin from the same source here and eliminate them -
-          #   #   this is an efficiency workaround for now
-          #   next memo
-          # end
+          if memo == pin && memo.source != :combined
+            # @todo we should track down situations where we are handled
+            #   the same pin from the same source here and eliminate them -
+            #   this is an efficiency workaround for now
+            next memo
+          end
           memo.combine_with(pin)
         end
         Solargraph.logger.debug { "GemPins.combine_method_pins(pins.length=#{pins.length}, pins=#{pins}) => #{out.inspect}" }
