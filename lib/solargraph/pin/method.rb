@@ -29,7 +29,8 @@ module Solargraph
         super(**splat)
         @visibility = visibility
         @explicit = explicit
-        @block = block
+        @block_known = block != :undefined
+        @block = block if block.is_a?(Signature)
         @node = node
         @attribute = attribute
         @signatures = signatures
@@ -93,7 +94,7 @@ module Solargraph
       def reset_generated!
         super
         unless signatures.empty?
-          @block = :undefined
+          @block_known = false
           []
         end
         block&.reset_generated!
@@ -126,11 +127,10 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore flow sensitive typing needs to remove literal with
-      #   this unless block
       # @return [Pin::Signature, nil]
       def block
-        return @block unless @block == :undefined
+        return @block if @block_known
+        @block_known = true
         @block = signatures.first&.block
       end
 
@@ -453,7 +453,14 @@ module Solargraph
 
       protected
 
-      attr_writer :block, :signature_help, :documentation, :return_type
+      attr_writer :signature_help, :documentation, :return_type
+
+      # @param value [Pin::Signature, nil]
+      # @return [void]
+      def block= value
+        @block_known = true
+        @block = value
+      end
 
       def dodgy_visibility_source?
         # as of 2025-03-12, the RBS generator used for
