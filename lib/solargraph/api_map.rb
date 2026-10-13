@@ -43,7 +43,7 @@ module Solargraph
     # @param other [Object]
     def eql? other
       self.class == other.class &&
-        # @sg-ignore flow sensitive typing needs to handle self.class == other.class
+        # @sg-ignore flow sensitive typing should support .class == .class
         equality_fields == other.equality_fields
     end
 

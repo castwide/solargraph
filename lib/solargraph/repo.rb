@@ -101,7 +101,7 @@ module Solargraph
       Solargraph.with_clean_env do
         cmd = ['ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
-        # @sg-ignore multiple assignment types every target as tuple element 0
+        # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
         if s.success?
           last_line = o.strip.split("\n").last
           json = last_line ? JSON.parse(last_line, symbolize_names: true) : []

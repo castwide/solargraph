@@ -7,7 +7,7 @@ module Solargraph
     class Problem
       # @todo Missed nil violation
       # @return [Solargraph::Location]
-      # @sg-ignore pin.location relies on location always resolved
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1399
       attr_reader :location
 
       # @return [String]

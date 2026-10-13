@@ -620,7 +620,7 @@ module Solargraph
           cmd = [workspace.command_path, 'cache', spec.name]
           cmd.push('--directory', workspace.directory) if workspace.directory
           _o, e, s = Open3.capture3(*cmd)
-          # @sg-ignore multiple assignment types every target as tuple element 0
+          # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else

@@ -149,7 +149,7 @@ module Solargraph
           if node.type == :dstr && node.children.last.nil?
             # @sg-ignore https://github.com/castwide/solargraph/pull/1396
             last = node.children[-2]
-            # @sg-ignore Range.from_node result assumed always present
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1394
             unless last.nil?
               rng = Range.from_node(last)
               # @sg-ignore https://github.com/castwide/solargraph/pull/1394

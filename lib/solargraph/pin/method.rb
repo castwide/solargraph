@@ -601,9 +601,9 @@ module Solargraph
         # This should actually be an intersection type
         # @param ref [YARD::Tags::Tag, YARD::Tags::RefTag]
         docstring.ref_tags.each do |ref|
-          # @sg-ignore ref should actually be an intersection type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           next unless ref.tag_name == 'return' && ref.owner
-          # @sg-ignore should actually be an intersection type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           result = resolve_reference(ref.owner.to_s, api_map)
           return result unless result.nil?
         end

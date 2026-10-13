@@ -75,7 +75,7 @@ module Solargraph
     # @return [String, nil]
     def rbs_collection_config_path
       # @todo Get rid of the '*' case
-      # @sg-ignore a nil? guard does not narrow a method call, only a local
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
                                         yaml_file = File.join(directory, 'rbs_collection.yaml')
                                         yaml_file if File.file?(yaml_file)

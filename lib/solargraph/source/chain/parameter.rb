@@ -74,7 +74,7 @@ module Solargraph
         end
 
         # @return [::String, ::Symbol] The literal value of the parameter
-        # @sg-ignore false "return type could not be inferred"
+        # @sg-ignore return type could not be inferred
         def literal_value
           literal.node.children.first
         end

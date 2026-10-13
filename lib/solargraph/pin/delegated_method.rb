@@ -103,7 +103,7 @@ module Solargraph
             [receiver_type.to_s, :instance]
           end
 
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         method_stack = api_map.get_method_stack(receiver_path, @receiver_method_name, scope: method_scope)
         @resolved_method = method_stack.first
       end

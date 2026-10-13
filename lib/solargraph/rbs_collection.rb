@@ -60,7 +60,7 @@ module Solargraph
 
     # @param metagem [Metagem]
     # @return [String, nil]
-    # @sg-ignore Array#first/#last relies on non-empty invariant
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1392
     def best_key metagem
       key = "#{metagem.name}-#{metagem.version}"
       return key if gem_path_map.key?(key)
@@ -68,7 +68,7 @@ module Solargraph
       full_key = "#{metagem.name}-#{metagem.version}."
       zero_key = "#{metagem.name}-0"
       found = gem_path_map.find { |key, _| full_key.start_with?("#{key}.") } ||
-              # @sg-ignore need to support destructured args in blocks
+              # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
               gem_path_map.find { |key, _| key == zero_key }
       found&.first || closest_key(metagem)
     end

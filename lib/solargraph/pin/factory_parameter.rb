@@ -25,7 +25,7 @@ module Solargraph
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
-      # @sg-ignore literal symbols  in this module turn into ::Solargraph::Source::Chain::Symbol
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       # @return [::String, ::Symbol] The literal value
       attr_reader :value
       # @return [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg

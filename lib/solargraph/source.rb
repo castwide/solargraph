@@ -293,7 +293,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1396
       if FOLDING_NODE_TYPES.include?(top.type)
         range = Range.from_node(top)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         if (result.empty? || range.start.line > result.last.start.line) && range.ending.line - range.start.line >= 2
           result.push range
         end
@@ -394,7 +394,7 @@ module Solargraph
     def inner_tree_at node, position, stack
       return if node.nil?
       here = Range.from_node(node)
-      # @sg-ignore Range.from_node result assumed always present
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       return unless here.contain?(position)
       stack.unshift node
       # @param c [Parser::AST::Node]

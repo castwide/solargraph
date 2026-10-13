@@ -78,9 +78,9 @@ module Solargraph
       # @param insert [String]
       # @return [String]
       def commit text, insert
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         start_offset = Position.to_offset(text, range.start)
-        # @sg-ignore Range.from_node result assumed always present
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1394
         end_offset = Position.to_offset(text, range.ending)
         (start_offset.zero? ? '' : text[0..(start_offset - 1)].to_s) + normalize(insert) + text[end_offset..].to_s
       end

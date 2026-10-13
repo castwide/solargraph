@@ -32,7 +32,7 @@ module Solargraph
       def typify api_map
         # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         if return_type.defined?
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified = return_type.qualify(api_map, closure.namespace)
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
@@ -49,7 +49,7 @@ module Solargraph
           next unless sig
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           next if sig.return_type.undefined?
-          # @sg-ignore pin.closure relies on closure always resolved
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified = sig.return_type.qualify(api_map, closure.namespace)
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }

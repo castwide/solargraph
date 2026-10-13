@@ -109,7 +109,7 @@ module Solargraph
         chain = Parser.chain(receiver, location.filename, node)
         # @sg-ignore https://github.com/castwide/solargraph/pull/1399
         locals = api_map.source_map(location.filename).locals_at(location)
-        # @sg-ignore Array#first/#last relies on non-empty invariant
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         receiver_pin = chain.define(api_map, closure, locals).first
         return ComplexType::UNDEFINED unless receiver_pin
 

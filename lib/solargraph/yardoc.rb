@@ -28,7 +28,7 @@ module Solargraph
       cmd = ['yardoc', '--db', path, '--no-output', '--plugin', 'solargraph', '--plugin', 'activesupport-concern']
       Solargraph.logger.debug "Running: #{cmd.inspect}"
       output, status = Open3.capture2e(*cmd, chdir: metagem.full_path)
-      # @sg-ignore multiple assignment types every target as tuple element 0
+      # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
       return if status.success?
 
       Solargraph.logger.warn { "YARD failed running #{cmd.inspect} in #{metagem.full_path}" }
