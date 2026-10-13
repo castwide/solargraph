@@ -83,6 +83,22 @@ describe Solargraph::Convention::ActiveSupportAccessors do
                                   ])
   end
 
+  it 'keeps instance accessors when instance_accessor is not a literal boolean' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        class_attribute :bar, instance_accessor: Rails.env.test?
+      end
+    )
+    expect(accessors(pins)).to eq([
+                                    ['bar', :class],
+                                    ['bar', :instance],
+                                    ['bar=', :class],
+                                    ['bar=', :instance],
+                                    ['bar?', :class],
+                                    ['bar?', :instance]
+                                  ])
+  end
+
   it 'marks generated accessors as attributes' do
     pins = method_pins_for 'Foo', %(
       class Foo
