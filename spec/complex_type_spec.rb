@@ -481,6 +481,11 @@ describe 'YARD type specifier list parsing' do
         expect(type.to_rbs).to eq('Variable')
       end
 
+      it 'renders a generic without a parameter as untyped RBS' do
+        type = Solargraph::ComplexType.parse('generic')
+        expect(type.to_rbs).to eq('untyped')
+      end
+
       it 'recognizes generic parameters' do
         type = Solargraph::ComplexType.parse('Array<generic<Variable>>')
         expect(type).to be_generic
