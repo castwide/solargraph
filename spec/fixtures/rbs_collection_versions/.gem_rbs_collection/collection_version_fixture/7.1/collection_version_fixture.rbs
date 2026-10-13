@@ -1,3 +1,0 @@
-class CollectionVersionFixture
-  def from_seven_one: () -> String
-end

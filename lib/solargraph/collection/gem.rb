@@ -9,8 +9,6 @@ module Solargraph
 
       attr_reader :metagem
 
-      @@path_source_cache = {}
-
       # @param metagem [Metagem]
       def initialize metagem
         super()
@@ -23,12 +21,16 @@ module Solargraph
 
       # @sg-ignore Library method has no usable type
       def load
-        return super if metagem.cacheable?
-        @@path_source_cache[metagem.full_path] ||= pins
+        return pins unless metagem.cacheable?
+        super
       end
 
       def pins
-        @pins ||= without_yard
+        @pins ||= if metagem.cacheable?
+                    cacheable_pins
+                  else
+                    uncacheable_pins
+                  end
       end
 
       # @param metagem [Metagem]
@@ -39,7 +41,7 @@ module Solargraph
       private
 
       # @return [Array<Pin::Base>]
-      def with_yard
+      def cacheable_pins
         code_objects = Yardoc.load!(metagem)
         yard_pins = YardMap::Mapper.new(code_objects, metagem).map
         # @sg-ignore https://github.com/castwide/solargraph/pull/1400
@@ -48,14 +50,10 @@ module Solargraph
       end
 
       # @return [Array<Pin::Base>]
-      def without_yard
+      def uncacheable_pins
         files = metagem.require_paths.flat_map { |path| Dir.glob(File.join(metagem.full_path, path, '**', '*.rb')) }
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
-
-        # Generating an ApiMap is necessary for processing macros
-        bench = Bench.new(source_maps: source_maps)
-        source_pins = ApiMap.new.catalog(bench).pins.select { |pin| files.include?(pin.filename) }
-
+        source_pins = source_maps.flat_map(&:pins)
         # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         rbs_pins = RbsMap::Gem.pins(metagem)
         RbsMap::Helpers.combine(source_pins, rbs_pins)
