@@ -608,7 +608,7 @@ module Solargraph
         end
         match = comments.match(/^[ \t]*\(see (.*)\)/m)
         return nil if match.nil?
-        # @sg-ignore Use .to_s on a MatchData capture that always participates
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         resolve_reference match[1], api_map
       end
 

@@ -757,7 +757,7 @@ module Solargraph
       def compare_docstring_tags docstring1, docstring2
         return false if docstring1.tags.length != docstring2.tags.length
         docstring1.tags.each_index do |i|
-          # @sg-ignore Use fetch(i) for an index already bounds-checked
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           return false unless compare_tags(docstring1.tags[i], docstring2.tags[i])
         end
         true
@@ -769,7 +769,7 @@ module Solargraph
       def compare_directives dir1, dir2
         return false if dir1.length != dir2.length
         dir1.each_index do |i|
-          # @sg-ignore Use fetch(i) for an index already bounds-checked
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           return false unless compare_tags(dir1[i].tag, dir2[i].tag)
         end
         true

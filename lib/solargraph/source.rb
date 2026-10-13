@@ -278,7 +278,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
-      # @sg-ignore Use fetch(i) for an index already bounds-checked
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor

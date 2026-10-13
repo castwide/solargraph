@@ -95,7 +95,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            # @sg-ignore Use node.children.fetch(N) / drop(N) for grammar-guaranteed children
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             node.children[2..].each do |a|
               loc = get_node_location(node)
               clos = region.closure

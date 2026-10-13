@@ -260,7 +260,7 @@ module Solargraph
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
-      # @sg-ignore Use fetch(i) for an index already bounds-checked
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def typify_block_param api_map
         block_pin = closure
         return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index

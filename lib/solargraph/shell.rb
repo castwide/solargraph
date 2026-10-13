@@ -290,7 +290,7 @@ module Solargraph
           exit 1
         end
       end
-      # @sg-ignore Use &. to suppress false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       puts "Scanned #{directory} (#{api_map.pins.length} pins) in #{time.real} seconds."
     end
 

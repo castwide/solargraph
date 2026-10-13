@@ -26,9 +26,9 @@ module Solargraph
           next if rng.nil? || lines.include?(rng.start.line)
           lines.push rng.start.line
           next if rng.start.line >= code.lines.length
-          # @sg-ignore Use fetch(i) for an index already bounds-checked
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           scol = code.lines[rng.start.line].index(/[^\s]/) || 0
-          # @sg-ignore Use fetch(i) for an index already bounds-checked
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           ecol = code.lines[rng.start.line].length
           result.push Range.from_to(rng.start.line, scol, rng.start.line, ecol)
         end
