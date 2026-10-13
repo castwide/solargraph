@@ -378,7 +378,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]

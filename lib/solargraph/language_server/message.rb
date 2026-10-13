@@ -37,7 +37,7 @@ module Solargraph
 
         # @param path [String]
         # @return [Class<Solargraph::LanguageServer::Message::Base>]
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         def select path
           if method_map.key?(path)
             method_map[path]
