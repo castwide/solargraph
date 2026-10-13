@@ -194,6 +194,17 @@ module Solargraph
       clip(cursor_at(filename, position))
     end
 
+    # Local variables visible at a position. Gem pins carry nodes from
+    # files this map never cataloged, so those files have no locals.
+    #
+    # @param filename [String, nil]
+    # @param position [Position, Array(Integer, Integer)]
+    # @return [::Array<Pin::LocalVariable>]
+    def locals_at filename, position
+      return [] unless filename && bundled?(filename)
+      clip_at(filename, position).locals
+    end
+
     # Create an ApiMap with a workspace in the specified directory.
     #
     # @param directory [String]

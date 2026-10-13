@@ -59,8 +59,7 @@ module Solargraph
       def typify_parameters api_map
         chain = Parser.chain(receiver, filename, node)
         # @sg-ignore Need to add nil check here
-        clip = api_map.clip_at(location.filename, location.range.start)
-        locals = clip.locals - [self]
+        locals = api_map.locals_at(location&.filename, location.range.start) - [self]
         # @sg-ignore Need to add nil check here
         meths = chain.define(api_map, closure, locals)
         # @todo Convert logic to use signatures

@@ -786,4 +786,17 @@ describe Solargraph::Pin::Method do
       expect { pin.signatures }.not_to raise_error
     end
   end
+
+  it 'infers return nodes in files the ApiMap has no source map for' do
+    gem_map = Solargraph::SourceMap.load_string(%(
+      class Foo
+        def bar
+          String.new
+        end
+      end
+    ), 'gem.rb')
+    api_map = Solargraph::ApiMap.new(pins: gem_map.pins)
+    pin = gem_map.pins.find { |p| p.path == 'Foo#bar' }
+    expect(pin.probe(api_map).tag).to eq('String')
+  end
 end
