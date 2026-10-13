@@ -116,6 +116,13 @@ describe Solargraph::RbsMap::Conversions do
       it 'binds the parameter by position' do
         expect(method_pin.return_type.tag).to eq('Array<String>')
       end
+
+      it 'binds the parameter on a pin combined with Ruby source' do
+        source = Solargraph::SourceMap.load_string("module Boxy\n  def declared_second; end\nend\n", 'boxy.rb')
+        api_map.index Solargraph::RbsMap::Helpers.combine(source.pins, conversions.pins)
+
+        expect(method_pin.return_type.tag).to eq('Array<String>')
+      end
     end
 
     context 'with a class reopened under a differently spelled type parameter' do

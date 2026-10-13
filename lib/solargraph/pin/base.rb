@@ -158,7 +158,17 @@ module Solargraph
       # @param other [self]
       # @return [Pin::Closure, nil]
       def combine_closure other
-        choose_pin_attr_with_same_name(other, :closure)
+        chosen = choose_pin_attr_with_same_name(other, :closure)
+        return chosen unless chosen.is_a?(Pin::Namespace) && chosen.generics.empty?
+
+        # Combined types may name type parameters only the other closure declares
+        own = closure
+        return own if own.is_a?(Pin::Namespace) && !own.generics.empty?
+
+        theirs = other.closure
+        return theirs if theirs.is_a?(Pin::Namespace) && !theirs.generics.empty?
+
+        chosen
       end
 
       # @param other [self]
@@ -740,7 +750,7 @@ module Solargraph
       def declaring_definitions definitions
         own = closure
         return definitions unless definitions.is_a?(Pin::Namespace) && own.is_a?(Pin::Namespace)
-        return definitions unless own.path == definitions.path && own.generics.length == definitions.generics.length
+        return definitions unless own.path == definitions.path && !own.generics.empty?
 
         own
       end
