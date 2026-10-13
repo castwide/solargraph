@@ -50,11 +50,11 @@ module Solargraph
           )
         end
         return [pins, locals, ivars] unless Parser.is_ast_node?(node)
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1396
         node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
         node_processor_classes.each do |klass|
-          # @sg-ignore flow sensitive typing needs better guard support
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           processor = klass.new(node, region, pins, locals, ivars)
           process_next = processor.process
 
