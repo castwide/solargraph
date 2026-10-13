@@ -175,7 +175,7 @@ module Solargraph
             # mixin, metaprogramming, etc.) isn't a tag/inference mismatch - just
             # unproven. Only methods with an actual body get flagged for this.
             unless rules.ignore_all_undefined? || external?(pin) || pin.attribute?
-              result.push Problem.new(pin.location, "#{pin.path} return type could not be inferred", pin: pin)
+              result.push Problem.new(pin.location, method_inference_message(pin), pin: pin)
             end
           else
             unless return_type_conforms_to?(inferred, declared)
@@ -267,7 +267,7 @@ module Solargraph
                 if declared_externally?(pin)
                   ignored_pins.push pin
                 else
-                  result.push Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)
+                  result.push Problem.new(pin.location, variable_inference_message(pin), pin: pin)
                 end
               else
                 unless assignment_conforms_to?(inferred, declared)
@@ -362,9 +362,9 @@ module Solargraph
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.generic? || ignored_pins.include?(found))
             if closest.defined?
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
+              result.push Problem.new(location, "Unresolved call to #{missing.links.last&.word} on #{closest}")
             else
-              result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
+              result.push Problem.new(location, "Unresolved call to #{missing.links.last&.word}")
             end
             @marked_ranges.push rng
           end
@@ -674,6 +674,44 @@ module Solargraph
       return false if pin.nil?
       # @sg-ignore flow sensitive typing needs to handle attrs
       pin.location && api_map.bundled?(pin.location.filename)
+    end
+
+    # @param pin [Pin::Method]
+    # @return [String]
+    def method_inference_message pin
+      message = "#{pin.path} return type could not be inferred"
+      blame = pin.probe_blame(api_map)
+      cause = blame_description(blame) unless blame.nil?
+      message += ": #{cause}" unless cause.nil?
+      message
+    end
+
+    # @param pin [Pin::BaseVariable]
+    # @return [String]
+    def variable_inference_message pin
+      message = "Variable type could not be inferred for #{pin.name}"
+      blame = pin.probe_blame(api_map)
+      cause = blame_description(blame) unless blame.nil?
+      message += ": #{cause}" unless cause.nil?
+      message
+    end
+
+    # A short plain-language cause for the first failing link of a chain.
+    # Zero pins means the name did not resolve; otherwise a definition
+    # exists but its return type could not be determined.
+    #
+    # @param blame [Source::Chain::LinkResolution]
+    # @return [String, nil] nil when the failing link has no name to report
+    def blame_description blame
+      # No name to report for an undefined link (e.g. a numbered block parameter).
+      return nil if blame.link.undefined?
+
+      receiver = blame.receiver_type&.defined? ? " on #{blame.receiver_type}" : ''
+      if blame.pin_count.zero?
+        "`#{blame.link.word}` could not be resolved#{receiver}"
+      else
+        "could not determine the return type of `#{blame.link.word}`#{receiver}"
+      end
     end
 
     # True if the pin is either internal (part of the workspace) or from the core/stdlib
