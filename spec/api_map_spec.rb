@@ -759,6 +759,19 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:path)).to include('Object.object_singleton_method')
   end
 
+  it 'excludes Class instance methods from module class methods' do
+    source = Solargraph::Source.load_string(%(
+      class Class
+        def class_only_method; end
+      end
+
+      module Example; end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Example', scope: :class)
+    expect(pins.map(&:path)).not_to include('Class#class_only_method')
+  end
+
   it 'finds class methods in nested class << Example' do
     source = Solargraph::Source.load_string(%(
       module Container

@@ -855,12 +855,13 @@ module Solargraph
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           rooted_sc_tag = qualify_superclass(rooted_tag)
-          unless rooted_sc_tag.nil?
+          type = get_namespace_type(fqns)
+          # A module's singleton class does not inherit from Object's
+          unless rooted_sc_tag.nil? || type == :module
             result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, no_core)
           end
           unless no_core || fqns.empty?
-            type = get_namespace_type(fqns)
             result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
             result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
           end
