@@ -997,5 +997,17 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves calls on a block parameter in the second operand of ||' do
+      checker = type_checker(%(
+        # @param arr [Array<String>]
+        # @param str [String]
+        # @return [Array<String>]
+        def matching arr, str
+          arr.select { |elem| elem.empty? || elem == str }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

@@ -1887,6 +1887,50 @@ describe Solargraph::SourceMap::Clip do
     expect(type.to_s).to eq('Set<Integer>')
   end
 
+  it 'infers a block parameter whose receiver is another block call' do
+    source = Solargraph::Source.load_string(%(
+      # @param arr [Array<String>]
+      # @return [void]
+      def chained arr
+        arr.map { |s| s }.each { |t| t.upcase }
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 38])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+  end
+
+  it 'infers a chained block parameter when the receiver block declares a local' do
+    pending 'only the block parameters join the locals; a local the body assigns does not'
+    source = Solargraph::Source.load_string(%(
+      # @param arr [Array<String>]
+      # @return [void]
+      def chained arr
+        arr.map { |s| x = s; x }.each { |t| t.upcase }
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 45])
+    type = clip.infer
+    expect(type.to_s).to eq('String')
+  end
+
+  it 'keeps same-named parameters of separate blocks distinct' do
+    source = Solargraph::Source.load_string(%(
+      # @param arr [Array<String>]
+      # @param nums [Array<Integer>]
+      # @return [void]
+      def siblings arr, nums
+        arr.map { |v| v }.each { |t| t.upcase }
+        nums.map { |v| v }.each { |u| u.abs }
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 38]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 39]).infer.to_s).to eq('Integer')
+  end
+
   it 'erases unresolvable class generics' do
     source = Solargraph::Source.load_string(%(
       # @generic T
