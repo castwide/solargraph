@@ -122,7 +122,9 @@ module Solargraph
             elsif a[0].start_with?('&')
               :blockarg
             elsif a[0].end_with?(':')
+              # @sg-ignore Array#[] chooses wrong signature when Array has no parameters
               a[1] ? :kwoptarg : :kwarg
+            # @sg-ignore Array#[] chooses wrong signature when Array has no parameters
             elsif a[1]
               :optarg
             else

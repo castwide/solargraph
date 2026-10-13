@@ -187,6 +187,7 @@ module Solargraph
           types = return_types_from_node(mass_node, api_map)
           types.map! do |type|
             if type.tuple?
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1223
               type.all_params[index]
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
               type.all_params.first

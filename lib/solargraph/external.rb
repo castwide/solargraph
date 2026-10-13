@@ -148,6 +148,7 @@ module Solargraph
     def read_rbs_collection_paths
       return [] unless rbs_collection_config_path
 
+      # @sg-ignore Translate to something flow sensitive typing understands
       yaml = YAML.load_file(rbs_collection_config_path)
       [File.expand_path(yaml.fetch('path'), directory)].concat(
         yaml.fetch('sources', [])
