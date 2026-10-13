@@ -277,7 +277,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
-      cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
+      cursor += 1 while cursor < code_lines.length && code_lines.fetch(cursor).strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor
     end

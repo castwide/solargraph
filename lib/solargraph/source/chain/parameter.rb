@@ -36,7 +36,7 @@ module Solargraph
             next false unless fp.value == literal_value
 
             # a splat takes every argument from its position on
-            method_pin.parameters[param_index].restarg? ? current_index >= param_index : current_index == param_index
+            method_pin.parameters.fetch(param_index).restarg? ? current_index >= param_index : current_index == param_index
           end
         end
 

@@ -75,7 +75,7 @@ module Solargraph
           # block; 'parameters' is what the block accepts
           argument_types = destructure_yield_types(yield_types, parameters)
           param_types = argument_types.each_with_index.map do |arg_type, idx|
-            param = parameters[idx]
+            param = parameters.fetch(idx)
             param_type = chain.base.infer(api_map, param, locals)
             unless arg_type.nil?
               if arg_type.generic? && param_type.defined?
