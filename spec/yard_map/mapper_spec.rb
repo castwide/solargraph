@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
 describe Solargraph::YardMap::Mapper do
-  def pins_with gem
+  def pins_with require
     repo = Solargraph::Repo.new('.')
-    metagem = repo.find_by_name(gem)
-    # Solargraph::Collection::Gem.load(metagem)
-    code_objects = Solargraph::Yardoc.load!(metagem)
-    described_class.new(code_objects).map
+    metagem = repo.find_by_path(require)
+    Solargraph::Collection::Gem.load(metagem)
   end
 
   it 'converts nil docstrings to empty strings' do
@@ -24,7 +22,7 @@ describe Solargraph::YardMap::Mapper do
 
   it 'marks explicit methods' do
     # Using rspec-expectations because it's a known dependency
-    pin = pins_with('rspec-expectations').find { |pin| pin.path == 'RSpec::Matchers#be_truthy' }
+    pin = pins_with('rspec/expectations').find { |pin| pin.path == 'RSpec::Matchers#be_truthy' }
     expect(pin).not_to be_nil
     expect(pin.explicit?).to be(true)
   end
@@ -44,7 +42,7 @@ describe Solargraph::YardMap::Mapper do
 
   it 'marks non-explicit methods' do
     # Using rspec-expectations because it's a known dependency
-    pin = pins_with('rspec-expectations').find { |pin| pin.path == 'RSpec::Matchers#expect' }
+    pin = pins_with('rspec/expectations').find { |pin| pin.path == 'RSpec::Matchers#expect' }
     expect(pin.explicit?).to be(false)
   end
 
