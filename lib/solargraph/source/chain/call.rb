@@ -94,10 +94,9 @@ module Solargraph
           atypes = []
           arguments.each_with_index do |arg, idx|
             param = overload.parameters[idx]
-            if param.nil?
-              match = overload.parameters.any?(&:restarg?)
-              break
-            end
+            match = overload.parameters.any?(&:restarg?) if param.nil?
+            break if param.nil?
+
             arg_name_pin = Pin::ProxyType.anonymous(name_pin.context,
                                                     closure: name_pin.closure,
                                                     gates: name_pin.gates,
