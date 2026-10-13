@@ -83,7 +83,7 @@ module Solargraph
     # @return [Range, nil]
     def self.from_node node
       return unless node&.loc&.expression
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       from_expr(node.loc.expression)
     end
 

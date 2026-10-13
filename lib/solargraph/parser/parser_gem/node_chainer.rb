@@ -207,7 +207,7 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
-          # @sg-ignore flow sensitive typing needs better guard support
+          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
           NodeChainer.chain(@parent.children[2], @filename)
         end
 
