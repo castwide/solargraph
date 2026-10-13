@@ -105,7 +105,7 @@ module Solargraph
       end
       character = 0 if character.nil? && (cursor - offset).between?(0, 1)
       raise InvalidOffsetError if character.nil?
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore flow sensitive typing needs to track reassignment
       Position.new(line, character)
     end
 

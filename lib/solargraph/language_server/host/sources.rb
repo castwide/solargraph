@@ -55,7 +55,7 @@ module Solargraph
         # @raise [FileNotFoundError] if the URI does not match an open source.
         #
         # @param uri [String]
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         # @return [Solargraph::Source]
         def find uri
           open_source_hash[uri] || raise(Solargraph::FileNotFoundError, "Host could not find #{uri}")

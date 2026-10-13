@@ -180,12 +180,10 @@ module Solargraph
             # reject it regardless
 
             with_block, without_block = overloads.partition(&:block?)
-            # @sg-ignore flow sensitive typing needs better guard support
-            # @type Array<Pin::Signature>
+            # @type [::Array<Pin::Signature>]
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
-            # @sg-ignore flow sensitive typing needs better guard support
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)

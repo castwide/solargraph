@@ -709,7 +709,7 @@ module Solargraph
       rng = Solargraph::Range.from_node(pin.assignment)
       # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
       type = chain.infer(api_map, closure_pin, locals)

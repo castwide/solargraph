@@ -742,7 +742,7 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
