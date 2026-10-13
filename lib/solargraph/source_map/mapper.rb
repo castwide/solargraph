@@ -12,7 +12,7 @@ module Solargraph
 
       private_class_method :new
 
-      DIRECTIVE_REGEXP = /(@!method|@!attribute|@!visibility|@!scope|@!domain|@!macro|@!parse|@!override)/
+      DIRECTIVE_REGEXP = /(@!method|@method|@!attribute|@!visibility|@!scope|@!domain|@!macro|@!parse|@!override)/
 
       # Generate the data.
       #
