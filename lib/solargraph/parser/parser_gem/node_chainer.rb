@@ -44,6 +44,7 @@ module Solargraph
           # @return [Source::Chain]
           def load_string code, filename, starting_line
             node = Parser.parse(code.sub(/\.$/, ''), filename, starting_line)
+            # @sg-ignore Need to add nil check here
             chain = NodeChainer.new(node).chain
             chain.links.push(Chain::Link.new) if code.end_with?('.')
             chain
