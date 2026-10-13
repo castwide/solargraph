@@ -24,7 +24,7 @@ module Solargraph
         # @return [Source::Chain]
         def chain
           links = generate_links(@node)
-          Chain.new(links, @node, Parser.is_ast_node?(@node) && @node.type == :splat)
+          Chain.new(links, @node, @node.is_a?(::Parser::AST::Node) && @node.type == :splat)
         end
 
         class << self
@@ -179,9 +179,9 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         def hash_is_splatted? node
-          return false unless Parser.is_ast_node?(node) && node.type == :hash
-          return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
-          if Parser.is_ast_node?(node.children.last.children[0]) && node.children.last.children[0].type == :hash
+          return false unless node.is_a?(::Parser::AST::Node) && node.type == :hash
+          return false unless node.children.last.is_a?(::Parser::AST::Node) && node.children.last.type == :kwsplat
+          if node.children.last.children[0].is_a?(::Parser::AST::Node) && node.children.last.children[0].type == :hash
             return false
           end
           true

@@ -7,7 +7,7 @@ describe Solargraph::Parser do
 
   it 'parses nodes' do
     node = parse('class Foo; end')
-    expect(described_class.is_ast_node?(node)).to be(true)
+    expect(node).to be_a(Parser::AST::Node)
   end
 
   it 'raises repairable SyntaxError for unknown encoding errors' do

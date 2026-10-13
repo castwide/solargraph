@@ -396,7 +396,7 @@ module Solargraph
       return unless here.contain?(position)
       stack.unshift node
       node.children.each do |c|
-        next unless Parser.is_ast_node?(c)
+        next unless c.is_a?(::Parser::AST::Node)
         next if c.loc.expression.nil?
         inner_tree_at(c, position, stack)
       end

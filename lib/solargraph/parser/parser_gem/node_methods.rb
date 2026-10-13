@@ -108,7 +108,7 @@ module Solargraph
         # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
         # `.children[0]` call, which is not recognized as returning a literal value.
         def simple_convert node
-          return nil unless Parser.is_ast_node?(node)
+          return nil unless node.is_a?(::Parser::AST::Node)
 
           case node.type
           when :const
@@ -127,18 +127,18 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Array]
         def simple_convert_array node
-          return [] unless Parser.is_ast_node?(node) && node.type == :array
+          return [] unless node.is_a?(::Parser::AST::Node) && node.type == :array
           node.children.compact.map { |c| simple_convert(c) }
         end
 
         # @param node [Parser::AST::Node]
         # @return [Hash]
         def simple_convert_hash node
-          return {} unless Parser.is_ast_node?(node) && node.type == :hash
+          return {} unless node.is_a?(::Parser::AST::Node) && node.type == :hash
           result = {}
           # @param pair [Parser::AST::Node]
           node.children.each do |pair|
-            next unless Parser.is_ast_node?(pair) && pair.children[0]
+            next unless pair.is_a?(::Parser::AST::Node) && pair.children[0]
             result[pair.children[0].children[0]] = simple_convert(pair.children[1])
           end
           result
@@ -151,7 +151,7 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           return convert_hash(node.children[0]) if node.type == :kwsplat
           # @sg-ignore flow sensitive typing needs to handle repeated pure calls
-          if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          if node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat
             # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             return convert_hash(node.children[0])
           end
@@ -171,7 +171,7 @@ module Solargraph
         #
         # @return [Array<Parser::AST::Node>]
         def const_nodes_from node
-          return [] unless Parser.is_ast_node?(node)
+          return [] unless node.is_a?(::Parser::AST::Node)
           result = []
           if node.type == :const
             result.push node
@@ -183,13 +183,13 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         def splatted_hash? node
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat
         end
 
         # @param node [Parser::AST::Node]
         def splatted_call? node
-          return false unless Parser.is_ast_node?(node)
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
+          return false unless node.is_a?(::Parser::AST::Node)
+          node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
         end
 
         # @param nodes [Enumerable<Parser::AST::Node>]
@@ -205,7 +205,7 @@ module Solargraph
           result = []
           if node.type == :block
             result.push node
-            if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
+            if node.children[0].is_a?(::Parser::AST::Node) && node.children[0].children.length > 2
               # @sg-ignore Need to add nil check here
               node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }
             end

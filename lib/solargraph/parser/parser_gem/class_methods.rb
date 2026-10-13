@@ -120,12 +120,6 @@ module Solargraph
           parser.version
         end
 
-        # @param node [BasicObject, nil]
-        # @return [Boolean]
-        def is_ast_node? node
-          node.is_a?(::Parser::AST::Node)
-        end
-
         # @param node [Parser::AST::Node]
         # @return [Range]
         def node_range node
