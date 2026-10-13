@@ -23,13 +23,13 @@ module Solargraph
         @variance = variance
         # :nocov:
         unless expected.is_a?(UniqueType)
-          # @sg-ignore This should never happen and the typechecker is angry about it
+          # @sg-ignore nil false alarm
           raise "Expected type must be a UniqueType, got #{expected.class} in #{expected.inspect}"
         end
         # :nocov:
         return if inferred.is_a?(UniqueType)
         # :nocov:
-        # @sg-ignore This should never happen and the typechecker is angry about it
+        # @sg-ignore nil false alarm
         raise "Inferred type must be a UniqueType, got #{inferred.class} in #{inferred.inspect}"
         # :nocov:
       end

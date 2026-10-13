@@ -21,7 +21,7 @@ module Solargraph
         File.join CacheDir.gem_dir, "#{metagem.cache_name}.ser"
       end
 
-      # @sg-ignore a singleton .load with no declared return falls back to Kernel#load
+      # @sg-ignore Library method has no usable type
       def load
         return super if metagem.cacheable?
         @@path_source_cache[metagem.full_path] ||= pins

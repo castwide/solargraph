@@ -10,8 +10,7 @@ module Solargraph
         @block = block
       end
 
-      # @sg-ignore Solargraph::LanguageServer::Request#process return
-      #   type could not be inferred
+      # @sg-ignore Library method has no usable type
       # @param result [Object]
       # @generic T
       # @yieldreturn [generic<T>]

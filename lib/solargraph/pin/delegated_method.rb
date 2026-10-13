@@ -44,7 +44,7 @@ module Solargraph
 
       %i[comments parameters return_type signatures].each do |method|
         define_method(method) do
-          # @sg-ignore Need to set context correctly in define_method blocks
+          # @sg-ignore Unexplained typecheck gap; needs investigation
           @resolved_method ? @resolved_method.send(method) : super()
         end
       end
@@ -53,7 +53,7 @@ module Solargraph
         # @param api_map [ApiMap]
         define_method(method) do |api_map|
           resolve_method(api_map)
-          # @sg-ignore Need to set context correctly in define_method blocks
+          # @sg-ignore Unexplained typecheck gap; needs investigation
           @resolved_method ? @resolved_method.send(method, api_map) : super(api_map)
         end
       end
@@ -70,9 +70,7 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       # @return [Pin::Method, nil]
-      # @sg-ignore Declared return type ::Solargraph::Pin::Method, nil
-      #   does not match inferred type nil, false for
-      #   Solargraph::Pin::DelegatedMethod#resolve_method
+      # @sg-ignore Unexplained typecheck gap; needs investigation
       def resolve_method api_map
         return if @resolved_method
 

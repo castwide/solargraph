@@ -71,7 +71,7 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
-    # @sg-ignore Proc#call return type isn't inferred without generics
+    # @sg-ignore Need better generic inference here
     # @return [String]
     def render template, layout: true, locals: {}
       # @type [String]

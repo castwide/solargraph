@@ -110,18 +110,18 @@ module Solargraph
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 
-          # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+          # @sg-ignore flow sensitive typing needs better guard support
           case node.type
           when :const
             unpack_name(node)
           when :str, :dstr, :int, :float, :sym, true, false
-            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+            # @sg-ignore flow sensitive typing needs better guard support
             node.children[0]
           when :array
-            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+            # @sg-ignore flow sensitive typing needs better guard support
             simple_convert_array(node)
           when :hash
-            # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+            # @sg-ignore flow sensitive typing needs better guard support
             simple_convert_hash(node)
           else
             Solargraph::Parser.chain(node)
@@ -275,7 +275,7 @@ module Solargraph
                    # @sg-ignore https://github.com/castwide/solargraph/pull/1395
                    match = source.code[0..(offset - 1)].match(/,\s*\z/)
                    if match
-                     # @sg-ignore MatchData relies on regex always matching
+                     # @sg-ignore nil false alarm
                      source.tree_at(position.line, position.column - match[0].length)
                    else
                      source.tree_at(position.line, position.column)

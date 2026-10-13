@@ -83,11 +83,11 @@ module Solargraph
       raise "No message given for #{type.inspect}" if msg.nil?
 
       # conditional aliases to handle compatibility corner cases
-      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      # @sg-ignore flow sensitive typing needs better guard support
       return if type == :alias_target_missing && msg.include?('highline/compatibility.rb')
-      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      # @sg-ignore flow sensitive typing needs better guard support
       return if type == :alias_target_missing && msg.include?('lib/json/add/date.rb')
-      # @sg-ignore flow sensitive typing needs to handle 'raise if'
+      # @sg-ignore flow sensitive typing needs better guard support
       return if type == :alias_target_missing && msg.include?('rubocop-ast.rbs')
       # @todo :combine_with_visibility is not ready for prime time -
       #  lots of disagreements found in practice that heuristics need
@@ -115,7 +115,7 @@ module Solargraph
   #
   # @generic T
   # @yieldreturn [generic<T>]
-  # @sg-ignore dynamic call, but both functions behave the same
+  # @sg-ignore dynamic send has no inferable return type
   # @return [generic<T>]
   def self.with_clean_env(&)
     meth = if Bundler.respond_to?(:with_original_env)

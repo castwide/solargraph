@@ -305,7 +305,7 @@ module Solargraph
         rooted_tags
       end
 
-      # @sg-ignore Need better if/elseanalysis
+      # @sg-ignore flow sensitive typing needs better guard support
       # @return [String]
       def to_rbs
         if duck_type?
@@ -394,7 +394,7 @@ module Solargraph
           return self unless generics_to_resolve.include? type_param
           unless context_type.nil? || !resolved_generic_values[type_param].nil?
             new_binding = true
-            # @sg-ignore flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
+            # @sg-ignore flow sensitive typing needs better guard support
             resolved_generic_values[type_param] = context_type
           end
           if new_binding
@@ -508,7 +508,7 @@ module Solargraph
         new_key_types ||= @key_types
         new_subtypes ||= @subtypes
         make_rooted = @rooted if make_rooted.nil?
-        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+        # @sg-ignore flow sensitive typing needs to track reassignment
         UniqueType.new(new_name, new_key_types, new_subtypes, rooted: make_rooted, parameters_type: parameters_type)
       end
 

@@ -198,7 +198,7 @@ module Solargraph
                    cursor.chain.base.infer(api_map, context_pin, locals)
                  # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                  elsif full.include?('::') && cursor.chain.links.length == 1
-                   # @sg-ignore MatchData relies on regex always matching
+                   # @sg-ignore nil false alarm
                    ComplexType.try_parse(full.split('::')[0..-2].join('::'))
                  elsif cursor.chain.links.length > 1
                    ComplexType.try_parse(full)

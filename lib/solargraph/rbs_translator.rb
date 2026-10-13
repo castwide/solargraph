@@ -51,12 +51,12 @@ module Solargraph
       arg_num = 0
       params = []
       method_type.type.required_positionals.each do |param|
-        # @sg-ignore Unresolved call to name
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :arg, closure)
         arg_num += 1
       end
       method_type.type.optional_positionals.each do |param|
-        # @sg-ignore Unresolved call to name
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :optarg, closure)
         arg_num += 1
       end
@@ -65,12 +65,12 @@ module Solargraph
         arg_num += 1
       end
       method_type.type.required_keywords.each do |param|
-        # @sg-ignore Unresolved call to first, last
+        # @sg-ignore Need better generic inference here
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwarg, closure)
         arg_num += 1
       end
       method_type.type.optional_keywords.each do |param|
-        # @sg-ignore Unresolved call to first, last
+        # @sg-ignore Need better generic inference here
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwoptarg, closure)
         arg_num += 1
       end

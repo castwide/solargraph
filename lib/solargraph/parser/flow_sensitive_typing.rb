@@ -305,8 +305,7 @@ module Solargraph
       # @param variable_name [String]
       # @param position [Position]
       #
-      # @sg-ignore Solargraph::Parser::FlowSensitiveTyping#find_var
-      #   return type could not be inferred
+      # @sg-ignore return type could not be inferred
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')

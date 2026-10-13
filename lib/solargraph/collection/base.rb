@@ -41,7 +41,7 @@ module Solargraph
       private
 
       # @return [Array<Pin::Base>, nil]
-      # @sg-ignore a singleton .load with no declared return falls back to Kernel#load
+      # @sg-ignore Library method has no usable type
       def file_cache_pins
         Marshal.load(File.read(cache_file, mode: 'rb')) if File.exist?(cache_file) # rubocop:disable Security/MarshalLoad
       end

@@ -157,7 +157,7 @@ module Solargraph
 
     # @return [Array<Parser::AST::Node>]
     def method_call_nodes
-      # @sg-ignore node expected Parser::AST::Node, received Parser::AST::Node, nil
+      # @sg-ignore probably nil false alarm
       @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)
     end
 
@@ -213,7 +213,7 @@ module Solargraph
 
     # @param pins [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
-    # @sg-ignore flow sensitive typing should support ivars
+    # @sg-ignore Unexplained typecheck gap; needs investigation
     def convention_pins= pins
       # unmemoizing the document_symbols in case it was called from any of conventions
       @document_symbols = nil

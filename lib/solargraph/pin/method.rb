@@ -126,8 +126,7 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore flow sensitive typing needs to remove literal with
-      #   this unless block
+      # @sg-ignore flow sensitive typing needs better guard support
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined
@@ -461,7 +460,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+      # @sg-ignore flow sensitive typing needs to track reassignment
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]

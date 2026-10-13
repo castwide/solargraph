@@ -186,9 +186,9 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
-        # @sg-ignore Parser::AST::Node's superclass is not itself
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         def send_node
-          # @sg-ignore Parser::AST::Node's superclass is not itself
+          # @sg-ignore Unexplained typecheck gap; needs investigation
           @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
@@ -207,7 +207,7 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
-          # @sg-ignore flow sensitive typing needs to handle &. comparisons
+          # @sg-ignore flow sensitive typing needs better guard support
           NodeChainer.chain(@parent.children[2], @filename)
         end
 

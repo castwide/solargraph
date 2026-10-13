@@ -17,7 +17,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           kind = directive.tag.text&.to_sym
 
-          # @sg-ignore include? only expects Symbol, but receives Symbol or nil
+          # @sg-ignore probably nil false alarm
           return [] unless VALID_VISIBILITIES.include?(kind.to_sym)
 
           name = directive.tag.name
@@ -55,7 +55,7 @@ module Solargraph
         # @return [Boolean]
         # @sg-ignore return type could not be inferred
         def no_empty_lines? code, line1, line2
-          # @sg-ignore unresolved call none? on the array.
+          # @sg-ignore Need better generic inference here
           code.lines[line1..line2].none? { |line| line.strip.empty? }
         end
 

@@ -18,7 +18,7 @@ module Solargraph
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
         # @return [Array<Class<NodeProcessor::Base>>]
-        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+        # @sg-ignore flow sensitive typing needs to track reassignment
         def register type, cls
           @@processors[type] ||= []
           @@processors[type] << cls
@@ -48,11 +48,11 @@ module Solargraph
           )
         end
         return [pins, locals, ivars] unless Parser.is_ast_node?(node)
-        # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+        # @sg-ignore flow sensitive typing needs better guard support
         node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
         node_processor_classes.each do |klass|
-          # @sg-ignore flow sensitive typing needs to handle is_ast_node? guards
+          # @sg-ignore flow sensitive typing needs better guard support
           processor = klass.new(node, region, pins, locals, ivars)
           process_next = processor.process
 

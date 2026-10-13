@@ -67,7 +67,7 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select do |pin|
-          # @sg-ignore flow sensitive typing not smart enough to handle this case
+          # @sg-ignore flow sensitive typing needs better guard support
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         end
       end
@@ -378,7 +378,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+      # @sg-ignore flow sensitive typing needs better guard support
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]

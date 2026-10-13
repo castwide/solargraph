@@ -27,7 +27,7 @@ module Solargraph
       # @param name [String] Namespace which may relative and not be rooted.
       # @param gates [Array<Array<String>, String>] Namespaces to search while resolving the name
       #
-      # @sg-ignore flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @sg-ignore flow sensitive typing needs better guard support
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)

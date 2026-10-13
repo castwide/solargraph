@@ -30,9 +30,9 @@ module Solargraph
           new_pins.each do |p|
             # @todo Smelly instance variable access
             next if p.location.nil?
-            # @sg-ignore Unresolved call to range on Solargraph::Location, nil - does not account for next clause above.
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
-            # @sg-ignore Unresolved call to range on Solargraph::Location, nil
+            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
             p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
           end
 

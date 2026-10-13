@@ -81,9 +81,7 @@ module Solargraph
     # @yieldparam [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    # @sg-ignore Declared return type
-    #   ::Array<::Solargraph::ComplexType::UniqueType> does not match
-    #   inferred type ::Array<::Proc> for Solargraph::ComplexType#map
+    # @sg-ignore Unexplained typecheck gap; needs investigation
     def map &block
       @items.map(&block)
     end
@@ -453,10 +451,7 @@ module Solargraph
       # #  @todo Need ability to use a literal true as a type below
       # #  @param partial [Boolean] True if the string is part of a another type
       # #  @return [Array<UniqueType>]
-      # @sg-ignore To be able to select the right signature above,
-      #   Chain::Call needs to know the decl type (:arg, :optarg,
-      #   :kwarg, etc) of the arguments given, instead of just having
-      #   an array of Chains as the arguments.
+      # @sg-ignore Need better overload selection
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType, Array<ComplexType::UniqueType>}]
         @cache ||= {}

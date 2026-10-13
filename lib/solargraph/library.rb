@@ -288,7 +288,7 @@ module Solargraph
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
-        # @sg-ignore a ternary over two arrays loses the element type, so the block parameter is undefined
+        # @sg-ignore Need better generic inference here
         result.concat(found.sort do |a, b|
           a.range.start.line <=> b.range.start.line
         end)
@@ -490,7 +490,7 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
-        # @sg-ignore OK if src.filename is nil
+        # @sg-ignore nil false alarm
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
         source_map_hash[src.filename]
       else
@@ -501,9 +501,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
-        # @sg-ignore OK if src.filename is nil
+        # @sg-ignore nil false alarm
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore OK if src.filename is nil
+        # @sg-ignore nil false alarm
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -533,7 +533,7 @@ module Solargraph
       new_set = source_map.requires.to_set(&:name)
       _filenames = nil
       filenames = -> { _filenames ||= workspace.filenames.to_set }
-      # @sg-ignore OK if source_map.filename is nil
+      # @sg-ignore nil false alarm
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -561,7 +561,7 @@ module Solargraph
     # @raise [FileNotFoundError] if the file does not exist
     # @param filename [String]
     # @return [Solargraph::Source]
-    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+    # @sg-ignore flow sensitive typing needs better guard support
     def read filename
       return @current if @current && @current.filename == filename
       raise FileNotFoundError, "File not found: #{filename}" unless workspace.has_file?(filename)
@@ -581,9 +581,9 @@ module Solargraph
     # @return [void]
     def maybe_map source
       return unless source
-      # @sg-ignore Wrong argument type for Solargraph::Workspace#has_file?: filename expected String, received String, nil
+      # @sg-ignore probably nil false alarm
       return unless @current == source || workspace.has_file?(source.filename)
-      # @sg-ignore OK if source.filename is nil
+      # @sg-ignore nil false alarm
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
     end
 
@@ -645,15 +645,15 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
-      # @sg-ignore Wrong argument type for Integer#>: arg_0 expected Numeric, received Integer, nil
+      # @sg-ignore probably nil false alarm
       @total = pending if pending > @total
-      # @sg-ignore Unresolved call to - on Integer, nil
+      # @sg-ignore probably nil false alarm
       finished = @total - pending
-      # @sg-ignore @total should always be an Integer
+      # @sg-ignore nil false alarm
       pct = if @total.zero?
               0
             else
-              # @sg-ignore Unresolved call to to_f
+              # @sg-ignore Unexplained typecheck gap; needs investigation
               ((finished.to_f / @total) * 100).to_i
             end
       message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
@@ -662,12 +662,12 @@ module Solargraph
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
-        # @sg-ignore Unresolved call to begin
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
       end
-      # @sg-ignore Unresolved call to report
+      # @sg-ignore Unexplained typecheck gap; needs investigation
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress

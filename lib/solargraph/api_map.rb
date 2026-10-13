@@ -148,7 +148,7 @@ module Solargraph
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
-          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+          # @sg-ignore flow sensitive typing needs better guard support
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end
@@ -182,7 +182,7 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
-    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+    # @sg-ignore flow sensitive typing needs better guard support
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
@@ -366,7 +366,7 @@ module Solargraph
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
+        # @sg-ignore flow sensitive typing needs better guard support
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
@@ -608,7 +608,7 @@ module Solargraph
     def search query
       pins.map(&:path)
           .compact
-          # @sg-ignore Need better handling of #compact
+          # @sg-ignore Need better generic inference here
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
@@ -666,7 +666,7 @@ module Solargraph
     #
     # @param filename [String, nil]
     # @return [SourceMap]
-    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+    # @sg-ignore flow sensitive typing needs better guard support
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
@@ -700,7 +700,7 @@ module Solargraph
       return true if sup == sub
       sc_fqns = sub
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
+        # @sg-ignore flow sensitive typing needs better guard support
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
@@ -958,7 +958,7 @@ module Solargraph
         # :nocov:
       end
 
-      # @sg-ignore ignore `received nil` for original
+      # @sg-ignore nil false alarm
       create_resolved_alias_pin(alias_pin, original)
     end
 

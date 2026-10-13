@@ -508,7 +508,7 @@ module Solargraph
                 name: 'new',
                 scope: :class,
                 location: pin.location,
-                # @sg-ignore Unresolved call to parameters on Solargraph::Pin::Base
+                # @sg-ignore Unexplained typecheck gap; needs investigation
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,
@@ -735,11 +735,11 @@ module Solargraph
       end
 
       # @param path [String]
-      # @sg-ignore Need to be able to choose signature on String#gsub
+      # @sg-ignore Need better overload selection
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore flow sensitive typing needs to handle constants
+        # @sg-ignore flow sensitive typing needs better guard support
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 

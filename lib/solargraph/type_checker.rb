@@ -233,7 +233,7 @@ module Solargraph
         # @param name [String]
         # @param data [Hash{Symbol => BasicObject}]
         params.each_pair do |name, data|
-          # @sg-ignore Need a downcast here
+          # @sg-ignore Need better generic inference here
           # @type [ComplexType]
           type = data[:qualified]
           if type.undefined?
@@ -570,7 +570,7 @@ module Solargraph
       kwargs.each_pair do |pname, argchain|
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         next unless params.key?(pname.to_s)
-        # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+        # @sg-ignore flow sensitive typing needs better guard support
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
@@ -631,7 +631,7 @@ module Solargraph
         next if tag.types.nil?
         result[tag.name.to_s] = {
           tagged: tag.types.join(', '),
-          # @sg-ignore need to add a nil check here
+          # @sg-ignore Need to add nil check here
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, *pin.closure.gates)
         }
       end
@@ -651,9 +651,9 @@ module Solargraph
         next unless param_names.include?(param_name)
 
         param_details[param_name] ||= {}
-        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+        # @sg-ignore flow sensitive typing needs to track reassignment
         param_details[param_name][:tagged] ||= details[:tagged]
-        # @sg-ignore flow sensitive typing needs better handling of ||= on lvars
+        # @sg-ignore flow sensitive typing needs to track reassignment
         param_details[param_name][:qualified] ||= details[:qualified]
       end
     end
@@ -707,7 +707,7 @@ module Solargraph
       rng = Solargraph::Range.from_node(pin.assignment)
       # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       closure_pin = source_map.locate_closure_pin(rng.start.line, rng.start.column)
-      # @sg-ignore flow sensitive typing needs to handle "if foo.nil?"
+      # @sg-ignore flow sensitive typing needs better guard support
       location = Location.new(filename, Range.from_node(pin.assignment))
       locals = source_map.locals_at(location)
       type = chain.infer(api_map, closure_pin, locals)
@@ -841,13 +841,13 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore Make ApiMap#var_at_location prefer the innermost same-named local
+        # @sg-ignore flow sensitive typing needs to track reassignment
         if %i[kwarg kwoptarg kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore Make ApiMap#var_at_location prefer the innermost same-named local
+        # @sg-ignore flow sensitive typing needs to track reassignment
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore Make ApiMap#var_at_location prefer the innermost same-named local
+        # @sg-ignore flow sensitive typing needs to track reassignment
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else

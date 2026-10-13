@@ -21,7 +21,7 @@ module Solargraph
         # @param code [String]
         # @param filename [String, nil]
         # @param starting_line [Integer]
-        # @sg-ignore need to understand that raise does not return
+        # @sg-ignore flow sensitive typing needs better guard support
         # @return [Parser::AST::Node]
         def parse code, filename = nil, starting_line = 0
           buffer = ::Parser::Source::Buffer.new(filename, starting_line)

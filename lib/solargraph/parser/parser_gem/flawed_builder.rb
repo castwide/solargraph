@@ -9,7 +9,7 @@ module Solargraph
       class FlawedBuilder < ::Parser::Builders::Default
         # @param token [::Parser::AST::Node]
         # @return [String]
-        # @sg-ignore parser gem's Builders::Default#value has no return type
+        # @sg-ignore Library method has no usable type
         def string_value token
           value(token)
         end

@@ -23,7 +23,7 @@ module Solargraph
     #
     # @param path [String]
     # @return [Metagem, nil]
-    # @sg-ignore a ternary nil branch infers NilClass, which will not match a declared nil
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
     def find_by_path path
       return system_find_by_path(path) unless bundled?
 
@@ -57,7 +57,7 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
-    # @sg-ignore keywords supplied by a ** splat are not matched against the signature
+    # @sg-ignore Need better overload selection
     def bundled?
       # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       !!@metagems
@@ -68,7 +68,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
-    # @sg-ignore keywords supplied by a ** splat are not matched against the signature
+    # @sg-ignore Need better overload selection
     def bundled
       @metagems || []
     end
@@ -105,9 +105,9 @@ module Solargraph
         if s.success?
           last_line = o.strip.split("\n").last
           json = last_line ? JSON.parse(last_line, symbolize_names: true) : []
-          # @sg-ignore keywords supplied by a ** splat are not matched against the signature
+          # @sg-ignore Need better overload selection
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          # @sg-ignore keywords supplied by a ** splat are not matched against the signature
+          # @sg-ignore Need better overload selection
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"

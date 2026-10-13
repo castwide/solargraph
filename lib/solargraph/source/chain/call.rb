@@ -64,7 +64,7 @@ module Solargraph
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           # Several union members can end up with the same pin and return type.
-          # @sg-ignore Array#flatten returns a bare Array
+          # @sg-ignore Need better generic inference here
           pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
@@ -102,7 +102,7 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
-            # @sg-ignore flow sensitive typing should handle is_a? and next
+            # @sg-ignore flow sensitive typing needs better guard support
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
               break
@@ -125,7 +125,7 @@ module Solargraph
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
                                                                                     blocktype)
           # @todo It shouldn't be necessary to choose either generics or macros
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
+          # @sg-ignore flow sensitive typing needs to track reassignment
           new_return_type = if new_signature_pin.return_type.defined?
                               # @sg-ignore https://github.com/castwide/solargraph/pull/1338
                               new_signature_pin.return_type
@@ -180,12 +180,12 @@ module Solargraph
             # reject it regardless
 
             with_block, without_block = overloads.partition(&:block?)
-            # @sg-ignore flow sensitive typing should handle is_a? and next
+            # @sg-ignore flow sensitive typing needs better guard support
             # @type Array<Pin::Signature>
             sorted_overloads = with_block + without_block
             # @type [Pin::Signature, nil]
             new_signature_pin = nil
-            # @sg-ignore flow sensitive typing should handle is_a? and next
+            # @sg-ignore flow sensitive typing needs better guard support
             # @param ol [Pin::Signature]
             sorted_overloads.each do |ol|
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
@@ -195,11 +195,11 @@ module Solargraph
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
+              # @sg-ignore flow sensitive typing needs to track reassignment
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
               result = process_directive(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing should be able to handle redefinition
+              # @sg-ignore flow sensitive typing needs to track reassignment
               next result unless result.return_type.undefined?
             end
             p
@@ -324,7 +324,7 @@ module Solargraph
         def find_method_pin name_pin
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore Need to support this in flow sensitive typing
+            # @sg-ignore flow sensitive typing needs to track reassignment
             method_pin = method_pin.closure
             return if method_pin.nil?
           end

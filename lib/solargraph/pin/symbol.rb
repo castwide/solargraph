@@ -7,7 +7,7 @@ module Solargraph
       # @param name [String]
       # @param [Hash{Symbol => Object}] kwargs
       def initialize(location, name, **kwargs)
-        # @sg-ignore "Unrecognized keyword argument kwargs to Solargraph::Pin::Base#initialize"
+        # @sg-ignore Need better overload selection
         super(location: location, name: name, **kwargs)
         # @name = name
         # @location = location

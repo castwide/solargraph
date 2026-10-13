@@ -48,7 +48,7 @@ module Solargraph
               namespace_pin.name.to_sym
             )
           end
-          # @sg-ignore Wrong argument type for YARD::CodeObjects::MethodObject.new: namespace
+          # @sg-ignore Library method has no usable type
           # expected YARD::CodeObjects::NamespaceObject, got nil.
           #   False positive because namespace_object is set in the loop above.
           YARD::CodeObjects::MethodObject.new(namespace_object, method_pin.name)
@@ -101,7 +101,7 @@ module Solargraph
 
         # @param generated_pins [Array<Pin::Base>]
         generate_yardoc_from(chain, source_map).reduce([]) do |generated_pins, directive|
-          # @sg-ignore flow sensitive typing confuses this block variable with the #directive attr reader
+          # @sg-ignore flow sensitive typing needs to track reassignment
           if directive.tag.tag_name == 'scope'
             inherited_scope = Directives::ScopeDirective.parse_scope(directive) || inherited_scope
             next generated_pins
@@ -129,7 +129,7 @@ module Solargraph
       def generate_yardoc_from chain, source_map
         name = chain.links.last.word
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
-        # @sg-ignore chain.node is assumed to exist
+        # @sg-ignore nil false alarm
         code = source_map.source.code_for(chain.node)
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
@@ -147,7 +147,7 @@ module Solargraph
         directives.each do |directive|
           next if VALUE_DIRECTIVES.include? directive.tag.tag_name
 
-          # @sg-ignore chain.node is assumed to exist
+          # @sg-ignore nil false alarm
           comments = source_map.source.comments_for(chain.node)
           if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"

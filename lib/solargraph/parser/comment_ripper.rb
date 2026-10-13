@@ -22,7 +22,7 @@ module Solargraph
       end
 
       def on_comment *args
-        # @sg-ignore super is typed void though it returns a value
+        # @sg-ignore Need better overload selection
         # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
         result = super
         # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge

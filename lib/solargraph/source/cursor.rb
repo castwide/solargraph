@@ -42,7 +42,7 @@ module Solargraph
           match = source.code[0..(offset - 1)].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
-          # @sg-ignore MatchData relies on regex always matching
+          # @sg-ignore nil false alarm
           if source.code[0..(offset - result.length - 1)].end_with?(':') && !source.code[0..(offset - result.length - 1)].end_with?('::')
             result = ":#{result}"
           end
@@ -139,10 +139,10 @@ module Solargraph
       # @return [Position]
       def node_position
         @node_position ||= if start_of_word.empty?
-                             # @sg-ignore MatchData relies on regex always matching
+                             # @sg-ignore nil false alarm
                              match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
                              if match
-                               # @sg-ignore MatchData relies on regex always matching
+                               # @sg-ignore nil false alarm
                                Position.from_offset(source.code, offset - match[0].length)
                              else
                                position

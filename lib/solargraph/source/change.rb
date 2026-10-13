@@ -62,7 +62,7 @@ module Solargraph
           result = commit text, fixed
           # @sg-ignore https://github.com/castwide/solargraph/issues/1249
           off = Position.to_offset(text, range.start)
-          # @sg-ignore MatchData relies on regex always matching
+          # @sg-ignore nil false alarm
           match = result[0, off].match(/[.:]+\z/)
           if match
             # @sg-ignore https://github.com/castwide/solargraph/issues/1250

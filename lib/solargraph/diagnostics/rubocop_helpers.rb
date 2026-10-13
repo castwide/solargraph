@@ -18,7 +18,7 @@ module Solargraph
           # @type [String]
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
           gem_lib_path = File.join(gem_path, 'lib')
-          # @sg-ignore Should better support meaning of '&' in RBS
+          # @sg-ignore Library method has no usable type
           $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)
         rescue Gem::MissingSpecVersionError => e
           # @type [Array<Gem::Specification>]
@@ -39,7 +39,7 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore Unresolved call to []=
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         options[:stdin] = code
         [options, paths]
       end

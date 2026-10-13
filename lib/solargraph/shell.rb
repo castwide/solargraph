@@ -41,7 +41,7 @@ module Solargraph
         Signal.trap('TERM') do
           Backport.stop
         end
-        # @sg-ignore Wrong argument type for Backport.prepare_tcp_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
+        # @sg-ignore Library method has no usable type
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
         $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
@@ -58,7 +58,7 @@ module Solargraph
         Signal.trap('TERM') do
           Backport.stop
         end
-        # @sg-ignore Wrong argument type for Backport.prepare_stdio_server: adapter expected Backport::Adapter, received Module<Solargraph::LanguageServer::Transport::Adapter>
+        # @sg-ignore Library method has no usable type
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
         $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
@@ -170,7 +170,7 @@ module Solargraph
                    end
                  else
                    gem_names.each_with_object([]) do |name, result|
-                     # @sg-ignore each_with_object yields an untyped accumulator and element
+                     # @sg-ignore Need better generic inference here
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
@@ -181,7 +181,7 @@ module Solargraph
                        #   TL;DR: `repo.find_by_path` should not be necessary
                        found = repo.find_by_name(name) || repo.find_by_path(name)
                        if found
-                         # @sg-ignore each_with_object yields an untyped accumulator and element
+                         # @sg-ignore Need better generic inference here
                          result.push found
                        else
                          warn "Gem #{name} not found"

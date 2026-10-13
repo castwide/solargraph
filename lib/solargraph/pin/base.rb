@@ -134,7 +134,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore Missing @return tag
+      # @sg-ignore dynamic send has no inferable return type
       # @return [undefined]
       def choose_longer other, attr
         # @type [undefined]
@@ -162,7 +162,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @sg-ignore @type should override probed type
+      # @sg-ignore Unexplained typecheck gap; needs investigation
       # @return [String]
       def combine_name other
         if needs_consistent_name? || other.needs_consistent_name?
@@ -235,7 +235,7 @@ module Solargraph
       # @param other [Pin::Base]
       # @param attr [::Symbol]
       #
-      # @sg-ignore Missing @return tag
+      # @sg-ignore dynamic send has no inferable return type
       # @return [undefined, nil]
       def choose other, attr
         results = [self, other].map(&attr).compact
@@ -251,7 +251,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore Missing @return tag
+      # @sg-ignore dynamic send has no inferable return type
       # @return [undefined]
       def choose_node other, attr
         if other.object_id < attr.object_id
@@ -263,7 +263,7 @@ module Solargraph
 
       # @param other [self]
       # @param attr [::Symbol]
-      # @sg-ignore Missing @return tag
+      # @sg-ignore dynamic send has no inferable return type
       # @return [undefined]
       def prefer_rbs_location other, attr
         if rbs_location? && !other.rbs_location?
@@ -332,7 +332,7 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore Missing @return tag
+      # @sg-ignore dynamic send has no inferable return type
       # @return [undefined]
       def assert_same other, attr
         if other.nil?
@@ -390,10 +390,10 @@ module Solargraph
             # maximize number of gates, as types in other combined pins may
             # depend on those gates
 
-            # @sg-ignore Need better handling of #compact
+            # @sg-ignore Need better generic inference here
             closure.gates.length,
             # use basename so that results don't vary system to system
-            # @sg-ignore Need better handling of #compact
+            # @sg-ignore Need better generic inference here
             File.basename(closure.best_location.to_s)
           ]
         end
@@ -509,7 +509,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
-        # @sg-ignore Should add more explicit type check on other
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         comments == other.comments && location == other.location
       end
 
@@ -526,7 +526,7 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @sg-ignore parse_comments will always set @directives
+      # @sg-ignore nil false alarm
       # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless @directives
