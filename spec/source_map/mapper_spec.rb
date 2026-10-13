@@ -437,6 +437,21 @@ describe Solargraph::SourceMap::Mapper do
     expect(pin).to be_a(Solargraph::Pin::InstanceVariable)
   end
 
+  it 'gives module function instance variable closures a source' do
+    with_env_var('SOLARGRAPH_ASSERTS', 'on') do
+      map = Solargraph::SourceMap.load_string(%(
+        module Functions
+          module_function
+          def foo
+            @foo ||= {}
+          end
+        end
+      ))
+      pin = map.pins.find { |p| p.name == '@foo' and p.context.scope == :class }
+      expect(pin.closure.source).to eq(:parser)
+    end
+  end
+
   it 'maps class variables' do
     map = Solargraph::SourceMap.load_string(%(
       class Foo
