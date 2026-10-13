@@ -368,7 +368,7 @@ module Solargraph
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore flow sensitive typing needs to track reassignment
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
@@ -704,7 +704,7 @@ module Solargraph
       return true if sup == sub
       sc_fqns = sub
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore flow sensitive typing needs to track reassignment
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
