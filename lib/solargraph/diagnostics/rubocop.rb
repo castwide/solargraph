@@ -59,6 +59,7 @@ module Solargraph
       def make_array resp
         diagnostics = []
         resp['files'].each do |file|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1398
           file['offenses'].each do |off|
             diagnostics.push offense_to_diagnostic(off)
           end
