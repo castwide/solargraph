@@ -94,6 +94,64 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'uses is_a? in a simple if() to refine types on a root-scoped (::-prefixed) class' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      module Foo
+        class Repro < ReproBase; end
+      end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        if repr.is_a?(::Foo::Repro)
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Foo::Repro')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'uses is_a? with a ::-prefixed class combined via && in a guard clause to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @param repr [ReproBase]
+      # @return [void]
+      def verify_repro(repr)
+        return unless repr.is_a?(::Repro) && repr.respond_to?(:foo)
+        repr
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? with a ::-prefixed class in an elsif to refine types in the branch body' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        if repr.is_a?(Repro1)
+          repr
+        elsif repr.is_a?(::Repro2) && repr.respond_to?(:foo)
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Repro2')
+  end
+
   it 'uses is_a? in a simple unless statement to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end
@@ -160,6 +218,96 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('Repro2')
 
     clip = api_map.clip_at('test.rb', [11, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'narrows a case/when subject to the matched class inside each branch' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1
+          repr
+        when Repro2
+          repr
+        else
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('Repro1')
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.to_s).to eq('Repro2')
+
+    clip = api_map.clip_at('test.rb', [12, 10])
+    expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'narrows a case/when subject to a union when a when clause has multiple values' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Repro2 < ReproBase; end
+      class Repro3 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1, Repro2
+          repr
+        when Repro3
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('Repro1, Repro2')
+  end
+
+  it 'narrows a case/when subject to the matched class for an ivar subject' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      class Foo
+        # @param repr [ReproBase]
+        def initialize(repr)
+          @repr = repr
+        end
+
+        # @return [void]
+        def verify
+          case @repr
+          when Repro1
+            @repr
+          end
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [13, 12])
+    expect(clip.infer.to_s).to eq('Repro1')
+  end
+
+  it 'does not narrow a case/when subject when a when clause value is not a simple constant' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro1 < ReproBase; end
+      # @param repr [ReproBase]
+      def verify_repro(repr)
+        case repr
+        when Repro1, some_dynamic_value
+          repr
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
@@ -660,6 +808,113 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 
+  it 'uses .nil? in a raise if() in a method to refine types using nil checks' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          baz
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses is_a? in a return unless() at the top level of a file (no enclosing method) to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @type [ReproBase, nil]
+      repr = Repro.new
+      return unless repr.is_a?(Repro)
+      repr
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 6])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses is_a? in a raise unless() at the top level of a class body (no enclosing method) to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      class Container
+        # @type [ReproBase, nil]
+        repr = Repro.new
+        raise 'invalid' unless repr.is_a?(Repro)
+        repr
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'uses .nil? in a raise if() to refine a type used as a call argument' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          accepts_boolean(baz)
+        end
+
+        # @param b [::Boolean]
+        # @return [void]
+        def accepts_boolean(b); end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 27])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'uses .nil? in a raise if() to refine a type used as a call receiver' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String, nil]
+        # @return [void]
+        def bar(baz: nil)
+          raise 'baz required' if baz.nil?
+          baz.length
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 12])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'uses .nil? in a raise if() with a multi-statement branch to refine types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [String, nil]
+        # @return [void]
+        def bar(baz: nil)
+          if baz.nil?
+            valid = %w[a b c]
+            raise "baz required. Valid: \#{valid.inspect}"
+          end
+          baz.length
+        end
+      end
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 12])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
   it 'uses .nil? in a return if() in a block to refine types using nil checks' do
     source = Solargraph::Source.load_string(%(
       class Foo
@@ -896,6 +1151,44 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
     clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean')
+  end
+
+  it 'narrows a plain ||= assignment on an lvar to eliminate nil' do
+    source = Solargraph::Source.load_string(%(
+      class ReproBase; end
+      class Repro < ReproBase; end
+      # @param repr [Repro, nil]
+      # @return [void]
+      def verify_repro(repr)
+        repr ||= Repro.new
+        repr
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 8])
+    expect(clip.infer.to_s).to eq('Repro')
+  end
+
+  it 'narrows a ||= assignment on a keyword param to eliminate nil, with no nested nil check' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param baz [::Boolean, nil]
+        # @return [void]
+        def bar(baz: nil)
+          baz
+          baz ||= true
+          baz
+        end
+      end
+  ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [5, 10])
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
+
+    clip = api_map.clip_at('test.rb', [7, 10])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
   end
 

@@ -7,6 +7,7 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         autoload :BeginNode,     'solargraph/parser/parser_gem/node_processors/begin_node'
+        autoload :CaseNode,      'solargraph/parser/parser_gem/node_processors/case_node'
         autoload :DefNode,       'solargraph/parser/parser_gem/node_processors/def_node'
         autoload :DefsNode,      'solargraph/parser/parser_gem/node_processors/defs_node'
         autoload :SendNode,      'solargraph/parser/parser_gem/node_processors/send_node'
@@ -40,6 +41,7 @@ module Solargraph
       register :kwbegin,      ParserGem::NodeProcessors::BeginNode
       register :rescue,       ParserGem::NodeProcessors::BeginNode
       register :resbody,      ParserGem::NodeProcessors::ResbodyNode
+      register :case,         ParserGem::NodeProcessors::CaseNode
       register :def,          ParserGem::NodeProcessors::DefNode
       register :defs,         ParserGem::NodeProcessors::DefsNode
       register :if,           ParserGem::NodeProcessors::IfNode
