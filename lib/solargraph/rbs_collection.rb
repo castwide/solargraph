@@ -16,6 +16,7 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
+      # @sg-ignore Need to add nil check here
       mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
     end
 
@@ -31,28 +32,35 @@ module Solargraph
     # so they can never be located by a gem name/version lookup.
     #
     # @return [Array<String>]
+    # @sg-ignore return type could not be inferred
     def stdlib_names
       @stdlib_names ||= raw_data[:gems].select { |gem| gem.dig(:source, :type).to_s == 'stdlib' }
+                                       # @sg-ignore return type could not be inferred
                                        .map { |gem| gem[:name].to_s }.uniq
     end
 
     private
 
     # @return [Hash{String => String, nil}]
+    # @sg-ignore return type could not be inferred
     def gem_path_map
+      # @sg-ignore return type could not be inferred
       @gem_path_map ||= raw_data[:gems].to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }
     end
 
     # The versions available in the collection for each gem name.
     #
     # @return [Hash{String => Array<String>}]
+    # @sg-ignore return type could not be inferred
     def versions_by_name
       @versions_by_name ||= raw_data[:gems].group_by { |gem| gem[:name].to_s }
+                                           # @sg-ignore return type could not be inferred
                                            .transform_values { |gems| gems.map { |gem| gem[:version].to_s } }
     end
 
     # @param metagem [Metagem]
     # @return [String, nil]
+    # @sg-ignore Array#first/#last relies on non-empty invariant
     def best_key metagem
       key = "#{metagem.name}-#{metagem.version}"
       return key if gem_path_map.key?(key)
@@ -60,6 +68,7 @@ module Solargraph
       full_key = "#{metagem.name}-#{metagem.version}."
       zero_key = "#{metagem.name}-0"
       found = gem_path_map.find { |key, _| full_key.start_with?("#{key}.") } ||
+              # @sg-ignore need to support destructured args in blocks
               gem_path_map.find { |key, _| key == zero_key }
       found&.first || closest_key(metagem)
     end
@@ -85,6 +94,7 @@ module Solargraph
                end
       chosen ||= usable.min_by { |_, parsed_version| parsed_version }
       chosen ||= parsed.first
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       "#{metagem.name}-#{chosen[0]}"
     end
 
@@ -111,6 +121,7 @@ module Solargraph
     end
 
     # @return [Hash]
+    # @sg-ignore return type could not be inferred
     def raw_data
       @raw_data ||= if lockfile && File.file?(lockfile)
                       YAML.load_file(lockfile, symbolize_names: true)
