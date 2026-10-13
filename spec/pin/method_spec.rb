@@ -799,4 +799,17 @@ describe Solargraph::Pin::Method do
     pin = gem_map.pins.find { |p| p.path == 'Foo#bar' }
     expect(pin.probe(api_map).tag).to eq('String')
   end
+
+  it 'infers return nodes from locals in sources without a filename' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        bar = String.new
+        bar
+      end
+    ))
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.get_path_pins('#foo').first
+    expect(pin.probe(api_map).tag).to eq('String')
+  end
 end

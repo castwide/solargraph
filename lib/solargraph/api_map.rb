@@ -175,7 +175,7 @@ module Solargraph
       @conventions_environ ||= Environ.new
     end
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
     def cursor_at filename, position
@@ -186,7 +186,7 @@ module Solargraph
 
     # Get a clip by filename and position.
     #
-    # @param filename [String]
+    # @param filename [String, nil]
     # @param position [Position, Array(Integer, Integer)]
     # @return [SourceMap::Clip]
     def clip_at filename, position
@@ -201,7 +201,7 @@ module Solargraph
     # @param position [Position, Array(Integer, Integer)]
     # @return [::Array<Pin::LocalVariable>]
     def locals_at filename, position
-      return [] unless filename && bundled?(filename)
+      return [] unless source_map_hash.key?(filename)
       clip_at(filename, position).locals
     end
 
