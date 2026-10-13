@@ -67,7 +67,7 @@ module Solargraph
       # @return [Enumerable<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>]
       def get_constants fqns, visibility = [:public]
         namespace_children(fqns).select do |pin|
-          # @sg-ignore flow sensitive typing needs better guard support
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           !pin.name.empty? && (pin.is_a?(Pin::Namespace) || pin.is_a?(Pin::Constant)) && visibility.include?(pin.visibility)
         end
       end

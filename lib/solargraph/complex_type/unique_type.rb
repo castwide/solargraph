@@ -305,7 +305,7 @@ module Solargraph
         rooted_tags
       end
 
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [String]
       def to_rbs
         if duck_type?

@@ -126,7 +126,7 @@ module Solargraph
         !block.nil?
       end
 
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [Pin::Signature, nil]
       def block
         return @block unless @block == :undefined

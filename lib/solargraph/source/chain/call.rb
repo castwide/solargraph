@@ -102,7 +102,7 @@ module Solargraph
                                                     gates: name_pin.gates,
                                                     source: :chain)
             atype = atypes[idx] ||= arg.infer(api_map, arg_name_pin, locals)
-            # @sg-ignore flow sensitive typing needs better guard support
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             unless param.compatible_arg?(atype, api_map) || param.restarg?
               match = false
               break

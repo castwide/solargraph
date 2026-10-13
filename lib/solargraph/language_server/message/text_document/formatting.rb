@@ -101,7 +101,7 @@ module Solargraph
           # @return [String, nil]
           def cop_list value
             # @type [String]
-            # @sg-ignore flow sensitive typing needs better guard support
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             value = value.join(',') if value.respond_to?(:join)
             return nil if value == '' || !value.is_a?(String)
             value
