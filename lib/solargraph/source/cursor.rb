@@ -35,7 +35,7 @@ module Solargraph
       # The part of the word before the current position. Given the text
       # `foo.bar`, the start_of_word at position(0, 6) is `ba`.
       #
-      # @sg-ignore Add a MatchData#[] (0 index) -> String RBS fill once castwide PRs 1223 and 1385 merge
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1385
       # @return [String]
       def start_of_word
         @start_of_word ||= begin
