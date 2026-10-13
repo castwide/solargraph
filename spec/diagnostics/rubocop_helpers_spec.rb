@@ -15,7 +15,7 @@ describe Solargraph::Diagnostics::RubocopHelpers do
       Gem.paths = { 'GEM_PATH' => old_gem_path.join(Gem.path_separator) }
       # Cleanup loaded classes from custom gem path
       $LOAD_PATH.delete_if { |path| path[custom_gem_path] }
-      Object.send(:remove_const, 'RuboCop')
+      RuboCop.send(:remove_const, :Version)
     end
 
     let(:custom_version) { '0.0.0' }

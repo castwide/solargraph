@@ -5,8 +5,14 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class DefNode < Parser::NodeProcessor::Base
+          on_node_type :def, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::DefNode]
+
+          # @return [void]
           def process
-            name = node.children[0].to_s
+            name = node.method_name.to_s
             scope = region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance)
             # specify context explicitly instead of relying on
             # closure, as they may differ (e.g., defs inside

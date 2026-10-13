@@ -9,18 +9,17 @@ module Solargraph
       autoload :Base, 'solargraph/parser/node_processor/base'
 
       class << self
-        # @type [Hash{Symbol => Array<Class<NodeProcessor::Base>>}]
-        @@processors ||= {}
-
-        # Register a processor for a node type. You can register multiple processors for the same type.
-        # If a node processor returns true, it will skip the next processor of the same node type.
+        # Register a processor's #process method for a node type. You can register multiple processors for the same
+        # type. If a processor's #process returns a falsy value, the next processors of the same node type are skipped.
+        #
+        # Processors can also register their own handlers with {Walker::BaseProcessor.on_node_type} and
+        # {Walker::BaseProcessor.on_node_pattern_enter}.
         #
         # @param type [Symbol]
         # @param cls [Class<NodeProcessor::Base>]
-        # @return [Array<Class<NodeProcessor::Base>>]
+        # @return [void]
         def register type, cls
-          @@processors[type] ||= []
-          @@processors[type] << cls
+          cls.on_node_type(type, :process_or_halt)
         end
 
         # @param type [Symbol]
@@ -28,7 +27,7 @@ module Solargraph
         #
         # @return [void]
         def deregister type, cls
-          @@processors[type].delete(cls)
+          Walker.deregister(cls, type)
         end
       end
 
@@ -47,14 +46,8 @@ module Solargraph
           )
         end
         return [pins, locals, ivars] unless Parser.is_ast_node?(node)
-        node_processor_classes = @@processors[node.type] || [NodeProcessor::Base]
 
-        node_processor_classes.each do |klass|
-          processor = klass.new(node, region, pins, locals, ivars)
-          process_next = processor.process
-
-          break unless process_next
-        end
+        Walker.new(node, region: region, pins: pins, locals: locals, ivars: ivars).walk!
 
         [pins, locals, ivars]
       end

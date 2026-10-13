@@ -7,6 +7,9 @@ module Solargraph
         class WhileNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :while, :process
+
+          # @return [void]
           def process
             FlowSensitiveTyping.new(locals,
                                     ivars,

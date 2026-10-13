@@ -7,30 +7,36 @@ module Solargraph
         class ResbodyNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_pattern_enter '(resbody $_ $_ $_)', :process
+
+          # @param exceptions [Parser::AST::Node, nil]
+          # @param variable [Parser::AST::Node, nil]
+          # @param body [Parser::AST::Node, nil]
           # @return [void]
-          def process
-            if node.children[1] # Exception local variable name
-              here = get_node_start_position(node.children[1])
+          def process exceptions, variable, body
+            skip_children
+            if variable
+              here = get_node_start_position(variable)
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
-              loc = get_node_location(node.children[1])
-              types = if node.children[0].nil?
+              loc = get_node_location(variable)
+              types = if exceptions.nil?
                         ['Exception']
                       else
-                        node.children[0].children.map do |child|
+                        exceptions.children.map do |child|
                           unpack_name(child)
                         end
                       end
               locals.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
-                name: node.children[1].children[0].to_s,
+                name: variable.children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            walk body
           end
         end
       end

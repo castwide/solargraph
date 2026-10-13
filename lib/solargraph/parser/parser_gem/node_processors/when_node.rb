@@ -7,6 +7,9 @@ module Solargraph
         class WhenNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :when, :process
+
+          # @return [void]
           def process
             pins.push Solargraph::Pin::CompoundStatement.new(
               location: get_node_location(node),
@@ -14,7 +17,6 @@ module Solargraph
               node: node,
               source: :parser
             )
-            process_children
           end
         end
       end

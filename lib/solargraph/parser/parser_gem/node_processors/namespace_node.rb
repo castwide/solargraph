@@ -7,13 +7,24 @@ module Solargraph
         class NamespaceNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_type :class, :process
+          on_node_type :module, :process
+
+          # @!method node
+          #   @return [RuboCop::AST::ClassNode, RuboCop::AST::ModuleNode]
+
+          # @!method const_superclass(node)
+          #   @param node [::Parser::AST::Node]
+          #   @return [::Parser::AST::Node, nil]
+          def_node_matcher :const_superclass, '(class _ $const _)'
+
+          # @return [void]
           def process
-            name = unpack_name(node.children[0])
+            name = unpack_name(node.identifier)
             comments = comments_for(node)
 
-            superclass_name = if node.type == :class && node.children[1]&.type == :const
-              "#{type_from_node}#{parameters_from_inline_rbs}"
-            end
+            superclass = const_superclass(node)
+            superclass_name = ("#{unpack_name(superclass)}#{parameters_from_inline_rbs(superclass)}" if superclass)
 
             loc = get_node_location(node)
             nspin = Solargraph::Pin::Namespace.new(
@@ -45,11 +56,9 @@ module Solargraph
           # it: directly after the superclass, on the same line, with no space
           # between `#` and `[`. Anything else is an ordinary comment.
           #
+          # @param superclass [::Parser::AST::Node]
           # @return [String, nil]
-          def parameters_from_inline_rbs
-            superclass = node.children[1]
-            return unless superclass
-
+          def parameters_from_inline_rbs superclass
             source = region.source.code
             pos = get_node_end_position(superclass)
             offset = Position.line_char_to_offset(source, pos.line, pos.character)
@@ -61,10 +70,6 @@ module Solargraph
             return if code.empty?
 
             "<#{code}>"
-          end
-
-          def type_from_node
-            unpack_name(node.children[1]) if node.children[1]&.type == :const
           end
         end
       end

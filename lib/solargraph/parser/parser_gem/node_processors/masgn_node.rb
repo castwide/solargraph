@@ -7,8 +7,12 @@ module Solargraph
         class MasgnNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
+          on_node_pattern_leave '(masgn (mlhs $...) $_)', :process
+
+          # @param lhs_arr [Array<Parser::AST::Node>]
+          # @param mass_rhs [Parser::AST::Node]
           # @return [void]
-          def process
+          def process lhs_arr, mass_rhs
             # Example:
             #
             # s(:masgn,
@@ -22,15 +26,6 @@ module Solargraph
             #     s(:int, 2),
             #     s(:int, 3)))
             masgn = node
-            # @type [Parser::AST::Node]
-            mlhs = masgn.children.fetch(0)
-            # @type [Array<Parser::AST::Node>]
-            lhs_arr = mlhs.children
-            # @type [Parser::AST::Node]
-            mass_rhs = node.children.fetch(1)
-
-            # Get pins created for the mlhs node
-            process_children
 
             lhs_arr.each_with_index do |lhs, i|
               location = get_node_location(lhs)
