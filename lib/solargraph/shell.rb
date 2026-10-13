@@ -120,7 +120,7 @@ module Solargraph
         if gem == 'core'
           Solargraph::Collection::Core.uncache
         elsif gem == 'stdlib'
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1255
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1281
           FileUtils.rm_rf CacheDir.stdlib_dir
         else
           metagem = repo.find_by_name(gem)
@@ -272,7 +272,7 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure do
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1250
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1338
         api_map.pins.each do |pin|
           puts pin_description(pin) if options[:verbose]
           pin.typify api_map

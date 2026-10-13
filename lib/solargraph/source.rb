@@ -325,7 +325,7 @@ module Solargraph
           ctxt.push p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1250
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1338
           skip = here if skip.nil? || here < skip
           ctxt.push p[skip..]
         end

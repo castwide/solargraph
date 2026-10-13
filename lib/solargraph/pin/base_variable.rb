@@ -279,7 +279,7 @@ module Solargraph
       # @param other_closure [Pin::Closure]
       # @param other_loc [Location]
       def visible_at? other_closure, other_loc
-        # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         location.filename == other_loc.filename &&
           # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           (!presence || presence.include?(other_loc.range.start)) &&

@@ -23,7 +23,7 @@ module Solargraph
 
       Solargraph.logger.info "Caching yardoc for #{metagem.cache_name}"
       path = path_for(metagem)
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1255
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1281
       FileUtils.mkdir_p File.dirname(path)
       cmd = ['yardoc', '--db', path, '--no-output', '--plugin', 'solargraph', '--plugin', 'activesupport-concern']
       Solargraph.logger.debug "Running: #{cmd.inspect}"
@@ -42,7 +42,7 @@ module Solargraph
     # @param metagem [Metagem]
     # @return [void]
     def uncache metagem
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1255
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1281
       FileUtils.rm_rf path_for(metagem)
     end
 

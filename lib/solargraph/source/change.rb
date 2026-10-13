@@ -60,12 +60,12 @@ module Solargraph
           fixed
         else
           result = commit text, fixed
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           off = Position.to_offset(text, range.start)
           # @sg-ignore nil false alarm
           match = result[0, off].match(/[.:]+\z/)
           if match
-            # @sg-ignore https://github.com/castwide/solargraph/issues/1250
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1338
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
           end
           result

@@ -489,7 +489,7 @@ module Solargraph
         instance_of?(other.class) &&
           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           name == other.name &&
-          # @sg-ignore https://github.com/castwide/solargraph/issues/1249
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           (comments == other.comments ||

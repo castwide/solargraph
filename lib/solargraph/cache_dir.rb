@@ -54,7 +54,7 @@ module Solargraph
 
     # @return [void]
     def clear
-      # @sg-ignore https://github.com/castwide/solargraph/issues/1255
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1281
       FileUtils.rm_rf base_dir
     end
   end

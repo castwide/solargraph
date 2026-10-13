@@ -777,7 +777,7 @@ module Solargraph
                   settled_kwargs += 1
                 elsif param.decl == :kwarg
                   last_arg_last_link = arguments.last.links.last
-                  # @sg-ignore https://github.com/castwide/solargraph/issues/1251
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end
