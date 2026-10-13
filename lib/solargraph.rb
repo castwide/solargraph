@@ -83,11 +83,11 @@ module Solargraph
       raise "No message given for #{type.inspect}" if msg.nil?
 
       # conditional aliases to handle compatibility corner cases
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       return if type == :alias_target_missing && msg.include?('highline/compatibility.rb')
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       return if type == :alias_target_missing && msg.include?('lib/json/add/date.rb')
-      # @sg-ignore flow sensitive typing needs better guard support
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       return if type == :alias_target_missing && msg.include?('rubocop-ast.rbs')
       # @todo :combine_with_visibility is not ready for prime time -
       #  lots of disagreements found in practice that heuristics need

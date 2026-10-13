@@ -16,7 +16,7 @@ module Solargraph
           end
           return Solargraph::Location.new(__FILE__, Solargraph::Range.from_to(__LINE__ - 1, 0, __LINE__ - 1, 0))
         end
-        # @sg-ignore flow sensitive typing needs better guard support
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
         file = File.join(spec.full_gem_path, code_object.file)
         Solargraph::Location.new(file, Solargraph::Range.from_to(code_object.line - 1, 0, code_object.line - 1, 0))
       end
