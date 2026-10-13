@@ -93,27 +93,6 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
-  end
-
-  context 'with standard loads for solargraph project' do
-    before :all do # rubocop:disable RSpec/BeforeAfterAll
-      @api_map = Solargraph::ApiMap.load_with_cache('.')
-    end
-
-    let(:api_map) { @api_map }
-
-    context 'with superclass pin for Parser::AST::Node' do
-      let(:superclass_pin) do
-        api_map.pins.find do |pin|
-          pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
-        end
-      end
-
-      it 'generates a rooted pin' do
-        # rooted!
-        expect(superclass_pin&.name).to eq('::AST::Node')
-      end
-    end
 
     # https://github.com/castwide/solargraph/issues/1042
     context 'with Hash superclass with untyped value and alias' do
@@ -137,6 +116,10 @@ describe Solargraph::RbsMap::Conversions do
         expect { sub_alias_stack }.not_to raise_error
       end
 
+      it 'resolves the alias to the inherited method' do
+        expect(sub_alias_stack).not_to be_empty
+      end
+
       it 'finds superclass method pin return type' do
         expect(sup_method_stack.map(&:return_type).map(&:rooted_tags).uniq).to eq(['undefined'])
       end
@@ -153,6 +136,27 @@ describe Solargraph::RbsMap::Conversions do
                    end
         expect(sup_method_stack.flat_map(&:signatures).flat_map(&:parameters).map(&:return_type).map(&:rooted_tags)
                  .uniq).to eq(expected)
+      end
+    end
+  end
+
+  context 'with standard loads for solargraph project' do
+    before :all do # rubocop:disable RSpec/BeforeAfterAll
+      @api_map = Solargraph::ApiMap.load_with_cache('.')
+    end
+
+    let(:api_map) { @api_map }
+
+    context 'with superclass pin for Parser::AST::Node' do
+      let(:superclass_pin) do
+        api_map.pins.find do |pin|
+          pin.is_a?(Solargraph::Pin::Reference::Superclass) && pin.context.namespace == 'Parser::AST::Node'
+        end
+      end
+
+      it 'generates a rooted pin' do
+        # rooted!
+        expect(superclass_pin&.name).to eq('::AST::Node')
       end
     end
   end
