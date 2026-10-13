@@ -30,7 +30,7 @@ module Solargraph
             return false if assignment_node.nil?
 
             struct_node = if assignment_node.type == :block
-                            assignment_node.children[0]
+                            assignment_node.children.fetch(0)
                           else
                             assignment_node
                           end
