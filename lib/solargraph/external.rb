@@ -38,6 +38,10 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    def loaded_stdlibs
+      @loaded_stdlibs ||= Set.new
+    end
+
     def pins
       @pins ||= []
     end
@@ -105,9 +109,38 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    def rbs_collection
+      @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
+    end
+
+    def rbs_collection_lockfile
+      return if directory.nil? || directory.empty? || directory == '*'
+      lockfile = File.join(directory, 'rbs_collection.lock.yaml')
+      lockfile if File.file?(lockfile)
+    end
+
+    # Signature sets for the Ruby stdlib are part of a collection's lockfile
+    # but are not associated with any gem in the bundle, so the gem lookup in
+    # #load_rbs_collection never finds them. Load them from the rbs gem.
+    #
+    # @return [void]
+    def load_collection_stdlibs
+      rbs_collection.stdlib_names.each do |library|
+        next if loaded_stdlibs.include? library
+        next unless RbsMap::Stdlib.has? library
+        loaded_stdlibs.add library
+        pins.concat Collection::Stdlib.load(library)
+      end
+    end
+
     def load_rbs_collection
-      rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
-      pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
+      load_collection_stdlibs
+      loaded_gems.each do |metagem|
+        rbsc_pins = rbs_collection.load(metagem)
+        # @todo Combining the pins is necessary because concatenating them
+        #   breaks deep type inference in some cases
+        pins.replace(RbsMap::Helpers.combine(pins, rbsc_pins)) unless rbsc_pins.empty?
+      end
     end
 
     def clear_all
@@ -116,6 +149,7 @@ module Solargraph
       unresolved_dependencies.clear
       loaded_gems.clear
       unloaded_gems.clear
+      loaded_stdlibs.clear
     end
 
     def process_gem metagem
@@ -142,18 +176,6 @@ module Solargraph
         next unresolved_dependencies.push(name) unless metagem
         process_gem metagem
       end
-    end
-
-    # @return [Array<String>]
-    def read_rbs_collection_paths
-      return [] unless rbs_collection_config_path
-
-      yaml = YAML.load_file(rbs_collection_config_path)
-      [File.expand_path(yaml.fetch('path'), directory)].concat(
-        yaml.fetch('sources', [])
-            .select { |source| source['type'] == 'local' && source['path'] }
-            .map { |source| File.expand_path(source['path'], directory) }
-      ).compact
     end
   end
 end
