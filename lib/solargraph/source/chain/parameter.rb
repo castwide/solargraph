@@ -25,9 +25,8 @@ module Solargraph
         # @param locals [::Array<Pin::Parameter, Pin::LocalVariable>]
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
-          # @type [Pin::Method]
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
-          return [] unless method_pin
+          return [] unless method_pin.is_a?(Pin::Method)
           # A literal nested inside an argument, e.g. foo([:bar]), is not
           # itself an argument
           arg_index = current_index
