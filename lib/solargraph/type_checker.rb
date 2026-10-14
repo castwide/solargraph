@@ -633,7 +633,7 @@ module Solargraph
         next if tag.types.nil?
         result[tag.name.to_s] = {
           tagged: tag.types.join(', '),
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1393
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, *pin.closure.gates)
         }
       end

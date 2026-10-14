@@ -101,7 +101,7 @@ module Solargraph
       source_hash.values
     end
 
-    # @param filename [String]
+    # @param filename [String, nil]
     # @return [Boolean]
     def has_file? filename
       source_hash.key?(filename)

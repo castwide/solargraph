@@ -583,7 +583,6 @@ module Solargraph
     # @return [void]
     def maybe_map source
       return unless source
-      # @sg-ignore probably nil false alarm
       return unless @current == source || workspace.has_file?(source.filename)
       # @sg-ignore nil false alarm
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)

@@ -325,7 +325,7 @@ module Solargraph
           ctxt.push p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore nil false alarm
           skip = here if skip.nil? || here < skip
           ctxt.push p[skip..]
         end

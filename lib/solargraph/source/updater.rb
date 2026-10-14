@@ -38,7 +38,7 @@ module Solargraph
         @output = text
         @did_nullify = can_nullify
         changes.each do |ch|
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore flow sensitive typing needs to track reassignment
           @output = ch.write(@output, can_nullify)
         end
         @output

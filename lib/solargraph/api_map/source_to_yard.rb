@@ -67,7 +67,7 @@ module Solargraph
             next
           end
 
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore Library method has no usable type
           # @param obj [YARD::CodeObjects::RootObject]
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
             code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope

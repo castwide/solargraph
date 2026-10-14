@@ -157,7 +157,7 @@ module Solargraph
 
     # @return [Array<Parser::AST::Node>]
     def method_call_nodes
-      # @sg-ignore probably nil false alarm
+      # @sg-ignore nil false alarm
       @method_call_nodes ||= Solargraph::Parser::ParserGem::NodeMethods.call_nodes_from(source.node)
     end
 
