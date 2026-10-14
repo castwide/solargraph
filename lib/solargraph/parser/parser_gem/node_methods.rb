@@ -197,6 +197,41 @@ module Solargraph
           nodes.any? { |n| splatted_call?(n) }
         end
 
+        # Names an expression made only of variables and argument-less
+        # calls, e.g. 'h', '@h' or 'loc.filename'.
+        #
+        # @param node [Parser::AST::Node, nil]
+        # @return [String, nil]
+        def variable_chain_name node
+          return unless node
+          return node.children[0].to_s if %i[lvar ivar].include?(node.type)
+          return unless node.type == :send && node.children.length == 2
+
+          receiver = node.children[0]
+          return node.children[1].to_s if receiver.nil?
+
+          base = variable_chain_name(receiver)
+          base && "#{base}.#{node.children[1]}"
+        end
+
+        # Names the 'h[k]' lookup that a 'h.key?(k)' guard proves present,
+        # so FlowSensitiveTyping and Chain agree on it, e.g. 'h[k]' or
+        # 'h[:a]'.
+        #
+        # @param receiver_name [String] see #variable_chain_name
+        # @param key_node [Parser::AST::Node, nil]
+        # @return [String, nil]
+        def key_lookup_name receiver_name, key_node
+          return unless key_node
+
+          key_name = if %i[str sym int].include?(key_node.type)
+                       key_node.children[0].inspect
+                     else
+                       variable_chain_name(key_node)
+                     end
+          key_name && "#{receiver_name}[#{key_name}]"
+        end
+
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         # @param node [Parser::AST::Node]
         # @return [Array<Parser::AST::Node>]

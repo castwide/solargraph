@@ -5,6 +5,9 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
+      # Hash methods that return true only when the key is present
+      KEY_GUARDS = %i[key? has_key? include? member?].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
@@ -82,6 +85,7 @@ module Solargraph
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
+        process_key_guard(node, true_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -431,6 +435,86 @@ module Solargraph
         if_false[pin] ||= []
         if_false[pin] << { type: ComplexType.parse('nil, false') }
         process_facts(if_false, false_presences)
+      end
+
+      # Records that 'h[k]' is not nil where 'h.key?(k)' is true. A false
+      # guard proves nothing about 'h[k]', which a default proc can still
+      # answer. Chain applies the fact only when 'h' is a Hash whose values
+      # can't be nil, and 'h' and 'k' read variables or attr_readers.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_key_guard node, true_presences
+        receiver, method_name, key = node.children
+        return unless KEY_GUARDS.include?(method_name) && node.children.length == 3
+
+        receiver_name = variable_chain_name(receiver)
+        name = receiver_name && key_lookup_name(receiver_name, key)
+        statement = enclosing_compound_statement_pin
+        # a method or block body is its own closure
+        closure = statement.is_a?(Pin::Closure) ? statement : statement&.closure
+        return unless name && closure
+
+        pin = Pin::LocalVariable.new(
+          location: Location.from_node(node),
+          closure: closure,
+          name: name,
+          # e.g. 'h[k]' with the location of 'h.key?(k)'
+          assignment: node.updated(nil, [receiver, :[], key]),
+          source: :flow_sensitive_typing
+        )
+        presences = clip_at_writes(true_presences, [receiver, key])
+        process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
+      end
+
+      # Ends each presence at the first assignment to a variable that one
+      # of `nodes` reads, e.g. 'h = other' for 'h', or '@table = other'
+      # for an attr_reader 'table'.
+      #
+      # @param presences [Array<Range>]
+      # @param nodes [Array<Parser::AST::Node>]
+      # @return [Array<Range>]
+      def clip_at_writes presences, nodes
+        body = enclosing_compound_statement_pin&.node
+        # without the enclosing body, writes can't be ruled out
+        return [] if body.nil?
+
+        targets = nodes.filter_map { |node| written_variable(node) }
+        writes = []
+        collect_writes(body, targets, writes)
+        presences.map do |presence|
+          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut ? Range.new(presence.start, cut) : presence
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @return [Array(Symbol, Symbol), nil] assignment node type and
+      #   variable name whose write changes what `node` reads, e.g.
+      #   [:ivasgn, :@table] for 'table.size'
+      def written_variable node
+        return [:lvasgn, node.children[0]] if node.type == :lvar
+        return [:ivasgn, node.children[0]] if node.type == :ivar
+        return unless node.type == :send
+
+        receiver = node.children[0]
+        # a bare attr_reader reads its same-named instance variable
+        return [:ivasgn, :"@#{node.children[1]}"] if receiver.nil?
+
+        written_variable(receiver)
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param targets [Array<Array(Symbol, Symbol)>]
+      # @param writes [Array<Position>] start positions found so far
+      # @return [void]
+      def collect_writes node, targets, writes
+        writes << get_node_start_position(node) if targets.include?([node.type, node.children[0]])
+        node.children.each do |child|
+          collect_writes(child, targets, writes) if child.is_a?(::Parser::AST::Node)
+        end
       end
 
       # @param node [Parser::AST::Node]

@@ -997,5 +997,30 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'trusts a Hash lookup guarded by key?' do
+      checker = type_checker(%(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @return [Integer]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h[k] + 1
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'reports an unguarded Hash lookup' do
+      checker = type_checker(%(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @return [Integer]
+        def foo h, k
+          h[k] + 1
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to + on Integer, nil')
+    end
   end
 end
