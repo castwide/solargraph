@@ -88,8 +88,7 @@ module Solargraph
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore
-              BlankRubocopFormatter
+              self.class.const_get('BlankRubocopFormatter')
             else
               require_rubocop(config['version'])
               klass = Class.new(::RuboCop::Formatter::BaseFormatter)
