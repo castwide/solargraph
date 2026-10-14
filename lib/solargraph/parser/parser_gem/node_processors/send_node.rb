@@ -9,7 +9,7 @@ module Solargraph
 
           # @sg-ignore @override is adding, not overriding
           def process
-            # @sg-ignore Unexplained typecheck gap; needs investigation
+            # @sg-ignore child node types depend on parent node type
             # @type [Symbol]
             method_name = node.children[1]
             # :nocov:
@@ -61,7 +61,7 @@ module Solargraph
             if node.children.length > 2
               # @sg-ignore child node types depend on parent node type
               node.children[2..].each do |child|
-                # @sg-ignore Unexplained typecheck gap; needs investigation
+                # @sg-ignore child node types depend on parent node type
                 # @type [Symbol]
                 visibility = node.children[1]
                 # :nocov:

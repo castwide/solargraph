@@ -655,7 +655,7 @@ module Solargraph
       pct = if @total.zero?
               0
             else
-              # @sg-ignore Unexplained typecheck gap; needs investigation
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1259
               ((finished.to_f / @total) * 100).to_i
             end
       message = "#{gem_name}#{" (+#{pending})" if pending.positive?}"
@@ -664,12 +664,12 @@ module Solargraph
         @cache_progress = LanguageServer::Progress.new('Caching gem')
         # If we don't send both a begin and a report, the progress notification
         # might get stuck in the status bar forever
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore flow sensitive typing needs to track reassignment
         @cache_progress.begin(message, pct)
         changed
         notify_observers @cache_progress
       end
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore flow sensitive typing needs to track reassignment
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress

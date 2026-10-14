@@ -510,7 +510,7 @@ module Solargraph
                 name: 'new',
                 scope: :class,
                 location: pin.location,
-                # @sg-ignore Unexplained typecheck gap; needs investigation
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1245
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,

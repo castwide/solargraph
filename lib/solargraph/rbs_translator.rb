@@ -51,12 +51,12 @@ module Solargraph
       arg_num = 0
       params = []
       method_type.type.required_positionals.each do |param|
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :arg, closure)
         arg_num += 1
       end
       method_type.type.optional_positionals.each do |param|
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :optarg, closure)
         arg_num += 1
       end

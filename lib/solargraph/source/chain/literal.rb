@@ -39,9 +39,7 @@ module Solargraph
           @complex_type = ComplexType.try_parse(type)
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         protected def equality_fields
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           super + [@value, @type, @literal_type, @complex_type]
         end
 

@@ -70,7 +70,7 @@ module Solargraph
       #
       # @param api_map [ApiMap]
       # @return [Pin::Method, nil]
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore flow sensitive typing needs to track reassignment
       def resolve_method api_map
         return if @resolved_method
 

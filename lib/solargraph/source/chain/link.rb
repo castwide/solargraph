@@ -74,7 +74,6 @@ module Solargraph
 
         protected
 
-        # @sg-ignore Unexplained typecheck gap; needs investigation
         def equality_fields
           [self.class, word]
         end

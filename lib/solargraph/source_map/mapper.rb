@@ -91,7 +91,7 @@ module Solargraph
           # @todo Legacy syntax should probably emit a warning
           line.include?("@!#{tag}") || (tag == 'method' && line.include?("@#{tag}"))
         end
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         num.to_i + start
       end
 

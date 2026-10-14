@@ -204,7 +204,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         assignment == other.assignment
       end
 

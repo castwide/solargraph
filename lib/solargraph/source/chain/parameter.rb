@@ -75,7 +75,7 @@ module Solargraph
         end
 
         # @return [::String, ::Symbol] The literal value of the parameter
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore child node types depend on parent node type
         def literal_value
           literal.node.children.first
         end

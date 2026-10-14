@@ -336,7 +336,6 @@ module Solargraph
 
       protected
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def equality_fields
         [links, node]
       end

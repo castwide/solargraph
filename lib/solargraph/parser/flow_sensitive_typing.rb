@@ -308,7 +308,7 @@ module Solargraph
       # @param variable_name [String]
       # @param position [Position]
       #
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1397
       # @return [Solargraph::Pin::LocalVariable, Solargraph::Pin::InstanceVariable, nil]
       def find_var variable_name, position
         if variable_name.start_with?('@')

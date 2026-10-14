@@ -6,7 +6,7 @@ module Solargraph
   #     equality_fields()
   module Equality
     # @!method equality_fields
-    #   @return [Array]
+    #   @return [::Array]
 
     # @param other [Object]
     # @return [Boolean]

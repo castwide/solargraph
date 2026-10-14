@@ -18,7 +18,7 @@ module Solargraph
 
             require_rubocop(config['version'])
             options, paths = ::RuboCop::Options.new.parse(args)
-            # @sg-ignore Unexplained typecheck gap; needs investigation
+            # @sg-ignore Library method has no usable type
             options[:stdin] = original
 
             # Ensure only one instance of RuboCop::Runner is running at
@@ -29,7 +29,7 @@ module Solargraph
                 ::RuboCop::Runner.new(options, ::RuboCop::ConfigStore.new).run(paths)
               end
             end
-            # @sg-ignore Unexplained typecheck gap; needs investigation
+            # @sg-ignore Library method has no usable type
             result = options[:stdin]
 
             log_corrections(corrections)

@@ -162,7 +162,7 @@ module Solargraph
       end
 
       # @param other [self]
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore dynamic send has no inferable return type
       # @return [String]
       def combine_name other
         if needs_consistent_name? || other.needs_consistent_name?
@@ -509,7 +509,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         comments == other.comments && location == other.location
       end
 
