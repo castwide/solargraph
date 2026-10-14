@@ -206,7 +206,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless self.class == other.class
-        # @sg-ignore flow sensitive typing should support .class == .class
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1367
         tag == other.tag
       end
 
