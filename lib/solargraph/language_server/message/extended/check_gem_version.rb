@@ -56,9 +56,10 @@ module Solargraph
                 host.show_message "The Solargraph gem is up to date (version #{Solargraph::VERSION})."
               end
             elsif fetched?
-              Solargraph::Logging.logger.warn error
-              # @sg-ignore Need to add nil check here
-              host.show_message(error, MessageTypes::ERROR) if params['verbose']
+              # fetch_available sets an error whenever it finds no version
+              message = error
+              Solargraph::Logging.logger.warn message
+              host.show_message(message, MessageTypes::ERROR) if message && params['verbose']
             end
             set_result({
                          installed: current,
