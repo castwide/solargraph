@@ -11,13 +11,14 @@ module Solargraph
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               clazz_name = unpack_name(node.children[0].children[0])
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
               scope = :class
             end
+            # @sg-ignore child node types depend on parent node type
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: region.closure,
@@ -35,11 +36,11 @@ module Solargraph
           private
 
           def other_class_eval?
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             node.children[0].type == :send &&
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               node.children[0].children[1] == :class_eval &&
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end

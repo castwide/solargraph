@@ -38,7 +38,7 @@ module Solargraph
                 process_autoload
               elsif method_name == :private_constant
                 process_private_constant
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
@@ -59,7 +59,7 @@ module Solargraph
           # @return [void]
           def process_visibility
             if node.children.length > 2
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               node.children[2..].each do |child|
                 # @sg-ignore Unexplained typecheck gap; needs investigation
                 # @type [Symbol]
@@ -130,10 +130,10 @@ module Solargraph
 
           # @return [void]
           def process_include
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             node.children[2..].each do |i|
               type = region.scope == :class ? Pin::Reference::Extend : Pin::Reference::Include
               pins.push type.new(
@@ -147,10 +147,10 @@ module Solargraph
 
           # @return [void]
           def process_prepend
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
             cp = region.closure
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             node.children[2..].each do |i|
               pins.push Pin::Reference::Prepend.new(
                 location: get_node_location(i),
@@ -163,7 +163,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             node.children[2..].each do |i|
               loc = get_node_location(node)
               if i.type == :self
@@ -186,18 +186,18 @@ module Solargraph
 
           # @return [void]
           def process_require
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :str
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             path = node.children[2].children[0].to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
 
           # @return [void]
           def process_autoload
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return unless node.children[3].is_a?(AST::Node) && node.children[3].type == :str
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             path = node.children[3].children[0].to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
@@ -207,9 +207,9 @@ module Solargraph
             if node.children[2].nil?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             elsif %i[sym str].include?(node.children[2].type)
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               node.children[2..].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]
@@ -259,17 +259,18 @@ module Solargraph
                   )
                 end
               end
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             elsif node.children[2].type == :def
+              # @sg-ignore child node types depend on parent node type
               NodeProcessor.process node.children[2], region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 
           # @return [void]
           def process_private_constant
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return unless node.children[2] && %i[sym str].include?(node.children[2].type)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             cn = node.children[2].children[0].to_s
             ref = pins.select do |p|
               [Solargraph::Pin::Namespace,
@@ -285,9 +286,9 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               name: node.children[2].children[0].to_s,
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               original: node.children[3].children[0].to_s,
               scope: region.scope || :instance,
               source: :parser
@@ -296,10 +297,10 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             if %i[sym str].include?(node.children[2].type)
               ref = pins.select do |p|
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+                # @sg-ignore child node types depend on parent node type
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == node.children[2].children[0].to_s
               end.first
               # HACK: Smelly instance variable access

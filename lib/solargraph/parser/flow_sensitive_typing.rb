@@ -25,10 +25,10 @@ module Solargraph
         return unless and_node.type == :and
 
         # @type [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         lhs = and_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         rhs = and_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -53,10 +53,10 @@ module Solargraph
         return unless or_node.type == :or
 
         # @type [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         lhs = or_node.children[0]
         # @type [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         rhs = or_node.children[1]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
@@ -109,8 +109,10 @@ module Solargraph
         # [4] pry(main)>
         conditional_node = if_node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore child node types depend on parent node type
         then_clause = if_node.children[1]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore child node types depend on parent node type
         else_clause = if_node.children[2]
 
         unless enclosing_breakable_pin.nil?
@@ -180,6 +182,7 @@ module Solargraph
         # [4] pry(main)>
         conditional_node = while_node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore child node types depend on parent node type
         do_clause = while_node.children[1]
 
         unless do_clause.nil?
@@ -452,8 +455,10 @@ module Solargraph
         #  s(:const, nil, :Baz)
         return unless node&.type == :const
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore child node types depend on parent node type
         module_node = node.children[0]
         # @type [Parser::AST::Node, nil]
+        # @sg-ignore child node types depend on parent node type
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?

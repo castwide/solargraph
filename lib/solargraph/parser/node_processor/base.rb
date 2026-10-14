@@ -74,6 +74,7 @@ module Solargraph
           @processed_children = true
           node.children.each do |child|
             next unless Parser.is_ast_node?(child)
+            # @sg-ignore child node types depend on parent node type
             NodeProcessor.process(child, subregion, pins, locals, ivars)
           end
         end

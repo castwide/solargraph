@@ -34,6 +34,7 @@ module Solargraph
                 source: :parser
               )
             end
+            # @sg-ignore child node types depend on parent node type
             NodeProcessor.process(node.children[2], region, pins, locals, ivars)
           end
         end

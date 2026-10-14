@@ -9,6 +9,7 @@ module Solargraph
 
           def process
             loc = get_node_location(node)
+            # @sg-ignore child node types depend on parent node type
             ivars.push Solargraph::Pin::InstanceVariable.new(
               location: loc,
               closure: region.closure,
@@ -22,6 +23,7 @@ module Solargraph
               # @type [Pin::Closure, nil]
               named_path = named_path_pin(here)
               if named_path.is_a?(Pin::Method)
+                # @sg-ignore child node types depend on parent node type
                 ivars.push Solargraph::Pin::InstanceVariable.new(
                   location: loc,
                   closure: Pin::Namespace.new(type: :module, closure: region.closure.closure,

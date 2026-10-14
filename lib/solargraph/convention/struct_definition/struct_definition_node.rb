@@ -30,7 +30,7 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             struct_definition_node?(node.children[1])
           end
 
@@ -41,8 +41,9 @@ module Solargraph
           def struct_definition_node? struct_node
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
+            # @sg-ignore child node types depend on parent node type
             return false unless struct_node.children[0]&.type == :const
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             return false unless struct_node.children[0].children[1] == :Struct
             return false unless struct_node.children[1] == :new
 
@@ -70,20 +71,20 @@ module Solargraph
 
         def keyword_init?
           keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+              # @sg-ignore child node types depend on parent node type
               struct_def_param.children[0].children[0].children[0] == :keyword_init
           end
 
           return false if keyword_init_param.nil?
 
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+          # @sg-ignore child node types depend on parent node type
           keyword_init_param.children[0].children[1].type == :true
         end
 
         # @return [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         def body_node
           node.children[2]
         end
@@ -94,12 +95,12 @@ module Solargraph
         attr_reader :node
 
         # @return [Parser::AST::Node]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         def struct_node
           node.children[1]
         end
 
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+        # @sg-ignore child node types depend on parent node type
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
           struct_node.children[2..-1]

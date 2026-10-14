@@ -74,7 +74,7 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1391
+            # @sg-ignore child node types depend on parent node type
             # @type [Parser::AST::Node]
             variable_name = asgn.children[0]
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar

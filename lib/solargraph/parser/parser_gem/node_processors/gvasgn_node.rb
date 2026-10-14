@@ -7,6 +7,7 @@ module Solargraph
         class GvasgnNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
+            # @sg-ignore child node types depend on parent node type
             pins.push Solargraph::Pin::GlobalVariable.new(
               location: loc,
               closure: region.closure,

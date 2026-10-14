@@ -36,6 +36,7 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :const
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore child node types depend on parent node type
               also = NodeMethods.unpack_name(sclass)
               names << also if also != region.closure.name
               name = names.reject(&:empty?).join('::')
