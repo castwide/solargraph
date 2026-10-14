@@ -7,7 +7,7 @@ module Solargraph
       # @param name [String]
       # @param [Hash{Symbol => Object}] kwargs
       def initialize(location, name, **kwargs)
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore double-splat argument is checked as a keyword named after the variable
         super(location: location, name: name, **kwargs)
         # @name = name
         # @location = location
