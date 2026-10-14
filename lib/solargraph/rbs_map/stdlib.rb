@@ -9,8 +9,7 @@ module Solargraph
     class Stdlib < Base
       def initialize library
         super()
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
-        loader.add(library: library.gsub('/', '-'), version: nil) if self.class.has?(library)
+        loader.add(library: library.gsub('/', '-')) if self.class.has?(library)
       end
 
       def repository
