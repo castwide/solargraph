@@ -25,8 +25,8 @@ module Solargraph
               @value = true
             elsif node.type == :false
               @value = false
-            elsif %i[int sym].include?(node.type)
-              @value = node.children.first
+            elsif node in [:int | :sym, value, *]
+              @value = value
             end
           end
           @type = type

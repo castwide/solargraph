@@ -87,17 +87,19 @@ module Solargraph
         # @return [String]
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
-          if %i[const cbase].include?(node.type)
-            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
+          if node in [:const, scope, name, *]
+            signature += drill_signature(scope, signature) unless scope.nil?
             signature += '::' unless signature.empty?
-            signature += node.children[1].to_s
-          elsif %i[lvar ivar cvar].include?(node.type)
+            signature += name.to_s
+          elsif node in [:cbase, *]
+            signature += '::' unless signature.empty?
+          elsif node in [:lvar | :ivar | :cvar, name, *]
             signature += '.' unless signature.empty?
-            signature += node.children[0].to_s
-          elsif node.type == :send
-            signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
+            signature += name.to_s
+          elsif node in [:send, receiver, name, *]
+            signature += drill_signature(receiver, signature) unless receiver.nil?
             signature += '.' unless signature.empty?
-            signature += node.children[1].to_s
+            signature += name.to_s
           end
           signature
         end
@@ -114,7 +116,8 @@ module Solargraph
           when :const
             unpack_name(node)
           when :str, :dstr, :int, :float, :sym, true, false
-            node.children[0]
+            # a dstr converts to its first part, e.g. s(:str, "foo") for "foo\#{bar}"
+            (node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
           when :array
             simple_convert_array(node)
           when :hash
@@ -138,8 +141,11 @@ module Solargraph
           result = {}
           # @param pair [Parser::AST::Node]
           node.children.each do |pair|
-            next unless Parser.is_ast_node?(pair) && pair.children[0]
-            result[pair.children[0].children[0]] = simple_convert(pair.children[1])
+            # s(:pair, s(:sym, key), value); a kwsplat contributes its operand's name with a nil value
+            next unless pair in ::Parser::AST::Node[_, ::Parser::AST::Node => key_node, *rest]
+
+            key = (key_node in [_, key_value, *]) ? key_value : nil # rubocop:disable Style/RedundantParentheses
+            result[key] = simple_convert((rest in [value, *]) ? value : nil) # rubocop:disable Style/RedundantParentheses
           end
           result
         end
@@ -149,18 +155,23 @@ module Solargraph
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           # @sg-ignore Translate to something flow sensitive typing understands
-          return convert_hash(node.children[0]) if node.type == :kwsplat
+          if node in [:kwsplat, splatted, *]
+            return convert_hash(splatted)
+          end
           # @sg-ignore Translate to something flow sensitive typing understands
-          if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          if node in [_, [:kwsplat, *] => first_child, *]
             # @sg-ignore Translate to something flow sensitive typing understands
-            return convert_hash(node.children[0])
+            return convert_hash(first_child)
           end
           # @sg-ignore Translate to something flow sensitive typing understands
           return {} unless node.type == :hash
           result = {}
           # @sg-ignore Translate to something flow sensitive typing understands
           node.children.each do |pair|
-            result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
+            # s(:pair, s(:sym, key), value)
+            pair => [_, key_node, *rest]
+            key = (key_node in [_, key_value, *]) ? key_value : nil # rubocop:disable Style/RedundantParentheses
+            result[key] = Solargraph::Parser.chain((rest in [value, *]) ? value : nil) # rubocop:disable Style/RedundantParentheses
           end
           result
         end
@@ -183,13 +194,15 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         def splatted_hash? node
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          node in [_, ::Parser::AST::Node[:kwsplat, *], *]
         end
 
         # @param node [Parser::AST::Node]
         def splatted_call? node
-          return false unless Parser.is_ast_node?(node)
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
+          # **splatted as the first child, unless splatted is a hash literal
+          return false unless node in ::Parser::AST::Node[_, ::Parser::AST::Node[:kwsplat, splatted, *], *]
+
+          splatted.type != :hash
         end
 
         # @param nodes [Enumerable<Parser::AST::Node>]
@@ -203,19 +216,19 @@ module Solargraph
         def call_nodes_from node
           return [] unless node.is_a?(::Parser::AST::Node)
           result = []
-          if node.type == :block
+          if node in [:block, call, *block_rest]
             result.push node
-            if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
+            if call in ::Parser::AST::Node[_, _, _, *call_args]
               # @sg-ignore Need to add nil check here
-              node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }
+              call_args.each { |child| result.concat call_nodes_from(child) }
             end
             # @sg-ignore Need to add nil check here
-            node.children[1..].each { |child| result.concat call_nodes_from(child) }
-          elsif node.type == :send
+            block_rest.each { |child| result.concat call_nodes_from(child) }
+          elsif node in [:send, receiver, _, *args]
             result.push node
-            result.concat call_nodes_from(node.children.first)
+            result.concat call_nodes_from(receiver)
             # @sg-ignore Need to add nil check here
-            node.children[2..].each { |child| result.concat call_nodes_from(child) }
+            args.each { |child| result.concat call_nodes_from(child) }
           elsif %i[super zsuper].include?(node.type)
             result.push node
             node.children.each { |child| result.concat call_nodes_from(child) }
@@ -275,8 +288,7 @@ module Solargraph
           # @type [AST::Node, nil]
           prev = nil
           tree.each do |node|
-            if node.type == :send
-              args = node.children[2..]
+            if node in [:send, _, _, *args]
               # @sg-ignore Need to add nil check here
               if !args.empty?
                 # @sg-ignore Need to add nil check here
@@ -481,36 +493,45 @@ module Solargraph
               if COMPOUND_STATEMENTS.include?(node.type)
                 result.concat from_value_position_compound_statement node
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
+                # s(:if, condition, then, else)
+                node => [_, _, *branches]
                 # @sg-ignore Need to add nil check here
-                result.concat reduce_to_value_nodes(node.children[1..])
+                result.concat reduce_to_value_nodes(branches)
                 # result.push NIL_NODE unless node.children[2]
               elsif ONLY_ONE_CHILD.include?(node.type)
-                result.concat reduce_to_value_nodes([node.children[0]])
+                # s(:return) or s(:return, value, *more_values)
+                returned = (node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                result.concat reduce_to_value_nodes([returned])
               elsif FIRST_TWO_CHILDREN.include?(node.type)
-                result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
+                # s(:rescue, body, resbody, *more_resbodies, else)
+                node => [_, body, first_resbody, *]
+                result.concat reduce_to_value_nodes([body, first_resbody])
               elsif FUNCTION_VALUE.include?(node.type)
                 # the block itself is a first class value that could be returned
                 result.push node
                 # @todo any explicit returns actually return from
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
-                if include_explicit_returns
-                  result.concat explicit_return_values_from_compound_statement(node.children[2])
+                # s(:block, call, args, body)
+                if include_explicit_returns && (node in [_, _, _, body, *])
+                  result.concat explicit_return_values_from_compound_statement(body)
                 end
               elsif CASE_STATEMENT.include?(node.type)
+                # s(:case, subject, *whens, else)
+                node => [_, _, *clauses]
                 # @sg-ignore Need to add nil check here
-                node.children[1..].each do |cc|
+                clauses.each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
-                  elsif cc.type == :when
-                    result.concat reduce_to_value_nodes([cc.children.last])
+                  elsif cc in [:when, *, when_body]
+                    result.concat reduce_to_value_nodes([when_body])
                   else
                     # else clause in case
                     result.concat reduce_to_value_nodes([cc])
                   end
                 end
-              elsif node.type == :resbody
-                result.concat reduce_to_value_nodes([node.children[2]])
+              elsif node in [:resbody, _, _, body, *]
+                result.concat reduce_to_value_nodes([body])
               else
                 result.push node
               end
@@ -534,19 +555,20 @@ module Solargraph
               result = []
               nodes = parent.children.select { |n| n.is_a?(AST::Node) }
               nodes.each_with_index do |node, idx|
-                if node.type == :block
-                  result.concat explicit_return_values_from_compound_statement(node.children[2])
-                elsif node.type == :rescue
+                if node in [:block, _, _, body, *]
+                  result.concat explicit_return_values_from_compound_statement(body)
+                elsif node in [:rescue, body, first_resbody, *]
                   # body statements
-                  result.concat from_value_position_statement(node.children[0])
+                  result.concat from_value_position_statement(body)
                   # rescue statements
-                  result.concat from_value_position_statement(node.children[1])
+                  result.concat from_value_position_statement(first_resbody)
                 elsif SKIPPABLE.include?(node.type)
                   next
-                elsif node.type == :resbody
-                  result.concat reduce_to_value_nodes([node.children[2]])
+                elsif node in [:resbody, _, _, body, *]
+                  result.concat reduce_to_value_nodes([body])
                 elsif node.type == :return
-                  result.concat reduce_to_value_nodes([node.children[0]])
+                  returned = (node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  result.concat reduce_to_value_nodes([returned])
                   # Return here because the rest of the code is
                   # unreachable and shouldn't be looked at
                   return result
@@ -580,7 +602,8 @@ module Solargraph
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :return
-                  result.concat reduce_to_value_nodes([node.children[0]])
+                  returned = (node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  result.concat reduce_to_value_nodes([returned])
                   # Return the result here because the rest of the code is
                   # unreachable
                   return result
@@ -604,11 +627,13 @@ module Solargraph
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat reduce_to_value_nodes(node.children[1..])
+                  node => [_, _, *branches]
+                  result.concat reduce_to_value_nodes(branches)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :return
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat reduce_to_value_nodes([node.children[0]])
+                  returned = (node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  result.concat reduce_to_value_nodes([returned])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :or
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
@@ -616,11 +641,13 @@ module Solargraph
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat explicit_return_values_from_compound_statement(node.children[2])
+                  body = (node in [_, _, _, block_body, *]) ? block_body : nil # rubocop:disable Style/RedundantParentheses
+                  result.concat explicit_return_values_from_compound_statement(body)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat reduce_to_value_nodes([node.children[2]])
+                  body = (node in [_, _, _, resbody_body, *]) ? resbody_body : nil # rubocop:disable Style/RedundantParentheses
+                  result.concat reduce_to_value_nodes([body])
                 else
                   result.push node
                 end

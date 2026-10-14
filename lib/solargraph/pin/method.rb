@@ -649,9 +649,12 @@ module Solargraph
         return nil if node.nil?
         return node.children[1].children.last if node.type == :DEFN
         return node.children[2].children.last if node.type == :DEFS
-        return node.children[2] if %i[def DEFS].include?(node.type)
-        return node.children[3] if node.type == :defs
-        nil
+        # s(:def, name, args, body) or s(:defs, receiver, name, args, body)
+        case node
+        in [:def | :DEFS, _, _, body, *] then body
+        in [:defs, _, _, _, defs_body, *] then defs_body
+        else nil
+        end
       end
 
       # @param api_map [ApiMap]

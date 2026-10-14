@@ -65,13 +65,17 @@ module Solargraph
         # The index of the literal in the method call chain.
         # @return [Integer]
         def current_index
-          @current_index ||= method_call_chain.node.children[2..].index(literal.node)
+          return @current_index if @current_index
+
+          # s(:send, receiver, method_name, *args)
+          method_call_chain.node => [_, _, _, *args]
+          @current_index = args.index(literal.node)
         end
 
         # @return [::String, ::Symbol] The literal value of the parameter
         # @sg-ignore false "return type could not be inferred"
         def literal_value
-          literal.node.children.first
+          (literal.node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
         end
       end
     end
