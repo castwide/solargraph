@@ -846,13 +846,13 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore block parameter does not shadow an outer local of the same name
         if %i[kwarg kwoptarg kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore block parameter does not shadow an outer local of the same name
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore block parameter does not shadow an outer local of the same name
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else
