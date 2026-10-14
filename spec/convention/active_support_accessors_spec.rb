@@ -314,7 +314,7 @@ describe Solargraph::Convention::ActiveSupportAccessors do
   it 'infers the type of each kind of literal default' do
     {
       '1' => 'Integer', '1.5' => 'Float', "'baz'" => 'String', ':baz' => 'Symbol',
-      'nil' => 'NilClass', '[]' => 'Array', '{}' => 'Hash'
+      '[]' => 'Array', '{}' => 'Hash'
     }.each do |literal, type|
       pins = method_pins_for 'Foo', %(
         class Foo
@@ -322,6 +322,28 @@ describe Solargraph::Convention::ActiveSupportAccessors do
         end
       )
       expect(pins.map { |pin| pin.return_type.to_s }.uniq).to eq([type]), literal
+    end
+  end
+
+  it 'leaves accessors with a nil default untyped' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        mattr_accessor :bar, default: nil
+      end
+    )
+    expect(pins.map(&:return_type).all?(&:undefined?)).to be(true)
+    expect(pins.flat_map(&:parameters).map(&:return_type).all?(&:undefined?)).to be(true)
+  end
+
+  it 'types the writer parameter from a literal default' do
+    %w[class_attribute mattr_accessor mattr_writer config_accessor].each do |macro|
+      pins = method_pins_for 'Foo', %(
+        class Foo
+          #{macro} :bar, default: 1
+        end
+      )
+      writers = pins.select { |pin| pin.name.end_with?('=') }
+      expect(writers.flat_map(&:parameters).map { |param| param.return_type.to_s }.uniq).to eq(['Integer']), macro
     end
   end
 
@@ -338,10 +360,12 @@ describe Solargraph::Convention::ActiveSupportAccessors do
     pins = method_pins_for 'Foo', %(
       class Foo
         # @return [String, nil]
-        mattr_accessor :bar, default: nil
+        mattr_accessor :bar, default: 1
       end
     )
     expect(pins.map { |pin| pin.return_type.to_s }.uniq).to eq(['String, nil'])
+    writer_params = pins.select { |pin| pin.name.end_with?('=') }.flat_map(&:parameters)
+    expect(writer_params.map { |param| param.return_type.to_s }).not_to include('Integer')
   end
 
   it 'resolves a literal default type through the ApiMap' do

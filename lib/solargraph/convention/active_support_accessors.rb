@@ -122,13 +122,15 @@ module Solargraph
           end
 
           # The type of a literal +default:+ option, unless the macro's
-          # comments declare the type.
+          # comments declare the type. A +nil+ default is the same as none.
           #
           # @return [ComplexType, nil]
           def default_type
             docstring = Solargraph::Source.parse_docstring(comments_for(node) || '').to_docstring
             return nil unless docstring.tags(:return).empty? && docstring.tags(:type).empty?
-            type = Parser.infer_literal_node_type(options['default'])
+            default = options['default']
+            return nil if default.nil? || default.type == :nil
+            type = Parser.infer_literal_node_type(default)
             ComplexType.try_parse(type) if type
           end
 
@@ -152,6 +154,7 @@ module Solargraph
             )
             if writer
               pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pin,
+                                                     return_type: return_type,
                                                      source: :active_support_accessors)
             end
             pin
