@@ -103,6 +103,7 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
         if s.success?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           # @sg-ignore Library method has no usable type
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
