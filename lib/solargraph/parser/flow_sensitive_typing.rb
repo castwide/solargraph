@@ -436,13 +436,13 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
-      # @param node [Parser::AST::Node]
+      # @param node [Parser::AST::Node, nil]
       #
       # @return [String, nil]
       def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node&.type == :const
+        return if node.nil? || node.type != :const
         # @type [Parser::AST::Node, nil]
         module_node = node.children[0]
         # @type [Parser::AST::Node, nil]
