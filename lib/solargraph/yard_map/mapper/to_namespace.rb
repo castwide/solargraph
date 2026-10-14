@@ -21,7 +21,7 @@ module Solargraph
             type: code_object.is_a?(YARD::CodeObjects::ClassObject) ? :class : :module,
             visibility: code_object.visibility,
             closure: closure,
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             gates: closure.gates,
             source: :yardoc
           )

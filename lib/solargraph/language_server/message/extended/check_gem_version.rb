@@ -72,7 +72,7 @@ module Solargraph
           attr_reader :current
 
           # @return [Gem::Version]
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           def available
             if !@available && !@fetched
               @fetched = true

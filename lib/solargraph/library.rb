@@ -647,11 +647,11 @@ module Solargraph
     # @return [void]
     def report_cache_progress gem_name, pending
       @total ||= pending
-      # @sg-ignore probably nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       @total = pending if pending > @total
-      # @sg-ignore probably nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       finished = @total - pending
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       pct = if @total.zero?
               0
             else

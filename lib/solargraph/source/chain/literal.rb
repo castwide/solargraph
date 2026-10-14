@@ -21,15 +21,15 @@ module Solargraph
           @node = node
 
           if node.is_a?(::Parser::AST::Node)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             if node.type == :true
               @value = true
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             elsif node.type == :false
               @value = false
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             elsif %i[int sym].include?(node.type)
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1277
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1259
               @value = node.children.first
             end
           end

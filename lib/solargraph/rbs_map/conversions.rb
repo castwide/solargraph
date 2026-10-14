@@ -79,7 +79,7 @@ module Solargraph
           end
           pins.push(
             Solargraph::Pin::Reference::TypeAlias.new(
-              # @sg-ignore Unexplained typecheck gap; needs investigation
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1259
               name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: RbsTranslator.to_complex_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
@@ -463,7 +463,7 @@ module Solargraph
       # @param scope [Symbol] :instance or :class
       # @param name [String] The name of the method
       # @return [Symbol]
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       def calculate_method_visibility decl, context, closure, scope, name
         override_key = [closure.path, scope, name]
         visibility = VISIBILITY_OVERRIDE[override_key]

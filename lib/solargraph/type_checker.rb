@@ -781,7 +781,7 @@ module Solargraph
                 elsif param.decl == :kwarg
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1392
                   last_arg_last_link = arguments.last.links.last
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+                  # @sg-ignore Unexplained typecheck gap; needs investigation
                   return [] if last_arg_last_link.is_a?(Solargraph::Source::Chain::Hash) && last_arg_last_link.splatted?
                   return [Problem.new(location, "Missing keyword argument #{param.name} to #{pin.path}")]
                 end

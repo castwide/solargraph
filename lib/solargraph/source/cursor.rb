@@ -42,7 +42,7 @@ module Solargraph
           match = source.code[0..(offset - 1)].to_s.match(start_word_pattern)
           result = (match ? match[0] : '')
           # Including the preceding colon if the word appears to be a symbol
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           if source.code[0..(offset - result.length - 1)].end_with?(':') && !source.code[0..(offset - result.length - 1)].end_with?('::')
             result = ":#{result}"
           end

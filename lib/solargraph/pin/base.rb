@@ -489,7 +489,7 @@ module Solargraph
         instance_of?(other.class) &&
           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           name == other.name &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+          # @sg-ignore flow sensitive typing should support .class == .class
           (closure.equal?(other.closure) || (closure&.nearly?(other.closure))) &&
           # @sg-ignore https://github.com/castwide/solargraph/pull/1367
           (comments == other.comments ||

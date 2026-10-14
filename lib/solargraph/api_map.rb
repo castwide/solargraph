@@ -962,7 +962,7 @@ module Solargraph
         # :nocov:
       end
 
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       create_resolved_alias_pin(alias_pin, original)
     end
 

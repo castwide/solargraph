@@ -85,7 +85,7 @@ module Solargraph
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
           rescue StandardError => e
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1338
+            # @sg-ignore Unexplained typecheck gap; needs investigation
             Solargraph.logger.warn "Error reading #{gemspec_file_path}: [#{e.class}] #{e.message}"
             []
           end

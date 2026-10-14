@@ -65,7 +65,7 @@ module Solargraph
           # @sg-ignore nil false alarm
           match = result[0, off].match(/[.:]+\z/)
           if match
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1338
+            # @sg-ignore probably nil false alarm
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
           end
           result

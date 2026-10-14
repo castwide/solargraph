@@ -45,9 +45,9 @@ module Solargraph
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring}"
             end
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           elsif parameters_type == :list && name == 'Hash'
             # Treat Hash<A, B> as Hash{A => B}
