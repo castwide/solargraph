@@ -239,11 +239,10 @@ module Solargraph
           end
         end
         # @param name [String]
-        # @param data [Hash{Symbol => BasicObject}]
+        # @param data [Hash{Symbol => String, ComplexType}]
         params.each_pair do |name, data|
-          # @type [ComplexType]
           type = data[:qualified]
-          if type.undefined?
+          if type.is_a?(ComplexType) && type.undefined?
             result.push Problem.new(pin.location, "Unresolved type #{data[:tagged]} for #{name} param on #{pin.path}",
                                     pin: pin)
           end
