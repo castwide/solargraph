@@ -17,6 +17,10 @@ module Solargraph
 
           # @return [void]
           def process
+            FlowSensitiveTyping.new(locals,
+                                    ivars,
+                                    enclosing_breakable_pin,
+                                    enclosing_compound_statement_pin).process_case_match(node)
             # @type [Parser::AST::Node]
             subject = node.children.fetch(0)
             NodeProcessor.process(subject, region, pins, locals, ivars)

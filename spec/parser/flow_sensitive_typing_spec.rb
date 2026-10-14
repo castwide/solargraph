@@ -1055,6 +1055,14 @@ end
       expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo')
     end
 
+    it 'narrows the subject in the matching clause' do
+      expect(api_map.clip_at('test.rb', [8, 4]).infer.to_s).to eq('Foo')
+    end
+
+    it 'narrows the subject separately in the next clause' do
+      expect(api_map.clip_at('test.rb', [10, 4]).infer.to_s).to eq('Integer')
+    end
+
     it 'types array-index captures from a one-line => match' do
       expect(api_map.clip_at('test.rb', [13, 2]).infer.to_s).to eq('String')
       expect(api_map.clip_at('test.rb', [14, 2]).infer.to_s).to eq('String')
@@ -1062,6 +1070,10 @@ end
 
     it 'keeps a capture visible after the case ends' do
       expect(api_map.clip_at('test.rb', [15, 2]).infer.to_s).to eq('Foo')
+    end
+
+    it 'leaves the subject unnarrowed after the case ends' do
+      expect(api_map.clip_at('test.rb', [16, 2]).infer.to_s).to eq('Foo, Integer')
     end
   end
 
@@ -1080,6 +1092,8 @@ end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('String, Integer, Symbol')
   end
 
   it 'types a bare capture as the subject' do
@@ -1156,6 +1170,30 @@ end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String')
+  end
+
+  it 'narrows an instance variable subject with a const_pattern' do
+    source = Solargraph::Source.load_string(%(
+      class Point; end
+      class Example
+        # @param value [Point, Integer]
+        def initialize(value)
+          @value = value
+        end
+
+        def check
+          case @value
+          in Point(x:)
+            @value
+          in Integer
+            @value
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [11, 12]).infer.to_s).to eq('Point')
+    expect(api_map.clip_at('test.rb', [13, 12]).infer.to_s).to eq('Integer')
   end
 
   it 'maps a capture beside a pinned value' do
