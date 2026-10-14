@@ -140,7 +140,7 @@ module Solargraph
       # @param name_pin [Pin::Base] The pin for the closure in which this code runs
       # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
-      # @sg-ignore Need better generic inference here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def infer api_map, name_pin, locals
         # includes binder as it is mutable in Pin::Block
         cache_key = [node, node&.location, links, name_pin&.return_type, name_pin&.binder, locals]

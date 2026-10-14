@@ -390,10 +390,10 @@ module Solargraph
             # maximize number of gates, as types in other combined pins may
             # depend on those gates
 
-            # @sg-ignore Need better generic inference here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             closure.gates.length,
             # use basename so that results don't vary system to system
-            # @sg-ignore Need better generic inference here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             File.basename(closure.best_location.to_s)
           ]
         end

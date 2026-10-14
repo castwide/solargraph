@@ -72,7 +72,9 @@ module Solargraph
           code_object_map[pin.path] ||= YARD::CodeObjects::MethodObject.new(
             code_object_at(pin.namespace, YARD::CodeObjects::NamespaceObject), pin.name, pin.scope
           ) do |obj|
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             next if pin.location.nil? || pin.location.filename.nil?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
             obj.add_file pin.location.filename, pin.location.range.start.line
           end
           method_object = code_object_at(pin.path, YARD::CodeObjects::MethodObject)

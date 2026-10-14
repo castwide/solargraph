@@ -55,7 +55,7 @@ module Solargraph
           Position.new(node.loc.line, node.loc.column)
         end
 
-        # @sg-ignore Need better generic inference here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         # @return [Solargraph::Pin::Breakable, nil]
         def enclosing_breakable_pin
           pins.select { |pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position) }.last

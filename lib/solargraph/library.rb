@@ -289,7 +289,7 @@ module Solargraph
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
-        # @sg-ignore Need better generic inference here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         result.concat(found.sort do |a, b|
           a.range.start.line <=> b.range.start.line
         end)

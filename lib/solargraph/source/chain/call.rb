@@ -64,7 +64,7 @@ module Solargraph
           end
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           # Several union members can end up with the same pin and return type.
-          # @sg-ignore Need better generic inference here
+          # @sg-ignore Library method has no usable type
           pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)

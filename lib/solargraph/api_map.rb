@@ -610,7 +610,7 @@ module Solargraph
     def search query
       pins.map(&:path)
           .compact
-          # @sg-ignore Need better generic inference here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           .select { |path| path.downcase.include?(query.downcase) }
     end
 

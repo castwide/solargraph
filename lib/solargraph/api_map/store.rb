@@ -167,7 +167,7 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Namespace)
       end
 
-      # @return [Enumerable<Solargraph::Pin::Method>]
+      # @return [Set<Solargraph::Pin::Method>]
       def method_pins
         pins_by_class(Solargraph::Pin::Method)
       end

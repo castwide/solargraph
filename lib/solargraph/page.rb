@@ -71,7 +71,7 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
-    # @sg-ignore Need better generic inference here
+    # @sg-ignore Library method has no usable type
     # @return [String]
     def render template, layout: true, locals: {}
       # @type [String]

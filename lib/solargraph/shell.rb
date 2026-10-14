@@ -170,7 +170,7 @@ module Solargraph
                    end
                  else
                    gem_names.each_with_object([]) do |name, result|
-                     # @sg-ignore Need better generic inference here
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1326
                      if name == 'core'
                        Collection::Core.uncache if options[:rebuild]
                        puts 'Caching core'
@@ -181,7 +181,7 @@ module Solargraph
                        #   TL;DR: `repo.find_by_path` should not be necessary
                        found = repo.find_by_name(name) || repo.find_by_path(name)
                        if found
-                         # @sg-ignore Need better generic inference here
+                         # @sg-ignore https://github.com/castwide/solargraph/pull/1326
                          result.push found
                        else
                          warn "Gem #{name} not found"
@@ -500,7 +500,6 @@ module Solargraph
         store.method_pins.each do |pin|
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
-          # @sg-ignore Need better generic inference here
           type = pin.probe(api_map) if type.undefined?
           # @sg-ignore probably nil false alarm
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))

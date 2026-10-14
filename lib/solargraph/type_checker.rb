@@ -231,9 +231,9 @@ module Solargraph
           end
         end
         # @param name [String]
-        # @param data [Hash{Symbol => BasicObject}]
+        # @param data [Hash{Symbol => String, ComplexType}]
         params.each_pair do |name, data|
-          # @sg-ignore Need better generic inference here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           # @type [ComplexType]
           type = data[:qualified]
           if type.undefined?
