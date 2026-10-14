@@ -13,10 +13,8 @@ module Solargraph
             return process_children unless node in [:op_asgn, target, operator, argument]
 
             if target.type == :send
-              # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
             elsif target.type.to_s.end_with?('vasgn')
-              # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,

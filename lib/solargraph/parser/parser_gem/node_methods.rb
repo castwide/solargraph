@@ -107,8 +107,6 @@ module Solargraph
         # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node]
         # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
-        # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
-        # `.children[0]` call, which is not recognized as returning a literal value.
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 
@@ -154,13 +152,10 @@ module Solargraph
         # @return [Hash{Symbol => Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
-          # @sg-ignore Translate to something flow sensitive typing understands
           if node in [:kwsplat, splatted, *]
             return convert_hash(splatted)
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
           if node in [_, [:kwsplat, *] => first_child, *]
-            # @sg-ignore Translate to something flow sensitive typing understands
             return convert_hash(first_child)
           end
           # @sg-ignore Translate to something flow sensitive typing understands
@@ -495,7 +490,6 @@ module Solargraph
               elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                 # s(:if, condition, then, else)
                 node => [_, _, *branches]
-                # @sg-ignore Need to add nil check here
                 result.concat reduce_to_value_nodes(branches)
                 # result.push NIL_NODE unless node.children[2]
               elsif ONLY_ONE_CHILD.include?(node.type)

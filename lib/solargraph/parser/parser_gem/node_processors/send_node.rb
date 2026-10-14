@@ -10,7 +10,6 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:send, receiver, method_name, *args)
-            # @sg-ignore Variable type could not be inferred for method_name
             return process_children unless node in [:send, receiver, method_name, *args]
 
             # :nocov:
@@ -58,7 +57,6 @@ module Solargraph
 
           # @return [void]
           def process_visibility
-            # @sg-ignore Variable type could not be inferred for method_name
             return unless node in [:send, _, visibility, *args]
 
             if args.empty?

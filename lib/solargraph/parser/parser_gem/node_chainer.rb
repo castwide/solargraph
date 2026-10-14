@@ -201,7 +201,6 @@ module Solargraph
           # s(:block, call, args, body)
           return unless node == @node && (@parent in [:block, _, _, body])
 
-          # @sg-ignore Need to add nil check here
           NodeChainer.chain(body, @filename)
         end
 
