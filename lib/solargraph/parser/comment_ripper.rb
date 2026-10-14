@@ -23,20 +23,20 @@ module Solargraph
 
       def on_comment *args
         # @sg-ignore Unexplained typecheck gap; needs investigation
-        # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
+        # @type [Array(Symbol, String, Array(Integer, Integer))]
         result = super
-        # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+        # @sg-ignore nil false alarm
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           chomped = result[1].chomp
-          # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           if result[2][0].zero? && chomped.encode('UTF-8', 'binary', invalid: :replace, undef: :replace,
                                                                      replace: '').match(/^#\s*frozen_string_literal:/)
             chomped = '#'
           end
           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           @comments[result[2][0]] =
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             Snippet.new(Range.from_to(result[2][0], result[2][1], result[2][0], result[2][1] + chomped.length), chomped)
         end
         result

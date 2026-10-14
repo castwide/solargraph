@@ -106,27 +106,27 @@ module Solargraph
             end
           end
 
-          # @param a [Array<String>]
+          # @param a [Array(String, String | nil)]
           # @return [String]
-          # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           def arg_name a
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
-          # @param a [Array]
+          # @param a [Array(String, String | nil)]
           # @return [::Symbol]
           def arg_type a
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
             if a[0].start_with?('**')
               :kwrestarg
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
             elsif a[0].start_with?('*')
               :restarg
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
             elsif a[0].start_with?('&')
               :blockarg
-            # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]

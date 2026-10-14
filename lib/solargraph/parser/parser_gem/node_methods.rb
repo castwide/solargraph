@@ -209,11 +209,12 @@ module Solargraph
         end
 
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Array<Parser::AST::Node>]
         def call_nodes_from node
           return [] unless node.is_a?(::Parser::AST::Node)
           result = []
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if node.type == :block
             result.push node
             # @sg-ignore flow sensitive typing needs to handle repeated pure calls
@@ -223,12 +224,14 @@ module Solargraph
             end
             # @sg-ignore child node types depend on parent node type
             node.children[1..].each { |child| result.concat call_nodes_from(child) }
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           elsif node.type == :send
             result.push node
             # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat call_nodes_from(node.children.first)
             # @sg-ignore child node types depend on parent node type
             node.children[2..].each { |child| result.concat call_nodes_from(child) }
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           elsif %i[super zsuper].include?(node.type)
             result.push node
             # @sg-ignore child node types depend on parent node type
