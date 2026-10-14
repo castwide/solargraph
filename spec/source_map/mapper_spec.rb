@@ -1598,4 +1598,50 @@ describe Solargraph::SourceMap::Mapper do
     pin = map.first_pin('Bar#foobar')
     expect(pin.path).to eq('Bar#foobar')
   end
+
+  it 'maps pattern match captures as locals' do
+    map = Solargraph::SourceMap.load_string(%(
+      def m(x, t)
+        case x
+        in [a, *rest] if a
+          a
+        in {k:, j: Integer => jj}
+          k
+        in Foo | Bar => alt
+          alt
+        in [*, Integer => mid, *]
+          mid
+        in [first, *]
+          first
+        in {h:, **others}
+          others
+        else
+          e = 1
+        end
+        t => [s, n] => pair
+        t in u
+        t in Foo | 1 => mixed
+      end
+    ))
+    names = map.locals.map(&:name)
+    expect(names).to include('a', 'rest', 'k', 'jj', 'alt', 'mid', 'first', 'h', 'others', 'e', 's', 'n', 'pair',
+                             'u', 'mixed')
+    expect(names.count('a')).to eq(1)
+    expect(names.count('jj')).to eq(1)
+  end
+
+  it 'keeps pattern match captures present until the end of the closure' do
+    map = Solargraph::SourceMap.load_string(%(
+      def m(x)
+        case x
+        in Integer => i
+          i
+        end
+        i
+      end
+    ))
+    pin = map.locals.find { |p| p.name == 'i' }
+    expect(pin.presence.start.line).to eq(3)
+    expect(pin.presence.ending.line).to eq(7)
+  end
 end

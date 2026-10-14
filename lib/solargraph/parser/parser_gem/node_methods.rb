@@ -38,6 +38,27 @@ module Solargraph
           parts
         end
 
+        # The type a value has when it matches a pattern made only of
+        # constants, e.g. `Foo`, `Foo(x:)` or `Foo | Bar => f`.
+        #
+        # @param node [Parser::AST::Node]
+        # @return [String, nil] nil when the pattern is not a constant check
+        def pattern_type_name node
+          case node.type
+          when :const
+            unpack_name(node)
+          when :const_pattern, :match_as
+            # @type [Parser::AST::Node]
+            inner = node.children.fetch(0)
+            pattern_type_name(inner)
+          when :match_alt
+            # @type [Array<Parser::AST::Node>]
+            alternatives = node.children
+            names = alternatives.map { |alternative| pattern_type_name(alternative) }
+            names.join(', ') unless names.include?(nil)
+          end
+        end
+
         # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def infer_literal_node_type node
