@@ -997,5 +997,31 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves the result generic of a blockless Enumerator so with_index reports the mapped array' do
+      checker = type_checker(%(
+        class Foo
+          # @param items [::Array<String>]
+          # @return [::Array<Integer>]
+          def bar(items)
+            items.map.with_index { |_, idx| idx }
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'reports the receiver itself when with_index runs over an each Enumerator' do
+      checker = type_checker(%(
+        class Foo
+          # @param items [::Array<String>]
+          # @return [::Array<String>]
+          def bar(items)
+            items.each.with_index { |_, idx| idx }
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
   end
 end

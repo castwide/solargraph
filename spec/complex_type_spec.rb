@@ -501,6 +501,50 @@ describe 'YARD type specifier list parsing' do
         expect(type.tag).to eq('Array<String>')
       end
 
+      it 'resolves a generic parameter from the receiver parameter in the same position' do
+        return_type = Solargraph::ComplexType.parse('Array<generic<B>>')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', generics: %w[A B])
+        context_type = Solargraph::ComplexType.parse('Foo<String, Integer>')
+        type = return_type.resolve_generics(generic_class, context_type)
+        expect(type.tag).to eq('Array<Integer>')
+      end
+
+      it 'gives a leading generic parameter only the first receiver parameter' do
+        return_type = Solargraph::ComplexType.parse('Array<generic<A>>')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Foo', generics: %w[A B])
+        context_type = Solargraph::ComplexType.parse('Foo<String, Integer>')
+        type = return_type.resolve_generics(generic_class, context_type)
+        expect(type.tag).to eq('Array<String>')
+      end
+
+      it 'treats every parameter of an implicit union receiver as one generic value' do
+        return_type = Solargraph::ComplexType.parse('Array<generic<A>>')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Array', generics: %w[A])
+        context_type = Solargraph::ComplexType.parse('Array<String, Integer>')
+        type = return_type.resolve_generics(generic_class, context_type)
+        expect(type.tag).to eq('Array<String, Integer>')
+      end
+
+      it 'treats extra parameters of a non-union receiver as one generic value' do
+        return_type = Solargraph::ComplexType.parse('Array<generic<A>>')
+        generic_class = Solargraph::Pin::Namespace.new(name: 'Pair', generics: %w[A])
+        context_type = Solargraph::ComplexType.parse('Pair<String, Integer>')
+        type = return_type.resolve_generics(generic_class, context_type)
+        expect(type.tag).to eq('Array<String, Integer>')
+      end
+
+      it 'falls back to the declared default for a generic the receiver leaves out' do
+        return_type = Solargraph::ComplexType.parse('Array<generic<C>>')
+        generic_class = Solargraph::Pin::Namespace.new(
+          name: 'Foo',
+          generics: %w[A B C],
+          generic_defaults: { 'C' => Solargraph::ComplexType.parse('generic<A>') }
+        )
+        context_type = Solargraph::ComplexType.parse('Foo<String, Integer>')
+        type = return_type.resolve_generics(generic_class, context_type)
+        expect(type.tag).to eq('Array<String>')
+      end
+
       UNIQUE_METHOD_GENERIC_TESTS = [
         # tag, context_type_tag, unfrozen_input_map, expected_tag, expected_output_map
         ['String', 'String', {}, 'String', {}],
