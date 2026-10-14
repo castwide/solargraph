@@ -12,14 +12,18 @@ module Solargraph
                 forward(callable)
               else
                 node.children.each do |u|
+                  # s(:arg, name), s(:optarg, name, default), s(:restarg) for an anonymous splat,
+                  # or s(:mlhs, *args) for |(a, b)|
+                  name = (u in [_, first, *]) ? first : nil # rubocop:disable Style/RedundantParentheses
+                  default = (u in [_, _, second, *]) ? second : nil # rubocop:disable Style/RedundantParentheses
                   loc = get_node_location(u)
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,
                     comments: comments_for(node),
-                    name: u.children[0].to_s,
-                    assignment: u.children[1],
-                    asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
+                    name: name.to_s,
+                    assignment: default,
+                    asgn_code: default ? region.code_for(default) : nil,
                     # @sg-ignore Need to add nil check here
                     presence: callable.location.range,
                     decl: get_decl(u),

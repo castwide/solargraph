@@ -6,7 +6,9 @@ module Solargraph
       module NodeProcessors
         class DefNode < Parser::NodeProcessor::Base
           def process
-            name = node.children[0].to_s
+            return process_children unless node in [:def, method_name, *]
+
+            name = method_name.to_s
             scope = region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance)
             # specify context explicitly instead of relying on
             # closure, as they may differ (e.g., defs inside

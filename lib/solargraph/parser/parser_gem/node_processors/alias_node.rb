@@ -6,12 +6,15 @@ module Solargraph
       module NodeProcessors
         class AliasNode < Parser::NodeProcessor::Base
           def process
+            # s(:alias, s(:sym, new), s(:sym, old)) - gvar aliases use s(:gvar, name)
+            return process_children unless node in [:alias, [_, new_name, *], [_, original, *]]
+
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].children[0].to_s,
-              original: node.children[1].children[0].to_s,
+              name: new_name.to_s,
+              original: original.to_s,
               scope: region.scope || :instance,
               source: :parser
             )

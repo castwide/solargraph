@@ -7,7 +7,10 @@ module Solargraph
         class OrasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            new_node = node.updated(node.children[0].type, node.children[0].children + [node.children[1]])
+            # s(:or_asgn, s(:lvasgn, name), value) is processed as s(:lvasgn, name, value)
+            return process_children unless node in [:or_asgn, [target_type, *target_children], value]
+
+            new_node = node.updated(target_type, target_children + [value])
             NodeProcessor.process(new_node, region, pins, locals, ivars)
           end
         end

@@ -22,12 +22,9 @@ module Solargraph
             #     s(:int, 2),
             #     s(:int, 3)))
             masgn = node
-            # @type [Parser::AST::Node]
-            mlhs = masgn.children.fetch(0)
+            masgn => [:masgn, mlhs, mass_rhs]
             # @type [Array<Parser::AST::Node>]
             lhs_arr = mlhs.children
-            # @type [Parser::AST::Node]
-            mass_rhs = node.children.fetch(1)
 
             # Get pins created for the mlhs node
             process_children

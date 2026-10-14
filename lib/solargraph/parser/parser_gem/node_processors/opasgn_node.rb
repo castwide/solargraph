@@ -9,9 +9,9 @@ module Solargraph
         class OpasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            target = node.children[0]
-            operator = node.children[1]
-            argument = node.children[2]
+            # s(:op_asgn, target, operator, argument)
+            return process_children unless node in [:op_asgn, target, operator, argument]
+
             if target.type == :send
               # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
@@ -39,8 +39,8 @@ module Solargraph
             #      :+, # operator
             #      s(:send, nil, :baz)) # argument
             # [11] pry(main)>
-            callee = call.children[0]
-            call_method = call.children[1]
+            return unless call in [:send, callee, call_method, *]
+
             asgn_method = :"#{call_method}="
 
             # [8] pry(main)> Parser::CurrentRuby.parse("Foo.bar = Foo.bar + baz")
@@ -71,8 +71,8 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @type [Parser::AST::Node]
-            variable_name = asgn.children[0]
+            return unless asgn in [_, variable_name, *]
+
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
