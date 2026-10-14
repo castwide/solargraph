@@ -190,7 +190,7 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [Boolean]
-        # @sg-ignore return type could not be inferred
+        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         def splatted_hash? node
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
