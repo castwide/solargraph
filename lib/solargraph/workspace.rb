@@ -72,7 +72,7 @@ module Solargraph
       sources.each do |source|
         next unless directory == '*' || config.calculated.include?(source.filename)
 
-        # @sg-ignore probably nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         source_hash[source.filename] = source
         includes_any = true
       end

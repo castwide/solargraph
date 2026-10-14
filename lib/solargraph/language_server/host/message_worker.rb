@@ -66,7 +66,7 @@ module Solargraph
             @resource.wait(@mutex) if messages.empty?
             next_message
           end
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           handler = @host.receive(message)
           handler&.send_response
         end

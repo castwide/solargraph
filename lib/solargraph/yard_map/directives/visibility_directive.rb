@@ -17,7 +17,7 @@ module Solargraph
         def process_directive source, pins, source_position, comment_position, directive
           kind = directive.tag.text&.to_sym
 
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           return [] unless VALID_VISIBILITIES.include?(kind.to_sym)
 
           name = directive.tag.name
