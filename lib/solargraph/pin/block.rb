@@ -49,7 +49,7 @@ module Solargraph
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
-          yield_type = yield_types.first
+          yield_type = yield_types.fetch(0)
           return yield_type.all_params if yield_type.tuple? && yield_type.all_params.length == parameters.length
         end
         parameters.map.with_index { |_, idx| yield_types[idx] || ComplexType::UNDEFINED }
