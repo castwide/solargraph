@@ -44,7 +44,7 @@ module Solargraph
 
       %i[comments parameters return_type signatures].each do |method|
         define_method(method) do
-          # @sg-ignore Unexplained typecheck gap; needs investigation
+          # @sg-ignore super inside define_method does not resolve
           @resolved_method ? @resolved_method.send(method) : super()
         end
       end
@@ -53,7 +53,7 @@ module Solargraph
         # @param api_map [ApiMap]
         define_method(method) do |api_map|
           resolve_method(api_map)
-          # @sg-ignore Unexplained typecheck gap; needs investigation
+          # @sg-ignore super inside define_method does not resolve
           @resolved_method ? @resolved_method.send(method, api_map) : super(api_map)
         end
       end
