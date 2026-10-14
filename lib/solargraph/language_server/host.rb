@@ -502,13 +502,12 @@ module Solargraph
           #   might not exist.
           if result.empty? && params['data']['path'] =~ /\.new$/
             result.concat(library.path_pins(params['data']['path'].sub(/\.new$/, '#initialize')).map do |pin|
-              next pin unless pin.name == 'initialize'
+              next pin unless pin.is_a?(Pin::Method) && pin.name == 'initialize'
 
               Pin::Method.new(
                 name: 'new',
                 scope: :class,
                 location: pin.location,
-                # @sg-ignore Unresolved call to parameters on Solargraph::Pin::Base
                 parameters: pin.parameters,
                 return_type: ComplexType.try_parse(params['data']['path']),
                 comments: pin.comments,

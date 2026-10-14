@@ -510,8 +510,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless nearly? other
-        # @sg-ignore Should add more explicit type check on other
-        comments == other.comments && location == other.location
+        other.is_a?(Pin::Base) && comments == other.comments && location == other.location
       end
 
       # The pin's return type.
