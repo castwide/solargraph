@@ -7,7 +7,7 @@ module Solargraph
       # @param name [String]
       # @param [Hash{Symbol => Object}] kwargs
       def initialize(location, name, **kwargs)
-        # @sg-ignore Need better overload selection
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         super(location: location, name: name, **kwargs)
         # @name = name
         # @location = location

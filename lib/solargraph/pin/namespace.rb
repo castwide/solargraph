@@ -15,7 +15,7 @@ module Solargraph
       # may be the root level namespace, or it may not yet be
       # qualified
       # @return [Solargraph::Pin::Closure, nil]
-      # @sg-ignore flow sensitive typing needs to track reassignment
+      # @sg-ignore Unexplained typecheck gap; needs investigation
       attr_reader :closure
 
       # @param type [::Symbol] :class or :module

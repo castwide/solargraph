@@ -738,7 +738,7 @@ module Solargraph
       end
 
       # @param path [String]
-      # @sg-ignore Need better overload selection
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?

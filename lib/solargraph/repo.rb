@@ -57,7 +57,7 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
-    # @sg-ignore Need better overload selection
+    # @sg-ignore Library method has no usable type
     def bundled?
       # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       !!@metagems
@@ -68,7 +68,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
-    # @sg-ignore Need better overload selection
+    # @sg-ignore Library method has no usable type
     def bundled
       @metagems || []
     end
@@ -104,9 +104,9 @@ module Solargraph
         # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
         if s.success?
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          # @sg-ignore Need better overload selection
+          # @sg-ignore Library method has no usable type
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          # @sg-ignore Need better overload selection
+          # @sg-ignore Library method has no usable type
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"

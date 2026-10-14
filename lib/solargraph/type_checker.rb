@@ -846,13 +846,13 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore flow sensitive typing needs to track reassignment
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         if %i[kwarg kwoptarg kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore flow sensitive typing needs to track reassignment
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore flow sensitive typing needs to track reassignment
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else

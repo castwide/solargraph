@@ -41,7 +41,7 @@ module Solargraph
         Signal.trap('TERM') do
           Backport.stop
         end
-        # @sg-ignore Library method has no usable type
+        # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
         $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
@@ -58,7 +58,7 @@ module Solargraph
         Signal.trap('TERM') do
           Backport.stop
         end
-        # @sg-ignore Library method has no usable type
+        # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
         $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end

@@ -61,7 +61,6 @@ module Solargraph
     end
 
     # @return [Gem::Specification, nil]
-    # @sg-ignore Library method has no usable type
     def to_specification
       Gem::Specification.load(spec_file)
     end

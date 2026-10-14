@@ -25,7 +25,7 @@ module Solargraph
         end
         # Some yardocs contain documentation for dependencies that can be
         # ignored here. The YardMap will load dependencies separately.
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end

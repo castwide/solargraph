@@ -22,7 +22,7 @@ module Solargraph
       end
 
       def on_comment *args
-        # @sg-ignore Need better overload selection
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         # @type [Array(Symbol, String, Array([Integer, nil], [Integer, nil]))]
         result = super
         # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge

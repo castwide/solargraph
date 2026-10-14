@@ -125,7 +125,7 @@ module Solargraph
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
                                                                                     blocktype)
           # @todo It shouldn't be necessary to choose either generics or macros
-          # @sg-ignore flow sensitive typing needs to track reassignment
+          # @sg-ignore probably nil false alarm
           new_return_type = if new_signature_pin.return_type.defined?
                               # @sg-ignore https://github.com/castwide/solargraph/pull/1338
                               new_signature_pin.return_type
@@ -193,11 +193,11 @@ module Solargraph
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing needs to track reassignment
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1338
               next result unless result.return_type.undefined?
             elsif !p.directives.empty?
               result = process_directive(p, api_map, name_pin.context, locals)
-              # @sg-ignore flow sensitive typing needs to track reassignment
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1338
               next result unless result.return_type.undefined?
             end
             p
@@ -322,7 +322,7 @@ module Solargraph
         def find_method_pin name_pin
           method_pin = name_pin
           until method_pin.is_a?(Pin::Method)
-            # @sg-ignore flow sensitive typing needs to track reassignment
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1338
             method_pin = method_pin.closure
             return if method_pin.nil?
           end

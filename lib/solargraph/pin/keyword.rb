@@ -4,7 +4,7 @@ module Solargraph
   module Pin
     class Keyword < Base
       def initialize(name, **kwargs)
-        # @sg-ignore Need better overload selection
+        # @sg-ignore Unexplained typecheck gap; needs investigation
         super(name: name, **kwargs)
       end
 

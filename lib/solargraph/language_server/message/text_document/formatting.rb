@@ -87,7 +87,7 @@ module Solargraph
           # @return [Class<RuboCop::Formatter::BaseFormatter>]
           def formatter_class config
             if self.class.const_defined?('BlankRubocopFormatter')
-              # @sg-ignore Library method has no usable type
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               BlankRubocopFormatter
             else
               require_rubocop(config['version'])

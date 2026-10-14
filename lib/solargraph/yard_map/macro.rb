@@ -90,7 +90,7 @@ module Solargraph
 
         # @param generated_pins [Array<Pin::Base>]
         generate_yardoc_from(chain, source_map).reduce([]) do |generated_pins, directive|
-          # @sg-ignore flow sensitive typing needs to track reassignment
+          # @sg-ignore Unexplained typecheck gap; needs investigation
           if directive.tag.tag_name == 'scope'
             inherited_scope = Directives::ScopeDirective.parse_scope(directive) || inherited_scope
             next generated_pins

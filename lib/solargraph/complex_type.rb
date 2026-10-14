@@ -447,11 +447,12 @@ module Solargraph
       #   only be used internally.
       # @param strings [Array<String>] The type definitions to parse
       # @return [ComplexType]
-      # # @overload parse(*strings, partial: false)
-      # #  @todo Need ability to use a literal true as a type below
-      # #  @param partial [Boolean] True if the string is part of a another type
-      # #  @return [Array<UniqueType>]
-      # @sg-ignore Need better overload selection
+      # @overload parse(*strings, partial: false)
+      #  @param partial [false]
+      #  @return [ComplexType]
+      # @overload parse(*strings, partial: true)
+      #  @param partial [true] True if the string is part of a another type
+      #  @return [Array<ComplexType::UniqueType>]
       def parse *strings, partial: false
         # @type [Hash{Array<String> => ComplexType, Array<ComplexType::UniqueType>}]
         @cache ||= {}

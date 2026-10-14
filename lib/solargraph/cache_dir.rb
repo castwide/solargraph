@@ -10,7 +10,7 @@ module Solargraph
     # The base directory for cached YARD documentation and serialized pins.
     #
     # @return [String]
-    # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+    # @sg-ignore Unexplained typecheck gap; needs investigation
     def base_dir
       ENV['SOLARGRAPH_CACHE'] ||
         (ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') : nil) ||

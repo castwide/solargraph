@@ -19,7 +19,7 @@ module Solargraph
         File.join CacheDir.gem_dir, "#{metagem.cache_name}.ser"
       end
 
-      # @sg-ignore Library method has no usable type
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def load
         return pins unless metagem.cacheable?
         super

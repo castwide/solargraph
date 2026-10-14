@@ -460,7 +460,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore flow sensitive typing needs to track reassignment
+      # @sg-ignore Unexplained typecheck gap; needs investigation
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]
