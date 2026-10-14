@@ -121,6 +121,33 @@ describe Solargraph::Parser::NodeMethods do
     expect(returns.map(&:to_s)).to eq(['(true)', '(int 73)', '(false)', '(nil)', '(false)', '(true)'])
   end
 
+  it 'handles return nodes from case/in statements without else' do
+    node = parse(%(
+      case x
+      in Integer
+        true
+      in String
+        73
+      end
+    ))
+    returns = described_class.returns_from_method_body(node)
+    # No implicit nil: an unmatched case/in raises NoMatchingPatternError
+    expect(returns.map(&:to_s)).to eq(['(true)', '(int 73)'])
+  end
+
+  it 'handles empty bodies in case/in statements' do
+    node = parse(%(
+      case x
+      in Integer
+      in String
+        73
+      else
+      end
+    ))
+    returns = described_class.returns_from_method_body(node)
+    expect(returns.map(&:to_s)).to eq(['(nil)', '(int 73)', '(nil)'])
+  end
+
   it 'handles return nodes from case statements with boolean conditions' do
     node = parse(%(
       case true

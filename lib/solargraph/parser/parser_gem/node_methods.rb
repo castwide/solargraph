@@ -530,12 +530,28 @@ module Solargraph
                     result.concat reduce_to_value_nodes([cc])
                   end
                 end
+              elsif node.type == :case_match
+                result.concat from_case_match(node)
               elsif node.type == :resbody
                 result.concat reduce_to_value_nodes([node.children[2]])
               else
                 result.push node
               end
               result
+            end
+
+            # @param node [Parser::AST::Node] (case_match SUBJECT IN_PATTERN... ELSE)
+            # @return [Array<Parser::AST::Node>]
+            def from_case_match node
+              # No else adds no nil: an unmatched case/in raises NoMatchingPatternError
+              # @type [Array<Parser::AST::Node>]
+              clauses = node.children.drop(1).compact
+              clauses.flat_map do |clause|
+                body = clause.type == :in_pattern ? clause.children.last : clause
+                next [NIL_NODE] if body.nil? || body.type == :empty_else
+
+                reduce_to_value_nodes([body])
+              end
             end
 
             # Treat parent as as a begin block and use the last node's
