@@ -6,8 +6,11 @@ module Solargraph
       module NodeProcessors
         class AliasNode < Parser::NodeProcessor::Base
           def process
-            # s(:alias, s(:sym, new), s(:sym, old)) - gvar aliases use s(:gvar, name)
-            return process_children unless node in [:alias, [_, new_name, *], [_, original, *]]
+            # s(:alias, s(:sym, new), s(:sym, old)) - gvar aliases use s(:gvar, name); `alias :"" a` has s(:dsym)
+            return process_children unless node in [:alias, new_node, original_node]
+
+            new_name = (new_node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            original = (original_node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
