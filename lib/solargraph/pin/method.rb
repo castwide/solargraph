@@ -460,7 +460,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore instance variable type gains Boolean from a truthiness guard
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]
