@@ -1048,6 +1048,21 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [6, 10])).to eq('Integer')
     end
 
+    it 'does not offer the narrowed lookup as a local variable completion' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h
+        end
+      )
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      names = api_map.clip_at('test.rb', [5, 11]).complete.pins.map(&:name)
+      expect(names).to include('h')
+      expect(names).not_to include('h[k]')
+    end
+
     it 'keeps nil that the Hash values themselves allow' do
       code = %(
         # @param h [Hash{String => Integer, nil}]
