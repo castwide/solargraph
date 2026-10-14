@@ -103,8 +103,7 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore Type as a tuple with union members once castwide PRs 1223 and 1231 merge
         if s.success?
-          last_line = o.strip.split("\n").last
-          json = last_line ? JSON.parse(last_line, symbolize_names: true) : []
+          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           # @sg-ignore Need better overload selection
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
           # @sg-ignore Need better overload selection

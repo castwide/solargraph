@@ -118,6 +118,7 @@ Metrics/AbcSize:
   Exclude:
     - 'lib/solargraph/api_map/source_to_yard.rb'
     - 'lib/solargraph/parser/parser_gem/node_chainer.rb'
+    - 'lib/solargraph/shell.rb'
     - 'lib/solargraph/source_map/clip.rb'
 
 # Configuration parameters: CountComments, CountAsOne, AllowedMethods, AllowedPatterns, inherit_mode.

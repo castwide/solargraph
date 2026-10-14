@@ -435,10 +435,20 @@ module Solargraph
         end
         catalog_time = Time.now - catalog_start
 
-        test_file = profile_test_file(directory, file)
-        unless test_file
-          puts 'No Ruby files found in workspace'
-          return
+        # Determine test file
+        if file
+          test_file = File.join(directory, file)
+        else
+          test_file = File.join(directory, 'lib', 'other.rb')
+          unless File.exist?(test_file)
+            # Fallback to any Ruby file in the workspace
+            workspace = Solargraph::Workspace.new(directory)
+            test_file = workspace.filenames.find { |f| f.end_with?('.rb') }
+            unless test_file
+              puts 'No Ruby files found in workspace'
+              return
+            end
+          end
         end
 
         file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
@@ -526,22 +536,6 @@ module Solargraph
     end
 
     private
-
-    # The file to profile go-to-definition against: the given file,
-    # lib/other.rb, or any Ruby file in the workspace.
-    #
-    # @param directory [String]
-    # @param file [String, nil]
-    # @return [String, nil]
-    def profile_test_file directory, file
-      return File.join(directory, file) if file
-
-      test_file = File.join(directory, 'lib', 'other.rb')
-      return test_file if File.exist?(test_file)
-
-      workspace = Solargraph::Workspace.new(directory)
-      workspace.filenames.find { |f| f.end_with?('.rb') }
-    end
 
     # @param pin [Solargraph::Pin::Base]
     # @return [String]

@@ -80,8 +80,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
           begin
-            last_line = o.split("\n").last
-            hash = last_line ? JSON.parse(last_line) : {}
+            hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
           rescue StandardError => e
