@@ -44,16 +44,17 @@ module Solargraph
             instance_reader = boolean_option 'instance_reader', instance_accessor
             instance_writer = boolean_option 'instance_writer', instance_accessor
             instance_predicate = boolean_option 'instance_predicate', true
+            type = default_type
             attribute_names.each do |name|
               next if name.empty?
-              pins.push build_pin(name, scope: :class)
-              pins.push build_pin("#{name}=", scope: :class, writer: true)
+              pins.push build_pin(name, scope: :class, return_type: type)
+              pins.push build_pin("#{name}=", scope: :class, writer: true, return_type: type)
               pins.push build_pin("#{name}?", scope: :class) if instance_predicate
               if instance_reader
-                pins.push build_pin(name, scope: :instance)
+                pins.push build_pin(name, scope: :instance, return_type: type)
                 pins.push build_pin("#{name}?", scope: :instance) if instance_predicate
               end
-              pins.push build_pin("#{name}=", scope: :instance, writer: true) if instance_writer
+              pins.push build_pin("#{name}=", scope: :instance, writer: true, return_type: type) if instance_writer
             end
           end
 
@@ -69,15 +70,19 @@ module Solargraph
             instance_accessor = boolean_option 'instance_accessor', true
             instance_reader = reader && instance_accessor && boolean_option('instance_reader', true)
             instance_writer = writer && instance_accessor && boolean_option('instance_writer', true)
+            type = default_type
             attribute_names.each do |name|
               next unless ATTRIBUTE_NAME.match?(name)
               if reader
-                pins.push build_pin(name, scope: :class, visibility: :public)
-                pins.push build_pin(name, scope: :instance, visibility: :public) if instance_reader
+                pins.push build_pin(name, scope: :class, visibility: :public, return_type: type)
+                pins.push build_pin(name, scope: :instance, visibility: :public, return_type: type) if instance_reader
               end
               next unless writer
-              pins.push build_pin("#{name}=", scope: :class, writer: true, visibility: :public)
-              pins.push build_pin("#{name}=", scope: :instance, writer: true, visibility: :public) if instance_writer
+              pins.push build_pin("#{name}=", scope: :class, writer: true, visibility: :public, return_type: type)
+              if instance_writer
+                pins.push build_pin("#{name}=", scope: :instance, writer: true, visibility: :public,
+                                                return_type: type)
+              end
             end
           end
 
@@ -116,12 +121,24 @@ module Solargraph
             default
           end
 
+          # The type of a literal +default:+ option, unless the macro's
+          # comments declare the type.
+          #
+          # @return [ComplexType, nil]
+          def default_type
+            docstring = Solargraph::Source.parse_docstring(comments_for(node) || '').to_docstring
+            return nil unless docstring.tags(:return).empty? && docstring.tags(:type).empty?
+            type = Parser.infer_literal_node_type(options['default'])
+            ComplexType.try_parse(type) if type
+          end
+
           # @param name [String]
           # @param scope [Symbol] :class or :instance
           # @param writer [Boolean]
           # @param visibility [Symbol]
+          # @param return_type [ComplexType, nil]
           # @return [Pin::Method]
-          def build_pin name, scope:, writer: false, visibility: region.visibility
+          def build_pin name, scope:, writer: false, visibility: region.visibility, return_type: nil
             pin = Pin::Method.new(
               location: get_node_location(node),
               closure: region.closure,
@@ -130,6 +147,7 @@ module Solargraph
               scope: scope,
               visibility: visibility,
               attribute: true,
+              return_type: return_type,
               source: :active_support_accessors
             )
             if writer

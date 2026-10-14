@@ -298,4 +298,63 @@ describe Solargraph::Convention::ActiveSupportAccessors do
     )
     expect(pins.all? { |pin| pin.parameters.map(&:name) == ['value'] }).to be(true)
   end
+
+  it 'types accessors from a literal default' do
+    %w[class_attribute mattr_accessor cattr_accessor mattr_reader mattr_writer config_accessor].each do |macro|
+      pins = method_pins_for 'Foo', %(
+        class Foo
+          #{macro} :bar, default: false
+        end
+      )
+      accessor_pins = pins.reject { |pin| pin.name.end_with?('?') }
+      expect(accessor_pins.map { |pin| pin.return_type.to_s }.uniq).to eq(['Boolean']), macro
+    end
+  end
+
+  it 'infers the type of each kind of literal default' do
+    {
+      '1' => 'Integer', '1.5' => 'Float', "'baz'" => 'String', ':baz' => 'Symbol',
+      'nil' => 'NilClass', '[]' => 'Array', '{}' => 'Hash'
+    }.each do |literal, type|
+      pins = method_pins_for 'Foo', %(
+        class Foo
+          mattr_accessor :bar, default: #{literal}
+        end
+      )
+      expect(pins.map { |pin| pin.return_type.to_s }.uniq).to eq([type]), literal
+    end
+  end
+
+  it 'leaves accessors with a non-literal default untyped' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        mattr_accessor :bar, default: Baz.new
+      end
+    )
+    expect(pins.map(&:return_type).all?(&:undefined?)).to be(true)
+  end
+
+  it 'prefers an explicit @return tag to the default literal type' do
+    pins = method_pins_for 'Foo', %(
+      class Foo
+        # @return [String, nil]
+        mattr_accessor :bar, default: nil
+      end
+    )
+    expect(pins.map { |pin| pin.return_type.to_s }.uniq).to eq(['String, nil'])
+  end
+
+  it 'resolves a literal default type through the ApiMap' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        cattr_accessor :bar, instance_accessor: false, default: false
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    %w[bar bar=].each do |name|
+      pin = api_map.get_method_stack('Foo', name, scope: :class).first
+      expect(pin.typify(api_map).to_s).to eq('Boolean'), name
+    end
+  end
 end
