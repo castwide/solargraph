@@ -502,7 +502,7 @@ module Solargraph
           type = pin.typify(api_map)
           # @sg-ignore Need better generic inference here
           type = pin.probe(api_map) if type.undefined?
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore probably nil false alarm
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
           pin.instance_variable_set(:@return_type, type)
         end

@@ -26,7 +26,7 @@ module Solargraph
         # @return [::Array<Pin::Base>]
         def resolve api_map, name_pin, locals
           # @type [Pin::Method]
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
           return [] unless method_pin
 
@@ -69,7 +69,7 @@ module Solargraph
 
         # The index of the literal in the method call chain.
         # @return [Integer]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         def current_index
           @current_index ||= method_call_chain.node.children[2..].index(literal.node)
         end

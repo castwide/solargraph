@@ -275,7 +275,7 @@ module Solargraph
         #     s(:const, nil, :Baz)),
         #
         call_receiver = call_node.children[0]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         call_arg = type_name(call_node.children[2])
 
         # check if call_receiver looks like this:

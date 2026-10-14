@@ -324,7 +324,7 @@ module Solargraph
           end
         end
         @index = @indexes.last.clone
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear

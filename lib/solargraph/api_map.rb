@@ -573,7 +573,7 @@ module Solargraph
                 else
                   get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
                 end
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end

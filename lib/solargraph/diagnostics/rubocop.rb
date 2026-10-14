@@ -25,7 +25,7 @@ module Solargraph
       def diagnose source, _api_map
         @source = source
         require_rubocop(rubocop_version)
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         options, paths = generate_options(source.filename, source.code)
         store = RuboCop::ConfigStore.new
         runner = RuboCop::Runner.new(options, store)

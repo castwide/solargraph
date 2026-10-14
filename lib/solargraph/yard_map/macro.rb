@@ -118,7 +118,7 @@ module Solargraph
       def generate_yardoc_from chain, source_map
         # @sg-ignore https://github.com/castwide/solargraph/pull/1392
         name = chain.links.last.word
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
         # @sg-ignore nil false alarm
         code = source_map.source.code_for(chain.node)

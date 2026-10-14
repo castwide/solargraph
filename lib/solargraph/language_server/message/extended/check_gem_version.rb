@@ -57,7 +57,7 @@ module Solargraph
               end
             elsif fetched?
               Solargraph::Logging.logger.warn error
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               host.show_message(error, MessageTypes::ERROR) if params['verbose']
             end
             set_result({
