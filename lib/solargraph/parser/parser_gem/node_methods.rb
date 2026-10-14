@@ -279,7 +279,7 @@ module Solargraph
                    # @sg-ignore https://github.com/castwide/solargraph/pull/1395
                    match = source.code[0..(offset - 1)].match(/,\s*\z/)
                    if match
-                     # @sg-ignore nil false alarm
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1395
                      source.tree_at(position.line, position.column - match[0].length)
                    else
                      source.tree_at(position.line, position.column)
