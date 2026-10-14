@@ -990,11 +990,12 @@ module Solargraph
       resolved_pin
     end
 
-    # @param namespace_pin [Pin::Namespace]
+    # @param namespace_pin [Pin::Base, nil]
     # @param rooted_type [ComplexType]
     # @param pins [Enumerable<Pin::Base>]
     # @return [Array<Pin::Base>]
     def erase_generics namespace_pin, rooted_type, pins
+      return pins unless namespace_pin.is_a?(Pin::Namespace)
       return pins unless should_erase_generics_when_done?(namespace_pin, rooted_type)
 
       logger.debug("Erasing generics on namespace_pin=#{namespace_pin} / rooted_type=#{rooted_type}")
