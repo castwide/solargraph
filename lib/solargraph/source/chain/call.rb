@@ -125,7 +125,7 @@ module Solargraph
           new_signature_pin = overload.resolve_generics_from_context_until_complete(overload.generics, atypes, nil, nil,
                                                                                     blocktype)
           # @todo It shouldn't be necessary to choose either generics or macros
-          # @sg-ignore probably nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1338
           new_return_type = if new_signature_pin.return_type.defined?
                               # @sg-ignore https://github.com/castwide/solargraph/pull/1338
                               new_signature_pin.return_type
