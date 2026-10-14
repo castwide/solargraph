@@ -7,7 +7,7 @@ module Solargraph
         class SendNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
-          # @sg-ignore @override is adding, not overriding
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           def process
             # @sg-ignore child node types depend on parent node type
             # @type [Symbol]

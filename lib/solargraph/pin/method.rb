@@ -251,7 +251,7 @@ module Solargraph
 
         # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
         rbs = "def #{name}: #{signatures.first.to_rbs}"
-        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+        # @sg-ignore nil false alarm
         signatures[1..].each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))

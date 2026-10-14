@@ -63,7 +63,7 @@ module Solargraph
           current = mutex.synchronize { queue.shift }
           return if queue.include?(current)
           begin
-            # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+            # @sg-ignore Need to add nil check here
             host.diagnose current
           rescue InvalidOffsetError
             # @todo This error can occur when the Source is out of sync with
