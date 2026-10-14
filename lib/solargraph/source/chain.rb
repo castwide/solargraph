@@ -39,6 +39,7 @@ module Solargraph
       @@inference_stack = []
       @@inference_depth = 0
       @@inference_invalidation_key = nil
+      # @type [::Hash{::Array => ComplexType}]
       @@inference_cache = {}
 
       UNDEFINED_CALL = Chain::Call.new('<undefined>', nil)
@@ -138,7 +139,6 @@ module Solargraph
       # @param name_pin [Pin::Base] The pin for the closure in which this code runs
       # @param locals [::Array<Pin::LocalVariable>]
       # @return [ComplexType]
-      # @sg-ignore
       def infer api_map, name_pin, locals
         # includes binder as it is mutable in Pin::Block
         cache_key = [node, node&.location, links, name_pin&.return_type, name_pin&.binder, locals]
@@ -147,6 +147,7 @@ module Solargraph
           return cached if cached
         else
           @@inference_invalidation_key = api_map.hash
+          # @type [::Hash{::Array => ComplexType}]
           @@inference_cache = {}
         end
         out = infer_uncached(api_map, name_pin, locals).downcast_to_literal_if_possible
@@ -159,7 +160,7 @@ module Solargraph
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param locals [::Array<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [ComplexType]
       def infer_uncached api_map, name_pin, locals
         pins = define(api_map, name_pin, locals)
         if pins.empty?
@@ -259,7 +260,7 @@ module Solargraph
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [ComplexType]
       def infer_from_definitions pins, name_pin, api_map, locals
         # @type [::Array<ComplexType, ComplexType::UniqueType>]
         types = []
@@ -322,9 +323,9 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param type [ComplexType]
       # @param api_map [ApiMap]
-      # @return [ComplexType, ComplexType::UniqueType]
+      # @return [ComplexType]
       def maybe_nil type, api_map
         return type if type.undefined? || type.void? || type.nullable?
         return type unless nullable?(api_map)
