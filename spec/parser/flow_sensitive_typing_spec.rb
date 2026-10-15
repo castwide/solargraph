@@ -1312,6 +1312,152 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Location, nil')
   end
 
+  it 'narrows a repeated attr_reader chain rooted at a bare attr_reader after a .nil? guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String, nil]
+        attr_reader :filename
+      end
+
+      class Pin
+        # @return [Location]
+        attr_reader :location
+
+        def bundled_filename
+          return nil if location.filename.nil?
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 20])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'narrows a repeated attr_reader chain rooted at a bare attr_reader after a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String, nil]
+        attr_reader :filename
+      end
+
+      class Pin
+        # @return [Location]
+        attr_reader :location
+
+        def bundled_filename
+          return nil unless location.filename
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 20])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'does not narrow an attr_reader chain rooted at a bare method that is not an attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String, nil]
+        attr_reader :filename
+      end
+
+      class Pin
+        # @return [Location]
+        def location; end
+
+        def bundled_filename
+          return nil if location.filename.nil?
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 20])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+  end
+
+  it 'does not narrow a different attr_reader chain rooted at a bare attr_reader' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String, nil]
+        attr_reader :filename
+      end
+
+      class Pin
+        # @return [Location]
+        attr_reader :location
+
+        # @return [Location]
+        attr_reader :origin
+
+        def bundled_filename
+          return nil if location.filename.nil?
+          origin.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [15, 18])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+  end
+
+  it 'drops narrowing of a chain rooted at a bare attr_reader once the chain is written' do
+    source = Solargraph::Source.load_string(%(
+      class Location
+        # @return [String, nil]
+        attr_accessor :filename
+      end
+
+      class Pin
+        # @return [Location]
+        attr_accessor :location
+
+        def after_ivar_write
+          return nil if location.filename.nil?
+          @location = Location.new
+          location.filename
+        end
+
+        def after_self_write
+          return nil if location.filename.nil?
+          self.location = Location.new
+          location.filename
+        end
+
+        def after_bare_setter
+          return nil if location.filename.nil?
+          location.filename = nil
+          location.filename
+        end
+
+        def after_ivar_setter
+          return nil if location.filename.nil?
+          @location.filename = nil
+          location.filename
+        end
+
+        def after_self_setter
+          return nil if location.filename.nil?
+          self.location.filename = nil
+          location.filename
+        end
+
+        def after_local_shadow
+          return nil if location.filename.nil?
+          location = Location.new
+          location.filename
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    [13, 19, 25, 31, 37, 43].each do |line|
+      clip = api_map.clip_at('test.rb', [line, 20])
+      expect(clip.infer.rooted_tags).to eq('::String, nil'), "line #{line}"
+    end
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]

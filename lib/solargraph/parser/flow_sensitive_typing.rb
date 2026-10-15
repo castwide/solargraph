@@ -295,11 +295,26 @@ module Solargraph
         name = target.children[1].to_s
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
 
-        receiver = target.children[0]
-        receiver_words = receiver.nil? || receiver.type == :self ? ['self'] : parse_receiver_chain(receiver)
+        receiver_words = write_receiver(target.children[0], words)
         return false if receiver_words.nil? || receiver_words.length >= words.length
 
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
+      end
+
+      # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.
+      #   'location' in 'location.filename = x'
+      # @param words [::Array<String>] the chain #write_to? checks
+      # @return [::Array<String>, nil] the chain `node` reads, e.g. ['pin']
+      #   for 'pin', ['self', 'location'] for 'location' or
+      #   'self.location', or for '@location' when `words` starts at self
+      def write_receiver node, words
+        return ['self'] if node.nil? || node.type == :self
+        # an attr_reader on self reads its same-named instance variable
+        return ['self', node.children[0].to_s.delete_prefix('@')] if node.type == :ivar && words.first == 'self'
+        return parse_receiver_chain(node) unless node.type == :send && (node.children[2..] || []).empty?
+
+        base = write_receiver(node.children[0], words)
+        base && (base + [node.children[1].to_s])
       end
 
       # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
@@ -390,7 +405,7 @@ module Solargraph
       end
 
       # Finds (single var) or builds (chain, e.g. ['pin', 'location'], or
-      # bare self call, e.g. 'location') the pin narrowing facts get
+      # chain from a bare self call, e.g. 'location') the pin narrowing facts get
       # recorded on. A built pin probes its type lazily from `node`, so it
       # can't see its own new facts.
       #
@@ -404,8 +419,8 @@ module Solargraph
         return unless root_word
 
         root_pin = find_var(root_word, position)
-        return root_pin || self_call_pin(node) if chain_words.length == 1
-        return unless root_pin
+        return self_call_pin(node, chain_words) if root_pin.nil?
+        return root_pin if chain_words.length == 1
 
         Pin::LocalVariable.new(
           location: Location.from_node(node),
@@ -416,22 +431,34 @@ module Solargraph
         )
       end
 
-      # Builds a pin for a bare self call, e.g. 'location', named
-      # 'self.location' so it never shadows a local; Chain::Call consults it
-      # only when the call is an attr_reader.
+      # Builds a pin for a chain from a bare self call, e.g. 'location' or
+      # 'location.filename', named 'self.location' or
+      # 'self.location.filename' so it never shadows a local; Chain::Call
+      # consults it only when each call is an attr_reader.
       #
       # @param node [Parser::AST::Node]
+      # @param chain_words [::Array<String>] e.g. ['location', 'filename']
       # @return [Solargraph::Pin::LocalVariable, nil]
-      def self_call_pin node
-        return unless closure && node.type == :send && node.children[0].nil?
+      def self_call_pin node, chain_words
+        return unless closure && self_rooted?(node)
 
         Pin::LocalVariable.new(
           location: Location.from_node(node),
           closure: closure,
-          name: "self.#{node.children[1]}",
+          name: ['self', *chain_words].join('.'),
           assignment: node,
           source: :flow_sensitive_typing
         )
+      end
+
+      # @param node [Parser::AST::Node]
+      # @return [Boolean] true for a chain that starts with a bare call,
+      #   e.g. 'table' or 'table.size'
+      def self_rooted? node
+        return false unless node.type == :send
+
+        receiver = node.children[0]
+        receiver.nil? || (receiver.is_a?(::Parser::AST::Node) && self_rooted?(receiver))
       end
 
       # @param isa_node [Parser::AST::Node]
