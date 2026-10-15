@@ -1230,4 +1230,20 @@ end
     expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
     expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('Array')
   end
+
+  it 'types rest captures as the core Array inside a namespace with its own Array' do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        class Array; end
+
+        # @param x [Object]
+        def self.m(x)
+          x in [*rest]
+          rest
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
+  end
 end

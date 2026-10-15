@@ -107,7 +107,7 @@ module Solargraph
                 add_capture(element, mass_assignment: [subject, index])
               elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
                 # A rest in an array or find pattern always binds an Array
-                add_capture(rest_var, comments: '@type [Array]')
+                add_capture(rest_var, comments: '@type [::Array]')
               else
                 add_captures(element)
               end
