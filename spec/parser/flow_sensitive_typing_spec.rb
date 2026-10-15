@@ -1200,4 +1200,23 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [8, 8])
     expect(clip.infer.to_s).not_to eq('StandardError')
   end
+
+  it 'uses the earlier value inside a multiple assignment that reassigns it in a block' do
+    source = Solargraph::Source.load_string(%(
+      # @param s [String, nil]
+      # @return [Array(Integer, String, nil)]
+      def step s; [1, s]; end
+
+      def run
+        # @type [String, nil]
+        acc = nil
+        [1, 2].each do
+          _n, acc = step(acc)
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [9, 26])
+    expect(clip.infer.to_s).to eq('String, nil')
+  end
 end

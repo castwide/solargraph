@@ -395,6 +395,15 @@ module Solargraph
 
       public
 
+      # The values assigned to us, including the right-hand side of a
+      # multiple assignment like `a, b = pair`
+      #
+      # @return [::Array<Parser::AST::Node>]
+      def value_nodes
+        mass_node = mass_assignment&.first
+        mass_node ? assignments + [mass_node] : assignments
+      end
+
       # True if `other_loc` sits inside one of our own assignment value
       # nodes - the receiver `x` in `x = x.length`. Such a reference must
       # resolve against our other assignments, not the value being derived.
@@ -404,7 +413,7 @@ module Solargraph
       def within_own_assignment? other_loc
         return false unless location&.filename == other_loc.filename
 
-        assignments.any? do |assignment_node|
+        value_nodes.any? do |assignment_node|
           next false unless assignment_node.respond_to?(:loc)
 
           rng = Range.from_node(assignment_node)
@@ -427,7 +436,7 @@ module Solargraph
       # @return [Boolean]
       def override_assignments? other
         other.definite && within_closure?(other.closure) &&
-          other.assignments.none? { |node| references_name?(node) }
+          other.value_nodes.none? { |node| references_name?(node) }
       end
 
       # True if `other_closure` is our closure or a block nested in it,
