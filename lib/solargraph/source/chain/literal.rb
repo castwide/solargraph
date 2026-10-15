@@ -25,7 +25,7 @@ module Solargraph
               @value = true
             elsif node.type == :false
               @value = false
-            elsif node in [:int | :sym, value, *]
+            elsif node in [:int | :sym, Integer | Symbol => value, *]
               @value = value
             end
           end

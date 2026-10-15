@@ -651,8 +651,8 @@ module Solargraph
         return node.children[2].children.last if node.type == :DEFS
         # s(:def, name, args, body) or s(:defs, receiver, name, args, body)
         case node
-        in [:def | :DEFS, _, _, body, *] then body
-        in [:defs, _, _, _, defs_body, *] then defs_body
+        in [:def | :DEFS, _, _, ::Parser::AST::Node | nil => body, *] then body
+        in [:defs, _, _, _, ::Parser::AST::Node | nil => defs_body, *] then defs_body
         else nil
         end
       end

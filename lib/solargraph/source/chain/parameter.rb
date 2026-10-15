@@ -75,7 +75,7 @@ module Solargraph
         # @return [::String, ::Symbol] The literal value of the parameter
         # @sg-ignore false "return type could not be inferred"
         def literal_value
-          (literal.node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+          (literal.node in [_, String | Integer | Float | Symbol | ::Parser::AST::Node | nil => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
         end
       end
     end

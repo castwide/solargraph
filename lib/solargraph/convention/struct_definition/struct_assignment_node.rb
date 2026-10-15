@@ -28,7 +28,7 @@ module Solargraph
             # s(:casgn, scope, name, value) - value is the call, or a block on it
             return false unless node in [:casgn, _, _, ::Parser::AST::Node => value, *]
 
-            struct_node = (value in [:block, call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
+            struct_node = (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
 
             struct_definition_node?(struct_node)
           end
@@ -36,7 +36,7 @@ module Solargraph
 
         def class_name
           # s(:casgn, scope, name, value) - scope is nil for a bare name
-          return '' unless node in [_, scope, name, *]
+          return '' unless node in [_, ::Parser::AST::Node | nil => scope, Symbol => name, *]
 
           if scope
             Parser::NodeMethods.unpack_name(scope) + "::#{name}"
@@ -49,8 +49,8 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          node => [_, _, _, value, *]
-          (value in [:block, call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
+          node => [_, _, _, ::Parser::AST::Node => value, *]
+          (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
         end
       end
     end

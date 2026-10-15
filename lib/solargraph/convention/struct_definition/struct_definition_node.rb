@@ -28,7 +28,7 @@ module Solargraph
           #
           # @param node [Parser::AST::Node]
           def match? node
-            return false unless node in [:class, _, superclass, *]
+            return false unless node in [:class, _, ::Parser::AST::Node | nil => superclass, *]
 
             struct_definition_node?(superclass)
           end
@@ -56,7 +56,7 @@ module Solargraph
         # @return [Array<Array(Parser::AST::Node, String)>]
         def attributes
           struct_attribute_nodes.map do |struct_def_param|
-            next unless struct_def_param in [:sym, name]
+            next unless struct_def_param in [:sym, Symbol => name]
 
             [struct_def_param, name.to_s]
           end.compact
@@ -74,7 +74,7 @@ module Solargraph
         # @return [Parser::AST::Node]
         def body_node
           # s(:class, name, superclass, body)
-          (node in [_, _, _, body, *]) ? body : nil # rubocop:disable Style/RedundantParentheses
+          (node in [_, _, _, ::Parser::AST::Node | nil => body, *]) ? body : nil # rubocop:disable Style/RedundantParentheses
         end
 
         private
@@ -84,7 +84,7 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          (node in [_, _, superclass, *]) ? superclass : nil # rubocop:disable Style/RedundantParentheses
+          (node in [_, _, ::Parser::AST::Node | nil => superclass, *]) ? superclass : nil # rubocop:disable Style/RedundantParentheses
         end
 
         # @sg-ignore Need to add nil check here

@@ -164,7 +164,7 @@ module Solargraph
       return @macro_method_candidates if @macro_method_names == macro_method_names
       @macro_method_names = macro_method_names
       @macro_method_candidates = method_call_nodes.select do |node|
-        (node in [_, _, method_name, *]) && macro_method_names.include?(method_name.to_s)
+        (node in [_, _, Symbol | ::Parser::AST::Node | nil => method_name, *]) && macro_method_names.include?(method_name.to_s)
       end
     end
 
