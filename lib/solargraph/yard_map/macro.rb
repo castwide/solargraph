@@ -37,9 +37,6 @@ module Solargraph
               namespace_pin.name.to_sym
             )
           end
-          # @sg-ignore Library method has no usable type
-          # expected YARD::CodeObjects::NamespaceObject, got nil.
-          #   False positive because namespace_object is set in the loop above.
           YARD::CodeObjects::MethodObject.new(namespace_object, method_pin.name)
         end
       end
