@@ -1357,4 +1357,100 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [6, 10])
     expect(clip.infer.rooted_tags).to eq('::Object')
   end
+
+  context 'with %a{pure} methods that take arguments' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @workspace = dir
+        example.run
+      end
+    end
+
+    # A workspace whose rbs_collection.yaml loads sig/table.rbs
+    #
+    # @param code [String]
+    # @param position [Array(Integer, Integer)]
+    # @return [String]
+    def infer_at code, position
+      File.write(File.join(@workspace, 'rbs_collection.yaml'), <<~YAML)
+        sources:
+          - type: local
+            name: sig
+            path: sig
+        path: .gem_rbs_collection
+      YAML
+      FileUtils.mkdir_p(File.join(@workspace, 'sig'))
+      File.write(File.join(@workspace, 'sig', 'table.rbs'), <<~RBS)
+        class Table
+          %a{pure}
+          def []: (Integer | Symbol | String) -> String?
+
+          def []=: (Integer | Symbol | String, String?) -> String?
+
+          def row: (Integer) -> String?
+        end
+      RBS
+      filename = File.join(@workspace, 'test.rb')
+      File.write(filename, code)
+      Solargraph::ApiMap.load(@workspace).clip_at(filename, position).infer.rooted_tags
+    end
+
+    it 'narrows a repeated pure call with the same literal argument' do
+      code = %(
+        # @param table [Table]
+        def cell(table)
+          return nil unless table[0]
+          table[0]
+        end
+      )
+      expect(infer_at(code, [4, 18])).to eq('::String')
+    end
+
+    it 'does not narrow a pure call with a different literal argument' do
+      code = %(
+        # @param table [Table]
+        def cell(table)
+          return nil unless table[0]
+          table[1]
+        end
+      )
+      expect(infer_at(code, [4, 18])).to eq('::String, nil')
+    end
+
+    it 'does not narrow a pure call with a variable argument' do
+      code = %(
+        # @param table [Table]
+        # @param index [Integer]
+        def cell(table, index)
+          return nil unless table[index]
+          table[index]
+        end
+      )
+      expect(infer_at(code, [5, 22])).to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at an index assignment to the receiver' do
+      code = %(
+        # @param table [Table]
+        def cell(table)
+          return nil unless table[:a]
+          table[:a] = nil
+          table[:a]
+        end
+      )
+      expect(infer_at(code, [5, 19])).to eq('::String, nil')
+    end
+
+    it 'does not narrow a call with arguments that is not pure' do
+      code = %(
+        # @param table [Table]
+        def cell(table)
+          return nil unless table.row(0)
+          table.row(0)
+        end
+      )
+      expect(infer_at(code, [4, 22])).to eq('::String, nil')
+    end
+  end
 end

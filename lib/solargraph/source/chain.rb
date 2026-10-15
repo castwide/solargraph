@@ -338,7 +338,8 @@ module Solargraph
 
       # Extends a receiver-chain path (see #define) with the word from
       # `link`, or breaks the chain (returns nil) once `link` is anything
-      # other than a variable or an argument-less attr_reader or pure call.
+      # other than a variable, an argument-less attr_reader call, or a pure
+      # call whose arguments are literals.
       # Only those are known to return the same value on a repeat call.
       #
       # @param path [::Array<String>, nil]
@@ -349,14 +350,15 @@ module Solargraph
         return nil if path.nil?
         return path + [link.word] if link.is_a?(Chain::InstanceVariable)
 
-        simple_call = link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper) &&
-                      link.arguments.empty? && !link.with_block?
-        return nil unless simple_call
+        return nil unless link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper) && !link.with_block?
+
+        word = Parser::FlowSensitiveTyping.call_word(link.word, link.arguments.map(&:node))
+        return nil unless word
         # variables include Call#narrowed_call_pin results, already readers
         stable = !pins.empty? && pins.all? do |pin|
           pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?))
         end
-        return path + [link.word] if stable
+        return path + [word] if stable
 
         nil
       end

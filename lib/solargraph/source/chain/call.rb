@@ -184,10 +184,10 @@ module Solargraph
         # after a 'return unless pin.location' guard, consulted here while
         # resolving the 'location' call in a later 'pin.location.filename'.
         #
-        # Only applies to argument-less attr_reader or pure (RBS %a{pure})
-        # calls whose receiver chain is variables and such calls (see
-        # Chain#next_receiver_path): other methods aren't known to return
-        # the same value twice.
+        # Only applies to argument-less attr_reader calls, or pure (RBS
+        # %a{pure}) calls with literal arguments, whose receiver chain is
+        # variables and such calls (see Chain#next_receiver_path): other
+        # methods and arguments aren't known to return the same value twice.
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
@@ -196,9 +196,12 @@ module Solargraph
         # @return [Pin::Base, nil]
         def narrowed_call_pin api_map, name_pin, locals, receiver_path
           return nil if receiver_path.nil? || receiver_path.empty?
-          return nil unless arguments.empty? && !with_block?
+          return nil if with_block?
 
-          composite_name = (receiver_path + [word]).join('.')
+          call_word = Parser::FlowSensitiveTyping.call_word(word, arguments.map(&:node))
+          return nil unless call_word
+
+          composite_name = (receiver_path + [call_word]).join('.')
           pin = api_map.var_at_location(locals, composite_name, name_pin, location)
           return nil if pin.nil?
 
