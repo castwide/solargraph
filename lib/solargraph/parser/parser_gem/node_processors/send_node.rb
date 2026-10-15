@@ -10,16 +10,8 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:send, receiver, method_name, *args)
-            # method_name stays unconstrained so a malformed node still reaches the assert below
-            return process_children unless node in [:send, ::Parser::AST::Node | nil => receiver, method_name, *args]
+            return process_children unless node in [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
 
-            # :nocov:
-            unless method_name.instance_of?(Symbol)
-              Solargraph.assert_or_log(:parser_method_name,
-                                       "Expected method name to be a Symbol, got #{method_name.class} for node #{node.inspect}")
-              return process_children
-            end
-            # :nocov:
             if receiver.nil?
               if %i[private public protected].include?(method_name)
                 process_visibility
@@ -58,7 +50,7 @@ module Solargraph
 
           # @return [void]
           def process_visibility
-            return unless node in [:send, _, visibility, *args]
+            return unless node in [:send, _, Symbol => visibility, *args]
 
             if args.empty?
               # @todo Smelly instance variable access
@@ -66,13 +58,6 @@ module Solargraph
             else
               # @sg-ignore Need to add nil check here
               args.each do |child|
-                # :nocov:
-                unless visibility.instance_of?(Symbol)
-                  Solargraph.assert_or_log(:parser_visibility,
-                                           "Expected visibility name to be a Symbol, got #{visibility.class} for node #{node.inspect}")
-                  return process_children
-                end
-                # :nocov:
                 if child in ::Parser::AST::Node[:sym | :str, Symbol | String => value, *]
                   name = value.to_s
                   matches = pins.select { |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance) }
