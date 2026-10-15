@@ -42,7 +42,6 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore Library method has no usable type
         options[:stdin] = code
         [options, paths]
       end
