@@ -1210,4 +1210,24 @@ end
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [6, 10]).locals.map(&:name)).to include('w')
   end
+
+  it 'types rest captures in array and find patterns as Array' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def m(x)
+        case x
+        in [a, *rest]
+          rest
+        in [*, 1, *post]
+          post
+        end
+        x in [*tail]
+        tail
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('Array')
+  end
 end

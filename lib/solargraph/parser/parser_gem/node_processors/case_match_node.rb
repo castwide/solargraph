@@ -68,7 +68,7 @@ module Solargraph
               add_capture(pattern, assignment: subject)
             when :match_as
               add_as_capture(pattern, subject)
-            when :array_pattern
+            when :array_pattern, :find_pattern
               add_array_captures(pattern, subject)
             else
               pattern.children.each do |child|
@@ -105,6 +105,9 @@ module Solargraph
             elements.each_with_index do |element, index|
               if subject && index < indexed.length && element.type == :match_var
                 add_capture(element, mass_assignment: [subject, index])
+              elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
+                # A rest in an array or find pattern always binds an Array
+                add_capture(rest_var, comments: '@type [Array]')
               else
                 add_captures(element)
               end
