@@ -630,7 +630,7 @@ module Solargraph
         return false unless node.type == :send
 
         receiver = node.children[0]
-        receiver.nil? || self_rooted?(receiver)
+        receiver.nil? || (receiver.is_a?(::Parser::AST::Node) && self_rooted?(receiver))
       end
 
       # @param node [Parser::AST::Node]
