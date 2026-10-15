@@ -303,11 +303,26 @@ module Solargraph
         name = target.children[1].to_s
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
 
-        receiver = target.children[0]
-        receiver_words = receiver.nil? || receiver.type == :self ? ['self'] : parse_receiver_chain(receiver)
+        receiver_words = write_receiver(target.children[0], words)
         return false if receiver_words.nil? || receiver_words.length >= words.length
 
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
+      end
+
+      # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.
+      #   'location' in 'location.filename = x'
+      # @param words [::Array<String>] the chain #write_to? checks
+      # @return [::Array<String>, nil] the chain `node` reads, e.g. ['pin']
+      #   for 'pin', ['self', 'location'] for 'location' or
+      #   'self.location', or for '@location' when `words` starts at self
+      def write_receiver node, words
+        return ['self'] if node.nil? || node.type == :self
+        # an attr_reader on self reads its same-named instance variable
+        return ['self', node.children[0].to_s.delete_prefix('@')] if node.type == :ivar && words.first == 'self'
+        return parse_receiver_chain(node) unless node.type == :send && (node.children[2..] || []).empty?
+
+        base = write_receiver(node.children[0], words)
+        base && (base + [node.children[1].to_s])
       end
 
       # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
@@ -602,7 +617,8 @@ module Solargraph
 
         writes = []
         [receiver, key].each do |node|
-          words = written_words(node)
+          # e.g. ['h'], or ['self', 'table'] for an attr_reader 'table'
+          words = write_receiver(node, [])
           collect_writes(body, words, writes) if words
         end
         collect_key_removals(body, receiver, writes)
@@ -610,27 +626,6 @@ module Solargraph
           cut = writes.select { |pos| presence.include?(pos) }.min
           cut ? Range.new(presence.start, cut) : presence
         end
-      end
-
-      # @param node [Parser::AST::Node]
-      # @return [::Array<String>, nil] the chain #write_to? matches writes
-      #   against, e.g. ['h'], ['loc', 'filename'], or ['self', 'table']
-      #   for a bare attr_reader 'table'
-      def written_words node
-        words = parse_receiver_chain(node)
-        return unless words
-
-        self_rooted?(node) ? ['self'] + words : words
-      end
-
-      # @param node [Parser::AST::Node]
-      # @return [Boolean] true for a chain that starts with a bare call,
-      #   e.g. 'table' or 'table.size'
-      def self_rooted? node
-        return false unless node.type == :send
-
-        receiver = node.children[0]
-        receiver.nil? || (receiver.is_a?(::Parser::AST::Node) && self_rooted?(receiver))
       end
 
       # @param node [Parser::AST::Node]
