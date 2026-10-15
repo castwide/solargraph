@@ -11,6 +11,8 @@ module Solargraph
       #   @return [Array(Symbol, String, Array)]
       # @!override Ripper::SexpBuilder#on_embdoc_end
       #   @return [Array(Symbol, String, Array)]
+      # @!override Ripper::SexpBuilder#on_comment
+      #   @return [Array(Symbol, String, Array(Integer, Integer))]
 
       # @param src [String]
       # @param filename [String]
@@ -22,7 +24,7 @@ module Solargraph
       end
 
       def on_comment *args
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         # @type [Array(Symbol, String, Array(Integer, Integer))]
         result = super
         # @sg-ignore nil false alarm
