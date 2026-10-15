@@ -88,7 +88,7 @@ module Solargraph
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
           if %i[const cbase].include?(node.type)
-            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+            # @sg-ignore child node types depend on parent node type
             signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '::' unless signature.empty?
             signature += node.children[1].to_s
@@ -96,7 +96,7 @@ module Solargraph
             signature += '.' unless signature.empty?
             signature += node.children[0].to_s
           elsif node.type == :send
-            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+            # @sg-ignore child node types depend on parent node type
             signature += drill_signature(node.children[0], signature) unless node.children[0].nil?
             signature += '.' unless signature.empty?
             signature += node.children[1].to_s
@@ -144,7 +144,7 @@ module Solargraph
           # @param pair [Parser::AST::Node]
           node.children.each do |pair|
             next unless Parser.is_ast_node?(pair) && pair.children[0]
-            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+            # @sg-ignore child node types depend on parent node type
             result[pair.children[0].children[0]] = simple_convert(pair.children[1])
           end
           result
@@ -190,7 +190,7 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         # @return [Boolean]
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore child node types depend on parent node type
         def splatted_hash? node
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
@@ -199,7 +199,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         def splatted_call? node
           return false unless Parser.is_ast_node?(node)
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore child node types depend on parent node type
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
         end
 

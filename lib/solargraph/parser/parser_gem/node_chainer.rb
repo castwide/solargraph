@@ -201,9 +201,9 @@ module Solargraph
         # @param node [Parser::AST::Node]
         def hash_is_splatted? node
           return false unless Parser.is_ast_node?(node) && node.type == :hash
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore child node types depend on parent node type
           return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore child node types depend on parent node type
           if Parser.is_ast_node?(node.children.last.children[0]) && node.children.last.children[0].type == :hash
             return false
           end
@@ -215,7 +215,7 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore child node types depend on parent node type
           NodeChainer.chain(@parent.children[2], @filename)
         end
 
