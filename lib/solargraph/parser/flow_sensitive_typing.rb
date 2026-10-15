@@ -302,19 +302,6 @@ module Solargraph
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
       end
 
-      # @param expression_node [Parser::AST::Node]
-      # @param true_ranges [Array<Range>]
-      # @param false_ranges [Array<Range>]
-      #
-      # @return [void]
-      def process_expression expression_node, true_ranges, false_ranges
-        process_calls(expression_node, true_ranges, false_ranges)
-        process_and(expression_node, true_ranges, false_ranges)
-        process_or(expression_node, true_ranges, false_ranges)
-        process_variable(expression_node, true_ranges, false_ranges)
-        process_call_chain(expression_node, true_ranges, false_ranges)
-      end
-
       # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
       # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
       # calls/variables rooted in a local, ivar, or unresolved name.
@@ -342,6 +329,19 @@ module Solargraph
         return unless base
 
         base + [method_name.to_s]
+      end
+
+      # @param expression_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_expression expression_node, true_ranges, false_ranges
+        process_calls(expression_node, true_ranges, false_ranges)
+        process_and(expression_node, true_ranges, false_ranges)
+        process_or(expression_node, true_ranges, false_ranges)
+        process_variable(expression_node, true_ranges, false_ranges)
+        process_call_chain(expression_node, true_ranges, false_ranges)
       end
 
       # @param call_node [Parser::AST::Node]
