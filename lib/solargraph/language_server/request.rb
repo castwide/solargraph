@@ -10,11 +10,8 @@ module Solargraph
         @block = block
       end
 
-      # @sg-ignore Library method has no usable type
       # @param result [Object]
-      # @generic T
-      # @yieldreturn [generic<T>]
-      # @return [generic<T>, nil]
+      # @return [void]
       def process result
         @block&.call(result)
       end
