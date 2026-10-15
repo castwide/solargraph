@@ -1247,12 +1247,12 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     source = Solargraph::Source.load_string(%(
       # @param names [Array<String>]
       def head(names)
-        return nil unless names.first
-        names.first
+        return nil unless names.sample
+        names.sample
       end
   ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    clip = api_map.clip_at('test.rb', [4, 15])
+    clip = api_map.clip_at('test.rb', [4, 16])
     expect(clip.infer.rooted_tags).to eq('::String, nil')
   end
 
@@ -1451,6 +1451,51 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       )
       expect(infer_at(code, [4, 22])).to eq('::String, nil')
+    end
+  end
+
+  context 'with read-only core methods' do
+    # @param body [String] statements using 'list', 'table' and 'key'
+    # @param line [Integer] zero-based line of the expression to infer
+    # @return [String]
+    def infer_core body, line
+      code = <<~RUBY
+
+        # @param list [Array<String>]
+        # @param table [Hash{Symbol => String}]
+        # @param key [Symbol]
+        def demo(list, table, key)
+        #{body}end
+      RUBY
+      source = Solargraph::Source.load_string(code, 'test.rb')
+      api_map = Solargraph::ApiMap.new.map(source)
+      column = code.lines[line].rstrip.length
+      api_map.clip_at('test.rb', [line, column]).infer.rooted_tags
+    end
+
+    it 'narrows a repeated Array#[] with the same literal index' do
+      expect(infer_core("        return unless list[0]\n        list[0]\n", 6)).to eq('::String')
+    end
+
+    it 'narrows a repeated Hash#[] with the same literal key' do
+      expect(infer_core("        return unless table[:k]\n        table[:k]\n", 6)).to eq('::String')
+    end
+
+    it 'narrows a repeated Array#last' do
+      expect(infer_core("        return if list.last.nil?\n        list.last\n", 6)).to eq('::String')
+    end
+
+    it 'does not narrow Array#[] with a different literal index' do
+      expect(infer_core("        return unless list[0]\n        list[1]\n", 6)).to eq('::String, nil')
+    end
+
+    it 'does not narrow Hash#[] with a variable key' do
+      expect(infer_core("        return unless table[key]\n        table[key]\n", 6)).to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at an index write' do
+      expect(infer_core("        return unless table[:k]\n        table[:k] = nil\n        table[:k]\n", 7))
+        .to eq('::String, nil')
     end
   end
 end

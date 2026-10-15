@@ -12,6 +12,9 @@ module Solargraph
 
       attr_writer :signatures
 
+      # @return [Boolean]
+      attr_writer :pure
+
       # @return [Parser::AST::Node]
       attr_reader :node
 

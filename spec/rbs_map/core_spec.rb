@@ -120,4 +120,25 @@ describe Solargraph::RbsMap::Core do
     clip = api_map.clip_at('test.rb', [2, 6])
     expect(clip.infer.to_s).to eq('String')
   end
+
+  it 'marks known read-only core methods pure without changing their signatures' do
+    store = Solargraph::ApiMap::Store.new(core.pins)
+    {
+      'Array#[]' => 3, 'Array#first' => 2, 'Array#last' => 2,
+      'Hash#[]' => 1, 'Hash#fetch' => 3,
+      'RBS::Unnamed::ENVClass#[]' => 1, 'RBS::Unnamed::ENVClass#fetch' => 3
+    }.each do |path, overloads|
+      pins = store.get_path_pins(path)
+      expect(pins.length).to eq(1), path
+      expect(pins.first).to be_pure, path
+      expect(pins.first.signatures.length).to eq(overloads), path
+    end
+  end
+
+  it 'leaves other core methods impure' do
+    store = Solargraph::ApiMap::Store.new(core.pins)
+    %w[Array#sample Array#pop Hash#delete].each do |path|
+      expect(store.get_path_pins(path).first).not_to be_pure, path
+    end
+  end
 end
