@@ -8,8 +8,12 @@ module Solargraph
       # Hash methods that return true only when the key is present
       KEY_GUARDS = %i[key? has_key? include? member?].freeze
 
-      # Hash methods that can remove a key, ending what a key guard proved
-      KEY_REMOVERS = %i[delete delete_if reject! select! filter! keep_if clear replace shift].freeze
+      # Hash methods that can remove or rename a key, or change how keys
+      # match, ending what a key guard proved
+      KEY_REMOVERS = %i[
+        delete delete_if reject! select! filter! keep_if clear replace shift
+        transform_keys! compare_by_identity
+      ].freeze
 
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
