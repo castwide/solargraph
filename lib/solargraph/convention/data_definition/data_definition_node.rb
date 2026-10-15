@@ -35,7 +35,7 @@ module Solargraph
 
           private
 
-          # @param data_node [Parser::AST::Node]
+          # @param data_node [Parser::AST::Node, nil]
           # @return [Boolean]
           def data_definition_node? data_node
             # Data.define(*args) - s(:send, s(:const, scope, :Data), :define, *args)

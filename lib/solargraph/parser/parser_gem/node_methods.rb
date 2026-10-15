@@ -11,13 +11,13 @@ module Solargraph
       module NodeMethods
         module_function
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [String]
         def unpack_name node
           pack_name(node).join('::')
         end
 
-        # @param node [Parser::AST::Node]
+        # @param node [Parser::AST::Node, nil]
         # @return [Array<String>]
         def pack_name node
           # @type [Array<String>]
@@ -106,7 +106,7 @@ module Solargraph
 
         # Convert a DSL method call argument with directly inferrable simple params.
         # @param node [Parser::AST::Node]
-        # @return [String, Integer, Float, Symbol, Array, Hash, Source::Chain, nil]
+        # @return [String, Integer, Float, Symbol, Parser::AST::Node, Array, Hash, Source::Chain, nil]
         def simple_convert node
           return nil unless Parser.is_ast_node?(node)
 

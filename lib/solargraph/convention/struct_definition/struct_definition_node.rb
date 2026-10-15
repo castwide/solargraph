@@ -35,7 +35,7 @@ module Solargraph
 
           private
 
-          # @param struct_node [Parser::AST::Node]
+          # @param struct_node [Parser::AST::Node, nil]
           # @return [Boolean]
           def struct_definition_node? struct_node
             # Struct.new(*args) - s(:send, s(:const, scope, :Struct), :new, *args)
@@ -71,7 +71,7 @@ module Solargraph
           keyword_init_param in [:hash, [:pair, _, [:true, *]], *]
         end
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def body_node
           # s(:class, name, superclass, body)
           (node in [_, _, _, ::Parser::AST::Node | nil => body, *]) ? body : nil # rubocop:disable Style/RedundantParentheses
@@ -82,7 +82,7 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def struct_node
           (node in [_, _, ::Parser::AST::Node | nil => superclass, *]) ? superclass : nil # rubocop:disable Style/RedundantParentheses
         end
