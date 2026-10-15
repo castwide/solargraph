@@ -238,10 +238,11 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
+          pin_presences = clip_at_writes(pin, presences)
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
-            presences.each do |presence|
+            pin_presences.each do |presence|
               add_downcast_var(pin,
                                presence: presence,
                                downcast_type: downcast_type,
@@ -249,6 +250,64 @@ module Solargraph
             end
           end
         end
+      end
+
+      # Ends each presence of a call-chain pin, e.g. 'pin.location' or
+      # 'self.location', at the first write that can change what the chain
+      # returns, e.g. 'pin = other' or 'pin.location = nil'.
+      #
+      # @param pin [Pin::BaseVariable]
+      # @param presences [Array<Range>]
+      # @return [Array<Range>]
+      def clip_at_writes pin, presences
+        return presences unless pin.name.include?('.')
+        # without the enclosing body, writes can't be ruled out
+        return [] if enclosing_compound_statement_pin&.node.nil?
+
+        writes = []
+        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes)
+        presences.map do |presence|
+          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut ? Range.new(presence.start, cut) : presence
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>] e.g. ['pin', 'location']
+      # @param writes [::Array<Position>] start positions found so far
+      # @return [void]
+      def collect_writes node, words, writes
+        range = Range.from_node(node)
+        writes << range.start if range && write_to?(node, words)
+        node.children.each do |child|
+          collect_writes(child, words, writes) if child.is_a?(::Parser::AST::Node)
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>]
+      # @return [Boolean]
+      def write_to? node, words
+        # e.g. 'pin.location ||= x' wraps a reader call in an or_asgn
+        wrapped = %i[op_asgn or_asgn and_asgn].include?(node.type)
+        target = wrapped ? node.children[0] : node
+        return false unless target.is_a?(::Parser::AST::Node)
+
+        variable = target.children[0].to_s
+        # an attr_reader on self reads its same-named instance variable
+        self_ivar = words.first == 'self' && variable == "@#{words[1]}"
+        return variable == words.first || self_ivar if target.type == :ivasgn
+        return words.first == variable if target.type == :lvasgn
+        return false unless target.type == :send
+
+        name = target.children[1].to_s
+        return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
+
+        receiver = target.children[0]
+        receiver_words = receiver.nil? || receiver.type == :self ? ['self'] : parse_receiver_chain(receiver)
+        return false if receiver_words.nil? || receiver_words.length >= words.length
+
+        receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
       end
 
       # @param expression_node [Parser::AST::Node]
@@ -261,6 +320,35 @@ module Solargraph
         process_and(expression_node, true_ranges, false_ranges)
         process_or(expression_node, true_ranges, false_ranges)
         process_variable(expression_node, true_ranges, false_ranges)
+      end
+
+      # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
+      # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
+      # calls/variables rooted in a local, ivar, or unresolved name.
+      #
+      # @param node [Parser::AST::Node, nil]
+      # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
+      #   'location'], or nil if `node` doesn't have this shape.
+      def parse_receiver_chain node
+        return unless node.is_a?(::Parser::AST::Node)
+        return [node.children[0].to_s] if %i[lvar ivar].include?(node.type)
+        return unless node.type == :send
+        # no arguments -- children[2..] is only nil (rather than [])
+        # if the start index is out of bounds, which can't happen here
+        return unless (node.children[2..] || []).empty?
+
+        method_name = node.children[1]
+        return unless method_name.is_a?(Symbol)
+
+        receiver = node.children[0]
+        # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
+        # 'foo' could be a local variable or a 0-arg method on self
+        return [method_name.to_s] if receiver.nil?
+
+        base = parse_receiver_chain(receiver)
+        return unless base
+
+        base + [method_name.to_s]
       end
 
       # @param call_node [Parser::AST::Node]
@@ -472,28 +560,29 @@ module Solargraph
           assignment: node.updated(nil, [receiver, :[], key]),
           source: :flow_sensitive_typing
         )
-        presences = clip_at_writes(true_presences, [receiver, key], hash: receiver)
+        presences = clip_at_key_writes(true_presences, receiver, key)
         process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
       end
 
-      # Ends each presence at the first assignment to a variable that one
-      # of `nodes` reads, e.g. 'h = other' for 'h', or '@table = other'
-      # for an attr_reader 'table', and at the first call that can remove
-      # a key from `hash`, e.g. 'h.delete(k)'.
+      # Ends each presence of the 'h[k]' fact from a 'h.key?(k)' guard at
+      # the first write to 'h' or 'k', e.g. 'h = other', or call that can
+      # remove a key from 'h', e.g. 'h.delete(k)'.
       #
       # @param presences [Array<Range>]
-      # @param nodes [Array<Parser::AST::Node>]
-      # @param hash [Parser::AST::Node]
+      # @param receiver [Parser::AST::Node] e.g. 'h'
+      # @param key [Parser::AST::Node] e.g. 'k'
       # @return [Array<Range>]
-      def clip_at_writes presences, nodes, hash:
+      def clip_at_key_writes presences, receiver, key
         body = enclosing_compound_statement_pin&.node
         # without the enclosing body, writes can't be ruled out
         return [] if body.nil?
 
-        targets = nodes.filter_map { |node| written_variable(node) }
         writes = []
-        collect_writes(body, targets, writes)
-        collect_key_removals(body, hash, writes)
+        [receiver, key].each do |node|
+          words = written_words(node)
+          collect_writes(body, words, writes) if words
+        end
+        collect_key_removals(body, receiver, writes)
         presences.map do |presence|
           cut = writes.select { |pos| presence.include?(pos) }.min
           cut ? Range.new(presence.start, cut) : presence
@@ -501,30 +590,24 @@ module Solargraph
       end
 
       # @param node [Parser::AST::Node]
-      # @return [Array(Symbol, Symbol), nil] assignment node type and
-      #   variable name whose write changes what `node` reads, e.g.
-      #   [:ivasgn, :@table] for 'table.size'
-      def written_variable node
-        return [:lvasgn, node.children[0]] if node.type == :lvar
-        return [:ivasgn, node.children[0]] if node.type == :ivar
-        return unless node.type == :send
+      # @return [::Array<String>, nil] the chain #write_to? matches writes
+      #   against, e.g. ['h'], ['loc', 'filename'], or ['self', 'table']
+      #   for a bare attr_reader 'table'
+      def written_words node
+        words = parse_receiver_chain(node)
+        return unless words
 
-        receiver = node.children[0]
-        # a bare attr_reader reads its same-named instance variable
-        return [:ivasgn, :"@#{node.children[1]}"] if receiver.nil?
-
-        written_variable(receiver)
+        self_rooted?(node) ? ['self'] + words : words
       end
 
       # @param node [Parser::AST::Node]
-      # @param targets [Array<Array(Symbol, Symbol)>]
-      # @param writes [Array<Position>] start positions found so far
-      # @return [void]
-      def collect_writes node, targets, writes
-        writes << get_node_start_position(node) if targets.include?([node.type, node.children[0]])
-        node.children.each do |child|
-          collect_writes(child, targets, writes) if child.is_a?(::Parser::AST::Node)
-        end
+      # @return [Boolean] true for a chain that starts with a bare call,
+      #   e.g. 'table' or 'table.size'
+      def self_rooted? node
+        return false unless node.type == :send
+
+        receiver = node.children[0]
+        receiver.nil? || self_rooted?(receiver)
       end
 
       # @param node [Parser::AST::Node]
@@ -553,6 +636,9 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name

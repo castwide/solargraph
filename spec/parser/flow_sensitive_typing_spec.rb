@@ -1026,6 +1026,25 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'uses is_a? with a fully-qualified type name to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def verify_repro(x)
+        if x.is_a?(::Integer)
+          x
+        else
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Object')
+  end
+
   context 'with a Hash key guard' do
     # @param code [String]
     # @param position [Array(Integer, Integer)]
@@ -1159,6 +1178,42 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       )
       expect(infer_at(code, [8, 10])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once the key is reassigned' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param j [String]
+        def foo h, k, j
+          return 0 unless h.key?(k)
+          k = j
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [8, 10])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once an attr_reader receiver is reassigned' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k)
+            a = table[k]
+            @table = {}
+            b = table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [11, 12])).to eq('Integer')
+      expect(infer_at(code, [12, 12])).to eq('Integer, nil')
     end
 
     it 'stops narrowing once a key may have been removed' do
