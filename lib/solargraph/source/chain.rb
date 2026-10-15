@@ -358,9 +358,12 @@ module Solargraph
         stable = !pins.empty? && pins.all? do |pin|
           pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?))
         end
-        return path + [word] if stable
+        return nil unless stable
+        # a head call that isn't a local is an implicit-self call, e.g.
+        # 'location' in 'location.filename'; see Call#resolve
+        return ['self', word] if path.empty? && pins.none? { |pin| pin.is_a?(Pin::BaseVariable) && pin.name == link.word }
 
-        nil
+        path + [word]
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]
