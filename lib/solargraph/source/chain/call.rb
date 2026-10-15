@@ -65,6 +65,7 @@ module Solargraph
           pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
           # Several union members can end up with the same pin and return type.
           # @sg-ignore Library method has no usable type
+          #   Array#flatten's element type depends on nesting depth, which neither YARD nor RBS can express
           pins = pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
           return [] if pins.empty?
           inferred_pins(pins, api_map, name_pin, locals)
