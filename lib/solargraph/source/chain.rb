@@ -338,8 +338,8 @@ module Solargraph
 
       # Extends a receiver-chain path (see #define) with the word from
       # `link`, or breaks the chain (returns nil) once `link` is anything
-      # other than a variable or an argument-less attr_reader call. Only
-      # attr_readers are known to return the same value on a repeat call.
+      # other than a variable or an argument-less attr_reader or pure call.
+      # Only those are known to return the same value on a repeat call.
       #
       # @param path [::Array<String>, nil]
       # @param link [Chain::Link]
@@ -354,7 +354,7 @@ module Solargraph
         return nil unless simple_call
         # variables include Call#narrowed_call_pin results, already readers
         stable = !pins.empty? && pins.all? do |pin|
-          pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && pin.attribute?)
+          pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && (pin.attribute? || pin.pure?))
         end
         return path + [link.word] if stable
 

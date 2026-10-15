@@ -184,9 +184,10 @@ module Solargraph
         # after a 'return unless pin.location' guard, consulted here while
         # resolving the 'location' call in a later 'pin.location.filename'.
         #
-        # Only applies to argument-less attr_reader calls whose receiver
-        # chain is variables and attr_readers (see Chain#next_receiver_path):
-        # other methods aren't known to return the same value twice.
+        # Only applies to argument-less attr_reader or pure (RBS %a{pure})
+        # calls whose receiver chain is variables and such calls (see
+        # Chain#next_receiver_path): other methods aren't known to return
+        # the same value twice.
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
@@ -202,7 +203,7 @@ module Solargraph
           return nil if pin.nil?
 
           readers = method_pins(api_map, name_pin)
-          return nil if readers.empty? || !readers.all?(&:attribute?)
+          return nil if readers.empty? || !readers.all? { |reader| reader.attribute? || reader.pure? }
 
           # An uninferrable narrowed pin would shadow the method lookup
           type = pin.typify(api_map)

@@ -1229,6 +1229,33 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Location, nil')
   end
 
+  it 'narrows a repeated call to a method RBS declares %a{pure}' do
+    # core RBS: %a{pure} def timeout: () -> Float?
+    source = Solargraph::Source.load_string(%(
+      # @param regexp [Regexp]
+      def limit(regexp)
+        return nil unless regexp.timeout
+        regexp.timeout
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 16])
+    expect(clip.infer.rooted_tags).to eq('::Float')
+  end
+
+  it 'does not narrow a repeated call to an RBS method without %a{pure}' do
+    source = Solargraph::Source.load_string(%(
+      # @param names [Array<String>]
+      def head(names)
+        return nil unless names.first
+        names.first
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 15])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+  end
+
   it 'drops attr_reader narrowing once the receiver is reassigned' do
     source = Solargraph::Source.load_string(%(
       class Location; end
