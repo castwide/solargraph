@@ -63,7 +63,7 @@ module Solargraph
             subtypes.concat subs
           end
         end
-        # @sg-ignore Need better generic inference here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1266
         new(name, key_types, subtypes, rooted: rooted, parameters_type: parameters_type)
       end
 
