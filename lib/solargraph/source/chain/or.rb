@@ -13,7 +13,11 @@ module Solargraph
           @links = links
         end
 
-        def resolve api_map, name_pin, locals
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @param locals [::Array<Pin::Base>]
+        # @param _receiver_path [::Array<String>, nil]
+        def resolve api_map, name_pin, locals, _receiver_path = nil
           types = @links.map { |link| link.infer(api_map, name_pin, locals) }
           combined_type = Solargraph::ComplexType.new(types)
           unless types.all?(&:nullable?)

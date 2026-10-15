@@ -229,11 +229,9 @@ module Solargraph
       end
 
       # @param other_loc [Location]
-      # @sg-ignore flow sensitive typing needs to handle attrs
       def starts_at? other_loc
         location&.filename == other_loc.filename &&
           presence &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
           presence.start == other_loc.range.start
       end
 
@@ -245,7 +243,6 @@ module Solargraph
       def combine_presence other
         return presence || other.presence if presence.nil? || other.presence.nil?
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
         Range.new([presence.start, other.presence.start].max, [presence.ending, other.presence.ending].min)
       end
 
@@ -281,7 +278,6 @@ module Solargraph
       def visible_at? other_closure, other_loc
         # @sg-ignore flow sensitive typing needs to handle attrs
         location.filename == other_loc.filename &&
-          # @sg-ignore flow sensitive typing needs to handle attrs
           (!presence || presence.include?(other_loc.range.start)) &&
           visible_in_closure?(other_closure)
       end
@@ -292,6 +288,13 @@ module Solargraph
 
       # @return [Range]
       attr_writer :presence
+
+      # Downcast pins share name/location/closure; must differ by narrowing facts too.
+      #
+      # @return [::Array]
+      def equality_fields
+        super + [presence, intersection_return_type, exclude_return_type]
+      end
 
       private
 
