@@ -545,10 +545,10 @@ module Solargraph
       # @param decl [RBS::AST::Members::MethodDefinition]
       # @return [Boolean]
       def pure_method? decl
-        return true if decl.annotations.any? { |annotation| annotation.string == pure }
+        return true if decl.annotations.any? { |annotation| annotation.string == 'pure' }
         return false if decl.overloads.empty?
 
-        decl.overloads.all? { |overload| overload.annotations.any? { |annotation| annotation.string == pure } }
+        decl.overloads.all? { |overload| overload.annotations.any? { |annotation| annotation.string == 'pure' } }
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
