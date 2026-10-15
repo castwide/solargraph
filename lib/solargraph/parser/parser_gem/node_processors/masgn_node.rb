@@ -22,7 +22,7 @@ module Solargraph
             #     s(:int, 2),
             #     s(:int, 3)))
             masgn = node
-            masgn => [:masgn, mlhs, mass_rhs]
+            masgn => [:masgn, ::Parser::AST::Node => mlhs, ::Parser::AST::Node => mass_rhs]
             # @type [Array<Parser::AST::Node>]
             lhs_arr = mlhs.children
 

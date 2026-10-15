@@ -10,7 +10,8 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:send, receiver, method_name, *args)
-            return process_children unless node in [:send, receiver, method_name, *args]
+            # method_name stays unconstrained so a malformed node still reaches the assert below
+            return process_children unless node in [:send, ::Parser::AST::Node | nil => receiver, method_name, *args]
 
             # :nocov:
             unless method_name.instance_of?(Symbol)
@@ -72,7 +73,7 @@ module Solargraph
                   return process_children
                 end
                 # :nocov:
-                if child in ::Parser::AST::Node[:sym | :str, value, *]
+                if child in ::Parser::AST::Node[:sym | :str, Symbol | String => value, *]
                   name = value.to_s
                   matches = pins.select { |pin| pin.is_a?(Pin::Method) && pin.name == name && pin.namespace == region.closure.full_context.namespace && pin.context.scope == (region.scope || :instance) }
                   matches.each do |pin|
@@ -88,7 +89,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            return unless node in [:send, _, attr_method, *args]
+            return unless node in [:send, _, Symbol => attr_method, *args]
 
             # @sg-ignore Need to add nil check here
             args.each do |a|
@@ -193,7 +194,7 @@ module Solargraph
           # @return [void]
           def process_require
             # require 'path' - s(:send, nil, :require, s(:str, path))
-            return unless node in [:send, _, _, ::AST::Node[:str, value, *], *]
+            return unless node in [:send, _, _, ::AST::Node[:str, String => value, *], *]
 
             path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
@@ -202,7 +203,7 @@ module Solargraph
           # @return [void]
           def process_autoload
             # autoload :Name, 'path' - s(:send, nil, :autoload, s(:sym, name), s(:str, path))
-            return unless node in [:send, _, _, _, ::AST::Node[:str, value, *], *]
+            return unless node in [:send, _, _, _, ::AST::Node[:str, String => value, *], *]
 
             path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
@@ -266,14 +267,14 @@ module Solargraph
                   )
                 end
               end
-            elsif args in [[:def, *] => def_node, *]
+            elsif args in [::Parser::AST::Node[:def, *] => def_node, *]
               NodeProcessor.process def_node, region.update(visibility: :module_function), pins, locals, ivars
             end
           end
 
           # @return [void]
           def process_private_constant
-            return unless node in [:send, _, _, [:sym | :str, value, *], *]
+            return unless node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
 
             cn = value.to_s
             ref = pins.select do |p|
@@ -287,7 +288,8 @@ module Solargraph
           # @return [void]
           def process_alias_method
             # alias_method :new, :old - s(:send, nil, :alias_method, s(:sym, new), s(:sym, old))
-            return unless node in [:send, _, _, [_, new_name, *], [_, original, *], *]
+            # only reached when both arguments are sym nodes (see #process)
+            return unless node in [:send, _, _, [_, Symbol => new_name, *], [_, Symbol => original, *], *]
 
             get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
@@ -302,7 +304,8 @@ module Solargraph
 
           # @return [Boolean]
           def process_private_class_method
-            if node in [:send, _, _, [:sym | :str, value, *], *]
+            if node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
+
               ref = pins.select do |p|
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == value.to_s
               end.first

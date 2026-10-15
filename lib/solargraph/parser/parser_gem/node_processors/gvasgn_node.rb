@@ -7,8 +7,8 @@ module Solargraph
         class GvasgnNode < Parser::NodeProcessor::Base
           def process
             # s(:gvasgn, name, value) - value is absent when the target is in an mlhs
-            return process_children unless node in [:gvasgn, name, *rest]
-            assignment = (rest in [value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            return process_children unless node in [:gvasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             loc = get_node_location(node)
             pins.push Solargraph::Pin::GlobalVariable.new(

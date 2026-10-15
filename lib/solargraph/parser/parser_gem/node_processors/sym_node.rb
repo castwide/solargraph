@@ -7,7 +7,8 @@ module Solargraph
         class SymNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            return unless node in [:sym, value]
+            return unless node in [:sym, Symbol => value]
+
 
             pins.push Solargraph::Pin::Symbol.new(
               get_node_location(node),

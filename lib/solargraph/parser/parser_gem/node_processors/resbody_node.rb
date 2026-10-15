@@ -10,9 +10,15 @@ module Solargraph
           # @return [void]
           def process
             # s(:resbody, s(:array, *exception_classes) | nil, s(:lvasgn, name) | nil, body)
-            return process_children unless node in [:resbody, exceptions, variable, body]
+            return process_children unless node in [:resbody,
+                                                    ::Parser::AST::Node | nil => exceptions,
+                                                    ::Parser::AST::Node | nil => variable,
+                                                    ::Parser::AST::Node | nil => body]
 
-            if variable in [_, variable_name, *]
+            # variable is an lvasgn, ivasgn, cvasgn or gvasgn (Symbol name), a
+            # send for `=> a.b` (receiver node) or a casgn for `=> A` (nil scope)
+            if variable in [_, Symbol | ::Parser::AST::Node | nil => variable_name, *]
+
               here = get_node_start_position(variable)
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)

@@ -8,7 +8,7 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:sclass, target, body) - target is s(:self), s(:casgn, ...) or s(:const, ...)
-            return unless node in [:sclass, sclass, *]
+            return unless node in [:sclass, ::Parser::AST::Node => sclass, *]
 
             # @todo Changing Parser::AST::Node to AST::Node below will
             #   cause type errors at strong level because the combined
@@ -22,7 +22,8 @@ module Solargraph
             case sclass
             in ::Parser::AST::Node[:self, *]
               closure = region.closure
-            in ::Parser::AST::Node[:casgn, scope, const_name, *]
+            in ::Parser::AST::Node[:casgn, ::Parser::AST::Node | nil => scope, Symbol => const_name, *]
+
               names = [region.closure.namespace, region.closure.name]
               if scope.nil? && names.last != const_name.to_s
                 names << const_name.to_s

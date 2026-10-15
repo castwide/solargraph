@@ -9,8 +9,8 @@ module Solargraph
 
           def process
             # s(:lvasgn, name, value) - value is absent in an mlhs or a rescue
-            return process_children unless node in [:lvasgn, name, *rest]
-            assignment = (rest in [value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            return process_children unless node in [:lvasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             here = get_node_start_position(node)
             # @sg-ignore Need to add nil check here

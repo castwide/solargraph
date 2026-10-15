@@ -9,12 +9,12 @@ module Solargraph
 
           def process
             # s(:block, call, args, body)
-            return process_children unless node in [:block, call, *]
+            return process_children unless node in [:block, ::Parser::AST::Node => call, *]
 
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
             # Foo.class_eval { ... } - s(:send, s(:const, ...), :class_eval, *args)
-            if call in [:send, [:cbase | :const, *] => clazz, :class_eval, *]
+            if call in [:send, ::Parser::AST::Node[:cbase | :const, *] => clazz, :class_eval, *]
               clazz_name = unpack_name(clazz)
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables

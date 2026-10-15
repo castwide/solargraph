@@ -9,12 +9,13 @@ module Solargraph
 
           def process
             # s(:class, name, superclass, body) or s(:module, name, body)
-            return process_children unless node in [:class | :module, name_node, *]
+            return process_children unless node in [:class | :module, ::Parser::AST::Node => name_node, *]
 
             name = unpack_name(name_node)
             comments = comments_for(node)
 
-            superclass_name = if node in [:class, _, [:const, *] => superclass, *]
+            superclass_name = if node in [:class, _, ::Parser::AST::Node[:const, *] => superclass, *]
+
                                 "#{unpack_name(superclass)}#{parameters_from_inline_rbs(superclass)}"
                               end
 

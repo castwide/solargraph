@@ -9,8 +9,8 @@ module Solargraph
 
           def process
             # s(:ivasgn, name, value) - value is absent when the target is in an mlhs
-            return process_children unless node in [:ivasgn, name, *rest]
-            assignment = (rest in [value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            return process_children unless node in [:ivasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             loc = get_node_location(node)
             ivars.push Solargraph::Pin::InstanceVariable.new(

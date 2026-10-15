@@ -9,8 +9,8 @@ module Solargraph
 
           def process
             # s(:casgn, scope, name, value) - scope is nil for a bare name; value is absent in an mlhs
-            return process_children unless node in [:casgn, scope, name, *rest]
-            assignment = (rest in [value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            return process_children unless node in [:casgn, ::Parser::AST::Node | nil => scope, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             pins.push Solargraph::Pin::Constant.new(
               location: get_node_location(node),
