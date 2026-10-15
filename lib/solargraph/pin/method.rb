@@ -376,14 +376,11 @@ module Solargraph
         @attribute
       end
 
-      # @parm other [self]
+      # @param other [self]
       def nearly? other
         super &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           parameters == other.parameters &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           scope == other.scope &&
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1050
           visibility == other.visibility
       end
 
