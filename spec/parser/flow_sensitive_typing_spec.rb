@@ -1161,6 +1161,23 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [8, 10])).to eq('Integer, nil')
     end
 
+    it 'stops narrowing once a key may have been removed' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          a = h[k]
+          h.delete(k)
+          b = h[k]
+          a
+          b
+        end
+      )
+      expect(infer_at(code, [8, 10])).to eq('Integer')
+      expect(infer_at(code, [9, 10])).to eq('Integer, nil')
+    end
+
     it 'narrows a lookup on an attr_reader but not on another method' do
       code = %(
         class Foo

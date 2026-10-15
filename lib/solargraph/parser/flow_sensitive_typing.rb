@@ -8,6 +8,9 @@ module Solargraph
       # Hash methods that return true only when the key is present
       KEY_GUARDS = %i[key? has_key? include? member?].freeze
 
+      # Hash methods that can remove a key, ending what a key guard proved
+      KEY_REMOVERS = %i[delete delete_if reject! select! filter! keep_if clear replace shift].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
@@ -465,18 +468,20 @@ module Solargraph
           assignment: node.updated(nil, [receiver, :[], key]),
           source: :flow_sensitive_typing
         )
-        presences = clip_at_writes(true_presences, [receiver, key])
+        presences = clip_at_writes(true_presences, [receiver, key], hash: receiver)
         process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
       end
 
       # Ends each presence at the first assignment to a variable that one
       # of `nodes` reads, e.g. 'h = other' for 'h', or '@table = other'
-      # for an attr_reader 'table'.
+      # for an attr_reader 'table', and at the first call that can remove
+      # a key from `hash`, e.g. 'h.delete(k)'.
       #
       # @param presences [Array<Range>]
       # @param nodes [Array<Parser::AST::Node>]
+      # @param hash [Parser::AST::Node]
       # @return [Array<Range>]
-      def clip_at_writes presences, nodes
+      def clip_at_writes presences, nodes, hash:
         body = enclosing_compound_statement_pin&.node
         # without the enclosing body, writes can't be ruled out
         return [] if body.nil?
@@ -484,6 +489,7 @@ module Solargraph
         targets = nodes.filter_map { |node| written_variable(node) }
         writes = []
         collect_writes(body, targets, writes)
+        collect_key_removals(body, hash, writes)
         presences.map do |presence|
           cut = writes.select { |pos| presence.include?(pos) }.min
           cut ? Range.new(presence.start, cut) : presence
@@ -514,6 +520,19 @@ module Solargraph
         writes << get_node_start_position(node) if targets.include?([node.type, node.children[0]])
         node.children.each do |child|
           collect_writes(child, targets, writes) if child.is_a?(::Parser::AST::Node)
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param hash [Parser::AST::Node] e.g. 'h' for 'h.delete(k)'
+      # @param writes [Array<Position>] start positions found so far
+      # @return [void]
+      def collect_key_removals node, hash, writes
+        if node.type == :send && node.children[0] == hash && KEY_REMOVERS.include?(node.children[1])
+          writes << get_node_start_position(node)
+        end
+        node.children.each do |child|
+          collect_key_removals(child, hash, writes) if child.is_a?(::Parser::AST::Node)
         end
       end
 
