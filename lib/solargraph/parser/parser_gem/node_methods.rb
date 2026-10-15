@@ -47,6 +47,8 @@ module Solargraph
           case node.type
           when :const
             unpack_name(node)
+          when :nil
+            'nil'
           when :const_pattern, :match_as
             # @type [Parser::AST::Node]
             inner = node.children.fetch(0)

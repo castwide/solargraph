@@ -1130,5 +1130,26 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to eq(['Wrong argument type for #takes_string: s expected String, received Integer'])
     end
+
+    it 'types a pattern match capture with a nil alternative' do
+      checker = type_checker(%(
+        # @param s [String]
+        # @return [void]
+        def takes_string(s); end
+
+        # @param x [Integer, String, nil]
+        # @return [void]
+        def bar(x)
+          case x
+          in Integer | nil => i
+            takes_string(i)
+          else
+            nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for #takes_string: s expected String, received Integer, nil'])
+    end
   end
 end
