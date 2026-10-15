@@ -57,7 +57,7 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
-    # @sg-ignore Library method has no usable type
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def bundled?
       # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       !!@metagems
@@ -68,7 +68,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
-    # @sg-ignore Library method has no usable type
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def bundled
       @metagems || []
     end
