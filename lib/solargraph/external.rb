@@ -169,7 +169,7 @@ module Solargraph
       [File.expand_path(yaml.fetch('path'), directory)].concat(
         yaml.fetch('sources', [])
             .select { |source| source['type'] == 'local' && source['path'] }
-            # @sg-ignore Library method has no usable type
+            # @sg-ignore Need better generic inference here
             .map { |source| File.expand_path(source['path'], directory) }
       ).compact
     end
