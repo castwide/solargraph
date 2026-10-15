@@ -58,17 +58,17 @@ module Solargraph
           return [] unless n.is_a?(::Parser::AST::Node)
           # s(:splat, value) - an anonymous splat in an mlhs has no value
           if n in [:splat, *rest]
-            return (rest in [splatted, *]) ? generate_links(splatted) : [] # rubocop:disable Style/RedundantParentheses
+            return (rest in [::Parser::AST::Node => splatted, *]) ? generate_links(splatted) : [] # rubocop:disable Style/RedundantParentheses
           end
           # @type [Array<Chain::Link>]
           result = []
           case n
-          in [:block, call, *]
+          in [:block, ::Parser::AST::Node => call, *]
             result.concat NodeChainer.chain(call, @filename, n).links
-          in [:send, ::Parser::AST::Node => receiver, method_name, *]
+          in [:send, ::Parser::AST::Node => receiver, Symbol => method_name, *]
             result.concat generate_links(receiver)
             result.push Chain::Call.new(method_name.to_s, Location.from_node(n), node_args(n), passed_block(n))
-          in [:send, nil, method_name, *args]
+          in [:send, nil, Symbol => method_name, *args]
             # @sg-ignore Need to add nil check here
             args.map do |c|
               NodeChainer.chain(c, @filename, n)
@@ -76,10 +76,10 @@ module Solargraph
             result.push Chain::Call.new(method_name.to_s, Location.from_node(n), node_args(n), passed_block(n))
           in [:send, *]
             raise "No idea what to do with #{n}"
-          in [:csend, ::Parser::AST::Node => receiver, method_name, *]
+          in [:csend, ::Parser::AST::Node => receiver, Symbol => method_name, *]
             result.concat generate_links(receiver)
             result.push Chain::QCall.new(method_name.to_s, Location.from_node(n), node_args(n))
-          in [:csend, nil, method_name, *]
+          in [:csend, nil, Symbol => method_name, *]
             result.push Chain::QCall.new(method_name.to_s, Location.from_node(n), node_args(n))
           in [:csend, *]
             raise "No idea what to do with #{n}"
@@ -96,15 +96,15 @@ module Solargraph
           in [:const, *]
             const = unpack_name(n)
             result.push Chain::Constant.new(const)
-          in [:lvar | :lvasgn, name, *]
+          in [:lvar | :lvasgn, Symbol => name, *]
             result.push Chain::Call.new(name.to_s, Location.from_node(n))
-          in [:ivar | :ivasgn, name, *]
+          in [:ivar | :ivasgn, Symbol => name, *]
             result.push Chain::InstanceVariable.new(name.to_s, n, Location.from_node(n))
-          in [:cvar | :cvasgn, name, *]
+          in [:cvar | :cvasgn, Symbol => name, *]
             result.push Chain::ClassVariable.new(name.to_s)
-          in [:gvar | :gvasgn, name, *]
+          in [:gvar | :gvasgn, Symbol => name, *]
             result.push Chain::GlobalVariable.new(name.to_s)
-          in [:or_asgn, lhs, rhs, *]
+          in [:or_asgn, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs, *]
             # @bar ||= 123 translates to:
             #
             # s(:or_asgn,
@@ -118,12 +118,12 @@ module Solargraph
           in [:class | :module | :def | :defs, *]
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL
-          in [:and, *, last]
+          in [:and, *, ::Parser::AST::Node => last]
             result.concat generate_links(last)
-          in [:or, lhs, rhs, *]
+          in [:or, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs, *]
             result.push Chain::Or.new([NodeChainer.chain(lhs, @filename),
                                        NodeChainer.chain(rhs, @filename, n)])
-          in [:if, _, then_node, else_node, *]
+          in [:if, _, ::Parser::AST::Node | nil => then_node, ::Parser::AST::Node | nil => else_node, *]
             then_clause = if then_node
                             NodeChainer.chain(then_node, @filename, n)
                           else
@@ -135,7 +135,7 @@ module Solargraph
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
             result.push Chain::If.new([then_clause, else_clause])
-          in [:begin | :kwbegin, *, last]
+          in [:begin | :kwbegin, *, ::Parser::AST::Node => last]
             result.concat generate_links(last)
           in [:begin | :kwbegin]
             # an empty begin...end has no links
@@ -165,7 +165,7 @@ module Solargraph
         # @return [Chain::Link]
         def block_pass_link block_pass
           case block_pass
-          in [_, [:sym, symbol, *]]
+          in [_, [:sym, Symbol => symbol, *]]
             Chain::BlockSymbol.new(symbol.to_s)
           in [_, ::Parser::AST::Node => block_variable_name_node, *]
             # &blk passes s(:lvar, :blk); &method(:x) passes a send whose first child is nil
@@ -190,7 +190,7 @@ module Solargraph
         # @param node [Parser::AST::Node]
         def hash_is_splatted? node
           # {**splatted} - s(:hash, *pairs, s(:kwsplat, splatted)), unless splatted is a hash literal
-          return false unless node in ::Parser::AST::Node[:hash, *, ::Parser::AST::Node[:kwsplat, splatted, *]]
+          return false unless node in ::Parser::AST::Node[:hash, *, ::Parser::AST::Node[:kwsplat, ::Parser::AST::Node => splatted, *]]
 
           !(splatted in ::Parser::AST::Node[:hash, *])
         end
@@ -199,7 +199,7 @@ module Solargraph
         # @return [Source::Chain, nil]
         def passed_block node
           # s(:block, call, args, body)
-          return unless node == @node && (@parent in [:block, _, _, body])
+          return unless node == @node && (@parent in [:block, _, _, ::Parser::AST::Node | nil => body])
 
           NodeChainer.chain(body, @filename)
         end

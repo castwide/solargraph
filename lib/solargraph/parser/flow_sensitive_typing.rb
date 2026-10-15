@@ -22,7 +22,7 @@ module Solargraph
       #
       # @return [void]
       def process_and and_node, true_ranges = [], false_ranges = []
-        return unless and_node in [:and, lhs, rhs]
+        return unless and_node in [:and, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
@@ -43,7 +43,7 @@ module Solargraph
       #
       # @return [void]
       def process_or or_node, true_ranges = [], false_ranges = []
-        return unless or_node in [:or, lhs, rhs]
+        return unless or_node in [:or, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
@@ -80,7 +80,10 @@ module Solargraph
       #
       # @return [void]
       def process_if if_node, true_ranges = [], false_ranges = []
-        return unless if_node in [:if, conditional_node, then_clause, else_clause]
+        return unless if_node in [:if,
+                                  ::Parser::AST::Node => conditional_node,
+                                  ::Parser::AST::Node | nil => then_clause,
+                                  ::Parser::AST::Node | nil => else_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -146,7 +149,7 @@ module Solargraph
       #
       # @return [void]
       def process_while while_node, true_ranges = [], false_ranges = []
-        return unless while_node in [:while, conditional_node, do_clause]
+        return unless while_node in [:while, ::Parser::AST::Node => conditional_node, ::Parser::AST::Node | nil => do_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -245,9 +248,9 @@ module Solargraph
         #     s(:send, nil, :foo), :is_a?,
         #     s(:const, nil, :Baz)),
         #
-        return unless call_node in [:send, call_receiver, ^method_name, *args]
+        return unless call_node in [:send, ::Parser::AST::Node | nil => call_receiver, ^method_name, *args]
 
-        call_arg = (args in [arg, *]) ? type_name(arg) : nil # rubocop:disable Style/RedundantParentheses
+        call_arg = (args in [::Parser::AST::Node => arg, *]) ? type_name(arg) : nil # rubocop:disable Style/RedundantParentheses
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
@@ -257,7 +260,7 @@ module Solargraph
         end
         # or like this:
         # (lvar :repr)
-        if call_receiver in [:lvar | :ivar, receiver_variable, *]
+        if call_receiver in [:lvar | :ivar, Symbol => receiver_variable, *]
           variable_name = receiver_variable.to_s
         end
         return unless variable_name
@@ -371,7 +374,7 @@ module Solargraph
         # => s(:send,
         #   s(:int, 2), :!)
         #       end
-        return unless bang_node in [:send, receiver, :!, *]
+        return unless bang_node in [:send, ::Parser::AST::Node => receiver, :!, *]
 
         # swap the two presences
         process_expression(receiver, false_presences, true_presences)
@@ -381,7 +384,8 @@ module Solargraph
       #
       # @return [String, nil] Variable name referenced
       def parse_variable var_node
-        return unless var_node in [_, variable_name]
+        # only reached for lvar, ivar, cvar and gvar nodes
+        return unless var_node in [_, Symbol => variable_name]
 
         variable_name&.to_s
       end
@@ -421,7 +425,7 @@ module Solargraph
       def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node in [:const, module_node, class_node]
+        return unless node in [:const, ::Parser::AST::Node | nil => module_node, Symbol => class_node]
 
         return class_node.to_s if module_node.nil?
 
