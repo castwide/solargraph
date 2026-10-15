@@ -93,6 +93,40 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    context 'with %a{pure} methods' do
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            %a{pure}
+            def bar: () -> String?
+
+            def baz: () -> String?
+
+            %a{pure}
+            def self.qux: () -> String?
+
+            alias quux bar
+          end
+        RBS
+      end
+
+      it 'marks an annotated instance method pure' do
+        expect(api_map.get_method_stack('Foo', 'bar').first).to be_pure
+      end
+
+      it 'leaves an unannotated method impure' do
+        expect(api_map.get_method_stack('Foo', 'baz').first).not_to be_pure
+      end
+
+      it 'marks an annotated singleton method pure' do
+        expect(api_map.get_method_stack('Foo', 'qux', scope: :class).first).to be_pure
+      end
+
+      it 'carries purity to an alias of a pure method' do
+        expect(api_map.get_method_stack('Foo', 'quux').first).to be_pure
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do

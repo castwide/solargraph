@@ -493,6 +493,7 @@ module Solargraph
         generics = decl.overloads.map(&:method_type).map do |method_type|
           type_parameter_names method_type
         end
+        pure = pure_method?(decl)
 
         if decl.instance?
           name = decl.name.to_s
@@ -507,6 +508,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
+            pure: pure,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -529,11 +531,24 @@ module Solargraph
             scope: final_scope,
             signatures: [],
             generics: generics,
+            pure: pure,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
           pins.push pin
         end
+      end
+
+      # %a{pure} on the method, or on every overload, declares it side-effect
+      # free and stable for the same arguments
+      #
+      # @param decl [RBS::AST::Members::MethodDefinition]
+      # @return [Boolean]
+      def pure_method? decl
+        return true if decl.annotations.any? { |annotation| annotation.string == pure }
+        return false if decl.overloads.empty?
+
+        decl.overloads.all? { |overload| overload.annotations.any? { |annotation| annotation.string == pure } }
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
