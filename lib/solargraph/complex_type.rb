@@ -81,7 +81,7 @@ module Solargraph
     # @yieldparam [UniqueType]
     # @yieldreturn [UniqueType]
     # @return [Array<UniqueType>]
-    # @sg-ignore Unexplained typecheck gap; needs investigation
+    # @sg-ignore https://github.com/apiology/solargraph/pull/112
     def map &block
       @items.map(&block)
     end

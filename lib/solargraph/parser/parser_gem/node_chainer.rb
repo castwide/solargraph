@@ -192,9 +192,9 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
-        # @sg-ignore Unexplained typecheck gap; needs investigation
+        # @sg-ignore https://github.com/apiology/solargraph/pull/139
         def send_node
-          # @sg-ignore Unexplained typecheck gap; needs investigation
+          # @sg-ignore https://github.com/apiology/solargraph/pull/139
           @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
