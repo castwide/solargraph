@@ -61,7 +61,7 @@ module Solargraph
     def self.from_node node
       return nil if node.nil? || node.loc.nil?
       filename = node.loc.expression.source_buffer.name
-      # @sg-ignore flow sensitive typing needs to track reassignment
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       filename = nil if filename.empty?
       range = Range.from_node(node)
       # @sg-ignore https://github.com/castwide/solargraph/pull/1394
