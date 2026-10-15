@@ -23,7 +23,6 @@ module Solargraph
             in ::Parser::AST::Node[:self, *]
               closure = region.closure
             in ::Parser::AST::Node[:casgn, ::Parser::AST::Node | nil => scope, Symbol => const_name, *]
-
               names = [region.closure.namespace, region.closure.name]
               if scope.nil? && names.last != const_name.to_s
                 names << const_name.to_s

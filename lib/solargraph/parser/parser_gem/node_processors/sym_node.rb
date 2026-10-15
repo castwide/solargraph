@@ -9,7 +9,6 @@ module Solargraph
           def process
             return unless node in [:sym, Symbol => value]
 
-
             pins.push Solargraph::Pin::Symbol.new(
               get_node_location(node),
               ":#{value}",

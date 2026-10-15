@@ -15,7 +15,6 @@ module Solargraph
             comments = comments_for(node)
 
             superclass_name = if node in [:class, _, ::Parser::AST::Node[:const, *] => superclass, *]
-
                                 "#{unpack_name(superclass)}#{parameters_from_inline_rbs(superclass)}"
                               end
 

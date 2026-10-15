@@ -305,7 +305,6 @@ module Solargraph
           # @return [Boolean]
           def process_private_class_method
             if node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
-
               ref = pins.select do |p|
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == value.to_s
               end.first

@@ -12,7 +12,6 @@ module Solargraph
                                                     ::Parser::AST::Node[Symbol => target_type, *target_children],
                                                     ::Parser::AST::Node => value]
 
-
             new_node = node.updated(target_type, target_children + [value])
             NodeProcessor.process(new_node, region, pins, locals, ivars)
           end

@@ -75,7 +75,6 @@ module Solargraph
             # only reached for lvasgn, ivasgn, cvasgn and gvasgn targets
             return unless asgn in [_, Symbol => variable_name, *]
 
-
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
