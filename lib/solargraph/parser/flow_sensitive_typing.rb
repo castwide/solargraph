@@ -9,6 +9,14 @@ module Solargraph
       # fixed by the source text
       LITERAL_ARGUMENTS = %i[int sym str true false nil].freeze
 
+      # Methods that can remove, move or overwrite what 'receiver[...]'
+      # returns, ending the narrowing of every index on that receiver
+      INDEX_REMOVERS = %i[
+        delete delete_if reject! select! filter! keep_if clear replace shift
+        store merge! update push << append concat transform_keys!
+        compare_by_identity
+      ].freeze
+
       # The word a receiver chain records for a call, e.g. 'location' or
       # '[](int:0)' for '[0]'. Repeated calls only match when their arguments
       # are the same literals, so this is nil for any other argument, and for
@@ -317,6 +325,7 @@ module Solargraph
         return false unless target.type == :send
 
         name = target.children[1].to_s
+        return true if removes_index?(target, words)
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i) || name == '[]='
 
         receiver_words = write_receiver(target.children[0], words)
@@ -325,6 +334,20 @@ module Solargraph
         # 'table[:a] = x' writes to every 'table[...]', whatever the key
         written = words.fetch(receiver_words.length).sub(/\(.*\z/m, '')
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == written
+      end
+
+      # @param send_node [Parser::AST::Node] e.g. 'table.delete(:a)'
+      # @param words [::Array<String>] e.g. ['table', '[](sym::a)']
+      # @return [Boolean] true for a call that can change every index read
+      #   in `words` on the call's receiver
+      def removes_index? send_node, words
+        return false unless INDEX_REMOVERS.include?(send_node.children[1])
+
+        receiver_words = write_receiver(send_node.children[0], words)
+        return false if receiver_words.nil? || receiver_words.length >= words.length
+
+        receiver_words == words.first(receiver_words.length) &&
+          words.fetch(receiver_words.length).start_with?('[](')
       end
 
       # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.

@@ -1643,5 +1643,20 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_core("        return unless table[:k]\n        table[:k] = nil\n        table[:k]\n", 7))
         .to eq('::String, nil')
     end
+
+    it 'ends the narrowing at a call that removes keys' do
+      expect(infer_core("        return unless table[:k]\n        table.delete(:k)\n        table[:k]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at a call that overwrites a key' do
+      expect(infer_core("        return unless table[:k]\n        table.store(:k, nil)\n        table[:k]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at a merge into the receiver' do
+      expect(infer_core("        return unless table[:k]\n        table.merge!(k: nil)\n        table[:k]\n", 7))
+        .to eq('::String, nil')
+    end
   end
 end
