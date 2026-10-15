@@ -18,7 +18,6 @@ module Solargraph
             # variable is an lvasgn, ivasgn, cvasgn or gvasgn (Symbol name), a
             # send for `=> a.b` (receiver node) or a casgn for `=> A` (nil scope)
             if variable in [_, Symbol | ::Parser::AST::Node | nil => variable_name, *]
-
               here = get_node_start_position(variable)
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
