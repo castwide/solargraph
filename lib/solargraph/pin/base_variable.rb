@@ -109,6 +109,15 @@ module Solargraph
         result
       end
 
+      # @param presence [Range]
+      #
+      # @return [self]
+      def with_presence presence
+        result = dup
+        result.presence = presence
+        result
+      end
+
       def reset_generated!
         @assignment = nil
         super
@@ -136,7 +145,9 @@ module Solargraph
                                   assignment: superseded ? nil : choose(other, :assignment),
                                   assignments: new_assignments,
                                   mass_assignment: combine_mass_assignment(other),
-                                  return_type: combine_return_type(other),
+                                  # a superseding assignment also replaces the old
+                                  # value's declared type, e.g. an earlier @type tag
+                                  return_type: superseded ? defined_or_nil(other.return_type) : combine_return_type(other),
                                   # Narrowing recorded against the old value expires
                                   # when that value is definitely overwritten, so when
                                   # `other`'s assignment supersedes ours, keep only the
@@ -156,6 +167,7 @@ module Solargraph
                                   # override, not just union with, the rest
                                   definite: definite || other.definite || superseded
                                 })
+        new_attrs.merge!(comments: other.comments, docstring: other.docstring) if superseded
         super(other, new_attrs)
       end
 
@@ -187,6 +199,14 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def assignment
         @assignment ||= assignments.last
+      end
+
+      # @param type [ComplexType, nil]
+      # @return [ComplexType, nil]
+      def defined_or_nil type
+        return nil if type.nil? || type.undefined?
+
+        type
       end
 
       # @param other [self]
@@ -403,8 +423,24 @@ module Solargraph
       # @param other [self]
       # @return [Boolean]
       def override_assignments? other
-        other.definite && other.closure == closure &&
+        other.definite && within_closure?(other.closure) &&
           other.assignments.none? { |node| references_name?(node) }
+      end
+
+      # True if `other_closure` is our closure or a block nested in it,
+      # where an assignment reassigns this same variable
+      #
+      # @param other_closure [Pin::Closure, nil]
+      # @return [Boolean]
+      def within_closure? other_closure
+        candidate = other_closure
+        while candidate
+          return true if candidate == closure
+          return false unless candidate.is_a?(Pin::Block)
+
+          candidate = candidate.closure
+        end
+        false
       end
 
       public
