@@ -324,7 +324,7 @@ module Solargraph
         return false if receiver_words.nil? || receiver_words.length >= words.length
 
         # 'table[:a] = x' writes to every 'table[...]', whatever the key
-        written = words[receiver_words.length].sub(/\(.*\z/m, '')
+        written = words.fetch(receiver_words.length).sub(/\(.*\z/m, '')
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == written
       end
 
