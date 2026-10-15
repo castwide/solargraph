@@ -9,6 +9,16 @@ module Solargraph
 
           # @return [void]
           def process
+            rescue_body_node = node.children[2]
+            rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
+              location: rescue_body_node ? get_node_location(rescue_body_node) : nil,
+              closure: region.closure,
+              compound_statement: region.compound_statement,
+              conditional: true,
+              node: rescue_body_node,
+              source: :parser
+            )
+            pins.push rescue_body_cs
             if node.children[1] # Exception local variable name
               here = get_node_start_position(node.children[1])
               # @sg-ignore Need to add nil check here
@@ -27,19 +37,12 @@ module Solargraph
                 name: node.children[1].children[0].to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,
+                # bound only when this rescue clause runs
+                definite: false,
+                compound_statement: rescue_body_cs,
                 source: :parser
               )
             end
-            rescue_body_node = node.children[2]
-            rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
-              location: rescue_body_node ? get_node_location(rescue_body_node) : nil,
-              closure: region.closure,
-              compound_statement: region.compound_statement,
-              conditional: true,
-              node: rescue_body_node,
-              source: :parser
-            )
-            pins.push rescue_body_cs
             NodeProcessor.process(rescue_body_node, region.update(compound_statement: rescue_body_cs), pins, locals, ivars) if rescue_body_node
           end
         end

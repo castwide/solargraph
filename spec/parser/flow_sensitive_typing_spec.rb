@@ -966,10 +966,9 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [8, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean')
 
+    # the rescue clause can run before the guard did
     clip = api_map.clip_at('test.rb', [10, 12])
-    expect(clip.infer.rooted_tags).to eq('::Boolean')
-
-    pending('better scoping of return if in begin/rescue/ensure')
+    expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
 
     clip = api_map.clip_at('test.rb', [12, 12])
     expect(clip.infer.rooted_tags).to eq('::Boolean, nil')
@@ -1064,5 +1063,55 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
+  end
+
+  it 'keeps earlier assignments in a rescue clause after a reassignment in its begin body' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        value = 1
+        begin
+          value = 'a'
+          value
+        rescue StandardError
+          value
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'keeps earlier assignments in an ensure clause after a reassignment in its begin body' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        value = 1
+        begin
+          value = 'a'
+        ensure
+          value
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('Integer, String')
+  end
+
+  it 'keeps earlier values after a rescue that binds the same variable name' do
+    source = Solargraph::Source.load_string(%(
+      def check
+        error = 'a'
+        begin
+          error
+        rescue StandardError => error
+          error
+        end
+        error
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [8, 8])
+    expect(clip.infer.to_s).not_to eq('StandardError')
   end
 end
