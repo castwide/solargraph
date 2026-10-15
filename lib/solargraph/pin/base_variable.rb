@@ -127,6 +127,9 @@ module Solargraph
       # @param attrs [Hash]
       def combine_with other, attrs = {}
         superseded = override_assignments?(other)
+        # a reassignment replaces the declared type too; parameters
+        # combined from several signatures don't reassign each other
+        redeclared = superseded && !other.is_a?(Parameter)
         # Facts expire only when a *different* assignment overwrote the
         # value they describe.  Two flow-sensitive downcasts of the same
         # assignment - e.g. the one per operand that `a.nil? ||
@@ -147,7 +150,7 @@ module Solargraph
                                   mass_assignment: combine_mass_assignment(other),
                                   # a superseding assignment also replaces the old
                                   # value's declared type, e.g. an earlier @type tag
-                                  return_type: superseded ? defined_or_nil(other.return_type) : combine_return_type(other),
+                                  return_type: redeclared ? defined_or_nil(other.return_type) : combine_return_type(other),
                                   # Narrowing recorded against the old value expires
                                   # when that value is definitely overwritten, so when
                                   # `other`'s assignment supersedes ours, keep only the
@@ -167,7 +170,7 @@ module Solargraph
                                   # override, not just union with, the rest
                                   definite: definite || other.definite || superseded
                                 })
-        new_attrs.merge!(comments: other.comments, docstring: other.docstring) if superseded
+        new_attrs.merge!(comments: other.comments, docstring: other.docstring) if redeclared
         super(other, new_attrs)
       end
 
