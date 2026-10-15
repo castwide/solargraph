@@ -532,6 +532,29 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
+      # @param node [Parser::AST::Node]
+      #
+      # @return [String, nil]
+      def type_name node
+        # e.g.,
+        #  s(:const, nil, :Baz)
+        return unless node&.type == :const
+        # @type [Parser::AST::Node, nil]
+        module_node = node.children[0]
+        # @type [Parser::AST::Node, nil]
+        class_node = node.children[1]
+
+        return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
+
+        module_type_name = type_name(module_node)
+        return unless module_type_name
+
+        "#{module_type_name}::#{class_node}"
+      end
+
       # Records that 'h[k]' is not nil where 'h.key?(k)' is true. A false
       # guard proves nothing about 'h[k]', which a default proc can still
       # answer. Chain applies the fact only when 'h' is a Hash whose values
@@ -621,29 +644,6 @@ module Solargraph
         node.children.each do |child|
           collect_key_removals(child, hash, writes) if child.is_a?(::Parser::AST::Node)
         end
-      end
-
-      # @param node [Parser::AST::Node]
-      #
-      # @return [String, nil]
-      def type_name node
-        # e.g.,
-        #  s(:const, nil, :Baz)
-        return unless node&.type == :const
-        # @type [Parser::AST::Node, nil]
-        module_node = node.children[0]
-        # @type [Parser::AST::Node, nil]
-        class_node = node.children[1]
-
-        return class_node.to_s if module_node.nil?
-        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
-        #  s(:const, s(:cbase), :Baz)
-        return "::#{class_node}" if module_node.type == :cbase
-
-        module_type_name = type_name(module_node)
-        return unless module_type_name
-
-        "#{module_type_name}::#{class_node}"
       end
 
       # @param clause_node [Parser::AST::Node, nil]
