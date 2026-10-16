@@ -638,7 +638,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
-      # @sg-ignore https://github.com/apiology/solargraph/pull/172
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1417
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -657,7 +657,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
-      # @sg-ignore https://github.com/apiology/solargraph/pull/172
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1417
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
