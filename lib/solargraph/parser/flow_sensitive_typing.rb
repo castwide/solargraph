@@ -477,7 +477,22 @@ module Solargraph
           other_loc = Location.new(pin.location&.filename, Range.new(position, position))
           !pin.within_own_assignment?(other_loc)
         end
-        matches.max_by { |pin| pin.presence&.start || Position.new(0, 0) }
+        matches.max_by { |pin| pin.presence&.start || reaching_start(pin, position) }
+      end
+
+      # Where an ivar assignment, which has no presence, starts if it
+      # dominates `position`; the start of the file otherwise, so that
+      # a same-named ivar elsewhere isn't preferred over it.
+      #
+      # @param pin [Pin::BaseVariable]
+      # @param position [Position]
+      # @return [Position]
+      def reaching_start pin, position
+        here = Location.new(pin.location&.filename, Range.new(position, position))
+        start = pin.location&.range&.start
+        return Position.new(0, 0) unless start && pin.definite_reaches?(here)
+
+        start
       end
 
       # @param isa_node [Parser::AST::Node]

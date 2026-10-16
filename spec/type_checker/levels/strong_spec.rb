@@ -878,7 +878,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'knows that ivar references with intermediate calls are not safe' do
+    it 'assumes calls between an ivar assignment and its read do not reassign it' do
       checker = type_checker(%(
         class Foo
           def initialize
@@ -900,8 +900,7 @@ describe Solargraph::TypeChecker do
         end
       ))
 
-      expect(checker.problems.map(&:message)).to eq(['Foo#bar return type could not be inferred',
-                                                     'Unresolved call to round on Integer, nil'])
+      expect(checker.problems.map(&:message)).to eq([])
     end
 
     it 'performs simple flow-sensitive typing on lvars' do
@@ -1465,6 +1464,52 @@ describe Solargraph::TypeChecker do
             @ivar = 'hello'
             @ivar.upcase
             nil
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'narrows an ivar assigned in an unless guard on the ivar' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            @x = nil
+          end
+
+          # @return [void]
+          def run
+            unless @x
+              @x = 'a'
+              @x.upcase
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'applies a guard after an ivar assignment to that assignment' do
+      checker = type_checker(%(
+        class Early
+          def initialize
+            @x = :early
+          end
+        end
+
+        class Foo
+          def initialize
+            @x = 1.5
+          end
+
+          # @return [String, nil]
+          def maybe; end
+
+          # @return [void]
+          def run
+            @x = maybe
+            return unless @x
+            @x.upcase
           end
         end
       ))
