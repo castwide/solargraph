@@ -9,7 +9,7 @@ module Solargraph
       class FlawedBuilder < ::Parser::Builders::Default
         # @param token [::Parser::AST::Node]
         # @return [String]
-        # @sg-ignore Library method has no usable type
+        # @sg-ignore https://github.com/ruby/gem_rbs_collection/pull/1104
         def string_value token
           value(token)
         end
