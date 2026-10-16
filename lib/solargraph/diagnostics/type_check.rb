@@ -11,7 +11,7 @@ module Solargraph
         # return [] unless args.include?('always') || api_map.workspaced?(source.filename)
         severity = Diagnostics::Severities::ERROR
         level = args.reverse.find { |a| %w[normal typed strict strong].include?(a) } || :normal
-        # @sg-ignore sensitive typing needs to handle || on nil types
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         checker = Solargraph::TypeChecker.new(source.filename, api_map: api_map, level: level.to_sym)
         checker.problems
                .sort { |a, b| a.location.range.start.line <=> b.location.range.start.line }

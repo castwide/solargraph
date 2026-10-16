@@ -5,7 +5,7 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class SclassNode < Parser::NodeProcessor::Base
-          # @sg-ignore @override is adding, not overriding
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           def process
             sclass = node.children[0]
             # @todo Changing Parser::AST::Node to AST::Node below will
@@ -17,19 +17,27 @@ module Solargraph
             #   types to "A<T>" if the "A" comes from YARD, with the
             #   rationale that folks tend to be less formal with types in
             #   YARD.
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             if sclass.is_a?(::Parser::AST::Node) && sclass.type == :self
               closure = region.closure
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :casgn
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1259
               if sclass.children[0].nil? && names.last != sclass.children[1].to_s
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                 names << sclass.children[1].to_s
               else
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1259
                 names.push NodeMethods.unpack_name(sclass.children[0]), sclass.children[1].to_s
               end
               name = names.reject(&:empty?).join('::')
               closure = Solargraph::Pin::Namespace.new(name: name, location: region.closure.location, source: :parser)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             elsif sclass.is_a?(::Parser::AST::Node) && sclass.type == :const
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               also = NodeMethods.unpack_name(sclass)
               names << also if also != region.closure.name
               name = names.reject(&:empty?).join('::')

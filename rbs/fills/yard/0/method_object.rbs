@@ -1,0 +1,11 @@
+# MethodObject#initialize passes namespace to CodeObjects::Base#initialize,
+# which accepts :root and nil; YARD's own @param omits them.
+# https://github.com/lsegal/yard/pull/1716
+module YARD
+  module CodeObjects
+    class MethodObject
+      def self.new: ((::YARD::CodeObjects::NamespaceObject | :root | nil) namespace, (String | Symbol) name, ?Symbol scope) ?{ (::YARD::CodeObjects::MethodObject) -> void } -> ::YARD::CodeObjects::MethodObject
+      def initialize: ((::YARD::CodeObjects::NamespaceObject | :root | nil) namespace, (String | Symbol) name, ?Symbol scope) ?{ (::YARD::CodeObjects::MethodObject) -> void } -> void
+    end
+  end
+end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# @sg-ignore Should better support meaning of '&' in RBS
+# @sg-ignore https://github.com/castwide/solargraph/pull/1231
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
 require 'solargraph/version'
 require 'date'
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.authors     = ['Fred Snyder']
   s.email       = 'admin@castwide.com'
   s.files       = Dir.chdir(File.expand_path(__dir__)) do
-    # @sg-ignore Need backtick support
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1320
     # @type [String]
     all_files = `git ls-files -z`
     all_files.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
@@ -69,7 +69,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rubocop', '~> 1.80.0.0'
   s.add_development_dependency 'rubocop-rake', '~> 0.7.1'
   s.add_development_dependency 'rubocop-rspec', '~> 3.6.0'
-  s.add_development_dependency 'rubocop-yard', '~> 1.0.0'
+  # rubocop-yard is in the Gemfile, which can gate it on the Ruby version
   s.add_development_dependency 'simplecov', '~> 0.21'
   s.add_development_dependency 'simplecov-lcov', '~> 0.8'
   s.add_development_dependency 'undercover', '~> 0.7'

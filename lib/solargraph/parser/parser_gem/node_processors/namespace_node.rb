@@ -8,9 +8,13 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             name = unpack_name(node.children[0])
             comments = comments_for(node)
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             superclass_name = if node.type == :class && node.children[1]&.type == :const
               "#{type_from_node}#{parameters_from_inline_rbs}"
             end
@@ -51,19 +55,26 @@ module Solargraph
             return unless superclass
 
             source = region.source.code
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             pos = get_node_end_position(superclass)
             offset = Position.line_char_to_offset(source, pos.line, pos.character)
             eol = source.index("\n", offset) || source.length
             match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
             return unless match
 
+            # @sg-ignore MatchData#[] is nilable even for a group that always matches
             code = match[1].strip
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             return if code.empty?
 
             "<#{code}>"
           end
 
+          # @return [String, nil]
           def type_from_node
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             unpack_name(node.children[1]) if node.children[1]&.type == :const
           end
         end

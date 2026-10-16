@@ -18,14 +18,17 @@ module Solargraph
           # @type [String]
           gem_path = Gem::Specification.find_by_name('rubocop', version).full_gem_path
           gem_lib_path = File.join(gem_path, 'lib')
-          # @sg-ignore Should better support meaning of '&' in RBS
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           $LOAD_PATH.unshift(gem_lib_path) unless $LOAD_PATH.include?(gem_lib_path)
         rescue Gem::MissingSpecVersionError => e
           # @type [Array<Gem::Specification>]
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
-                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
+                "did find: [#{
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+                  specs.map { |s| s.version.version }.join(', ')
+                }]"
         end
         require 'rubocop'
       end
@@ -39,7 +42,6 @@ module Solargraph
         args = ['-f', 'j', '--force-exclusion', filename]
         base_options = RuboCop::Options.new
         options, paths = base_options.parse(args)
-        # @sg-ignore
         options[:stdin] = code
         [options, paths]
       end
@@ -51,7 +53,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         path[0].upcase + path[1..]
       end
 

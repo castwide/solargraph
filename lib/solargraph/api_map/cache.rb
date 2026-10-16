@@ -29,7 +29,7 @@ module Solargraph
       # @param scope [Symbol]
       # @param visibility [Array<Symbol>]
       # @param deep [Boolean]
-      # @return [Array<Pin::Method>]
+      # @return [Array<Pin::Method>, nil]
       def get_methods fqns, scope, visibility, deep
         @methods["#{fqns}|#{scope}|#{visibility}|#{deep}"]
       end
@@ -46,7 +46,7 @@ module Solargraph
 
       # @param namespace [String]
       # @param contexts [Array<String>]
-      # @return [Array<Pin::Base>]
+      # @return [Array<Pin::Base>, nil]
       def get_constants namespace, contexts
         @constants["#{namespace}|#{contexts}"]
       end
@@ -62,6 +62,7 @@ module Solargraph
       # @param name [String]
       # @param context [String]
       # @return [String, nil]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
       def get_qualified_namespace name, context
         @qualified_namespaces["#{name}|#{context}"]
       end
@@ -71,11 +72,12 @@ module Solargraph
       # @param value [String, nil]
       # @return [void]
       def set_qualified_namespace name, context, value
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @qualified_namespaces["#{name}|#{context}"] = value
       end
 
       # @param path [String]
-      # @return [Pin::Method]
+      # @return [Pin::Method, nil]
       def get_receiver_definition path
         @receiver_definitions[path]
       end

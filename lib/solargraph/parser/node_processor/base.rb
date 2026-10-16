@@ -55,7 +55,7 @@ module Solargraph
           Position.new(node.loc.line, node.loc.column)
         end
 
-        # @sg-ignore downcast output of Enumerable#select
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         # @return [Solargraph::Pin::Breakable, nil]
         def enclosing_breakable_pin
           pins.select { |pin| pin.is_a?(Pin::Breakable) && pin.location&.range&.contain?(position) }.last
@@ -74,6 +74,8 @@ module Solargraph
           @processed_children = true
           node.children.each do |child|
             next unless Parser.is_ast_node?(child)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             NodeProcessor.process(child, subregion, pins, locals, ivars)
           end
         end
@@ -95,7 +97,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def named_path_pin position
           pins.select do |pin|
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             pin.is_a?(Pin::Closure) && pin.path && !pin.path.empty? && pin.location.range.contain?(position)
           end.last
         end
@@ -105,7 +107,7 @@ module Solargraph
         # @return [Pin::Closure, nil]
         def block_pin position
           # @todo determine if this can return a Pin::Block
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
 
@@ -113,7 +115,7 @@ module Solargraph
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def closure_pin position
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1392
           pins.select { |pin| pin.is_a?(Pin::Closure) && pin.location.range.contain?(position) }.last
         end
       end
