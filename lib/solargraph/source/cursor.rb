@@ -139,7 +139,7 @@ module Solargraph
       # @return [Position]
       def node_position
         @node_position ||= if start_of_word.empty?
-                             # @sg-ignore nil false alarm
+                             # @sg-ignore slice [0, n] is nil only for a negative n
                              match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
                              if match
                                # @sg-ignore nil false alarm

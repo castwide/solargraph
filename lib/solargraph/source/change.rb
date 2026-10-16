@@ -62,10 +62,10 @@ module Solargraph
           result = commit text, fixed
           # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           off = Position.to_offset(text, range.start)
-          # @sg-ignore nil false alarm
+          # @sg-ignore slice [0, n] is nil only for a negative n
           match = result[0, off].match(/[.:]+\z/)
           if match
-            # @sg-ignore nil false alarm
+            # @sg-ignore slice [0, n] is nil only for a negative n
             result = result[0, off].sub(/#{match[0]}\z/, ' ' * match[0].length) + result[off..]
           end
           result
