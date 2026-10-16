@@ -106,17 +106,42 @@ module Solargraph
               if subject && index < indexed.length && element.type == :match_var
                 add_capture(element, mass_assignment: [subject, index])
               elsif element in [:match_rest, ::Parser::AST::Node[:match_var, *] => rest_var]
-                # A rest in an array or find pattern always binds an Array
-                add_capture(rest_var, comments: '@type [::Array]')
+                add_rest_capture(rest_var, subject, rest_range(pattern, index))
               else
                 add_captures(element)
               end
             end
           end
 
+          # A rest in an array or find pattern always binds an Array, of
+          # the subject's elements when the subject is known
+          #
+          # @param rest_var [Parser::AST::Node] a match_var node
+          # @param subject [Parser::AST::Node, nil]
+          # @param range [::Range<Integer>] subject positions the rest covers
+          # @return [void]
+          def add_rest_capture rest_var, subject, range
+            return add_capture(rest_var, comments: '@type [::Array]') if subject.nil?
+
+            add_capture(rest_var, mass_assignment: [subject, range])
+          end
+
+          # Positions a rest covers, e.g. 1..-2 for `[a, *rest, b]`.  A
+          # find pattern's rests can cover any position.
+          #
+          # @param pattern [Parser::AST::Node] an array_pattern or find_pattern
+          # @param index [Integer] the rest's position in the pattern
+          # @return [::Range<Integer>]
+          def rest_range pattern, index
+            return (0..) if pattern.type == :find_pattern
+
+            after = pattern.children.length - index - 1
+            after.zero? ? (index..) : (index..-(after + 1))
+          end
+
           # @param var [Parser::AST::Node] a match_var node
           # @param assignment [Parser::AST::Node, nil]
-          # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
+          # @param mass_assignment [::Array(Parser::AST::Node, [Integer, ::Range<Integer>]), nil]
           # @param comments [String, nil]
           # @return [void]
           def add_capture var, assignment: nil, mass_assignment: nil, comments: nil

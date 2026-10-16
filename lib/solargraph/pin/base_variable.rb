@@ -19,7 +19,7 @@ module Solargraph
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
-      # @param mass_assignment [::Array(Parser::AST::Node, Integer), nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, [Integer, ::Range<Integer>]), nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -52,7 +52,7 @@ module Solargraph
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
-        # @type [nil, ::Array(Parser::AST::Node, Integer)]
+        # @type [nil, ::Array(Parser::AST::Node, [Integer, ::Range<Integer>])]
         @mass_assignment = mass_assignment
         @return_type = return_type
         @intersection_return_type = intersection_return_type
@@ -102,7 +102,7 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(AST::Node, Integer), nil]
+      # @return [Array(AST::Node, [Integer, ::Range<Integer>]), nil]
       def combine_mass_assignment other
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging
@@ -185,6 +185,8 @@ module Solargraph
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
+          return adjust_type api_map, rest_capture_type(api_map, types) if index.is_a?(::Range)
+
           types.map! do |type|
             if type.tuple?
               type.all_params[index]
@@ -199,6 +201,46 @@ module Solargraph
         end
 
         ComplexType::UNDEFINED
+      end
+
+      # The Array bound by a `*rest` capture in an array pattern, of the
+      # subject's deconstructed element types, e.g. `Array<String>` from
+      # `[a, *rest]` on an `Array<String>` subject.  Tuples do not
+      # resolve by position (TypeMethods#tuple? is always false), so a
+      # tuple subject gives the union of its element types.  Plain
+      # `::Array` when the element type is unknown.
+      #
+      # @param api_map [ApiMap]
+      # @param types [::Array<ComplexType>] the subject's types
+      # @return [ComplexType]
+      def rest_capture_type api_map, types
+        elements = types.flat_map do |type|
+          type = deconstructed_type(api_map, type)
+          next [] unless ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+
+          type.all_params
+        end
+        return ComplexType.parse('::Array') if elements.empty?
+
+        element_type = ComplexType.new(elements.flat_map(&:items).uniq)
+        array_type = ComplexType::UniqueType.new('Array', [], [element_type], rooted: true, parameters_type: :list)
+        ComplexType.new([array_type]).qualify(api_map, *gates)
+      end
+
+      # What an array pattern matches against: the type itself if it is
+      # already an Array, else the return type of its `deconstruct`
+      # method.
+      #
+      # @param api_map [ApiMap]
+      # @param type [ComplexType]
+      # @return [ComplexType, ComplexType::UniqueType]
+      def deconstructed_type api_map, type
+        return type if type.rooted_name == '::Array'
+
+        deconstruct = api_map.get_method_stack(type.rooted_tag, 'deconstruct').first
+        return type if deconstruct.nil?
+
+        deconstruct.typify(api_map).self_to_type(type)
       end
 
       # @param other [Object]

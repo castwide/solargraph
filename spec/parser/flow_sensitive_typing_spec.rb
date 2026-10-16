@@ -1246,4 +1246,53 @@ end
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
   end
+
+  it 'types rest captures with the element type of an Array subject' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array<String>]
+      def m(t)
+        case t
+        in [*all]
+          all
+        in [a, *tail]
+          tail
+        in [a, *middle, b]
+          middle
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array<String>')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array<String>')
+    expect(api_map.clip_at('test.rb', [9, 10]).infer.to_s).to eq('Array<String>')
+  end
+
+  it 'types rest captures from a tuple subject as an Array of its element types' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array(String, Integer)]
+      def m(t)
+        t => [s, *rest]
+        rest
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Array<String, Integer>')
+  end
+
+  it 'types rest captures from the return type of the subject deconstruct method' do
+    source = Solargraph::Source.load_string(%(
+      class Pair
+        # @return [Array<Symbol>]
+        def deconstruct; end
+      end
+
+      # @param pair [Pair]
+      def m(pair)
+        pair => [:left, *rest]
+        rest
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('Array<Symbol>')
+  end
 end
