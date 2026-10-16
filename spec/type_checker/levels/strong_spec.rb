@@ -997,5 +997,92 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves super inside define_method with a literal name' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          def bar
+            1
+          end
+        end
+
+        class Baz < Foo
+          define_method(:bar) do
+            super().upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase on Integer'])
+    end
+
+    it 'does not report super inside define_method with a computed name' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          def bar
+            1
+          end
+        end
+
+        class Baz < Foo
+          %i[bar].each do |name|
+            define_method(name) do
+              super()
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'reports super inside define_method when no ancestor defines the method' do
+      checker = type_checker(%(
+        class Foo; end
+
+        class Baz < Foo
+          define_method(:bar) do
+            super()
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to super'])
+    end
+
+    it 'reports implicit-argument super inside define_method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          def bar
+            1
+          end
+        end
+
+        class Baz < Foo
+          define_method(:bar) do
+            super
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to super'])
+    end
+
+    it 'reports super inside a block outside any method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          def bar
+            1
+          end
+        end
+
+        class Baz < Foo
+          tap do
+            super()
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to super'])
+    end
   end
 end

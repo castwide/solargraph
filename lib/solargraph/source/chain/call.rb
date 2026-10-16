@@ -44,7 +44,7 @@ module Solargraph
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
         def resolve api_map, name_pin, locals
-          return super_pins(api_map, name_pin) if word == 'super'
+          return explicit_super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
 
@@ -341,6 +341,70 @@ module Solargraph
           return [] if method_pin.nil?
           pins = api_map.get_method_stack(method_pin.namespace, method_pin.name, scope: method_pin.context.scope)
           pins.reject { |p| p.path == name_pin.path }
+        end
+
+        # Pins for `super(...)` with explicit arguments. Outside a def,
+        # it can still call an ancestor's method from a define_method
+        # block, which defines a method of the name it is given.
+        #
+        # Implicit-argument `super` raises a RuntimeError inside
+        # define_method, so ZSuper does not use this.
+        #
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Pin::Base>]
+        def explicit_super_pins api_map, name_pin
+          return super_pins(api_map, name_pin) if find_method_pin(name_pin)
+
+          block_pin = find_define_method_block(name_pin)
+          call = define_method_call(block_pin)
+          return [] if block_pin.nil? || call.nil?
+
+          name = literal_method_name(call)
+          # A computed name could be any method, so its super is untyped
+          return [Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)] if name.nil?
+
+          namespace = block_pin.namespace
+          pins = api_map.get_method_stack(namespace, name, scope: :instance)
+          pins.reject { |p| p.namespace == namespace }
+        end
+
+        # The innermost enclosing block passed to define_method
+        #
+        # @param name_pin [Pin::Base]
+        # @return [Pin::Block, nil]
+        def find_define_method_block name_pin
+          pin = name_pin
+          until pin.nil? || pin.is_a?(Pin::Namespace)
+            return pin if pin.is_a?(Pin::Block) && define_method_call(pin)
+
+            pin = pin.closure
+          end
+          nil
+        end
+
+        # The `define_method(name)` call on self that a block is passed to
+        #
+        # @param block_pin [Pin::Block, nil]
+        # @return [Chain::Call, nil]
+        def define_method_call block_pin
+          return if block_pin.nil?
+
+          receiver_links = Parser.chain(block_pin.receiver).links
+          call = receiver_links.last
+          return unless call.is_a?(Chain::Call) && call.word == 'define_method' && call.arguments.one?
+
+          call if receiver_links.one? || (receiver_links.length == 2 && receiver_links.first.is_a?(Chain::Head))
+        end
+
+        # @param call [Chain::Call] A define_method call
+        # @return [String, nil] The defined method's name if it is a literal symbol
+        def literal_method_name call
+          name_link = call.arguments.first&.links&.last
+          return unless name_link.is_a?(Chain::Literal)
+
+          value = name_link.value
+          value.to_s if value.is_a?(::Symbol)
         end
 
         # @param api_map [ApiMap]
