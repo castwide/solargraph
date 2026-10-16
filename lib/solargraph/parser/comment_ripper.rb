@@ -62,7 +62,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1104
       def on_embdoc_beg *args
         result = super
-        # @sg-ignore @override is adding, not overriding
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         create_snippet(result)
         result
       end
@@ -70,7 +70,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1104
       def on_embdoc *args
         result = super
-        # @sg-ignore @override is adding, not overriding
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         create_snippet(result)
         result
       end
@@ -78,7 +78,7 @@ module Solargraph
       # @sg-ignore https://github.com/castwide/solargraph/pull/1104
       def on_embdoc_end *args
         result = super
-        # @sg-ignore @override is adding, not overriding
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         create_snippet(result)
         result
       end
