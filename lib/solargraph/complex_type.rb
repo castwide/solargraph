@@ -401,7 +401,9 @@ module Solargraph
       # try to find common types via conformance
       items.each do |ut|
         intersection_type.each do |int_type|
-          if int_type.conforms_to?(api_map, ut, :assignment)
+          # a value known to be an instance of a generic parameter has
+          # that parameter's type, whatever else it was declared as
+          if int_type.name == GENERIC_TAG_NAME || int_type.conforms_to?(api_map, ut, :assignment)
             types << int_type
           elsif ut.conforms_to?(api_map, int_type, :assignment)
             types << ut

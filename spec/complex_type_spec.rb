@@ -765,4 +765,26 @@ describe 'YARD type specifier list parsing' do
       expect(atype.conforms_to?(api_map, ptype, :method_call)).to be(true)
     end
   end
+
+  describe '#intersect_with' do
+    let(:api_map) { Solargraph::ApiMap.new }
+
+    it 'narrows to a generic parameter' do
+      type = Solargraph::ComplexType.parse('Numeric')
+      result = type.intersect_with(Solargraph::ComplexType.parse('generic<T>'), api_map)
+      expect(result.to_s).to eq('generic<T>')
+    end
+
+    it 'keeps the conforming type of a non-generic intersection' do
+      type = Solargraph::ComplexType.parse('Numeric')
+      result = type.intersect_with(Solargraph::ComplexType.parse('Integer'), api_map)
+      expect(result.to_s).to eq('Integer')
+    end
+
+    it 'is undefined for unrelated non-generic types' do
+      type = Solargraph::ComplexType.parse('Numeric')
+      result = type.intersect_with(Solargraph::ComplexType.parse('String'), api_map)
+      expect(result).to be_undefined
+    end
+  end
 end
