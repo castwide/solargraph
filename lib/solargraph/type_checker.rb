@@ -342,7 +342,7 @@ module Solargraph
         locals = source_map.locals_at(location)
         # @sg-ignore Need to add nil check here
         type = chain.infer(api_map, closure_pin, locals)
-        if type.undefined? && !rules.ignore_all_undefined?
+        if type.undefined? && !rules.ignore_all_undefined? && !resolved_assignment?(chain, closure_pin, locals)
           base = chain
           missing = chain
           # @type [Solargraph::Pin::Base, nil]
@@ -373,6 +373,20 @@ module Solargraph
         result.concat argument_problems_for(chain, api_map, closure_pin, locals, location)
       end
       result
+    end
+
+    # An assignment's value is its right-hand side, whose calls are
+    # checked on their own nodes; the assignment itself is resolved if
+    # its setter is.
+    #
+    # @param chain [Solargraph::Source::Chain]
+    # @param closure_pin [Solargraph::Pin::Closure, nil]
+    # @param locals [Array<Solargraph::Pin::LocalVariable>]
+    # @return [Boolean]
+    def resolved_assignment? chain, closure_pin, locals
+      return false unless chain.assignment? && closure_pin
+
+      chain.define(api_map, closure_pin, locals).any?
     end
 
     # @param chain [Solargraph::Source::Chain]
