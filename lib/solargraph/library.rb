@@ -427,7 +427,7 @@ module Solargraph
           reporter = Diagnostics.reporter(name)
           raise DiagnosticsError, "Diagnostics reporter #{name} does not exist" if reporter.nil?
           repargs[reporter] ||= []
-          # @sg-ignore flow sensitive typing needs to track reassignment
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1417
           repargs[reporter].concat args
         end
       end
