@@ -7,7 +7,8 @@ module Solargraph
         class OrasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             new_node = node.updated(node.children[0].type, node.children[0].children + [node.children[1]])
             NodeProcessor.process(new_node, region, pins, locals, ivars)
           end

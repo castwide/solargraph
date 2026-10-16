@@ -30,7 +30,8 @@ module Solargraph
           def match? node
             return false unless node&.type == :class
 
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             data_definition_node?(node.children[1])
           end
 
@@ -41,9 +42,11 @@ module Solargraph
           def data_definition_node? data_node
             return false unless data_node.is_a?(::Parser::AST::Node)
             return false unless data_node&.type == :send
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             return false unless data_node.children[0]&.type == :const
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             return false unless data_node.children[0].children[1] == :Data
             return false unless data_node.children[1] == :define
 
@@ -70,7 +73,8 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
-        # @sg-ignore child node types depend on parent node type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+        #   also needs https://github.com/castwide/solargraph/pull/1416
         def body_node
           node.children[2]
         end
@@ -81,15 +85,18 @@ module Solargraph
         attr_reader :node
 
         # @return [Parser::AST::Node, nil]
-        # @sg-ignore child node types depend on parent node type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+        #   also needs https://github.com/castwide/solargraph/pull/1416
         def data_node
           node.children[1]
         end
 
-        # @sg-ignore child node types depend on parent node type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+        #   also needs https://github.com/castwide/solargraph/pull/1416
         # @return [Array<Parser::AST::Node>]
         def data_attribute_nodes
-          # @sg-ignore child node types depend on parent node type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           data_node.children[2..]
         end
       end

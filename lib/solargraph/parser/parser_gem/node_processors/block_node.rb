@@ -11,14 +11,16 @@ module Solargraph
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
             if other_class_eval?
-              # @sg-ignore child node types depend on parent node type
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               clazz_name = unpack_name(node.children[0].children[0])
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
               scope = :class
             end
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             block_pin = Solargraph::Pin::Block.new(
               location: location,
               closure: region.closure,
@@ -36,11 +38,14 @@ module Solargraph
           private
 
           def other_class_eval?
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             node.children[0].type == :send &&
-              # @sg-ignore child node types depend on parent node type
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               node.children[0].children[1] == :class_eval &&
-              # @sg-ignore child node types depend on parent node type
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end

@@ -43,7 +43,8 @@ module Solargraph
 
         def class_name
           if node.children[0]
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
           else
             node.children[1].to_s
@@ -53,11 +54,14 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
-        # @sg-ignore child node types depend on parent node type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+        #   also needs https://github.com/castwide/solargraph/pull/1416
         def struct_node
-          # @sg-ignore child node types depend on parent node type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           if node.children[2].type == :block
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             node.children[2].children[0]
           else
             node.children[2]
