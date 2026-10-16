@@ -103,7 +103,7 @@ module Solargraph
       # @todo 2: https://github.com/castwide/solargraph/issues/1251
       # @todo 2: https://github.com/castwide/solargraph/issues/1227
       # @todo 2: missing flow-sensitive typing on hash keys
-      # @todo 2: MatchData#[] is String, nil even for a required capture group
+      # @todo 2: MatchData#[] is nilable even for a group that always matches
       # @todo 1: Need better handling of Enumerator#with_index
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle if foo = bar
