@@ -92,6 +92,16 @@ Metrics/PerceivedComplexity:
   Max: 40
 RSpec/ExampleLength:
   Max: 310
+# Allow inline RBS such as `class Foo < Hash #[K, V]`, which Solargraph
+# reads as superclass type arguments
+Layout/LeadingCommentSpace:
+  AllowRBSInlineAnnotation: true
+# YARD's parser drops a generic in Hash key position, so this cop
+# misreports and miscorrects `Foo{Class<Bar> => Baz}`:
+# https://github.com/lsegal/yard/pull/1710
+YARD/CollectionStyle:
+  Exclude:
+    - 'lib/solargraph/api_map/index.rb'
 
 plugins:
   - rubocop-rspec
