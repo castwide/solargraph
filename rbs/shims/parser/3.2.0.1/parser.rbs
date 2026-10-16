@@ -48,8 +48,6 @@ module Parser
       alias loc location
 
       def children: () -> Array[self]
-
-      def deconstruct: () -> Array[self]
     end
 
     class Processor
