@@ -1035,8 +1035,9 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
+      # The parameter name comes from core RBS and varies by rbs version
       expect(checker.problems.map(&:message))
-        .to eq(['Wrong argument type for Hash#[]=: value expected String, received Integer'])
+        .to contain_exactly(/\AWrong argument type for Hash#\[\]=: \w+ expected String, received Integer\z/)
     end
 
     it 'still reports an assignment to an undefined attribute' do
