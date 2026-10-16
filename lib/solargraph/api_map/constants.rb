@@ -107,7 +107,7 @@ module Solargraph
 
       # @param name [String]
       # @param gates [Array<String>]
-      # @sg-ignore Unexplained typecheck gap; needs investigation
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1425
       # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = :in_process
