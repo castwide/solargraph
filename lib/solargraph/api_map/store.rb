@@ -93,7 +93,7 @@ module Solargraph
         return nil if fqns.nil? || fqns.empty?
         return BOOLEAN_SUPERCLASS_PIN if %w[TrueClass FalseClass].include?(fqns)
 
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1422
         superclass_references[fqns].first || try_special_superclasses(fqns)
       end
 
@@ -379,7 +379,7 @@ module Solargraph
 
       # @param name [String]
       # @return [Enumerable<Solargraph::Pin::Base>]
-      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1422
       def namespace_children name
         return [] unless index.namespace_hash.key?(name)
         index.namespace_hash[name]

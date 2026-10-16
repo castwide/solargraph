@@ -136,17 +136,17 @@ module Solargraph
         # @param k [Class<Pin::Base>]
         # @param v [Set<Pin::Base>]
         set.classify(&:class)
-           # @sg-ignore nil false alarm
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1422
            .map { |k, v| pin_class_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Namespace>]
         set.classify(&:namespace)
-           # @sg-ignore nil false alarm
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1422
            .map { |k, v| namespace_hash[k].concat v.to_a }
         # @param k [String]
         # @param v [Set<Pin::Base>]
         set.classify(&:path)
-           # @sg-ignore nil false alarm
+           # @sg-ignore https://github.com/castwide/solargraph/pull/1422
            .map { |k, v| path_pin_hash[k].concat v.to_a }
         @namespaces = path_pin_hash.keys.compact.to_set
         map_references Pin::Reference::Include, include_references
@@ -182,7 +182,7 @@ module Solargraph
           logger.debug { "ApiMap::Index#map_overrides: Looking at override #{ovr} for #{ovr.name}" }
           pins = path_pin_hash[ovr.name]
           logger.debug { "ApiMap::Index#map_overrides: pins for path=#{ovr.name}: #{pins}" }
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1422
           pins.each do |pin|
             new_pin = (path_pin_hash[pin.path.sub('#initialize', '.new')].first if pin.path.end_with?('#initialize'))
             (ovr.tags.map(&:tag_name) + ovr.delete).uniq.each do |tag|
@@ -220,7 +220,7 @@ module Solargraph
       # @return [void]
       def map_factory_parameters
         pins_by_class(Pin::FactoryParameter).each do |fp|
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1422
           factory_parameter_hash[fp.method_path] << fp
         end
       end
