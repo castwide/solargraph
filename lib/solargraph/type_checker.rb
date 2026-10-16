@@ -653,9 +653,11 @@ module Solargraph
         next unless param_names.include?(param_name)
 
         param_details[param_name] ||= {}
-        # @sg-ignore flow sensitive typing needs to track reassignment
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        #   also needs https://github.com/castwide/solargraph/pull/1417
         param_details[param_name][:tagged] ||= details[:tagged]
-        # @sg-ignore flow sensitive typing needs to track reassignment
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        #   also needs https://github.com/castwide/solargraph/pull/1417
         param_details[param_name][:qualified] ||= details[:qualified]
       end
     end
