@@ -123,11 +123,7 @@ module Solargraph
         name = call.word
         values = call.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
         node = chain.node
-        if node # rubocop:disable Style/GuardClause -- guard clause raise does not narrow types yet
-          code = source_map.source.code_for(node)
-        else
-          raise "Macro call chain has no node: #{chain.inspect}"
-        end
+        code = node ? source_map.source.code_for(node) : raise("Macro call chain has no node: #{chain.inspect}")
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
         directives = Solargraph::Source.parse_docstring(expanded_comment).directives.select do |directive|

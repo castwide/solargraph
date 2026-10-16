@@ -530,8 +530,7 @@ module Solargraph
       def directives
         parse_comments unless @directives
         parsed = @directives
-        return parsed if parsed
-        raise "parse_comments did not set directives for #{path}"
+        parsed.nil? ? raise("parse_comments did not set directives for #{path}") : parsed
       end
 
       # @return [::Array<Solargraph::YardMap::Macro>]
