@@ -144,6 +144,7 @@ module Solargraph
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.gates)
       if declared.undefined?
+        return result if declared_undefined?(pin)
         # @sg-ignore Need to add nil check here
         if pin.return_type.undefined? && rules.require_type_tags?
           if pin.attribute?
@@ -812,6 +813,15 @@ module Solargraph
     # @return [Integer]
     def optional_param_count parameters
       parameters.select { |p| p.decl == :optarg }.length
+    end
+
+    # True if the pin's @return tag explicitly declares the undefined
+    # type, i.e., the author states its return type is not statically
+    # known.
+    #
+    # @param pin [Pin::Method]
+    def declared_undefined? pin
+      pin.docstring.tags(:return).flat_map { |tag| tag.types || [] }.include?('undefined')
     end
 
     # @param pin [Pin::Method]
