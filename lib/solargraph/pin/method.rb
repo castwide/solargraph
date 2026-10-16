@@ -647,11 +647,9 @@ module Solargraph
       # @return [Parser::AST::Node, nil]
       def method_body_node
         return nil if node.nil?
-        return node.children[1].children.last if node.type == :DEFN
-        return node.children[2].children.last if node.type == :DEFS
         # s(:def, name, args, body) or s(:defs, receiver, name, args, body)
         case node
-        in [:def | :DEFS, _, _, ::Parser::AST::Node | nil => body, *] then body
+        in [:def, _, _, ::Parser::AST::Node | nil => body, *] then body
         in [:defs, _, _, _, ::Parser::AST::Node | nil => defs_body, *] then defs_body
         else nil
         end
