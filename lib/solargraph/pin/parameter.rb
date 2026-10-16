@@ -180,7 +180,7 @@ module Solargraph
           @return_type = ComplexType::UNDEFINED
           found = param_tag
           @return_type = ComplexType.try_parse(*found.types) unless found.nil? || found.types.nil?
-          # @sg-ignore flow sensitive typing needs to track reassignment
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1338
           if @return_type.undefined?
             case decl
             when :restarg
