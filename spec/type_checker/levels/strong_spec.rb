@@ -997,5 +997,15 @@ describe Solargraph::TypeChecker do
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
+
+    it 'resolves calls on class variables in a namespace body' do
+      checker = type_checker(%(
+        module Foo
+          @@bar = 'bar'
+          @@bar.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
