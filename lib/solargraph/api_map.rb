@@ -183,11 +183,13 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
-    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+    #   also needs https://github.com/castwide/solargraph/pull/1417
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
-      # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+      #   also needs https://github.com/castwide/solargraph/pull/1417
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -670,7 +672,8 @@ module Solargraph
     #
     # @param filename [String, nil]
     # @return [SourceMap]
-    # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+    #   also needs https://github.com/castwide/solargraph/pull/1417
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
