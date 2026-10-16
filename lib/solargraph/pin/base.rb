@@ -526,7 +526,7 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless @directives

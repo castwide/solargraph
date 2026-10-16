@@ -190,7 +190,7 @@ module Solargraph
         # @type [MatchData, nil]
         rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore nil false alarm
+          # @sg-ignore MatchData#[] is nilable even for a group that always matches
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -492,7 +492,7 @@ module Solargraph
       src = workspace.sources.find { |s| !source_map_hash.key?(s.filename) }
       if src
         Logging.logger.debug "Mapping #{src.filename}"
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
         source_map_hash[src.filename]
       else
@@ -503,9 +503,9 @@ module Solargraph
     # @return [self]
     def map!
       workspace.sources.each do |src|
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         source_map_hash[src.filename] = Solargraph::SourceMap.map(src)
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         find_external_requires source_map_hash[src.filename]
       end
       self
@@ -535,7 +535,7 @@ module Solargraph
       new_set = source_map.requires.to_set(&:name)
       _filenames = nil
       filenames = -> { _filenames ||= workspace.filenames.to_set }
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       source_map_external_require_hash[source_map.filename] = new_set.reject do |path|
         workspace.require_paths.any? do |base|
           full = File.join(base, path)
@@ -585,7 +585,7 @@ module Solargraph
     def maybe_map source
       return unless source
       return unless @current == source || workspace.has_file?(source.filename)
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       source_map_hash[source.filename] = Solargraph::SourceMap.map(source)
     end
 

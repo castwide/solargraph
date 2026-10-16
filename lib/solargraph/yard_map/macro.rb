@@ -117,7 +117,8 @@ module Solargraph
         name = chain.links.last.word
         # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         values = chain.links.last.arguments.map(&:node).map { |arg| Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg).to_s }
-        # @sg-ignore nil false alarm
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        #   also needs https://github.com/castwide/solargraph/pull/1245
         code = source_map.source.code_for(chain.node)
         expanded_comment = macro_object.expand([name, *values], code)
                                        .gsub(/\n(?!@!|\s)/, "\n  ")
@@ -127,7 +128,8 @@ module Solargraph
         directives.each do |directive|
           next if VALUE_DIRECTIVES.include? directive.tag.tag_name
 
-          # @sg-ignore nil false alarm
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+          #   also needs https://github.com/castwide/solargraph/pull/1245
           comments = source_map.source.comments_for(chain.node)
           if comments&.length&.positive?
             directive.tag.text += "\n#{comments}"

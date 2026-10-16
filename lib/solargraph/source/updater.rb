@@ -29,7 +29,7 @@ module Solargraph
 
       # @param text [String]
       # @param nullable [Boolean]
-      # @sg-ignore nil false alarm
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       # @return [String]
       def write text, nullable = false
         can_nullify = (nullable and changes.length == 1)
@@ -38,7 +38,7 @@ module Solargraph
         @output = text
         @did_nullify = can_nullify
         changes.each do |ch|
-          # @sg-ignore flow sensitive typing needs to track reassignment
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @output = ch.write(@output, can_nullify)
         end
         @output
