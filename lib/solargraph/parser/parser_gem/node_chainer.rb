@@ -213,7 +213,8 @@ module Solargraph
           # s(:block, call, args, body)
           return unless node == @node && (@parent in [:block, _, _, ::Parser::AST::Node | nil => body])
 
-          NodeChainer.chain(body, @filename)
+          # an empty block still passes a block, so it gets an empty chain, not nil
+          body ? NodeChainer.chain(body, @filename) : Chain.new([])
         end
 
         # @param node [Parser::AST::Node]

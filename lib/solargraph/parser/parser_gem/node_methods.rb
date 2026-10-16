@@ -517,7 +517,7 @@ module Solargraph
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
                 # s(:block, call, args, body)
-                if include_explicit_returns && (node in [_, _, _, ::Parser::AST::Node | nil => body, *])
+                if include_explicit_returns && (node in [_, _, _, ::Parser::AST::Node => body, *])
                   result.concat explicit_return_values_from_compound_statement(body)
                 end
               elsif CASE_STATEMENT.include?(node.type)
@@ -560,10 +560,10 @@ module Solargraph
               nodes = parent.children.select { |n| n.is_a?(AST::Node) }
               nodes.each_with_index do |node, idx|
                 if node in [:block, _, _, ::Parser::AST::Node | nil => body, *]
-                  result.concat explicit_return_values_from_compound_statement(body)
+                  result.concat explicit_return_values_from_compound_statement(body) if body
                 elsif node in [:rescue, ::Parser::AST::Node | nil => body, ::Parser::AST::Node => first_resbody, *]
                   # body statements
-                  result.concat from_value_position_statement(body)
+                  result.concat from_value_position_statement(body) if body
                   # rescue statements
                   result.concat from_value_position_statement(first_resbody)
                 elsif SKIPPABLE.include?(node.type)
