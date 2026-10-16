@@ -219,7 +219,8 @@ module Solargraph
             if node.children[2].nil?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             elsif %i[sym str].include?(node.children[2].type)
               # @sg-ignore child node types depend on parent node type
               node.children[2..].each do |x|

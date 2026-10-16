@@ -244,10 +244,12 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           elsif %i[super zsuper].include?(node.type)
             result.push node
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+            #   also needs https://github.com/castwide/solargraph/pull/1418
             node.children.each { |child| result.concat call_nodes_from(child) }
           else
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+            #   also needs https://github.com/castwide/solargraph/pull/1418
             node.children.each { |child| result.concat call_nodes_from(child) }
           end
           result
