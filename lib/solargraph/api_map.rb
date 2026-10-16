@@ -709,7 +709,11 @@ module Solargraph
     #
     # @return [Boolean]
     def type_include? host_ns, module_ns
-      store.get_includes(host_ns).map { |inc_tag| inc_tag.type.name }.include?(module_ns)
+      store.get_includes(host_ns).any? do |inc_tag|
+        # `include Mixin` inside `module Outer` names Outer::Mixin
+        qualified = store.constants.qualify_type(inc_tag.type, *inc_tag.reference_gates)
+        (qualified&.name || inc_tag.type.name) == module_ns
+      end
     end
 
     # @param pins [Enumerable<Pin::Base>]
