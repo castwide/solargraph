@@ -18,6 +18,7 @@ module Solargraph
     # The pins cached under a key, storing the block result on a miss.
     #
     # @param key [String]
+    # @yieldreturn [Array<Pin::Base>]
     # @return [Array<Pin::Base>]
     def self.cached key
       mem_cache.fetch(key) { mem_cache[key] = yield }
