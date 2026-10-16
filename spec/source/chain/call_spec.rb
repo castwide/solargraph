@@ -749,8 +749,25 @@ describe Solargraph::Source::Chain::Call do
     api_map.map source
 
     expect(api_map.clip_at('test.rb', [6, 8]).infer.rooted_tags).to eq('::Array<::String>')
-    expect(api_map.clip_at('test.rb', [7, 8]).infer.rooted_tags).to eq('::Array<::Integer>')
-    expect(api_map.clip_at('test.rb', [8, 8]).infer.rooted_tags).to eq('::Array<::String>')
+    # Flow-sensitive typing does not yet narrow by kind_of? or
+    # instance_of? (castwide/solargraph#1297) or by `::Integer`
+    # (castwide/solargraph#1259)
+    expect(api_map.clip_at('test.rb', [7, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.rooted_tags).to eq('::Array<::String, ::Integer>')
+  end
+
+  it 'narrows select results by any condition flow-sensitive typing understands' do
+    source = Solargraph::Source.load_string(%(
+      # @param items [Array<String, Integer>]
+      def foo items
+        a = items.select { |i| i.is_a?(String) && !i.empty? }
+        a
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::Array<::String>')
   end
 
   it 'keeps select element types when the block does more than check its parameter' do
