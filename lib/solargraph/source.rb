@@ -330,8 +330,12 @@ module Solargraph
           ctxt.push p
         else
           here = p.index(/[^ \t]/)
-          # @sg-ignore flow sensitive typing should be able to handle redefinition
-          skip = here if skip.nil? || here < skip
+          if here # rubocop:disable Style/GuardClause -- guard clause raise does not narrow types yet
+            # @sg-ignore flow sensitive typing should be able to handle redefinition
+            skip = here if skip.nil? || here < skip
+          else
+            raise 'Non-blank comment line has no non-blank character'
+          end
           ctxt.push p[skip..]
         end
         started = true

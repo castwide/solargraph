@@ -526,11 +526,12 @@ module Solargraph
         @docstring ||= Solargraph::Source.parse_docstring('').to_docstring
       end
 
-      # @sg-ignore parse_comments will always set @directives
       # @return [::Array<YARD::Tags::Directive>]
       def directives
         parse_comments unless @directives
-        @directives
+        parsed = @directives
+        return parsed if parsed
+        raise "parse_comments did not set directives for #{path}"
       end
 
       # @return [::Array<Solargraph::YardMap::Macro>]
