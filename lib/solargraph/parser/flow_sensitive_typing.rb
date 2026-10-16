@@ -5,6 +5,16 @@ module Solargraph
     class FlowSensitiveTyping
       include Solargraph::Parser::NodeMethods
 
+      # Hash methods that return true only when the key is present
+      KEY_GUARDS = %i[key? has_key? include? member?].freeze
+
+      # Hash methods that can remove or rename a key, or change how keys
+      # match, ending what a key guard proved
+      KEY_REMOVERS = %i[
+        delete delete_if reject! select! filter! keep_if clear replace shift
+        transform_keys! compare_by_identity
+      ].freeze
+
       # @param locals [Array<Solargraph::Pin::LocalVariable>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
@@ -82,6 +92,7 @@ module Solargraph
         process_isa(node, true_presences, false_presences)
         process_nilp(node, true_presences, false_presences)
         process_bang(node, true_presences, false_presences)
+        process_key_guard(node, true_presences)
       end
 
       # @param if_node [Parser::AST::Node]
@@ -190,6 +201,31 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # Records that 'h[k]' is not nil for the rest of the statements
+      # after 'h[k] ||= v', as a true 'h.key?(k)' guard does. Chain
+      # applies the fact only when 'h' is a Hash whose values can't be
+      # nil, so 'v' can't be nil either.
+      #
+      # @param or_asgn_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_index_or_asgn or_asgn_node
+        return unless or_asgn_node.type == :or_asgn
+
+        lookup = or_asgn_node.children[0]
+        return unless lookup.is_a?(::Parser::AST::Node) && lookup.type == :send
+        return unless lookup.children[1] == :[] && lookup.children.length == 3
+
+        body = enclosing_compound_statement_pin&.node
+        parent = body && parent_of(or_asgn_node, body)
+        # only statements that follow it in sequence run after it, unlike
+        # e.g. what follows 'cond && (h[k] ||= v)'
+        return unless parent && %i[begin kwbegin].include?(parent.type)
+
+        presence = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent))
+        add_key_fact(or_asgn_node, lookup, [presence])
+      end
+
       class << self
         include Logging
       end
@@ -227,10 +263,11 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
+          pin_presences = clip_at_writes(pin, presences)
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
-            presences.each do |presence|
+            pin_presences.each do |presence|
               add_downcast_var(pin,
                                presence: presence,
                                downcast_type: downcast_type,
@@ -238,6 +275,108 @@ module Solargraph
             end
           end
         end
+      end
+
+      # Ends each presence of a call-chain pin, e.g. 'pin.location' or
+      # 'self.location', at the first write that can change what the chain
+      # returns, e.g. 'pin = other' or 'pin.location = nil'.
+      #
+      # @param pin [Pin::BaseVariable]
+      # @param presences [Array<Range>]
+      # @return [Array<Range>]
+      def clip_at_writes pin, presences
+        return presences unless pin.name.include?('.')
+        # without the enclosing body, writes can't be ruled out
+        return [] if enclosing_compound_statement_pin&.node.nil?
+
+        writes = []
+        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes)
+        presences.map do |presence|
+          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut ? Range.new(presence.start, cut) : presence
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>] e.g. ['pin', 'location']
+      # @param writes [::Array<Position>] start positions found so far
+      # @return [void]
+      def collect_writes node, words, writes
+        range = Range.from_node(node)
+        writes << range.start if range && write_to?(node, words)
+        node.children.each do |child|
+          collect_writes(child, words, writes) if child.is_a?(::Parser::AST::Node)
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param words [::Array<String>]
+      # @return [Boolean]
+      def write_to? node, words
+        # e.g. 'pin.location ||= x' wraps a reader call in an or_asgn
+        wrapped = %i[op_asgn or_asgn and_asgn].include?(node.type)
+        target = wrapped ? node.children[0] : node
+        return false unless target.is_a?(::Parser::AST::Node)
+
+        variable = target.children[0].to_s
+        # an attr_reader on self reads its same-named instance variable
+        self_ivar = words.first == 'self' && variable == "@#{words[1]}"
+        return variable == words.first || self_ivar if target.type == :ivasgn
+        return words.first == variable if %i[lvasgn cvasgn].include?(target.type)
+        return false unless target.type == :send
+
+        name = target.children[1].to_s
+        return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
+
+        receiver_words = write_receiver(target.children[0], words)
+        return false if receiver_words.nil? || receiver_words.length >= words.length
+
+        receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
+      end
+
+      # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.
+      #   'location' in 'location.filename = x'
+      # @param words [::Array<String>] the chain #write_to? checks
+      # @return [::Array<String>, nil] the chain `node` reads, e.g. ['pin']
+      #   for 'pin', ['self', 'location'] for 'location' or
+      #   'self.location', or for '@location' when `words` starts at self
+      def write_receiver node, words
+        return ['self'] if node.nil? || node.type == :self
+        # an attr_reader on self reads its same-named instance variable
+        return ['self', node.children[0].to_s.delete_prefix('@')] if node.type == :ivar && words.first == 'self'
+        return parse_receiver_chain(node) unless node.type == :send && (node.children[2..] || []).empty?
+
+        base = write_receiver(node.children[0], words)
+        base && (base + [node.children[1].to_s])
+      end
+
+      # Recognizes receivers shaped like 'foo', '@foo', 'foo.bar', or
+      # '@foo.bar.baz' -- a chain of simple, argument-less, blockless
+      # calls/variables rooted in a local, ivar, or unresolved name.
+      #
+      # @param node [Parser::AST::Node, nil]
+      # @return [::Array<String>, nil] Dotted-word chain, e.g. ['pin',
+      #   'location'], or nil if `node` doesn't have this shape.
+      def parse_receiver_chain node
+        return unless node.is_a?(::Parser::AST::Node)
+        return [node.children[0].to_s] if %i[lvar ivar cvar].include?(node.type)
+        return unless node.type == :send
+        # no arguments -- children[2..] is only nil (rather than [])
+        # if the start index is out of bounds, which can't happen here
+        return unless (node.children[2..] || []).empty?
+
+        method_name = node.children[1]
+        return unless method_name.is_a?(Symbol)
+
+        receiver = node.children[0]
+        # bare call, e.g. `s(:send, nil, :foo)` - implicit self, so
+        # 'foo' could be a local variable or a 0-arg method on self
+        return [method_name.to_s] if receiver.nil?
+
+        base = parse_receiver_chain(receiver)
+        return unless base
+
+        base + [method_name.to_s]
       end
 
       # @param expression_node [Parser::AST::Node]
@@ -446,11 +585,110 @@ module Solargraph
         class_node = node.children[1]
 
         return class_node.to_s if module_node.nil?
+        # e.g., the '::' in '::Baz' or '::Foo::Baz' -
+        #  s(:const, s(:cbase), :Baz)
+        return "::#{class_node}" if module_node.type == :cbase
 
         module_type_name = type_name(module_node)
         return unless module_type_name
 
         "#{module_type_name}::#{class_node}"
+      end
+
+      # Records that 'h[k]' is not nil where 'h.key?(k)' is true. A false
+      # guard proves nothing about 'h[k]', which a default proc can still
+      # answer. Chain applies the fact only when 'h' is a Hash whose values
+      # can't be nil, and 'h' and 'k' read variables or attr_readers.
+      #
+      # @param node [Parser::AST::Node]
+      # @param true_presences [Array<Range>]
+      #
+      # @return [void]
+      def process_key_guard node, true_presences
+        receiver, method_name, key = node.children
+        return unless KEY_GUARDS.include?(method_name) && node.children.length == 3
+
+        # e.g. 'h[k]' with the location of 'h.key?(k)'
+        add_key_fact(node, node.updated(nil, [receiver, :[], key]), true_presences)
+      end
+
+      # @param location_node [Parser::AST::Node] where the fact is learned
+      # @param lookup [Parser::AST::Node] the 'h[k]' the fact is about
+      # @param presences [Array<Range>]
+      #
+      # @return [void]
+      def add_key_fact location_node, lookup, presences
+        receiver, _, key = lookup.children
+        receiver_name = variable_chain_name(receiver)
+        name = receiver_name && key_lookup_name(receiver_name, key)
+        statement = enclosing_compound_statement_pin
+        # a method or block body is its own closure
+        closure = statement.is_a?(Pin::Closure) ? statement : statement&.closure
+        return unless name && closure
+
+        pin = Pin::LocalVariable.new(
+          location: Location.from_node(location_node),
+          closure: closure,
+          name: name,
+          assignment: lookup,
+          source: :flow_sensitive_typing
+        )
+        presences = clip_at_key_writes(presences, receiver, key)
+        process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param root [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil] the node in `root` whose child
+      #   is `node`
+      def parent_of node, root
+        root.children.each do |child|
+          next unless child.is_a?(::Parser::AST::Node)
+          return root if child.equal?(node)
+
+          found = parent_of(node, child)
+          return found if found
+        end
+        nil
+      end
+
+      # Ends each presence of the 'h[k]' fact from a 'h.key?(k)' guard at
+      # the first write to 'h' or 'k', e.g. 'h = other', or call that can
+      # remove a key from 'h', e.g. 'h.delete(k)'.
+      #
+      # @param presences [Array<Range>]
+      # @param receiver [Parser::AST::Node] e.g. 'h'
+      # @param key [Parser::AST::Node] e.g. 'k'
+      # @return [Array<Range>]
+      def clip_at_key_writes presences, receiver, key
+        body = enclosing_compound_statement_pin&.node
+        # without the enclosing body, writes can't be ruled out
+        return [] if body.nil?
+
+        writes = []
+        [receiver, key].each do |node|
+          # e.g. ['h'], or ['self', 'table'] for an attr_reader 'table'
+          words = write_receiver(node, [])
+          collect_writes(body, words, writes) if words
+        end
+        collect_key_removals(body, receiver, writes)
+        presences.map do |presence|
+          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut ? Range.new(presence.start, cut) : presence
+        end
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param hash [Parser::AST::Node] e.g. 'h' for 'h.delete(k)'
+      # @param writes [Array<Position>] start positions found so far
+      # @return [void]
+      def collect_key_removals node, hash, writes
+        if node.type == :send && node.children[0] == hash && KEY_REMOVERS.include?(node.children[1])
+          writes << get_node_start_position(node)
+        end
+        node.children.each do |child|
+          collect_key_removals(child, hash, writes) if child.is_a?(::Parser::AST::Node)
+        end
       end
 
       # @param clause_node [Parser::AST::Node, nil]

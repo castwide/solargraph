@@ -1025,4 +1025,321 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  it 'uses is_a? with a fully-qualified type name to refine types' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def verify_repro(x)
+        if x.is_a?(::Integer)
+          x
+        else
+          x
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [4, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.rooted_tags).to eq('::Object')
+  end
+
+  context 'with a Hash key guard' do
+    # @param code [String]
+    # @param position [Array(Integer, Integer)]
+    # @return [String]
+    def infer_at code, position
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      api_map.clip_at('test.rb', position).infer.to_s
+    end
+
+    it 'drops nil from a lookup after return unless key?' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Integer')
+    end
+
+    it 'does not offer the narrowed lookup as a local variable completion' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h
+        end
+      )
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      names = api_map.clip_at('test.rb', [5, 11]).complete.pins.map(&:name)
+      expect(names).to include('h')
+      expect(names).not_to include('h[k]')
+    end
+
+    it 'keeps nil that the Hash values themselves allow' do
+      code = %(
+        # @param h [Hash{String => Integer, nil}]
+        # @param k [String]
+        def foo h, k
+          w = h[k]
+          return 0 unless h.key?(k)
+          v = h[k]
+          v
+          w
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq(infer_at(code, [8, 10]))
+      expect(infer_at(code, [7, 10])).to end_with('nil')
+    end
+
+    it 'keeps nil on a lookup without a guard' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [5, 10])).to eq('Integer, nil')
+    end
+
+    it 'narrows only the then clause of if has_key?' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          if h.has_key?(k)
+            a = h[k]
+            a
+          else
+            b = h[k]
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [6, 12])).to eq('Integer')
+      expect(infer_at(code, [9, 12])).to eq('Integer, nil')
+    end
+
+    it 'narrows the right side of member? &&' do
+      code = %(
+        # @param h [Hash{Symbol => String}]
+        def foo h
+          h.member?(:a) && (v = h[:a]) && v
+        end
+      )
+      expect(infer_at(code, [3, 41])).to eq('String')
+    end
+
+    it 'does not narrow a lookup of a different key' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param j [String]
+        def foo h, k, j
+          return 0 unless h.include?(k)
+          v = h[j]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Integer, nil')
+    end
+
+    it 'does not narrow Array#include?' do
+      code = %(
+        # @param a [Array<String>]
+        # @param i [Integer]
+        def foo a, i
+          return 0 unless a.include?(i)
+          v = a[i]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('String, nil')
+    end
+
+    it 'stops narrowing once the receiver is reassigned' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param g [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, g, k
+          return 0 unless h.key?(k)
+          h = g
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [8, 10])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once the key is reassigned' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        # @param j [String]
+        def foo h, k, j
+          return 0 unless h.key?(k)
+          k = j
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [8, 10])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once an attr_reader receiver is reassigned' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k)
+            a = table[k]
+            @table = {}
+            b = table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [11, 12])).to eq('Integer')
+      expect(infer_at(code, [12, 12])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once a key may have been removed' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          a = h[k]
+          h.delete(k)
+          b = h[k]
+          a
+          b
+        end
+      )
+      expect(infer_at(code, [8, 10])).to eq('Integer')
+      expect(infer_at(code, [9, 10])).to eq('Integer, nil')
+    end
+
+    it 'stops narrowing once the keys may have been rewritten' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h.transform_keys!(&:upcase)
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Integer, nil')
+    end
+
+    it 'narrows a lookup on an attr_reader but not on another method' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @return [Hash{String => Integer}]
+          def fresh_table
+            {}
+          end
+
+          # @param k [String]
+          def foo k
+            return 0 unless table.key?(k) && fresh_table.key?(k)
+            a = table[k]
+            b = fresh_table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [15, 12])).to eq('Integer')
+      expect(infer_at(code, [16, 12])).to eq('Integer, nil')
+    end
+
+    it 'does not narrow a key computed by a method call' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [Symbol]
+        def foo h, k
+          return 0 unless h.key?(k.to_s)
+          v = h[k.to_s]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Integer, nil')
+    end
+
+    it 'drops nil from a lookup after an ||= on it' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          h[k] ||= []
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Array<Integer>')
+    end
+
+    it 'does not narrow a lookup after an ||= inside an expression' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          bar && (h[k] ||= [])
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Array<Integer>, nil')
+    end
+
+    it 'ends the ||= fact at a write to the key' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          h[k] ||= []
+          k = 'other'
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Array<Integer>, nil')
+    end
+
+    it 'narrows a class variable lookup after an ||= on it' do
+      code = %(
+        class Foo
+          # @type [Hash{Symbol => Array<Integer>}]
+          @@table = {}
+
+          # @param k [Symbol]
+          def self.foo k
+            @@table[k] ||= []
+            v = @@table[k]
+            v
+          end
+        end
+      )
+      expect(infer_at(code, [9, 12])).to eq('Array<Integer>')
+    end
+  end
 end
