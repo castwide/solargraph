@@ -19,6 +19,13 @@ module Solargraph
     attr_reader :filename
 
     # @return [String]
+    def filename!
+      name = filename
+      return name if name
+      raise ArgumentError, 'Source has no filename'
+    end
+
+    # @return [String]
     def code
       finalize
       @code
