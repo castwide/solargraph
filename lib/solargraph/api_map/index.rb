@@ -12,7 +12,7 @@ module Solargraph
       # @generic V
       # @!method [](key)
       #   @return [generic<V>]
-      class ArrayHash < Hash #[K, V]
+      class ArrayHash < Hash
         def initialize
           # @param hash [Hash]
           # @param key [Object]
