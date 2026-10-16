@@ -11,7 +11,9 @@ module Solargraph
               if node.type == :forward_args
                 forward(callable)
               else
-                node.children.each do |u|
+                node.children.each do |child|
+                  # s(:args, *params) - every parameter is a node
+                  child => ::Parser::AST::Node => u
                   # s(:arg, name), s(:optarg, name, default), s(:restarg) for an anonymous splat,
                   # or s(:mlhs, *args) for |(a, b)|
                   name = (u in [_, Symbol | ::Parser::AST::Node | nil => first, *]) ? first : nil # rubocop:disable Style/RedundantParentheses

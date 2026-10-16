@@ -88,10 +88,18 @@ module Solargraph
           in [:zsuper, *]
             result.push Chain::ZSuper.new('super')
           in [:super, *]
-            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
+            # s(:super, *args) - every argument is a node
+            args = n.children.map do |child|
+              child => ::Parser::AST::Node => c
+              NodeChainer.chain(c, @filename, n)
+            end
             result.push Chain::Call.new('super', Location.from_node(n), args)
           in [:yield, *]
-            args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
+            # s(:yield, *args) - every argument is a node
+            args = n.children.map do |child|
+              child => ::Parser::AST::Node => c
+              NodeChainer.chain(c, @filename, n)
+            end
             result.push Chain::Call.new('yield', Location.from_node(n), args)
           in [:const, *]
             const = unpack_name(n)
@@ -144,7 +152,11 @@ module Solargraph
           in [:hash, *]
             result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           in [:array, *]
-            chained_children = n.children.map { |c| NodeChainer.chain(c) }
+            # s(:array, *elements) - every element is a node
+            chained_children = n.children.map do |child|
+              child => ::Parser::AST::Node => c
+              NodeChainer.chain(c)
+            end
             result.push Source::Chain::Array.new(chained_children, n)
           in _ if inside_method_call? # If the node is inside a method call, it may be a parameter.
             lit = infer_literal_node_type(n)

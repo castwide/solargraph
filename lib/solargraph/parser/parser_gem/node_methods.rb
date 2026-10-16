@@ -130,7 +130,11 @@ module Solargraph
         # @return [Array]
         def simple_convert_array node
           return [] unless Parser.is_ast_node?(node) && node.type == :array
-          node.children.compact.map { |c| simple_convert(c) }
+          # s(:array, *elements) - every element is a node
+          node.children.compact.map do |child|
+            child => ::Parser::AST::Node => c
+            simple_convert(c)
+          end
         end
 
         # @param node [Parser::AST::Node]
@@ -183,7 +187,12 @@ module Solargraph
           if node.type == :const
             result.push node
           else
-            node.children.each { |child| result.concat const_nodes_from(child) }
+            node.children.each do |child|
+              # children that are not nodes (names, literals, nil) hold no constants
+              next unless child in ::Parser::AST::Node => child_node
+
+              result.concat const_nodes_from(child_node)
+            end
           end
           result
         end
