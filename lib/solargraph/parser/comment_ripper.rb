@@ -27,7 +27,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         # @type [Array(Symbol, String, Array(Integer, Integer))]
         result = super
-        # @sg-ignore nil false alarm
+        # @sg-ignore Need to add nil check here
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           chomped = result[1].chomp
