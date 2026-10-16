@@ -4,7 +4,8 @@ module Solargraph
   module Pin
     class Keyword < Base
       def initialize(name, **kwargs)
-        # @sg-ignore double-splat argument is checked as a keyword named after the variable
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+        #   double-splat checks need https://github.com/apiology/solargraph/tree/kwsplat-record-types on top
         super(name: name, **kwargs)
       end
 
