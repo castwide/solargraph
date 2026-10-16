@@ -732,4 +732,25 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  it 'resolves super inside define_method with a literal name' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Integer]
+        def bar
+          1
+        end
+      end
+      class Baz < Foo
+        define_method(:bar) do
+          x = super()
+          x
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [10, 10])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
 end
