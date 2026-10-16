@@ -1284,5 +1284,62 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       )
       expect(infer_at(code, [6, 10])).to eq('Integer, nil')
     end
+
+    it 'drops nil from a lookup after an ||= on it' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          h[k] ||= []
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Array<Integer>')
+    end
+
+    it 'does not narrow a lookup after an ||= inside an expression' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          bar && (h[k] ||= [])
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [6, 10])).to eq('Array<Integer>, nil')
+    end
+
+    it 'ends the ||= fact at a write to the key' do
+      code = %(
+        # @param h [Hash{String => Array<Integer>}]
+        # @param k [String]
+        def foo h, k
+          h[k] ||= []
+          k = 'other'
+          v = h[k]
+          v
+        end
+      )
+      expect(infer_at(code, [7, 10])).to eq('Array<Integer>, nil')
+    end
+
+    it 'narrows a class variable lookup after an ||= on it' do
+      code = %(
+        class Foo
+          # @type [Hash{Symbol => Array<Integer>}]
+          @@table = {}
+
+          # @param k [Symbol]
+          def self.foo k
+            @@table[k] ||= []
+            v = @@table[k]
+            v
+          end
+        end
+      )
+      expect(infer_at(code, [9, 12])).to eq('Array<Integer>')
+    end
   end
 end

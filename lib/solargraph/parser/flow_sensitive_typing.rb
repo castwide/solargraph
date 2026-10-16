@@ -201,6 +201,31 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # Records that 'h[k]' is not nil for the rest of the statements
+      # after 'h[k] ||= v', as a true 'h.key?(k)' guard does. Chain
+      # applies the fact only when 'h' is a Hash whose values can't be
+      # nil, so 'v' can't be nil either.
+      #
+      # @param or_asgn_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_index_or_asgn or_asgn_node
+        return unless or_asgn_node.type == :or_asgn
+
+        lookup = or_asgn_node.children[0]
+        return unless lookup.is_a?(::Parser::AST::Node) && lookup.type == :send
+        return unless lookup.children[1] == :[] && lookup.children.length == 3
+
+        body = enclosing_compound_statement_pin&.node
+        parent = body && parent_of(or_asgn_node, body)
+        # only statements that follow it in sequence run after it, unlike
+        # e.g. what follows 'cond && (h[k] ||= v)'
+        return unless parent && %i[begin kwbegin].include?(parent.type)
+
+        presence = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent))
+        add_key_fact(or_asgn_node, lookup, [presence])
+      end
+
       class << self
         include Logging
       end
@@ -297,7 +322,7 @@ module Solargraph
         # an attr_reader on self reads its same-named instance variable
         self_ivar = words.first == 'self' && variable == "@#{words[1]}"
         return variable == words.first || self_ivar if target.type == :ivasgn
-        return words.first == variable if target.type == :lvasgn
+        return words.first == variable if %i[lvasgn cvasgn].include?(target.type)
         return false unless target.type == :send
 
         name = target.children[1].to_s
@@ -334,7 +359,7 @@ module Solargraph
       #   'location'], or nil if `node` doesn't have this shape.
       def parse_receiver_chain node
         return unless node.is_a?(::Parser::AST::Node)
-        return [node.children[0].to_s] if %i[lvar ivar].include?(node.type)
+        return [node.children[0].to_s] if %i[lvar ivar cvar].include?(node.type)
         return unless node.type == :send
         # no arguments -- children[2..] is only nil (rather than [])
         # if the start index is out of bounds, which can't happen here
@@ -583,6 +608,17 @@ module Solargraph
         receiver, method_name, key = node.children
         return unless KEY_GUARDS.include?(method_name) && node.children.length == 3
 
+        # e.g. 'h[k]' with the location of 'h.key?(k)'
+        add_key_fact(node, node.updated(nil, [receiver, :[], key]), true_presences)
+      end
+
+      # @param location_node [Parser::AST::Node] where the fact is learned
+      # @param lookup [Parser::AST::Node] the 'h[k]' the fact is about
+      # @param presences [Array<Range>]
+      #
+      # @return [void]
+      def add_key_fact location_node, lookup, presences
+        receiver, _, key = lookup.children
         receiver_name = variable_chain_name(receiver)
         name = receiver_name && key_lookup_name(receiver_name, key)
         statement = enclosing_compound_statement_pin
@@ -591,15 +627,29 @@ module Solargraph
         return unless name && closure
 
         pin = Pin::LocalVariable.new(
-          location: Location.from_node(node),
+          location: Location.from_node(location_node),
           closure: closure,
           name: name,
-          # e.g. 'h[k]' with the location of 'h.key?(k)'
-          assignment: node.updated(nil, [receiver, :[], key]),
+          assignment: lookup,
           source: :flow_sensitive_typing
         )
-        presences = clip_at_key_writes(true_presences, receiver, key)
+        presences = clip_at_key_writes(presences, receiver, key)
         process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
+      end
+
+      # @param node [Parser::AST::Node]
+      # @param root [Parser::AST::Node]
+      # @return [Parser::AST::Node, nil] the node in `root` whose child
+      #   is `node`
+      def parent_of node, root
+        root.children.each do |child|
+          next unless child.is_a?(::Parser::AST::Node)
+          return root if child.equal?(node)
+
+          found = parent_of(node, child)
+          return found if found
+        end
+        nil
       end
 
       # Ends each presence of the 'h[k]' fact from a 'h.key?(k)' guard at

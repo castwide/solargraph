@@ -198,13 +198,13 @@ module Solargraph
         end
 
         # Names an expression made only of variables and argument-less
-        # calls, e.g. 'h', '@h' or 'loc.filename'.
+        # calls, e.g. 'h', '@h', '@@h' or 'loc.filename'.
         #
         # @param node [Parser::AST::Node, nil]
         # @return [String, nil]
         def variable_chain_name node
           return unless node
-          return node.children[0].to_s if %i[lvar ivar].include?(node.type)
+          return node.children[0].to_s if %i[lvar ivar cvar].include?(node.type)
           return unless node.type == :send && node.children.length == 2
 
           receiver = node.children[0]

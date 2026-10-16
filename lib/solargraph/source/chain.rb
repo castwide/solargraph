@@ -363,7 +363,7 @@ module Solargraph
         return if chain_links.empty?
 
         simple = chain_links.all? do |link|
-          link.is_a?(Chain::InstanceVariable) ||
+          link.is_a?(Chain::InstanceVariable) || link.is_a?(Chain::ClassVariable) ||
             (link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?)
         end
         chain_links.map(&:word).join('.') if simple

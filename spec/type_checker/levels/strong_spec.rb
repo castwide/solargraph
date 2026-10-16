@@ -1022,5 +1022,18 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to include('Unresolved call to + on Integer, nil')
     end
+
+    it 'trusts a Hash lookup after an ||= on it' do
+      checker = type_checker(%(
+        # @param h [Hash{String => Array<String>}]
+        # @param k [String]
+        # @return [Array<String>]
+        def foo h, k
+          h[k] ||= []
+          h[k] << 'a'
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end
