@@ -53,9 +53,9 @@ module Solargraph
         # @param [Integer] line1
         # @param [Integer] line2
         # @return [Boolean]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+        # @sg-ignore nil false alarm
         def no_empty_lines? code, line1, line2
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+          # @sg-ignore nil false alarm
           code.lines[line1..line2].none? { |line| line.strip.empty? }
         end
 
