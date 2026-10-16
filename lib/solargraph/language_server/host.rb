@@ -785,7 +785,8 @@ module Solargraph
         diffs = Diff::LCS.diff(source.code, change['text'])
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
-        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
         # @type [Diff::LCS::Change]
         diff = diffs.first.first
         return change unless diff.adding? && ['.', ':', '(', ',', ' '].include?(diff.element)

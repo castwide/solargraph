@@ -144,7 +144,8 @@ module Solargraph
         @namespace ||= lambda do
           return 'Object' if duck_type?
           return 'NilClass' if nil_type?
-          # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+          #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
           %w[Class Module].include?(name) && !subtypes.empty? ? subtypes.first.name : name
         end.call
       end

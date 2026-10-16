@@ -249,9 +249,11 @@ module Solargraph
       def to_rbs
         return nil if signatures.empty?
 
-        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
         rbs = "def #{name}: #{signatures.first.to_rbs}"
-        # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
         signatures[1..].each do |sig|
           rbs += "\n"
           rbs += (' ' * (4 + name.length))

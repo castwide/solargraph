@@ -22,10 +22,12 @@ module Solargraph
                    .reject { |pin| pin.documentation.empty? && pin.return_type.undefined? }
             result = params
                      .transform_keys(&:to_sym)
-                     # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+                     # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+                     #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
                      .merge(pins.first.resolve_completion_item)
                      .merge(documentation: markup_content(join_docs(docs)))
-            # @sg-ignore flow sensitive typing adds '& _NonEmpty<T>'
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+            #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top
             result[:detail] = pins.first.detail
             result
           end
