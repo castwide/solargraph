@@ -13,12 +13,12 @@ module Solargraph
             last_link = nil
             suggestions&.each do |pin|
               parts = []
-              # @sg-ignore https://github.com/apiology/solargraph/pull/139
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1421
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               parts.push this_link if !this_link.nil? && this_link != last_link
-              # @sg-ignore https://github.com/apiology/solargraph/pull/139
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1421
               parts.push "`#{pin.detail}`" unless pin.is_a?(Pin::Namespace) || pin.detail.nil?
-              # @sg-ignore https://github.com/apiology/solargraph/pull/139
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1421
               parts.push pin.documentation unless pin.documentation.nil? || pin.documentation.empty?
               unless parts.empty?
                 data = parts.join("\n\n")

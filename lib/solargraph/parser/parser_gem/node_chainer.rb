@@ -209,9 +209,9 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
-        # @sg-ignore https://github.com/apiology/solargraph/pull/139
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1421
         def send_node
-          # @sg-ignore https://github.com/apiology/solargraph/pull/139
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1421
           @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
