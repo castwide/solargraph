@@ -16,7 +16,7 @@ module Solargraph
         @identity ||= "signature#{object_id}"
       end
 
-      # @ sg-ignore need boolish support for ? methods
+      # @return [Boolean, nil]
       def dodgy_return_type_source?
         super || closure&.dodgy_return_type_source?
       end

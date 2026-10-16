@@ -706,7 +706,7 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore need boolish support for ? methods
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       def client_supports_progress?
         # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
@@ -863,7 +863,7 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore need boolish support for ? methods
+      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
       def prepare_rename?
         # @sg-ignore flow sensitive typing needs to handle repeated pure calls
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']

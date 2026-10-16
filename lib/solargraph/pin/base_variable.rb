@@ -223,7 +223,7 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
-      # @sg-ignore need boolish support for ? methods
+      # @return [ComplexType, nil]
       def presence_certain?
         exclude_return_type || intersection_return_type
       end

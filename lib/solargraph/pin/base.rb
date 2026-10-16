@@ -222,7 +222,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore need boolish support for ? methods
+      # @return [Boolean, nil]
       def dodgy_return_type_source?
         # uses a lot of 'Object' instead of 'self'
         location&.filename&.include?('core_ext/object/') ||
@@ -275,7 +275,7 @@ module Solargraph
         end
       end
 
-      # @sg-ignore need boolish support for ? methods
+      # @return [Boolean, nil]
       def rbs_location?
         type_location&.rbs?
       end
