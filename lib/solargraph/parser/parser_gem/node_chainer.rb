@@ -97,11 +97,13 @@ module Solargraph
           elsif n.type == :zsuper
             result.push Chain::ZSuper.new('super')
           elsif n.type == :super
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('super', Location.from_node(n), args)
           elsif n.type == :yield
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('yield', Location.from_node(n), args)
           elsif n.type == :const
@@ -182,7 +184,8 @@ module Solargraph
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
@@ -231,7 +234,8 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
-          # @sg-ignore child node types depend on parent node type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           NodeChainer.chain(@parent.children[2], @filename)
         end
 

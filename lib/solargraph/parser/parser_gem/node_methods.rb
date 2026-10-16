@@ -134,7 +134,8 @@ module Solargraph
         # @return [Array]
         def simple_convert_array node
           return [] unless Parser.is_ast_node?(node) && node.type == :array
-          # @sg-ignore child node types depend on parent node type
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           node.children.compact.map { |c| simple_convert(c) }
         end
 
@@ -186,7 +187,8 @@ module Solargraph
           if node.type == :const
             result.push node
           else
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             node.children.each { |child| result.concat const_nodes_from(child) }
           end
           result
@@ -534,11 +536,13 @@ module Solargraph
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
                 if include_explicit_returns
-                  # @sg-ignore child node types depend on parent node type
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 end
               elsif CASE_STATEMENT.include?(node.type)
-                # @sg-ignore child node types depend on parent node type
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                #   also needs https://github.com/castwide/solargraph/pull/1418
                 node.children[1..].each do |cc|
                   if cc.nil?
                     result.push NIL_NODE
@@ -577,13 +581,15 @@ module Solargraph
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                 #   also needs https://github.com/castwide/solargraph/pull/1416
                 if node.type == :block
-                  # @sg-ignore child node types depend on parent node type
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                 #   also needs https://github.com/castwide/solargraph/pull/1416
                 elsif node.type == :rescue
                   # body statements
-                  # @sg-ignore child node types depend on parent node type
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat from_value_position_statement(node.children[0])
                   # rescue statements
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1418

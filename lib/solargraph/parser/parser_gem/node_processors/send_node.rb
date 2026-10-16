@@ -171,7 +171,8 @@ module Solargraph
 
           # @return [void]
           def process_extend
-            # @sg-ignore child node types depend on parent node type
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            #   also needs https://github.com/castwide/solargraph/pull/1418
             node.children[2..].each do |i|
               loc = get_node_location(node)
               if i.type == :self
@@ -222,7 +223,8 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             #   also needs https://github.com/castwide/solargraph/pull/1416
             elsif %i[sym str].include?(node.children[2].type)
-              # @sg-ignore child node types depend on parent node type
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              #   also needs https://github.com/castwide/solargraph/pull/1418
               node.children[2..].each do |x|
                 cn = x.children[0].to_s
                 # @type [Pin::Method, nil]

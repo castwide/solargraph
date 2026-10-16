@@ -75,7 +75,8 @@ module Solargraph
         end
 
         # @return [::String, ::Symbol] The literal value of the parameter
-        # @sg-ignore child node types depend on parent node type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+        #   also needs https://github.com/castwide/solargraph/pull/1416
         def literal_value
           literal.node.children.first
         end

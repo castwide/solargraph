@@ -12,7 +12,8 @@ module Solargraph
                 forward(callable)
               else
                 node.children.each do |u|
-                  # @sg-ignore child node types depend on parent node type
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   loc = get_node_location(u)
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                   locals.push Solargraph::Pin::Parameter.new(
@@ -30,7 +31,8 @@ module Solargraph
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1399
                     presence: callable.location.range,
-                    # @sg-ignore child node types depend on parent node type
+                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                    #   also needs https://github.com/castwide/solargraph/pull/1416
                     decl: get_decl(u),
                     source: :parser
                   )
