@@ -80,10 +80,10 @@ module Solargraph
       #
       # @return [void]
       def process_if if_node, true_ranges = [], false_ranges = []
-        return unless if_node in [:if,
-                                  ::Parser::AST::Node => conditional_node,
-                                  ::Parser::AST::Node | nil => then_clause,
-                                  ::Parser::AST::Node | nil => else_clause]
+        if_node => [:if,
+                    ::Parser::AST::Node => conditional_node,
+                    ::Parser::AST::Node | nil => then_clause,
+                    ::Parser::AST::Node | nil => else_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -149,7 +149,7 @@ module Solargraph
       #
       # @return [void]
       def process_while while_node, true_ranges = [], false_ranges = []
-        return unless while_node in [:while, ::Parser::AST::Node => conditional_node, ::Parser::AST::Node | nil => do_clause]
+        while_node => [:while, ::Parser::AST::Node => conditional_node, ::Parser::AST::Node | nil => do_clause]
 
         #
         # See if we can refine a type based on the result of 'if foo.nil?'
@@ -385,7 +385,7 @@ module Solargraph
       # @return [String, nil] Variable name referenced
       def parse_variable var_node
         # only reached for lvar, ivar, cvar and gvar nodes
-        return unless var_node in [_, Symbol => variable_name]
+        var_node => [_, Symbol => variable_name]
 
         variable_name&.to_s
       end

@@ -7,7 +7,7 @@ module Solargraph
         class CvasgnNode < Parser::NodeProcessor::Base
           def process
             # s(:cvasgn, name, value) - value is absent when the target is in an mlhs
-            return process_children unless node in [:cvasgn, Symbol => name, *rest]
+            node => [:cvasgn, Symbol => name, *rest]
             assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
 
             loc = get_node_location(node)

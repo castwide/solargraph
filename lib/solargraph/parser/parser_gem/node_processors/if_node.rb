@@ -13,10 +13,10 @@ module Solargraph
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_if(node)
             # s(:if, cond, then, else) - each child is a node, or nil when absent
-            return true unless node in [:if,
-                                        ::Parser::AST::Node | nil => condition_node,
-                                        ::Parser::AST::Node | nil => then_node,
-                                        ::Parser::AST::Node | nil => else_node]
+            node => [:if,
+                     ::Parser::AST::Node | nil => condition_node,
+                     ::Parser::AST::Node | nil => then_node,
+                     ::Parser::AST::Node | nil => else_node]
 
             if condition_node
               pins.push Solargraph::Pin::CompoundStatement.new(

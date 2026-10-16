@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             # s(:defs, receiver, name, args, body)
-            return process_children unless node in [:defs, ::Parser::AST::Node => receiver, Symbol => method_name, *]
+            node => [:defs, ::Parser::AST::Node => receiver, Symbol => method_name, *]
 
             s_visi = region.visibility
             s_visi = :public if s_visi == :module_function || region.scope != :class

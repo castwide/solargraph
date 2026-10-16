@@ -10,10 +10,10 @@ module Solargraph
           # @return [void]
           def process
             # s(:resbody, s(:array, *exception_classes) | nil, s(:lvasgn, name) | nil, body)
-            return process_children unless node in [:resbody,
-                                                    ::Parser::AST::Node | nil => exceptions,
-                                                    ::Parser::AST::Node | nil => variable,
-                                                    ::Parser::AST::Node | nil => body]
+            node => [:resbody,
+                     ::Parser::AST::Node | nil => exceptions,
+                     ::Parser::AST::Node | nil => variable,
+                     ::Parser::AST::Node | nil => body]
 
             # variable is an lvasgn, ivasgn, cvasgn or gvasgn (Symbol name), a
             # send for `=> a.b` (receiver node) or a casgn for `=> A` (nil scope)

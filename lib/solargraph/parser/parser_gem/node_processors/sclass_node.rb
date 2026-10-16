@@ -8,7 +8,7 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:sclass, target, body) - target is s(:self), s(:casgn, ...) or s(:const, ...)
-            return unless node in [:sclass, ::Parser::AST::Node => sclass, *]
+            node => [:sclass, ::Parser::AST::Node => sclass, *]
 
             # @todo Changing Parser::AST::Node to AST::Node below will
             #   cause type errors at strong level because the combined

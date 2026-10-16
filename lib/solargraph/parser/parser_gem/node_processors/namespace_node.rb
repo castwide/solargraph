@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             # s(:class, name, superclass, body) or s(:module, name, body)
-            return process_children unless node in [:class | :module, ::Parser::AST::Node => name_node, *]
+            node => [:class | :module, ::Parser::AST::Node => name_node, *]
 
             name = unpack_name(name_node)
             comments = comments_for(node)

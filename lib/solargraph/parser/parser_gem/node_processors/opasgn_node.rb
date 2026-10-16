@@ -10,10 +10,10 @@ module Solargraph
           # @return [void]
           def process
             # s(:op_asgn, target, operator, argument)
-            return process_children unless node in [:op_asgn,
-                                                    ::Parser::AST::Node => target,
-                                                    Symbol => operator,
-                                                    ::Parser::AST::Node => argument]
+            node => [:op_asgn,
+                     ::Parser::AST::Node => target,
+                     Symbol => operator,
+                     ::Parser::AST::Node => argument]
 
             if target.type == :send
               process_send_target(target, operator, argument)
@@ -40,7 +40,7 @@ module Solargraph
             #      :+, # operator
             #      s(:send, nil, :baz)) # argument
             # [11] pry(main)>
-            return unless call in [:send, ::Parser::AST::Node | nil => callee, Symbol => call_method, *]
+            call => [:send, ::Parser::AST::Node | nil => callee, Symbol => call_method, *]
 
             asgn_method = :"#{call_method}="
 
@@ -73,7 +73,7 @@ module Solargraph
             #      s(:int, 2)) # argument
 
             # only reached for lvasgn, ivasgn, cvasgn and gvasgn targets
-            return unless asgn in [_, Symbol => variable_name, *]
+            asgn => [_, Symbol => variable_name, *]
 
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")

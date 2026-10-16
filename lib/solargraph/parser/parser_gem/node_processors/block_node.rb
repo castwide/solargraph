@@ -9,7 +9,7 @@ module Solargraph
 
           def process
             # s(:block, call, args, body)
-            return process_children unless node in [:block, ::Parser::AST::Node => call, *]
+            node => [:block, ::Parser::AST::Node => call, *]
 
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope

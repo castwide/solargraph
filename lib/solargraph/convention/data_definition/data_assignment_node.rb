@@ -35,7 +35,7 @@ module Solargraph
 
         def class_name
           # s(:casgn, scope, name, value) - scope is nil for a bare name
-          return '' unless node in [_, ::Parser::AST::Node | nil => scope, Symbol => name, *]
+          node => [_, ::Parser::AST::Node | nil => scope, Symbol => name, *]
 
           if scope
             Parser::NodeMethods.unpack_name(scope) + "::#{name}"

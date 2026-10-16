@@ -10,7 +10,7 @@ module Solargraph
           # @sg-ignore @override is adding, not overriding
           def process
             # s(:send, receiver, method_name, *args)
-            return process_children unless node in [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
+            node => [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
 
             if receiver.nil?
               if %i[private public protected].include?(method_name)
@@ -50,7 +50,7 @@ module Solargraph
 
           # @return [void]
           def process_visibility
-            return unless node in [:send, _, Symbol => visibility, *args]
+            node => [:send, _, Symbol => visibility, *args]
 
             if args.empty?
               # @todo Smelly instance variable access
@@ -74,7 +74,7 @@ module Solargraph
 
           # @return [void]
           def process_attribute
-            return unless node in [:send, _, Symbol => attr_method, *args]
+            node => [:send, _, Symbol => attr_method, *args]
 
             # @sg-ignore Need to add nil check here
             args.each do |a|
@@ -118,7 +118,7 @@ module Solargraph
 
           # @return [void]
           def process_include
-            return unless node in [:send, _, _, *args]
+            node => [:send, _, _, *args]
             return unless args in [::AST::Node[:const, *], *]
 
             cp = region.closure
@@ -136,7 +136,7 @@ module Solargraph
 
           # @return [void]
           def process_prepend
-            return unless node in [:send, _, _, *args]
+            node => [:send, _, _, *args]
             return unless args in [::AST::Node[:const, *], *]
 
             cp = region.closure
@@ -153,7 +153,7 @@ module Solargraph
 
           # @return [void]
           def process_extend
-            return unless node in [:send, _, _, *args]
+            node => [:send, _, _, *args]
 
             # @sg-ignore Need to add nil check here
             args.each do |i|
@@ -196,7 +196,7 @@ module Solargraph
 
           # @return [void]
           def process_module_function
-            return unless node in [:send, _, _, *args]
+            node => [:send, _, _, *args]
 
             if args.empty?
               # @todo Smelly instance variable access
@@ -274,7 +274,7 @@ module Solargraph
           def process_alias_method
             # alias_method :new, :old - s(:send, nil, :alias_method, s(:sym, new), s(:sym, old))
             # only reached when both arguments are sym nodes (see #process)
-            return unless node in [:send, _, _, [_, Symbol => new_name, *], [_, Symbol => original, *], *]
+            node => [:send, _, _, [_, Symbol => new_name, *], [_, Symbol => original, *], *]
 
             get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(
