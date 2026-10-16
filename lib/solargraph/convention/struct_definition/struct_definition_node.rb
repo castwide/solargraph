@@ -28,23 +28,18 @@ module Solargraph
           #
           # @param node [Parser::AST::Node]
           def match? node
-            return false unless node&.type == :class
+            return false unless node in [:class, _, ::Parser::AST::Node | nil => superclass, *]
 
-            struct_definition_node?(node.children[1])
+            struct_definition_node?(superclass)
           end
 
           private
 
-          # @param struct_node [Parser::AST::Node]
+          # @param struct_node [Parser::AST::Node, nil]
           # @return [Boolean]
           def struct_definition_node? struct_node
-            return false unless struct_node.is_a?(::Parser::AST::Node)
-            return false unless struct_node&.type == :send
-            return false unless struct_node.children[0]&.type == :const
-            return false unless struct_node.children[0].children[1] == :Struct
-            return false unless struct_node.children[1] == :new
-
-            true
+            # Struct.new(*args) - s(:send, s(:const, scope, :Struct), :new, *args)
+            struct_node in ::Parser::AST::Node[:send, [:const, _, :Struct, *], :new, *]
           end
         end
 
@@ -61,25 +56,25 @@ module Solargraph
         # @return [Array<Array(Parser::AST::Node, String)>]
         def attributes
           struct_attribute_nodes.map do |struct_def_param|
-            next unless struct_def_param.type == :sym
-            [struct_def_param, struct_def_param.children[0].to_s]
+            next unless struct_def_param in [:sym, Symbol => name]
+
+            [struct_def_param, name.to_s]
           end.compact
         end
 
         def keyword_init?
+          # keyword_init: true - s(:hash, s(:pair, s(:sym, :keyword_init), s(:true)), *pairs)
           keyword_init_param = struct_attribute_nodes.find do |struct_def_param|
-            struct_def_param.type == :hash && struct_def_param.children[0].type == :pair &&
-              struct_def_param.children[0].children[0].children[0] == :keyword_init
+            struct_def_param in [:hash, [:pair, [_, :keyword_init, *], _], *]
           end
 
-          return false if keyword_init_param.nil?
-
-          keyword_init_param.children[0].children[1].type == :true
+          keyword_init_param in [:hash, [:pair, _, [:true, *]], *]
         end
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def body_node
-          node.children[2]
+          # s(:class, name, superclass, body)
+          (node in [_, _, _, ::Parser::AST::Node | nil => body, *]) ? body : nil # rubocop:disable Style/RedundantParentheses
         end
 
         private
@@ -87,15 +82,16 @@ module Solargraph
         # @return [Parser::AST::Node]
         attr_reader :node
 
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def struct_node
-          node.children[1]
+          (node in [_, _, ::Parser::AST::Node | nil => superclass, *]) ? superclass : nil # rubocop:disable Style/RedundantParentheses
         end
 
         # @sg-ignore Need to add nil check here
         # @return [Array<Parser::AST::Node>]
         def struct_attribute_nodes
-          struct_node.children[2..-1]
+          struct_node => [_, _, _, *args]
+          args
         end
       end
     end

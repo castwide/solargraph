@@ -8,10 +8,14 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # s(:block, call, args, body)
+            node => [:block, ::Parser::AST::Node => call, *]
+
             location = get_node_location(node)
             scope = region.scope || region.closure.context.scope
-            if other_class_eval?
-              clazz_name = unpack_name(node.children[0].children[0])
+            # Foo.class_eval { ... } - s(:send, s(:const, ...), :class_eval, *args)
+            if call in [:send, ::Parser::AST::Node[:cbase | :const, *] => clazz, :class_eval, *]
+              clazz_name = unpack_name(clazz)
               # instance variables should come from the Class<T> type
               # - i.e., treated as class instance variables
               context = ComplexType.try_parse("Class<#{clazz_name}>")
@@ -22,21 +26,13 @@ module Solargraph
               closure: region.closure,
               node: node,
               context: context,
-              receiver: node.children[0],
+              receiver: call,
               comments: comments_for(node),
               scope: scope,
               source: :parser
             )
             pins.push block_pin
             process_children region.update(closure: block_pin)
-          end
-
-          private
-
-          def other_class_eval?
-            node.children[0].type == :send &&
-              node.children[0].children[1] == :class_eval &&
-              %i[cbase const].include?(node.children[0].children[0]&.type)
           end
         end
       end

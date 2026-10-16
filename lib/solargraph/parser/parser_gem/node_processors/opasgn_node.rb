@@ -9,14 +9,15 @@ module Solargraph
         class OpasgnNode < Parser::NodeProcessor::Base
           # @return [void]
           def process
-            target = node.children[0]
-            operator = node.children[1]
-            argument = node.children[2]
+            # s(:op_asgn, target, operator, argument)
+            node => [:op_asgn,
+                     ::Parser::AST::Node => target,
+                     Symbol => operator,
+                     ::Parser::AST::Node => argument]
+
             if target.type == :send
-              # @sg-ignore Need a downcast here
               process_send_target(target, operator, argument)
             elsif target.type.to_s.end_with?('vasgn')
-              # @sg-ignore Need a downcast here
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
@@ -39,8 +40,8 @@ module Solargraph
             #      :+, # operator
             #      s(:send, nil, :baz)) # argument
             # [11] pry(main)>
-            callee = call.children[0]
-            call_method = call.children[1]
+            call => [:send, ::Parser::AST::Node | nil => callee, Symbol => call_method, *]
+
             asgn_method = :"#{call_method}="
 
             # [8] pry(main)> Parser::CurrentRuby.parse("Foo.bar = Foo.bar + baz")
@@ -71,8 +72,9 @@ module Solargraph
             #      :+, # operator
             #      s(:int, 2)) # argument
 
-            # @type [Parser::AST::Node]
-            variable_name = asgn.children[0]
+            # only reached for lvasgn, ivasgn, cvasgn and gvasgn targets
+            asgn => [_, Symbol => variable_name, *]
+
             # for lvasgn, gvasgn, cvasgn, convert to lvar, gvar, cvar
             # [6] pry(main)> Parser::CurrentRuby.parse("a = a + 1")
             # => s(:lvasgn, :a,
