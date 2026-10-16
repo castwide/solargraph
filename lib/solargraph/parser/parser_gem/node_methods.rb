@@ -156,7 +156,8 @@ module Solargraph
           return {} unless Parser.is_ast_node?(node)
           # @sg-ignore https://github.com/castwide/solargraph/pull/1396
           return convert_hash(node.children[0]) if node.type == :kwsplat
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+          #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
           if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
             # @sg-ignore https://github.com/castwide/solargraph/pull/1396
             return convert_hash(node.children[0])
@@ -217,7 +218,8 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if node.type == :block
             result.push node
-            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+            #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
             if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
               # @sg-ignore child node types depend on parent node type
               node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }

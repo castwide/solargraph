@@ -254,7 +254,8 @@ module Solargraph
         params.each do |p|
           return p if p.name == name
         end
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
       end
 

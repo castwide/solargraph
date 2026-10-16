@@ -187,9 +187,11 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+      #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
       def require_parameter?
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         links.last.is_a?(Chain::Parameter) && links.last.require_parameter?
       end
 

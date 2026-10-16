@@ -263,14 +263,17 @@ module Solargraph
           return closure || other.closure
         end
 
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         if closure.location.nil? || other.closure.location.nil?
-          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+          #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
           return closure.location.nil? ? other.closure : closure
         end
 
         # if filenames are different, this will just pick one
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         return closure if closure.location <= other.closure.location
 
         other.closure

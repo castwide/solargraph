@@ -40,7 +40,8 @@ module Solargraph
         end
         return ComplexType::UNDEFINED if closure.nil?
         return ComplexType::UNDEFINED unless closure.is_a?(Pin::Method)
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         # @type [Array<Pin::Method>]
         method_stack = closure.rest_of_stack api_map
         logger.debug { "Signature#typify(self=#{self}) - method_stack: #{method_stack}" }

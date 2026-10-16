@@ -112,7 +112,8 @@ module Solargraph
           message
         elsif request['id']
           if requests[request['id']]
-            # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+            #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
             requests[request['id']].process(request['result'])
             requests.delete request['id']
           else
@@ -706,9 +707,11 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+      #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
       def client_supports_progress?
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
@@ -742,7 +745,8 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
@@ -863,9 +867,11 @@ module Solargraph
       end
 
       # @return [Boolean]
-      # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+      #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
       def prepare_rename?
-        # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         client_capabilities['rename'] && client_capabilities['rename']['prepareSupport']
       end
 
