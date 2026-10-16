@@ -90,6 +90,7 @@ module Solargraph
           in [:super, *]
             # s(:super, *args) - every argument is a node
             args = n.children.map do |child|
+              # raises NoMatchingPatternError on a non-node child
               child => ::Parser::AST::Node => c
               NodeChainer.chain(c, @filename, n)
             end
@@ -97,6 +98,7 @@ module Solargraph
           in [:yield, *]
             # s(:yield, *args) - every argument is a node
             args = n.children.map do |child|
+              # raises NoMatchingPatternError on a non-node child
               child => ::Parser::AST::Node => c
               NodeChainer.chain(c, @filename, n)
             end
@@ -154,6 +156,7 @@ module Solargraph
           in [:array, *]
             # s(:array, *elements) - every element is a node
             chained_children = n.children.map do |child|
+              # raises NoMatchingPatternError on a non-node child
               child => ::Parser::AST::Node => c
               NodeChainer.chain(c)
             end

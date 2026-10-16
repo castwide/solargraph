@@ -13,6 +13,7 @@ module Solargraph
               else
                 node.children.each do |child|
                   # s(:args, *params) - every parameter is a node
+                  # raises NoMatchingPatternError on a non-node child
                   child => ::Parser::AST::Node => u
                   # s(:arg, name), s(:optarg, name, default), s(:restarg) for an anonymous splat,
                   # or s(:mlhs, *args) for |(a, b)|

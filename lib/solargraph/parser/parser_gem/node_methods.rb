@@ -132,6 +132,7 @@ module Solargraph
           return [] unless Parser.is_ast_node?(node) && node.type == :array
           # s(:array, *elements) - every element is a node
           node.children.compact.map do |child|
+            # raises NoMatchingPatternError on a non-node child
             child => ::Parser::AST::Node => c
             simple_convert(c)
           end
