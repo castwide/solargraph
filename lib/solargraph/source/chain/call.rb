@@ -365,8 +365,19 @@ module Solargraph
           return [Pin::ProxyType.anonymous(ComplexType::UNDEFINED, source: :chain)] if name.nil?
 
           namespace = block_pin.namespace
-          pins = api_map.get_method_stack(namespace, name, scope: :instance)
+          pins = api_map.get_method_stack(namespace, name, scope: define_method_scope(block_pin))
           pins.reject { |p| p.namespace == namespace }
+        end
+
+        # define_method inside `class << self` defines a class method
+        #
+        # @param pin [Pin::Base, nil] The define_method block or a closure around it
+        # @return [Symbol]
+        def define_method_scope pin
+          return :instance if pin.nil? || pin.is_a?(Pin::Namespace)
+          return :class if pin.is_a?(Pin::Singleton)
+
+          define_method_scope(pin.closure)
         end
 
         # The innermost enclosing block passed to define_method

@@ -1084,5 +1084,30 @@ describe Solargraph::TypeChecker do
       ))
       expect(checker.problems.map(&:message)).to eq(['Unresolved call to super'])
     end
+
+    it 'resolves super inside define_method in a singleton class as a class method' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          def self.bar
+            'bar'
+          end
+
+          # @return [Integer]
+          def bar
+            1
+          end
+        end
+
+        class Baz < Foo
+          class << self
+            define_method(:bar) do
+              super().foo
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to foo on String'])
+    end
   end
 end
