@@ -103,6 +103,7 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd, chdir: directory)
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
