@@ -517,8 +517,8 @@ module Solargraph
                 #   scope in which the proc is run.  This asssumes
                 #   that the function is executed here.
                 # s(:block, call, args, body)
-                if include_explicit_returns && (node in [_, _, _, ::Parser::AST::Node => body, *])
-                  result.concat explicit_return_values_from_compound_statement(body)
+                if include_explicit_returns && (node in [_, _, _, ::Parser::AST::Node => block_body, *])
+                  result.concat explicit_return_values_from_compound_statement(block_body)
                 end
               elsif CASE_STATEMENT.include?(node.type)
                 # s(:case, subject, *whens, else)
