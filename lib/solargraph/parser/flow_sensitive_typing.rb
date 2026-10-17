@@ -223,7 +223,9 @@ module Solargraph
         when_nodes = case_node.children[1..].compact.select { |child| child.type == :when }
         # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
         when_nodes.each do |when_node|
-          *value_nodes, body_node = when_node.children
+          # The last child is the body; the rest are the 'when' values
+          value_nodes = when_node.children.dup
+          body_node = value_nodes.pop
           next if body_node.nil?
 
           type_names = value_nodes.map { |value_node| type_name(value_node) }
