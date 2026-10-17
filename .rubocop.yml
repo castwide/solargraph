@@ -14,12 +14,12 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   NewCops: enable
   Exclude:
-    - "spec/fixtures/invalid_byte.rb"
-    - "spec/fixtures/invalid_node_comment.rb"
-    - "spec/fixtures/invalid_utf8.rb"
+    - "spec/fixtures/invalid_*.rb"
     - "spec/fixtures/gem-with-yard-macros/**/*"
     - "vendor/**/*"
     - "vendor/**/.*"
+    - ".claude/**/*"
+    - ".cursor/**/*"
   TargetRubyVersion: 3.1
 
 Gemspec/RequiredRubyVersion:
