@@ -245,7 +245,7 @@ module Solargraph
         return results.first if results.any? { |r| r.is_a? AST::Node }
         results.min
       rescue StandardError
-        warn("Problem handling #{attr} for \n#{inspect}\n and \n#{other.inspect}\n\n#{send(attr).inspect} vs #{other.send(attr).inspect}")
+        logger.warn("Problem handling #{attr} for \n#{inspect}\n and \n#{other.inspect}\n\n#{send(attr).inspect} vs #{other.send(attr).inspect}")
         raise
       end
 
