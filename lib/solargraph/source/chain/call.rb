@@ -220,6 +220,10 @@ module Solargraph
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
               break if type.defined?
             end
+            # RBS types slice args as Range[Integer]; Range has one type
+            # parameter shared by both ends, so no overload can match only
+            # ranges starting at 0, and the signatures must return nil.
+            # Narrow here when the argument is a 0-start Range literal.
             type = type.without_nil if type.nullable? && SLICE_METHOD_PATHS.include?(p.path) && zero_start_range_arg?
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
