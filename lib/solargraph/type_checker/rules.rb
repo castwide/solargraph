@@ -76,11 +76,11 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (97):
+      # flow sensitive typing could handle (99):
       #
       # @todo 30: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
-      # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
+      # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 10: flow sensitive typing ought to be able to handle 'when ClassName'
       # @todo 9: flow sensitive typing should support .class == .class

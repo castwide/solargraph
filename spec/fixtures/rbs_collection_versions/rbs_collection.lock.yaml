@@ -1,0 +1,20 @@
+---
+path: ".gem_rbs_collection"
+gems:
+- name: collection_version_fixture
+  version: '6.0'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: 3fd6f8f6b3f8617e6929310cc8af3027028a4f09
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+- name: collection_version_fixture
+  version: '7.1'
+  source:
+    type: git
+    name: ruby/gem_rbs_collection
+    revision: 3fd6f8f6b3f8617e6929310cc8af3027028a4f09
+    remote: https://github.com/ruby/gem_rbs_collection.git
+    repo_dir: gems
+gemfile_lock_path: Gemfile.lock

@@ -141,6 +141,8 @@ module Solargraph
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
+      # An unresolvable DelegatedMethod's type comes from its @!method directive, not a @return tag.
+      return [] if pin.is_a?(Pin::DelegatedMethod) && !pin.resolvable?(api_map)
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.gates)
       if declared.undefined?
@@ -408,7 +410,8 @@ module Solargraph
           pin_ignored = ignored_pins.include?(found)
 
           if (no_pin_found || found_a_variable || checkable_receiver) && !receiver_undecided && !pin_ignored
-            if closest.defined?
+            # An empty union is defined but names no receiver to report.
+            if closest.defined? && all_closest.any?
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
