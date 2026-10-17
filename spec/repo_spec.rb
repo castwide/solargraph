@@ -30,6 +30,13 @@ describe Solargraph::Repo do
       meta = repo.find_by_path('backport/machine')
       expect(meta.name).to eq('backport')
     end
+
+    it 'finds loaded gems outside the gems directory by path' do
+      repo = described_class.new(directory)
+      # The spec helper's bundle loads Solargraph from a path source
+      meta = repo.find_by_path('solargraph/version')
+      expect(meta.name).to eq('solargraph')
+    end
   end
 
   context 'with a bundle' do
