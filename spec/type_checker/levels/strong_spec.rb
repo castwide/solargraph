@@ -1043,7 +1043,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
-    it 'passes a narrowed local assigned from a bare accessor to a non-nil param, guarded by .nil?' do
+    it 'accepts a local copied from a .nil?-guarded bare accessor as a non-nil argument' do
       checker = type_checker(%(
         class Repro
           # @return [Array<Hash>, nil]
@@ -1066,7 +1066,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'passes a narrowed local assigned from a bare accessor to a non-nil param, guarded by a non-nil return' do
+    it 'accepts a local copied from a bare accessor guarded by a non-nil return as a non-nil argument' do
       checker = type_checker(%(
         class Repro
           # @return [Array<Hash>, nil]
