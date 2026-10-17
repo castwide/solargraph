@@ -270,12 +270,15 @@ module Solargraph
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
-        if call_receiver&.type == :send && call_receiver.children[0].nil? && call_receiver.children[1].is_a?(Symbol)
-          variable_name = call_receiver.children[1].to_s
+        # @sg-ignore flow sensitive typing needs better guard support
+        if call_receiver&.type == :send && call_receiver.children.fetch(0).nil? && call_receiver.children.fetch(1).is_a?(Symbol)
+          # @sg-ignore flow sensitive typing needs better guard support
+          variable_name = call_receiver.children.fetch(1).to_s
         end
         # or like this:
         # (lvar :repr)
-        variable_name = call_receiver.children[0].to_s if %i[lvar ivar].include?(call_receiver&.type)
+        # @sg-ignore flow sensitive typing needs better guard support
+        variable_name = call_receiver.children.fetch(0).to_s if %i[lvar ivar].include?(call_receiver&.type)
         return unless variable_name
 
         [call_arg, variable_name]
@@ -433,13 +436,13 @@ module Solargraph
         process_facts(if_false, false_presences)
       end
 
-      # @param node [Parser::AST::Node]
+      # @param node [Parser::AST::Node, nil]
       #
       # @return [String, nil]
       def type_name node
         # e.g.,
         #  s(:const, nil, :Baz)
-        return unless node&.type == :const
+        return if node.nil? || node.type != :const
         # @type [Parser::AST::Node, nil]
         module_node = node.children[0]
         # @type [Parser::AST::Node, nil]

@@ -11,7 +11,8 @@ module Solargraph
         # @param starting_line [Integer] must be provided so that we
         #   can find relevant local variables later even if this is just
         #   a subset of the file in question
-        # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet})]
+        # @return [Array(Parser::AST::Node, Hash{Integer => Solargraph::Parser::Snippet}),
+        #   Array(nil, Hash{Integer => Solargraph::Parser::Snippet})]
         def parse_with_comments code, filename = nil, starting_line = 0
           node = parse(code, filename, starting_line)
           comments = CommentRipper.new(code, filename, 0).parse
@@ -21,8 +22,7 @@ module Solargraph
         # @param code [String]
         # @param filename [String, nil]
         # @param starting_line [Integer]
-        # @sg-ignore need to understand that raise does not return
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil] nil when the code has no expressions
         def parse code, filename = nil, starting_line = 0
           buffer = ::Parser::Source::Buffer.new(filename, starting_line)
           buffer.source = code
@@ -57,20 +57,27 @@ module Solargraph
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { reg.match(code, offset).offset(0) }
+            extract_offset = lambda do |code, offset|
+              match = reg.match(code, offset)
+              match ? match.offset(0) : [nil, nil]
+            end
           else
             # @param code [String]
             # @param offset [Integer]
             # @return [Array(Integer, Integer), Array(nil, nil)]
-            # @sg-ignore Need to add nil check here
-            extract_offset = ->(code, offset) { [soff = code.index(name, offset), soff + name.length] }
+            extract_offset = lambda do |code, offset|
+              soff = code.index(name, offset)
+              soff ? [soff, soff + name.length] : [nil, nil]
+            end
           end
-          inner_node_references(name, source.node).map do |n|
+          inner_node_references(name, source.node).filter_map do |n|
             rng = Range.from_node(n)
             # @sg-ignore Need to add nil check here
             offset = Position.to_offset(source.code, rng.start)
             soff, eoff = extract_offset[source.code, offset]
+            # Operator calls like foo[0] do not spell the method name
+            next unless soff && eoff
+
             Location.new(
               source.filename,
               Range.new(

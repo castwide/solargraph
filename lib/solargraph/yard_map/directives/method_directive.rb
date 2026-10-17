@@ -19,7 +19,8 @@ module Solargraph
           begin
             src = Solargraph::Source.load_string("def #{directive.tag.name};end", source.filename)
             region = Parser::Region.new(source: src, closure: namespace)
-            method_gen_pins = Parser.process_node(src.node, region).first.select { |pin| pin.is_a?(Pin::Method) }
+            pins_from_directive, = Parser.process_node(src.node, region)
+            method_gen_pins = pins_from_directive.select { |pin| pin.is_a?(Pin::Method) }
             gen_pin = method_gen_pins.last
             return [] if gen_pin.nil?
             # Move the location to the end of the line so it gets recognized

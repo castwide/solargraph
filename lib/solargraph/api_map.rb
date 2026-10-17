@@ -719,8 +719,7 @@ module Solargraph
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
-        # @sg-ignore Need to add nil check here
-        next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
+        next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved&.visibility)
         resolved
       end.compact
       logger.debug do
@@ -837,6 +836,8 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
             in_tag = dereference(ref)
+            next if in_tag.nil?
+
             # @sg-ignore Need to add nil check here
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
@@ -991,11 +992,12 @@ module Solargraph
       resolved_pin
     end
 
-    # @param namespace_pin [Pin::Namespace]
+    # @param namespace_pin [Pin::Base, nil]
     # @param rooted_type [ComplexType]
     # @param pins [Enumerable<Pin::Base>]
     # @return [Array<Pin::Base>]
     def erase_generics namespace_pin, rooted_type, pins
+      return pins unless namespace_pin.is_a?(Pin::Namespace)
       return pins unless should_erase_generics_when_done?(namespace_pin, rooted_type)
 
       logger.debug("Erasing generics on namespace_pin=#{namespace_pin} / rooted_type=#{rooted_type}")

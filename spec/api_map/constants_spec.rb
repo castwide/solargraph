@@ -173,4 +173,23 @@ describe Solargraph::ApiMap::Constants do
       expect(collected).to eq(['Foo::Bar::Baz'])
     end
   end
+
+  describe '#qualify_namespace' do
+    let(:constants) do
+      source_map = Solargraph::SourceMap.load_string(%(
+        module Foo
+          module Bar; end
+        end
+      ), 'test.rb')
+      described_class.new(Solargraph::ApiMap::Store.new(source_map.pins))
+    end
+
+    it 'qualifies a rooted namespace from the top level' do
+      expect(constants.send(:qualify_namespace, '::Foo::Bar', 'Foo')).to eq('Foo::Bar')
+    end
+
+    it 'qualifies a relative namespace from its context' do
+      expect(constants.send(:qualify_namespace, 'Bar', 'Foo')).to eq('Foo::Bar')
+    end
+  end
 end

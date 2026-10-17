@@ -207,8 +207,7 @@ module Solargraph
       # @param other [Object]
       def == other
         return false unless super
-        # @sg-ignore Should add type check on other
-        assignment == other.assignment
+        other.is_a?(BaseVariable) && assignment == other.assignment
       end
 
       def type_desc

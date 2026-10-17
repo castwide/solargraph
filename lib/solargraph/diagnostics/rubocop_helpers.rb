@@ -25,7 +25,7 @@ module Solargraph
           specs = e.specs
           raise InvalidRubocopVersionError,
                 "could not find '#{e.name}' (#{e.requirement}) - " \
-                "did find: [#{specs.map { |s| s.version.version }.join(', ')}]"
+                "did find: [#{specs.map { |s| s.version.to_s }.join(', ')}]"
         end
         require 'rubocop'
       end
@@ -51,8 +51,7 @@ module Solargraph
       # @return [String]
       def fix_drive_letter path
         return path unless path.match(/^[a-z]:/)
-        # @sg-ignore Need to add nil check here
-        path[0].upcase + path[1..]
+        path.sub(/\A[a-z]/, &:upcase)
       end
 
       # @todo This is a smelly way to redirect output, but the RuboCop specs do

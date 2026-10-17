@@ -35,6 +35,25 @@ describe Solargraph::LanguageServer::Message::Extended::CheckGemVersion do
     expect { message.process }.not_to raise_error
   end
 
+  it 'reports an unreachable gem source instead of crashing' do
+    fetcher = instance_double(Gem::SpecFetcher)
+    allow(fetcher).to receive(:search_for_dependency).and_raise(Errno::EADDRNOTAVAIL)
+    described_class.fetcher = fetcher
+    host = Solargraph::LanguageServer::Host.new
+    message = described_class.new(host, { 'params' => { 'verbose' => true } })
+    message.process
+    expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+  end
+
+  it 'reports an empty gem source response instead of crashing' do
+    described_class.fetcher = instance_double(Gem::SpecFetcher, search_for_dependency: [])
+    host = Solargraph::LanguageServer::Host.new
+    message = described_class.new(host, { 'params' => { 'verbose' => true } })
+    message.process
+    expect(message.result).to eq({ installed: Gem::Version.new(Solargraph::VERSION), available: Gem::Version.new('0.0.0') })
+    expect(host.flush).to include('An error occurred fetching the gem data')
+  end
+
   it 'responds to update actions' do
     host = Solargraph::LanguageServer::Host.new
     message = described_class.new(host, {}, current: Gem::Version.new('0.0.1'))

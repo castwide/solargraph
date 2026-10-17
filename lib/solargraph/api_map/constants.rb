@@ -31,17 +31,13 @@ module Solargraph
       # @return [String, nil] fully qualified namespace (i.e., is
       #   absolute, but will not start with ::)
       def resolve(name, *gates)
-        # @sg-ignore Need to add nil check here
-        return store.get_path_pins(name[2..]).first&.path if name.start_with?('::')
+        return store.get_path_pins(name.delete_prefix('::')).first&.path if name.start_with?('::')
 
         flat = gates.flatten
         flat.push '' if flat.empty?
-        if cached_resolve.include? [name, flat]
-          cached_result = cached_resolve[[name, flat]]
-          # don't recurse
-          return nil if cached_result == :in_process
-          return cached_result
-        end
+        return cached_resolve[[name, flat]] if cached_resolve.include? [name, flat]
+        # don't recurse
+        return nil if in_process.include? [name, flat]
         resolve_and_cache(name, flat)
       end
 
@@ -98,7 +94,7 @@ module Solargraph
 
       # @return [void]
       def clear
-        [cached_collect, cached_resolve].each(&:clear)
+        [cached_collect, cached_resolve, in_process].each(&:clear)
       end
 
       private
@@ -111,8 +107,10 @@ module Solargraph
       # @sg-ignore flow sensitive typing should be able to handle redefinition
       # @return [String, nil]
       def resolve_and_cache name, gates
-        cached_resolve[[name, gates]] = :in_process
+        in_process.add [name, gates]
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
+      ensure
+        in_process.delete [name, gates]
       end
 
       # @param name [String]
@@ -188,9 +186,16 @@ module Solargraph
         end
       end
 
-      # @return [Hash{Array(String, Array<String>) => String, :in_process, nil}]
+      # @return [Hash{Array(String, Array<String>) => String, nil}]
       def cached_resolve
         @cached_resolve ||= {}
+      end
+
+      # Keys whose resolution is underway, so recursion stops
+      #
+      # @return [Set<Array(String, Array<String>)>]
+      def in_process
+        @in_process ||= Set.new
       end
 
       # @return [Hash{Array<String> => Array<Solargraph::Pin::Namespace, Solargraph::Pin::Constant>}]
@@ -210,8 +215,7 @@ module Solargraph
       # @return [String, nil] fully qualified namespace
       def qualify_namespace namespace, context_namespace = ''
         if namespace.start_with?('::')
-          # @sg-ignore Need to add nil check here
-          inner_qualify(namespace[2..], '', Set.new)
+          inner_qualify(namespace.delete_prefix('::'), '', Set.new)
         else
           inner_qualify(namespace, context_namespace, Set.new)
         end

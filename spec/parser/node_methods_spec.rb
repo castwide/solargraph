@@ -12,6 +12,11 @@ describe Solargraph::Parser::NodeMethods do
     expect(described_class.unpack_name(ast)).to eq 'Foo::Bar'
   end
 
+  it 'drills signatures from constant and call chains' do
+    expect(described_class.drill_signature(parse('Foo::Bar'), '')).to eq 'Foo::Bar'
+    expect(described_class.drill_signature(parse('@foo.bar.baz'), '')).to eq '@foo.bar.baz'
+  end
+
   it 'infers literal strings' do
     ast = parse("x = 'string'")
     expect(described_class.infer_literal_node_type(ast.children[1])).to eq '::String'
