@@ -698,7 +698,12 @@ module Solargraph
       def infer_from_iv api_map
         types = []
         varname = "@#{name.gsub(/=$/, '')}"
-        pins = api_map.get_instance_variable_pins(binder.namespace, binder.scope).select { |iv| iv.name == varname }
+        # Pins with a presence are flow-sensitive narrowings scoped to
+        # part of one method, not assignments, so they don't describe
+        # what the attribute returns
+        pins = api_map.get_instance_variable_pins(binder.namespace, binder.scope).select do |iv|
+          iv.name == varname && iv.presence.nil?
+        end
         pins.each do |pin|
           type = pin.typify(api_map)
           type = pin.probe(api_map) if type.undefined?
