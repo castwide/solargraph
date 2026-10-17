@@ -97,13 +97,9 @@ module Solargraph
           elsif n.type == :zsuper
             result.push Chain::ZSuper.new('super')
           elsif n.type == :super
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('super', Location.from_node(n), args)
           elsif n.type == :yield
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('yield', Location.from_node(n), args)
           elsif n.type == :const
@@ -170,22 +166,14 @@ module Solargraph
               # anonymous block forwarding (e.g., "&")
               # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
               result.push Chain::BlockVariable.new(nil)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             elsif block_variable_name_node.type == :sym
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.push Chain::BlockSymbol.new(block_variable_name_node.children[0].to_s)
             else
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0]}")
             end
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.

@@ -23,14 +23,10 @@ module Solargraph
             #     s(:int, 3)))
             masgn = node
             # @type [Parser::AST::Node]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             mlhs = masgn.children.fetch(0)
             # @type [Array<Parser::AST::Node>]
             lhs_arr = mlhs.children
             # @type [Parser::AST::Node]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             mass_rhs = node.children.fetch(1)
 
             # Get pins created for the mlhs node

@@ -74,8 +74,6 @@ module Solargraph
           @processed_children = true
           node.children.each do |child|
             next unless Parser.is_ast_node?(child)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             NodeProcessor.process(child, subregion, pins, locals, ivars)
           end
         end

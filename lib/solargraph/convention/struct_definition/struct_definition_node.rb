@@ -42,8 +42,6 @@ module Solargraph
           def struct_definition_node? struct_node
             return false unless struct_node.is_a?(::Parser::AST::Node)
             return false unless struct_node&.type == :send
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             return false unless struct_node.children[0]&.type == :const
             # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             #   also needs https://github.com/castwide/solargraph/pull/1416

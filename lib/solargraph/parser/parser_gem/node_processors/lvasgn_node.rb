@@ -12,8 +12,6 @@ module Solargraph
             # @sg-ignore https://github.com/castwide/solargraph/pull/1399
             presence = Range.new(here, region.closure.location.range.ending)
             loc = get_node_location(node)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,

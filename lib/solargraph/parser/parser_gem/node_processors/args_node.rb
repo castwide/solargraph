@@ -12,27 +12,19 @@ module Solargraph
                 forward(callable)
               else
                 node.children.each do |u|
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   loc = get_node_location(u)
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,
                     comments: comments_for(node),
-                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                    #   also needs https://github.com/castwide/solargraph/pull/1416
                     name: u.children[0].to_s,
-                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                    #   also needs https://github.com/castwide/solargraph/pull/1416
                     assignment: u.children[1],
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                     #   also needs https://github.com/castwide/solargraph/pull/1416
                     asgn_code: u.children[1] ? region.code_for(u.children[1]) : nil,
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1399
                     presence: callable.location.range,
-                    # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                    #   also needs https://github.com/castwide/solargraph/pull/1416
                     decl: get_decl(u),
                     source: :parser
                   )

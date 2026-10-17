@@ -55,7 +55,6 @@ module Solargraph
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           binder = binder.without_nil if nullable?
           # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
           # @type [::Array<Pin::Base>]

@@ -7,8 +7,6 @@ module Solargraph
         class CvasgnNode < Parser::NodeProcessor::Base
           def process
             loc = get_node_location(node)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-            #   also needs https://github.com/castwide/solargraph/pull/1416
             pins.push Solargraph::Pin::ClassVariable.new(
               location: loc,
               closure: region.closure,
