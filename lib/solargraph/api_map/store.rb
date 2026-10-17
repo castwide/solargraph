@@ -319,7 +319,8 @@ module Solargraph
           end
         end
         @index = @indexes.last.clone
-        @index = index.merge(block.call) if block
+        # @sg-ignore Unresolved call to merge
+        @index = @index.merge(block.call) if block
         constants.clear
         cached_qualify_superclass.clear
         true
