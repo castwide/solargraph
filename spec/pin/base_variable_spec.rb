@@ -56,6 +56,14 @@ describe Solargraph::Pin::BaseVariable do
     expect(realized.return_type.all_rooted?).to be(true)
   end
 
+  it 'keeps the declared type when combined with a reassignment whose comments are longer' do
+    declared = Solargraph::Pin::LocalVariable.new(name: 'x', closure: Solargraph::Pin::ROOT_PIN,
+                                                  comments: '@type [Array<String>]')
+    reassigned = Solargraph::Pin::LocalVariable.new(name: 'x', closure: Solargraph::Pin::ROOT_PIN,
+                                                    comments: 'A comment longer than the type tag')
+    expect(declared.combine_with(reassigned).return_type.to_s).to eq('Array<String>')
+  end
+
   it "understands proc kwarg parameters aren't affected by @type" do
     code = %(
       # @return [Proc]
