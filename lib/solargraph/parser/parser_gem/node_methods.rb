@@ -58,7 +58,7 @@ module Solargraph
             return '::Symbol'
           elsif node.type == :regexp
             return '::Regexp'
-          elsif node.type == :irange
+          elsif %i[irange erange].include?(node.type)
             return '::Range'
           elsif %i[true false].include?(node.type)
             return '::Boolean'
@@ -261,7 +261,6 @@ module Solargraph
           position = cursor.position
           offset = cursor.offset
           tree = if source.synchronized?
-                   # @sg-ignore Need to add nil check here
                    match = source.code[0..(offset - 1)].match(/,\s*\z/)
                    if match
                      # @sg-ignore Need to add nil check here
