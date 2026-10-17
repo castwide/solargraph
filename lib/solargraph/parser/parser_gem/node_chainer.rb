@@ -186,6 +186,7 @@ module Solargraph
 
         # @param block_pass [Parser::AST::Node]
         # @return [Chain::Link]
+        # @sg-ignore return type could not be inferred
         def block_pass_link block_pass
           case block_pass
           in [_, [:sym, Symbol => symbol, *]]
