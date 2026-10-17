@@ -137,6 +137,33 @@ describe Solargraph::Shell do
     end
   end
 
+  context 'with a plugin configured in the workspace' do
+    let(:plugin_dir) { Dir.mktmpdir }
+
+    before do
+      File.write(File.join(plugin_dir, 'cache_probe_plugin.rb'), '')
+      File.write(File.join(temp_dir, '.solargraph.yml'), "plugins:\n  - cache_probe_plugin\n")
+      $LOAD_PATH.unshift plugin_dir
+    end
+
+    after do
+      $LOAD_PATH.delete plugin_dir
+      $LOADED_FEATURES.delete_if { |path| path.end_with?('cache_probe_plugin.rb') }
+      Solargraph::CacheDir.plugins.delete 'cache_probe_plugin'
+      FileUtils.rm_rf plugin_dir
+    end
+
+    it 'loads the plugin before caching' do
+      capture_both { described_class.new([], directory: temp_dir).cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads the plugin before uncaching' do
+      capture_both { described_class.new([], directory: temp_dir).uncache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
+    end
+  end
+
   describe 'cache' do
     it 'caches a stdlib gem without erroring out' do
       skip 'WIP'
