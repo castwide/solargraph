@@ -15,7 +15,6 @@ describe Solargraph::Source::Chain::Call do
   end
 
   it 'recognizes that the count overload of a core method is not nilable' do
-    pending 'https://github.com/castwide/solargraph/pull/1316'
     api_map = Solargraph::ApiMap.new
     source = Solargraph::Source.load_string(%(
       # @type [Array<String>]
