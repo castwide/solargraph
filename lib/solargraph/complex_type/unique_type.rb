@@ -302,7 +302,6 @@ module Solargraph
         rooted_tags
       end
 
-      # @sg-ignore sensitive typing needs to handle || on nil types
       # @return [String]
       def to_rbs
         if duck_type?
