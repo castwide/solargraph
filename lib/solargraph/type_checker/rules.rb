@@ -75,11 +75,11 @@ module Solargraph
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
       #
-      # flow sensitive typing could handle (96):
+      # flow sensitive typing could handle (99):
       #
       # @todo 36: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
-      # @todo 19: flow sensitive typing needs to narrow down type with an if is_a? check
+      # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
       # @todo 8: flow sensitive typing should support .class == .class
       # @todo 6: need boolish support for ? methods
@@ -113,6 +113,7 @@ module Solargraph
       # @todo 1: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: flow sensitive typing needs to eliminate literal from union with return if foo == :bar
+      # @todo 1: Array#flatten returns a bare Array
       def require_all_unique_types_match_expected?
         report?(:require_all_unique_types_match_expected, :strong)
       end
