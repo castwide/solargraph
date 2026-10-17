@@ -12,7 +12,7 @@ module Solargraph
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin,
-                                    name_pin: region.closure).process_while(node)
+                                    closure: region.closure).process_while(node)
 
             # Note - this should not be considered a block, as the
             # while statement doesn't create a closure - e.g.,

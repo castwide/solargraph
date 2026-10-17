@@ -9,14 +9,14 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param name_pin [Solargraph::Pin::Closure, nil] receiver of bare,
+      # @param closure [Solargraph::Pin::Closure, nil] receiver of bare,
       #   implicit-self calls like 'location'
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, name_pin: nil
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
-        @name_pin = name_pin
+        @closure = closure
       end
 
       # @param and_node [Parser::AST::Node]
@@ -444,11 +444,11 @@ module Solargraph
       # @param chain_words [::Array<String>] e.g. ['location', 'filename']
       # @return [Solargraph::Pin::LocalVariable, nil]
       def self_call_pin node, chain_words
-        return unless name_pin && self_rooted?(node)
+        return unless closure && self_rooted?(node)
 
         Pin::LocalVariable.new(
           location: Location.from_node(node),
-          closure: name_pin,
+          closure: closure,
           name: ['self', *chain_words].join('.'),
           assignment: node,
           source: :flow_sensitive_typing
@@ -665,7 +665,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :name_pin
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin, :closure
     end
   end
 end

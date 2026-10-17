@@ -14,7 +14,7 @@ module Solargraph
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin,
-                                    name_pin: region.closure).process_or(node)
+                                    closure: region.closure).process_or(node)
           end
         end
       end
