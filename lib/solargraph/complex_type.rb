@@ -367,7 +367,7 @@ module Solargraph
     def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
-      @items.first.erased_version_of?(other.items.first)
+      @items.fetch(0).erased_version_of?(other.items.fetch(0))
     end
 
     # every top-level type has resolved to be fully qualified; see
