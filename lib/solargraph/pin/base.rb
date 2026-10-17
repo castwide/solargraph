@@ -48,18 +48,17 @@ module Solargraph
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
                      docstring: nil, directives: nil, combine_priority: nil
+        preassign_ivars
+
         @location = location
         @type_location = type_location
         @closure = closure
         @name = name
         @comments = comments
         @source = source
-        @identity = nil
         @docstring = docstring
         @directives = directives
         @combine_priority = combine_priority
-        # @type [ComplexType, ComplexType::UniqueType, nil]
-        @binder = nil
 
         assert_source_provided
         assert_location_provided
@@ -730,6 +729,37 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # Memory optimization: Ruby 3.2 keeps a table of up to 8 ivar-assignment
+      # orders per class; once those run out, every object built afterward
+      # carries its own table, which can quadruple the size of each one.
+      #
+      # @return [void]
+      def preassign_ivars
+        preassign_common_ivars
+        preassign_conversions_ivars
+        preassign_documenting_ivars
+        @location = nil
+        @type_location = nil
+        @closure = nil
+        @name = ''
+        @comments = ''
+        @source = nil
+        @docstring = nil
+        @directives = nil
+        @combine_priority = nil
+        # @type [ComplexType, ComplexType::UniqueType, nil]
+        @binder = nil
+        @identity = nil
+        @return_type = nil
+        @gates = nil
+        @deprecated = nil
+        @proxied = false
+        @probed = false
+        @macros = nil
+        @macro_names = nil
+        @maybe_directives = nil
+      end
 
       # @return [void]
       def parse_comments

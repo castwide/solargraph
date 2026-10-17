@@ -295,6 +295,18 @@ module Solargraph
 
       private
 
+      # @return [void]
+      def preassign_ivars
+        super
+        @assignment = nil
+        # @type [::Array<::Parser::AST::Node>]
+        @assignments = []
+        @mass_assignment = nil
+        @presence = nil
+        @intersection_return_type = nil
+        @exclude_return_type = nil
+      end
+
       # @param api_map [ApiMap]
       # @param raw_return_type [ComplexType, ComplexType::UniqueType]
       #

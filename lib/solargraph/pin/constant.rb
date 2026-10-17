@@ -31,6 +31,12 @@ module Solargraph
 
       private
 
+      # @return [void]
+      def preassign_ivars
+        super
+        @visibility = :public
+      end
+
       # @return [ComplexType]
       def generate_complex_type
         tags = docstring.tags(:return).map(&:types).flatten.compact
