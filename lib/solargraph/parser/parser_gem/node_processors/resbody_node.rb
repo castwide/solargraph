@@ -11,7 +11,9 @@ module Solargraph
           def process
             rescue_body_node = node.children[2]
             rescue_body_cs = Solargraph::Pin::CompoundStatement.new(
-              location: rescue_body_node ? get_node_location(rescue_body_node) : nil,
+              # an empty clause has no body node; fall back to the
+              # clause itself, since SourceMap expects located pins
+              location: get_node_location(rescue_body_node || node),
               closure: region.closure,
               compound_statement: region.compound_statement,
               conditional: true,
