@@ -128,6 +128,82 @@ describe Solargraph::Pin::Method do
     expect(result.length).to eq(signatures.length)
   end
 
+  it 'merges a block signature that declares parameters with one that does not' do
+    plain_impl = Solargraph::SourceMap.load_string(%(
+      module Widgetbox
+        class << self
+          # @return [String]
+          def build(&block) = 'x'
+        end
+      end
+    ), 'widgetbox.rb')
+    parse_stub = Solargraph::SourceMap.load_string(%(
+      # @!parse
+      #   module Widgetbox
+      #     class << self
+      #       # @yieldparam config [String]
+      #       # @return [String]
+      #       def build(&block); end
+      #     end
+      #   end
+    ), 'annotations.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.catalog Solargraph::Bench.new(source_maps: [plain_impl, parse_stub])
+    method = api_map.get_method_stack('Widgetbox', 'build', scope: :class).first
+    expect(method.signatures.length).to eq(1)
+    expect(method.signatures.first.block.parameters.map(&:name)).to eq(['config'])
+  end
+
+  it 'merges a block signature with more declared parameters than one with fewer' do
+    fewer_params = Solargraph::SourceMap.load_string(%(
+      module Widgetbox
+        class << self
+          # @yieldparam a [String]
+          # @return [String]
+          def build(&block) = 'x'
+        end
+      end
+    ), 'widgetbox.rb')
+    more_params = Solargraph::SourceMap.load_string(%(
+      # @!parse
+      #   module Widgetbox
+      #     class << self
+      #       # @yieldparam a [String]
+      #       # @yieldparam b [Integer]
+      #       # @return [String]
+      #       def build(&block); end
+      #     end
+      #   end
+    ), 'annotations.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.catalog Solargraph::Bench.new(source_maps: [fewer_params, more_params])
+    method = api_map.get_method_stack('Widgetbox', 'build', scope: :class).first
+    expect(method.signatures.length).to eq(1)
+    expect(method.signatures.first.block.parameters.map(&:name)).to eq(%w[a b])
+  end
+
+  it 'combines RBS and YARD pins whose blocks have differently named closures' do
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+    location = Solargraph::Location.new('dsl.rb', Solargraph::Range.from_to(0, 0, 0, 0))
+    void = Solargraph::ComplexType.parse('void')
+    namespace = Solargraph::Pin::Namespace.new(name: 'Dsl', type: :module, source: :rbs, location: location)
+    # RBS conversions close a block over its method; YARD closes it over its signature
+    rbs_pin = described_class.new(name: 'file', closure: namespace, source: :rbs, location: location)
+    rbs_block = Solargraph::Pin::Signature.new(closure: rbs_pin, source: :rbs, location: location, return_type: void)
+    rbs_pin.signatures = [Solargraph::Pin::Signature.new(block: rbs_block, closure: rbs_pin, source: :rbs,
+                                                         location: location, return_type: void)]
+    yard_pin = described_class.new(name: 'file', closure: namespace, source: :yardoc, location: location,
+                                   parameters: [])
+    yard_pin.parameters = [Solargraph::Pin::Parameter.new(name: 'block', decl: :blockarg, closure: yard_pin,
+                                                          source: :yardoc, location: location)]
+
+    combined = rbs_pin.combine_with(yard_pin)
+    expect(combined.signatures.map { |sig| sig.block&.parameters }).to eq([[]])
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
   it 'does not merge with changes in parameters' do
     # @todo Method pin parameters are pins now
     pin1 = described_class.new(name: 'bar', parameters: %w[one two])
@@ -785,5 +861,13 @@ describe Solargraph::Pin::Method do
       pin = api_map.get_path_pins('#foo').first
       expect { pin.signatures }.not_to raise_error
     end
+  end
+
+  it 'typifies a closureless DuckMethod pin as String via Object#to_s' do
+    api_map = Solargraph::ApiMap.new
+    pin = Solargraph::Pin::DuckMethod.new(name: 'to_s', source: :api_map)
+    expect(pin.closure).to be_nil
+    expect(pin.return_type).to be_undefined
+    expect(pin.typify(api_map).rooted_tags).to eq('::String')
   end
 end
