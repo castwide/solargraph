@@ -90,4 +90,17 @@ describe Solargraph::Pin::Base do
       expect { pin1.nearly?(pin2) }.not_to raise_error
     end
   end
+
+  describe '#closure!' do
+    it 'returns the closure when one is set' do
+      closure = Solargraph::Pin::Namespace.new(name: 'Foo')
+      pin = described_class.new(name: 'bar', closure: closure)
+      expect(pin.closure!).to eq(closure)
+    end
+
+    it 'raises when the pin has no closure' do
+      pin = described_class.new(name: 'bar')
+      expect { pin.closure! }.to raise_error(RuntimeError, /No closure set/)
+    end
+  end
 end
