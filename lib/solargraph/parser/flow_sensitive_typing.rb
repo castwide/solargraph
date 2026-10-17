@@ -190,6 +190,43 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # @param until_node [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      # @param false_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_until until_node, true_ranges = [], false_ranges = []
+        return if until_node.type != :until
+
+        # [3] pry(main)> Parser::CurrentRuby.parse("until a; b; c; end")
+        # => s(:until,
+        #   s(:send, nil, :a),
+        #   s(:begin,
+        #     s(:send, nil, :b),
+        #     s(:send, nil, :c)))
+        # [4] pry(main)>
+        conditional_node = until_node.children[0]
+        return if conditional_node.nil?
+
+        # @type [Parser::AST::Node, nil]
+        do_clause = until_node.children[1]
+
+        unless do_clause.nil?
+          #
+          # The do clause runs only while the condition is false, so
+          # the condition's false facts hold throughout it.  Nothing
+          # is asserted after the loop - the body may run zero times,
+          # and a break can leave it with the condition still false.
+          #
+          before_do_clause_loc = do_clause.location.expression.adjust(begin_pos: -1)
+          before_do_clause_pos = Position.new(before_do_clause_loc.line, before_do_clause_loc.column)
+          false_ranges << Range.new(before_do_clause_pos,
+                                    get_node_end_position(do_clause))
+        end
+
+        process_expression(conditional_node, true_ranges, false_ranges)
+      end
+
       class << self
         include Logging
       end
