@@ -631,22 +631,18 @@ module Solargraph
                   result.concat from_value_position_compound_statement(node)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   node => [_, _, *branches]
                   result.concat reduce_to_value_nodes(branches)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :return
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
                   result.concat reduce_to_value_nodes([returned])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   body = (node in [_, _, _, ::Parser::AST::Node | nil => block_body, *]) ? block_body : nil # rubocop:disable Style/RedundantParentheses
-                  result.concat explicit_return_values_from_compound_statement(body)
+                  result.concat explicit_return_values_from_compound_statement(body) unless body.nil?
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   body = (node in [_, _, _, ::Parser::AST::Node | nil => resbody_body, *]) ? resbody_body : nil # rubocop:disable Style/RedundantParentheses
                   result.concat reduce_to_value_nodes([body])
                 else
