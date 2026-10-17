@@ -1492,6 +1492,27 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
+  it 'drops attr_reader narrowing once the attribute is written through safe navigation' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_accessor :location
+      end
+
+      # @param pin [Pin]
+      def scan(pin)
+        return nil unless pin.location
+        pin&.location = nil
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]

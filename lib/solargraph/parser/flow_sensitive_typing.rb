@@ -290,7 +290,8 @@ module Solargraph
         self_ivar = words.first == 'self' && variable == "@#{words[1]}"
         return variable == words.first || self_ivar if target.type == :ivasgn
         return words.first == variable if target.type == :lvasgn
-        return false unless target.type == :send
+        # e.g. 'pin.location = x' or 'pin&.location = x'
+        return false unless %i[send csend].include?(target.type)
 
         name = target.children[1].to_s
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
