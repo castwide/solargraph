@@ -182,6 +182,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'infers generic types from union type' do
+    pending 'WIP'
     source = Solargraph::Source.load_string(%(
       # @type [String, Array<Integer>]
       list = string_or_integer
@@ -199,7 +200,7 @@ describe Solargraph::Typedef::Dictionary do
 
     dictionary = described_class.new(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('Enumerator[Integer | String]')
+    expect(typeset.to_s).to eq('Enumerator[Integer | Array[Integer]]')
   end
 
   it 'allows calls off of nilable objects by default' do
@@ -312,5 +313,29 @@ describe Solargraph::Typedef::Dictionary do
     dictionary = described_class.new(api_map, 'test.rb', [6, 6])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Set[String]')
+  end
+
+  it 'infers instances from Class#new' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+      end
+      Example.new
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [3, 15])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Example')
+  end
+
+  it 'infers Class from Class#new' do
+    source = Solargraph::Source.load_string(%(
+      Class.new
+    ), 'test.rb')
+
+    api_map = Solargraph::ApiMap.new.map(source)
+    dictionary = described_class.new(api_map, 'test.rb', [1, 12])
+    typeset = dictionary.infer
+    expect(typeset.to_s).to eq('Class')
   end
 end

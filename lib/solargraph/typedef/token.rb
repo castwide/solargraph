@@ -14,7 +14,21 @@ module Solargraph
 
       def expand named_values
         return self unless named_values[name]
-        Typedef.tokenize(named_values[name])
+        if name == 'self' && named_values[name].is_a?(Typedef::Typeset)
+          Typedef::Typeset.new(named_values[name].types.map do |type|
+            if (type.base.name == 'Class' || type.base.name == 'Module')
+              if type.params.empty?
+                Typeset::UNDEFINED
+              else
+                Typedef::Typeset.new(type.params)
+              end
+            else
+              Typedef.tokenize(type)
+            end
+          end)
+        else
+          Typedef.tokenize(named_values[name])
+        end
       end
 
       def resolve_rooted api_map, gates

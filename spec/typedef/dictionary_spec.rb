@@ -95,7 +95,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'resolves a shared self-returning method separately for each union member' do
-      pending 'WIP'
       source = Solargraph::Source.load_string(%(
         # @type [String, Symbol]
         name = string_or_symbol
@@ -109,7 +108,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'resolves self in a union return type separately for each union member' do
-      pending 'WIP'
       source = Solargraph::Source.load_string(%(
         class Base
           # @return [String, self]
@@ -178,7 +176,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'does not leak one union member into a Class#new call resolved on another' do
-      pending 'Correct return type is probably Class | Beta'
       source = Solargraph::Source.load_string(%(
         class Beta; end
 
@@ -195,7 +192,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'resolves Class#new the same way regardless of union member order' do
-      pending 'Correct return type is probably Class | Beta'
       source = Solargraph::Source.load_string(%(
         class Beta; end
 

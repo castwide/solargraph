@@ -123,8 +123,15 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
       def root_and_infer pin, receiver
-        # Early self expansion for the sake of Class#new et al.
-        expanded = pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.namespace }).to_complex_type)
+        # @todo A Class#new exception is necessary because the current pin from
+        #   RBS core has return type `undefined`. A better solution is a
+        #   CoreFills override of `Class#new => self`, but it interferes with
+        #   the existing chain inference.
+        expanded = if pin.path == 'Class#new'
+          pin.proxy(Solargraph::ComplexType.parse('::Class'))
+        else
+          pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
+        end
         rooted = resolve_rooted(expanded, receiver)
         inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
                      infer_by_pin_type expanded, receiver
