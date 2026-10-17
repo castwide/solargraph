@@ -1458,6 +1458,40 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
+  it 'keeps the declared attr_reader type in the else branch of a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [String, nil]
+        attr_reader :name
+
+        # @return [Boolean]
+        attr_reader :flag
+
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      # @param name [String, nil]
+      # @param flag [Boolean]
+      def scan(pin, name, flag)
+        if pin.name then pin.name else pin.name end
+        if pin.flag then pin.flag else pin.flag end
+        if pin.location then pin.location else pin.location end
+        if name then name else name end
+        if flag then flag else flag end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    # each attr_reader matches the param of the same type on the next lines
+    { [18, 44] => 'nil', [19, 44] => '::Boolean', [20, 52] => 'nil',
+      [21, 32] => 'nil', [22, 32] => '::Boolean' }.each do |position, tags|
+      expect(api_map.clip_at('test.rb', position).infer.rooted_tags).to eq(tags), position.inspect
+    end
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]

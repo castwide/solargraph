@@ -223,10 +223,12 @@ module Solargraph
           readers = readers.compact
           return nil if readers.empty? || !readers.all?(&:attribute?)
 
-          # An uninferrable narrowed pin would shadow the method lookup
-          type = pin.typify(api_map)
-          type = pin.probe(api_map) if type.undefined?
-          type.defined? ? pin : nil
+          # Without a declared type the pin's type is the fact alone, e.g.
+          # 'nil, false'; declare the reader's type at the guard so the fact
+          # narrows it. An uninferrable pin would shadow the method lookup.
+          declared = pin.assignments.flat_map { |node| pin.return_types_from_node(node, api_map) }
+          narrowed = pin.proxy(ComplexType.new(declared.flat_map(&:items).uniq))
+          narrowed.typify(api_map).defined? ? narrowed : nil
         end
 
         # @param pins [::Enumerable<Pin::Base>]
