@@ -71,7 +71,7 @@ module Solargraph
         Typedef::Path.new(path.to_s, rooted: return_type.rooted?)
       end
 
-      # @return [Typedef::Typeset]
+      # @return [Type]
       def typedef_typeset
         return_type.to_typedef_typeset
       end

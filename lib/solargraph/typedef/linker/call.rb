@@ -66,7 +66,7 @@ module Solargraph
 
         def compatible_arg? parameter, argument
           return true if parameter.typedef_typeset.to_complex_type.undefined? ||
-                         parameter.typedef_typeset.generic?
+                         parameter.typedef_typeset.any_generic?
           # @todo Conformance needs to work for typesets
           atype = argument&.to_complex_type || ComplexType::UNDEFINED
           atype.conforms_to?(api_map, parameter.typedef_typeset.to_complex_type, :method_call, %i[allow_empty_params allow_undefined])
@@ -77,8 +77,8 @@ module Solargraph
         #
         def expand_generic_parameters_from_arguments pin
           return pin unless pin.is_a?(Pin::Callable)
-          # return pin unless pin.typedef_typeset.generic?
-          return pin unless pin.parameters.map(&:typedef_typeset).any?(&:generic?)
+          # return pin unless pin.typedef_typeset.any_generic?
+          return pin unless pin.parameters.map(&:typedef_typeset).any?(&:any_generic?)
 
           named_values = {}
           pin.parameters.map.with_index do |param, idx|
@@ -104,7 +104,7 @@ module Solargraph
           end
           arguments = pin.parameters.map.with_index do |_param, idx|
             token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(link.arguments[idx].node))
-            Typeset.new([Type.new(token)])
+            Union.new([Concrete.new(token)])
           end
           named_values = pin.parameter_names.zip(arguments).to_h
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
