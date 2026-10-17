@@ -56,35 +56,50 @@ module Solargraph
           found ||= narrowed_call_pin(api_map, name_pin, locals, head? ? ['self'] : receiver_path)
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
-          pins = method_pins(api_map, name_pin)
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin, locals)
+          # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
+          # @type [::Array<Pin::Base>]
+          resolved = []
+          unresolved_type = false
+          each_method_pin(api_map, name_pin) do |context, pin|
+            if pin.nil?
+              unresolved_type = true
+              next
+            end
+            # Bind name_pin to this type alone, so #inferred_pins (incl. Class#new) cannot see the others.
+            type_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                     closure: name_pin.closure,
+                                                     gates: name_pin.gates,
+                                                     binder: context,
+                                                     source: :chain)
+            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
+          end
+          return [] if unresolved_type && !api_map.loose_unions
+          return [] if resolved.empty?
+          # Accumulating every type's result treats the binder as a union, which is the only
+          # multi-type binder ComplexType builds; dedup on rooted_tags rather than #tag, which
+          # reports only the first member and so collapses two distinct unions.
+          resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
         end
 
         private
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @return [::Array<Pin::Method>] the methods this call dispatches to
-        def method_pins api_map, name_pin
+        # @yieldparam context [ComplexType::UniqueType] one member of the binder
+        # @yieldparam pin [Pin::Method, nil] the method this call dispatches to on that member
+        # @return [void]
+        def each_method_pin api_map, name_pin
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
-          pin_groups = binder.each_unique_type.map do |context|
+          binder.each_unique_type do |context|
             ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+            yield context, api_map.get_method_stack(ns_tag, word, scope: context.scope).first
           end
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          # Several union members can end up with the same pin and return type.
-          # @sg-ignore Array#flatten returns a bare Array
-          pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
         end
 
         # Checks whether a single overload signature matches the call's
@@ -201,7 +216,11 @@ module Solargraph
           pin = api_map.var_at_location(locals, composite_name, name_pin, location)
           return nil if pin.nil?
 
-          readers = method_pins(api_map, name_pin)
+          # @type [::Array<Pin::Method, nil>]
+          readers = []
+          each_method_pin(api_map, name_pin) { |_context, reader| readers.push reader }
+          return nil if readers.include?(nil) && !api_map.loose_unions
+          readers = readers.compact
           return nil if readers.empty? || !readers.all?(&:attribute?)
 
           # An uninferrable narrowed pin would shadow the method lookup
@@ -212,7 +231,7 @@ module Solargraph
 
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # @param name_pin [Pin::Base] its #binder resolves `self` in the declarations of `pins`
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals
