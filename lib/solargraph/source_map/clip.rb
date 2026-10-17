@@ -25,8 +25,7 @@ module Solargraph
         result.concat file_global_methods
         if result.empty?
           result.concat((source_map.pins + source_map.locals).select do |p|
-            # @sg-ignore Need to add nil check here
-            p.name == cursor.word && p.location.range.contain?(cursor.position)
+            p.name == cursor.word && p.location!.range.contain?(cursor.position)
           end)
         end
         result
