@@ -40,6 +40,8 @@ module Solargraph
                 process_private_constant
               elsif method_name == :alias_method && node.children[2] && node.children[2] && node.children[2].type == :sym && node.children[3] && node.children[3].type == :sym
                 process_alias_method
+              elsif %i[def_delegator def_delegators].include?(method_name) && extends_forwardable?
+                process_def_delegators
               elsif method_name == :private_class_method && node.children[2].is_a?(AST::Node)
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
@@ -54,6 +56,91 @@ module Solargraph
           end
 
           private
+
+          # True when the enclosing namespace extends Forwardable, which is
+          # what makes def_delegator and def_delegators available there.
+          # Matched by name only, so a same-named local module would fool this.
+          #
+          # @return [Boolean]
+          def extends_forwardable?
+            pins.any? do |pin|
+              pin.is_a?(Pin::Reference::Extend) &&
+                pin.closure == region.closure &&
+                ['Forwardable', '::Forwardable'].include?(pin.name)
+            end
+          end
+
+          # The word behind a symbol or string node, e.g. :@records or "size".
+          #
+          # @param subject [Object]
+          # @return [String, nil]
+          def symbol_word subject
+            return nil unless subject.is_a?(::Parser::AST::Node)
+
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            return nil unless %i[sym str].include?(subject.type)
+
+            # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
+            subject.children.first.to_s
+          end
+
+          # Forwardable's def_delegator/def_delegators define real methods
+          # whose behavior - including return type - comes from the method
+          # they forward to. Map them to DelegatedMethod pins, which resolve
+          # the receiver and the forwarded method lazily.
+          #
+          # @return [void]
+          def process_def_delegators
+            receiver_word = symbol_word(node.children[2])
+            return if receiver_word.nil?
+
+            receiver_chain = delegation_receiver_chain(receiver_word)
+            if node.children[1] == :def_delegator
+              receiver_method_name = symbol_word(node.children[3])
+              return if receiver_method_name.nil?
+
+              name = symbol_word(node.children[4]) || receiver_method_name
+              push_delegated_method(name, receiver_method_name, receiver_chain)
+            else
+              (node.children[3..] || []).each do |method_node|
+                word = symbol_word(method_node)
+                next if word.nil?
+
+                push_delegated_method(word, word, receiver_chain)
+              end
+            end
+          end
+
+          # @param word [String] the delegation target, e.g. "@records" or "records"
+          # @return [Source::Chain]
+          def delegation_receiver_chain word
+            link = if word.start_with?('@@')
+                     Source::Chain::ClassVariable.new(word)
+                   elsif word.start_with?('@')
+                     Source::Chain::InstanceVariable.new(word, node, get_node_location(node))
+                   else
+                     Source::Chain::Call.new(word, get_node_location(node))
+                   end
+            Source::Chain.new([link])
+          end
+
+          # @param name [String]
+          # @param receiver_method_name [String]
+          # @param receiver_chain [Source::Chain]
+          # @return [void]
+          def push_delegated_method name, receiver_method_name, receiver_chain
+            pins.push Solargraph::Pin::DelegatedMethod.new(
+              location: get_node_location(node),
+              closure: region.closure,
+              name: name,
+              receiver: receiver_chain,
+              receiver_method_name: receiver_method_name,
+              scope: region.scope || :instance,
+              visibility: region.visibility,
+              comments: comments_for(node),
+              source: :parser
+            )
+          end
 
           # @return [void]
           def process_visibility
