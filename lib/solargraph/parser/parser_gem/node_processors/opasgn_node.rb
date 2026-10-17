@@ -15,12 +15,15 @@ module Solargraph
                      Symbol => operator,
                      ::Parser::AST::Node => argument]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             if target.type == :send
               process_send_target(target, operator, argument)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             elsif target.type.to_s.end_with?('vasgn')
               process_vasgn_target(target, operator, argument)
             else
               Solargraph.assert_or_log(:opasgn_unknown_target,
+                                       # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                                        "Unexpected op_asgn target type: #{target.type}")
             end
           end

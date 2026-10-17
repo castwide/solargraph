@@ -24,9 +24,12 @@ module Solargraph
               closure = region.closure
             in ::Parser::AST::Node[:casgn, ::Parser::AST::Node | nil => scope, Symbol => const_name, *]
               names = [region.closure.namespace, region.closure.name]
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               if scope.nil? && names.last != const_name.to_s
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 names << const_name.to_s
               else
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 names.push NodeMethods.unpack_name(scope), const_name.to_s
               end
               name = names.reject(&:empty?).join('::')

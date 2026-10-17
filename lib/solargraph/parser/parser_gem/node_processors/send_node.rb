@@ -12,37 +12,49 @@ module Solargraph
             # s(:send, receiver, method_name, *args)
             node => [:send, ::Parser::AST::Node | nil => receiver, Symbol => method_name, *args]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             if receiver.nil?
               if %i[private public protected].include?(method_name)
                 process_visibility
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :module_function
                 process_module_function
               elsif %i[attr_reader attr_writer attr_accessor].include?(method_name)
                 process_attribute
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :class_attribute
                 process_class_attribute
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :include
                 process_include
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :extend
                 process_extend
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :prepend
                 process_prepend
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :require
                 process_require
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :autoload
                 process_autoload
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :private_constant
                 process_private_constant
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :alias_method && (args in [[:sym, *], [:sym, *], *])
                 process_alias_method
               elsif %i[def_delegator def_delegators].include?(method_name) && extends_forwardable?
                 process_def_delegators
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               elsif method_name == :private_class_method && (args in [::AST::Node, *])
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
             elsif %i[include extend prepend].include?(method_name) && (receiver in [:const, *])
               process_qualified_mixin method_name
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             elsif method_name == :require && (receiver in [:const, nil, :Bundler])
               pins.push Pin::Reference::Require.new(
                 Solargraph::Location.new(region.filename,
@@ -143,6 +155,7 @@ module Solargraph
           def process_visibility
             node => [:send, _, Symbol => visibility, *args]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             if args.empty?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, visibility)
@@ -386,6 +399,7 @@ module Solargraph
             # require 'path' - s(:send, nil, :require, s(:str, path))
             return unless node in [:send, _, _, ::AST::Node[:str, String => value, *], *]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
@@ -395,6 +409,7 @@ module Solargraph
             # autoload :Name, 'path' - s(:send, nil, :autoload, s(:sym, name), s(:str, path))
             return unless node in [:send, _, _, _, ::AST::Node[:str, String => value, *], *]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             path = value.to_s
             pins.push Pin::Reference::Require.new(get_node_location(node), path, source: :parser)
           end
@@ -403,6 +418,7 @@ module Solargraph
           def process_module_function
             node => [:send, _, _, *args]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             if args.empty?
               # @todo Smelly instance variable access
               region.instance_variable_set(:@visibility, :module_function)
@@ -466,6 +482,7 @@ module Solargraph
           def process_private_constant
             return unless node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             cn = value.to_s
             ref = pins.select do |p|
               [Solargraph::Pin::Namespace,
@@ -485,7 +502,9 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: get_node_location(node),
               closure: region.closure,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               name: new_name.to_s,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               original: original.to_s,
               scope: region.scope || :instance,
               source: :parser
@@ -496,6 +515,7 @@ module Solargraph
           def process_private_class_method
             if node in [:send, _, _, [:sym | :str, Symbol | String => value, *], *]
               ref = pins.select do |p|
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == value.to_s
               end.first
               # HACK: Smelly instance variable access

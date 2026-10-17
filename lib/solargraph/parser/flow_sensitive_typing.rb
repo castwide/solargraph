@@ -24,7 +24,9 @@ module Solargraph
       def process_and and_node, true_ranges = [], false_ranges = []
         return unless and_node in [:and, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
 
         rhs_presence = Range.new(before_rhs_pos,
@@ -45,7 +47,9 @@ module Solargraph
       def process_or or_node, true_ranges = [], false_ranges = []
         return unless or_node in [:or, ::Parser::AST::Node => lhs, ::Parser::AST::Node => rhs]
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_loc = rhs.location.expression.adjust(begin_pos: -1)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         before_rhs_pos = Position.new(before_rhs_loc.line, before_rhs_loc.column)
 
         rhs_presence = Range.new(before_rhs_pos,
@@ -120,21 +124,27 @@ module Solargraph
           true_ranges << rest_of_returnable_body if always_leaves_compound_statement?(else_clause)
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless then_clause.nil?
           #
           # If the condition is true we can assume things about the then clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_then_clause_loc = then_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_then_clause_pos = Position.new(before_then_clause_loc.line, before_then_clause_loc.column)
           true_ranges << Range.new(before_then_clause_pos,
                                    get_node_end_position(then_clause))
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless else_clause.nil?
           #
           # If the condition is true we can assume things about the else clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_else_clause_loc = else_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_else_clause_pos = Position.new(before_else_clause_loc.line, before_else_clause_loc.column)
           false_ranges << Range.new(before_else_clause_pos,
                                     get_node_end_position(else_clause))
@@ -162,11 +172,14 @@ module Solargraph
         #     s(:send, nil, :c)))
         # [4] pry(main)>
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         unless do_clause.nil?
           #
           # If the condition is true we can assume things about the do clause
           #
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_do_clause_loc = do_clause.location.expression.adjust(begin_pos: -1)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           before_do_clause_pos = Position.new(before_do_clause_loc.line, before_do_clause_loc.column)
           true_ranges << Range.new(before_do_clause_pos,
                                    get_node_end_position(do_clause))
@@ -256,11 +269,13 @@ module Solargraph
         #  s(:send, nil, :foo)
         # and set variable_name to :foo
         if call_receiver in [:send, nil, Symbol => receiver_method, *]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           variable_name = receiver_method.to_s
         end
         # or like this:
         # (lvar :repr)
         if call_receiver in [:lvar | :ivar, Symbol => receiver_variable, *]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           variable_name = receiver_variable.to_s
         end
         return unless variable_name
@@ -383,6 +398,7 @@ module Solargraph
       # @param var_node [Parser::AST::Node]
       #
       # @return [String, nil] Variable name referenced
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1416
       def parse_variable var_node
         # only reached for lvar, ivar, cvar and gvar nodes
         var_node => [_, Symbol => variable_name]
@@ -427,6 +443,7 @@ module Solargraph
         #  s(:const, nil, :Baz)
         return unless node in [:const, ::Parser::AST::Node | nil => module_node, Symbol => class_node]
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         return class_node.to_s if module_node.nil?
 
         module_type_name = type_name(module_node)

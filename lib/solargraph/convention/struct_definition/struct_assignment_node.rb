@@ -41,6 +41,7 @@ module Solargraph
           if scope
             Parser::NodeMethods.unpack_name(scope) + "::#{name}"
           else
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             name.to_s
           end
         end
@@ -48,6 +49,7 @@ module Solargraph
         private
 
         # @return [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         def struct_node
           node => [_, _, _, ::Parser::AST::Node => value, *]
           (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses

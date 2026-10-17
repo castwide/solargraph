@@ -24,6 +24,7 @@ module Solargraph
             masgn = node
             masgn => [:masgn, ::Parser::AST::Node => mlhs, ::Parser::AST::Node => mass_rhs]
             # @type [Array<Parser::AST::Node>]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             lhs_arr = mlhs.children
 
             # Get pins created for the mlhs node

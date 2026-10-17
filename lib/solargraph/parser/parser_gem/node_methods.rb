@@ -88,17 +88,22 @@ module Solargraph
         def drill_signature node, signature
           return signature unless node.is_a?(AST::Node)
           if node in [:const, ::Parser::AST::Node | nil => scope, Symbol => name, *]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             signature += drill_signature(scope, signature) unless scope.nil?
             signature += '::' unless signature.empty?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             signature += name.to_s
           elsif node in [:cbase, *]
             signature += '::' unless signature.empty?
           elsif node in [:lvar | :ivar | :cvar, Symbol => name, *]
             signature += '.' unless signature.empty?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             signature += name.to_s
           elsif node in [:send, ::Parser::AST::Node | nil => receiver, Symbol => name, *]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             signature += drill_signature(receiver, signature) unless receiver.nil?
             signature += '.' unless signature.empty?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             signature += name.to_s
           end
           signature
@@ -208,6 +213,7 @@ module Solargraph
           # **splatted as the first child, unless splatted is a hash literal
           return false unless node in ::Parser::AST::Node[_, ::Parser::AST::Node[:kwsplat, ::Parser::AST::Node => splatted, *], *]
 
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           splatted.type != :hash
         end
 

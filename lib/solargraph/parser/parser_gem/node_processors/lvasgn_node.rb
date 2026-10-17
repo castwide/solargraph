@@ -19,6 +19,7 @@ module Solargraph
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               name: name.to_s,
               assignment: assignment,
               comments: comments_for(node),

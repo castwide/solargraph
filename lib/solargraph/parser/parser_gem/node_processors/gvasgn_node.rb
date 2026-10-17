@@ -14,6 +14,7 @@ module Solargraph
             pins.push Solargraph::Pin::GlobalVariable.new(
               location: loc,
               closure: region.closure,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               name: name.to_s,
               comments: comments_for(node),
               assignment: assignment,

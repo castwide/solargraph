@@ -30,6 +30,7 @@ module Solargraph
           def match? node
             return false unless node in [:class, _, ::Parser::AST::Node | nil => superclass, *]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             struct_definition_node?(superclass)
           end
 
@@ -37,6 +38,7 @@ module Solargraph
 
           # @param struct_node [Parser::AST::Node, nil]
           # @return [Boolean]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           def struct_definition_node? struct_node
             # Struct.new(*args) - s(:send, s(:const, scope, :Struct), :new, *args)
             struct_node in ::Parser::AST::Node[:send, [:const, _, :Struct, *], :new, *]
@@ -58,10 +60,12 @@ module Solargraph
           struct_attribute_nodes.map do |struct_def_param|
             next unless struct_def_param in [:sym, Symbol => name]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             [struct_def_param, name.to_s]
           end.compact
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         def keyword_init?
           # keyword_init: true - s(:hash, s(:pair, s(:sym, :keyword_init), s(:true)), *pairs)
           keyword_init_param = struct_attribute_nodes.find do |struct_def_param|

@@ -22,9 +22,11 @@ module Solargraph
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
               loc = get_node_location(variable)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               types = if exceptions.nil?
                         ['Exception']
                       else
+                        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                         exceptions.children.map do |child|
                           unpack_name(child)
                         end
@@ -32,6 +34,7 @@ module Solargraph
               locals.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 name: variable_name.to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,

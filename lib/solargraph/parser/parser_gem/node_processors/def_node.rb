@@ -8,6 +8,7 @@ module Solargraph
           def process
             node => [:def, Symbol => method_name, *]
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
             name = method_name.to_s
             scope = region.scope || (region.closure.is_a?(Pin::Singleton) ? :class : :instance)
             # specify context explicitly instead of relying on
@@ -21,6 +22,7 @@ module Solargraph
               context: method_context,
               comments: comments_for(node),
               scope: scope,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               visibility: scope == :instance && name == 'initialize' ? :private : region.visibility,
               node: node,
               source: :parser
