@@ -42,6 +42,10 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    def loaded_stdlibs
+      @loaded_stdlibs ||= Set.new
+    end
+
     # @return [Array<Pin::Base>]
     def pins
       @pins ||= []
@@ -84,7 +88,7 @@ module Solargraph
       @generation = generation + 1
       clear_all
       load_requires
-      load_rbs_collection
+      # load_rbs_collection
     end
 
     def cache_changed?
@@ -100,8 +104,7 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
-          pins.concat Collection::Stdlib.load(path)
+          pins.concat Collection::Stdlib.load(path) if loaded_stdlibs.add?(path)
         else
           metagem = @repo.find_by_path(path)
           next unresolved_requires.push(path) unless metagem
@@ -114,10 +117,14 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
-    # @return [void]
-    def load_rbs_collection
-      rbs_collection_pins = rbs_collection_paths.flat_map { |path| Collection::Rbs.load(path) }
-      pins.replace RbsMap::Helpers.combine(pins, rbs_collection_pins)
+    def rbs_collection
+      @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
+    end
+
+    def rbs_collection_lockfile
+      return if directory.nil? || directory.empty? || directory == '*'
+      lockfile = File.join(directory, 'rbs_collection.lock.yaml')
+      lockfile if File.file?(lockfile)
     end
 
     # @return [void]
@@ -127,6 +134,7 @@ module Solargraph
       unresolved_dependencies.clear
       loaded_gems.clear
       unloaded_gems.clear
+      loaded_stdlibs.clear
     end
 
     # @param metagem [Metagem]
@@ -134,18 +142,23 @@ module Solargraph
     def process_gem metagem
       return if loaded_gems.include?(metagem) || unloaded_gems.include?(metagem)
 
-      if metagem.cacheable?
-        if Collection::Gem.cached?(metagem)
-          loaded_gems.add metagem
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
-          pins.concat Collection::Gem.load(metagem)
-        else
-          unloaded_gems.add metagem
-        end
+      if metagem.cacheable? && !Collection::Gem.cached?(metagem)
+        unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
-        pins.concat Collection::Gem.load(metagem)
+        base_pins = Collection::Gem.load(metagem)
+        rbsc_pins = rbs_collection.load(metagem)
+        if rbsc_pins.empty?
+          pins.concat base_pins
+        else
+          pins.concat RbsMap::Helpers.combine(base_pins, rbsc_pins)
+        end
+        # Gems might not declare stdlib dependencies as gem dependencies
+        # (e.g., `activesupport` requires `date`)
+        base_pins.select { |pin| pin.is_a?(Pin::Reference::Require) && RbsMap::Stdlib.has?(pin.name) }
+                 .each do |pin|
+                   pins.concat Collection::Stdlib.load(pin.name) if loaded_stdlibs.add?(pin.name)
+                 end
       end
       load_dependencies metagem
     end
@@ -159,19 +172,6 @@ module Solargraph
         next unresolved_dependencies.push(name) unless metagem
         process_gem metagem
       end
-    end
-
-    # @return [Array<String>]
-    def read_rbs_collection_paths
-      return [] unless rbs_collection_config_path
-
-      yaml = YAML.load_file(rbs_collection_config_path)
-      [File.expand_path(yaml.fetch('path'), directory)].concat(
-        yaml.fetch('sources', [])
-            .select { |source| source['type'] == 'local' && source['path'] }
-            # @sg-ignore Need better generic inference here
-            .map { |source| File.expand_path(source['path'], directory) }
-      ).compact
     end
   end
 end

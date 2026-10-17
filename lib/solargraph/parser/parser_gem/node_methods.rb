@@ -674,8 +674,6 @@ module Solargraph
                   result.concat reduce_to_value_nodes(node.children[1..])
                 elsif node.type == :return
                   result.concat reduce_to_value_nodes([node.children[0]])
-                elsif node.type == :or
-                  result.concat reduce_to_value_nodes(node.children)
                 elsif node.type == :block
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
                 elsif node.type == :resbody

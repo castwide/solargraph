@@ -541,18 +541,18 @@ module Solargraph
       # @param pin [Pin::Method]
       # @return [void]
       def method_def_to_sigs decl, pin
-        # rubocop:disable Style/SafeNavigationChainLength
-        implicit_nil = decl.overloads.first&.annotations&.map(&:string)&.include?('implicitly-returns-nil') || false
-        # rubocop:enable Style/SafeNavigationChainLength
         # @param overload [RBS::AST::Members::MethodDefinition::Overload]
         decl.overloads.map do |overload|
+          # RBS attaches this annotation to a single overload, not to the method as a whole
+          implicit_nil = overload.annotations.map(&:string).include?('implicitly-returns-nil')
           # @sg-ignore https://github.com/castwide/solargraph/pull/1281
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)
           block = if overload.method_type.block
+                    # the annotation describes the method's return value, not the block's
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-                    block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, implicit_nil)
+                    block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, false)
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1223
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
