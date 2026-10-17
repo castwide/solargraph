@@ -190,6 +190,36 @@ module Solargraph
         process_expression(conditional_node, true_ranges, false_ranges)
       end
 
+      # Narrow a variable subject to the constant each `in` clause
+      # matches, over that clause's guard and body:
+      #
+      #   case x
+      #   in Foo   # x is a Foo here
+      #   in Bar   # x is a Bar here
+      #   end
+      #
+      # @param case_node [Parser::AST::Node]
+      #
+      # @return [void]
+      def process_case_match case_node
+        return unless case_node.type == :case_match
+
+        # @type [Parser::AST::Node]
+        subject = case_node.children.fetch(0)
+        return unless %i[lvar ivar].include?(subject.type)
+
+        pin = find_var(subject.children.fetch(0).to_s, get_node_start_position(subject))
+        return unless pin
+
+        # @type [Array<Parser::AST::Node>]
+        clauses = case_node.children.drop(1).compact
+        clauses.each do |clause|
+          next unless clause.type == :in_pattern
+
+          process_in_pattern(pin, clause)
+        end
+      end
+
       class << self
         include Logging
       end
@@ -451,6 +481,24 @@ module Solargraph
         return unless module_type_name
 
         "#{module_type_name}::#{class_node}"
+      end
+
+      # @param pin [Pin::BaseVariable] the case subject
+      # @param in_pattern [Parser::AST::Node] (in_pattern PATTERN GUARD BODY)
+      #
+      # @return [void]
+      def process_in_pattern pin, in_pattern
+        # @type [Parser::AST::Node]
+        pattern = in_pattern.children.fetch(0)
+        type_name = pattern_type_name(pattern)
+        # @type [Array<Parser::AST::Node>]
+        guard_and_body = in_pattern.children.drop(1).compact
+        return if type_name.nil? || guard_and_body.empty?
+
+        before_loc = guard_and_body.fetch(0).location.expression.adjust(begin_pos: -1)
+        presence = Range.new(Position.new(before_loc.line, before_loc.column),
+                             get_node_end_position(guard_and_body.fetch(-1)))
+        process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
       end
 
       # @param clause_node [Parser::AST::Node, nil]
