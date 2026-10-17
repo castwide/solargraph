@@ -368,6 +368,13 @@ module Solargraph
         @explicit
       end
 
+      # False for method pins synthesized from a class-body statement rather than parsed from a def.
+      #
+      # @return [Boolean]
+      def body?
+        !attribute?
+      end
+
       def attribute?
         @attribute
       end
@@ -385,6 +392,9 @@ module Solargraph
 
       def probe api_map
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        ComplexType::UNDEFINED
       end
 
       # @return [::Array<Pin::Signature>]

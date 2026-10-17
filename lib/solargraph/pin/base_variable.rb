@@ -170,6 +170,9 @@ module Solargraph
           end
         end
         types
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        [ComplexType::UNDEFINED]
       end
 
       # @param api_map [ApiMap]
