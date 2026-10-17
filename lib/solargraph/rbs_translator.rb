@@ -128,18 +128,18 @@ module Solargraph
       def type_to_tag type
         case type
         when RBS::Types::Optional
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
         when RBS::Types::Tuple
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.literal.inspect
         when RBS::Types::Union
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -149,7 +149,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -157,7 +157,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
           'Proc'
@@ -169,11 +169,11 @@ module Solargraph
           # `Interface represents a mix-in module which can be considered a
           # subtype of a consumer of it
           #
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name, type.args)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
-          # @sg-ignore flow based typing needs to understand case when class pattern
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
