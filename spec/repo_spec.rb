@@ -70,5 +70,10 @@ describe Solargraph::Repo do
       meta = repo.find_by_name('nokogiri')
       expect(meta.name).to eq('nokogiri')
     end
+
+    it 'does not raise when the bundle script prints only blank lines' do
+      allow(Open3).to receive(:capture3).and_return(["\n", '', instance_double(Process::Status, success?: true)])
+      expect { described_class.new(directory) }.not_to raise_error
+    end
   end
 end
