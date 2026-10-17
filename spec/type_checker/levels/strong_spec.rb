@@ -1880,5 +1880,36 @@ describe Solargraph::TypeChecker do
       ), ['forwardable'])
       expect(checker.problems).to be_empty
     end
+
+    it 'does not call a namespaced @type unresolved in a branch that rules it out' do
+      checker = type_checker(%(
+        module Ns
+          class Chain
+            # @return [Integer]
+            def node
+              1
+            end
+          end
+        end
+
+        class Checker
+          # @param chain [Ns::Chain]
+          # @param flag [Boolean]
+          # @return [void]
+          def foo chain, flag
+            # @type [Ns::Chain]
+            argchain = chain
+            if flag
+              1
+            elsif argchain
+              argchain.node
+            elsif flag.nil?
+              2
+            end
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

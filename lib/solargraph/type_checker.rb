@@ -280,7 +280,9 @@ module Solargraph
             elsif declared_externally?(pin)
               ignored_pins.push pin
             end
-          elsif !pin.is_a?(Pin::Parameter) && !resolved_constant?(pin)
+          # A narrowed copy can typify as undefined when a branch rules
+          # out every declared type; the declaring pin reports its tag
+          elsif !pin.is_a?(Pin::Parameter) && !pin.presence_certain? && !resolved_constant?(pin)
             result.push Problem.new(pin.location, "Unresolved type #{pin.return_type} for variable #{pin.name}",
                                     pin: pin)
           end

@@ -272,15 +272,12 @@ module Solargraph
           pin.typify api_map
           pin.probe api_map
         rescue StandardError => e
-          # @todo to add nil check here
-          # @todo should warn on nil dereference below
-          warn "Error testing #{pin_description(pin)} #{if pin.location
-                                                          "at #{pin.location.filename}:#{pin.location.range.start.line + 1}"
+          location = pin.location
+          warn "Error testing #{pin_description(pin)} #{if location
+                                                          "at #{location.filename}:#{location.range.start.line + 1}"
                                                         end}"
           warn "[#{e.class}]: #{e.message}"
-          # @todo Need to add nil check here
-          # @todo flow sensitive typing should be able to handle redefinition
-          warn e.backtrace.join("\n")
+          warn e.backtrace&.join("\n")
           exit 1
         end
       end
