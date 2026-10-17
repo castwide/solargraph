@@ -349,7 +349,6 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1316
         def super_pins api_map, name_pin
           method_pin = find_method_pin(name_pin)
           return [] if method_pin.nil?
