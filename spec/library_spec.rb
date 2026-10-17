@@ -348,6 +348,20 @@ describe Solargraph::Library do
       expect(obj_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(6, 12, 6, 15))])
     end
 
+    it 'keeps Class#new references whose receivers match' do
+      workspace = Solargraph::Workspace.new('*')
+      library = described_class.new(workspace)
+      source = Solargraph::Source.load_string(%(
+        klass = Class.new
+        klass.new
+        Class.new
+      ), 'test.rb')
+      library.merge source
+      library.catalog
+      locs = library.references_from('test.rb', 3, 15)
+      expect(locs.map { |loc| loc.range.start.line }).to eq([1, 3])
+    end
+
     it 'searches the core for queries' do
       library = described_class.new
       result = library.search('String')
