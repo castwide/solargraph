@@ -218,7 +218,7 @@ module Solargraph
             # assume this was a declaration that should have said 'self'
             all_items.delete_if { |item| item.rooted_tag == context.reduce_class_type.rooted_tag }
           end
-          ComplexType.new(all_items)
+          ComplexType.intern(all_items)
         end
       end
 
