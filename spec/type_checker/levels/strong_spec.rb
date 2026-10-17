@@ -361,6 +361,42 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq(['Unneeded @sg-ignore comment'])
     end
 
+    it 'accepts an explicit undefined return tag' do
+      checker = type_checker(%(
+        class Foo
+          # @param attr [Symbol]
+          # @return [undefined]
+          def bar(attr)
+            send(attr)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'accepts an explicit undefined return tag in a union' do
+      checker = type_checker(%(
+        class Foo
+          # @param attr [Symbol]
+          # @return [undefined, nil]
+          def bar(attr)
+            send(attr)
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'reports a return tag without types as missing' do
+      checker = type_checker(%(
+        class Foo
+          # @return the result
+          def bar; end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Missing @return tag for Foo#bar'])
+    end
+
     it 'reports missing return tags' do
       checker = type_checker(%(
         class Foo
@@ -892,7 +928,6 @@ describe Solargraph::TypeChecker do
 
           # @param other [self]
           #
-          # @sg-ignore Missing @return tag
           # @return [undefined]
           def baz(other); end
         end
