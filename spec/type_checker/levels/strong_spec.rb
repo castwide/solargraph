@@ -1881,35 +1881,61 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'does not call a namespaced @type unresolved in a branch that rules it out' do
-      checker = type_checker(%(
-        module Ns
-          class Chain
-            # @return [Integer]
-            def node
-              1
+    context 'with a @type tag on a local narrowed by later branches' do
+      # @param tag [String]
+      # @return [String]
+      def narrowed_local_code tag
+        %(
+          module Ns
+            class Chain
+              # @return [Integer]
+              def node
+                1
+              end
             end
           end
-        end
 
-        class Checker
-          # @param chain [Ns::Chain]
-          # @param flag [Boolean]
-          # @return [void]
-          def foo chain, flag
-            # @type [Ns::Chain]
-            argchain = chain
-            if flag
-              1
-            elsif argchain
-              argchain.node
-            elsif flag.nil?
-              2
+          class Checker
+            # @param chain [Ns::Chain]
+            # @param flag [Boolean]
+            # @return [void]
+            def foo chain, flag
+              # @type [#{tag}]
+              argchain = chain
+              if flag
+                1
+              elsif argchain
+                argchain.node
+              elsif flag.nil?
+                2
+              end
             end
           end
+        )
+      end
+
+      # @param code [String]
+      # @return [Integer]
+      def declaration_line code
+        code.lines.index { |line| line.include?('argchain = chain') }
+      end
+
+      it 'reports nothing on the declaration line when the tag resolves' do
+        code = narrowed_local_code('Ns::Chain')
+        problems = type_checker(code).problems.select do |problem|
+          problem.location.range.start.line == declaration_line(code)
         end
-      ))
-      expect(checker.problems.map(&:message)).to be_empty
+        expect(problems.map(&:message)).to be_empty
+      end
+
+      it 'reports an unresolvable tag once, on the declaration line' do
+        code = narrowed_local_code('Ns::Nope')
+        problems = type_checker(code).problems.select do |problem|
+          problem.message.start_with?('Unresolved type')
+        end
+        expect(problems.map(&:message)).to eq(['Unresolved type Ns::Nope for variable argchain'])
+        expect(problems.first.location.range.start.line).to eq(declaration_line(code))
+      end
     end
   end
 end
