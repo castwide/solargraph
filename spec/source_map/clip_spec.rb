@@ -2441,8 +2441,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'replaces nil with reassignments' do
-    pending 'sequential assignment support'
-
     source = Solargraph::Source.load_string(%(
       bar = nil
       bar
@@ -2458,8 +2456,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'replaces type with reassignments' do
-    pending 'sequential assignment support'
-
     source = Solargraph::Source.load_string(%(
       bar = 'a'
       bar
@@ -3186,5 +3182,60 @@ describe Solargraph::SourceMap::Clip do
 
     clip = api_map.clip_at('test.rb', [9, 13])
     expect(clip.complete.pins.map(&:path)).to eq(['Top::Foo::Bar'])
+  end
+
+  it 'narrows an instance variable to its assignment until the compound statement ends' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def run
+          @x = 123
+          if rand
+            @x = 'a'
+            @x
+          end
+          @x
+        end
+      end
+    ), 'test.rb')
+    api_map.map source
+    expect(api_map.clip_at('test.rb', [6, 13]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [8, 11]).infer.to_s).to eq('Integer, String')
+  end
+
+  it 'keeps an instance variable assignment narrowing out of other methods, classes and attributes' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def initialize
+          @x = :sym
+        end
+
+        def run
+          @x = 123
+          @x
+        end
+
+        def other
+          @x
+        end
+
+        attr_reader :x
+      end
+
+      class Bar
+        def run
+          @x = 'bar'
+        end
+
+        def read
+          @x
+        end
+      end
+      Foo.new.x
+    ), 'test.rb')
+    api_map.map source
+    expect(api_map.clip_at('test.rb', [8, 11]).infer.to_s).to eq('Integer')
+    expect(api_map.clip_at('test.rb', [12, 11]).infer.to_s).to eq('Symbol, Integer')
+    expect(api_map.clip_at('test.rb', [24, 11]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [27, 14]).infer.to_s).to eq('Symbol, Integer')
   end
 end

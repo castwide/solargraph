@@ -267,7 +267,6 @@ module Solargraph
       api_map = nil
       time = Benchmark.measure do
         api_map = Solargraph::ApiMap.load_with_cache(directory, $stdout)
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         api_map.pins.each do |pin|
           puts pin_description(pin) if options[:verbose]
           pin.typify api_map

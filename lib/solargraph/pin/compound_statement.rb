@@ -44,11 +44,60 @@ module Solargraph
     class CompoundStatement < Pin::Base
       attr_reader :node
 
+      # The immediately enclosing CompoundStatement - nil only for the
+      # synthetic root Namespace Region creates for top-level code.
+      #
+      # @return [Pin::CompoundStatement, nil]
+      attr_reader :compound_statement
+
+      # True if this body may be skipped or run more than once - an
+      # if/while/until/rescue/&&/||/||= body, or a block, whose call
+      # count depends on the method it is passed to. Defaults false.
+      #
+      # @return [Boolean]
+      attr_reader :conditional
+
       # @param node [Parser::AST::Node, nil]
+      # @param compound_statement [Pin::CompoundStatement, nil]
+      # @param conditional [Boolean]
       # @param [Hash{Symbol => Object}] splat
-      def initialize node: nil, **splat
+      def initialize node: nil, compound_statement: nil, conditional: false, **splat
         super(**splat)
         @node = node
+        @compound_statement = compound_statement
+        @conditional = conditional
+      end
+
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      # @return [self]
+      def combine_with other, attrs = {}
+        new_attrs = {
+          compound_statement: combine_compound_statement(other),
+          conditional: choose(other, :conditional)
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
+      # Bare CompoundStatement pins all share name == '', so pick by
+      # location instead, as BaseVariable#combine_closure does.
+      #
+      # @param other [self]
+      # @return [Pin::CompoundStatement, nil]
+      def combine_compound_statement other
+        return compound_statement if compound_statement == other.compound_statement
+        return compound_statement || other.compound_statement if compound_statement.nil? || other.compound_statement.nil?
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        if compound_statement.location.nil? || other.compound_statement.location.nil?
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          return compound_statement.location.nil? ? other.compound_statement : compound_statement
+        end
+
+        # @sg-ignore flow sensitive typing needs to handle attrs
+        return compound_statement if compound_statement.location <= other.compound_statement.location
+
+        other.compound_statement
       end
     end
   end
