@@ -144,6 +144,7 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           next unless store.macro_method_name_pins.key?(method_name.to_s)
 
+          # @sg-ignore Unresolved call to find on Array<Solargraph::Pin::Method>, nil
           match = store.macro_method_name_pins[method_name.to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
