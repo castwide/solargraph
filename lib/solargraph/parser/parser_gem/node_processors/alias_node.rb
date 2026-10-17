@@ -10,8 +10,8 @@ module Solargraph
             pins.push Solargraph::Pin::MethodAlias.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].children[0].to_s,
-              original: node.children[1].children[0].to_s,
+              name: node.children.fetch(0).children.fetch(0).to_s,
+              original: node.children.fetch(1).children.fetch(0).to_s,
               scope: region.scope || :instance,
               source: :parser
             )
