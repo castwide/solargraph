@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 describe Solargraph::Typedef::Memoizer::Cache do
+  # rubocop:disable RSpec/IndexedLet
   let(:key) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example1.rb', api_map: nil, position: nil, chain: nil, action: :example) }
   let(:key2) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example2.rb', api_map: nil, position: nil, chain: nil, action: :example) }
   let(:key3) { Solargraph::Typedef::Memoizer::Key.new(filename: 'example3.rb', api_map: nil, position: nil, chain: nil, action: :example) }
+  # rubocop:enable RSpec/IndexedLet
   let(:memos) { described_class.new }
 
   it 'saves on fetch' do
