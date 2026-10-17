@@ -640,10 +640,6 @@ module Solargraph
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
                   result.concat reduce_to_value_nodes([returned])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                elsif node.type == :or
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                  result.concat reduce_to_value_nodes(node.children)
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
                   # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   body = (node in [_, _, _, ::Parser::AST::Node | nil => block_body, *]) ? block_body : nil # rubocop:disable Style/RedundantParentheses
