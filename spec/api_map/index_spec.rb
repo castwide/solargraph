@@ -62,6 +62,15 @@ describe Solargraph::ApiMap::Index do
     end
   end
 
+  describe '#include_reference_pins' do
+    it 'returns an ArrayHash' do
+      hash = described_class.new.include_reference_pins
+
+      expect(hash).to be_a(Solargraph::ApiMap::Index::ArrayHash)
+      expect(hash['Foo']).to eq([])
+    end
+  end
+
   describe Solargraph::ApiMap::Index::ArrayHash do
     it 'returns and stores an empty Array for a missing key' do
       hash = described_class.new
