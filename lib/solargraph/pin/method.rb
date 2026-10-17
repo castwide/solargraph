@@ -394,6 +394,9 @@ module Solargraph
 
       def probe api_map
         attribute? ? infer_from_iv(api_map) : infer_from_return_nodes(api_map)
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        ComplexType::UNDEFINED
       end
 
       # @return [::Array<Pin::Signature>]

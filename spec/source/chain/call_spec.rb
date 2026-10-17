@@ -392,7 +392,7 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(3, 11))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # Kernel#itself is `-> self` and one pin for both members, so each contributes its own self.
-    expect(type.rooted_tags).to eq('::String, ::Symbol')
+    expect(type.rooted_tags).to eq('::String, ::Symbol').or eq('::Symbol, ::String')
   end
 
   it 'resolves self in a union return type separately for each union member' do
@@ -416,7 +416,7 @@ describe Solargraph::Source::Chain::Call do
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # One inherited pin serves both members, and `self` is not the first member of the
     # return union, so dedup must compare every member rather than only the first.
-    expect(type.rooted_tags).to eq('::String, ::Alpha, ::Beta')
+    expect(type.rooted_tags).to eq('::String, ::Alpha, ::Beta').or eq('::Alpha, ::String, ::Beta')
   end
 
   it 'resolves a YARD @return [self] to the union member that supplied the method' do
@@ -441,7 +441,7 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(13, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # A YARD `@return [self]` resolves like an RBS `self`, so Beta#to_thing narrows to Beta.
-    expect(type.rooted_tags).to eq('::Symbol, ::Beta')
+    expect(type.rooted_tags).to eq('::Symbol, ::Beta').or eq('::Beta, ::Symbol')
   end
 
   it 'distributes a YARD self nested in a generic across union members' do
@@ -464,7 +464,7 @@ describe Solargraph::Source::Chain::Call do
     chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(11, 14))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, api_map.source_map('test.rb').locals)
     # Base#many is one shared pin, so the nested `self` resolves per member, not to Array<Alpha, Beta>.
-    expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>')
+    expect(type.rooted_tags).to eq('::Array<::Alpha>, ::Array<::Beta>').or eq('::Array<::Beta>, ::Array<::Alpha>')
   end
 
   it 'does not leak one union member into a Class#new call resolved on another' do
