@@ -9,8 +9,8 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param closure [Solargraph::Pin::Closure, nil] receiver of bare,
-      #   implicit-self calls like 'location'
+      # @param closure [Solargraph::Pin::Closure, nil] the enclosing closure, given to
+      #   pins built by #self_call_pin for bare, implicit-self calls like 'location'
       def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
         @locals = locals
         @ivars = ivars
