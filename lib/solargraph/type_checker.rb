@@ -430,7 +430,9 @@ module Solargraph
           end
           all_errors.concat signature_errors
         end
-        result.concat all_errors
+        # Overloads sharing a parameter fail it identically; all
+        # errors here share one location, so the message identifies them.
+        result.concat all_errors.uniq(&:message)
       end
       result
     end
