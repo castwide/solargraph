@@ -188,6 +188,28 @@ describe Solargraph::RbsMap::Conversions do
       end
     end
 
+    context 'with a core alias reference loaded through a stdlib-less RbsMap' do
+      subject(:parameter) { method_pin.signatures.first.parameters.first }
+
+      let(:conversions) { Solargraph::RbsMap::Path.new(temp_dir) }
+
+      let(:method_pin) { api_map.get_method_stack('Foo', 'bar', scope: :instance).first }
+
+      let(:rbs) do
+        <<~RBS
+          type wrapped_path = ::path
+
+          class Foo
+            def bar: (wrapped_path src) -> void
+          end
+        RBS
+      end
+
+      it 'expands the alias' do
+        expect(parameter.return_type.rooted_tags).to eq('::String, ::_ToStr, ::_ToPath')
+      end
+    end
+
     context 'with a core alias reference alongside a shim that redeclares a core name' do
       subject(:parameter) { method_pin.signatures.first.parameters.first }
 

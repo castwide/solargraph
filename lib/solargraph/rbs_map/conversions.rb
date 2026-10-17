@@ -76,7 +76,11 @@ module Solargraph
         return fallback unless loader.core_root.nil?
         return fallback unless rebound_alias?(fallback)
 
-        core_loader = RBS::EnvironmentLoader.new(repository: loader.repository)
+        # Loading core makes RBS add the stringio library, which only the
+        # stdlib repository provides.
+        core_repository = RBS::Repository.new(no_stdlib: false)
+        loader.repository.dirs.each { |dir| core_repository.add(dir) unless core_repository.dirs.include?(dir) }
+        core_loader = RBS::EnvironmentLoader.new(repository: core_repository)
         loader.libs.each { |lib| core_loader.add(library: lib.name, version: lib.version) }
         loader.dirs.each { |dir| core_loader.add(path: dir) }
         RBS::Environment.from_loader(core_loader).resolve_type_names
