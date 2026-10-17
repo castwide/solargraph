@@ -93,6 +93,37 @@ describe Solargraph::RbsMap::Conversions do
         expect(method_pin.return_type.tag).to eq('undefined')
       end
     end
+
+    context 'with implicitly-returns-nil on some overloads' do
+      subject(:method_pin) { conversions.pins.find { |pin| pin.path == 'Foo#bar' } }
+
+      let(:rbs) do
+        <<~RBS
+          class Foo
+            def bar: %a{implicitly-returns-nil} () -> String
+                   | %a{implicitly-returns-nil} () { (String a) -> Integer } -> String
+                   | (Integer n) -> Array[String]
+                   | (Integer n) { (String a) -> Integer? } -> Array[String]
+          end
+        RBS
+      end
+
+      it 'adds nil to the return type of the annotated overloads' do
+        expect(method_pin.signatures[0..1].map { |sig| sig.return_type.to_s }).to eq(['String, nil'] * 2)
+      end
+
+      it 'leaves the return type of the unannotated overloads alone' do
+        expect(method_pin.signatures[2..3].map { |sig| sig.return_type.to_s }).to eq(['Array<String>'] * 2)
+      end
+
+      it 'does not add nil to a block return type' do
+        expect(method_pin.signatures[1].block.return_type.to_s).to eq('Integer')
+      end
+
+      it 'keeps nil in a block return type declared optional in RBS' do
+        expect(method_pin.signatures[3].block.return_type.to_s).to eq('Integer, nil')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
