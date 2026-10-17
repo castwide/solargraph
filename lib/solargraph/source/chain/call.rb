@@ -43,17 +43,11 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
-        # @param receiver_path [::Array<String>, nil] Dotted-word path of the
-        #   receiver chain leading up to this call (see Chain#define). Used
-        #   to find flow-sensitive-typing facts recorded against repeated
-        #   calls to the same argument-less accessor, e.g. a nil check on
-        #   'pin.location' narrowing a later 'pin.location.filename'.
-        def resolve api_map, name_pin, locals, receiver_path = nil
+        def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          # a head call with no local of its name is an implicit-self call
-          found ||= narrowed_call_pin(api_map, name_pin, locals, head? ? ['self'] : receiver_path)
+          found ||= narrowed_call_pin(api_map, name_pin, locals)
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
@@ -206,9 +200,10 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::Base>]
-        # @param receiver_path [::Array<String>, nil]
         # @return [Pin::Base, nil]
-        def narrowed_call_pin api_map, name_pin, locals, receiver_path
+        def narrowed_call_pin api_map, name_pin, locals
+          # a head call with no local of its name is an implicit-self call
+          receiver_path = head? ? ['self'] : (name_pin.receiver_path if name_pin.is_a?(Pin::ProxyType))
           return nil if receiver_path.nil? || receiver_path.empty?
           return nil unless arguments.empty? && !with_block?
 

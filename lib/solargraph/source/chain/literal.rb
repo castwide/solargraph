@@ -41,11 +41,7 @@ module Solargraph
           super + [@value, @type, @literal_type, @complex_type]
         end
 
-        # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Base>]
-        # @param _receiver_path [::Array<String>, nil]
-        def resolve api_map, name_pin, locals, _receiver_path = nil
+        def resolve api_map, name_pin, locals
           if api_map.super_and_sub?(@complex_type.name, @literal_type.name)
             [Pin::ProxyType.anonymous(@literal_type, source: :chain)]
           else
