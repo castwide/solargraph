@@ -31,8 +31,13 @@ module Solargraph
       end
 
       def combine_with other, attrs = {}
-        # Parameters can only be combined with local variables in the same closure
-        return self unless other.closure == closure
+        # Parameters can only be combined with local variables in the same
+        # closure. A parameter of a nested closure (e.g., a block) shadows us.
+        unless other.closure == closure
+          other_start = other.presence&.start
+          return other if other.is_a?(Parameter) && other_start && presence&.contain?(other_start)
+          return self
+        end
 
         new_attrs = if other.is_a?(Parameter)
                       {
