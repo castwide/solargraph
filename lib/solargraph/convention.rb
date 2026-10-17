@@ -13,6 +13,7 @@ module Solargraph
     autoload :DataDefinition,   'solargraph/convention/data_definition'
     autoload :ClassDefinition,  'solargraph/convention/class_definition'
     autoload :ActiveSupportConcern, 'solargraph/convention/active_support_concern'
+    autoload :ActiveSupportAccessors, 'solargraph/convention/active_support_accessors'
 
     # @type [Set<Convention::Base>]
     @@conventions = Set.new
