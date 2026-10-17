@@ -5,7 +5,7 @@ describe Solargraph::Source do
     code = 'class Foo;def bar;end;end'
     source = described_class.new(code)
     expect(source.code).to eq(code)
-    expect(Solargraph::Parser).to be_is_ast_node(source.node)
+    expect(source.node).to be_a(Parser::AST::Node)
     expect(source).to be_parsed
   end
 
