@@ -1342,4 +1342,30 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [9, 12])).to eq('Array<Integer>')
     end
   end
+
+  describe '#parse_receiver_chain' do
+    let(:typing) { described_class.new([], [], nil, nil) }
+
+    # @param code [String]
+    # @return [Array<String>, nil]
+    def chain_of code
+      typing.send(:parse_receiver_chain, Solargraph::Parser.parse(code))
+    end
+
+    it 'names a bare call' do
+      expect(chain_of('foo')).to eq(['foo'])
+    end
+
+    it 'names a chain of argument-less calls on a variable' do
+      expect(chain_of('@foo.bar.baz')).to eq(['@foo', 'bar', 'baz'])
+    end
+
+    it 'rejects a call with arguments' do
+      expect(chain_of('foo.bar(1)')).to be_nil
+    end
+
+    it 'rejects a chain rooted at a call with arguments' do
+      expect(chain_of('foo(1).bar')).to be_nil
+    end
+  end
 end
