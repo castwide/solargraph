@@ -15,3 +15,5 @@ coverage
 /.pryrc
 /.rspec-local
 vendor/cache
+/.claude
+/.cursor
