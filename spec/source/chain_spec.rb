@@ -124,6 +124,7 @@ describe Solargraph::Source::Chain do
     chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(8, 20))
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(type.name).to eq('MyModel')
+  ensure
     Solargraph::Convention.unregister dummy_convention
   end
 
@@ -166,6 +167,7 @@ describe Solargraph::Source::Chain do
     pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(pins.length).to eq(1)
     expect(pins.first).to be_a(Solargraph::Pin::FactoryParameter)
+  ensure
     Solargraph::Convention.unregister dummy_convention
   end
 
@@ -206,6 +208,7 @@ describe Solargraph::Source::Chain do
     chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(6, 46))
     pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
     expect(pins.map(&:value)).to eq([:pinned])
+  ensure
     Solargraph::Convention.unregister dummy_convention
   end
 
@@ -364,7 +367,8 @@ describe Solargraph::Source::Chain do
     # chain = Solargraph::Source::NodeChainer.chain(node, 'test.rb')
     chain = Solargraph::Parser.chain(node, 'test.rb')
     type = chain.infer(api_map, Solargraph::Pin::ROOT_PIN, [])
-    expect(type.tag).to eq('Boolean')
+    expect(type.tag).to eq('true')
+    expect(type.simplify_literals.tag).to eq('Boolean')
   end
 
   it 'infers self from Object#freeze' do

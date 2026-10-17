@@ -82,11 +82,14 @@ module Solargraph
                                                                                                 '  '))).lines.each do |l|
             if l.start_with?('  ')
               # Code block
+              # @sg-ignore Translate to something flow sensitive typing understands
               sections.push DocSection.new(true) unless sections.last.code?
+            # @sg-ignore Translate to something flow sensitive typing understands
             elsif sections.last.code?
               # Regular documentation
               sections.push DocSection.new(false)
             end
+            # @sg-ignore Translate to something flow sensitive typing understands
             sections.last.concat l
           end
           sections.map(&:to_s).join.strip

@@ -12,7 +12,7 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
-    # @param type [RBS::Types::Bases::Base]
+    # @param type [RBS::Types::t]
     # @return [ComplexType]
     def self.to_complex_type(type)
       tag = type_to_tag(type)
@@ -25,14 +25,40 @@ module Solargraph
     # @param closure [Pin::Closure]
     # @return [Pin::Parameter]
     def self.to_parameter_pin(param_type, name, decl, closure)
-      return_type = if decl == :restarg
-        ComplexType.parse('Array')
-      elsif decl == :kwrestarg
-        ComplexType.parse('Hash{Symbol => Object}')
-      else
-        RbsTranslator.to_complex_type(param_type.type)
-      end
+      return_type = case decl
+                    when :restarg
+                      RbsTranslator.to_restarg_return_type(param_type.type)
+                    when :kwrestarg
+                      RbsTranslator.to_kwrestarg_return_type(param_type.type)
+                    else
+                      RbsTranslator.to_complex_type(param_type.type)
+                    end
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
+    end
+
+    # The type of the local variable a restarg is captured into
+    # inside the method body - a wrapped Array of its per-element
+    # type, e.g. `Array<Integer>` for `*args: Integer`. When the
+    # element type isn't known (e.g. an untyped inline `#:`
+    # annotation), falls back to a bare, unparameterized Array.
+    #
+    # @param elem_rbs_type [RBS::Types::t]
+    # @return [ComplexType]
+    def self.to_restarg_return_type elem_rbs_type
+      elem_type = RbsTranslator.to_complex_type(elem_rbs_type)
+      return ComplexType.parse('Array') if elem_type.undefined?
+      ComplexType.new([ComplexType::UniqueType.new('Array', [], [elem_type], rooted: true, parameters_type: :list)])
+    end
+
+    # Likewise, the type of the local variable a kwrestarg is
+    # captured into - a wrapped Hash of Symbol to its per-value type.
+    #
+    # @param elem_rbs_type [RBS::Types::t]
+    # @return [ComplexType]
+    def self.to_kwrestarg_return_type elem_rbs_type
+      elem_type = RbsTranslator.to_complex_type(elem_rbs_type)
+      return ComplexType.parse('Hash{Symbol => Object}') if elem_type.undefined?
+      ComplexType.new([ComplexType::UniqueType.new('Hash', [ComplexType.try_parse('Symbol')], [elem_type], rooted: true, parameters_type: :hash)])
     end
 
     # @param method_type [RBS::MethodType]
@@ -123,19 +149,30 @@ module Solargraph
     class << self
       private
 
-      # @param type [RBS::Types::Bases::Base]
+      # @param type [RBS::Types::t]
       # @return [String]
       def type_to_tag type
+        # Every branch below narrows `type` by class via `when`, but
+        # the type checker doesn't propagate that narrowing to calls
+        # inside the branch body - it still sees the full RBS::Types::t
+        # union, so calls to members that only exist on the matched
+        # class (e.g. #type, #types, #literal, #name, #args) need an
+        # inline ignore comment. Tracked at
+        # https://github.com/castwide/solargraph/issues/1241
         case type
         when RBS::Types::Optional
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
         when RBS::Types::Tuple
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           type.literal.inspect
         when RBS::Types::Union
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -145,6 +182,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -152,6 +190,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
           'Proc'
@@ -163,9 +202,11 @@ module Solargraph
           # `Interface represents a mix-in module which can be considered a
           # subtype of a consumer of it
           #
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           type_tag(type.name, type.args)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
+          # @sg-ignore https://github.com/castwide/solargraph/issues/1241 - case/when doesn't narrow type
           type_tag(type.name)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return

@@ -13,6 +13,7 @@ module Solargraph
           @location = location
         end
 
+        # @sg-ignore Need better handling of #compact
         def resolve api_map, name_pin, locals
           ivars = api_map.get_instance_variable_pins(name_pin.context.namespace, name_pin.context.scope).select do |p|
             p.name == word

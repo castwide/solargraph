@@ -49,6 +49,66 @@ describe Solargraph::TypeChecker do
         .to eq(['Wrong argument type for #foo: str expected String, received Class<File>'])
     end
 
+    it 'catches a bad #push argument against an inferred Array element type' do
+      # Inference still can't track a mutating call's effect on the
+      # array itself (see clip_spec.rb's mutating-call spec).
+      checker = type_checker(%(
+        y = [1]
+        y.push 'two'
+      ))
+      # The restarg's parameter name (`objects`, `obj`, etc.) varies
+      # across core RBS versions, so match on the substance of the
+      # message rather than the exact name.
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#push: \w+ expected Integer, received "two"\z/))
+    end
+
+    it 'does not report a bogus problem for a restarg typed as RBS `untyped`' do
+      # `**untyped` restargs (e.g. BasicObject#instance_exec) have no
+      # per-element type to check arguments against.
+      checker = type_checker(%(
+        1.instance_exec(2) { }
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'does not leak an unresolved generic from a literal-keyed Hash#fetch' do
+      checker = type_checker(%(
+        class ReproLeak
+          # @param period [Hash{"Index" => Float}]
+          # @return [Float]
+          def literal_key(period)
+            period.fetch('Index')
+          end
+
+          # @param period [Hash{String => Float}]
+          # @return [Float]
+          def class_key(period)
+            period.fetch('Index')
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'catches a bad #<< argument against a fixed-arity generic parameter resolved against the receiver' do
+      # The fixed-arity counterpart to the restarg check above.
+      checker = type_checker(%(
+        y = [1]
+        y << 'two'
+      ))
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(a_string_matching(/\AWrong argument type for Array#<<: \w+ expected Integer, received "two"\z/))
+    end
+
+    it 'does not flag a #<< argument matching the receiver element type' do
+      checker = type_checker(%(
+        y = [1]
+        y << 5
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'handles compatible interfaces with self types on call' do
       checker = type_checker(%(
         # @param a [Enumerable<String>]
@@ -768,7 +828,7 @@ describe Solargraph::TypeChecker do
           foo(123)
         end
         ))
-      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received Integer'])
+      expect(checker.problems.map(&:message)).to eq(['Wrong argument type for #foo: bar expected String, received 123'])
     end
 
     it 'validates inferred return types with complex tags' do
@@ -926,7 +986,6 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    # @todo Possibly redundant
     it 'understands tuple superclass' do
       checker = type_checker(%(
         b = ['a', 'b', 123]
@@ -1021,7 +1080,6 @@ describe Solargraph::TypeChecker do
     end
 
     it 'does not complain when passing NilClass to nil parameter' do
-      pending 'should be feasible'
       checker = type_checker(%(
         # @param a [nil]
         def foo(a); end
