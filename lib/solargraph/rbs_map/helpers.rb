@@ -18,7 +18,6 @@ module Solargraph
           next orig_pin unless rbs_pin && orig_pin.instance_of?(Pin::Method)
 
           unless rbs_pin
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1114
             Solargraph.logger.debug { "GemPins.combine: No rbs pin for #{orig_pin.path} - using YARD's '#{orig_pin.inspect} (return_type=#{orig_pin.return_type}; signatures=#{orig_pin.signatures})" }
             next orig_pin
           end
