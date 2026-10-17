@@ -231,5 +231,3 @@ jobs:
         ALLOW_IMPROVEMENTS=true bundle exec rake spec
       env:
         MATRIX_RAILS_VERSION: "7.0"
-      # @todo Temporary, expect to revert in 0.60
-      continue-on-error: true
