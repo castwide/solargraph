@@ -65,7 +65,9 @@ module Solargraph
         # false, so provide false ranges to assert facts on
 
         # can't assume if an or is true that every single condition is
-        # true, so don't provide true ranges to assert facts on
+        # true, so don't provide true ranges to assert facts on -
+        # except when both sides are `is_a?` on the same variable.
+        process_or_isa_union(or_node, lhs, rhs, true_ranges)
 
         process_expression(lhs, [], false_ranges + [rhs_presence])
         process_expression(rhs, [], false_ranges)
@@ -332,6 +334,39 @@ module Solargraph
         if_false[pin] ||= []
         if_false[pin] << { not_type: ComplexType.parse(isa_type_name) }
         process_facts(if_false, false_presences)
+      end
+
+      # Narrows `x.is_a?(A) || x.is_a?(B)` to the union of A and B.
+      #
+      # @param or_node [Parser::AST::Node]
+      # @param lhs [Parser::AST::Node]
+      # @param rhs [Parser::AST::Node]
+      # @param true_ranges [Array<Range>]
+      #
+      # @return [void]
+      def process_or_isa_union or_node, lhs, rhs, true_ranges
+        return if true_ranges.empty?
+
+        lhs_type_name, lhs_variable_name = parse_isa(lhs)
+        return if lhs_variable_name.nil? || lhs_variable_name.empty?
+
+        rhs_type_name, rhs_variable_name = parse_isa(rhs)
+        return if rhs_variable_name.nil? || rhs_variable_name.empty?
+
+        # only sound to narrow when both sides test the same variable
+        return unless lhs_variable_name == rhs_variable_name
+
+        # @sg-ignore Need to add nil check here
+        or_position = Range.from_node(or_node).start
+
+        pin = find_var(lhs_variable_name, or_position)
+        return unless pin
+
+        # @type Hash{Pin::BaseVariable => Array<Hash{Symbol => ComplexType}>}
+        if_true = {}
+        if_true[pin] ||= []
+        if_true[pin] << { type: ComplexType.parse(lhs_type_name, rhs_type_name) }
+        process_facts(if_true, true_ranges)
       end
 
       # @param nilp_node [Parser::AST::Node]
