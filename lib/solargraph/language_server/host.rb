@@ -621,6 +621,22 @@ module Solargraph
         result
       end
 
+      # Clients can request code lenses for files that are not open, e.g. a
+      # test explorer running a spec file. Those are not attached to a library.
+      #
+      # @param uri [String]
+      # @return [Array<Solargraph::CodeLens>]
+      def code_lenses uri
+        return library_for(uri).code_lenses(uri_to_file(uri)) if sources.include?(uri)
+
+        filename = uri_to_file(uri)
+        library = libraries.find do |lib|
+          directory = lib.workspace.directory
+          lib.contain?(filename) || (!directory.empty? && filename.start_with?(directory))
+        end
+        (library || generic_library).code_lenses(filename)
+      end
+
       # @param uri [String]
       # @return [Array<Solargraph::Pin::Base>]
       def document_symbols uri
@@ -845,7 +861,10 @@ module Solargraph
             foldingRangeProvider: true
           },
           'textDocument/codeAction' => {
-            codeActionProvider: true
+            codeActionKinds: [Message::TextDocument::CodeAction::KIND]
+          },
+          'textDocument/codeLens' => {
+            resolveProvider: false
           },
           'textDocument/documentHighlight' => {
             documentHighlightProvider: true

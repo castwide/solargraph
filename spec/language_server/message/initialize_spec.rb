@@ -78,7 +78,9 @@ describe Solargraph::LanguageServer::Message::Initialize do
                                           referencesProvider: true,
                                           workspaceSymbolProvider: true,
                                           foldingRangeProvider: true,
-                                          documentHighlightProvider: true
+                                          documentHighlightProvider: true,
+                                          codeActionProvider: { codeActionKinds: ['source'] },
+                                          codeLensProvider: { resolveProvider: false }
                                         })
   end
 
@@ -108,6 +110,8 @@ describe Solargraph::LanguageServer::Message::Initialize do
       workspaceSymbolProvider: true,
       foldingRangeProvider: true,
       documentHighlightProvider: true,
+      codeActionProvider: { codeActionKinds: ['source'] },
+      codeLensProvider: { resolveProvider: false },
       workspace: { workspaceFolders: { changeNotifications: true, supported: true } },
       documentFormattingProvider: true,
       textDocumentSync: 2
