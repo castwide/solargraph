@@ -297,7 +297,10 @@ module Solargraph
         return false unless wrapped || name.match?(/\A[a-z_]\w*=\z/i)
 
         receiver_words = write_receiver(target.children[0], words)
-        return false if receiver_words.nil? || receiver_words.length >= words.length
+        return false if receiver_words.nil?
+        # an attr_writer on self assigns its same-named instance variable
+        return true if receiver_words == ['self'] && words.first == "@#{name.chomp('=')}"
+        return false if receiver_words.length >= words.length
 
         receiver_words == words.first(receiver_words.length) && name.chomp('=') == words[receiver_words.length]
       end

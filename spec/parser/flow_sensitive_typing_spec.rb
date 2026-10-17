@@ -1513,6 +1513,36 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Location, nil')
   end
 
+  it 'drops ivar-rooted attr_reader narrowing once the ivar is written through its writer' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Bundler
+        # @return [Pin]
+        attr_accessor :pin
+
+        # @param pin [Pin]
+        def initialize(pin)
+          @pin = pin
+        end
+
+        def scan
+          return nil unless @pin.location
+          self.pin = Pin.new
+          @pin.location
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [20, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]
