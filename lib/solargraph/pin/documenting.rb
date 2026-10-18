@@ -97,7 +97,7 @@ module Solargraph
             end
             sections.last.concat l
           end
-          text = sections.map(&:to_s).join.strip
+          text = sections.join.strip
           note = abstract_note
           note.to_s.empty? ? text : [text, "Abstract: #{note}"].reject(&:empty?).join("\n\n")
         end
