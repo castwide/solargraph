@@ -14,7 +14,7 @@ module Solargraph
         # which also loads Ruby core: for a method a gem adds to a core
         # class, core's pin would be found instead of the gem's, and the
         # gem's signature dropped.
-        rbs_methods_by_path = rbs_pins.select { |pin| pin.is_a?(Pin::Method) }.group_by(&:path)
+        rbs_methods_by_path = rbs_pins.grep(Pin::Method).group_by(&:path)
         # Resolving an alias needs the ancestors only an ApiMap knows
         rbs_api_map = Solargraph::ApiMap.new(pins: rbs_pins) if rbs_pins.any?(Pin::MethodAlias)
         combined = orig_pins.map do |orig_pin|
