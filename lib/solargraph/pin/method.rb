@@ -593,6 +593,9 @@ module Solargraph
           # refinement of an RBS signature set rather than a replacement.
           winner = equal?(boss) ? self : other
           loser = equal?(boss) ? other : self
+          # A bare @return describes no parameters, so it retypes every arity
+          return loser.signatures.map { |sig| sig.proxy(winner.return_type) } if retypes_every_arity?(winner, loser)
+
           superseded = winner.signatures.map(&:type_arity)
           return winner.signatures + loser.signatures.reject { |sig| superseded.include?(sig.type_arity) }
         end
@@ -606,6 +609,19 @@ module Solargraph
         else
           combine_signatures_by_type_arity(*signatures, *other.signatures)
         end
+      end
+
+      # True when the winner documents a return type without saying which
+      # parameters it goes with, as solargraph-rails does for Date#as_json.
+      #
+      # @param winner [Pin::Method]
+      # @param loser [Pin::Method]
+      # @return [Boolean]
+      def retypes_every_arity? winner, loser
+        return false if loser.signatures.empty?
+
+        tags = winner.docstring
+        tags.has_tag?('return') && !tags.has_tag?('overload') && !tags.has_tag?('param')
       end
 
       # @param signature_pins [Array<Pin::Signature>]

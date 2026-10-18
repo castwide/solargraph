@@ -308,6 +308,18 @@ describe Solargraph::ApiMap::Index do
       method_pin = output_pins.find { |pin| pin.path == 'Collection#first' }
       expect(method_pin.signatures.map { |sig| sig.return_type.tag }).to eq(['Array<Symbol>', 'String'])
     end
+
+    context 'when the override gives only a @return tag' do
+      let(:first_override) do
+        Solargraph::Pin::Reference::Override.from_comment('Collection#first', '@return [Symbol]')
+      end
+
+      it 'redefines the return type of every RBS signature' do
+        method_pin = output_pins.find { |pin| pin.path == 'Collection#first' }
+        expect(method_pin.signatures.map { |sig| [sig.parameters.map(&:name), sig.return_type.tag] })
+          .to eq([[[], 'Symbol'], [['count'], 'Symbol']])
+      end
+    end
   end
 
   # A method that defines a macro is cached by name before overrides run, and
