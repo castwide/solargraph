@@ -25,11 +25,16 @@ module Solargraph
                               .reverse
                               .find { |pin| pin.name == link.word }
                   end
-          [found] if found
+          [Lexicon.new(found, receiver.typedef_typeset)] if found
         end
 
         def method_call
-          return receiver.signatures.map(&:block).compact if link.word == 'yield'
+          if link.word == 'yield'
+            return receiver.signatures
+                           .map(&:block)
+                           .compact
+                           .map { |pin| Lexicon.new(pin, receiver.typedef_typeset) }
+          end
 
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([receiver.context]).to_typedef_types
@@ -38,9 +43,9 @@ module Solargraph
                             .map { |pin| find_matching_signature(pin, receiver) }
                             .map { |pin| expand_generic_parameters_from_arguments(pin) }
                             .map { |pin| expand_macros_from_arguments(pin) }
-          return pins unless link.nullable? && receiver.typedef_typeset.nullable?
+          return pins.map { |pin| Lexicon.new(pin, receiver.typedef_typeset) } unless link.nullable? && receiver.typedef_typeset.nullable?
 
-          pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
+          pins.map { |pin| Lexicon.new(pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])), receiver.typedef_typeset) }
         end
 
         # @param pin [Pin::Method]

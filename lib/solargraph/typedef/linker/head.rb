@@ -6,7 +6,7 @@ module Solargraph
       class Head < Base
         # @return [Array<Pin::Base>]
         def resolve
-          return [Pin::ProxyType.anonymous(receiver.context, source: :chain)] if link.word == 'self'
+          return [Lexicon.new(Pin::ProxyType.anonymous(receiver.context, source: :chain), receiver.typedef_typeset)] if link.word == 'self'
           []
         end
       end

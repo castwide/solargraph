@@ -14,7 +14,7 @@ describe Solargraph::Typedef::Linker::Constant do
     # rubocop:enable RSpec/VerifiedDoubles
     constant = described_class.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
-    typeset = result.typedef_typeset
+    typeset = result.pin.typedef_typeset
     expect(typeset.to_s).to eq('Class[String]')
     expect(typeset).to be_rooted
   end
@@ -32,7 +32,7 @@ describe Solargraph::Typedef::Linker::Constant do
     # rubocop:enable RSpec/VerifiedDoubles
     constant = described_class.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
-    typeset = result.typedef_typeset
+    typeset = result.pin.typedef_typeset
     expect(typeset.to_s).to eq('Class[Example::String]')
     expect(typeset).to be_rooted
   end

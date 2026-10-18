@@ -14,7 +14,7 @@ module Solargraph
             gates = receiver.gates
             fqns = api_map.resolve(base, *gates)
             api_map.get_path_pins(fqns)
-          end
+          end.map { |pin| Lexicon.new(pin, receiver.typedef_typeset) }
         end
       end
     end
