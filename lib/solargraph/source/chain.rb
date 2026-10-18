@@ -345,6 +345,8 @@ module Solargraph
       def next_receiver_path path, link, pins
         return nil if path.nil?
         return path + [link.word] if link.is_a?(Chain::InstanceVariable)
+        # explicit self, e.g. 'self' in 'self.location'
+        return ['self'] if path.empty? && link.is_a?(Chain::Head) && link.word == 'self'
 
         simple_call = link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper) &&
                       link.arguments.empty? && !link.with_block?

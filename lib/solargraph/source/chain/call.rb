@@ -47,7 +47,7 @@ module Solargraph
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          found ||= narrowed_call_pin(api_map, name_pin, locals)
+          found ||= narrowed_call_pin(api_map, name_pin)
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
           # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
@@ -199,16 +199,14 @@ module Solargraph
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Base>]
         # @return [Pin::Base, nil]
-        def narrowed_call_pin api_map, name_pin, locals
+        def narrowed_call_pin api_map, name_pin
           # a head call with no local of its name is an implicit-self call
           receiver_path = head? ? ['self'] : (name_pin.receiver_path if name_pin.is_a?(Pin::ProxyType))
           return nil if receiver_path.nil? || receiver_path.empty?
           return nil unless arguments.empty? && !with_block?
 
-          composite_name = (receiver_path + [word]).join('.')
-          pin = api_map.var_at_location(locals, composite_name, name_pin, location)
+          pin = chain_fact(receiver_path + [word], name_pin)
           return nil if pin.nil?
 
           # @type [::Array<Pin::Method, nil>]
@@ -224,6 +222,32 @@ module Solargraph
           declared = pin.assignments.flat_map { |node| pin.return_types_from_node(node, api_map) }
           narrowed = pin.proxy(ComplexType.new(declared.flat_map(&:items).uniq))
           narrowed.typify(api_map).defined? ? narrowed : nil
+        end
+
+        # Combines the facts on path that FlowSensitiveTyping recorded in the
+        # closures around this call (see Pin::Closure#chain_facts), from the
+        # innermost out to the closure that owns the root: a local stops at a
+        # method or namespace, self or an ivar also at a block that rebinds
+        # self, e.g. via instance_eval.
+        #
+        # @param path [::Array<String>] e.g. ['self', 'location'] or ['pin', 'location']
+        # @param name_pin [Pin::Base]
+        # @return [Pin::BaseVariable, nil]
+        def chain_fact path, name_pin
+          return nil if location.nil?
+
+          self_bound = path.first == 'self' || path.first&.start_with?('@')
+          here = name_pin
+          here = here.closure until here.nil? || here.is_a?(Pin::Closure)
+          facts = []
+          while here.is_a?(Pin::Closure)
+            facts.concat((here.chain_facts[path] || []).select { |fact| fact.presence&.contain?(location.range.start) })
+            break if self_bound && here.rebound?
+            break unless here.is_a?(Pin::Block)
+
+            here = here.closure
+          end
+          facts.inject(&:combine_with)
         end
 
         # @param pins [::Enumerable<Pin::Base>]
