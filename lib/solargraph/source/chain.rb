@@ -344,12 +344,10 @@ module Solargraph
         return unless key
 
         receiver = links.first(index)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1316
         receiver_name = links_name(receiver)
         name = receiver_name && Parser::NodeMethods.key_lookup_name(receiver_name, key.node)
         pin = name && api_map.var_at_location(locals, name, name_pin, link.location)
         return unless pin && non_nil_hash?(working_pin.binder, api_map)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1316
         return unless stable_links?(receiver, api_map, name_pin, locals)
         return unless key.literal? || stable_links?(key.links, api_map, name_pin, locals)
 
@@ -377,7 +375,6 @@ module Solargraph
       #   attr_reader
       def stable_links? chain_links, api_map, name_pin, locals
         (1..chain_links.length).all? do |length|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1316
           pins = Chain.new(chain_links.first(length)).define(api_map, name_pin, locals)
           !pins.empty? && pins.all? do |pin|
             pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && pin.attribute?)
