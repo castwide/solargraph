@@ -490,7 +490,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         isa_position = Range.from_node(isa_node).start
 
-        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        # @sg-ignore Wrong argument type for Solargraph::Parser::FlowSensitiveTyping#chain_pin: chain_words expected Array<String>, received String
         pin = chain_pin(chain_words, isa_node.children[0], isa_position)
         return unless pin
 
@@ -528,7 +528,7 @@ module Solargraph
         # @sg-ignore Need to add nil check here
         nilp_position = Range.from_node(nilp_node).start
 
-        # @sg-ignore chain_pin's tuple-destructured args typecheck oddly
+        # @sg-ignore Wrong argument type for Solargraph::Parser::FlowSensitiveTyping#chain_pin: chain_words expected Array<String>, received String
         pin = chain_pin(chain_words, nilp_node.children[0], nilp_position)
         return unless pin
 
