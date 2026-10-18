@@ -158,9 +158,8 @@ describe Solargraph::Pin::LocalVariable do
       api_map = Solargraph::ApiMap.new
       api_map.map source
       x = api_map.source_map('test.rb').locals.find { |p| p.name == 'x' }
-      api_map.get_path_pins('Foo#bar').first
       each_block_pin = api_map.get_block_pins.find do |b|
-        b.location.range.start.line == 4
+        b.location.filename == 'test.rb' && b.location.range.start.line == 4
       end
       expect(each_block_pin).not_to be_nil
       range = Solargraph::Range.from_to(5, 24, 5, 25)
