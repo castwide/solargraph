@@ -41,4 +41,10 @@ describe Solargraph::RbsMap::Gem do
     root_pin = root_pins.first
     expect(root_pin.return_type.to_s).to eq('RBS::Namespace, nil')
   end
+
+  it 'ignores signatures outside the sig directory' do
+    # The rbs gem ships Ruby core signatures in core/, which must not
+    # shadow the core pins Solargraph maps itself
+    expect(gem.path_pins('Hash#[]')).to be_empty
+  end
 end
