@@ -99,7 +99,6 @@ jobs:
       run: bundle exec rbs validate
   rubocop_todo:
     name: .rubocop_todo.yml
-    continue-on-error: true
     runs-on: ubuntu-latest
 
     steps:
@@ -119,6 +118,7 @@ jobs:
       continue-on-error: true
 
     - name: Run RuboCop against todo file
+      continue-on-error: true
       run: |
         cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
         ${cmd:?}
