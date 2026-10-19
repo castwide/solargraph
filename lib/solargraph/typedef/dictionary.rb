@@ -106,7 +106,8 @@ module Solargraph
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
         #   or undefined otherwise
         result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-                     .map { |pin| root_and_infer(pin, receiver) }
+                     .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
+                     .map { |pin| deep_infer(pin, receiver) }
 
         # @todo Find the first pin with a defined type?
         # @todo Making a proxy for undefined types seems inefficient
@@ -123,7 +124,7 @@ module Solargraph
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
-      def root_and_infer pin, receiver
+      def deep_infer pin, receiver
         # @todo A Class#new exception is necessary because the current pin from
         #   RBS core has return type `undefined`. A better solution is a
         #   CoreFills override of `Class#new => self`, but it interferes with
@@ -133,7 +134,8 @@ module Solargraph
         else
           pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
         end
-        rooted = resolve_rooted(expanded, receiver)
+        # rooted = resolve_rooted(expanded, receiver)
+        rooted = expanded.typedef_typeset
         inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
                      infer_by_pin_type expanded, receiver
                    else
