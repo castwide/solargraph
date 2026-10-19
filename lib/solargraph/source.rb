@@ -516,6 +516,7 @@ module Solargraph
 
       # @param comments [String]
       # @return [YARD::DocstringParser]
+      # @sg-ignore Library method has no usable type
       def parse_docstring comments
         # HACK: Pass a dummy code object to the parser for plugins that
         # expect it not to be nil

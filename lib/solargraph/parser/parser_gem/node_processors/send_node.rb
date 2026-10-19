@@ -51,6 +51,7 @@ module Solargraph
                 # Processing a private class can potentially handle children on its own
                 return if process_private_class_method
               end
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             elsif %i[include extend prepend].include?(method_name) && Parser.is_ast_node?(node.children[0]) && node.children[0].type == :const
               process_qualified_mixin method_name
             elsif method_name == :require && node.children[0].to_s == '(const nil :Bundler)'
@@ -238,6 +239,7 @@ module Solargraph
             instance_reader = boolean_option options, 'instance_reader', instance_accessor
             instance_writer = boolean_option options, 'instance_writer', instance_accessor
             instance_predicate = boolean_option options, 'instance_predicate', true
+            # @sg-ignore String/Array Range slice relies on valid bounds
             node.children[2..].each do |a|
               next unless Parser.is_ast_node?(a) && %i[sym str].include?(a.type)
               name = a.children[0].to_s
@@ -259,7 +261,9 @@ module Solargraph
           # @return [Hash{String => AST::Node}]
           def class_attribute_options
             hash = node.children[-1]
+            # @sg-ignore Translate to something flow sensitive typing understands
             return {} unless Parser.is_ast_node?(hash) && hash.type == :hash
+            # @sg-ignore Translate to something flow sensitive typing understands
             hash.children.each_with_object({}) do |pair, result|
               next unless Parser.is_ast_node?(pair) && pair.type == :pair
               key = pair.children[0]
@@ -276,7 +280,9 @@ module Solargraph
             value = options[name]
             return default unless Parser.is_ast_node?(value)
             # rubocop:disable Lint/BooleanSymbol -- these are AST node types
+            # @sg-ignore Translate to something flow sensitive typing understands
             return true if value.type == :true
+            # @sg-ignore Translate to something flow sensitive typing understands
             return false if value.type == :false
             # rubocop:enable Lint/BooleanSymbol
             default
@@ -356,7 +362,9 @@ module Solargraph
             receiver = node.children[0]
             target = unpack_name(receiver)
             return if target.nil? || target.empty?
+            # @sg-ignore Translate to something flow sensitive typing understands
             closure = Pin::Namespace.new(location: get_node_location(receiver), name: target, source: :parser)
+            # @sg-ignore String/Array Range slice relies on valid bounds
             node.children[2..].each do |arg|
               next unless Parser.is_ast_node?(arg)
               name = if arg.type == :self

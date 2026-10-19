@@ -96,6 +96,7 @@ module Solargraph
       end
 
       # @return [YARD::CodeObjects::RootObject]
+      # @sg-ignore Library method has no usable type
       def root_code_object
         # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
