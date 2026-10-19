@@ -8,7 +8,7 @@ module Solargraph
         def resolve
           type_name = link.word.sub(/^</, '').sub(/>$/, '')
           complex_type = ComplexType.parse(type_name)
-          [Lexicon.new(Pin::ProxyType.anonymous(complex_type, source: :chain), receiver.typedef_typeset)]
+          [Pin::ProxyType.anonymous(complex_type, source: :chain)]
         end
       end
     end

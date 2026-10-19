@@ -15,7 +15,7 @@ module Solargraph
                              .select { |p| dictionary.closure.location.contain?(p.location) }
                              .select { |p| p.location.range.start.line <= dictionary.location.range.start.line }
                              .last
-          [nearby || ivars.first].map { |pin| Lexicon.new(pin, receiver.typedef_typeset) }
+          [nearby || ivars.first].compact
         end
       end
     end

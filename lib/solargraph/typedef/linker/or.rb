@@ -17,7 +17,7 @@ module Solargraph
             combined_type = combined_type.without_nil
           end
 
-          [Lexicon.new(Solargraph::Pin::ProxyType.anonymous(combined_type, source: :chain), receiver.typedef_typeset)]
+          [Solargraph::Pin::ProxyType.anonymous(combined_type, source: :chain)]
         end
       end
     end

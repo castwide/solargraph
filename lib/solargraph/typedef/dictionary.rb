@@ -53,8 +53,8 @@ module Solargraph
       def define
         # rubocop:disable Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:define), [[], nil] do
-          lexicons, receiver = define_from chain
-          lexicons.map { |lexicon| lexicon.pin.proxy(Expansions::Macros.expand(api_map, lexicon.pin, receiver).to_complex_type) }
+          pins, receiver = define_from_chain
+          pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
         end
         # rubocop:enable Lint/UselessDefaultValueArgument
       end
@@ -63,10 +63,10 @@ module Solargraph
       def infer
         # rubocop:disable Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
-          lexicons, receiver = define_from chain
-          return ComplexType::UNDEFINED.to_typedef_typeset if lexicons.empty?
+          pins, receiver = define_from_chain
+          return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
-          proxies = infer_proxies(lexicons, receiver)
+          proxies = infer_proxies(pins, receiver)
           inferred = proxies.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
           return inferred.typedef_typeset if inferred
 
@@ -78,30 +78,31 @@ module Solargraph
       private
 
       # @param chain [Source::Chain]
-      # @return [Array(Array<Lexicon>, Pin::Closure)]
-      def define_from chain
-        return [[Lexicon.new(closure, closure.closure)], closure.closure] if chain.undefined?
+      # @return [Array<Pin::Base>, Pin::Closure)]
+      def define_from_chain
+        # @todo Verify
+        return [[], nil] if chain.undefined?
 
-        lexicons = []
+        pins = []
         receiver = closure
         last_link = chain.links.last
+
         chain.links.each do |link|
-          lexicons = hitch(link, receiver)
+          pins = hitch(link, receiver)
           break if link == last_link
 
-          proxies = infer_proxies(lexicons, receiver)
+          proxies = infer_proxies(pins, receiver)
           return [[], receiver] if proxies.empty?
           receiver = proxies.first
           return [[], nil] unless receiver
         end
-        [lexicons, receiver]
+        [pins, receiver]
       end
 
-      # @param lexicons [Array<Lexicon>]
-      # @param receiver [Pin::Closure, nil]
+      # @param lexicons [Array<Pin::Base>]
+      # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
-      def infer_proxies lexicons, receiver
-        pins = lexicons.map(&:pin)
+      def infer_proxies pins, receiver
         return pins unless receiver # @todo Why is this necessary?
 
         # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
@@ -109,6 +110,7 @@ module Solargraph
         result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                      .map { |pin| root_and_infer(pin, receiver) }
 
+        # @todo Find the first pin with a defined type?
         # @todo Making a proxy for undefined types seems inefficient
         [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
       end

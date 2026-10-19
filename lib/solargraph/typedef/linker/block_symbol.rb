@@ -5,7 +5,7 @@ module Solargraph
     module Linker
       class BlockSymbol < Base
         def resolve
-          [Lexicon.new(Pin::ProxyType.anonymous(ComplexType.try_parse('::Proc'), source: :chain), receiver.typedef_typeset)]
+          [Pin::ProxyType.anonymous(ComplexType.try_parse('::Proc'), source: :chain)]
         end
       end
     end
