@@ -1,0 +1,3 @@
+class CollectionVersionFixture
+  def from_six: () -> String
+end
