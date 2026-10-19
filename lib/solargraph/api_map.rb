@@ -109,7 +109,12 @@ module Solargraph
       # @todo Determine what needs to be sent to global conventions
       conventions_environ.merge Convention.for_global(nil)
       external_changed = external.update(bench.external_requires.to_a + conventions_environ.requires)
-      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) { process_macros }
+      store_changed = store.update(@@core_pins, external.pins.clone, conventions_environ.pins, iced_pins, live_pins) do
+        @processing_macros = true
+        process_macros
+      ensure
+        @processing_macros = false
+      end
       @cache.clear if external_changed || store_changed
       Solargraph.logger.info "Cataloging ApiMap finished in #{Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time} seconds"
       self
@@ -941,6 +946,10 @@ module Solargraph
         break if original
       end
       if original.nil?
+        # Macro-generated pins join the store only after process_macros
+        # returns, so an alias to one cannot resolve yet
+        return nil if @processing_macros
+
         # :nocov:
         Solargraph.assert_or_log(:alias_target_missing) do
           "Rejecting alias - target is missing while looking for #{alias_pin.full_context.tag} #{alias_pin.original} in #{alias_pin.scope} scope = #{alias_pin.inspect}"
