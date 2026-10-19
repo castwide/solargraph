@@ -34,6 +34,8 @@ module Solargraph
                 source: :parser
               )
             end
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             NodeProcessor.process(node.children[2], region, pins, locals, ivars)
           end
         end

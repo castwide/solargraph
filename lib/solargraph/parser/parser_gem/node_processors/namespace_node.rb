@@ -8,6 +8,8 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             name = unpack_name(node.children[0])
             comments = comments_for(node)
 
@@ -67,6 +69,8 @@ module Solargraph
 
           # @return [String, nil]
           def type_from_node
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             unpack_name(node.children[1]) if node.children[1]&.type == :const
           end
         end
