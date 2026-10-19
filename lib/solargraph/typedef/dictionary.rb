@@ -80,13 +80,11 @@ module Solargraph
       # @param chain [Source::Chain]
       # @return [Array<Pin::Base>, Pin::Closure)]
       def define_from_chain
-        # @todo Verify
-        return [[], nil] if chain.undefined?
+        return [[closure], closure.closure] if chain.undefined?
 
         pins = []
         receiver = closure
         last_link = chain.links.last
-
         chain.links.each do |link|
           pins = hitch(link, receiver)
           break if link == last_link
