@@ -1294,5 +1294,17 @@ describe Solargraph::TypeChecker do
       ), ['forwardable'])
       expect(checker.problems).to be_empty
     end
+
+    it 'types method parameters from inline rbs signatures' do
+      checker = type_checker(%(
+        class Foo
+          #: (String) -> Integer
+          def bar(baz)
+            baz.size
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

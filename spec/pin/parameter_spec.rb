@@ -243,6 +243,28 @@ describe Solargraph::Pin::Parameter do
     expect(map.locals.first.return_type.tag).to eq('String')
   end
 
+  it 'detects method parameter return types from inline rbs signatures' do
+    source = Solargraph::Source.load_string(%(
+      #: (String, ?Integer, key: Symbol) -> void
+      def foo bar, baz = 1, key:
+      end
+    ), 'file.rb')
+    map = Solargraph::SourceMap.map(source)
+    expect(map.locals.map { |l| [l.name, l.return_type.to_s] })
+      .to eq([%w[bar String], %w[baz Integer], %w[key Symbol]])
+  end
+
+  it 'prefers inline rbs signatures over @param tags' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [Integer]
+      #: (String) -> void
+      def foo bar
+      end
+    ), 'file.rb')
+    map = Solargraph::SourceMap.map(source)
+    expect(map.locals.first.return_type.to_s).to eq('String')
+  end
+
   it 'tracks its index' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo bar
