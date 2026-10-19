@@ -212,12 +212,6 @@ Naming/MethodParameterName:
     - 'lib/solargraph/source.rb'
     - 'lib/solargraph/yard_map/mapper/to_method.rb'
 
-# Configuration parameters: Mode, AllowedMethods, AllowedPatterns, AllowBangMethods, WaywardPredicates.
-# AllowedMethods: call
-# WaywardPredicates: infinite?, nonzero?
-Naming/PredicateMethod:
-  Enabled: false
-
 # Configuration parameters: NamePrefix, ForbiddenPrefixes, AllowedMethods, MethodDefinitionMacros, UseSorbetSigs.
 # NamePrefix: is_, has_, have_, does_
 # ForbiddenPrefixes: is_, has_, have_, does_
@@ -438,10 +432,6 @@ Style/RedundantParentheses:
 Style/RedundantRegexpCharacterClass:
   Exclude:
     - 'lib/solargraph/pin/base.rb'
-
-# This cop supports unsafe autocorrection (--autocorrect-all).
-Style/SelectByKind:
-  Enabled: false
 
 # This cop supports unsafe autocorrection (--autocorrect-all).
 Style/SlicingWithRange:
