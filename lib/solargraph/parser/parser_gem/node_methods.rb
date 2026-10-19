@@ -589,16 +589,9 @@ module Solargraph
                   result.concat from_value_position_statement(node.children[1])
                 elsif SKIPPABLE.include?(node.type)
                   next
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                #   also needs https://github.com/castwide/solargraph/pull/1416
                 elsif node.type == :resbody
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat reduce_to_value_nodes([node.children[2]])
-                # @sg-ignore child node types depend on parent node type
                 elsif node.type == :return
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return here because the rest of the code is
                   # unreachable and shouldn't be looked at
@@ -634,8 +627,6 @@ module Solargraph
               nodes.each do |node|
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :return
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return the result here because the rest of the code is
                   # unreachable

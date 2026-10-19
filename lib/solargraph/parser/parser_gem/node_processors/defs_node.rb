@@ -17,8 +17,6 @@ module Solargraph
                         region.closure
                       else
                         Solargraph::Pin::Namespace.new(
-                          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                          #   also needs https://github.com/castwide/solargraph/pull/1416
                           name: unpack_name(node.children[0]),
                           source: :parser
                         )
