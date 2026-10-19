@@ -205,5 +205,22 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary.infer
       expect(typeset.to_s).to eq('undefined')
     end
+
+    it 'infers from variable assignments with if conditions' do
+      pending 'better node chain resolution'
+      source = Solargraph::Source.load_string(%(
+        x = if foo
+          1
+        else
+          '2'
+        end
+        x
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new.map(source)
+      dictionary = described_class.new(api_map, 'test.rb', [5, 8])
+      typeset = dictionary.infer
+      expect(typeset.to_s).to eq('String | Integer')
+    end
   end
 end
