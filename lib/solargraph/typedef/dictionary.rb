@@ -97,7 +97,7 @@ module Solargraph
         [pins, receiver]
       end
 
-      # @param lexicons [Array<Pin::Base>]
+      # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
