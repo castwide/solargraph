@@ -11,7 +11,6 @@ module Solargraph
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
     autoload :Tuple,      'solargraph/typedef/tuple'
-    autoload :Lexicon,    'solargraph/typedef/lexicon'
 
     # Convert a value to a Path or Token
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]
