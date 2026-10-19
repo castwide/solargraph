@@ -26,6 +26,7 @@ module Solargraph
         new_pins = RbsMap::Conversions.new(loader: loader).pins
 
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+        # @sg-ignore Accept NilClass where nil is declared
         fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
         fill_conversions = Conversions.new(loader: fill_loader)

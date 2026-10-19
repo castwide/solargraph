@@ -16,6 +16,7 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
+      # @sg-ignore Skip collection gems that have no source path
       mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
     end
 
@@ -59,6 +60,7 @@ module Solargraph
 
     # @param metagem [Metagem]
     # @return [String, nil]
+    # @sg-ignore Accept NilClass where nil is declared
     def best_key metagem
       key = "#{metagem.name}-#{metagem.version}"
       return key if gem_path_map.key?(key)

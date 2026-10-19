@@ -68,7 +68,9 @@ module Solargraph
     end
 
     # @return [Array<String>]
+    # @sg-ignore Define the missing read_rbs_collection_paths
     def rbs_collection_paths
+      # @sg-ignore Define the missing read_rbs_collection_paths
       @rbs_collection_paths ||= read_rbs_collection_paths
     end
 
