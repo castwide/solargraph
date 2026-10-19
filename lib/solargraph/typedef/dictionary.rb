@@ -107,6 +107,7 @@ module Solargraph
         #   or undefined otherwise
         result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                      .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
+                     .map { |pin| expand_self(pin, receiver) }
                      .map { |pin| deep_infer(pin, receiver) }
 
         # @todo Find the first pin with a defined type?
@@ -121,10 +122,7 @@ module Solargraph
         pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
       end
 
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Closure]
-      # @return [Pin::Base]
-      def deep_infer pin, receiver
+      def expand_self pin, receiver
         # @todo A Class#new exception is necessary because the current pin from
         #   RBS core has return type `undefined`. A better solution is a
         #   CoreFills override of `Class#new => self`, but it interferes with
@@ -134,12 +132,17 @@ module Solargraph
         else
           pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
         end
-        # rooted = resolve_rooted(expanded, receiver)
-        rooted = expanded.typedef_typeset
-        inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
-                     infer_by_pin_type expanded, receiver
+      end
+
+      # @param pin [Pin::Base]
+      # @param receiver [Pin::Closure]
+      # @return [Pin::Base]
+      def deep_infer pin, receiver
+        typeset = pin.typedef_typeset
+        inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
+                     infer_by_pin_type pin, receiver
                    else
-                     rooted
+                     typeset
                    end
         # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
         #   breaks a whole lot of stuff
