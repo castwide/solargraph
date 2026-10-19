@@ -360,6 +360,8 @@ module Solargraph
             }[keyword]
             return if reference_class.nil?
             receiver = node.children[0]
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             target = unpack_name(receiver)
             return if target.nil? || target.empty?
             # @sg-ignore Translate to something flow sensitive typing understands
