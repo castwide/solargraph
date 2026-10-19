@@ -5,7 +5,7 @@ module Solargraph
     autoload :Addon, 'solargraph/plugin/addon'
     autoload :Base, 'solargraph/plugin/base'
     autoload :Panel, 'solargraph/plugin/panel'
-    autoload :ActiveSupport, 'solargraph/plugin_active_support'
+    autoload :ActiveSupport, 'solargraph/plugin/active_support'
 
     def self.registry
       @registry ||= Set.new

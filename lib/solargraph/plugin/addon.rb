@@ -7,7 +7,7 @@ module Solargraph
 
       # @param gem_names [Array<String>]
       # @param pins [Array<Pin::Base>]
-      def initialize gem_names = [], pins = []
+      def initialize gem_names: [], pins: []
         @gem_names = gem_names
         @pins = pins
       end
