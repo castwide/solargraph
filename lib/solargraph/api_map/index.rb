@@ -111,6 +111,7 @@ module Solargraph
 
       # @return [self]
       def deep_clone
+        # @param copy [Index]
         Index.allocate.tap do |copy|
           copy.pin_select_cache = {}
           copy.pins = pins.clone

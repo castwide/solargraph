@@ -42,6 +42,7 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    # @return [Set<String>]
     def loaded_stdlibs
       @loaded_stdlibs ||= Set.new
     end
@@ -118,10 +119,12 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    # @return [RbsCollection]
     def rbs_collection
       @rbs_collection ||= RbsCollection.new(rbs_collection_lockfile)
     end
 
+    # @return [String, nil]
     def rbs_collection_lockfile
       # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       return if directory.nil? || directory.empty? || directory == '*'
