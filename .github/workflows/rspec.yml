@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   rspec:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         # @todo Restore 'head' once ruby/setup-ruby publishes it for ubuntu-24.04.
@@ -58,7 +58,7 @@ jobs:
     - name: Run tests
       run: bundle exec rake spec
   undercover:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
       with:
