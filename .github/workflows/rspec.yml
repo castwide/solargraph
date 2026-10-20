@@ -37,9 +37,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install libjitterentropy.a for rugged
-      if: matrix.ruby-version != '3.1'
       # Ubuntu 26.04's libcrypto.pc links it statically
-      run: sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -72,7 +74,10 @@ jobs:
         fetch-depth: 0
     - name: Install libjitterentropy.a for rugged
       # Ubuntu 26.04's libcrypto.pc links it statically
-      run: sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
