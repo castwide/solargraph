@@ -12,7 +12,5 @@ module Solargraph
         @pins = pins
       end
     end
-
-    EMPTY_ADDON = Addon.new.freeze
   end
 end

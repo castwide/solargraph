@@ -4,6 +4,7 @@ module Solargraph
   module Plugin
     class ActiveSupport < Base
       ATTRIBUTE_NAME = /\A[_A-Za-z]\w*\z/
+      EMPTY_ADDON = Addon.new.freeze
 
       def addon
         return EMPTY_ADDON unless gem_names.include?('activesupport')
