@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   regression:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v3
@@ -50,7 +50,7 @@ jobs:
     - name: Ensure specs still run
       run: bundle exec rake spec
   rails:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v3
@@ -85,7 +85,7 @@ jobs:
     - name: Ensure specs still run
       run: bundle exec rake spec
   rspec:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v3
@@ -120,7 +120,7 @@ jobs:
 
   run_solargraph_rspec_specs:
     # check out solargraph-rspec as well as this project, and point the former to use the latter as a local gem
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       SOLARGRAPH_CACHE: ${{ github.workspace }}/../solargraph-rspec/vendor/solargraph/cache
       BUNDLE_PATH: ${{ github.workspace }}/../solargraph-rspec/vendor/bundle
@@ -178,7 +178,7 @@ jobs:
 
   run_solargraph_rails_specs:
     # check out solargraph-rails as well as this project, and point the former to use the latter as a local gem
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
     - name: clone solargraph-rails
