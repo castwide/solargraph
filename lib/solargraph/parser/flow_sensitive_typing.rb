@@ -233,7 +233,7 @@ module Solargraph
 
           element = Pin::LocalVariable.new(name: param.name, return_type: element_type, closure: block_pin,
                                            location: param.location, source: :flow_sensitive_typing)
-          # @sg-ignore https://github.com/apiology/solargraph/pull/200
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1437
           new([element], [], block_pin, block_pin).type_where_true(element, block_body, api_map)
         end
 
