@@ -413,15 +413,16 @@ module Solargraph
     # Pins that declare the type of a global variable, from the highest
     # layer that declares one: RBS (core, stdlib and gem signatures,
     # including the RBS collection), then gem source, then the workspace.
-    # A concrete type in any layer beats an `untyped` declaration.
-    # Assignments neither widen nor narrow the declared type.
+    # Assignments neither widen nor narrow the declared type. An `untyped`
+    # declaration counts as none, so a concrete type in a lower layer
+    # beats it, and without one the assignments decide.
     #
     # @param name [String]
     # @return [Array<Solargraph::Pin::GlobalVariable>]
     def get_declared_global_variable_pins name
-      declared = get_global_variable_pins.select { |pin| pin.name == name && pin.docstring.has_tag?('type') }
-      typed = declared.reject { |pin| pin.typify(self).undefined? }
-      declared = typed unless typed.empty?
+      declared = get_global_variable_pins.select do |pin|
+        pin.name == name && pin.docstring.has_tag?('type') && !pin.typify(self).undefined?
+      end
       top_layer = declared.map { |pin| declaration_layer(pin) }.min
       declared.select { |pin| declaration_layer(pin) == top_layer }
     end

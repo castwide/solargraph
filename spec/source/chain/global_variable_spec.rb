@@ -106,4 +106,25 @@ describe Solargraph::Source::Chain::GlobalVariable do
     api_map = Solargraph::ApiMap.new.map(source)
     expect(api_map.clip_at('test.rb', [3, 8]).infer.rooted_tags).to eq('::Integer, ::String')
   end
+
+  it 'infers a global from its assignments when its only declaration is untyped' do
+    source = Solargraph::Source.load_string(%(
+      # @type [untyped]
+      $untyped_global = 'x'
+      $untyped_global = 1
+      $untyped_global
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::String, ::Integer')
+  end
+
+  it 'defines a global declared in RBS at its workspace assignments too' do
+    source = Solargraph::Source.load_string(%(
+      $stderr = File.new(File::NULL, 'w')
+      $stderr
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    lines = api_map.clip_at('test.rb', [2, 8]).define.filter_map(&:location).map { |location| location.range.start.line }
+    expect(lines).to include(1)
+  end
 end

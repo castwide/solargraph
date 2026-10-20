@@ -305,7 +305,6 @@ module Solargraph
     # @return [Array<Problem>]
     def declared_global_assignment_problems pin, declared_pins
       declared = ComplexType.new(declared_pins.flat_map { |dp| dp.typify(api_map).items }.uniq)
-      return [] if declared.undefined?
       inferred = pin.probe(api_map)
       if inferred.undefined?
         return [] unless rules.require_no_undefined_args?
