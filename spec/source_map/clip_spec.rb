@@ -2759,7 +2759,6 @@ describe Solargraph::SourceMap::Clip do
   end
 
   it 'preserves hash value when it is a union without brackets' do
-    pending 'Inferred type contains NilClass'
     source = Solargraph::Source.load_string(%(
       # @type [Hash{String => Array, Hash, Integer, nil}]
       raw_data = {}

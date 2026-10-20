@@ -617,8 +617,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Integer')
 
     clip = api_map.clip_at('test.rb', [7, 10])
-    # @todo `false` might be acceptable here
-    expect(clip.infer.rooted_tags).to eq('nil, ::Boolean')
+    expect(clip.infer.rooted_tags).to eq('nil, false')
   end
 
   it 'uses .nil? in a return if() in an if to refine types using nil checks' do
