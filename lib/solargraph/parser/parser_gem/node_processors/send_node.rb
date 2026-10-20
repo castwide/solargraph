@@ -348,12 +348,14 @@ module Solargraph
               prepend: Pin::Reference::Prepend
             }[keyword]
             return if reference_class.nil?
-            receiver = node.children[0]
+            # s(:send, receiver, keyword, *args) - the caller checked receiver is a constant
+            node => [:send, ::Parser::AST::Node => receiver, _, *args]
             target = unpack_name(receiver)
             return if target.nil? || target.empty?
             closure = Pin::Namespace.new(location: get_node_location(receiver), name: target, source: :parser)
-            node.children[2..].each do |arg|
-              next unless Parser.is_ast_node?(arg)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            args.each do |child|
+              next unless child in ::Parser::AST::Node => arg
               name = if arg.type == :self
                        region.closure&.full_context&.namespace
                      elsif arg.type == :const
