@@ -83,10 +83,10 @@ module Solargraph
       pins_by_class(Pin::Reference::Require)
     end
 
-    def calls(*method_names)
+    def calls *method_names
       symbolized = method_names.map(&:to_sym)
       node_map.find_by_type(:send).select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
-                       .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
+              .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
     end
 
     def node_map
@@ -212,7 +212,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
+    # @return [Hash{Class, Pin::Base => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)

@@ -15,7 +15,8 @@ describe Solargraph::Source::NodeMap do
 
   let(:node_map) { described_class.new(source.node) }
 
-  # it 'returns send nodes' do
-  #   puts node_map.find_by_type(:send).inspect
-  # end
+  it 'returns send nodes' do
+    result = node_map.find_by_type(:send)
+    expect(result.length).to eq(2)
+  end
 end

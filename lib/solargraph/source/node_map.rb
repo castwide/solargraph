@@ -3,7 +3,7 @@
 module Solargraph
   class Source
     class NodeMap
-      # @param [Parser::AST::Node]
+      # @param node [Parser::AST::Node]
       def initialize node
         @node = node
       end
@@ -20,7 +20,7 @@ module Solargraph
 
       def flatten from
         return [] unless from.is_a?(::Parser::AST::Node)
-        [from].concat from.children.flat_map { |child| flatten child }
+        [from].concat(from.children.flat_map { |child| flatten child })
       end
     end
   end

@@ -32,7 +32,7 @@ describe Solargraph::Plugin::ActiveSupport do
     let(:api_map) { Solargraph::ApiMap.new.map(source) }
 
     context 'with the activesupport gem' do
-      before(:each) do
+      before do
         allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
       end
 
@@ -59,7 +59,7 @@ describe Solargraph::Plugin::ActiveSupport do
       Solargraph::ApiMap.new
                         .map(source)
                         .pins
-                        .select { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.path&.start_with?("#{namespace}") }
+                        .select { |pin| pin.is_a?(Solargraph::Pin::Method) && pin.path&.start_with?(namespace) }
     end
 
     # @return [Array<Array(String, Symbol)>]
@@ -68,7 +68,7 @@ describe Solargraph::Plugin::ActiveSupport do
     end
 
     context 'with the activesupport gem' do
-      before(:each) do
+      before do
         allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
       end
 
