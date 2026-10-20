@@ -32,27 +32,21 @@ module Solargraph
           # @param node [Parser::AST::Node]
           # @return [Parser::AST::Node, nil]
           def new_node node
-            value = node.children[2]
-            return nil if value.nil?
-            return value unless value.type == :block
+            # s(:casgn, scope, name, value) - value is absent when the target is in an mlhs
+            node => [:casgn, _, _, *rest]
+            return nil unless rest in [::Parser::AST::Node => value, *]
 
-            value.children[0]
+            (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
           end
 
           private
 
           # @param send_node [Parser::AST::Node, nil]
           # @return [Boolean]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
           def class_new_node? send_node
-            return false if send_node.nil?
-            return false unless send_node.type == :send
-            return false unless send_node.children[1] == :new
-
-            receiver = send_node.children[0]
-            return false if receiver.nil?
-            return false unless receiver.type == :const
-
-            receiver.children[1] == :Class
+            # s(:send, s(:const, scope, :Class), :new, *args)
+            send_node in [:send, ::Parser::AST::Node[:const, _, :Class], :new, *]
           end
         end
 
@@ -63,10 +57,12 @@ module Solargraph
 
         # @return [String]
         def class_name
-          namespace = node.children[0]
-          return node.children[1].to_s if namespace.nil?
+          # s(:casgn, scope, name, value) - scope is nil for a bare name
+          node => [:casgn, ::Parser::AST::Node | nil => scope, Symbol => name, *]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+          return name.to_s if scope.nil?
 
-          "#{Parser::NodeMethods.unpack_name(namespace)}::#{node.children[1]}"
+          "#{Parser::NodeMethods.unpack_name(scope)}::#{name}"
         end
 
         # The superclass, when it is written as a constant. `Class.new(expr)`
@@ -77,11 +73,10 @@ module Solargraph
           send_node = self.class.new_node(node)
           return nil if send_node.nil?
 
-          arg = send_node.children[2]
-          return nil if arg.nil?
-          return nil unless arg.type == :const
+          # s(:send, receiver, :new, superclass, *) - superclass is absent for a bare Class.new
+          return nil unless send_node in [:send, _, _, ::Parser::AST::Node[:const, *] => superclass, *]
 
-          Parser::NodeMethods.unpack_name(arg)
+          Parser::NodeMethods.unpack_name(superclass)
         end
 
         private
