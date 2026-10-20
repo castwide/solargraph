@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# disable:rubocop RSpec/AnyInstance
+# rubocop:disable RSpec/AnyInstance
 describe Solargraph::Plugin::ActiveSupport do
   # @param namespace [String]
   # @param code [String]
@@ -446,4 +446,4 @@ describe Solargraph::Plugin::ActiveSupport do
     end
   end
 end
-# enable:rubocop RSpec/AnyInstance
+# rubocop:enable RSpec/AnyInstance
