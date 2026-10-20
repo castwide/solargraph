@@ -12,7 +12,7 @@ module Solargraph
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
       autoload :Literal,          'solargraph/typedef/linker/literal'
       autoload :Or,               'solargraph/typedef/linker/or'
-      autoload :If,               'solargraph/typedef/linker/If'
+      autoload :If,               'solargraph/typedef/linker/if'
 
       def hitch link, closure
         case link
