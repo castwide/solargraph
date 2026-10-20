@@ -15,7 +15,9 @@ module Solargraph
     def load metagem
       key = best_key(metagem)
       return [] unless key
-      mem_cache[key] ||= RbsMap::Path.pins(gem_path_map[key])
+      path = gem_path_map[key]
+      return [] unless path
+      mem_cache[key] ||= RbsMap::Path.pins(path)
     end
 
     def gem_keys
@@ -36,8 +38,15 @@ module Solargraph
 
     private
 
+    # Gems whose lockfile entry resolves to no path are left out.
+    #
+    # @return [Hash{String => String}]
     def gem_path_map
-      @gem_path_map ||= raw_data[:gems].to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }
+      @gem_path_map ||= begin
+        # @type [Array<Hash{Symbol => undefined}>]
+        gems = raw_data[:gems]
+        gems.to_h { |gem| ["#{gem[:name]}-#{gem[:version]}", gem_source_path(gem)] }.compact
+      end
     end
 
     # The versions available in the collection for each gem name.
