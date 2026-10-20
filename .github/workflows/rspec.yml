@@ -18,7 +18,8 @@ permissions:
 
 jobs:
   rspec:
-    runs-on: ubuntu-latest
+    # ruby/setup-ruby has no Ruby 3.1 build for Ubuntu 26.04
+    runs-on: ${{ matrix.ruby-version == '3.1' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       matrix:
         # @todo Restore 'head' once ruby/setup-ruby publishes it for ubuntu-24.04.
@@ -35,6 +36,10 @@ jobs:
             rbs-version: '4.0.2'
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      if: matrix.ruby-version != '3.1'
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -65,6 +70,9 @@ jobs:
         # fetch all history for all branches and tags so we can
         # compare against origin/master
         fetch-depth: 0
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:

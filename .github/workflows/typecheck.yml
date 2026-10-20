@@ -24,6 +24,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
