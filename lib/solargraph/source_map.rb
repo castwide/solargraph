@@ -85,8 +85,12 @@ module Solargraph
 
     def calls(*method_names)
       symbolized = method_names.map(&:to_sym)
-      method_call_nodes.select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
-                       .map { |node| Call.new(Parser.chain(node), locate_closure_pin(node.loc.line, node.loc.column)) }
+      node_map.find_by_type(:send).select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
+                       .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
+    end
+
+    def node_map
+      @node_map ||= Source::NodeMap.new(source.node)
     end
 
     # @return [Environ]
@@ -133,6 +137,10 @@ module Solargraph
     # @return [Pin::Method,Pin::Namespace]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
+    end
+
+    def locate_namespace_pin line, character
+      _locate_pin line, character, Pin::Namespace, Pin::Singleton
     end
 
     # @param line [Integer]
