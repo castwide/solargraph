@@ -68,7 +68,7 @@ module Solargraph
         # @return [Parser::AST::Node, nil]
         def body_node
           # s(:class, name, superclass, body)
-          (node in [_, _, _, ::Parser::AST::Node | nil => body, *]) ? body : nil # rubocop:disable Style/RedundantParentheses
+          (node in [_, _, _, ::Parser::AST::Node | nil => body, *]) ? body : nil
         end
 
         private
@@ -78,7 +78,7 @@ module Solargraph
 
         # @return [Parser::AST::Node, nil]
         def data_node
-          (node in [_, _, ::Parser::AST::Node | nil => superclass, *]) ? superclass : nil # rubocop:disable Style/RedundantParentheses
+          (node in [_, _, ::Parser::AST::Node | nil => superclass, *]) ? superclass : nil
         end
 
         # @sg-ignore Need to add nil check here

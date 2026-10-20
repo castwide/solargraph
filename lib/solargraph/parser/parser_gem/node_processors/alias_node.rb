@@ -9,8 +9,8 @@ module Solargraph
             # s(:alias, s(:sym, new), s(:sym, old)) - gvar aliases use s(:gvar, name); `alias :"" a` has s(:dsym)
             node => [:alias, ::Parser::AST::Node => new_node, ::Parser::AST::Node => original_node]
 
-            new_name = (new_node in [_, Symbol | ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
-            original = (original_node in [_, Symbol | ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            new_name = (new_node in [_, Symbol | ::Parser::AST::Node => value, *]) ? value : nil
+            original = (original_node in [_, Symbol | ::Parser::AST::Node => value, *]) ? value : nil
 
             loc = get_node_location(node)
             pins.push Solargraph::Pin::MethodAlias.new(

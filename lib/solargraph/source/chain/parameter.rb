@@ -76,7 +76,7 @@ module Solargraph
         # @return [::String, ::Symbol, nil] The literal value of the parameter,
         #   or nil when it is not a String or Symbol
         def literal_value
-          (literal.node in [_, ::String | ::Symbol => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+          (literal.node in [_, ::String | ::Symbol => value, *]) ? value : nil
         end
       end
     end

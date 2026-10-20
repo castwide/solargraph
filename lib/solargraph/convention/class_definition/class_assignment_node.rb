@@ -36,7 +36,7 @@ module Solargraph
             node => [:casgn, _, _, *rest]
             return nil unless rest in [::Parser::AST::Node => value, *]
 
-            (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
+            (value in [:block, ::Parser::AST::Node => call, *]) ? call : value
           end
 
           private

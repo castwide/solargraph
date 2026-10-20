@@ -263,7 +263,7 @@ module Solargraph
         #
         return unless call_node in [:send, ::Parser::AST::Node | nil => call_receiver, ^method_name, *args]
 
-        call_arg = (args in [::Parser::AST::Node => arg, *]) ? type_name(arg) : nil # rubocop:disable Style/RedundantParentheses
+        call_arg = (args in [::Parser::AST::Node => arg, *]) ? type_name(arg) : nil
 
         # check if call_receiver looks like this:
         #  s(:send, nil, :foo)

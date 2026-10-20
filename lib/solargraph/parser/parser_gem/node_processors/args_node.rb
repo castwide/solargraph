@@ -17,8 +17,8 @@ module Solargraph
                   child => ::Parser::AST::Node => u
                   # s(:arg, name), s(:optarg, name, default), s(:restarg) for an anonymous splat,
                   # or s(:mlhs, *args) for |(a, b)|
-                  name = (u in [_, Symbol | ::Parser::AST::Node | nil => first, *]) ? first : nil # rubocop:disable Style/RedundantParentheses
-                  default = (u in [_, _, ::Parser::AST::Node => second, *]) ? second : nil # rubocop:disable Style/RedundantParentheses
+                  name = (u in [_, Symbol | ::Parser::AST::Node | nil => first, *]) ? first : nil
+                  default = (u in [_, _, ::Parser::AST::Node => second, *]) ? second : nil
                   loc = get_node_location(u)
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,

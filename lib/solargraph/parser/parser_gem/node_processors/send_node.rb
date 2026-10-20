@@ -183,7 +183,7 @@ module Solargraph
             # @sg-ignore Need to add nil check here
             args.each do |a|
               # s(:sym, name) or s(:str, name); attr_reader(*X) passes s(:splat, s(:const, nil, :X))
-              attr_name = (a in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+              attr_name = (a in [_, value, *]) ? value : nil
               loc = get_node_location(node)
               clos = region.closure
               cmnt = comments_for(node)
@@ -427,7 +427,7 @@ module Solargraph
             elsif args in [[:sym | :str, *], *]
               # @sg-ignore Need to add nil check here
               args.each do |x|
-                cn = (x in [_, Symbol | String => value, *]) ? value.to_s : '' # rubocop:disable Style/RedundantParentheses
+                cn = (x in [_, Symbol | String => value, *]) ? value.to_s : ''
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 next if ref.nil?

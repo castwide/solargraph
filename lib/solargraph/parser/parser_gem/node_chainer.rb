@@ -58,7 +58,7 @@ module Solargraph
           return [] unless n.is_a?(::Parser::AST::Node)
           # s(:splat, value) - an anonymous splat in an mlhs has no value
           if n in [:splat, *rest]
-            return (rest in [::Parser::AST::Node => splatted, *]) ? generate_links(splatted) : [] # rubocop:disable Style/RedundantParentheses
+            return (rest in [::Parser::AST::Node => splatted, *]) ? generate_links(splatted) : []
           end
           # @type [Array<Chain::Link>]
           result = []
@@ -194,7 +194,7 @@ module Solargraph
             Chain::BlockSymbol.new(symbol.to_s)
           in [_, ::Parser::AST::Node => block_variable_name_node, *]
             # &blk passes s(:lvar, :blk); &method(:x) passes a send whose first child is nil
-            variable_name = (block_variable_name_node in [_, value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            variable_name = (block_variable_name_node in [_, value, *]) ? value : nil
             Chain::BlockVariable.new("&#{variable_name}")
           else
             # anonymous block forwarding (e.g., "&")

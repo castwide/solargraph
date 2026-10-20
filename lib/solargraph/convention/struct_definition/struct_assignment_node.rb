@@ -28,7 +28,7 @@ module Solargraph
             # s(:casgn, scope, name, value) - value is the call, or a block on it
             return false unless node in [:casgn, _, _, ::Parser::AST::Node => value, *]
 
-            struct_node = (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
+            struct_node = (value in [:block, ::Parser::AST::Node => call, *]) ? call : value
 
             struct_definition_node?(struct_node)
           end
@@ -52,7 +52,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         def struct_node
           node => [_, _, _, ::Parser::AST::Node => value, *]
-          (value in [:block, ::Parser::AST::Node => call, *]) ? call : value # rubocop:disable Style/RedundantParentheses
+          (value in [:block, ::Parser::AST::Node => call, *]) ? call : value
         end
       end
     end

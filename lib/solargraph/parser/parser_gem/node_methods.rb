@@ -121,7 +121,7 @@ module Solargraph
           when :str, :dstr, :int, :float, :sym, true, false
             # a dstr converts to its first part, e.g. s(:str, "foo") for "foo\#{bar}"
             # str: String, int: Integer, float: Float, sym: Symbol, dstr: its first part node
-            (node in [_, String | Integer | Float | Symbol | ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+            (node in [_, String | Integer | Float | Symbol | ::Parser::AST::Node => value, *]) ? value : nil
           when :array
             simple_convert_array(node)
           when :hash
@@ -153,8 +153,8 @@ module Solargraph
             # s(:pair, s(:sym, key), value); a kwsplat contributes its operand's name with a nil value
             next unless pair in ::Parser::AST::Node[_, ::Parser::AST::Node => key_node, *rest]
 
-            key = (key_node in [_, key_value, *]) ? key_value : nil # rubocop:disable Style/RedundantParentheses
-            result[key] = simple_convert((rest in [::Parser::AST::Node => value, *]) ? value : nil) # rubocop:disable Style/RedundantParentheses
+            key = (key_node in [_, key_value, *]) ? key_value : nil
+            result[key] = simple_convert((rest in [::Parser::AST::Node => value, *]) ? value : nil)
           end
           result
         end
@@ -176,8 +176,8 @@ module Solargraph
           node.children.each do |pair|
             # s(:pair, s(:sym, key), value)
             pair => [_, ::Parser::AST::Node => key_node, *rest]
-            key = (key_node in [_, key_value, *]) ? key_value : nil # rubocop:disable Style/RedundantParentheses
-            result[key] = Solargraph::Parser.chain((rest in [::Parser::AST::Node => value, *]) ? value : nil) # rubocop:disable Style/RedundantParentheses
+            key = (key_node in [_, key_value, *]) ? key_value : nil
+            result[key] = Solargraph::Parser.chain((rest in [::Parser::AST::Node => value, *]) ? value : nil)
           end
           result
         end
@@ -521,7 +521,7 @@ module Solargraph
                 # result.push NIL_NODE unless node.children[2]
               elsif ONLY_ONE_CHILD.include?(node.type)
                 # s(:return) or s(:return, value, *more_values)
-                returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                 result.concat reduce_to_value_nodes([returned])
               elsif FIRST_TWO_CHILDREN.include?(node.type)
                 # s(:rescue, body, resbody, *more_resbodies, else)
@@ -592,7 +592,7 @@ module Solargraph
                   result.concat reduce_to_value_nodes([body])
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 elsif node.type == :return
-                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                   result.concat reduce_to_value_nodes([returned])
                   # Return here because the rest of the code is
                   # unreachable and shouldn't be looked at
@@ -630,7 +630,7 @@ module Solargraph
                 next if SKIPPABLE.include?(node.type)
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 if node.type == :return
-                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                   result.concat reduce_to_value_nodes([returned])
                   # Return the result here because the rest of the code is
                   # unreachable
@@ -658,15 +658,15 @@ module Solargraph
                   result.concat reduce_to_value_nodes(branches)
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :return
-                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
+                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                   result.concat reduce_to_value_nodes([returned])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
-                  body = (node in [_, _, _, ::Parser::AST::Node | nil => block_body, *]) ? block_body : nil # rubocop:disable Style/RedundantParentheses
+                  body = (node in [_, _, _, ::Parser::AST::Node | nil => block_body, *]) ? block_body : nil
                   result.concat explicit_return_values_from_compound_statement(body) unless body.nil?
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
-                  body = (node in [_, _, _, ::Parser::AST::Node | nil => resbody_body, *]) ? resbody_body : nil # rubocop:disable Style/RedundantParentheses
+                  body = (node in [_, _, _, ::Parser::AST::Node | nil => resbody_body, *]) ? resbody_body : nil
                   result.concat reduce_to_value_nodes([body])
                 else
                   result.push node
