@@ -80,7 +80,7 @@ describe Solargraph::ComplexType do
     expect(match).to be(true)
   end
 
-  it 'validates modules included by a name relative to the namespace' do
+  it 'validates modules included by an unqualified name' do
     source = Solargraph::Source.load_string(%(
       module Outer
         module Mixin; end
