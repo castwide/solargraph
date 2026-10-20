@@ -204,11 +204,11 @@ module Solargraph
         return type if truthy.nil?
 
         process_expression(expression_node, [truthy], [])
-        # Facts that hold only within part of the expression, like
-        # the left side of `a.is_a?(Foo) || a.zero?` on its right
+        # Downcasts that hold only within part of the expression,
+        # like the left side of `a.is_a?(Foo) || a.zero?` on its right
         # side, have other presences
-        facts = locals.select { |pin| pin.name == variable.name && pin.presence == truthy }
-        facts.each { |pin| type = type.intersect_with(ComplexType.new(pin.typify(api_map).items), api_map) }
+        downcasts = locals.select { |pin| pin.name == variable.name && pin.presence == truthy }
+        downcasts.each { |pin| type = type.intersect_with(ComplexType.new(pin.typify(api_map).items), api_map) }
         type
       end
 
