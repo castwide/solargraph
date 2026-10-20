@@ -565,7 +565,9 @@ module Solargraph
             def from_value_position_compound_statement parent
               result = []
               nodes = parent.children.select { |n| n.is_a?(AST::Node) }
-              nodes.each_with_index do |node, idx|
+              nodes.each_with_index do |child, idx|
+                # nodes holds only the node children
+                child => ::Parser::AST::Node => node
                 if node in [:block, _, _, ::Parser::AST::Node | nil => body, *]
                   result.concat explicit_return_values_from_compound_statement(body) if body
                 elsif node in [:rescue, ::Parser::AST::Node | nil => body, ::Parser::AST::Node => first_resbody, *]
@@ -609,8 +611,9 @@ module Solargraph
             def explicit_return_values_from_compound_statement parent
               return [] unless parent.is_a?(::Parser::AST::Node)
               result = []
-              nodes = parent.children.select { |n| n.is_a?(::Parser::AST::Node) }
-              nodes.each do |node|
+              parent.children.each do |child|
+                # names, literals and nil hold no return statements
+                next unless child in ::Parser::AST::Node => node
                 next if SKIPPABLE.include?(node.type)
                 if node.type == :return
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
