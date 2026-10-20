@@ -61,20 +61,6 @@ module Solargraph
       true
     end
 
-    # @return [Array<String>]
-    def rbs_collection_paths
-      @rbs_collection_paths ||= read_rbs_collection_paths
-    end
-
-    # @return [String, nil]
-    def rbs_collection_config_path
-      # @todo Get rid of the '*' case
-      @rbs_collection_config_path ||= unless directory.nil? || directory.empty? || directory == '*'
-                                        yaml_file = File.join(directory, 'rbs_collection.yaml')
-                                        yaml_file if File.file?(yaml_file)
-                                      end
-    end
-
     private
 
     def update!
