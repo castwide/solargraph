@@ -26,6 +26,43 @@ describe Solargraph::ComplexType do
     expect(match).to be(true)
   end
 
+  context 'with tuples' do
+    it 'accepts a tuple with matching element positions' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(Integer, String)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+
+    it 'rejects a tuple with swapped element positions' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(String, Integer)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a tuple with a different length' do
+      exp = described_class.parse('Array(Integer, String)')
+      inf = described_class.parse('Array(Integer, String, String)')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'rejects a list whose element type cannot fill every position' do
+      exp = described_class.parse('Array(Array<Hash>, Hash)')
+      inf = described_class.parse('Array<Hash>')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(false)
+    end
+
+    it 'accepts a list whose element type fills every position' do
+      exp = described_class.parse('Array(String, String)')
+      inf = described_class.parse('Array<String>')
+      match = inf.conforms_to?(api_map, exp, :method_call)
+      expect(match).to be(true)
+    end
+  end
+
   it 'allows covariant behavior in parameters of Array' do
     exp = described_class.parse('Array<Object>')
     inf = described_class.parse('Array<Integer>')

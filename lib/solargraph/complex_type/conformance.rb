@@ -156,11 +156,31 @@ module Solargraph
 
         return false if inferred.subtypes.empty?
 
+        return tuple_elements_conform? if expected.fixed_parameters? && expected.name == 'Array'
+
         ComplexType.new(inferred.subtypes).conforms_to?(api_map,
                                                         ComplexType.new(expected.subtypes),
                                                         situation,
                                                         rules,
                                                         variance: inferred.parameter_variance(situation))
+      end
+
+      # An Array(A, B) expects A at index 0 and B at index 1, so
+      # compare position by position rather than as a union of A and B.
+      # A list such as Array<A> can fill it only if every element type
+      # could sit at every position.
+      def tuple_elements_conform?
+        return false if inferred.fixed_parameters? && inferred.subtypes.length != expected.subtypes.length
+
+        expected.subtypes.each_with_index.all? do |expected_element, index|
+          inferred_element = if inferred.fixed_parameters?
+                               inferred.subtypes.fetch(index)
+                             else
+                               ComplexType.new(inferred.subtypes)
+                             end
+          inferred_element.conforms_to?(api_map, expected_element, situation, rules,
+                                        variance: inferred.parameter_variance(situation))
+        end
       end
 
       # @return [self]
