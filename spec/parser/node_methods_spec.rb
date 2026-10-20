@@ -121,6 +121,21 @@ describe Solargraph::Parser::NodeMethods do
     expect(returns.map(&:to_s)).to eq(['(true)', '(int 73)', '(false)', '(nil)', '(false)', '(true)'])
   end
 
+  it 'keeps an or-node whole when it is a conditional branch value' do
+    node = parse(%(
+      if m.nil?
+        fallback
+      else
+        m <= expected || fallback
+      end
+    ))
+    returns = described_class.returns_from_method_body(node)
+    # The or-node must stay intact so chain inference (Chain::Or) can
+    # strip nil from the left operand when the right operand is not
+    # nullable; flattening it into both operands loses that.
+    expect(returns.map(&:type)).to eq(%i[send or])
+  end
+
   it 'handles return nodes from case statements with boolean conditions' do
     node = parse(%(
       case true
@@ -166,9 +181,10 @@ describe Solargraph::Parser::NodeMethods do
   it "handles nested 'or' nodes" do
     node = parse('return 1 || "2"')
     rets = described_class.returns_from_method_body(node)
-    expect(rets.length).to eq(2)
-    expect(described_class.infer_literal_node_type(rets[0])).to eq('::Integer')
-    expect(described_class.infer_literal_node_type(rets[1])).to eq('::String')
+    # The or-node stays whole so Chain::Or can union the operands and
+    # strip nil from the left one when the right is not nullable
+    expect(rets.length).to eq(1)
+    expect(rets[0].type).to eq(:or)
   end
 
   it 'finds return nodes in blocks' do
@@ -295,7 +311,7 @@ describe Solargraph::Parser::NodeMethods do
   it "handles nested 'or' nodes from return" do
     node = parse('return 1 || "2"')
     rets = described_class.returns_from_method_body(node)
-    expect(rets.map(&:type)).to eq(%i[int str])
+    expect(rets.map(&:type)).to eq(%i[or])
   end
 
   it 'handles return nodes from case statements' do

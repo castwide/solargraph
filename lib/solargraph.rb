@@ -53,6 +53,7 @@ module Solargraph
   autoload :RbsMap,           'solargraph/rbs_map'
   autoload :CacheDir,         'solargraph/cache_dir'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
+  autoload :RbsCollection,    'solargraph/rbs_collection'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')
