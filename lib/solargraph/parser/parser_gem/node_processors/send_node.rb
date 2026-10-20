@@ -427,7 +427,7 @@ module Solargraph
             elsif args in [[:sym | :str, *], *]
               # @sg-ignore Need to add nil check here
               args.each do |x|
-                cn = (x in [_, value, *]) ? value.to_s : '' # rubocop:disable Style/RedundantParentheses
+                cn = (x in [_, Symbol | String => value, *]) ? value.to_s : '' # rubocop:disable Style/RedundantParentheses
                 # @type [Pin::Method, nil]
                 ref = pins.find { |p| p.is_a?(Pin::Method) && p.namespace == region.closure.full_context.namespace && p.name == cn }
                 next if ref.nil?
