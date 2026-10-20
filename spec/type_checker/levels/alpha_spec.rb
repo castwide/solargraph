@@ -229,5 +229,20 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message))
         .to contain_exactly('Unresolved call to unknown_thing', 'Variable type could not be inferred for $stderr')
     end
+
+    it 'ignores an assignment from an untyped gem method to a global declared in core RBS' do
+      # @todo Like the normal-level spec, this relies on kramdown-parser-gfm
+      #   lacking typed methods.
+      rules = Solargraph::TypeChecker::Rules.new(:alpha, {})
+      api_map = Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_support_call?)
+      source = Solargraph::Source.load_string(%(
+        require 'kramdown-parser-gfm'
+        $stderr = Kramdown::Parser::GFM.new(nil, nil).parse
+      ), 'test.rb')
+      api_map.catalog Solargraph::Bench.new(source_maps: [Solargraph::SourceMap.map(source)],
+                                            external_requires: ['kramdown-parser-gfm'])
+      checker = described_class.new('test.rb', api_map: api_map, level: :alpha, rules: rules)
+      expect(checker.problems.map(&:message)).to be_empty
+    end
   end
 end

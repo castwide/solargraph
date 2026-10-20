@@ -307,6 +307,10 @@ module Solargraph
       declared = ComplexType.new(declared_pins.flat_map { |dp| dp.typify(api_map).items }.uniq)
       inferred = pin.probe(api_map)
       if inferred.undefined?
+        if declared_externally?(pin)
+          ignored_pins.push pin
+          return []
+        end
         return [] unless rules.require_no_undefined_args?
         return [Problem.new(pin.location, "Variable type could not be inferred for #{pin.name}", pin: pin)]
       end
