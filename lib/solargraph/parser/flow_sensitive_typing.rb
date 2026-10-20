@@ -191,15 +191,16 @@ module Solargraph
       end
 
       # The type a variable in locals has wherever an expression is
-      # truthy, e.g. `Foo` for `c` in `c.is_a?(Foo)`
+      # truthy, e.g. `Foo` for `c` of type `Foo, Integer` in
+      # `c.is_a?(Foo)`
       #
       # @param variable [Pin::LocalVariable]
+      # @param type [ComplexType] The variable's type outside the expression
       # @param expression_node [Parser::AST::Node]
       # @param api_map [ApiMap]
       #
       # @return [ComplexType]
-      def type_where_true variable, expression_node, api_map
-        type = ComplexType.new(variable.typify(api_map).items)
+      def type_where_true variable, type, expression_node, api_map
         truthy = Range.from_node(expression_node)
         return type if truthy.nil?
 
@@ -208,7 +209,7 @@ module Solargraph
         # like the left side of `a.is_a?(Foo) || a.zero?` on its right
         # side, have other presences
         downcasts = locals.select { |pin| pin.name == variable.name && pin.presence == truthy }
-        downcasts.each { |pin| type = type.intersect_with(ComplexType.new(pin.typify(api_map).items), api_map) }
+        downcasts.each { |pin| type = ComplexType.new(pin.adjust_type(api_map, type).items) }
         type
       end
 
@@ -231,10 +232,8 @@ module Solargraph
           param = block_pin.parameters.fetch(0)
           return element_type unless param.arg?
 
-          element = Pin::LocalVariable.new(name: param.name, return_type: element_type, closure: block_pin,
-                                           location: param.location, source: :flow_sensitive_typing)
           # @sg-ignore https://github.com/castwide/solargraph/pull/1437
-          new([element], [], block_pin, block_pin).type_where_true(element, block_body, api_map)
+          new([param], [], block_pin, block_pin).type_where_true(param, element_type, block_body, api_map)
         end
 
         private

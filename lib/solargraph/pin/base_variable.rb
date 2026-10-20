@@ -223,6 +223,20 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
+      # Apply this pin's downcasts to a type, e.g. `String` for
+      # `String, nil` where this pin excludes `nil`
+      #
+      # @param api_map [ApiMap]
+      # @param raw_return_type [ComplexType, ComplexType::UniqueType]
+      #
+      # @return [ComplexType, ComplexType::UniqueType]
+      def adjust_type api_map, raw_return_type
+        qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
+        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
+        minus_exclusions.intersect_with qualified_intersection, api_map
+      end
+
       # @sg-ignore need boolish support for ? methods
       def presence_certain?
         exclude_return_type || intersection_return_type
@@ -294,17 +308,6 @@ module Solargraph
       attr_writer :presence
 
       private
-
-      # @param api_map [ApiMap]
-      # @param raw_return_type [ComplexType, ComplexType::UniqueType]
-      #
-      # @return [ComplexType, ComplexType::UniqueType]
-      def adjust_type api_map, raw_return_type
-        qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions = raw_return_type.exclude qualified_exclude, api_map
-        qualified_intersection = intersection_return_type&.qualify(api_map, *(closure&.gates || ['']))
-        minus_exclusions.intersect_with qualified_intersection, api_map
-      end
 
       # See if this variable is visible within 'viewing_closure'
       #
