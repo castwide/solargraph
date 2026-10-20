@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'tmpdir'
+require 'open3'
+
 describe Solargraph::Plugin::ActiveSupport do
   # @param namespace [String]
   # @param code [String]
@@ -443,6 +446,56 @@ describe Solargraph::Plugin::ActiveSupport do
           pin = api_map.get_method_stack('Foo', name, scope: :class).first
           expect(pin.typify(api_map).to_s).to eq('Boolean'), name
         end
+      end
+    end
+
+    context 'with activesupport in the workspace bundle' do
+      around do |example|
+        Dir.mktmpdir do |dir|
+          @root = dir
+          example.run
+        end
+      end
+
+      # A workspace whose bundle has a stand-in activesupport path gem,
+      # kept outside the workspace so its files are not workspace sources
+      #
+      # @return [String] the workspace directory
+      def write_workspace
+        gem_dir = File.join(@root, 'activesupport')
+        workspace_dir = File.join(@root, 'app')
+        FileUtils.mkdir_p [File.join(gem_dir, 'lib'), workspace_dir]
+        File.write File.join(gem_dir, 'lib', 'active_support.rb'), "module ActiveSupport; end\n"
+        File.write File.join(gem_dir, 'activesupport.gemspec'), %(
+          Gem::Specification.new do |s|
+            s.name = 'activesupport'
+            s.version = '0.0.1'
+            s.summary = 'stand-in'
+            s.authors = ['stand-in']
+            s.files = ['lib/active_support.rb']
+          end
+        )
+        File.write File.join(workspace_dir, 'Gemfile'), %(
+          source 'https://rubygems.org'
+          gem 'activesupport', path: '../activesupport'
+        )
+        File.write File.join(workspace_dir, 'foo.rb'), %(
+          require 'active_support'
+
+          class Foo
+            cattr_accessor :bar
+          end
+        )
+        Solargraph.with_clean_env do
+          _out, err, status = Open3.capture3('bundle', 'lock', '--local', chdir: workspace_dir)
+          raise "bundle lock failed: #{err}" unless status.success?
+        end
+        workspace_dir
+      end
+
+      it 'generates accessors on the first catalog of a new ApiMap' do
+        api_map = Solargraph::ApiMap.load(write_workspace)
+        expect(api_map.get_method_stack('Foo', 'bar', scope: :class).map(&:path)).to eq(['Foo.bar'])
       end
     end
   end
