@@ -12,6 +12,7 @@ module Solargraph
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
     autoload :Data,          'solargraph/source_map/data'
+    autoload :Call,          'solargraph/source_map/call'
 
     # @return [Source]
     attr_reader :source
@@ -80,6 +81,12 @@ module Solargraph
     # @return [Array<Pin::Reference::Require>]
     def requires
       pins_by_class(Pin::Reference::Require)
+    end
+
+    def calls(*method_names)
+      symbolized = method_names.map(&:to_sym)
+      method_call_nodes.select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
+                       .map { |node| Call.new(Parser.chain(node), locate_closure_pin(node.loc.line, node.loc.column)) }
     end
 
     # @return [Environ]

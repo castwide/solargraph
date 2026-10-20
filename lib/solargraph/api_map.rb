@@ -96,6 +96,7 @@ module Solargraph
     # @param bench [Bench]
     # @return [self]
     def catalog bench
+      Solargraph.logger.warn "CATALOG"
       start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       @workspace = bench.workspace
       @source_map_hash = bench.source_map_hash

@@ -12,6 +12,7 @@ module Solargraph
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
+    autoload :NodeMap,       'solargraph/source/node_map'
 
     include EncodingFixes
 
@@ -457,6 +458,7 @@ module Solargraph
     # @return [String]
     def code= val
       @code_lines = nil
+      @node_map = nil
       @finalized = false
       @code = val
     end

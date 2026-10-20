@@ -26,8 +26,8 @@ module Solargraph
                 process_module_function
               elsif %i[attr_reader attr_writer attr_accessor].include?(method_name)
                 process_attribute
-              elsif method_name == :class_attribute
-                process_class_attribute
+              # elsif method_name == :class_attribute
+              #   process_class_attribute
               elsif method_name == :include
                 process_include
               elsif method_name == :extend
