@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable RSpec/AnyInstance
 describe Solargraph::Plugin::ActiveSupport do
   # @param namespace [String]
   # @param code [String]
@@ -34,6 +33,7 @@ describe Solargraph::Plugin::ActiveSupport do
 
     context 'with the activesupport gem' do
       before do
+        # rubocop:disable-next RSpec/AnyInstance
         allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
       end
 
@@ -70,6 +70,7 @@ describe Solargraph::Plugin::ActiveSupport do
 
     context 'with the activesupport gem' do
       before do
+        # rubocop:disable-next RSpec/AnyInstance
         allow_any_instance_of(Solargraph::External).to receive(:configured_gem_names).and_return(['activesupport'])
       end
 
@@ -446,4 +447,3 @@ describe Solargraph::Plugin::ActiveSupport do
     end
   end
 end
-# rubocop:enable RSpec/AnyInstance
