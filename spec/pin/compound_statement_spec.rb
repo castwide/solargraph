@@ -22,7 +22,7 @@ describe Solargraph::Pin::CompoundStatement do
       end
     ))
 
-    compound_statement_pins = source_map.pins.select { |pin| pin.is_a?(described_class) }
+    compound_statement_pins = source_map.pins.grep(described_class)
     expect(compound_statement_pins).not_to be_empty
 
     compound_statement_pins.each do |pin|
@@ -43,7 +43,7 @@ describe Solargraph::Pin::CompoundStatement do
       end
     ))
 
-    compound_statement_pins = source_map.pins.select { |pin| pin.is_a?(described_class) }
+    compound_statement_pins = source_map.pins.grep(described_class)
     expect(compound_statement_pins).not_to be_empty
 
     compound_statement_pins.each do |pin|
