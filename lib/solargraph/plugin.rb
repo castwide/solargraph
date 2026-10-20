@@ -18,5 +18,7 @@ module Solargraph
     def self.unregister klass
       registry.delete klass
     end
+
+    Plugin.register ActiveSupport
   end
 end
