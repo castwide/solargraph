@@ -7,6 +7,8 @@ module Solargraph
     autoload :Panel, 'solargraph/plugin/panel'
     autoload :ActiveSupport, 'solargraph/plugin/active_support'
 
+    EMPTY_ADDON = Addon.new.freeze
+
     def self.registry
       @registry ||= Set.new
     end
