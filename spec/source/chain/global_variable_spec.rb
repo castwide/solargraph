@@ -20,10 +20,24 @@ describe Solargraph::Source::Chain::GlobalVariable do
     Solargraph::Source::Chain.new([described_class.new(name)]).infer(api_map, Solargraph::Pin::ROOT_PIN, [])
   end
 
-  it 'keeps the RBS type of a global that gem source assigns an unknown value' do
+  # Pins from an RBS signature outside core, like a gem signature
+  #
+  # @param rbs [String]
+  # @return [Array<Solargraph::Pin::Base>]
+  def non_core_rbs_pins rbs
+    require 'tmpdir'
+    Dir.mktmpdir('rspec-solargraph-') do |dir|
+      File.write(File.join(dir, 'globals.rbs'), rbs)
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: true))
+      loader.add(path: Pathname(dir))
+      Solargraph::RbsMap::Conversions.new(loader: loader).pins
+    end
+  end
+
+  it 'keeps the RBS type of a global that gem source assigns a subtype' do
     gem_map = Solargraph::SourceMap.load_string(%(
       def silence
-        $stderr = StringIO.new
+        $stderr = File.new(File::NULL, 'w')
       end
     ), '/gems/some_gem/lib/some_gem.rb')
     api_map = Solargraph::ApiMap.new
@@ -41,26 +55,31 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(infer_global('$stderr', api_map).rooted_tags).to eq('::IO')
   end
 
-  it 'keeps an RBS untyped declaration untyped when gem source declares a type' do
-    require 'tmpdir'
-    rbs_pins = Dir.mktmpdir('rspec-solargraph-') do |dir|
-      File.write(File.join(dir, 'globals.rbs'), '$untyped_global: untyped')
-      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: true))
-      loader.add(path: Pathname(dir))
-      Solargraph::RbsMap::Conversions.new(loader: loader).pins
-    end
+  it 'keeps the type that non-core RBS declares for a global that gem source declares as another type' do
+    rbs_pins = non_core_rbs_pins('$gem_global: Integer')
+    gem_map = Solargraph::SourceMap.load_string(%(
+      # @type [String]
+      $gem_global = 'x'
+    ), '/gems/some_gem/lib/some_gem.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.index gem_map.pins + rbs_pins
+    expect(infer_global('$gem_global', api_map).rooted_tags).to eq('::Integer')
+  end
+
+  it 'prefers a type that gem source declares over an RBS untyped declaration' do
+    rbs_pins = non_core_rbs_pins('$untyped_global: untyped')
     gem_map = Solargraph::SourceMap.load_string(%(
       # @type [String]
       $untyped_global = 'x'
     ), '/gems/some_gem/lib/some_gem.rb')
     api_map = Solargraph::ApiMap.new
     api_map.index gem_map.pins + rbs_pins
-    expect(infer_global('$untyped_global', api_map)).to be_undefined
+    expect(infer_global('$untyped_global', api_map).rooted_tags).to eq('::String')
   end
 
-  it 'keeps the RBS type of a global that the workspace assigns a narrower value' do
+  it 'keeps the RBS type of a global that the workspace assigns a subtype' do
     source = Solargraph::Source.load_string(%(
-      $stderr = StringIO.new
+      $stderr = File.new(File::NULL, 'w')
       $stderr
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
