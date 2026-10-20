@@ -213,5 +213,21 @@ describe Solargraph::TypeChecker do
 
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it 'reports an untyped assignment to a global declared in RBS' do
+      checker = type_checker(%(
+        # @return [void]
+        def swap
+          $stderr = unknown_thing
+        end
+
+        # @return [void]
+        def log
+          $stderr.puts 'x'
+        end
+      ))
+      expect(checker.problems.map(&:message))
+        .to contain_exactly('Unresolved call to unknown_thing', 'Variable type could not be inferred for $stderr')
+    end
   end
 end

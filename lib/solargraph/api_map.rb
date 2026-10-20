@@ -410,6 +410,19 @@ module Solargraph
       store.pins_by_class(Pin::GlobalVariable)
     end
 
+    # Pins that declare the type of a global variable, from the highest
+    # layer that declares one: RBS (core and gems), then gem source, then
+    # the workspace. Assignments in lower layers neither widen nor narrow
+    # the declared type, including a declared `untyped`.
+    #
+    # @param name [String]
+    # @return [Array<Solargraph::Pin::GlobalVariable>]
+    def get_declared_global_variable_pins name
+      declared = get_global_variable_pins.select { |pin| pin.name == name && pin.docstring.has_tag?('type') }
+      top_layer = declared.map { |pin| declaration_layer(pin) }.min
+      declared.select { |pin| declaration_layer(pin) == top_layer }
+    end
+
     # @return [Enumerable<Solargraph::Pin::Block>]
     def get_block_pins
       store.pins_by_class(Pin::Block)
@@ -776,6 +789,15 @@ module Solargraph
     end
 
     private
+
+    # @param pin [Pin::GlobalVariable]
+    # @return [Integer] 0 for RBS, 1 for gem source, 2 for the workspace
+    def declaration_layer pin
+      return 0 if pin.source == :rbs
+      filename = pin.location&.filename
+      return 1 if filename.nil? || !bundled?(filename)
+      2
+    end
 
     # A hash of source maps with filename keys.
     #
