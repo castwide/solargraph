@@ -243,9 +243,19 @@ module Solargraph
             args.each { |child| result.concat call_nodes_from(child) }
           elsif %i[super zsuper].include?(node.type)
             result.push node
-            node.children.each { |child| result.concat call_nodes_from(child) }
+            node.children.each do |child|
+              # children that are not nodes (names, literals, nil) hold no calls
+              next unless child in ::Parser::AST::Node => child_node
+
+              result.concat call_nodes_from(child_node)
+            end
           else
-            node.children.each { |child| result.concat call_nodes_from(child) }
+            node.children.each do |child|
+              # children that are not nodes (names, literals, nil) hold no calls
+              next unless child in ::Parser::AST::Node => child_node
+
+              result.concat call_nodes_from(child_node)
+            end
           end
           result
         end
