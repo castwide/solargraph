@@ -298,7 +298,7 @@ module Solargraph
     end
 
     # Check an assignment to a global variable whose type is declared
-    # elsewhere, e.g. `$stderr = 42` against RBS's `$stderr: IO`
+    # elsewhere, e.g. `$stderr = 42` against core RBS's `$stderr: IO`
     #
     # @param pin [Pin::GlobalVariable]
     # @param declared_pins [Array<Pin::GlobalVariable>]

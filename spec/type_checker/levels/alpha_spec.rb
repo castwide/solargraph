@@ -214,7 +214,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
-    it 'reports an untyped assignment to a global declared in RBS' do
+    it 'reports an untyped assignment to a global declared in core RBS' do
       checker = type_checker(%(
         # @return [void]
         def swap

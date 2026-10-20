@@ -1295,7 +1295,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems).to be_empty
     end
 
-    it 'reports an incompatible assignment to a global declared in RBS and keeps the declared type' do
+    it 'reports an incompatible assignment to a global declared in core RBS and keeps the declared type' do
       checker = type_checker(%(
         # @return [void]
         def swap
@@ -1312,7 +1312,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.location.range.start.line).to eq(3)
     end
 
-    it 'ignores an untyped assignment to a global declared in RBS and keeps the declared type' do
+    it 'ignores an untyped assignment to a global declared in core RBS and keeps the declared type' do
       checker = type_checker(%(
         # @return [void]
         def swap

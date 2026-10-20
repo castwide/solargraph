@@ -411,11 +411,12 @@ module Solargraph
     end
 
     # Pins that declare the type of a global variable, from the highest
-    # layer that declares one: RBS (core, stdlib and gem signatures,
-    # including the RBS collection), then gem source, then the workspace.
-    # Assignments neither widen nor narrow the declared type. An `untyped`
-    # declaration counts as none, so a concrete type in a lower layer
-    # beats it, and without one the assignments decide.
+    # rank that declares one: core (core RBS and Solargraph's core fills),
+    # then non-core RBS (stdlib, gem and RBS collection signatures) and
+    # YARD tags in gem source as equals, whose types are unioned, then the
+    # workspace. Assignments neither widen nor narrow the declared type.
+    # An `untyped` declaration counts as none, so a concrete type of a
+    # lower rank beats it, and without one the assignments decide.
     #
     # @param name [String]
     # @return [Array<Solargraph::Pin::GlobalVariable>]
@@ -423,8 +424,8 @@ module Solargraph
       declared = get_global_variable_pins.select do |pin|
         pin.name == name && pin.docstring.has_tag?('type') && !pin.typify(self).undefined?
       end
-      top_layer = declared.map { |pin| declaration_layer(pin) }.min
-      declared.select { |pin| declaration_layer(pin) == top_layer }
+      top_rank = declared.map { |pin| declaration_rank(pin) }.min
+      declared.select { |pin| declaration_rank(pin) == top_rank }
     end
 
     # @return [Enumerable<Solargraph::Pin::Block>]
@@ -795,12 +796,18 @@ module Solargraph
     private
 
     # @param pin [Pin::GlobalVariable]
-    # @return [Integer] 0 for RBS, 1 for gem source, 2 for the workspace
-    def declaration_layer pin
-      return 0 if pin.source == :rbs
+    # @return [Integer] 0 for core, 1 for non-core RBS and gem source,
+    #   2 for the workspace
+    def declaration_rank pin
+      return 0 if core_global_variable_pins.any? { |core_pin| core_pin.equal?(pin) }
       filename = pin.location&.filename
       return 1 if filename.nil? || !bundled?(filename)
       2
+    end
+
+    # @return [Array<Pin::GlobalVariable>]
+    def core_global_variable_pins
+      @core_global_variable_pins ||= core_pins.grep(Pin::GlobalVariable)
     end
 
     # A hash of source maps with filename keys.

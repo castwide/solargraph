@@ -34,7 +34,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     end
   end
 
-  it 'keeps the RBS type of a global that gem source assigns a subtype' do
+  it 'keeps the core RBS type of a global that gem source assigns a subtype' do
     gem_map = Solargraph::SourceMap.load_string(%(
       def silence
         $stderr = File.new(File::NULL, 'w')
@@ -45,7 +45,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(infer_global('$stderr', api_map).rooted_tags).to eq('::IO')
   end
 
-  it 'keeps the RBS type of a global that gem source declares as another type' do
+  it 'keeps the core RBS type of a global that gem-source YARD declares as another type' do
     gem_map = Solargraph::SourceMap.load_string(%(
       # @type [StringIO]
       $stderr = StringIO.new
@@ -55,7 +55,14 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(infer_global('$stderr', api_map).rooted_tags).to eq('::IO')
   end
 
-  it 'keeps the type that non-core RBS declares for a global that gem source declares as another type' do
+  it 'keeps the core RBS type of a global that non-core RBS declares as another type' do
+    rbs_pins = non_core_rbs_pins('$stderr: StringIO')
+    api_map = Solargraph::ApiMap.new
+    api_map.index rbs_pins
+    expect(infer_global('$stderr', api_map).rooted_tags).to eq('::IO')
+  end
+
+  it 'unions the types that non-core RBS and gem-source YARD declare for a global' do
     rbs_pins = non_core_rbs_pins('$gem_global: Integer')
     gem_map = Solargraph::SourceMap.load_string(%(
       # @type [String]
@@ -63,10 +70,10 @@ describe Solargraph::Source::Chain::GlobalVariable do
     ), '/gems/some_gem/lib/some_gem.rb')
     api_map = Solargraph::ApiMap.new
     api_map.index gem_map.pins + rbs_pins
-    expect(infer_global('$gem_global', api_map).rooted_tags).to eq('::Integer')
+    expect(infer_global('$gem_global', api_map).items.map(&:rooted_tag)).to contain_exactly('::Integer', '::String')
   end
 
-  it 'prefers a type that gem source declares over an RBS untyped declaration' do
+  it 'prefers a type that gem-source YARD declares over a non-core RBS untyped declaration' do
     rbs_pins = non_core_rbs_pins('$untyped_global: untyped')
     gem_map = Solargraph::SourceMap.load_string(%(
       # @type [String]
@@ -77,7 +84,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(infer_global('$untyped_global', api_map).rooted_tags).to eq('::String')
   end
 
-  it 'keeps the RBS type of a global that the workspace assigns a subtype' do
+  it 'keeps the core RBS type of a global that the workspace assigns a subtype' do
     source = Solargraph::Source.load_string(%(
       $stderr = File.new(File::NULL, 'w')
       $stderr
@@ -86,7 +93,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(api_map.clip_at('test.rb', [2, 8]).infer.rooted_tags).to eq('::IO')
   end
 
-  it 'prefers a workspace declaration over workspace assignments' do
+  it 'prefers a workspace YARD declaration over workspace assignments' do
     source = Solargraph::Source.load_string(%(
       # @type [Numeric]
       $my_global = 1
@@ -107,7 +114,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(api_map.clip_at('test.rb', [3, 8]).infer.rooted_tags).to eq('::Integer, ::String')
   end
 
-  it 'infers a global from its assignments when its only declaration is untyped' do
+  it 'infers a global from its assignments when its only declaration is a YARD untyped tag' do
     source = Solargraph::Source.load_string(%(
       # @type [untyped]
       $untyped_global = 'x'
@@ -118,7 +125,7 @@ describe Solargraph::Source::Chain::GlobalVariable do
     expect(api_map.clip_at('test.rb', [4, 8]).infer.rooted_tags).to eq('::String, ::Integer')
   end
 
-  it 'defines a global declared in RBS at its workspace assignments too' do
+  it 'defines a global declared in core RBS at its workspace assignments too' do
     source = Solargraph::Source.load_string(%(
       $stderr = File.new(File::NULL, 'w')
       $stderr
