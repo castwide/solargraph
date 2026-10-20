@@ -21,13 +21,19 @@ permissions:
 
 jobs:
   overcommit:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         # Number of commits to fetch. 0 indicates all history for all branches and tags.
         with:
           fetch-depth: 0
 
+      - name: Install libjitterentropy.a for rugged
+        # Ubuntu 26.04's libcrypto.pc links it statically
+        run: |
+          if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+            sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+          fi
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.4
@@ -63,9 +69,15 @@ jobs:
         continue-on-error: true
   rubocop:
     name: rubocop
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install libjitterentropy.a for rugged
+        # Ubuntu 26.04's libcrypto.pc links it statically
+        run: |
+          if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+            sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+          fi
       - uses: ruby/setup-ruby@1a615958ad9d422dd932dc1d5823942ee002799f # v1.227.0
         with:
           ruby-version: '3.3'
@@ -82,10 +94,16 @@ jobs:
           level: info
   rbs_validate:
     name: rbs validate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
@@ -99,10 +117,16 @@ jobs:
       run: bundle exec rbs validate
   rubocop_todo:
     name: .rubocop_todo.yml
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
+    - name: Install libjitterentropy.a for rugged
+      # Ubuntu 26.04's libcrypto.pc links it statically
+      run: |
+        if pkg-config --libs --static libcrypto | grep -q jitterentropy; then
+          sudo apt-get update && sudo apt-get install -y libjitterentropy3-dev
+        fi
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
