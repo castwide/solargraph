@@ -265,6 +265,17 @@ describe Solargraph::Pin::Parameter do
     expect(map.locals.first.return_type.to_s).to eq('String')
   end
 
+  it 'falls back to @param tags when the inline rbs signature does not parse' do
+    source = Solargraph::Source.load_string(%(
+      # @param bar [Integer]
+      #: (String) -> -> void
+      def foo bar
+      end
+    ), 'file.rb')
+    map = Solargraph::SourceMap.map(source)
+    expect(map.locals.first.return_type.to_s).to eq('Integer')
+  end
+
   it 'tracks its index' do
     smap = Solargraph::SourceMap.load_string(%(
       def foo bar
