@@ -112,6 +112,8 @@ module Solargraph
         added = plugin.new(panel).addon
         addon.gem_names.concat added.gem_names
         addon.pins.concat added.pins
+      rescue StandardError => e
+        Solargraph.logger.warn "#{plugin} failed - [#{e.class}] #{e.message}"
       end
 
       # @todo Determine what needs to be sent to global conventions
