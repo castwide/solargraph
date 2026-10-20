@@ -575,10 +575,12 @@ module Solargraph
                   result.concat from_value_position_statement(body) if body
                   # rescue statements
                   result.concat from_value_position_statement(first_resbody)
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 elsif SKIPPABLE.include?(node.type)
                   next
                 elsif node in [:resbody, _, _, ::Parser::AST::Node | nil => body, *]
                   result.concat reduce_to_value_nodes([body])
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 elsif node.type == :return
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
                   result.concat reduce_to_value_nodes([returned])
@@ -614,7 +616,9 @@ module Solargraph
               parent.children.each do |child|
                 # names, literals and nil hold no return statements
                 next unless child in ::Parser::AST::Node => node
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 next if SKIPPABLE.include?(node.type)
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
                 if node.type == :return
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil # rubocop:disable Style/RedundantParentheses
                   result.concat reduce_to_value_nodes([returned])
