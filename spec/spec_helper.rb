@@ -48,6 +48,16 @@ def with_env_var name, value
   end
 end
 
+# Cache the gems a catalog left unloaded, then catalog again to load them.
+#
+# @param api_map [Solargraph::ApiMap]
+# @param bench [Solargraph::Bench]
+# @return [Solargraph::ApiMap]
+def cache_unloaded_gems api_map, bench
+  api_map.unloaded_gems.each { |metagem| Solargraph::Collection::Gem.load(metagem) }
+  api_map.catalog bench
+end
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = 'tmp/rspec_status.txt'
