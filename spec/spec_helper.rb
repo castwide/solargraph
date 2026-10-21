@@ -51,19 +51,6 @@ end
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = 'tmp/rspec_status.txt'
-
-  # Loading a workspace with plugins configured, such as the repo root in
-  # the plugin CI jobs, would otherwise switch CacheDir.gem_dir to a
-  # plugin-keyed directory for every later example.
-  config.around do |example|
-    saved = Solargraph::CacheDir.plugins.dup
-    saved_requires = Solargraph::CacheDir.plugin_requires.dup
-    Solargraph::CacheDir.plugins.clear
-    Solargraph::CacheDir.plugin_requires.clear
-    example.run
-    Solargraph::CacheDir.plugins.replace(saved)
-    Solargraph::CacheDir.plugin_requires.replace(saved_requires)
-  end
 end
 
 def capture_stdout &block

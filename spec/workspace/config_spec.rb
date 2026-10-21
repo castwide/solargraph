@@ -18,6 +18,7 @@ describe Solargraph::Workspace::Config do
     after do
       $LOAD_PATH.delete dir_path
       $LOADED_FEATURES.delete_if { |path| path.end_with?('config_probe_plugin.rb') }
+      Solargraph::CacheDir.plugins.delete 'config_probe_plugin'
     end
 
     it 'records the plugins it loads in the gem cache key' do
