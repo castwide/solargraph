@@ -3187,4 +3187,94 @@ describe Solargraph::SourceMap::Clip do
     clip = api_map.clip_at('test.rb', [9, 13])
     expect(clip.complete.pins.map(&:path)).to eq(['Top::Foo::Bar'])
   end
+
+  context 'with inline rbs type assertions' do
+    # @param code [String]
+    # @param line [Integer]
+    # @param column [Integer]
+    # @return [String]
+    def infer_at code, line, column
+      api_map.map Solargraph::Source.load_string(code, 'test.rb')
+      api_map.clip_at('test.rb', [line, column]).infer.to_s
+    end
+
+    it 'types local variables' do
+      expect(infer_at(%(
+        x = [] #: Array[String]
+        x
+      ), 2, 8)).to eq('Array<String>')
+    end
+
+    it 'types instance variables' do
+      expect(infer_at(%(
+        class Foo
+          def initialize
+            @bar = {} #: Hash[String, Integer]
+          end
+
+          def baz
+            @bar
+          end
+        end
+      ), 7, 12)).to eq('Hash{String => Integer}')
+    end
+
+    it 'types class variables' do
+      expect(infer_at(%(
+        class Foo
+          @@bar = nil #: String?
+
+          def baz
+            @@bar
+          end
+        end
+      ), 5, 12)).to eq('String, nil')
+    end
+
+    it 'types global variables' do
+      expect(infer_at(%(
+        $foo = [] #: Array[Integer]
+        $foo
+      ), 2, 8)).to eq('Array<Integer>')
+    end
+
+    it 'types ||= assignments' do
+      expect(infer_at(%(
+        x ||= [] #: Array[String]
+        x
+      ), 2, 8)).to eq('Array<String>')
+    end
+
+    it 'types assignments that span lines' do
+      expect(infer_at(%(
+        x = [
+          'a'
+        ] #: Array[String]
+        x
+      ), 4, 8)).to eq('Array<String>')
+    end
+
+    it 'prefers the assertion over a @type tag' do
+      expect(infer_at(%(
+        # @type [Array<Integer>]
+        x = [] #: Array[String]
+        x
+      ), 3, 8)).to eq('Array<String>')
+    end
+
+    it 'does not apply the assertion to the next statement' do
+      expect(infer_at(%(
+        x = 1 #: String
+        y = 'y'.size
+        y
+      ), 3, 8)).to eq('Integer')
+    end
+
+    it 'ignores comments that are not valid RBS types' do
+      expect(infer_at(%(
+        x = 'x'.size #:nodoc:
+        x
+      ), 2, 8)).to eq('Integer')
+    end
+  end
 end
