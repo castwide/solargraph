@@ -58,8 +58,11 @@ module Solargraph
       return if name.nil?
       file = Object.const_source_location(name)&.first
       return if file.nil?
-      spec = Gem.loaded_specs.values.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      spec = Gem.loaded_specs.each_value.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
       return if spec.nil? || spec.name == 'solargraph'
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
       plugins[spec.name] = spec.version.to_s
     end
 
