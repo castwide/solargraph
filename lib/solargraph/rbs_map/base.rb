@@ -15,7 +15,7 @@ module Solargraph
 
       # @return [RBS::EnvironmentLoader]
       def loader
-        # @sg-ignore Accept NilClass where nil is declared
+        # @sg-ignore https://github.com/apiology/solargraph/pull/225
         @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       end
 

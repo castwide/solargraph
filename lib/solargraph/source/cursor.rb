@@ -142,7 +142,7 @@ module Solargraph
                              # @sg-ignore slice [0, n] is nil only for a negative n
                              match = source.code[0, offset].match(/\s*(\.|:+)\s*$/)
                              if match
-                               # @sg-ignore MatchData#[] is nilable even for a group that always matches
+                               # @sg-ignore https://github.com/apiology/solargraph/pull/193
                                Position.from_offset(source.code, offset - match[0].length)
                              else
                                position

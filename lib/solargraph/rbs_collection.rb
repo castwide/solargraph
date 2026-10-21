@@ -60,7 +60,7 @@ module Solargraph
 
     # @param metagem [Metagem]
     # @return [String, nil]
-    # @sg-ignore Accept NilClass where nil is declared
+    # @sg-ignore https://github.com/apiology/solargraph/pull/225
     def best_key metagem
       key = "#{metagem.name}-#{metagem.version}"
       return key if gem_path_map.key?(key)

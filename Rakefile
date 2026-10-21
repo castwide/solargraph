@@ -65,16 +65,16 @@ def undercover
     Open3.capture2e(cmd)
   end
   puts output
-  # @sg-ignore Global variables from core RBS are untyped
+  # @sg-ignore https://github.com/apiology/solargraph/pull/229
   $stdout.flush
   status
 rescue StandardError => e
   warn "hit error: #{e.message}"
-  # @sg-ignore flow sensitive typing adds '& _Raised' to rescued exceptions
+  # @sg-ignore https://github.com/apiology/solargraph/pull/176
   warn "Backtrace:\n#{e.backtrace.join("\n")}"
   warn "output: #{output}"
   puts 'Flushing'
-  # @sg-ignore Global variables from core RBS are untyped
+  # @sg-ignore https://github.com/apiology/solargraph/pull/229
   $stdout.flush
   raise
 end
@@ -131,7 +131,7 @@ def simplecov_collate
 rescue StandardError => e
   puts "Simplecov collate failed: #{e.message}"
 ensure
-  # @sg-ignore Global variables from core RBS are untyped
+  # @sg-ignore https://github.com/apiology/solargraph/pull/229
   $stdout.flush
 end
 

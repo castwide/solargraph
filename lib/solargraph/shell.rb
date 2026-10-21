@@ -43,7 +43,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        # @sg-ignore Global variables from core RBS are untyped
+        # @sg-ignore https://github.com/apiology/solargraph/pull/229
         $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
@@ -61,7 +61,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        # @sg-ignore Global variables from core RBS are untyped
+        # @sg-ignore https://github.com/apiology/solargraph/pull/229
         $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
@@ -90,7 +90,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      # @sg-ignore Global variables from core RBS are untyped
+      # @sg-ignore https://github.com/apiology/solargraph/pull/229
       $stdout.puts 'Configuration file initialized.'
     end
 
@@ -378,11 +378,11 @@ module Solargraph
       begin
         require 'vernier'
       rescue LoadError
-        # @sg-ignore Global variables from core RBS are untyped
+        # @sg-ignore https://github.com/apiology/solargraph/pull/229
         $stderr.puts 'vernier gem not found. Please install this dependency:'
-        # @sg-ignore Global variables from core RBS are untyped
+        # @sg-ignore https://github.com/apiology/solargraph/pull/229
         $stderr.puts
-        # @sg-ignore Global variables from core RBS are untyped
+        # @sg-ignore https://github.com/apiology/solargraph/pull/229
         $stderr.puts "  gem 'vernier', '>1.0', '<2'"
 
         return

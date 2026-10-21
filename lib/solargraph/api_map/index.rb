@@ -110,6 +110,7 @@ module Solargraph
                   :macro_method_names, :macro_method_name_pins
 
       # @return [self]
+      # @sg-ignore https://github.com/apiology/solargraph/pull/207
       def deep_clone
         # @param copy [Index]
         Index.allocate.tap do |copy|

@@ -469,7 +469,7 @@ module Solargraph
 
       protected
 
-      # @sg-ignore instance variable type gains Boolean from a truthiness guard
+      # @sg-ignore https://github.com/apiology/solargraph/pull/178
       attr_writer :block, :signature_help, :documentation, :return_type
 
       # @return [Boolean]

@@ -605,7 +605,7 @@ module Solargraph
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                   #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat reduce_to_value_nodes([node.children[2]])
-                # @sg-ignore child node types depend on parent node type
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                 elsif node.type == :return
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                   #   also needs https://github.com/castwide/solargraph/pull/1416

@@ -190,7 +190,7 @@ module Solargraph
         # @type [MatchData, nil]
         rgt = source.code[offset..]&.match(/^([a-z0-9_]*)(:[a-z0-9_:]*)?[\]>, ]/i)
         if lft && rgt
-          # @sg-ignore MatchData#[] is nilable even for a group that always matches
+          # @sg-ignore https://github.com/apiology/solargraph/pull/193
           tag = (lft[1] + rgt[1]).sub(/:+$/, '')
           clip = mutex.synchronize { api_map.clip(cursor) }
           clip.translate tag
@@ -669,7 +669,7 @@ module Solargraph
         changed
         notify_observers @cache_progress
       end
-      # @sg-ignore flow sensitive typing needs to track reassignment
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       @cache_progress.report(message, pct)
       changed
       notify_observers @cache_progress

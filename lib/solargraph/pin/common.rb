@@ -57,7 +57,7 @@ module Solargraph
       end
 
       # @return [ComplexType, ComplexType::UniqueType]
-      # @sg-ignore Let a mixin declare instance variable types it uses
+      # @sg-ignore https://github.com/apiology/solargraph/pull/190
       def binder
         @binder || context
       end
