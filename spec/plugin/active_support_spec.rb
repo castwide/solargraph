@@ -449,6 +449,30 @@ describe Solargraph::Plugin::ActiveSupport do
       end
     end
 
+    context 'with activesupport in the workspace gem names' do
+      # @param gemnames [Array<String>]
+      # @return [Solargraph::ApiMap]
+      def catalog_with gemnames
+        source_map = Solargraph::SourceMap.load_string(%(
+          class Foo
+            cattr_accessor :bar
+          end
+        ), 'test.rb')
+        workspace = Solargraph::Workspace.new(gemnames: gemnames)
+        Solargraph::ApiMap.new.catalog(Solargraph::Bench.new(source_maps: [source_map], workspace: workspace))
+      end
+
+      it 'generates accessors' do
+        api_map = catalog_with(['activesupport'])
+        expect(api_map.get_method_stack('Foo', 'bar', scope: :class).map(&:path)).to eq(['Foo.bar'])
+      end
+
+      it 'skips accessors without activesupport' do
+        api_map = catalog_with([])
+        expect(api_map.get_method_stack('Foo', 'bar', scope: :class)).to be_empty
+      end
+    end
+
     context 'with activesupport in the workspace bundle' do
       around do |example|
         Dir.mktmpdir do |dir|

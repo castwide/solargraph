@@ -15,6 +15,10 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
+    # Gems the workspace's code can use beyond those its bundle and requires
+    # provide, e.g., a gem's own name and runtime dependencies when the
+    # workspace is the gem's source
+    #
     # @return [Array<String>]
     attr_reader :gemnames
     alias source_gems gemnames
@@ -22,7 +26,8 @@ module Solargraph
     # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
-    def initialize directory = '', config = nil, server = {}
+    # @param gemnames [Array<String>]
+    def initialize directory = '', config = nil, server = {}, gemnames: []
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
       @directory = if ['*', ''].include?(directory)
@@ -33,7 +38,7 @@ module Solargraph
       @config = config
       @server = server
       load_sources
-      @gemnames = []
+      @gemnames = gemnames
       require_plugins
     end
 

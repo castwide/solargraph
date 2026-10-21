@@ -48,7 +48,8 @@ module Solargraph
         source_maps = files.map { |file| Solargraph::SourceMap.load(file) }
 
         # Generating an ApiMap is necessary for processing macros
-        bench = Bench.new(source_maps: source_maps, gem_names: [metagem.name] + metagem.dependencies)
+        workspace = Workspace.new(gemnames: [metagem.name] + metagem.dependencies)
+        bench = Bench.new(source_maps: source_maps, workspace: workspace)
         source_pins = ApiMap.new.catalog(bench).pins.select { |pin| files.include?(pin.filename) }
 
         rbs_pins = RbsMap::Gem.pins(metagem)
