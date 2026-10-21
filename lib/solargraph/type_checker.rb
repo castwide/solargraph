@@ -591,6 +591,7 @@ module Solargraph
         next if param_details.key? tag.name.to_s
         next if tag.types.nil?
         details = {
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           tagged: tag.types.join(', '),
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, pin.full_context.namespace)
         }
@@ -622,6 +623,7 @@ module Solargraph
         next if result.key? tag.name.to_s
         next if tag.types.nil?
         result[tag.name.to_s] = {
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1258
           tagged: tag.types.join(', '),
           # @sg-ignore need to add a nil check here
           qualified: Solargraph::ComplexType.try_parse(*tag.types).qualify(api_map, *pin.closure.gates)

@@ -40,7 +40,7 @@ module Solargraph
     # @param parameter_names [Array<String>]
     # @return [Array<Pin::Parameter>]
     def self.to_parameter_pins method_type, closure, parameter_names = []
-      if defined?(RBS::Types::UntypedFunction) && method_type.type.is_a?(RBS::Types::UntypedFunction)
+      if method_type.type.is_a?(RBS::Types::UntypedFunction)
         return [
           Solargraph::Pin::Parameter.new(decl: :restarg, name: 'arg', closure: closure, source: :rbs)
         ]
@@ -48,27 +48,35 @@ module Solargraph
 
       arg_num = 0
       params = []
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.required_positionals.each do |param|
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :arg, closure)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.optional_positionals.each do |param|
         params.push RbsTranslator.to_parameter_pin(param, param.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :optarg, closure)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       if method_type.type.rest_positionals
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         params.push RbsTranslator.to_parameter_pin(method_type.type.rest_positionals, method_type.type.rest_positionals.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :restarg, closure)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.required_keywords.each do |param|
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwarg, closure)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       method_type.type.optional_keywords.each do |param|
         params.push RbsTranslator.to_parameter_pin(param.last, param.first.to_s, :kwoptarg, closure)
         arg_num += 1
       end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
       if method_type.type.rest_keywords
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         params.push RbsTranslator.to_parameter_pin(method_type.type.rest_keywords, method_type.type.rest_keywords.name&.to_s || parameter_names[arg_num] || "arg_#{arg_num}", :kwrestarg, closure)
       end
       params
@@ -88,6 +96,7 @@ module Solargraph
       return_type = to_complex_type(method_type.type.return_type)
       block = if method_type.block
         block_parameters = to_parameter_pins(method_type.block, closure)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         block_return_type = to_complex_type(method_type.block.type.return_type)
         Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
       end
