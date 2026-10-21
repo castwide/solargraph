@@ -35,9 +35,7 @@ describe Solargraph::LanguageServer::Transport::Adapter do
     tester = AdapterTester.new
     Backport.run do
       tester.opening
-      # Backport::Server::Interval's thread can see stopped? before
-      # Base#start sets @started and exit without ticking, leaving
-      # Backport.run asleep forever; a plain thread has no such window.
+      # Works around https://github.com/apiology/backport/pull/1
       Thread.new do
         sleep 0.1
         tester.host.stop
