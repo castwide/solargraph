@@ -12,11 +12,15 @@ module Solargraph
       'NilClass' => 'nil'
     }
 
+    # Relative type names (e.g. `Bar` in an inline `#: () -> Bar`) stay
+    # unrooted so they resolve against the pin's namespace like YARD tags
+    # do. Absolute names (`::Bar`, or any name from an RBS environment
+    # after `resolve_type_names`) and RBS builtins stay rooted.
+    #
     # @param type [RBS::Types::Bases::Base]
     # @return [ComplexType]
     def self.to_complex_type(type)
-      tag = type_to_tag(type)
-      ComplexType.try_parse(tag).force_rooted
+      ComplexType.try_parse(type_to_tag(type))
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -98,14 +102,16 @@ module Solargraph
     # @param type_args [Enumerable<RBS::Types::Bases::Base>]
     # @return [ComplexType::UniqueType]
     def self.build_unique_type(type_name, type_args = [])
-      base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+      yard_base = RBS_TO_YARD_TYPE[type_name.relative!.to_s]
+      base = yard_base || type_name.relative!.to_s
+      rooted = !yard_base.nil? || type_name.absolute?
       params = type_args.map do |a|
         RbsTranslator.to_complex_type(a)
       end
       if base == 'Hash' && params.length == 2
-        ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+        ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
       else
-        ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
+        ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)
       end
     end
 
@@ -130,16 +136,17 @@ module Solargraph
         when RBS::Types::Optional
           "#{type_to_tag(type.type)}, nil"
         when RBS::Types::Bases::Bool
-          'Boolean'
+          '::Boolean'
         when RBS::Types::Tuple
-          "Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+          "::Array(#{type.types.map { |t| type_to_tag(t) }.join(', ')})"
         when RBS::Types::Literal
           type.literal.inspect
         when RBS::Types::Union
           type.types.map { |t| type_to_tag(t) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
-          'Hash'
+          '::Hash'
         when RBS::Types::Bases::Nil
           'nil'
         when RBS::Types::Bases::Void
@@ -150,11 +157,11 @@ module Solargraph
           'self'
         when RBS::Types::Bases::Top
           # `Top` is the most super superclass
-          'BasicObject'
+          '::BasicObject'
         when RBS::Types::Intersection
           type.types.map { |member| type_to_tag(member) }.join(', ')
         when RBS::Types::Proc
-          'Proc'
+          '::Proc'
         when RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Interface
           # `Alias` is a top-level type alias, e.g., 'bool' in "type bool = true | false"
           # @todo ensure these get resolved after processing all aliases
@@ -184,22 +191,7 @@ module Solargraph
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [String]
       def type_tag(type_name, type_args = [])
-        build_type(type_name, type_args).tags
-      end
-
-      # @param type_name [RBS::TypeName]
-      # @param type_args [Enumerable<RBS::Types::Bases::Base>]
-      # @return [ComplexType::UniqueType]
-      def build_type(type_name, type_args = [])
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |a| type_to_tag(a) }.map do |t|
-          ComplexType.try_parse(t)
-        end
-        if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
-        else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
-        end
+        build_unique_type(type_name, type_args).rooted_tags
       end
     end
   end
