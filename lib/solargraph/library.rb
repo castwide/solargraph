@@ -615,7 +615,7 @@ module Solargraph
           begin
             _o, e, s = Open3.capture3(*cmd)
           rescue SystemCallError => e
-            # The command could not start, e.g. Errno::ENOENT
+            # The command could not start, e.g. Errno::ENOENT - handled below
           end
           if s&.success?
             logger.info "Cached #{spec.name} #{spec.version}"
