@@ -449,16 +449,18 @@ describe Solargraph::Plugin::ActiveSupport do
       end
     end
 
-    context 'with activesupport in the workspace gem names' do
-      # @param gemnames [Array<String>]
+    context 'with activesupport among the workspace gem dependencies' do
+      # @param dependencies [Array<String>]
       # @return [Solargraph::ApiMap]
-      def catalog_with gemnames
+      def catalog_with dependencies
         source_map = Solargraph::SourceMap.load_string(%(
           class Foo
             cattr_accessor :bar
           end
         ), 'test.rb')
-        workspace = Solargraph::Workspace.new(gemnames: gemnames)
+        metagem = Solargraph::Metagem.new(name: 'foo', full_path: Dir.pwd, spec_file: nil, source: 'source at .',
+                                          version: '1.0.0', require_paths: ['lib'], dependencies: dependencies)
+        workspace = Solargraph::Workspace.for_gem(metagem)
         Solargraph::ApiMap.new.catalog(Solargraph::Bench.new(source_maps: [source_map], workspace: workspace))
       end
 

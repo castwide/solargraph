@@ -15,10 +15,6 @@ module Solargraph
     # @return [String]
     attr_reader :directory
 
-    # Gems the workspace's code can use beyond those its bundle and requires
-    # provide, e.g., a gem's own name and runtime dependencies when the
-    # workspace is the gem's source
-    #
     # @return [Array<String>]
     attr_reader :gemnames
     alias source_gems gemnames
@@ -26,8 +22,7 @@ module Solargraph
     # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
-    # @param gemnames [Array<String>]
-    def initialize directory = '', config = nil, server = {}, gemnames: []
+    def initialize directory = '', config = nil, server = {}
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
       @directory = if ['*', ''].include?(directory)
@@ -38,8 +33,29 @@ module Solargraph
       @config = config
       @server = server
       load_sources
-      @gemnames = gemnames
+      @gemnames = []
+      # @type [Metagem, nil]
+      @metagem = nil
       require_plugins
+    end
+
+    # A workspace for a gem's source. It loads no files from disk and
+    # resolves no bundle.
+    #
+    # @param metagem [Metagem]
+    # @return [Workspace]
+    def self.for_gem metagem
+      new.tap { |workspace| workspace.instance_variable_set(:@metagem, metagem) }
+    end
+
+    # Names of the gems the workspace's code can use beyond those its bundle
+    # and requires provide: for a gem's source, the gem and its runtime
+    # dependencies
+    #
+    # @return [Array<String>]
+    def available_gem_names
+      return [] unless @metagem
+      [@metagem.name] + @metagem.dependencies
     end
 
     # The require paths associated with the workspace.
