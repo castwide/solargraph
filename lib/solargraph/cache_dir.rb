@@ -45,7 +45,22 @@ module Solargraph
     def add_plugin name
       # @sg-ignore Unresolved call to name on Gem::BasicSpecification, Hash{String => Gem::BasicSpecification}
       spec = Gem.loaded_specs.each_value.find { |s| s.name == name || s.contains_requirable_file?(name) }
-      plugins[name] = spec&.version&.to_s
+      plugins[spec&.name || name] = spec&.version&.to_s
+    end
+
+    # Record the gem that defines a convention, so a plugin loaded by a
+    # plain require still gets its own gem cache directory.
+    #
+    # @param convention [Class<Convention::Base>]
+    # @return [void]
+    def add_convention convention
+      name = convention.name
+      return if name.nil?
+      file = Object.const_source_location(name)&.first
+      return if file.nil?
+      spec = Gem.loaded_specs.values.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
+      return if spec.nil? || spec.name == 'solargraph'
+      plugins[spec.name] = spec.version.to_s
     end
 
     # The current stdlib directory.
