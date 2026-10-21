@@ -3,9 +3,11 @@
 describe Solargraph::CacheDir do
   around do |example|
     saved = described_class.plugins.dup
+    saved_requires = described_class.plugin_requires.dup
     described_class.plugins.clear
     example.run
     described_class.plugins.replace(saved)
+    described_class.plugin_requires.replace(saved_requires)
   end
 
   # @param version [String]

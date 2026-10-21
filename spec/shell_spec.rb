@@ -162,6 +162,11 @@ describe Solargraph::Shell do
       capture_both { described_class.new([], directory: temp_dir).uncache('nonexistentgem8675309') }
       expect($LOADED_FEATURES).to include(end_with('cache_probe_plugin.rb'))
     end
+
+    it 'loads the plugins it is given instead of the configured ones' do
+      capture_both { described_class.new([], directory: temp_dir, plugins: '').cache('nonexistentgem8675309') }
+      expect($LOADED_FEATURES).not_to include(end_with('cache_probe_plugin.rb'))
+    end
   end
 
   describe 'cache' do
