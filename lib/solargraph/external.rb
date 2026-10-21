@@ -13,6 +13,7 @@ module Solargraph
     # @return [Array<String>]
     attr_reader :requires
 
+    # @return [Array<String>]
     attr_reader :extra_gem_names
 
     # @param directory [String]
@@ -26,6 +27,7 @@ module Solargraph
       update!
     end
 
+    # @return [Array<String>]
     def configured_gem_names
       loaded_gems.map(&:name) + unloaded_gems.map(&:name) + extra_gem_names
     end
@@ -46,6 +48,7 @@ module Solargraph
       @unloaded_gems ||= Set.new
     end
 
+    # @return [Array<String>]
     def unfound_gem_names
       @unfound_gem_names ||= []
     end
@@ -64,6 +67,7 @@ module Solargraph
     end
 
     # @param new_requires [Array<String>]
+    # @param new_gem_names [Array<String>]
     # @return [Boolean]
     def update new_requires, new_gem_names = []
       return false if requires == new_requires && new_gem_names == extra_gem_names && !cache_changed?
@@ -123,6 +127,7 @@ module Solargraph
       @repo.find_by_group(:default).each { |metagem| process_gem metagem }
     end
 
+    # @return [void]
     def load_gem_names
       extra_gem_names.uniq.each do |gem|
         metagem = @repo.find_by_name(gem)
