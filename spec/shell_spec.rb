@@ -149,8 +149,6 @@ describe Solargraph::Shell do
     after do
       $LOAD_PATH.delete plugin_dir
       $LOADED_FEATURES.delete_if { |path| path.end_with?('cache_probe_plugin.rb') }
-      Solargraph::CacheDir.plugins.delete 'cache_probe_plugin'
-      Solargraph::CacheDir.plugin_requires.delete 'cache_probe_plugin'
       FileUtils.rm_rf plugin_dir
     end
 
