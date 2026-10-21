@@ -219,7 +219,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class, Pin::Base => Array<Pin::Base>}]
+    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
