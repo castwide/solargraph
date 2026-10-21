@@ -111,7 +111,7 @@ module Solargraph
       # @return [String, nil]
       def resolve_and_cache name, gates
         cached_resolve[[name, gates]] = :in_process
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore https://github.com/apiology/solargraph/pull/225
         cached_resolve[[name, gates]] = resolve_uncached(name, gates)
       end
 
