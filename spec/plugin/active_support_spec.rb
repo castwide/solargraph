@@ -93,6 +93,16 @@ describe Solargraph::Plugin::ActiveSupport do
                                       ])
       end
 
+      it 'generates no accessors for class_attribute without arguments' do
+        pins = method_pins_for 'Foo', %(
+          class Foo
+            class_attribute
+            class_attribute :bar
+          end
+        )
+        expect(accessors(pins)).to include(['bar', :class])
+      end
+
       it 'generates accessors for multiple attributes' do
         pins = method_pins_for 'Foo', %(
           class Foo

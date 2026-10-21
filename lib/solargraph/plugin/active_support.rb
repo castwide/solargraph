@@ -74,6 +74,8 @@ module Solargraph
           instance_accessor: true,
           instance_predicate: true
         }
+        return defaults unless args
+
         kwargs = Parser::ParserGem::NodeMethods.convert_hash(args.node)
                                                .select { |_, val| val.literal? }
                                                # @sg-ignore Chain#literal? does not narrow links.last to Chain::Literal
