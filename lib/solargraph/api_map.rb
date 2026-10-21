@@ -866,10 +866,6 @@ module Solargraph
             result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
           end
         end
-        store.domains(fqns).each do |d|
-          dt = ComplexType.try_parse(d)
-          result.concat inner_get_methods(dt.namespace, dt.scope, visibility, deep, skip)
-        end
       end
       result
     end

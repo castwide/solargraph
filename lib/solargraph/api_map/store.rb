@@ -169,16 +169,6 @@ module Solargraph
         pins_by_class(Solargraph::Pin::Method)
       end
 
-      # @param fqns [String]
-      # @return [Array<String>]
-      def domains fqns
-        result = []
-        fqns_pins(fqns).each do |nspin|
-          result.concat nspin.domains
-        end
-        result
-      end
-
       # @return [Hash{String => YardMap::Macro}]
       def named_macros
         @named_macros ||= begin
