@@ -150,6 +150,7 @@ describe Solargraph::Shell do
       $LOAD_PATH.delete plugin_dir
       $LOADED_FEATURES.delete_if { |path| path.end_with?('cache_probe_plugin.rb') }
       Solargraph::CacheDir.plugins.delete 'cache_probe_plugin'
+      Solargraph::CacheDir.plugin_requires.delete 'cache_probe_plugin'
       FileUtils.rm_rf plugin_dir
     end
 
@@ -166,6 +167,17 @@ describe Solargraph::Shell do
     it 'loads the plugins it is given instead of the configured ones' do
       capture_both { described_class.new([], directory: temp_dir, plugins: '').cache('nonexistentgem8675309') }
       expect($LOADED_FEATURES).not_to include(end_with('cache_probe_plugin.rb'))
+    end
+
+    it 'loads and records the plugins it is given' do
+      capture_both { described_class.new([], directory: temp_dir, plugins: 'cache_probe_plugin').cache('nonexistentgem8675309') }
+      expect(Solargraph::CacheDir.plugin_requires).to include('cache_probe_plugin')
+    end
+
+    it 'warns about a plugin it cannot load' do
+      allow(Solargraph.logger).to receive(:warn)
+      capture_both { described_class.new([], directory: temp_dir, plugins: 'missing_probe_plugin').cache('nonexistentgem8675309') }
+      expect(Solargraph.logger).to have_received(:warn).with("Failed to load plugin 'missing_probe_plugin'")
     end
   end
 
