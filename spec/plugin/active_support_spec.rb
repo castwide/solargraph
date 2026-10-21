@@ -460,7 +460,7 @@ describe Solargraph::Plugin::ActiveSupport do
         ), 'test.rb')
         metagem = Solargraph::Metagem.new(name: 'foo', full_path: Dir.pwd, spec_file: nil, source: 'source at .',
                                           version: '1.0.0', require_paths: ['lib'], dependencies: dependencies)
-        workspace = Solargraph::Workspace.for_gem(metagem)
+        workspace = Solargraph::Workspace.new(metagem: metagem)
         Solargraph::ApiMap.new.catalog(Solargraph::Bench.new(source_maps: [source_map], workspace: workspace))
       end
 

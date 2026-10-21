@@ -146,7 +146,7 @@ describe Solargraph::Workspace do
     end.not_to raise_error
   end
 
-  describe '.for_gem' do
+  describe 'with a metagem' do
     let(:metagem) do
       Solargraph::Metagem.new(name: 'foo', full_path: File.absolute_path('spec/fixtures/workspace'), spec_file: nil,
                               source: 'source at spec/fixtures/workspace', version: '1.0.0',
@@ -154,11 +154,11 @@ describe Solargraph::Workspace do
     end
 
     it 'derives available gem names from the gem and its dependencies' do
-      expect(described_class.for_gem(metagem).available_gem_names).to eq(%w[foo activesupport])
+      expect(described_class.new(metagem: metagem).available_gem_names).to eq(%w[foo activesupport])
     end
 
     it 'loads no sources from the gem directory' do
-      expect(described_class.for_gem(metagem).filenames).to be_empty
+      expect(described_class.new(metagem: metagem).filenames).to be_empty
     end
   end
 

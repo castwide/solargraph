@@ -22,7 +22,8 @@ module Solargraph
     # @param directory [String] TODO: Remove '' and '*' special cases
     # @param config [Config, nil]
     # @param server [Hash]
-    def initialize directory = '', config = nil, server = {}
+    # @param metagem [Metagem, nil] the gem whose source the workspace is
+    def initialize directory = '', config = nil, server = {}, metagem: nil
       raise ArgumentError, 'directory must be a String' unless directory.is_a?(String)
 
       @directory = if ['*', ''].include?(directory)
@@ -34,18 +35,8 @@ module Solargraph
       @server = server
       load_sources
       @gemnames = []
-      # @type [Metagem, nil]
-      @metagem = nil
+      @metagem = metagem
       require_plugins
-    end
-
-    # A workspace for a gem's source. It loads no files from disk and
-    # resolves no bundle.
-    #
-    # @param metagem [Metagem]
-    # @return [Workspace]
-    def self.for_gem metagem
-      new.tap { |workspace| workspace.instance_variable_set(:@metagem, metagem) }
     end
 
     # Names of the gems the workspace's code can use beyond those its bundle
