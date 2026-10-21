@@ -24,6 +24,50 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.to_s).to eq('ReproBase')
   end
 
+  it 'narrows to an intersection when is_a? checks an unrelated mix-in' do
+    source = Solargraph::Source.load_string(%(
+      module M; end
+      class T; end
+      # @param t [T]
+      def verify(t)
+        if t.is_a?(M)
+          t
+        else
+          t
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [6, 10])
+    expect(clip.infer.to_s).to eq('T & M')
+
+    clip = api_map.clip_at('test.rb', [8, 10])
+    expect(clip.infer.to_s).to eq('T')
+  end
+
+  it 'does not build a redundant intersection when the mix-in is already included' do
+    source = Solargraph::Source.load_string(%(
+      module M; end
+      class T
+        include M
+      end
+      # @param t [T]
+      def verify(t)
+        if t.is_a?(M)
+          t
+        else
+          t
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [7, 10])
+    expect(clip.infer.to_s).to eq('T')
+
+    clip = api_map.clip_at('test.rb', [9, 10])
+    expect(clip.infer.to_s).to eq('T')
+  end
+
   it 'uses is_a? in a simple if() with a union to refine types' do
     source = Solargraph::Source.load_string(%(
       class ReproBase; end

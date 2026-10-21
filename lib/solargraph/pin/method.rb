@@ -143,7 +143,7 @@ module Solargraph
       end
 
       def return_type
-        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type).flat_map(&:items))
+        @return_type ||= return_type_from_inline_rbs || ComplexType.new(signatures.map(&:return_type))
       end
 
       # @param parameters [::Array<Parameter>]
