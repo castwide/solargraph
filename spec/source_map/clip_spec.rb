@@ -3238,6 +3238,20 @@ describe Solargraph::SourceMap::Clip do
       ), 2, 8)).to eq('Array<Integer>')
     end
 
+    it 'types variables initialized as tuples' do
+      expect(infer_at(%(
+        pair = ['a', 1] #: [String, Integer]
+        pair
+      ), 2, 8)).to eq('Array(String, Integer)')
+    end
+
+    it 'types variables initialized from hash literals' do
+      expect(infer_at(%(
+        opts = { 'a' => 1 } #: Hash[String, Integer]
+        opts
+      ), 2, 8)).to eq('Hash{String => Integer}')
+    end
+
     it 'types ||= assignments' do
       expect(infer_at(%(
         x ||= [] #: Array[String]
@@ -3275,6 +3289,92 @@ describe Solargraph::SourceMap::Clip do
         x = 'x'.size #:nodoc:
         x
       ), 2, 8)).to eq('Integer')
+    end
+
+    it 'ignores #: inside string literals' do
+      expect(infer_at(%(
+        x = '#: Integer'
+        x
+      ), 2, 8)).to eq('String')
+    end
+
+    it 'types operator assignments' do
+      expect(infer_at(%(
+        x = 0
+        x += 1 #: Float
+        x
+      ), 3, 8)).to eq('Float')
+    end
+
+    it 'types variables with union types' do
+      expect(infer_at(%(
+        x = nil #: String | Integer
+        x
+      ), 2, 8)).to eq('String, Integer')
+    end
+
+    it 'types values of nested generic hashes' do
+      expect(infer_at(%(
+        h = {} #: Hash[Symbol, Array[String]]
+        h[:a]
+      ), 2, 13)).to eq('Array<String>, nil')
+    end
+
+    it 'types variables with qualified names in a namespace' do
+      expect(infer_at(%(
+        module Top
+          class Bar; end
+
+          class Foo
+            def baz
+              x = nil #: Top::Bar
+              x
+            end
+          end
+        end
+      ), 7, 14)).to eq('Top::Bar')
+    end
+
+    it 'types variables with names relative to a namespace' do
+      pending('relative type names in inline RBS resolve from the root')
+
+      expect(infer_at(%(
+        module Top
+          class Bar; end
+
+          class Foo
+            def baz
+              x = nil #: Bar
+              x
+            end
+          end
+        end
+      ), 7, 14)).to eq('Top::Bar')
+    end
+
+    it 'types variables with record types as hashes' do
+      expect(infer_at(%(
+        cfg = { name: 'app' } #: { name: String }
+        cfg
+      ), 2, 8)).to eq('Hash')
+    end
+
+    it 'types values of record types' do
+      pending('record type support')
+
+      expect(infer_at(%(
+        cfg = { name: 'app' } #: { name: String }
+        cfg[:name]
+      ), 2, 18)).to eq('String')
+    end
+
+    it 'types elements of tuples' do
+      pending('literal index typing, disabled by castwide/solargraph#1201')
+
+      expect(infer_at(%(
+        pair = ['a', 1] #: [String, Integer]
+        pair[0]
+      ), 2, 15)).to eq('String')
     end
   end
 end
