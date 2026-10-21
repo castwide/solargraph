@@ -64,6 +64,20 @@ RSpec.configure do |config|
     Solargraph::CacheDir.plugins.replace(saved)
     Solargraph::CacheDir.plugin_requires.replace(saved_requires)
   end
+
+  # The same applies to a before(:all) load, which runs outside the
+  # around hook above.
+  saved_contexts = []
+  config.before(:context) do
+    saved_contexts.push [Solargraph::CacheDir.plugins.dup, Solargraph::CacheDir.plugin_requires.dup]
+    Solargraph::CacheDir.plugins.clear
+    Solargraph::CacheDir.plugin_requires.clear
+  end
+  config.after(:context) do
+    saved, saved_requires = saved_contexts.pop
+    Solargraph::CacheDir.plugins.replace(saved)
+    Solargraph::CacheDir.plugin_requires.replace(saved_requires)
+  end
 end
 
 def capture_stdout &block
