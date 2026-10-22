@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'tmpdir'
+require 'timeout'
 
 describe Solargraph::LanguageServer::Host do
   it 'prepares a workspace' do
@@ -71,12 +72,14 @@ describe Solargraph::LanguageServer::Host do
       host.open(file, File.read(file), 1)
       buffer = host.flush
       times = 0
-      # @todo Weak timeout for waiting until the diagnostics thread
-      #   sends a notification
-      while buffer.empty? && times < 10
-        sleep 1
-        times += 1
-        buffer = host.flush
+      Timeout.timeout 60 do
+        # @todo Weak timeout for waiting until the diagnostics thread
+        #   sends a notification
+        while buffer.empty? && times < 10
+          sleep 1
+          times += 1
+          buffer = host.flush
+        end
       end
       expect(buffer).to include('textDocument/publishDiagnostics')
       host.stop
@@ -177,7 +180,9 @@ describe Solargraph::LanguageServer::Host do
     host = described_class.new
     host.prepare ''
     host.open uri, 'Foo::Bar', 1
-    sleep 0.1 until host.libraries.all?(&:mapped?)
+    Timeout.timeout 60 do
+      sleep 0.1 until host.libraries.all?(&:mapped?)
+    end
     host.change({
                   'textDocument' => {
                     'uri' => uri,
@@ -209,7 +214,9 @@ describe Solargraph::LanguageServer::Host do
       host = described_class.new
       host.prepare ''
       host.open uri, code, 1
-      sleep 0.1 until host.libraries.all?(&:mapped?)
+      Timeout.timeout 60 do
+        sleep 0.1 until host.libraries.all?(&:mapped?)
+      end
       result = host.locate_pins({
                                   'data' => {
                                     'uri' => uri,
