@@ -1021,6 +1021,90 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'accepts anonymous splat forwarding to super' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          def initialize(arg, kwarg:); end
+        end
+
+        class FooProxy < Foo
+          def initialize(*, **)
+            super
+          end
+        end
+
+        FooProxy.new('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts ... forwarding' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          def initialize(arg, kwarg:); end
+        end
+
+        class FooProxy < Foo
+          def initialize(...)
+            super(...)
+          end
+        end
+
+        FooProxy.new('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts ... forwarding from a class method to new' do
+      checker = type_checker(%(
+        class Base
+          # @return [Array<String>]
+          def self.load(...)
+            new(...).load
+          end
+
+          # @return [Array<String>]
+          def load
+            []
+          end
+        end
+
+        class Sub < Base
+          # @param name [String]
+          def initialize(name)
+            super()
+            @name = name
+          end
+        end
+
+        Sub.load('foo')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts anonymous *, ** and & forwarding to a call' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          # @return [void]
+          def bar(arg, kwarg:); end
+
+          # @return [void]
+          def baz(*, **, &)
+            bar(*, **, &)
+          end
+        end
+
+        Foo.new.baz('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     # TypeChecker.load_string builds a bare ApiMap, so a gem's own pins -
     # Forwardable's def_delegators among them - are not available. Cataloging a
     # Bench with external_requires loads just the gems named in `requires`.
