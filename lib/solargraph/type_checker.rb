@@ -526,7 +526,7 @@ module Solargraph
       result = []
       kwargs = convert_hash(argchain.node)
       par = sig.parameters[idx]
-      # @type [Solargraph::Source::Chain]
+      # @type [Solargraph::Source::Chain, nil]
       argchain = kwargs[par.name.to_sym]
       if par.decl == :kwrestarg || (par.decl == :optarg && idx == pin.parameters.length - 1 && par.asgn_code == '{}')
         result.concat kwrestarg_problems_for(api_map, closure_pin, locals, location, pin, params, kwargs)
