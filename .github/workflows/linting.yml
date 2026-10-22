@@ -119,27 +119,6 @@ jobs:
     - name: Run RuboCop
       run: bundle exec rubocop -c .rubocop.yml
 
-    # PRs and other non-master events: contributors are expected to have
-    # regenerated .rubocop_todo.yml locally and committed it; fail with the
-    # diff if they didn't. We can't auto-push here because GITHUB_TOKEN
-    # can't write to a fork's branch, which is where most PRs come from.
-    - name: Run RuboCop against todo file
-      if: github.event_name != 'push' || github.ref != 'refs/heads/master'
-      run: |
-        cmd="bundle exec rubocop --auto-gen-config --exclude-limit=5 --no-offense-counts --no-auto-gen-timestamp"
-        # --auto-gen-config's exit code reflects the underlying offense count,
-        # not whether new offenses were introduced; the git diff check below
-        # is the actual pass/fail signal.
-        ${cmd:?} || true
-        set +e
-        if [ -n "$(git status --porcelain)" ]
-        then
-          git status --porcelain
-          git diff -u .
-           >&2 echo "Please address any new issues, then run '${cmd:?}' and push up any improvements"
-           exit 1
-        fi
-
     # Diffs here can only be a shrink: "Run RuboCop" above already
     # confirmed no new offenses exist against .rubocop_todo.yml.
     - name: Auto-update .rubocop_todo.yml
