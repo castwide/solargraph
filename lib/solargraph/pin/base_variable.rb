@@ -207,8 +207,11 @@ module Solargraph
           else
             types = types.flat_map do |type|
               if type.tuple?
+                # tuple? is disabled until the tuple redesign.
+                # :nocov:
                 # Array(Integer, String) gives each position its own type.
                 [type.all_params[index]].compact
+                # :nocov:
               elsif splattable?(api_map, type)
                 # Array<Integer, String> is a union: any position holds either.
                 type.all_params
