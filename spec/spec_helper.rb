@@ -48,6 +48,11 @@ def with_env_var name, value
   end
 end
 
+RSpec.configure do |config|
+  # Enable flags like --only-failures and --next-failure
+  config.example_status_persistence_file_path = 'tmp/rspec_status.txt'
+end
+
 def capture_stdout &block
   original_stdout = $stdout
   $stdout = StringIO.new
