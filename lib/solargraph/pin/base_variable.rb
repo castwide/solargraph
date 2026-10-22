@@ -191,7 +191,7 @@ module Solargraph
           mass_node, index, splat = @mass_assignment
           # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           types = return_types_from_node(mass_node, api_map)
-          # rubocop:disable Style/ConditionalAssignment
+          # rubocop:disable-next Style/ConditionalAssignment
           if splat
             # A splat target (`*args`) captures every remaining
             # element of the right-hand side, not just one position -
@@ -220,7 +220,6 @@ module Solargraph
               end
             end
           end
-          # rubocop:enable Style/ConditionalAssignment
 
           return ComplexType::UNDEFINED if types.empty?
 
