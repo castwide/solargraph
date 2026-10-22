@@ -37,6 +37,13 @@ module Solargraph
       File.join(work_dir, 'stdlib')
     end
 
+    # The current RBS collection directory.
+    #
+    # @return [String]
+    def rbs_dir
+      File.join(work_dir, 'rbs')
+    end
+
     # The directory for the current YARD version.
     #
     # @return [String]
