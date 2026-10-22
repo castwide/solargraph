@@ -200,4 +200,35 @@ describe Solargraph::SourceMap do
     expect(api_map.hash).not_to eq(original_api_map_hash)
     expect(clip.infer.to_s).to eq('Array')
   end
+
+  it 'applies scope directives to direct attachments' do
+    source_map = described_class.load_string(%(
+      class Example
+        # @!scope class
+        def foo; end
+
+        def bar; end
+      end
+    ), 'test.rb')
+    paths = source_map.pins.map(&:path)
+    expect(paths).to include('Example.foo')
+    expect(paths).to include('Example#bar')
+  end
+
+  it 'applies scope directives to future objects' do
+    source_map = described_class.load_string(%(
+      class Example
+        # @!scope class
+
+        # foo
+        def foo; end
+
+        # bar
+        def bar; end
+      end
+    ), 'test.rb')
+    paths = source_map.pins.map(&:path)
+    expect(paths).to include('Example.foo')
+    expect(paths).to include('Example.bar')
+  end
 end
