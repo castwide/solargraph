@@ -413,12 +413,24 @@ module Solargraph
           node_location = Solargraph::Location.from_node(block.node)
           return if node_location.nil?
 
-          # block.node is the block's body, so an enclosing block contains it
-          # too; locate_closure_pin picks the innermost, which is this block.
-          position = node_location.range.start
-          closure = api_map.source_map(node_location.filename)
-                           .locate_closure_pin(position.line, position.character)
-          closure if closure.is_a?(Pin::Block)
+          # block.node is the block's body, so enclosing blocks contain it too,
+          # and its first statement may be a closure of its own (a def), so
+          # take the innermost block containing the whole body: the one every
+          # other containing block also contains. A block's range includes its
+          # receiver, so in `a.map { }.each { }` the each block contains map's.
+          containing = api_map.get_block_pins.select { |pin| pin.location&.contain?(node_location) }
+          containing.find { |pin| containing.all? { |other| encloses?(other, pin) } }
+        end
+
+        # @param outer [Pin::Base]
+        # @param inner [Pin::Base]
+        # @return [Boolean]
+        def encloses? outer, inner
+          outer_location = outer.location
+          inner_location = inner.location
+          return false if outer_location.nil? || inner_location.nil?
+
+          outer_location.contain?(inner_location)
         end
 
         # @param api_map [ApiMap]

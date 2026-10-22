@@ -1931,6 +1931,24 @@ describe Solargraph::SourceMap::Clip do
     expect(api_map.clip_at('test.rb', [6, 39]).infer.to_s).to eq('Integer')
   end
 
+  it 'infers a block call whose body starts with a method definition' do
+    source = Solargraph::Source.load_string(%(
+      class Grp
+        # @generic T
+        # @yieldreturn [generic<T>]
+        # @return [generic<T>]
+        def self.run(&blk); end
+      end
+      result = Grp.run do
+        def self.helper; end
+        to_s
+      end
+      result
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [11, 6]).infer.to_s).to eq('String')
+  end
+
   it 'erases unresolvable class generics' do
     source = Solargraph::Source.load_string(%(
       # @generic T
