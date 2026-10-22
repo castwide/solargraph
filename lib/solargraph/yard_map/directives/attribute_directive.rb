@@ -18,8 +18,8 @@ module Solargraph
           docstring = Solargraph::Source.parse_docstring(directive.tag.text.to_s).to_docstring
           return [] if directive.tag.name.nil?
           namespace = closure_at(pins, source_position)
-          types = directive.tag.types
-          t = types.nil? || types.empty? ? nil : types.join
+          # @sg-ignore flow sensitive typing needs to handle attrs
+          t = directive.tag.types.nil? || directive.tag.types.empty? ? nil : directive.tag.types.join
           if t.nil? || t.include?('r')
             new_pins.push Solargraph::Pin::Method.new(
               location: location,
