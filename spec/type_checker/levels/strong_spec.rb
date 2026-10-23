@@ -371,6 +371,29 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.first.message).to include('Missing @return tag')
     end
 
+    it 'strips nil from an or-expression fallback in a conditional branch' do
+      checker = type_checker(%(
+        class Container
+          # @param m [Module, nil]
+          # @param expected [Module]
+          # @return [Boolean]
+          def check(m, expected)
+            if m.nil?
+              fallback
+            else
+              m <= expected || fallback
+            end
+          end
+
+          # @return [Boolean]
+          def fallback
+            true
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'calls out keyword issues even when required arg count matches' do
       checker = type_checker(%(
         # @param a [String]
@@ -779,6 +802,84 @@ describe Solargraph::TypeChecker do
       end
     end
 
+    it 'resolves a generic type variable against a union @param type' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def must_nilable(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_nilable(arg) = must_nilable(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable when both the @param and @return types are the same union' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>, nil]
+        def maybe(arg)
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [String, nil]
+        def via(arg) = maybe(arg)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type with more than two members' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil, Symbol]
+        # @return [generic<A>]
+        def must_not_nil_or_symbol(arg)
+          raise ArgumentError, 'arg must not be nil or a Symbol' if arg.nil? || arg.is_a?(Symbol)
+
+          arg
+        end
+
+        # @param arg [String, nil, Symbol]
+        # @return [Integer]
+        def via_triple(arg) = must_not_nil_or_symbol(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer1(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer2(arg) = layer1(arg)
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_layers(arg) = layer2(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar
@@ -954,6 +1055,74 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'resolves an ivar type when it is assigned only in an ancestor class method' do
+      checker = type_checker(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type when it is assigned and read within the same class' do
+      checker = type_checker(%(
+        class Widget
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type across files when it is assigned only in an ancestor class method' do
+      base = Solargraph::Source.load_string(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+      ), 'widget_base.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ), 'widget.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('widget.rb', api_map: api_map, level: :strong)
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'supports !@x.nil && @x.y' do
       checker = type_checker(%(
         class Bar
@@ -996,6 +1165,379 @@ describe Solargraph::TypeChecker do
       # expect 'sub' to be treated as 'Subclass' inside the block, and
       # an error when trying to declare sub as Subclass
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
+    end
+
+    it 'resolves the operators TrueClass and FalseClass share on Boolean' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def flag; true; end
+
+          # @return [Boolean]
+          def combined
+            flag & flag
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'accepts anonymous splat forwarding to super' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          def initialize(arg, kwarg:); end
+        end
+
+        class FooProxy < Foo
+          def initialize(*, **)
+            super
+          end
+        end
+
+        FooProxy.new('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts ... forwarding' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          def initialize(arg, kwarg:); end
+        end
+
+        class FooProxy < Foo
+          def initialize(...)
+            super(...)
+          end
+        end
+
+        FooProxy.new('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts ... forwarding from a class method to new' do
+      checker = type_checker(%(
+        class Base
+          # @return [Array<String>]
+          def self.load(...)
+            new(...).load
+          end
+
+          # @return [Array<String>]
+          def load
+            []
+          end
+        end
+
+        class Sub < Base
+          # @param name [String]
+          def initialize(name)
+            super()
+            @name = name
+          end
+        end
+
+        Sub.load('foo')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts anonymous *, ** and & forwarding to a call' do
+      checker = type_checker(%(
+        class Foo
+          # @param arg [String]
+          # @param kwarg [String]
+          # @return [void]
+          def bar(arg, kwarg:); end
+
+          # @return [void]
+          def baz(*, **, &)
+            bar(*, **, &)
+          end
+        end
+
+        Foo.new.baz('my arg', kwarg: 'my kwarg')
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    # TypeChecker.load_string builds a bare ApiMap, so a gem's own pins -
+    # Forwardable's def_delegators among them - are not available. Cataloging a
+    # Bench with external_requires loads just the gems named in `requires`.
+    #
+    # @param code [String]
+    # @param requires [::Array<String>]
+    # @return [Solargraph::TypeChecker]
+    def type_checker_with_gems code, requires
+      rules = Solargraph::TypeChecker::Rules.new(:strong, {})
+      api_map = Solargraph::ApiMap.new(loose_unions: !rules.require_all_unique_types_support_call?)
+      source = Solargraph::Source.load_string(code, 'test.rb')
+      bench = Solargraph::Bench.new(source_maps: [Solargraph::SourceMap.map(source)],
+                                    external_requires: requires)
+      api_map.catalog bench
+      Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strong, rules: rules)
+    end
+
+    it 'resolves methods delegated from an instance variable' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [Integer]
+          def size; 3; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegators :@records, :size
+
+          # @return [void]
+          def initialize
+            # @type [Records]
+            @records = Records.new
+          end
+
+          # @return [Integer]
+          def total
+            size
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'resolves methods delegated from a class variable' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [Integer]
+          def size; 3; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegators :@@records, :size
+
+          # @type [Records]
+          @@records = Records.new
+
+          # @return [Integer]
+          def total
+            size
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'resolves methods delegated through another method' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [String]
+          def label; 'x'; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegators :records, :label
+
+          # @return [Records]
+          def records
+            Records.new
+          end
+
+          # @return [String]
+          def name
+            label
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'takes the @!method tag for a delegation whose receiver does not resolve' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Context
+        end
+
+        class Holder
+          extend Forwardable
+
+          # @return [Context]
+          def context
+            Context.new
+          end
+
+          # @!method label
+          #   @return [String]
+          def_delegators :context, :label
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'reports the receiver, not the delegation, when neither declares a type' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [String]
+          def label; 'x'; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def records
+            @records
+          end
+
+          def_delegators :records, :label
+        end
+      ), ['forwardable'])
+      expect(checker.problems.map(&:message)).to contain_exactly('Missing @return tag for Holder#records')
+    end
+
+    it 'resolves a delegated method given an alias' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [Integer]
+          def size; 3; end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegator :@records, :size, :count
+
+          # @return [void]
+          def initialize
+            # @type [Records]
+            @records = Records.new
+          end
+
+          # @return [Integer]
+          def total
+            count
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'passes arguments and blocks through a delegated method' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @param n [Integer]
+          # @return [String]
+          def at(n); 'x'; end
+
+          # @yieldparam item [String]
+          # @return [Array<String>]
+          def each_item(&blk); ['a'].each(&blk); end
+        end
+
+        class Holder
+          extend Forwardable
+
+          def_delegators :@records, :at, :each_item
+
+          # @return [void]
+          def initialize
+            # @type [Records]
+            @records = Records.new
+          end
+
+          # @return [String]
+          def first_at
+            at(0)
+          end
+
+          # @return [Array<String>]
+          def items
+            each_item { |item| item.upcase }
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
+    end
+
+    it 'does not delegate without extending Forwardable' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Records
+          # @return [Integer]
+          def size; 3; end
+        end
+
+        class Holder
+          def_delegators :@records, :size
+
+          # @return [void]
+          def initialize
+            # @type [Records]
+            @records = Records.new
+          end
+
+          # @return [Integer]
+          def total
+            size
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems.map(&:message)).to include('Unresolved call to size')
+    end
+
+    it 'does not report the statement that declares a delegation or an alias' do
+      checker = type_checker_with_gems(%(
+        require 'forwardable'
+
+        class Widget
+          extend Forwardable
+
+          # @return [String]
+          def name; 'x'; end
+
+          alias_method :title, :name
+
+          def_delegators :@parts, :size
+
+          # @return [void]
+          def initialize
+            # @type [Array<String>]
+            @parts = []
+          end
+
+          # @return [String]
+          def label
+            title
+          end
+
+          # @return [Integer]
+          def count
+            size
+          end
+        end
+      ), ['forwardable'])
+      expect(checker.problems).to be_empty
     end
   end
 end
