@@ -360,6 +360,11 @@ module Solargraph
       # @param other [self]
       # @return [ComplexType, nil]
       def combine_return_type other
+        # An authoritative side (e.g. an @!override) replaces the type
+        # rather than widening it
+        authoritative = authoritative_value(other, :return_type)
+        return authoritative if authoritative&.defined?
+
         # The reader never returns nil, so an untyped side would add an
         # undefined member to the union and lose the other side's type
         return other.return_type if return_type.undefined?
