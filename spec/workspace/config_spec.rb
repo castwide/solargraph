@@ -52,4 +52,39 @@ describe Solargraph::Workspace::Config do
     expect(config.reporters).to include('rubocop')
     expect(config.reporters).to include('require_not_found')
   end
+
+  it 'has no type checker rule overrides by default' do
+    config = described_class.new(dir_path)
+    expect(config.type_checker_rules).to eq({})
+  end
+
+  it 'symbolizes a level override for a type checker rule' do
+    File.write(File.join(dir_path, '.solargraph.yml'), %(
+      type_checker:
+        rules:
+          validate_calls: typed
+    ))
+    config = described_class.new(dir_path)
+    expect(config.type_checker_rules).to eq(validate_calls: :typed)
+  end
+
+  describe '.commented_yaml' do
+    it 'renders a doc comment above a key with a CONFIG_DOCS entry' do
+      yaml = described_class.commented_yaml('max_files' => 5000)
+      expect(yaml).to eq(<<~YAML)
+        # Maximum number of files Solargraph will index in this workspace.
+        max_files: 5000
+      YAML
+    end
+
+    it 'renders a key with no CONFIG_DOCS entry without a comment' do
+      yaml = described_class.commented_yaml('not_a_real_key' => 'value')
+      expect(yaml).to eq("not_a_real_key: value\n")
+    end
+
+    it 'round-trips to the same data it was given' do
+      conf = described_class.new(dir_path).raw_data
+      expect(YAML.safe_load(described_class.commented_yaml(conf))).to eq(conf)
+    end
+  end
 end
