@@ -61,17 +61,22 @@ module Solargraph
           resolved = []
           unresolved_type = false
           binder.each_unique_type do |context|
-            pin = if context.bot?
-                    # bot is a subtype of everything, so a call on it is unreachable code,
-                    # not unresolved. A DuckMethod pin (bot return type keeps propagating,
-                    # explicit: false skips arity) gives resolution something to work
-                    # with; closure must come from name_pin, or #closure raises.
-                    Pin::DuckMethod.new(name: word, source: :chain, explicit: false, return_type: ComplexType::BOT,
+            if context.bot?
+              # bot is a subtype of everything, so a call on it is unreachable code,
+              # not unresolved. A DuckMethod pin (bot return type keeps propagating,
+              # explicit: false skips arity) gives resolution something to work
+              # with; closure must come from name_pin, or #closure raises.
+              pin = Pin::DuckMethod.new(name: word, source: :chain, explicit: false, return_type: ComplexType::BOT,
                                         closure: name_pin.closure)
-                  else
-                    ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-                    api_map.get_method_stack(ns_tag, word, scope: context.scope).first
-                  end
+            elsif context.duck_type? && context.name[1..] == word
+              # explicit: false skips arity checking; the duck type
+              # only tells us the method exists, not its signature
+              pin = Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
+            else
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
+              pin = stack.first
+            end
             if pin.nil?
               unresolved_type = true
               next
