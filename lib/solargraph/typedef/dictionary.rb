@@ -215,15 +215,6 @@ module Solargraph
         node.children[3] if node.type == :defs
       end
 
-      def real_method_body_node pin
-        node = pin.node
-        return unless node
-        return node.children[1].children.last if node.type == :DEFN
-        return node.children[2].children.last if node.type == :DEFS
-        return node.children[2] if %i[def DEFS].include?(node.type)
-        node.children[3] if node.type == :defs
-      end
-
       # @param parent_node [Parser::AST::Node]
       # @return [Typeset]
       def return_types_from_node parent_node
