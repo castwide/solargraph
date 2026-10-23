@@ -11,6 +11,14 @@ module Solargraph
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
+        # Array#[]/String#[] declare their Range-taking overload
+        # nilable, since an out-of-range start returns nil - but a
+        # literal 0 (or omitted/beginless) start can never be out of
+        # range, so the result is never nil there regardless of the
+        # receiver's actual size.
+        SLICE_METHOD_PATHS = ['Array#[]', 'String#[]'].freeze
+        private_constant :SLICE_METHOD_PATHS
+
         # @return [String]
         attr_reader :word
 
@@ -91,6 +99,26 @@ module Solargraph
         end
 
         private
+
+        # @return [Boolean] true if this call's sole argument is a
+        #   Range literal with a literal 0 or omitted start
+        def zero_start_range_arg?
+          return false unless arguments.length == 1
+
+          arg = arguments[0]
+          return false if arg.nil?
+
+          node = arg.node
+          return false if node.nil?
+          return false unless %i[irange erange].include?(node.type)
+
+          start_node = node.children[0]
+          return true if start_node.nil?
+          return false unless start_node.type == :int
+
+          # @sg-ignore Parser::AST::Node#children is declared Array<Node>, but an :int node's child is a literal Integer
+          start_node.children[0].zero?
+        end
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded
@@ -211,6 +239,11 @@ module Solargraph
               type, new_signature_pin = match_overload_type(ol, p, api_map, name_pin, locals, type, new_signature_pin)
               break if type.defined?
             end
+            # RBS types slice args as Range[Integer]; Range has one type
+            # parameter shared by both ends, so no overload can match only
+            # ranges starting at 0, and the signatures must return nil.
+            # Narrow here when the argument is a 0-start Range literal.
+            type = type.without_nil if type.nullable? && SLICE_METHOD_PATHS.include?(p.path) && zero_start_range_arg?
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
