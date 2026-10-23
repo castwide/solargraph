@@ -680,13 +680,10 @@ module Solargraph
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                   node => [_, _, *branches]
                   result.concat reduce_to_value_nodes(branches)
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
-                elsif node.type == :return
-                  returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
-                  result.concat reduce_to_value_nodes([returned])
-                elsif ENSURE.include?(node.type)
-                  node => [_, ::Parser::AST::Node | nil => ensured_body, *]
-                  result.concat reduce_to_value_nodes([ensured_body])
+                elsif node.type == :return || ENSURE.include?(node.type)
+                  # s(:return, value, *more_values) or s(:ensure, body, ensure_body)
+                  first = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
+                  result.concat reduce_to_value_nodes([first])
                 elsif FIRST_TWO_CHILDREN.include?(node.type)
                   # a :rescue node's value is its body's value or the
                   # value of whichever resbody handled the exception
