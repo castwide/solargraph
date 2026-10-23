@@ -117,6 +117,44 @@ module Solargraph
                      [path] + @open_gates
                    end
       end
+
+      # @param other [self]
+      # @param attrs [Hash{Symbol => Object}]
+      # @return [self]
+      def combine_with other, attrs = {}
+        new_attrs = {
+          type: combine_type(other),
+          visibility: choose(other, :visibility),
+          gates: open_gates == [''] ? other.open_gates : open_gates
+        }.merge(attrs)
+        super(other, new_attrs)
+      end
+
+      protected
+
+      # The gates this namespace itself opens up for name resolution,
+      # as passed to the constructor - not to be confused with #gates,
+      # which additionally prepends this namespace's own #path.
+      #
+      # @return [::Array<String>]
+      attr_reader :open_gates
+
+      private
+
+      # An RBS signature's class/module keyword can go stale relative
+      # to the gem's real source; prefer the pin parsed from it.
+      #
+      # @param other [self]
+      # @return [::Symbol]
+      def combine_type other
+        return type if type == other.type
+
+        Solargraph.logger.debug { "Namespace#combine_with: :type disagreement for #{path} - self=#{inspect}, other=#{other.inspect}" }
+        return type if source == :yardoc
+        return other.type if other.source == :yardoc
+
+        type
+      end
     end
   end
 end
