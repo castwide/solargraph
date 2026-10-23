@@ -99,13 +99,13 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        if receiver
-          pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-              .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
-              .map { |pin| expand_self(pin, receiver) }
-        else
-          pins
-        end
+        expanded = if receiver
+                     pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
+                         .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
+                         .map { |pin| expand_self(pin, receiver) }
+                   else
+                     pins
+                   end
 
         result = expanded.map { |pin| deep_infer(pin, receiver) }
 
