@@ -79,6 +79,7 @@ module Solargraph
         o, e, s = Open3.capture3(*cmd)
         if s.success?
           begin
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             hash = o && !o.empty? ? JSON.parse(o.split("\n").last) : {}
             return [] if hash.empty?
             hash['paths'].map { |path| File.join(base, path) }
