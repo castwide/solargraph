@@ -8,6 +8,10 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # s(:lvasgn, name, value) - value is absent in an mlhs or a rescue
+            node => [:lvasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil
+
             here = get_node_start_position(node)
             # @sg-ignore Need to add nil check here
             presence = Range.new(here, region.closure.location.range.ending)
@@ -15,8 +19,9 @@ module Solargraph
             locals.push Solargraph::Pin::LocalVariable.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].to_s,
-              assignment: node.children[1],
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              name: name.to_s,
+              assignment: assignment,
               comments: comments_for(node),
               presence: presence,
               source: :parser

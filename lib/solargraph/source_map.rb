@@ -163,7 +163,10 @@ module Solargraph
     def macro_method_candidates macro_method_names
       return @macro_method_candidates if @macro_method_names == macro_method_names
       @macro_method_names = macro_method_names
-      @macro_method_candidates = method_call_nodes.select { |node| macro_method_names.include?(node.children[1].to_s) }
+      @macro_method_candidates = method_call_nodes.select do |node|
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+        (node in [_, _, Symbol | ::Parser::AST::Node | nil => method_name, *]) && macro_method_names.include?(method_name.to_s)
+      end
     end
 
     class << self

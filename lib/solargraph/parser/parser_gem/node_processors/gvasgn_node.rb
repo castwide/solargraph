@@ -6,13 +6,18 @@ module Solargraph
       module NodeProcessors
         class GvasgnNode < Parser::NodeProcessor::Base
           def process
+            # s(:gvasgn, name, value) - value is absent when the target is in an mlhs
+            node => [:gvasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil
+
             loc = get_node_location(node)
             pins.push Solargraph::Pin::GlobalVariable.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].to_s,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              name: name.to_s,
               comments: comments_for(node),
-              assignment: node.children[1],
+              assignment: assignment,
               source: :parser
             )
             process_children

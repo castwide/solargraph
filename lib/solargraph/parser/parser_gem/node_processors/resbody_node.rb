@@ -9,28 +9,39 @@ module Solargraph
 
           # @return [void]
           def process
-            if node.children[1] # Exception local variable name
-              here = get_node_start_position(node.children[1])
+            # s(:resbody, s(:array, *exception_classes) | nil, s(:lvasgn, name) | nil, body)
+            node => [:resbody,
+                     ::Parser::AST::Node | nil => exceptions,
+                     ::Parser::AST::Node | nil => variable,
+                     ::Parser::AST::Node | nil => body]
+
+            # variable is an lvasgn, ivasgn, cvasgn or gvasgn (Symbol name), a
+            # send for `=> a.b` (receiver node) or a casgn for `=> A` (nil scope)
+            if variable in [_, Symbol | ::Parser::AST::Node | nil => variable_name, *]
+              here = get_node_start_position(variable)
               # @sg-ignore Need to add nil check here
               presence = Range.new(here, region.closure.location.range.ending)
-              loc = get_node_location(node.children[1])
-              types = if node.children[0].nil?
+              loc = get_node_location(variable)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              types = if exceptions.nil?
                         ['Exception']
                       else
-                        node.children[0].children.map do |child|
+                        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                        exceptions.children.map do |child|
                           unpack_name(child)
                         end
                       end
               locals.push Solargraph::Pin::LocalVariable.new(
                 location: loc,
                 closure: region.closure,
-                name: node.children[1].children[0].to_s,
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                name: variable_name.to_s,
                 comments: "@type [#{types.join(',')}]",
                 presence: presence,
                 source: :parser
               )
             end
-            NodeProcessor.process(node.children[2], region, pins, locals, ivars)
+            NodeProcessor.process(body, region, pins, locals, ivars)
           end
         end
       end

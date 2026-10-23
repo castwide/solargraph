@@ -12,7 +12,12 @@ module Solargraph
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_if(node)
-            condition_node = node.children[0]
+            # s(:if, cond, then, else) - each child is a node, or nil when absent
+            node => [:if,
+                     ::Parser::AST::Node | nil => condition_node,
+                     ::Parser::AST::Node | nil => then_node,
+                     ::Parser::AST::Node | nil => else_node]
+
             if condition_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(condition_node),
@@ -22,7 +27,6 @@ module Solargraph
               )
               NodeProcessor.process(condition_node, region, pins, locals, ivars)
             end
-            then_node = node.children[1]
             if then_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(then_node),
@@ -33,7 +37,6 @@ module Solargraph
               NodeProcessor.process(then_node, region, pins, locals, ivars)
             end
 
-            else_node = node.children[2]
             if else_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(else_node),

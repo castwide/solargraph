@@ -24,36 +24,34 @@ module Solargraph
           #       s(:send, nil, :bar))))
           # @param node [::Parser::AST::Node]
           def match? node
-            return false unless node&.type == :casgn
-            return false if node.children[2].nil?
+            # s(:casgn, scope, name, value) - value is the call, or a block on it
+            return false unless node in [:casgn, _, _, ::Parser::AST::Node => value, *]
 
-            data_node = if node.children[2].type == :block
-                          node.children[2].children[0]
-                        else
-                          node.children[2]
-                        end
+            data_node = (value in [:block, ::Parser::AST::Node => call, *]) ? call : value
 
             data_definition_node?(data_node)
           end
         end
 
         def class_name
-          if node.children[0]
-            Parser::NodeMethods.unpack_name(node.children[0]) + "::#{node.children[1]}"
+          # s(:casgn, scope, name, value) - scope is nil for a bare name
+          node => [_, ::Parser::AST::Node | nil => scope, Symbol => name, *]
+
+          if scope
+            Parser::NodeMethods.unpack_name(scope) + "::#{name}"
           else
-            node.children[1].to_s
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+            name.to_s
           end
         end
 
         private
 
         # @return [Parser::AST::Node]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1416
         def data_node
-          if node.children[2].type == :block
-            node.children[2].children[0]
-          else
-            node.children[2]
-          end
+          node => [_, _, _, ::Parser::AST::Node => value, *]
+          (value in [:block, ::Parser::AST::Node => call, *]) ? call : value
         end
       end
     end

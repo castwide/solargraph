@@ -8,13 +8,18 @@ module Solargraph
           include ParserGem::NodeMethods
 
           def process
+            # s(:ivasgn, name, value) - value is absent when the target is in an mlhs
+            node => [:ivasgn, Symbol => name, *rest]
+            assignment = (rest in [::Parser::AST::Node => value, *]) ? value : nil
+
             loc = get_node_location(node)
             ivars.push Solargraph::Pin::InstanceVariable.new(
               location: loc,
               closure: region.closure,
-              name: node.children[0].to_s,
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+              name: name.to_s,
               comments: comments_for(node),
-              assignment: node.children[1],
+              assignment: assignment,
               source: :parser
             )
             if region.visibility == :module_function
@@ -26,9 +31,10 @@ module Solargraph
                   location: loc,
                   closure: Pin::Namespace.new(type: :module, closure: region.closure.closure,
                                               name: region.closure.name),
-                  name: node.children[0].to_s,
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1416
+                  name: name.to_s,
                   comments: comments_for(node),
-                  assignment: node.children[1],
+                  assignment: assignment,
                   source: :parser
                 )
               end

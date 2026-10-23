@@ -753,6 +753,28 @@ describe Solargraph::ApiMap do
     expect(pins.map(&:name).sort).to eq(%w[bar foo])
   end
 
+  it 'finds class methods in class << Scoped::Example' do
+    source = Solargraph::Source.load_string(%(
+      class << Container::Example = Class.new
+        def foo; end
+      end
+    ))
+    @api_map.map source
+    pins = @api_map.get_methods('Container::Example', scope: :class).select do |pin|
+      pin.namespace == 'Container::Example'
+    end
+    expect(pins.map(&:name)).to eq(['foo'])
+  end
+
+  it 'skips the body of class << on an arbitrary expression' do
+    source_map = Solargraph::SourceMap.load_string(%(
+      class << some_object
+        def foo; end
+      end
+    ))
+    expect(source_map.pins.map(&:name)).not_to include('foo')
+  end
+
   it 'can qualify "Boolean"' do
     api_map = described_class.new
     expect(api_map.qualify('Boolean')).to eq('Boolean')
