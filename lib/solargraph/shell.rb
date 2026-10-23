@@ -336,7 +336,6 @@ module Solargraph
         exit 1
       when Pin::Namespace
         if options[:references]
-          # @sg-ignore Need to add nil check here
           superclass_tag = api_map.qualify_superclass(pin.return_type.tag)
           superclass_pin = api_map.get_path_pins(superclass_tag).first if superclass_tag
           references[:superclass] = superclass_pin if superclass_pin

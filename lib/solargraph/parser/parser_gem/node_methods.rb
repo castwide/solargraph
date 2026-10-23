@@ -181,6 +181,24 @@ module Solargraph
           result
         end
 
+        # Whether clause_node necessarily leaves its enclosing compound statement.
+        #
+        # @param clause_node [Parser::AST::Node, nil]
+        # @return [Boolean]
+        def always_leaves_compound_statement? clause_node
+          # https://docs.ruby-lang.org/en/2.2.0/keywords_rdoc.html
+          return true if %i[return next redo retry].include?(clause_node&.type)
+          return false if clause_node.nil?
+
+          # A multi-statement clause parses as :begin; only its last child leaves.
+          return always_leaves_compound_statement?(clause_node.children.last) if clause_node.type == :begin
+
+          return false unless clause_node.type == :send
+
+          # raise/fail are plain :send calls, not a dedicated node type.
+          clause_node.children[0].nil? && %i[raise fail].include?(clause_node.children[1])
+        end
+
         # @param node [Parser::AST::Node]
         def splatted_hash? node
           Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
