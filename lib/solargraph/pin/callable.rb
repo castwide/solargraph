@@ -143,13 +143,11 @@ module Solargraph
                                         resolved_generic_values: {}
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
-          if arg_types.nil?
-            param.dup
-          else
-            param.resolve_generics_from_context(generics_to_resolve,
-                                                arg_types[i],
-                                                resolved_generic_values: resolved_generic_values)
-          end
+          # nil defers to any binding resolved_generic_values already has.
+          arg_type_for_param = arg_types&.[](i)
+          param.resolve_generics_from_context(generics_to_resolve,
+                                              arg_type_for_param,
+                                              resolved_generic_values: resolved_generic_values)
         end
         if callable.block?
           callable.block = block.resolve_generics_from_context(generics_to_resolve,
