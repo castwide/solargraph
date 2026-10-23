@@ -609,7 +609,7 @@ module Solargraph
       remaining_items = context_type.items.reject { |ct| concrete_items.any? { |ci| ci.name == ct.name } }
       return BOT if remaining_items.empty?
 
-      ComplexType.new(remaining_items)
+      ComplexType.intern(remaining_items)
     end
 
     # @todo This is a quick and dirty hack that forces `self` keywords
