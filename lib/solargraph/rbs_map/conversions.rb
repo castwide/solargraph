@@ -315,7 +315,6 @@ module Solargraph
         generic_defaults = {}
         decl.type_params.each do |param|
           next unless param.default_type
-          # @sg-ignore Wrong argument type for to_complex_type: type expected RBS::Types::Bases::Base, received union of concrete subtypes, nil
           complex_type = RbsTranslator.to_complex_type(param.default_type, type_alias_decls: type_alias_decls).force_rooted
           generic_defaults[param.name.to_s] = complex_type
         end
