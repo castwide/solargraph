@@ -43,7 +43,7 @@ module Solargraph
     # @param other [Object]
     def eql? other
       self.class == other.class &&
-        # @sg-ignore flow sensitive typing needs to handle self.class == other.class
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1367
         equality_fields == other.equality_fields
     end
 
@@ -87,6 +87,7 @@ module Solargraph
     # @return [self]
     def map source, live: false
       map = Solargraph::SourceMap.map(source)
+      # @sg-ignore https://github.com/apiology/solargraph/pull/225
       catalog Bench.new(source_maps: [map], live_map: live ? map : nil)
       self
     end
@@ -115,14 +116,17 @@ module Solargraph
       self
     end
 
+    # @return [External]
     def external
       @external ||= External.new(workspace&.directory, [])
     end
 
+    # @return [Array<String>]
     def unresolved_requires
       external.unresolved_requires
     end
 
+    # @return [Set<Metagem>]
     def unloaded_gems
       external.unloaded_gems
     end
@@ -140,10 +144,12 @@ module Solargraph
           closure = source_map.locate_closure_pin(node.location.line, node.location.column)
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(node)
           next unless node.children[0].nil? && store.macro_method_name_pins.key?(node.children[1].to_s)
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match = store.macro_method_name_pins[node.children[1].to_s].find do |pin|
             get_complex_type_methods(closure.return_type).include?(pin)
           end
           next unless match
+          # @sg-ignore flow sensitive typing needs to handle Hash#key? guards
           match.macros.each do |macro|
             macro_pins.concat macro.generate_pins_from(chain, match, source_map)
           end
@@ -161,7 +167,6 @@ module Solargraph
     # @param name [String, nil]
     # @return [Solargraph::YardMap::Macro, nil]
     def named_macro name
-      # @sg-ignore Need to add nil check here
       store.named_macros[name]
     end
 
@@ -178,9 +183,13 @@ module Solargraph
     # @param filename [String]
     # @param position [Position, Array(Integer, Integer)]
     # @return [Source::Cursor]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+    #   also needs https://github.com/castwide/solargraph/pull/1417
     def cursor_at filename, position
       position = Position.normalize(position)
       raise FileNotFoundError, "File not found: #{filename}" unless source_map_hash.key?(filename)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+      #   also needs https://github.com/castwide/solargraph/pull/1417
       source_map_hash[filename].cursor_at(position)
     end
 
@@ -360,7 +369,7 @@ module Solargraph
       result.concat store.get_instance_variables(namespace, scope)
       sc_fqns = namespace
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1338
         sc_fqns = store.constants.dereference(sc)
         result.concat store.get_instance_variables(sc_fqns, scope)
       end
@@ -565,6 +574,7 @@ module Solargraph
                 else
                   get_methods(rooted_tag, scope: scope, visibility: visibility).select { |p| p.name == name }
                 end
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       methods = erase_generics(namespace_pin, rooted_type, methods) unless preserve_generics
       methods
     end
@@ -573,7 +583,7 @@ module Solargraph
     #
     # @deprecated Use #get_path_pins instead.
     #
-    # @param path [String] The path to find
+    # @param path [String, nil] The path to find
     # @return [Array<Solargraph::Pin::Base>]
     def get_path_suggestions path
       return [] if path.nil?
@@ -585,7 +595,7 @@ module Solargraph
     # @example
     #   api_map.get_pins_by_path('String#split')
     #
-    # @param path [String]
+    # @param path [String, nil]
     # @return [Array<Pin::Base>]
     def get_path_pins path
       get_path_suggestions(path)
@@ -601,6 +611,7 @@ module Solargraph
     def search query
       pins.map(&:path)
           .compact
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
@@ -628,6 +639,7 @@ module Solargraph
     # @return [Array<Solargraph::Pin::Base>]
     def locate_pins location
       return [] if location.nil? || !source_map_hash.key?(location.filename)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1417
       resolve_method_aliases source_map_hash[location.filename].locate_pins(location)
     end
 
@@ -646,6 +658,7 @@ module Solargraph
     # @return [Array<Pin::Symbol>]
     def document_symbols filename
       return [] unless source_map_hash.key?(filename) # @todo Raise error?
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1417
       resolve_method_aliases source_map_hash[filename].document_symbols
     end
 
@@ -656,8 +669,10 @@ module Solargraph
 
     # Get a source map by filename.
     #
-    # @param filename [String]
+    # @param filename [String, nil]
     # @return [SourceMap]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+    #   also needs https://github.com/castwide/solargraph/pull/1417
     def source_map filename
       raise FileNotFoundError, "Source map for `#{filename}` not found" unless source_map_hash.key?(filename)
       source_map_hash[filename]
@@ -682,16 +697,16 @@ module Solargraph
       # @todo If two literals are different values of the same type, it would
       #   make more sense for super_and_sub? to return true, but there are a
       #   few callers that currently expect this to be false.
-      # @sg-ignore flow-sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       return false if sup.literal? && sub.literal? && sup.to_s != sub.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       sup = sup.simplify_literals.to_s
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
       while (sc = store.get_superclass(sc_fqns))
-        # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1338
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
         return false if sc_new == sc_fqns
@@ -719,7 +734,7 @@ module Solargraph
       with_resolved_aliases = pins.map do |pin|
         next pin unless pin.is_a?(Pin::MethodAlias)
         resolved = resolve_method_alias(pin)
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         next nil if resolved.respond_to?(:visibility) && !visibility.include?(resolved.visibility)
         resolved
       end.compact
@@ -735,7 +750,7 @@ module Solargraph
     end
 
     # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    # @param namespace_pin [Pin::Base, nil] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
     # @param type [ComplexType] The type which is having its
     #   methods supplemented from fq_reference_tag
@@ -853,7 +868,7 @@ module Solargraph
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
             in_tag = dereference(ref)
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
           end
@@ -971,7 +986,7 @@ module Solargraph
         # :nocov:
       end
 
-      # @sg-ignore ignore `received nil` for original
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1259
       create_resolved_alias_pin(alias_pin, original)
     end
 
@@ -1046,8 +1061,7 @@ module Solargraph
     protected
 
     # @todo need to model type def statement in chains as a symbol so
-    #   that this overload of 'protected' will typecheck @sg-ignore
-    # @sg-ignore
+    #   that this overload of 'protected' will typecheck
     def equality_fields
       # External is compared by identity and generation instead of by its pins:
       # Chain#infer hashes the ApiMap on every inference, and Array#hash would

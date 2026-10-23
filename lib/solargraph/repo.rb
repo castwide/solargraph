@@ -23,6 +23,7 @@ module Solargraph
     #
     # @param path [String]
     # @return [Metagem, nil]
+    # @sg-ignore https://github.com/apiology/solargraph/pull/225
     def find_by_path path
       return system_find_by_path(path) unless bundled?
 
@@ -56,7 +57,9 @@ module Solargraph
     # @note If Solargraph itself is running in this directory's bundled
     #   environment, `bundled?` is false.
     #
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def bundled?
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       !!@metagems
     end
     alias bundle? bundled?
@@ -65,6 +68,7 @@ module Solargraph
     # bundle definition does not exist.
     #
     # @return [Array<Solargraph::Metagem>]
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def bundled
       @metagems || []
     end
@@ -90,16 +94,20 @@ module Solargraph
     # This method performs gem collection in a separate process to suppress
     # output from the `Bundler.definition.specs` call.
     #
-    # @return [Array<Metagem>, nil]
+    # @return [void]
     def build_from_directory
       return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
 
       Solargraph.with_clean_env do
         cmd = ['ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         if s.success?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @metagems = json[:metagems].map { |data| Metagem.new(**data) }
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
         else
           Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
@@ -108,6 +116,7 @@ module Solargraph
       end
     end
 
+    # @return [String]
     def bundle_script
       "
         require 'bundler/setup'
@@ -158,18 +167,21 @@ module Solargraph
              .map { |spec| Metagem.from_specification(spec) }
     end
 
+    # @return [Hash{String => Metagem}]
     def bundled_metagem_name_map
       @bundled_metagem_name_map ||= bundled.to_set
                                            .classify(&:name)
                                            .transform_values(&:first)
     end
 
+    # @return [Hash{String => Metagem, nil}]
     def bundled_metagem_path_map
       @bundled_metagem_path_map ||= Hash.new do |hash, path|
         hash[path] = bundled.find { |mg| mg.require?(path) }
       end
     end
 
+    # @return [Hash{Symbol => Array<Metagem>}]
     def bundled_group_map
       @bundled_group_map ||= {}
     end

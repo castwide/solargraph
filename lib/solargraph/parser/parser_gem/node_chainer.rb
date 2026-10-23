@@ -56,17 +56,24 @@ module Solargraph
         # @return [Array<Chain::Link>]
         def generate_links n
           return [] unless n.is_a?(::Parser::AST::Node)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           return generate_links(n.children[0]) if n.type == :splat
           # @type [Array<Chain::Link>]
           result = []
           if n.type == :block
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             result.concat NodeChainer.chain(n.children[0], @filename, n).links
           elsif n.type == :send
             if n.children[0].is_a?(::Parser::AST::Node)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.concat generate_links(n.children[0])
               result.push Chain::Call.new(n.children[1].to_s, Location.from_node(n), node_args(n), passed_block(n))
             elsif n.children[0].nil?
-              # @sg-ignore Need to add nil check here
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               n.children[2..].map do |c|
                 NodeChainer.chain(c, @filename, n)
               end
@@ -76,6 +83,8 @@ module Solargraph
             end
           elsif n.type == :csend
             if n.children[0].is_a?(::Parser::AST::Node)
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.concat generate_links(n.children[0])
               result.push Chain::QCall.new(n.children[1].to_s, Location.from_node(n), node_args(n))
             elsif n.children[0].nil?
@@ -88,9 +97,13 @@ module Solargraph
           elsif n.type == :zsuper
             result.push Chain::ZSuper.new('super')
           elsif n.type == :super
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('super', Location.from_node(n), args)
           elsif n.type == :yield
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             args = n.children.map { |c| NodeChainer.chain(c, @filename, n) }
             result.push Chain::Call.new('yield', Location.from_node(n), args)
           elsif n.type == :const
@@ -110,7 +123,11 @@ module Solargraph
             # s(:or_asgn,
             #   s(:ivasgn, :@bar),
             #   s(:int, 123))
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             lhs_chain = NodeChainer.chain n.children[0] # s(:ivasgn, :@bar)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             rhs_chain = NodeChainer.chain n.children[1] # s(:int, 123)
             or_link = Chain::Or.new([lhs_chain, rhs_chain])
             # this is just for a call chain, so we don't need to record the assignment
@@ -119,23 +136,33 @@ module Solargraph
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL
           elsif n.type == :and
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat generate_links(n.children.last)
           elsif n.type == :or
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             result.push Chain::Or.new([NodeChainer.chain(n.children[0], @filename),
+                                       # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                                       #   also needs https://github.com/castwide/solargraph/pull/1416
                                        NodeChainer.chain(n.children[1], @filename, n)])
           elsif n.type == :if
             then_clause = if n.children[1]
+                            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                            #   also needs https://github.com/castwide/solargraph/pull/1416
                             NodeChainer.chain(n.children[1], @filename, n)
                           else
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
             else_clause = if n.children[2]
+                            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+                            #   also needs https://github.com/castwide/solargraph/pull/1416
                             NodeChainer.chain(n.children[2], @filename, n)
                           else
                             Source::Chain.new([Source::Chain::Literal.new('nil', nil)], n)
                           end
             result.push Chain::If.new([then_clause, else_clause])
           elsif %i[begin kwbegin].include?(n.type)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
             block_variable_name_node = n.children[0]
@@ -143,19 +170,28 @@ module Solargraph
               # anonymous block forwarding (e.g., "&")
               # added in Ruby 3.1 - https://bugs.ruby-lang.org/issues/11256
               result.push Chain::BlockVariable.new(nil)
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             elsif block_variable_name_node.type == :sym
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.push Chain::BlockSymbol.new(block_variable_name_node.children[0].to_s)
             else
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+              #   also needs https://github.com/castwide/solargraph/pull/1416
               result.push Chain::BlockVariable.new("&#{block_variable_name_node.children[0]}")
             end
           elsif n.type == :hash
             result.push Chain::Hash.new('::Hash', n, hash_is_splatted?(n))
           elsif n.type == :array
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+            #   also needs https://github.com/castwide/solargraph/pull/1416
             chained_children = n.children.map { |c| NodeChainer.chain(c) }
             result.push Source::Chain::Array.new(chained_children, n)
           elsif inside_method_call? # If the node is inside a method call, it may be a parameter.
             lit = infer_literal_node_type(n)
             if lit
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
               method_call_chain = NodeChainer.chain(send_node, @filename, nil, [])
               literal = Chain::Literal.new(lit, n)
               result.push Chain::Parameter.new(literal, method_call_chain)
@@ -173,14 +209,20 @@ module Solargraph
         end
 
         # @return [Parser::AST::Node, nil]
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1421
         def send_node
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1421
           @send_node ||= @tree&.find { |n| n.type == :send }
         end
 
         # @param node [Parser::AST::Node]
         def hash_is_splatted? node
           return false unless Parser.is_ast_node?(node) && node.type == :hash
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           return false unless Parser.is_ast_node?(node.children.last) && node.children.last.type == :kwsplat
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           if Parser.is_ast_node?(node.children.last.children[0]) && node.children.last.children[0].type == :hash
             return false
           end
@@ -192,15 +234,17 @@ module Solargraph
         def passed_block node
           return unless node == @node && @parent&.type == :block
 
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           NodeChainer.chain(@parent.children[2], @filename)
         end
 
         # @param node [Parser::AST::Node]
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1391
         # @return [Array<Source::Chain>]
         def node_args node
-          # @sg-ignore Need to add nil check here
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
+          #   also needs https://github.com/castwide/solargraph/pull/1416
           node.children[2..].map do |child|
             NodeChainer.chain(child, @filename, node)
           end

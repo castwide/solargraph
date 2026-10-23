@@ -25,13 +25,14 @@ module Solargraph
         end
         # Some yardocs contain documentation for dependencies that can be
         # ignored here. The YardMap will load dependencies separately.
-        # @sg-ignore does not consider `pin.location.nil? || ` condition
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         @pins.keep_if { |pin| pin.location.nil? || File.file?(pin.location.filename) } if @spec
         @pins
       end
 
       private
 
+      # @return [ApiMap::Store]
       def core_store
         @core_store ||= ApiMap::Store.new(RbsMap::Core.new.pins)
       end
@@ -65,11 +66,11 @@ module Solargraph
                                                                      source: :yard_map)
             end
           end
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           code_object.class_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Extend.new(closure: nspin, name: m.path, source: :yard_map)
           end
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           code_object.instance_mixins.each do |m|
             result.push Solargraph::Pin::Reference::Include.new(
               closure: nspin, # @todo Fix this
@@ -80,7 +81,7 @@ module Solargraph
         when YARD::CodeObjects::MethodObject
           closure = @namespace_pins[code_object.namespace.to_s]
           macros_for_method_object(code_object)
-          # @sg-ignore flow sensitive typing ought to be able to handle 'when ClassName'
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           if code_object.name == :initialize && code_object.scope == :instance
             # @todo Check the visibility of <Class>.new
             result.push ToMethod.make(code_object, 'new', :class, :public, closure, @spec)
@@ -109,6 +110,7 @@ module Solargraph
 
       # @param method_object [YARD::CodeObjects::MethodObject]
       # @return [Array<YARD::CodeObjects::MacroObject>]
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       def macros_for_method_object method_object
         attached_macros_by_method_object[method_object]
       end

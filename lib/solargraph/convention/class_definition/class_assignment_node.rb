@@ -31,11 +31,14 @@ module Solargraph
           #
           # @param node [Parser::AST::Node]
           # @return [Parser::AST::Node, nil]
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
           def new_node node
             value = node.children[2]
             return nil if value.nil?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             return value unless value.type == :block
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             value.children[0]
           end
 
@@ -50,8 +53,10 @@ module Solargraph
 
             receiver = send_node.children[0]
             return false if receiver.nil?
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             return false unless receiver.type == :const
 
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             receiver.children[1] == :Class
           end
         end
@@ -66,6 +71,7 @@ module Solargraph
           namespace = node.children[0]
           return node.children[1].to_s if namespace.nil?
 
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
           "#{Parser::NodeMethods.unpack_name(namespace)}::#{node.children[1]}"
         end
 
@@ -79,8 +85,10 @@ module Solargraph
 
           arg = send_node.children[2]
           return nil if arg.nil?
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
           return nil unless arg.type == :const
 
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1418
           Parser::NodeMethods.unpack_name(arg)
         end
 

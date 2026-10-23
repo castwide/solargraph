@@ -10,7 +10,7 @@ module AST
   class Node
     public
 
-    attr_reader children: Array[self]
+    attr_reader children: Array[self | Integer | Float | Rational | Complex | String | Symbol | nil]
     attr_reader hash: String
     attr_reader type: Symbol
 

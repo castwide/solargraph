@@ -14,8 +14,10 @@ module Solargraph
                        })
           rescue FileNotFoundError => e
             Logging.logger.warn "[#{e.class}] #{e.message}"
-            # @sg-ignore Need to add nil check here
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+            #   rescued exceptions need https://github.com/apiology/solargraph/tree/type-rescued-exception-backtrace on top
             Logging.logger.warn e.backtrace.join("\n")
+            # @sg-ignore https://github.com/apiology/solargraph/pull/225
             set_result nil
           end
         end

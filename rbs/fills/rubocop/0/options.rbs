@@ -1,0 +1,7 @@
+# The rubocop 1.57 RBS in gem_rbs_collection has no RuboCop::Options.
+# https://github.com/ruby/gem_rbs_collection/pull/1099
+module RuboCop
+  class Options
+    def parse: (Array[String] command_line_args) -> [Hash[Symbol, untyped], Array[String]]
+  end
+end

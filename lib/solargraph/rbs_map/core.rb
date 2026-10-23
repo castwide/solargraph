@@ -5,6 +5,7 @@ module Solargraph
     class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
 
+      # @return [Array<Pin::Base>]
       def pins
         @pins ||= generate_pins
       end
@@ -25,6 +26,7 @@ module Solargraph
         new_pins = RbsMap::Conversions.new(loader: loader).pins
 
         # Avoid RBS::DuplicatedDeclarationError by loading in a different EnvironmentLoader
+        # @sg-ignore https://github.com/apiology/solargraph/pull/225
         fill_loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         fill_loader.add(path: Pathname(FILLS_DIRECTORY))
         fill_conversions = Conversions.new(loader: fill_loader)

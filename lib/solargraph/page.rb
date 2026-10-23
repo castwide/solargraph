@@ -71,7 +71,8 @@ module Solargraph
     # @param template [String]
     # @param layout [Boolean]
     # @param locals [Hash]
-    # @sg-ignore
+    # @sg-ignore Library method has no usable type
+    #   Proc#call is untyped; RBS can type a proc (^(String) -> String), YARD can't
     # @return [String]
     def render template, layout: true, locals: {}
       # @type [String]

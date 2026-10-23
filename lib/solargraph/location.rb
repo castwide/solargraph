@@ -8,7 +8,7 @@ module Solargraph
     include Equality
     include Comparable
 
-    # @return [String]
+    # @return [String, nil]
     attr_reader :filename
 
     # @return [Solargraph::Range]
@@ -33,7 +33,9 @@ module Solargraph
       end
     end
 
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1245
     def rbs?
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1245
       filename.end_with?('.rbs')
     end
 
@@ -59,10 +61,10 @@ module Solargraph
     def self.from_node node
       return nil if node.nil? || node.loc.nil?
       filename = node.loc.expression.source_buffer.name
-      # @sg-ignore flow sensitive typing needs to create separate ranges for postfix if
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1338
       filename = nil if filename.empty?
       range = Range.from_node(node)
-      # @sg-ignore Need to add nil check here
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1394
       new(filename, range)
     end
 
