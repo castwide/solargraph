@@ -171,5 +171,22 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary.infer
       expect(typeset.to_s).to eq('Integer | String')
     end
+
+    it 'infers from variable assignments with if conditions' do
+      source = Solargraph::Source.load_string(%(
+        x = case foo
+        when bar
+          1
+        else
+          '2'
+        end
+        x
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new.map(source)
+      dictionary = described_class.new(api_map, 'test.rb', [7, 8])
+      typeset = dictionary.infer
+      expect(typeset.to_s).to eq('Integer | String')
+    end
   end
 end
