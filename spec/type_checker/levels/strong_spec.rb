@@ -1539,5 +1539,53 @@ describe Solargraph::TypeChecker do
       ), ['forwardable'])
       expect(checker.problems).to be_empty
     end
+
+    it 'resolves calls on variables typed by inline rbs assertions' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String, nil]
+          def bar
+            names = [] #: Array[String]
+            names.first&.upcase
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'accepts tuple and hash variables typed by inline rbs assertions' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String, Integer, nil]
+          def first
+            pair = ['a', 1] #: [String, Integer]
+            pair.first
+          end
+
+          # @return [Integer, nil]
+          def count
+            opts = { 'a' => 1 } #: Hash[String, Integer]
+            opts['a']
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'complains on an inline rbs assertion that does not match' do
+      checker = type_checker(%(
+        x = 'x'.size #: String
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Declared type String does not match inferred type Integer for variable x']
+    end
+
+    it 'complains on an inline rbs assertion that removes nil' do
+      checker = type_checker(%(
+        x = ENV['A'] #: String
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq ['Declared type String does not match inferred type String, nil for variable x']
+    end
   end
 end
