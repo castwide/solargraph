@@ -59,7 +59,7 @@ module Solargraph
               [attribute_name, "#{attribute_name}="].each do |name|
                 docs = docstring.tags.find { |t| t.tag_name == 'param' && t.name == attribute_name }
 
-                attribute_type = ComplexType.parse(tag_string(docs))
+                attribute_type = ComplexType.try_parse(tag_string(docs))
                 return_type_comment = attribute_comment(docs, false)
                 param_comment = attribute_comment(docs, true)
 
