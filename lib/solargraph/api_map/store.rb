@@ -128,6 +128,12 @@ module Solargraph
         extend_references[fqns] || []
       end
 
+      # @param fqns [String]
+      # @return [Array<Pin::Reference::IncludedMixin>]
+      def get_included_mixins fqns
+        index.included_mixin_references[fqns] || []
+      end
+
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       # @sg-ignore https://github.com/castwide/solargraph/pull/1245

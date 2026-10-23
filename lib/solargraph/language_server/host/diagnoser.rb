@@ -61,7 +61,7 @@ module Solargraph
             return
           end
           current = mutex.synchronize { queue.shift }
-          return if queue.include?(current)
+          return if current.nil? || queue.include?(current)
           begin
             # @sg-ignore https://github.com/castwide/solargraph/pull/1426
             host.diagnose current
