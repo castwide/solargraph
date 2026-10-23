@@ -253,12 +253,7 @@ module Solargraph
         #
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
-        @deprecated = nil
-        @context = nil
-        @binder = nil
-        @path = nil
-        @documentation = nil
-        reset_conversions
+        reset_own_generated
       end
 
       def needs_consistent_name?
@@ -715,7 +710,10 @@ module Solargraph
         result = dup
         result.return_type = return_type
         result.proxied = true
-        result.reset_generated!
+        # Not reset_generated!, whose overrides cascade into the parameters
+        # and signatures dup still shares with this pin, rereading their tag
+        # types over any already resolved
+        result.send(:reset_own_generated)
         # dup shares this pin's docstring, whose tags hold the old return type
         result.docstring = copied_docstring
         result.send(:sync_return_type_tag) if result.return_type.defined?
@@ -812,6 +810,18 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # The state this class memoizes itself, without what subclasses add
+      #
+      # @return [void]
+      def reset_own_generated
+        @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
+        @documentation = nil
+        reset_conversions
+      end
 
       # Declarations of a reopened generic may spell its parameters
       # differently, so bind by position against this pin's own one.
