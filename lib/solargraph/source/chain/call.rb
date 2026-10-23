@@ -91,8 +91,14 @@ module Solargraph
 
           binder = binder.without_nil if nullable?
           binder.each_unique_type do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            yield context, api_map.get_method_stack(ns_tag, word, scope: context.scope).first
+            if context.duck_type? && context.name[1..] == word
+              # explicit: false skips arity checking; the duck type
+              # only tells us the method exists, not its signature
+              yield context, Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
+            else
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              yield context, api_map.get_method_stack(ns_tag, word, scope: context.scope).first
+            end
           end
         end
 
