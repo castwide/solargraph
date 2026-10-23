@@ -480,6 +480,15 @@ module Solargraph
         location || type_location
       end
 
+      # RBS, convention and synthesized pins may lack a location; every
+      # #location! call site receives a pin built from parsed source.
+      #
+      # @sg-ignore flow ensitive typing should understand raise
+      # @return [Location]
+      def location!
+        location || raise("No location set on #{inner_desc}")
+      end
+
       # True if the specified pin is a near match to this one. A near match
       # indicates that the pins contain mostly the same data. Any differences
       # between them should not have an impact on the API surface.
