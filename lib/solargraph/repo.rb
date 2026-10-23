@@ -82,6 +82,7 @@ module Solargraph
     end
 
     def bundled_directory?
+      # @sg-ignore Translate to something flow sensitive typing understands
       directory && File.file?(gemfile) && File.file?(lockfile)
     end
 

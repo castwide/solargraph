@@ -4,7 +4,7 @@ module Solargraph
   module Convention
     class Rakefile < Base
       def local source_map
-        basename = File.basename(source_map.filename)
+        basename = File.basename(source_map.filename.to_s)
         return EMPTY_ENVIRON unless basename.end_with?('.rake') || basename == 'Rakefile'
 
         @local ||= Environ.new(

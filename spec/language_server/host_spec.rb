@@ -199,6 +199,26 @@ describe Solargraph::LanguageServer::Host do
     expect(source.send(:repaired)).to eq('Foo::Bar ')
   end
 
+  describe '#prepare' do
+    it 'keeps the directory as given when there is no alternate separator' do
+      stub_const('File::ALT_SEPARATOR', nil)
+      host = described_class.new
+      Dir.mktmpdir do |dir|
+        host.prepare(dir)
+        expect(host.libraries.first.workspace.directory).to eq(File.absolute_path(dir))
+      end
+    end
+
+    it 'converts alternate separators in the directory to File::SEPARATOR' do
+      stub_const('File::ALT_SEPARATOR', '\\')
+      host = described_class.new
+      Dir.mktmpdir do |dir|
+        host.prepare(dir.tr('/', '\\'))
+        expect(host.libraries.first.workspace.directory).to eq(File.absolute_path(dir))
+      end
+    end
+  end
+
   describe '#locate_pins' do
     it 'locates #initialize for Class#new calls' do
       code = %(
