@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 describe Solargraph::Position do
   it 'normalizes arrays into positions' do
     pos = described_class.normalize([0, 1])
