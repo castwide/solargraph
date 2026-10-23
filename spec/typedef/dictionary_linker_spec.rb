@@ -286,7 +286,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [2, 8])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('NilClass') # @todo should be 'nil'
+    expect(typeset.to_s).to eq('nil')
 
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [3, 8])

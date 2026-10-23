@@ -157,10 +157,14 @@ module Solargraph
         case pin
         when Pin::BaseVariable, Pin::Constant
           return_types_from_node(pin.assignment)
+        # when Pin::Callable
+        #   return_types_from_node(real_method_body_node(pin))
         else
-          next_chain = next_chain(pin)
-          return pin.typedef_typeset unless next_chain
-          Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+          # next_chain = next_chain(pin)
+          # return pin.typedef_typeset unless next_chain
+          # Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+          next_node = next_node(pin)
+          return_types_from_node(next_node)
         end
       end
 
@@ -192,10 +196,29 @@ module Solargraph
         end
       end
 
+      def next_node(pin)
+        if pin.is_a?(Pin::Method)
+          method_body_node(pin)
+        else
+          return unless pin.location
+          source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        end
+      end
+
       # @param pin [Pin::Base]
       # @return [Parser::AST::Node, nil]
       def method_body_node pin
-        node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        node = pin.node
+        return unless node
+        return node.children[1].children.last if node.type == :DEFN
+        return node.children[2].children.last if node.type == :DEFS
+        return node.children[2] if %i[def DEFS].include?(node.type)
+        node.children[3] if node.type == :defs
+      end
+
+      def real_method_body_node pin
+        node = pin.node
         return unless node
         return node.children[1].children.last if node.type == :DEFN
         return node.children[2].children.last if node.type == :DEFS
@@ -226,6 +249,7 @@ module Solargraph
             types.push result #unless result.undefined?
           end
         end
+        return ComplexType::UNDEFINED.to_typedef_typeset if types.empty?
         Typeset.new(types)
       rescue FileNotFoundError
         # @todo Necessary for pins from source maps that are not part of the workspace
