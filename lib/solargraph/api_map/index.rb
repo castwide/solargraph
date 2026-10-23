@@ -87,8 +87,8 @@ module Solargraph
 
       # @return [Hash{String => Array<Pin::Reference::IncludedMixin>}]
       def included_mixin_references
-        # @param h [String]
-        # @param k [Array<Pin::Reference::IncludedMixin>]
+        # @param h [Hash{String => Array<Pin::Reference::IncludedMixin>}]
+        # @param k [String]
         @included_mixin_references ||= Hash.new { |h, k| h[k] = [] }
       end
 
