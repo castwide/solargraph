@@ -111,8 +111,9 @@ module Solargraph
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
         # @sg-ignore Need to add nil check here
-        links[0..-2].each do |link|
-          pins = link.resolve(api_map, working_pin, locals)
+        links[0..-2].each_with_index do |link, index|
+          pins = key_guarded_pins(index, api_map, name_pin, working_pin, locals) ||
+                 link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
           if type.undefined?
             logger.debug do
@@ -131,7 +132,8 @@ module Solargraph
           end
         end
         links.last.last_context = working_pin
-        links.last.resolve(api_map, working_pin, locals)
+        key_guarded_pins(links.length - 1, api_map, name_pin, working_pin, locals) ||
+          links.last.resolve(api_map, working_pin, locals)
       end
 
       # @param api_map [ApiMap]
@@ -321,6 +323,75 @@ module Solargraph
           return type
         end
         type.self_to_type(name_pin.context)
+      end
+
+      # Resolves 'h[k]' to the pin FlowSensitiveTyping records after a
+      # 'h.key?(k)' guard, whose type excludes nil. Applies only when 'h'
+      # is a Hash whose values can't be nil, and 'h' and 'k' read
+      # variables or attr_readers, which return the same value every time.
+      #
+      # @param index [Integer] position of the possible '[]' link
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param working_pin [Pin::Base] its binder is the receiver's type
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @return [::Array<Pin::Base>, nil]
+      def key_guarded_pins index, api_map, name_pin, working_pin, locals
+        link = links[index]
+        return unless link.is_a?(Chain::Call) && link.word == '[]' && !link.nullable? && !link.with_block?
+
+        key = link.arguments.first if link.arguments.length == 1
+        return unless key
+
+        receiver = links.first(index)
+        receiver_name = links_name(receiver)
+        name = receiver_name && Parser::NodeMethods.key_lookup_name(receiver_name, key.node)
+        pin = name && api_map.var_at_location(locals, name, name_pin, link.location)
+        return unless pin && non_nil_hash?(working_pin.binder, api_map)
+        return unless stable_links?(receiver, api_map, name_pin, locals)
+        return unless key.literal? || stable_links?(key.links, api_map, name_pin, locals)
+
+        [pin]
+      end
+
+      # @param chain_links [::Array<Chain::Link>]
+      # @return [String, nil] e.g. 'loc.filename', matching
+      #   NodeMethods#variable_chain_name
+      def links_name chain_links
+        return if chain_links.empty?
+
+        simple = chain_links.all? do |link|
+          link.is_a?(Chain::InstanceVariable) || link.is_a?(Chain::ClassVariable) ||
+            (link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?)
+        end
+        chain_links.map(&:word).join('.') if simple
+      end
+
+      # @param chain_links [::Array<Chain::Link>]
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable>]
+      # @return [Boolean] true if each link reads a variable or an
+      #   attr_reader
+      def stable_links? chain_links, api_map, name_pin, locals
+        (1..chain_links.length).all? do |length|
+          pins = Chain.new(chain_links.first(length)).define(api_map, name_pin, locals)
+          !pins.empty? && pins.all? do |pin|
+            pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && pin.attribute?)
+          end
+        end
+      end
+
+      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param api_map [ApiMap]
+      # @return [Boolean] true for a Hash whose declared values exclude
+      #   nil, e.g. Hash{String => Integer}
+      def non_nil_hash? type, api_map
+        type.defined? && type.each_unique_type.all? do |t|
+          api_map.super_and_sub?('Hash', t.name) &&
+            # 'nil' can arrive spelled 'NilClass'
+            t.value_types.none? { |value| value.each_unique_type.any? { |u| u.namespace == 'NilClass' } }
+        end
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]
