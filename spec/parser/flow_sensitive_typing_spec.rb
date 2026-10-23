@@ -1025,4 +1025,274 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     clip = api_map.clip_at('test.rb', [13, 12])
     expect(clip.infer.to_s).to eq('ReproBase')
   end
+
+  context 'with pattern matching' do
+    let(:source) do
+      Solargraph::Source.load_string(%(
+class Foo; def foo_only; end; end
+# @param x [Foo, Integer]
+# @param t [Array<String>]
+def m(x, t)
+  case x
+  in Foo => f
+    f
+    x
+  in Integer
+    x
+  end
+  t => [s, n]
+  s
+  n
+  f
+  x
+end
+      ), 'test.rb')
+    end
+
+    let(:api_map) { Solargraph::ApiMap.new.map(source) }
+
+    it 'types a const capture' do
+      expect(api_map.clip_at('test.rb', [7, 4]).infer.to_s).to eq('Foo')
+    end
+
+    it 'narrows the subject in the matching clause' do
+      expect(api_map.clip_at('test.rb', [8, 4]).infer.to_s).to eq('Foo')
+    end
+
+    it 'narrows the subject separately in the next clause' do
+      expect(api_map.clip_at('test.rb', [10, 4]).infer.to_s).to eq('Integer')
+    end
+
+    it 'types array-index captures from a one-line => match' do
+      expect(api_map.clip_at('test.rb', [13, 2]).infer.to_s).to eq('String')
+      expect(api_map.clip_at('test.rb', [14, 2]).infer.to_s).to eq('String')
+    end
+
+    it 'keeps a capture visible after the case ends' do
+      expect(api_map.clip_at('test.rb', [15, 2]).infer.to_s).to eq('Foo')
+    end
+
+    it 'leaves the subject unnarrowed after the case ends' do
+      expect(api_map.clip_at('test.rb', [16, 2]).infer.to_s).to eq('Foo, Integer')
+    end
+  end
+
+  it 'types an alternative capture as the union' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String, Integer, Symbol]
+      def m(x)
+        case x
+        in String | Integer => v
+          v
+          x
+        else
+          x
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String, Integer')
+    expect(api_map.clip_at('test.rb', [8, 10]).infer.to_s).to eq('String, Integer, Symbol')
+  end
+
+  it 'types a bare capture as the subject' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String]
+      def m(x)
+        case x
+        in y
+          y
+        end
+        x => z
+        z
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [8, 8]).infer.to_s).to eq('String')
+  end
+
+  it 'types array-index captures in a case clause' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array<String>]
+      def m(t)
+        case t
+        in [a, b]
+          a
+          b
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 10]).infer.to_s).to eq('String')
+  end
+
+  it 'types tuple-index captures by position' do
+    pending 'ComplexType::TypeMethods#tuple? returns false, so mass assignment reads every index as the first'
+
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array(String, Integer)]
+      def m(t)
+        t => [s, n]
+        n
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Integer')
+  end
+
+  it 'types captures from a one-line in match' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array<String>]
+      def m(t)
+        if t in [a, Integer => b]
+          a
+          b
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 10]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Integer')
+  end
+
+  it 'types a capture read in a guard' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [String, Integer]
+      def m(x)
+        case x
+        in String => s if s.empty?
+          s
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 26]).infer.to_s).to eq('String')
+  end
+
+  it 'narrows an instance variable subject with a const_pattern' do
+    source = Solargraph::Source.load_string(%(
+      class Point; end
+      class Example
+        # @param value [Point, Integer]
+        def initialize(value)
+          @value = value
+        end
+
+        def check
+          case @value
+          in Point(x:)
+            @value
+          in Integer
+            @value
+          end
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [11, 12]).infer.to_s).to eq('Point')
+    expect(api_map.clip_at('test.rb', [13, 12]).infer.to_s).to eq('Integer')
+  end
+
+  it 'maps a capture beside a pinned value' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Integer]
+      def m(x)
+        v = 1
+        case x
+        in ^v => w
+          w
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [6, 10]).locals.map(&:name)).to include('w')
+  end
+
+  it 'types rest captures in array and find patterns as Array' do
+    source = Solargraph::Source.load_string(%(
+      # @param x [Object]
+      def m(x)
+        case x
+        in [a, *rest]
+          rest
+        in [*, 1, *post]
+          post
+        end
+        x in [*tail]
+        tail
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
+    expect(api_map.clip_at('test.rb', [10, 8]).infer.to_s).to eq('Array')
+  end
+
+  it 'types rest captures as the core Array inside a namespace with its own Array' do
+    source = Solargraph::Source.load_string(%(
+      module Foo
+        class Array; end
+
+        # @param x [Object]
+        def self.m(x)
+          x in [*rest]
+          rest
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array')
+  end
+
+  it 'types rest captures with the element type of an Array subject' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array<String>]
+      def m(t)
+        case t
+        in [*all]
+          all
+        in [a, *tail]
+          tail
+        in [a, *middle, b]
+          middle
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('Array<String>')
+    expect(api_map.clip_at('test.rb', [7, 10]).infer.to_s).to eq('Array<String>')
+    expect(api_map.clip_at('test.rb', [9, 10]).infer.to_s).to eq('Array<String>')
+  end
+
+  it 'types rest captures from a tuple subject as an Array of its element types' do
+    source = Solargraph::Source.load_string(%(
+      # @param t [Array(String, Integer)]
+      def m(t)
+        t => [s, *rest]
+        rest
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Array<String, Integer>')
+  end
+
+  it 'types rest captures from the return type of the subject deconstruct method' do
+    source = Solargraph::Source.load_string(%(
+      class Pair
+        # @return [Array<Symbol>]
+        def deconstruct; end
+      end
+
+      # @param pair [Pair]
+      def m(pair)
+        pair => [:left, *rest]
+        rest
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [9, 8]).infer.to_s).to eq('Array<Symbol>')
+  end
 end
