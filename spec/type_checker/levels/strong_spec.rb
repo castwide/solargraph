@@ -803,6 +803,84 @@ describe Solargraph::TypeChecker do
       end
     end
 
+    it 'resolves a generic type variable against a union @param type' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def must_nilable(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_nilable(arg) = must_nilable(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable when both the @param and @return types are the same union' do
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>, nil]
+        def maybe(arg)
+          arg
+        end
+
+        # @param arg [String, nil]
+        # @return [String, nil]
+        def via(arg) = maybe(arg)
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type with more than two members' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil, Symbol]
+        # @return [generic<A>]
+        def must_not_nil_or_symbol(arg)
+          raise ArgumentError, 'arg must not be nil or a Symbol' if arg.nil? || arg.is_a?(Symbol)
+
+          arg
+        end
+
+        # @param arg [String, nil, Symbol]
+        # @return [Integer]
+        def via_triple(arg) = must_not_nil_or_symbol(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
+    it 'resolves a generic type variable against a union @param type through two layers of generic methods' do
+      pending 'https://github.com/castwide/solargraph/issues/1276'
+      checker = type_checker(%(
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer1(arg)
+          raise ArgumentError, 'arg must not be nil' if arg.nil?
+
+          arg
+        end
+
+        # @generic A
+        # @param arg [generic<A>, nil]
+        # @return [generic<A>]
+        def layer2(arg) = layer1(arg)
+
+        # @param arg [String, nil]
+        # @return [Integer]
+        def via_layers(arg) = layer2(arg).length
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves constants inside modules inside classes' do
       checker = type_checker(%(
         class Bar
@@ -975,6 +1053,74 @@ describe Solargraph::TypeChecker do
           end
         end
       ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type when it is assigned only in an ancestor class method' do
+      checker = type_checker(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type when it is assigned and read within the same class' do
+      checker = type_checker(%(
+        class Widget
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'resolves an ivar type across files when it is assigned only in an ancestor class method' do
+      base = Solargraph::Source.load_string(%(
+        class WidgetBase
+          # @return [void]
+          def run
+            @name = 'set-in-run'
+          end
+        end
+      ), 'widget_base.rb')
+      sub = Solargraph::Source.load_string(%(
+        class Widget < WidgetBase
+          # @return [void]
+          def test_no_block
+            run
+            puts @name.upcase
+          end
+        end
+      ), 'widget.rb')
+      api_map = Solargraph::ApiMap.new
+      api_map.catalog(Solargraph::Bench.new(source_maps: [
+                                              Solargraph::SourceMap.map(base),
+                                              Solargraph::SourceMap.map(sub)
+                                            ]))
+      checker = described_class.new('widget.rb', api_map: api_map, level: :strong)
 
       expect(checker.problems.map(&:message)).to eq([])
     end
@@ -1232,6 +1378,21 @@ describe Solargraph::TypeChecker do
       ))
       msg = checker.problems.map(&:message).find { |m| m.include?('no_such_method') }
       expect(msg).to eq('Unresolved call to no_such_method on String')
+    end
+
+    it 'resolves the operators TrueClass and FalseClass share on Boolean' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Boolean]
+          def flag; true; end
+
+          # @return [Boolean]
+          def combined
+            flag & flag
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
     end
 
     it 'accepts anonymous splat forwarding to super' do
