@@ -50,8 +50,7 @@ module Solargraph
           when :nil
             'nil'
           when :const_pattern, :match_as
-            # @type [Parser::AST::Node]
-            inner = node.children.fetch(0)
+            node => [_, ::Parser::AST::Node => inner, *]
             pattern_type_name(inner)
           when :match_alt
             # @type [Array<Parser::AST::Node>]
@@ -573,7 +572,8 @@ module Solargraph
               # @type [Array<Parser::AST::Node>]
               clauses = node.children.drop(1).compact
               clauses.flat_map do |clause|
-                body = clause.type == :in_pattern ? clause.children.last : clause
+                body = clause
+                clause => [:in_pattern, _, _, ::Parser::AST::Node | nil => body] if clause.type == :in_pattern
                 next [NIL_NODE] if body.nil? || body.type == :empty_else
 
                 reduce_to_value_nodes([body])

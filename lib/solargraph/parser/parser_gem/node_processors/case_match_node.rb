@@ -21,10 +21,12 @@ module Solargraph
                                     ivars,
                                     enclosing_breakable_pin,
                                     enclosing_compound_statement_pin).process_case_match(node)
-            # @type [Parser::AST::Node]
-            subject = node.children.fetch(0)
+            node => [_, ::Parser::AST::Node => subject, *]
             NodeProcessor.process(subject, region, pins, locals, ivars)
-            return add_captures(node.children.fetch(1), subject) unless node.type == :case_match
+            unless node.type == :case_match
+              node => [_, _, ::Parser::AST::Node => pattern]
+              return add_captures(pattern, subject)
+            end
 
             # @type [Array<Parser::AST::Node>]
             clauses = node.children.drop(1).compact
@@ -72,7 +74,7 @@ module Solargraph
               add_array_captures(pattern, subject)
             else
               pattern.children.each do |child|
-                add_captures(child) if Parser.is_ast_node?(child)
+                add_captures(child) if child.is_a?(::Parser::AST::Node)
               end
             end
           end
@@ -81,10 +83,7 @@ module Solargraph
           # @param subject [Parser::AST::Node, nil]
           # @return [void]
           def add_as_capture pattern, subject
-            # @type [Parser::AST::Node]
-            inner = pattern.children.fetch(0)
-            # @type [Parser::AST::Node]
-            var = pattern.children.fetch(1)
+            pattern => [:match_as, ::Parser::AST::Node => inner, ::Parser::AST::Node => var]
             type_name = pattern_type_name(inner)
             if type_name
               add_capture(var, comments: "@type [#{type_name}]")
