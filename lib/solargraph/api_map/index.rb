@@ -86,6 +86,11 @@ module Solargraph
         @prepend_references ||= ArrayHash.new
       end
 
+      # @return [ArrayHash{String => Array<Pin::Reference::IncludedMixin>}]
+      def included_mixin_references
+        @included_mixin_references ||= ArrayHash.new
+      end
+
       # @return [ArrayHash{String => Array<Pin::Reference::Superclass>}]
       def superclass_references
         @superclass_references ||= ArrayHash.new
@@ -106,7 +111,7 @@ module Solargraph
 
       attr_writer :pins, :pin_select_cache, :namespace_hash, :pin_class_hash, :path_pin_hash, :include_references,
                   :extend_references, :prepend_references, :superclass_references, :factory_parameter_hash,
-                  :macro_method_names, :macro_method_name_pins
+                  :macro_method_names, :macro_method_name_pins, :included_mixin_references
 
       # @return [self]
       def deep_clone
@@ -116,7 +121,7 @@ module Solargraph
           copy.macro_method_names = macro_method_names
           %i[
             namespace_hash pin_class_hash path_pin_hash include_references extend_references prepend_references
-            superclass_references macro_method_name_pins
+            superclass_references macro_method_name_pins included_mixin_references
           ].each do |sym|
             copy.send("#{sym}=", send(sym).clone)
             copy.send(sym)&.transform_values!(&:clone)
@@ -149,6 +154,7 @@ module Solargraph
         map_references Pin::Reference::Prepend, prepend_references
         map_references Pin::Reference::Extend, extend_references
         map_references Pin::Reference::Superclass, superclass_references
+        map_references Pin::Reference::IncludedMixin, included_mixin_references
         macro_pins = pins_by_class(Pin::Method).select { |pin| pin.macros.any? }
         @macro_method_names = macro_pins.to_set(&:name)
         @macro_method_name_pins = macro_pins.to_set.classify(&:name)
@@ -199,7 +205,7 @@ module Solargraph
         end
       end
 
-      # @param pin [Pin::Method]
+      # @param pin [Pin::Base]
       # @param tag [YARD::Tags::Tag]
       # @return [void]
       def redefine_return_type pin, tag
@@ -207,6 +213,9 @@ module Solargraph
         #   proxy() / proxy_with_signatures() instead?
         return unless pin && tag.tag_name == 'return'
         pin.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
+        # Only methods carry signatures; constants and other pins have
+        # just the one return type set above.
+        return unless pin.is_a?(Pin::Method)
         pin.signatures.each do |sig|
           sig.instance_variable_set(:@return_type, ComplexType.try_parse(tag.type))
         end

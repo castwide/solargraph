@@ -62,6 +62,29 @@ describe Solargraph::ApiMap::Index do
     end
   end
 
+  describe '#map_overrides on a constant' do
+    let(:baz_constant) do
+      Solargraph::Pin::Constant.new(name: 'BAZ',
+                                    closure: Solargraph::Pin::ROOT_PIN,
+                                    comments: '@return [String]')
+    end
+
+    let(:baz_override) do
+      Solargraph::Pin::Reference::Override.from_comment('BAZ', '@return [Integer]')
+    end
+
+    let(:input_pins) { [baz_constant, baz_override] }
+
+    it 'does not raise on a pin without signatures' do
+      expect { output_pins }.not_to raise_error
+    end
+
+    it 'redefines the return type of the constant' do
+      constant_pin = output_pins.find { |pin| pin.path == 'BAZ' }
+      expect(constant_pin.return_type.tag).to eq('Integer')
+    end
+  end
+
   describe '#include_reference_pins' do
     it 'returns an ArrayHash' do
       hash = described_class.new.include_reference_pins
