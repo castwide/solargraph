@@ -72,6 +72,7 @@ module Solargraph
         return false if presence && location&.filename != other_loc.filename
         # @sg-ignore flow sensitive typing needs to handle attrs
         return false if presence && !presence.include?(other_loc.range.start)
+        return false if within_own_assignment?(other_loc)
 
         visible_in_closure?(other_closure)
       end

@@ -30,4 +30,19 @@ describe Solargraph::Pin::InstanceVariable do
     expect(pin.dominates?(pin.closure, read)).to be(true)
     expect(pin.dominates?(orphan_block, read)).to be(false)
   end
+
+  it 'is not visible from inside its own assigned value' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          @x = 1
+          @x = [@x]
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 17])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
 end
