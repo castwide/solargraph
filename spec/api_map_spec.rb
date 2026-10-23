@@ -1063,4 +1063,54 @@ describe Solargraph::ApiMap do
     expect(api_map.get_path_pins('Example.foo_one')).to be_one
     expect(api_map.get_path_pins('Example.foo_two')).to be_one
   end
+
+  it 'resolves an alias to an attribute a macro defines with assertions on' do
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+    source = Solargraph::Source.load_string(%(
+      class Options
+        # @!macro [attach] default_attr
+        #   @!attribute $1
+        #     @return [String]
+        def self.default_attr(key, default)
+          attr_accessor(key)
+        end
+      end
+
+      class TemplateOptions < Options
+        default_attr :globals, nil
+        alias __globals globals
+      end
+    ), 'test.rb')
+    api_map = nil
+    expect { api_map = described_class.new.map(source) }.not_to raise_error
+    pins = api_map.get_method_stack('TemplateOptions', '__globals')
+    expect(pins.map(&:return_type).map(&:tag)).to eq(['String'])
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
+
+  it 'rejects an alias to a method nothing defines with assertions on' do
+    old_asserts = ENV.fetch('SOLARGRAPH_ASSERTS', nil)
+    ENV['SOLARGRAPH_ASSERTS'] = 'on'
+    source = Solargraph::Source.load_string(%(
+      class Options
+        # @!macro [attach] default_attr
+        #   @!attribute $1
+        def self.default_attr(key, default)
+          attr_accessor(key)
+        end
+      end
+
+      class TemplateOptions < Options
+        default_attr :globals, nil
+        alias __missing missing
+      end
+    ), 'test.rb')
+    api_map = described_class.new.map(source)
+    expect { api_map.get_method_stack('TemplateOptions', '__missing') }
+      .to raise_error(RuntimeError, /Rejecting alias - target is missing/)
+  ensure
+    ENV['SOLARGRAPH_ASSERTS'] = old_asserts
+  end
 end
