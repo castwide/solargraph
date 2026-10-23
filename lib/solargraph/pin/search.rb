@@ -43,7 +43,6 @@ module Solargraph
         end
              # @param a [self]
              # @param b [self]
-             # @sg-ignore https://github.com/castwide/solargraph/pull/1299
              .sort { |a, b| b.match <=> a.match }
              .map(&:pin)
       end
