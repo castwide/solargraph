@@ -932,6 +932,26 @@ describe Solargraph::Source::Chain::Call do
       end
     end
 
+    context 'when the same overloads are declared twice' do
+      let(:rbs) do
+        <<~RBS
+          class Integer
+            def -: (String) -> String | ...
+          end
+          class Integer
+            def -: (String) -> String | ...
+          end
+        RBS
+      end
+
+      it 'matches each overload once' do
+        source = Solargraph::Source.load_string('1 - nil')
+        chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+        pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
+        expect(pin.signatures.map(&:to_rbs).grep(/String/).length).to eq(1)
+      end
+    end
+
     context 'when it replaces the method' do
       let(:rbs) do
         <<~RBS
@@ -941,8 +961,11 @@ describe Solargraph::Source::Chain::Call do
         RBS
       end
 
-      it 'does not match the replaced overloads' do
-        expect(infer_value('1 - 1')).to eq('String')
+      it 'does not add its overloads to the core declaration' do
+        source = Solargraph::Source.load_string('1 - nil')
+        chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+        pin = chain.define(api_map, Solargraph::Pin::ROOT_PIN, []).first
+        expect(pin.signatures.length).not_to eq(5)
       end
     end
   end

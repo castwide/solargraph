@@ -94,15 +94,22 @@ module Solargraph
         # @return [Pin::Base, nil]
         def with_overloaded_signatures stack
           pin = stack.first
-          return pin unless pin.is_a?(Pin::Method) && pin.overloading?
+          return pin unless pin.is_a?(Pin::Method) && pin.source == :rbs
 
           # @type [::Array<Pin::Method>]
-          same_method = stack.select { |other| other.is_a?(Pin::Method) && other.path == pin.path }
-          overloading, replacing = same_method.partition(&:overloading?)
+          same_method = stack.select do |other|
+            other.is_a?(Pin::Method) && other.source == :rbs && other.path == pin.path
+          end
+          overloading, declared = same_method.partition(&:overloading?)
+          return pin if overloading.empty?
+
+          # The stack does not follow RBS load order, so the reopened
+          # declaration need not come after the ones reopening it
           signatures = overloading.flat_map(&:signatures)
-          reopened = replacing.first
+          reopened = declared.first
           signatures.concat reopened.signatures if reopened
-          pin.with_signatures(signatures)
+          # a gem's sig and its stdlib copy declare the same overloads
+          pin.with_signatures(signatures.uniq(&:to_rbs))
         end
 
         # Checks whether a single overload signature matches the call's
