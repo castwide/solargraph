@@ -52,7 +52,6 @@ module Solargraph
         # @return [Array<Location>]
         def references source, name
           if name.end_with?('=')
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1395
             reg = /#{Regexp.escape name[0..-2]}\s*=/
             # @param code [String]
             # @param offset [Integer]

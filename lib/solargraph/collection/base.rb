@@ -29,7 +29,6 @@ module Solargraph
       # @return [void]
       def self.uncache(...)
         cache_file = new(...).cache_file
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1281
         FileUtils.rm_rf cache_file
         Collection.mem_cache.delete cache_file
       end
@@ -46,7 +45,6 @@ module Solargraph
       def generate_pin_caches
         Collection.mem_cache[cache_file] = pins
         serial = Marshal.dump(pins)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1281
         FileUtils.mkdir_p File.dirname(cache_file)
         File.write cache_file, serial, mode: 'wb'
         pins

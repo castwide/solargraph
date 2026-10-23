@@ -55,7 +55,6 @@ module Solargraph
         end
         # Register up front so expansion does not depend on declaration order.
         core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
-          # @sg-ignore Need better generic inference here
           type_alias_decls[entry.decl.name.to_s] = entry.decl
         end
         # @sg-ignore Need a downcast here
@@ -603,7 +602,6 @@ module Solargraph
         decl.overloads.map do |overload|
           # RBS attaches this annotation to a single overload, not to the method as a whole
           implicit_nil = overload.annotations.map(&:string).include?('implicitly-returns-nil')
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1281
           type_location = location_decl_to_pin_location(overload.method_type.location)
           generics = overload.method_type.type_params.map(&:name).map(&:to_s)
           signature_parameters, signature_return_type = parts_of_function(overload.method_type, pin, implicit_nil)

@@ -746,8 +746,6 @@ module Solargraph
       # @return [String]
       def normalize_separators path
         return path if File::ALT_SEPARATOR.nil?
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
-        #   pure calls need https://github.com/apiology/solargraph/tree/narrow-pure-rbs-calls on top
         path.gsub(File::ALT_SEPARATOR, File::SEPARATOR)
       end
 
