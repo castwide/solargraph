@@ -11,13 +11,16 @@ module Solargraph
 
       # allow this to be set to the method after the method itself has
       # been created
+      #
+      # @param value [Pin::Callable]
       attr_writer :closure
 
+      # @param closure [Pin::Callable, nil]
       # @param decl [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg
       # @param asgn_code [String, nil]
       # @param [Hash{Symbol => Object}] splat
-      def initialize decl: :arg, asgn_code: nil, **splat
-        super(**splat)
+      def initialize closure: nil, decl: :arg, asgn_code: nil, **splat
+        super(closure: closure, **splat)
         @asgn_code = asgn_code
         @decl = decl
       end
@@ -196,13 +199,18 @@ module Solargraph
         super
       end
 
+      # @return [Pin::Callable]
+      def closure!
+        callable = closure
+        return callable if callable.is_a?(Pin::Callable)
+        raise "Closure of parameter #{name.inspect} is #{callable.class}, not a Pin::Callable"
+      end
+
       # The parameter's zero-based location in the block's signature.
       #
-      # @sg-ignore Need to add nil check here
-      # @return [Integer]
+      # @return [Integer, nil]
       def index
-        method_pin = closure
-        # @sg-ignore Need to add nil check here
+        method_pin = closure!
         method_pin.parameter_names.index(name)
       end
 
@@ -249,29 +257,29 @@ module Solargraph
 
       # @return [YARD::Tags::Tag, nil]
       def param_tag
-        # @sg-ignore Need to add nil check here
         params = closure.docstring.tags(:param)
-        # @sg-ignore Need to add nil check here
         params.each do |p|
           return p if p.name == name
         end
+        idx = index
         # @sg-ignore Need to add nil check here
-        params[index] if index && params[index] && (params[index].name.nil? || params[index].name.empty?)
+        params[idx] if idx && params[idx] && (params[idx].name.nil? || params[idx].name.empty?)
       end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_block_param api_map
         block_pin = closure
-        return block_pin.typify_parameters(api_map)[index] if block_pin.is_a?(Pin::Block) && block_pin.receiver && index
+        idx = index
+        return block_pin.typify_parameters(api_map)[idx] if block_pin.is_a?(Pin::Block) && block_pin.receiver && idx
         ComplexType::UNDEFINED
       end
 
       # @param api_map [ApiMap]
       # @return [ComplexType]
       def typify_method_param api_map
-        # @sg-ignore Need to add nil check here
         meths = api_map.get_method_stack(closure.full_context.tag, closure.name, scope: closure.scope)
+        idx = index
         # meths.shift # Ignore the first one
         meths.each do |meth|
           found = nil
@@ -281,13 +289,13 @@ module Solargraph
             found = p
             break
           end
-          if found.nil? && !index.nil? && params[index] && (params[index].name.nil? || params[index].name.empty?)
-            found = params[index]
+          # @sg-ignore Need to add nil check here
+          if found.nil? && !idx.nil? && params[idx] && (params[idx].name.nil? || params[idx].name.empty?)
+            found = params[idx]
           end
           unless found.nil? || found.types.nil?
             return ComplexType.try_parse(*found.types).qualify(api_map,
-                                                               # @sg-ignore Need to add nil check here
-                                                               *meth.closure.gates)
+                                                               *meth.closure!.gates)
           end
         end
         ComplexType::UNDEFINED

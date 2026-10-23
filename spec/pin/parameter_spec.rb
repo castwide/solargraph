@@ -262,6 +262,27 @@ describe Solargraph::Pin::Parameter do
     expect(pin.return_type.tag).to eq('String')
   end
 
+  it 'infers types from unnamed @param tags on a superclass method' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param [String]
+        def foo bar; end
+      end
+      class Sub < Foo
+        def foo bar; end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    pin = api_map.source_map('test.rb').locals.find { |p| p.name == 'bar' && p.closure.path == 'Sub#foo' }
+    expect(pin.typify(api_map).tag).to eq('String')
+  end
+
+  it 'raises from closure! when the closure is not callable' do
+    pin = described_class.new(name: 'bar', closure: Solargraph::Pin::Namespace.new(name: 'Foo'))
+    expect { pin.closure! }.to raise_error(RuntimeError, /not a Pin::Callable/)
+  end
+
   it 'infers return types from method reference tags' do
     source = Solargraph::Source.load_string(%(
       class Foo
