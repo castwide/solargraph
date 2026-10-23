@@ -291,6 +291,25 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'reports an argument mismatch shared by several overloads once' do
+      checker = type_checker(%(
+        class Foo
+          # @overload bar(a)
+          #   @param a [String]
+          #   @return [void]
+          # @overload bar(a, b)
+          #   @param a [String]
+          #   @param b [Integer]
+          #   @return [void]
+          def bar(a, b = 0); end
+        end
+
+        Foo.new.bar(1)
+      ))
+      expect(checker.problems.map(&:message))
+        .to eq(['Wrong argument type for Foo#bar: a expected String, received Integer'])
+    end
+
     it 'does not complain on array dereference' do
       checker = type_checker(%(
         # @param idx [Integer] an index
