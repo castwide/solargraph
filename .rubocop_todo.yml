@@ -154,7 +154,7 @@ Metrics/MethodLength:
 
 # Configuration parameters: CountComments, CountAsOne.
 Metrics/ModuleLength:
-  Max: 139
+  Max: 140
 
 # Configuration parameters: Max, CountKeywordArgs, MaxOptionalParameters.
 Metrics/ParameterLists:
@@ -461,6 +461,7 @@ YARD/MismatchName:
 YARD/TagTypeSyntax:
   Exclude:
     - 'lib/solargraph/parser/comment_ripper.rb'
+    - 'lib/solargraph/rbs_translator.rb'
 
 # This cop supports safe autocorrection (--autocorrect).
 # Configuration parameters: AllowHeredoc, AllowURI, AllowQualifiedName, URISchemes, IgnoreCopDirectives, AllowedPatterns, SplitStrings.
