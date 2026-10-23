@@ -28,7 +28,21 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [void]
       def rebind api_map
-        @rebind ||= maybe_rebind(api_map)
+        # inferring the receiver can clip inside this block, which rebinds
+        # it again, e.g. via a narrowing fact recorded in the block
+        return @rebind if @rebind || @rebinding
+
+        begin
+          @rebinding = true
+          @rebind = maybe_rebind(api_map)
+        ensure
+          @rebinding = false
+        end
+      end
+
+      # True once #rebind found a @yieldreceiver for this block
+      def rebound?
+        !!@rebind&.defined?
       end
 
       def binder

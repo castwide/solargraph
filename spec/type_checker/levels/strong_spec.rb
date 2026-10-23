@@ -1167,6 +1167,77 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'flags calls on a guarded accessor of an undeclared generic' do
+      checker = type_checker(%(
+        class Store
+          # @yieldparam [generic<Elem>]
+          # @return [void]
+          def foos; end
+        end
+
+        class Bar
+          # @param store [Store]
+          # @return [void]
+          def run store
+            store.foos do |pin|
+              next if pin.path.nil? || pin.path.empty?
+              pin.path.upcase
+            end
+          end
+        end
+      ))
+      pending('Type checking should complain when a type parameter is used without being declared')
+
+      expect(checker.problems).not_to be_empty
+      expect(checker.problems.map(&:message)).to include(a_string_matching(/Elem/))
+    end
+
+    it 'accepts a local copied from a .nil?-guarded bare accessor as a non-nil argument' do
+      checker = type_checker(%(
+        class Repro
+          # @return [Array<Hash>, nil]
+          attr_reader :steps
+
+          # @param steps [Array<Hash>]
+          # @return [void]
+          def consume(steps); end
+
+          # @return [void]
+          def unwrap
+            return nil if steps.nil?
+
+            steps_list = steps
+            consume(steps_list)
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'accepts a local copied from a bare accessor guarded by a non-nil return as a non-nil argument' do
+      checker = type_checker(%(
+        class Repro
+          # @return [Array<Hash>, nil]
+          attr_reader :substeps
+
+          # @param substeps [Array<Hash>]
+          # @return [void]
+          def consume(substeps); end
+
+          # @return [void]
+          def extract
+            return ['', nil] if substeps.nil?
+
+            steps_list = substeps
+            consume(steps_list)
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo

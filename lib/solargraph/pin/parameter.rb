@@ -234,7 +234,6 @@ module Solargraph
         ptype.generic?
       end
 
-      # @sg-ignore flow sensitive typing needs to handle attrs
       def documentation
         tag = param_tag
         return '' if tag.nil? || tag.text.nil?

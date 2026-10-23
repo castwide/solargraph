@@ -101,7 +101,6 @@ module Solargraph
       parameters = to_parameter_pins(method_type, closure, parameter_names, type_alias_decls: type_alias_decls)
       return_type = to_complex_type(method_type.type.return_type, type_alias_decls: type_alias_decls)
       block = if method_type.block
-                # @sg-ignore https://github.com/castwide/solargraph/issues/1249
                 block_parameters = to_parameter_pins(method_type.block, closure, type_alias_decls: type_alias_decls)
                 block_return_type = to_complex_type(method_type.block.type.return_type, type_alias_decls: type_alias_decls)
                 Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
@@ -131,18 +130,18 @@ module Solargraph
       def type_to_tag type, type_alias_decls = {}, expanding_aliases = []
         case type
         when RBS::Types::Optional
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{type_to_tag(type.type, type_alias_decls, expanding_aliases)}, nil"
         when RBS::Types::Bases::Bool
           'Boolean'
         when RBS::Types::Tuple
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
         when RBS::Types::Literal
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.literal.inspect
         when RBS::Types::Union
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
@@ -152,7 +151,7 @@ module Solargraph
         when RBS::Types::Bases::Void
           'void'
         when RBS::Types::Variable
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{Solargraph::ComplexType::GENERIC_TAG_NAME}<#{type.name}>"
         when RBS::Types::Bases::Self, RBS::Types::Bases::Instance
           'self'
@@ -160,7 +159,7 @@ module Solargraph
           # `Top` is the most super superclass
           'BasicObject'
         when RBS::Types::Intersection
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |member| type_to_tag(member, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Proc
           'Proc'
@@ -181,11 +180,11 @@ module Solargraph
         when RBS::Types::ClassInstance, RBS::Types::Interface
           # `Interface` represents a mix-in module which can be considered a
           # subtype of a consumer of it
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
         when RBS::Types::ClassSingleton
           # e.g., singleton(String)
-          # @sg-ignore flow sensitive typing should support case/when
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type_tag(type.name, [], type_alias_decls, expanding_aliases)
         when RBS::Types::Bases::Any, RBS::Types::Bases::Bottom
           # `Bottom`` is used in contexts where nothing will ever return
