@@ -16,7 +16,7 @@ module Solargraph
         return self unless named_values[name]
         if name == 'self' && named_values[name].is_a?(Typedef::Typeset)
           Typedef::Typeset.new(named_values[name].types.map do |type|
-            if (type.base.name == 'Class' || type.base.name == 'Module')
+            if %w[Class Module].include?(type.base.name)
               if type.params.empty?
                 Typeset::UNDEFINED
               else

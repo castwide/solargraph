@@ -51,17 +51,16 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        # rubocop:disable Lint/UselessDefaultValueArgument
+        # rubocop:disable-next Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:define), [[], nil] do
           pins, receiver = define_from_chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
         end
-        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       # @return [Typeset]
       def infer
-        # rubocop:disable Lint/UselessDefaultValueArgument
+        # rubocop:disable-next Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:infer), Typeset::UNDEFINED do
           pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
@@ -72,7 +71,6 @@ module Solargraph
 
           ComplexType::UNDEFINED.to_typedef_typeset
         end
-        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       private
@@ -101,7 +99,7 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        expanded = if receiver
+        if receiver
           pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
               .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
               .map { |pin| expand_self(pin, receiver) }
@@ -128,7 +126,7 @@ module Solargraph
         #   RBS core has return type `undefined`. A better solution is a
         #   CoreFills override of `Class#new => self`, but it interferes with
         #   the existing chain inference.
-        expanded = if pin.path == 'Class#new'
+        if pin.path == 'Class#new'
           pin.proxy(Solargraph::ComplexType.parse('::Class'))
         else
           pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
@@ -196,7 +194,7 @@ module Solargraph
         end
       end
 
-      def next_node(pin)
+      def next_node pin
         if pin.is_a?(Pin::Method)
           method_body_node(pin)
         else
@@ -238,15 +236,9 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
-            # @sg-ignore Need to add nil check here
-            clip = api_map.clip_at(location.filename, pos)
-            # Use the return node for inference. The clip might infer from the
-            # first node in a method call instead of the entire call.
             chain = Parser.chain(node, nil, nil)
-            # @sg-ignore Need to add nil check here
-            # result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
             result = Dictionary.new(api_map, source_map, pos, chain: chain).infer
-            types.push result #unless result.undefined?
+            types.push result
           end
         end
         return ComplexType::UNDEFINED.to_typedef_typeset if types.empty?
