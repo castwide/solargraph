@@ -222,6 +222,18 @@ module Solargraph
           nodes.any? { |n| splatted_call?(n) }
         end
 
+        # Anonymous `*`, `**` and `...` arguments pass on whatever the
+        # enclosing method received, so neither count nor types are known.
+        #
+        # @param nodes [Enumerable<Parser::AST::Node>]
+        def any_forwarded_args? nodes
+          nodes.any? do |n|
+            next false unless Parser.is_ast_node?(n)
+            next true if %i[forwarded_args forwarded_restarg].include?(n.type)
+            n.type == :hash && n.children.any? { |c| Parser.is_ast_node?(c) && c.type == :forwarded_kwrestarg }
+          end
+        end
+
         # @todo Temporarily here for testing. Move to Solargraph::Parser.
         # @param node [Parser::AST::Node]
         # @return [Array<Parser::AST::Node>]
@@ -476,6 +488,11 @@ module Solargraph
             CONDITIONAL_ALL_BUT_FIRST = %i[if unless].freeze
             ONLY_ONE_CHILD = [:return].freeze
             FIRST_TWO_CHILDREN = [:rescue].freeze
+            # :ensure's value is always its body's value (first
+            # child); the ensure clause itself (second child) never
+            # contributes to the method's return value unless it
+            # explicitly returns.
+            ENSURE = [:ensure].freeze
             COMPOUND_STATEMENTS = %i[begin kwbegin].freeze
             SKIPPABLE = %i[def defs class sclass module].freeze
             FUNCTION_VALUE = [:block].freeze
@@ -527,6 +544,13 @@ module Solargraph
                 # s(:rescue, body, resbody, *more_resbodies, else)
                 node => [_, ::Parser::AST::Node | nil => body, ::Parser::AST::Node => first_resbody, *]
                 result.concat reduce_to_value_nodes([body, first_resbody])
+              elsif ENSURE.include?(node.type)
+                # s(:ensure, body, ensure_body)
+                node => [_, ::Parser::AST::Node | nil => ensured_body, *]
+                result.concat reduce_to_value_nodes([ensured_body])
+                if include_explicit_returns && (node in [_, _, ::Parser::AST::Node => ensure_body, *])
+                  result.concat explicit_return_values_from_compound_statement(ensure_body)
+                end
               elsif FUNCTION_VALUE.include?(node.type)
                 # the block itself is a first class value that could be returned
                 result.push node
@@ -660,6 +684,14 @@ module Solargraph
                 elsif node.type == :return
                   returned = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                   result.concat reduce_to_value_nodes([returned])
+                elsif ENSURE.include?(node.type)
+                  node => [_, ::Parser::AST::Node | nil => ensured_body, *]
+                  result.concat reduce_to_value_nodes([ensured_body])
+                elsif FIRST_TWO_CHILDREN.include?(node.type)
+                  # a :rescue node's value is its body's value or the
+                  # value of whichever resbody handled the exception
+                  node => [_, ::Parser::AST::Node | nil => body, ::Parser::AST::Node => first_resbody, *]
+                  result.concat reduce_to_value_nodes([body, first_resbody])
                 # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
                   body = (node in [_, _, _, ::Parser::AST::Node | nil => block_body, *]) ? block_body : nil
