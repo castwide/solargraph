@@ -101,14 +101,15 @@ module Solargraph
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        return pins unless receiver # @todo Why is this necessary?
+        expanded = if receiver
+          pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
+              .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
+              .map { |pin| expand_self(pin, receiver) }
+        else
+          pins
+        end
 
-        # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
-        #   or undefined otherwise
-        result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-                     .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
-                     .map { |pin| expand_self(pin, receiver) }
-                     .map { |pin| deep_infer(pin, receiver) }
+        result = expanded.map { |pin| deep_infer(pin, receiver) }
 
         # @todo Find the first pin with a defined type?
         # @todo Making a proxy for undefined types seems inefficient
