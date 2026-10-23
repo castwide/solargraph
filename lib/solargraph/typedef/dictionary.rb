@@ -189,8 +189,6 @@ module Solargraph
         elsif pin.is_a?(Pin::Callable)
           node = method_body_node(pin)
           Parser::ParserGem::NodeChainer.chain(node) if node
-        elsif pin.is_a?(Pin::BaseVariable)
-          Parser::ParserGem::NodeChainer.chain(pin.assignment)
         end
       end
 
