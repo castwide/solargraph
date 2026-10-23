@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'open3'
-require 'json'
+require 'set'
+require 'yaml'
 
 module Solargraph
   # A repository for the gems available in the specified directory. If the
@@ -85,51 +85,215 @@ module Solargraph
       directory && File.file?(gemfile) && File.file?(lockfile)
     end
 
-    # Load metagems from the directory's bundle definition if available.
+    # Load metagems by parsing the directory's Gemfile.lock if available.
     #
-    # This method performs gem collection in a separate process to suppress
-    # output from the `Bundler.definition.specs` call.
+    # Parsing the lockfile is significantly faster and less intrusive than
+    # evaluating the bundle definition, which can execute arbitrary code from
+    # the Gemfile and emit output in the host process.
     #
     # @return [Array<Metagem>, nil]
     def build_from_directory
       return unless bundled_directory? && ENV['BUNDLE_GEMFILE'] != gemfile
 
-      Solargraph.with_clean_env do
-        cmd = ['ruby', '-e', bundle_script]
-        o, e, s = Open3.capture3(*cmd, chdir: directory)
-        if s.success?
-          json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []
-          @metagems = json[:metagems].map { |data| Metagem.new(**data) }
-          @bundled_group_map = json[:groups].transform_values { |names| names.map { |name| bundled_metagem_name_map[name] } }
-        else
-          Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
-          nil
-        end
+      require 'bundler'
+      parser = Bundler::LockfileParser.new(File.read(lockfile))
+      metagems = []
+      parsed = Set.new
+      parser.specs.each do |spec|
+        # The lockfile may include multiple platform-specific variants of the
+        # same gem; they collapse to a single name/version pair.
+        next unless parsed.add?("#{spec.name} #{spec.version}")
+        metagem = metagem_from_lock(spec)
+        metagems << metagem if metagem
+      end
+      @metagems = metagems
+      # Gemfile.lock does not record bundle groups, so direct dependencies
+      # are treated as members of the :default group.
+      @bundled_group_map = {
+        default: parser.dependencies.filter_map { |name, _dep| bundled_metagem_name_map[name] }
+      }
+    rescue StandardError => e
+      Solargraph.logger.warn "Failed to load gems from bundle at #{directory}: #{e}"
+      @metagems = nil
+      @bundled_group_map = {}
+      nil
+    end
+
+    # Build a metagem from a locked specification.
+    #
+    # @param spec [Bundler::LazySpecification]
+    # @return [Metagem, nil]
+    def metagem_from_lock spec
+      # NOTE: Bundler::Source::Git is a subclass of Bundler::Source::Path, so
+      # it must be matched first.
+      case spec.source
+      when Bundler::Source::Git
+        git_gem_from_lock(spec)
+      when Bundler::Source::Path
+        path_gem_from_lock(spec)
+      else
+        installed_gem_from_lock(spec)
       end
     end
 
-    def bundle_script
-      "
-        require 'bundler/setup'
-        require 'json'
+    # @param spec [Bundler::LazySpecification]
+    # @return [Metagem, nil]
+    def installed_gem_from_lock spec
+      gemspec = find_installed_gemspec(spec.name, spec.version.to_s)
+      unless gemspec
+        Solargraph.logger.warn "Skipping #{spec.name} (#{spec.version}): not installed"
+        return
+      end
+      Metagem.new(name: spec.name,
+                  full_path: gemspec.full_gem_path,
+                  spec_file: gemspec.spec_file,
+                  source: rubygems_source_string(spec.source),
+                  version: spec.version.to_s,
+                  require_paths: gemspec.require_paths,
+                  dependencies: spec.dependencies.map(&:name))
+    end
 
-        puts Bundler.definition.specs.length
-        metagems = Bundler.definition.specs.map do |spec|
-          {
-            name: spec.name,
-            full_path: spec.full_gem_path,
-            spec_file: spec.spec_file,
-            source: spec.source.to_s,
-            version: spec.version,
-            require_paths: spec.require_paths,
-            dependencies: spec.runtime_dependencies.map(&:name)
-          }
+    # @param spec [Bundler::LazySpecification]
+    # @return [Metagem]
+    def path_gem_from_lock spec
+      options = spec.source.options || {}
+      remote = options['path'] || options['remote']
+      root = File.expand_path(remote.to_s, directory)
+      spec_file = File.join(root, "#{spec.name}.gemspec")
+      spec_file = Dir[File.join(root, '*.gemspec')].first unless File.file?(spec_file)
+      gemspec = spec_file && File.file?(spec_file) ? Gem::Specification.load(spec_file) : nil
+      Metagem.new(name: spec.name,
+                  full_path: root,
+                  spec_file: spec_file,
+                  source: "source at #{root}",
+                  version: spec.version.to_s,
+                  require_paths: gemspec&.require_paths || ['lib'],
+                  dependencies: spec.dependencies.map(&:name))
+    end
+
+    # @param spec [Bundler::LazySpecification]
+    # @return [Metagem, nil]
+    def git_gem_from_lock spec
+      options = spec.source.options || {}
+      revision = (options['revision'] || options['commit']).to_s
+      scope = revision[0, 12]
+      git_home_paths.each do |home|
+        Dir[File.join(home, 'bundler', 'gems', "*#{spec.name}-#{scope}*")].each do |dir|
+          spec_file = File.join(dir, "#{spec.name}.gemspec")
+          spec_file = Dir[File.join(dir, '*.gemspec')].first unless File.file?(spec_file)
+          next unless spec_file && File.file?(spec_file)
+          gemspec = Gem::Specification.load(spec_file)
+          return Metagem.new(name: spec.name,
+                             full_path: dir,
+                             spec_file: spec_file,
+                             source: spec.source.to_s,
+                             version: spec.version.to_s,
+                             require_paths: gemspec&.require_paths || ['lib'],
+                             dependencies: spec.dependencies.map(&:name))
         end
-        groups = Bundler.definition.groups.to_h do |group|
-          [group, Bundler.definition.specs_for([group]).map(&:name)]
+      end
+      Solargraph.logger.warn "Skipping #{spec.name} (#{spec.version}): git gem not found in bundle path"
+      nil
+    end
+
+    # Locate an installed gemspec by name and version, searching both the
+    # system gems and any local bundle path configured for the directory.
+    #
+    # @param name [String]
+    # @param version [String]
+    # @return [Gem::Specification, nil]
+    def find_installed_gemspec name, version
+      # Gems installed to a local bundle path take precedence, mirroring the
+      # resolution performed by Bundler at runtime.
+      found = find_gemspec_in_homes(local_gem_home_paths, name, version)
+      return found if found
+      match = Gem::Specification.find_all_by_name(name).find { |gs| gs.version.to_s == version }
+      return match if match
+      find_gemspec_in_homes(gem_home_paths, name, version)
+    end
+
+    # @param homes [Array<String>]
+    # @param name [String]
+    # @param version [String]
+    # @return [Gem::Specification, nil]
+    def find_gemspec_in_homes homes, name, version
+      homes.each do |home|
+        file = locate_spec_file(home, name, version)
+        next unless file
+        begin
+          return Gem::Specification.load(file)
+        rescue StandardError => e
+          Solargraph.logger.warn "Failed to load gemspec #{file}: #{e}"
         end
-        puts({ groups: groups, metagems: metagems }.to_json)
-      "
+      end
+      nil
+    end
+
+    # Find a gemspec file in a gem home, accounting for platform-specific
+    # variants such as name-1.0.0-x86_64-linux.gemspec.
+    #
+    # @param home [String]
+    # @param name [String]
+    # @param version [String]
+    # @return [String, nil]
+    def locate_spec_file home, name, version
+      exact = File.join(home, 'specifications', "#{name}-#{version}.gemspec")
+      return exact if File.file?(exact)
+      variants = Dir[File.join(home, 'specifications', "#{name}-#{version}-*.gemspec")].select { |f| File.file?(f) }
+      local = variants.find { |f| File.basename(f) == "#{name}-#{version}-#{Gem::Platform.local}.gemspec" }
+      local || variants.first
+    end
+
+    # All gem home directories to search for installed gems.
+    #
+    # @return [Array<String>]
+    def gem_home_paths
+      @gem_home_paths ||= (local_gem_home_paths + Gem.path + [Gem.default_dir, Gem.user_dir]).uniq
+    end
+
+    # @param source [Bundler::Source::Rubygems]
+    # @return [String]
+    def rubygems_source_string source
+      remotes = source.respond_to?(:remotes) ? source.remotes : []
+      remotes.empty? ? 'https://rubygems.org' : remotes.map { |r| r.to_s.chomp('/') }.join(',')
+    end
+
+    # The base directory in which Bundler installs gems, including any path
+    # configured via `bundle config path`.
+    #
+    # @return [Array<String>]
+    def local_gem_home_paths
+      @local_gem_home_paths ||= begin
+        paths = []
+        setting = bundle_config_setting('BUNDLE_PATH')
+        if setting && setting != 'system'
+          base = File.expand_path(setting, directory)
+          paths.push File.join(base, 'ruby', RbConfig::CONFIG['ruby_version']), base
+        end
+        paths
+      end
+    end
+
+    # @return [Array<String>]
+    def git_home_paths
+      @git_home_paths ||= (local_gem_home_paths + [Gem.default_dir, Gem.user_dir] + Gem.path).uniq
+    end
+
+    # Read a setting from the directory's local .bundle/config file.
+    #
+    # @param key [String]
+    # @return [String, nil]
+    def bundle_config_setting key
+      file = File.join(directory, '.bundle', 'config')
+      return unless File.file?(file)
+      config = YAML.load_file(file)
+      return unless config.is_a?(Hash)
+      value = config[key] || config[key.downcase]
+      value = value['value'] || value[:value] if value.is_a?(Hash)
+      value&.to_s
+    rescue StandardError => e
+      Solargraph.logger.warn "Failed to read #{file}: #{e}"
+      nil
     end
 
     # @param path [String]
