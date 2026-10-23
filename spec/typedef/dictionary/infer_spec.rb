@@ -172,7 +172,7 @@ describe Solargraph::Typedef::Dictionary do
       expect(typeset.to_s).to eq('Integer | String')
     end
 
-    it 'infers from variable assignments with if conditions' do
+    it 'infers from variable assignments with case conditions' do
       source = Solargraph::Source.load_string(%(
         x = case foo
         when bar
@@ -185,6 +185,24 @@ describe Solargraph::Typedef::Dictionary do
 
       api_map = Solargraph::ApiMap.new.map(source)
       dictionary = described_class.new(api_map, 'test.rb', [7, 8])
+      typeset = dictionary.infer
+      expect(typeset.to_s).to eq('Integer | String')
+    end
+
+    it 'infers from method definitions' do
+      source = Solargraph::Source.load_string(%(
+        def foo
+          case x
+          when y
+            1
+          else
+            '2'
+          end
+        end
+      ), 'test.rb')
+
+      api_map = Solargraph::ApiMap.new.map(source)
+      dictionary = described_class.new(api_map, 'test.rb', [1, 8])
       typeset = dictionary.infer
       expect(typeset.to_s).to eq('Integer | String')
     end

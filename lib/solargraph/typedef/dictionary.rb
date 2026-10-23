@@ -156,8 +156,7 @@ module Solargraph
 
         case pin
         when Pin::BaseVariable, Pin::Constant
-          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(pin.assignment)
-          Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
+          return_types_from_node(pin.assignment)
         else
           next_chain = next_chain(pin)
           return pin.typedef_typeset unless next_chain
@@ -204,6 +203,35 @@ module Solargraph
         return node.children[2].children.last if node.type == :DEFS
         return node.children[2] if %i[def DEFS].include?(node.type)
         node.children[3] if node.type == :defs
+      end
+
+      # @param parent_node [Parser::AST::Node]
+      # @return [Typeset]
+      def return_types_from_node parent_node
+        types = []
+        Parser::ParserGem::NodeMethods.value_position_nodes_only(parent_node).each do |node|
+          # Nil nodes may not have a location
+          if node.nil? || node.type == :NIL || node.type == :nil
+            types.push ComplexType::NIL.to_typedef_typeset
+          else
+            rng = Range.from_node(node)
+            next if rng.nil?
+            pos = rng.ending
+            # @sg-ignore Need to add nil check here
+            clip = api_map.clip_at(location.filename, pos)
+            # Use the return node for inference. The clip might infer from the
+            # first node in a method call instead of the entire call.
+            chain = Parser.chain(node, nil, nil)
+            # @sg-ignore Need to add nil check here
+            # result = chain.infer(api_map, closure, clip.locals).self_to_type(closure.context)
+            result = Dictionary.new(api_map, source_map, pos, chain: chain).infer
+            types.push result #unless result.undefined?
+          end
+        end
+        Typeset.new(types)
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        [ComplexType::UNDEFINED]
       end
 
       # @param action [Symbol]
