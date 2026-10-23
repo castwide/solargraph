@@ -1283,6 +1283,38 @@ describe Solargraph::TypeChecker do
       Solargraph::TypeChecker.new('test.rb', api_map: api_map, level: :strong, rules: rules)
     end
 
+    it 'reports calls on a nilable return value from a gem method' do
+      checker = type_checker_with_gems(%(
+        require 'yard'
+
+        class Foo
+          # @return [String]
+          def bar
+            YARD::Registry.at('Foo').path
+          end
+        end
+      ), ['yard'])
+      expect(checker.problems.map(&:message))
+        .to include('Unresolved call to path on YARD::CodeObjects::Base, nil')
+    end
+
+    it 'accepts calls on a nil-checked return value from a gem method' do
+      checker = type_checker_with_gems(%(
+        require 'yard'
+
+        class Foo
+          # @return [String]
+          def bar
+            object = YARD::Registry.at('Foo')
+            return '' if object.nil?
+
+            object.path
+          end
+        end
+      ), ['yard'])
+      expect(checker.problems.map(&:message)).not_to include(a_string_starting_with('Unresolved call'))
+    end
+
     it 'resolves methods delegated from an instance variable' do
       checker = type_checker_with_gems(%(
         require 'forwardable'

@@ -189,6 +189,7 @@ module Solargraph
           result = {}
           pins.each do |pin|
             pin.macros.select { |m| m.tag.tag_name == 'macro' && !m.tag.text.empty? }.each do |macro|
+              # @sg-ignore flow sensitive typing needs to handle attrs
               next if macro.tag.name.nil? || macro.tag.name.empty?
               result[macro.tag.name] = macro
             end

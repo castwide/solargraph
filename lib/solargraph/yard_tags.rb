@@ -3,6 +3,7 @@
 require 'yard'
 
 # Change YARD log IO to avoid sending unexpected messages to STDOUT
+# @sg-ignore https://github.com/apiology/gem_rbs_collection/pull/16
 YARD::Logger.instance.io = File.new(File::NULL, 'w')
 
 module Solargraph
