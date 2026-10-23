@@ -23,11 +23,58 @@ module Solargraph
       File.join(base_dir, "ruby-#{RUBY_VERSION}", "rbs-#{RBS::VERSION}", "solargraph-#{Solargraph::VERSION}")
     end
 
-    # The current gem directory.
+    # The current gem directory. Plugins can change the pins mapped from
+    # gem source, so each set of loaded plugin versions gets its own.
     #
     # @return [String]
     def gem_dir
-      File.join(work_dir, 'gems')
+      return File.join(work_dir, 'gems') if plugins.empty?
+      key = plugins.sort.map { |name, version| [name, version].compact.join('-') }.join('+')
+      File.join(work_dir, "gems-#{key.tr(File::SEPARATOR, '_')}")
+    end
+
+    # The plugins loaded in this process, with their gem versions.
+    #
+    # @return [Hash{String => String, nil}]
+    def plugins
+      @plugins ||= {}
+    end
+
+    # What to require to load {plugins} again in another process, such as
+    # the cache subprocess, so that it writes to the same {gem_dir}.
+    #
+    # @return [Array<String>]
+    def plugin_requires
+      @plugin_requires ||= []
+    end
+
+    # @param name [String] the plugin's require path
+    # @return [void]
+    def add_plugin name
+      # @sg-ignore Unresolved call to name on Gem::BasicSpecification, Hash{String => Gem::BasicSpecification}
+      spec = Gem.loaded_specs.each_value.find { |s| s.name == name || s.contains_requirable_file?(name) }
+      plugins[spec&.name || name] = spec&.version&.to_s
+      plugin_requires.push name unless plugin_requires.include?(name)
+    end
+
+    # Record the gem that defines a convention, so a plugin loaded by a
+    # plain require still gets its own gem cache directory.
+    #
+    # @param convention [Class<Convention::Base>]
+    # @return [void]
+    def add_convention convention
+      name = convention.name
+      return if name.nil?
+      file = Object.const_source_location(name)&.first
+      return if file.nil?
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      spec = Gem.loaded_specs.each_value.find { |s| file.start_with?(File.join(s.full_gem_path, '')) }
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      return if spec.nil? || spec.name == 'solargraph'
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      plugins[spec.name] = spec.version.to_s
+      # @sg-ignore each_value block param is typed as the Hash pair, not the value
+      plugin_requires.push spec.name unless plugin_requires.include?(spec.name)
     end
 
     # The current stdlib directory.
