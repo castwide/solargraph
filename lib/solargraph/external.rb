@@ -107,7 +107,6 @@ module Solargraph
           bundler_require = true
         end
         if RbsMap::Stdlib.has?(path)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1400
           pins.concat Collection::Stdlib.load(path) if loaded_stdlibs.add?(path)
         else
           metagem = @repo.find_by_path(path)
@@ -153,7 +152,6 @@ module Solargraph
         unloaded_gems.add metagem
       else
         loaded_gems.add metagem
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         base_pins = Collection::Gem.load(metagem)
         rbsc_pins = rbs_collection.load(metagem)
         if rbsc_pins.empty?
@@ -165,7 +163,6 @@ module Solargraph
         # (e.g., `activesupport` requires `date`)
         base_pins.select { |pin| pin.is_a?(Pin::Reference::Require) && RbsMap::Stdlib.has?(pin.name) }
                  .each do |pin|
-                   # @sg-ignore https://github.com/castwide/solargraph/pull/1400
                    pins.concat Collection::Stdlib.load(pin.name) if loaded_stdlibs.add?(pin.name)
                  end
       end

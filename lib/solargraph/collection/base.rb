@@ -22,16 +22,12 @@ module Solargraph
       end
 
       # @return [Array<Pin::Base>]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1400
       def self.load(...)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         new(...).load
       end
 
       # @return [void]
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1400
       def self.uncache(...)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1400
         cache_file = new(...).cache_file
         # @sg-ignore https://github.com/castwide/solargraph/pull/1281
         FileUtils.rm_rf cache_file
