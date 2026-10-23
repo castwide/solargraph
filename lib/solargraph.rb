@@ -47,6 +47,8 @@ module Solargraph
   autoload :Logging,          'solargraph/logging'
   autoload :TypeChecker,      'solargraph/type_checker'
   autoload :Environ,          'solargraph/environ'
+  autoload :CodeLens,         'solargraph/code_lens'
+  autoload :Command,          'solargraph/command'
   autoload :Equality,         'solargraph/equality'
   autoload :Convention,       'solargraph/convention'
   autoload :Parser,           'solargraph/parser'
