@@ -101,7 +101,6 @@ module Solargraph
       parameters = to_parameter_pins(method_type, closure, parameter_names, type_alias_decls: type_alias_decls)
       return_type = to_complex_type(method_type.type.return_type, type_alias_decls: type_alias_decls)
       block = if method_type.block
-                # @sg-ignore https://github.com/castwide/solargraph/issues/1249
                 block_parameters = to_parameter_pins(method_type.block, closure, type_alias_decls: type_alias_decls)
                 block_return_type = to_complex_type(method_type.block.type.return_type, type_alias_decls: type_alias_decls)
                 Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
