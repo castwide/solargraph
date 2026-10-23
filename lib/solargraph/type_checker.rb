@@ -831,13 +831,10 @@ module Solargraph
       with_block = false
       # @param pin [Pin::Parameter]
       pin.parameters.each do |pin|
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         if %i[kwarg kwoptarg kwrestarg].include?(pin.decl)
           with_opts = true
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         elsif pin.decl == :block
           with_block = true
-        # @sg-ignore flow sensitive typing should be able to handle redefinition
         elsif pin.decl == :restarg
           args.push Solargraph::Source::Chain.new([Solargraph::Source::Chain::Variable.new(pin.name)], nil, true)
         else
