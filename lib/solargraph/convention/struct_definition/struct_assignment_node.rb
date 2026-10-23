@@ -50,10 +50,10 @@ module Solargraph
 
         # @return [Parser::AST::Node]
         def struct_node
-          if node.children[2].type == :block
-            node.children[2].children[0]
+          if node.children.fetch(2).type == :block
+            node.children.fetch(2).children.fetch(0)
           else
-            node.children[2]
+            node.children.fetch(2)
           end
         end
       end

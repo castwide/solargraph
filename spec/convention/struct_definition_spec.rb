@@ -175,4 +175,16 @@ describe Solargraph::Convention::StructDefinition do
       expect(checker.problems.map(&:message)).not_to include(a_string_matching(/Missing keyword argument/))
     end
   end
+
+  describe Solargraph::Convention::StructDefinition::StructDefintionNode do
+    it 'returns the class body from body_node' do
+      node = Solargraph::Parser.parse(%(
+        class Foo < Struct.new(:bar)
+          def baz; end
+        end
+      ), 'test.rb', 0)
+
+      expect(described_class.new(node).body_node.type).to eq(:def)
+    end
+  end
 end
