@@ -183,17 +183,11 @@ module Solargraph
 
       def eql? other
         self.class == other.class &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @name == other.name &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @key_types == other.key_types &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @subtypes == other.subtypes &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @rooted == other.rooted? &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @all_params == other.all_params &&
-          # @sg-ignore flow sensitive typing should support .class == .class
           @parameters_type == other.parameters_type
       end
 
