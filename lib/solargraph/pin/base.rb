@@ -163,7 +163,17 @@ module Solargraph
         namespace = namespace_enclosing(closure, other.closure) || namespace_enclosing(other.closure, closure)
         return namespace if namespace
 
-        choose_pin_attr_with_same_name(other, :closure)
+        chosen = choose_pin_attr_with_same_name(other, :closure)
+        return chosen unless chosen.is_a?(Pin::Namespace) && chosen.generics.empty?
+
+        # Combined types may name type parameters only the other closure declares
+        own = closure
+        return own if own.is_a?(Pin::Namespace) && !own.generics.empty?
+
+        theirs = other.closure
+        return theirs if theirs.is_a?(Pin::Namespace) && !theirs.generics.empty?
+
+        chosen
       end
 
       # @param scope [Pin::Closure, nil]
@@ -451,6 +461,7 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [self]
       def resolve_generics definitions, context_type
+        definitions = declaring_definitions(definitions)
         transform_types { |t| t&.resolve_generics(definitions, context_type) }
       end
 
@@ -746,6 +757,19 @@ module Solargraph
       attr_writer :docstring, :directives
 
       private
+
+      # Declarations of a reopened generic may spell its parameters
+      # differently, so bind by position against this pin's own one.
+      #
+      # @param definitions [Pin::Namespace, nil]
+      # @return [Pin::Namespace, nil]
+      def declaring_definitions definitions
+        own = closure
+        return definitions unless definitions.is_a?(Pin::Namespace) && own.is_a?(Pin::Namespace)
+        return definitions unless own.path == definitions.path && !own.generics.empty?
+
+        own
+      end
 
       # @return [void]
       def parse_comments
