@@ -36,4 +36,9 @@ describe Solargraph::TypeChecker::Rules do
     expect(rules.validate_calls?).to be(true)
     expect(rules.validate_tags?).to be(true)
   end
+
+  it 'sets level to the matching symbol' do
+    rules = described_class.new(:strong, {})
+    expect(rules.level).to eq(:strong)
+  end
 end
