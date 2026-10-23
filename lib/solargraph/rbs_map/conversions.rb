@@ -37,6 +37,11 @@ module Solargraph
 
       private
 
+      # @return [Hash{String => RBS::AST::Declarations::TypeAlias}]
+      def type_alias_decls
+        @type_alias_decls ||= {}
+      end
+
       # @param loader [RBS::EnvironmentLoader]
       #
       # @return [void]
@@ -48,9 +53,62 @@ module Solargraph
                                  "directories #{loader.dirs}"
           return
         end
+        # Register up front so expansion does not depend on declaration order.
+        core_aware_environment(loader, fallback: environment).type_alias_decls.each_value do |entry|
+          type_alias_decls[entry.decl.name.to_s] = entry.decl
+        end
+        # @sg-ignore Need a downcast here
         environment.declarations.each { |decl| convert_decl_to_pin(decl, Solargraph::Pin::ROOT_PIN) }
       rescue RBS::DuplicatedDeclarationError => e
         Solargraph.logger.warn "RBS conversion failed due to duplicate declarations: [#{e.class}] #{e.message}"
+      end
+
+      # A non-core RbsMap omits core so its pins do not re-declare CoreMap's,
+      # which leaves #resolve_type_names unable to bind an alias pointing into
+      # core. Resolve alias names against core separately; pins do not.
+      #
+      # @param loader [RBS::EnvironmentLoader]
+      # @param fallback [RBS::Environment] the already-resolved, core-less
+      #   environment to use if a core-aware one can't be built
+      # @return [RBS::Environment]
+      def core_aware_environment loader, fallback:
+        return fallback unless loader.core_root.nil?
+        return fallback unless rebound_alias?(fallback)
+
+        # Loading core makes RBS add the stringio library, which only the
+        # stdlib repository provides.
+        core_repository = RBS::Repository.new(no_stdlib: false)
+        loader.repository.dirs.each { |dir| core_repository.add(dir) unless core_repository.dirs.include?(dir) }
+        core_loader = RBS::EnvironmentLoader.new(repository: core_repository)
+        loader.libs.each { |lib| core_loader.add(library: lib.name, version: lib.version) }
+        loader.dirs.each { |dir| core_loader.add(path: dir) }
+        RBS::Environment.from_loader(core_loader).resolve_type_names
+      rescue RBS::DuplicatedDeclarationError => e
+        # A local RBS shim may redeclare a core name; nominal tags beat no pins.
+        logger.warn do
+          "Could not build a core-aware environment for #{loader.libs}: #{e.message}. " \
+            'Type aliases referencing names declared in RBS core will not be expanded ' \
+            'for these libraries, and will be typed by their alias name instead.'
+        end
+        fallback
+      end
+
+      # A reference into absent core survives #resolve_type_names naming
+      # either the alias itself or a name nothing declares.
+      #
+      # @param environment [RBS::Environment]
+      # @return [Boolean]
+      def rebound_alias? environment
+        decls = environment.type_alias_decls
+        decls.any? do |name, entry|
+          # @sg-ignore Unresolved call to decl on generic<D>
+          type = entry.decl.type
+          # @sg-ignore Unresolved call to is_a? on generic<D>
+          next false unless type.is_a?(RBS::Types::Alias)
+
+          # @sg-ignore Unresolved call to to_s on generic<D>
+          type.name.to_s == name.to_s || !decls.key?(type.name)
+        end
       end
 
       # @param decl [RBS::AST::Declarations::Base]
@@ -77,10 +135,12 @@ module Solargraph
                                      # @sg-ignore flow sensitive typing should support case/when
                                      "Ignoring closure #{closure.inspect} on alias type name #{decl.name}")
           end
+          # @sg-ignore flow sensitive typing should support case/when
+          alias_return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
           pins.push(
             Solargraph::Pin::Reference::TypeAlias.new(
-              # @sg-ignore Unresolved calls to name, type, type_location; return_type type mismatch
-              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: RbsTranslator.to_complex_type(decl.type).force_rooted, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
+              # @sg-ignore flow sensitive typing should support case/when
+              name: ComplexType.try_parse(decl.name.to_s).to_s, return_type: alias_return_type, closure: closure, source: :rbs, type_location: location_decl_to_pin_location(decl.location)
             )
           )
         when RBS::AST::Declarations::Module
@@ -257,7 +317,7 @@ module Solargraph
           next unless param.default_type
 
           # @sg-ignore flow sensitive typing needs to handle attrs
-          complex_type = RbsTranslator.to_complex_type(param.default_type).force_rooted
+          complex_type = RbsTranslator.to_complex_type(param.default_type, type_alias_decls: type_alias_decls).force_rooted
           generic_defaults[param.name.to_s] = complex_type
         end
 
@@ -282,7 +342,6 @@ module Solargraph
         if decl.super_class
           type = build_type(decl.super_class.name, decl.super_class.args)
           generic_values = type.all_params.map(&:to_s)
-          superclass_name = decl.super_class.name.to_s
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
@@ -391,7 +450,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Constant]
       # @return [void]
       def constant_decl_to_pin decl
-        tag = RbsTranslator.to_complex_type(decl.type)
+        tag = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls)
         pins.push create_constant(decl.name.relative!.to_s, tag, decl.comment&.string, decl)
       end
 
@@ -400,7 +459,7 @@ module Solargraph
       def global_decl_to_pin decl
         closure = Solargraph::Pin::ROOT_PIN
         name = decl.name.to_s
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::GlobalVariable.new(
           name: name,
           closure: closure,
@@ -513,24 +572,23 @@ module Solargraph
             pin.instance_variable_set(:@return_type, ComplexType::VOID)
           end
         end
-        if decl.singleton?
-          final_scope = :class
-          name = decl.name.to_s
-          visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
-          pin = Solargraph::Pin::Method.new(
-            name: name,
-            closure: closure,
-            comments: decl.comment&.string,
-            type_location: location_decl_to_pin_location(decl.location),
-            visibility: visibility,
-            scope: final_scope,
-            signatures: [],
-            generics: generics,
-            source: :rbs
-          )
-          pin.signatures.concat method_def_to_sigs(decl, pin)
-          pins.push pin
-        end
+        return unless decl.singleton?
+        final_scope = :class
+        name = decl.name.to_s
+        visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
+        pin = Solargraph::Pin::Method.new(
+          name: name,
+          closure: closure,
+          comments: decl.comment&.string,
+          type_location: location_decl_to_pin_location(decl.location),
+          visibility: visibility,
+          scope: final_scope,
+          signatures: [],
+          generics: generics,
+          source: :rbs
+        )
+        pin.signatures.concat method_def_to_sigs(decl, pin)
+        pins.push pin
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]
@@ -557,7 +615,7 @@ module Solargraph
 
       # @param location [RBS::Location, nil]
       # @return [Solargraph::Location, nil]
-      def location_decl_to_pin_location(location)
+      def location_decl_to_pin_location location
         return nil if location&.name.nil?
 
         start_pos = Position.new(location.start_line - 1, location.start_column)
@@ -572,7 +630,7 @@ module Solargraph
       # @return [Array(Array<Pin::Parameter>, ComplexType)]
       def parts_of_function type, pin, implicit_nil
         [
-          RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names),
+          RbsTranslator.to_parameter_pins(type, pin, pin.parameter_names, type_alias_decls: type_alias_decls),
           extract_method_type_return_type(type, implicit_nil).force_rooted
         ]
       end
@@ -585,7 +643,7 @@ module Solargraph
         name = decl.name.to_s
         final_scope = decl.kind == :instance ? :instance : :class
         visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::Method.new(
           name: name,
           type_location: location_decl_to_pin_location(decl.location),
@@ -612,7 +670,7 @@ module Solargraph
         name = "#{decl.name}="
         visibility = calculate_method_visibility(decl, context, closure, final_scope, name)
         type_location = location_decl_to_pin_location(decl.location)
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::Method.new(
           name: name,
           type_location: type_location,
@@ -649,7 +707,7 @@ module Solargraph
       # @param closure [Pin::Namespace]
       # @return [void]
       def ivar_to_pin decl, closure
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::InstanceVariable.new(
           name: decl.name.to_s,
           closure: closure,
@@ -666,7 +724,7 @@ module Solargraph
       # @return [void]
       def cvar_to_pin decl, closure
         name = decl.name.to_s
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::ClassVariable.new(
           name: name,
           closure: closure,
@@ -683,7 +741,7 @@ module Solargraph
       # @return [void]
       def civar_to_pin decl, closure
         name = decl.name.to_s
-        return_type = RbsTranslator.to_complex_type(decl.type).force_rooted
+        return_type = RbsTranslator.to_complex_type(decl.type, type_alias_decls: type_alias_decls).force_rooted
         pin = Solargraph::Pin::InstanceVariable.new(
           name: name,
           closure: closure,
@@ -759,7 +817,7 @@ module Solargraph
         'int' => 'Integer',
         'untyped' => '',
         'NilClass' => 'nil'
-      }
+      }.freeze
       private_constant :RBS_TO_YARD_TYPE
 
       # Extract a ComplexType from a MethodType's return type.
@@ -768,18 +826,19 @@ module Solargraph
       #
       # @param type [RBS::MethodType]
       # @return [ComplexType]
+      # @param [Object] implicit_nil
       def extract_method_type_return_type type, implicit_nil
-          tag = RbsTranslator.to_complex_type(type.type.return_type)
-          return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
-          tag
+        tag = RbsTranslator.to_complex_type(type.type.return_type, type_alias_decls: type_alias_decls)
+        return ComplexType.parse("#{tag}, nil") if tag && implicit_nil
+        tag
       end
 
       # @param type_name [RBS::TypeName]
       # @param type_args [Enumerable<RBS::Types::Bases::Base>]
       # @return [ComplexType::UniqueType]
-      def build_type(type_name, type_args = [])
+      def build_type type_name, type_args = []
         base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
-        params = type_args.map { |arg| RbsTranslator.to_complex_type(arg).force_rooted }
+        params = type_args.map { |arg| RbsTranslator.to_complex_type(arg, type_alias_decls: type_alias_decls).force_rooted }
         if base == 'Hash' && params.length == 2
           ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
         else
