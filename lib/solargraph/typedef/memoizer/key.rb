@@ -15,22 +15,18 @@ module Solargraph
         # @return [Chain, nil]
         attr_reader :chain
 
-        # @return [Position, nil]
-        attr_reader :position
-
         # @return [Symbol]
         attr_reader :action
 
         # @return [Integer]
         attr_reader :hash
 
-        def initialize filename:, api_map:, chain:, position:, action:
+        def initialize filename:, api_map:, chain:, action:
           @filename = filename
           @api_map = api_map
           @chain = chain
-          @position = position
           @action = action
-          @hash = [filename, api_map, chain, position, action].hash
+          @hash = [filename, api_map, chain, action].hash
           freeze
         end
 
@@ -39,7 +35,6 @@ module Solargraph
             filename == other.filename &&
             api_map == other.api_map &&
             chain == other.chain &&
-            position == other.position &&
             action == other.action
         end
       end
