@@ -256,12 +256,28 @@ module Solargraph
 
       private
 
+      # A global whose type is declared takes it from its declarations
+      # alone, while its definitions still include every assignment, so
+      # go-to-definition keeps reaching them.
+      #
+      # @param pins [::Array<Pin::Base>]
+      # @param api_map [ApiMap]
+      # @return [::Array<Pin::Base>]
+      def declared_global_pins pins, api_map
+        first = pins.first
+        return pins unless first.is_a?(Pin::GlobalVariable)
+
+        declared = api_map.get_declared_global_variable_pins(first.name)
+        declared.empty? ? pins : declared
+      end
+
       # @param pins [::Array<Pin::Base>]
       # @param name_pin [Pin::Base]
       # @param api_map [ApiMap]
       # @param locals [::Enumerable<Pin::LocalVariable>]
       # @return [ComplexType, ComplexType::UniqueType]
       def infer_from_definitions pins, name_pin, api_map, locals
+        pins = declared_global_pins(pins, api_map)
         # @type [::Array<ComplexType, ComplexType::UniqueType>]
         types = []
         unresolved_pins = []
