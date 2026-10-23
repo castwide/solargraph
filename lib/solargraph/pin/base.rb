@@ -9,6 +9,7 @@ module Solargraph
       include Conversions
       include Documenting
       include Abstractable
+      include Authority
       include Logging
 
       # @return [YARD::CodeObjects::Base]
@@ -126,66 +127,6 @@ module Solargraph
         out = self.class.new(**new_attrs)
         out.reset_generated!
         out
-      end
-
-      # The docstring belonging to whichever pin supplied the combined
-      # comments. Taking it independently leaves the two disagreeing,
-      # so that tags written in the comments that won are not the tags
-      # the combined pin reports. #choose_longer returns one of the two
-      # comments, so one of these pins always supplied them.
-      #
-      # @param other [self]
-      # @param chosen_comments [String, nil]
-      # @return [YARD::Docstring]
-      def docstring_for other, chosen_comments
-        boss = authority_over(other)
-        return overlay_docstring(boss, boss.equal?(self) ? other : self) unless boss.nil?
-
-        comments == chosen_comments ? docstring : other.docstring
-      end
-
-      # The base pin's docstring with every tag name the authoritative pin
-      # supplies replaced by that pin's tags. Tags it says nothing about
-      # survive, which is what makes an override a refinement.
-      #
-      # @param boss [Pin::Base]
-      # @param base [Pin::Base]
-      # @return [YARD::Docstring]
-      def overlay_docstring boss, base
-        merged = base.docstring.dup
-        boss.docstring.tags.map(&:tag_name).uniq.each { |name| merged.delete_tags(name) }
-        boss.docstring.tags.each { |tag| merged.add_tag(tag) }
-        merged
-      end
-
-      # The pin whose values win a field-by-field merge, or nil when neither
-      # outranks the other. A nil combine_priority ranks below any number.
-      #
-      # @param other [Pin::Base]
-      # @return [Pin::Base, nil]
-      def authority_over other
-        return nil if combine_priority == other.combine_priority
-        return other if combine_priority.nil?
-        return self if other.combine_priority.nil?
-
-        combine_priority > other.combine_priority ? self : other
-      end
-
-      # The authoritative pin's value for one attribute. nil when there is no
-      # authority, or it supplies nothing, and the ordinary merge decides.
-      #
-      # @param other [Pin::Base]
-      # @param attr [::Symbol]
-      # @return [Object, nil]
-      def authoritative_value other, attr
-        boss = authority_over(other)
-        return nil if boss.nil?
-
-        value = boss.send(attr)
-        return nil if value.nil?
-        return nil if value.respond_to?(:empty?) && value.empty?
-
-        value
       end
 
       # @param other [self]
