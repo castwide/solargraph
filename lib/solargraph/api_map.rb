@@ -806,6 +806,25 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache
 
+    # Top-level defs are private instance methods of Object at runtime, but
+    # stored under the root namespace.
+    #
+    # @param fqns [String]
+    # @param scope [Symbol] :class or :instance
+    # @param visibility [Array<Symbol>]
+    # @param deep [Boolean]
+    # @param skip [Set<String>]
+    # @return [Array<Pin::Method>]
+    def top_level_methods fqns, scope, visibility, deep, skip
+      return [] unless fqns == 'Object' && scope == :instance && visibility.include?(:private)
+
+      root_reqstr = "|#{scope}|#{visibility.sort}|#{deep}"
+      return [] if skip.include?(root_reqstr)
+
+      skip.add root_reqstr
+      store.get_methods('', scope: :instance, visibility: visibility).sort { |a, b| a.name <=> b.name }
+    end
+
     # @param rooted_tag [String] A fully qualified namespace, with
     #   generic parameter values if applicable
     # @param scope [Symbol] :class or :instance
@@ -843,14 +862,7 @@ module Solargraph
       # namespaces; resolving the generics in the method pins is this
       # class' responsibility
       methods = store.get_methods(fqns, scope: scope, visibility: visibility).sort { |a, b| a.name <=> b.name }
-      if fqns == 'Object' && scope == :instance && visibility.include?(:private)
-        # Top-level defs are private instance methods of Object at runtime, but stored under the root namespace.
-        root_reqstr = "|#{scope}|#{visibility.sort}|#{deep}"
-        unless skip.include?(root_reqstr)
-          skip.add root_reqstr
-          methods += store.get_methods('', scope: :instance, visibility: visibility).sort { |a, b| a.name <=> b.name }
-        end
-      end
+      methods += top_level_methods(fqns, scope, visibility, deep, skip)
       logger.info do
         "ApiMap#inner_get_methods(rooted_tag=#{rooted_tag.inspect}, scope=#{scope.inspect}, visibility=#{visibility.inspect}, deep=#{deep.inspect}, skip=#{skip.inspect}, fqns=#{fqns}) - added from store: #{methods}"
       end
