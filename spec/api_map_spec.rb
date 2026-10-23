@@ -1033,4 +1033,62 @@ describe Solargraph::ApiMap do
     # @todo Undefined because the return tag expands to `type: String`
     expect(pins.map(&:return_type).map(&:tag)).to eq(%w[undefined])
   end
+
+  # @!override on a constant used to abort cataloging with NoMethodError
+  # because Pin::Constant does not respond to #signatures.
+  # https://github.com/castwide/solargraph/issues/1302
+  it 'applies override directives to constants without aborting' do
+    source = Solargraph::Source.load_string(%(
+      # @!override Overridable::CONST
+      #   @return [Integer]
+
+      module Overridable
+        CONST = 'a string'
+      end
+    ), 'test.rb')
+    api_map = described_class.new
+    expect { api_map.map source }.not_to raise_error
+    pin = api_map.get_path_pins('Overridable::CONST').first
+    expect(pin.return_type.tag).to eq('Integer')
+  end
+
+  it 'applies scope directives for direct attachments in macros' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @!macro [attach] example_method
+        #   @!method $1_one(&block)
+        #     @!scope class
+        #     @param block [Block]
+        #   @!method $1_two(&block)
+        #     @param block [Block]
+        def self.example_method(name, metadata={})
+        end
+
+        example_method :foo
+      end
+    ), 'test.rb')
+    api_map = described_class.new.map(source)
+    expect(api_map.get_path_pins('Example.foo_one')).to be_one
+    expect(api_map.get_path_pins('Example#foo_two')).to be_one
+  end
+
+  it 'applies scope directives for future objects in macros' do
+    source = Solargraph::Source.load_string(%(
+      class Example
+        # @!macro [attach] example_method
+        #   @!scope class
+        #   @!method $1_one(&block)
+        #     @param block [Block]
+        #   @!method $1_two(&block)
+        #     @param block [Block]
+        def self.example_method(name, metadata={})
+        end
+
+        example_method :foo
+      end
+    ), 'test.rb')
+    api_map = described_class.new.map(source)
+    expect(api_map.get_path_pins('Example.foo_one')).to be_one
+    expect(api_map.get_path_pins('Example.foo_two')).to be_one
+  end
 end
