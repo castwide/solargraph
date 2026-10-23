@@ -867,4 +867,83 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  context 'with an RBS declaration of a core method' do
+    around do |example|
+      require 'tmpdir'
+      Dir.mktmpdir('rspec-solargraph-') do |dir|
+        @temp_dir = dir
+        example.run
+      end
+    end
+
+    let(:api_map) do
+      require 'rbs'
+      File.write(File.join(@temp_dir, 'ext.rbs'), rbs)
+      loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
+      loader.add(path: Pathname(@temp_dir))
+      Solargraph::ApiMap.new.index(Solargraph::RbsMap::Conversions.new(loader: loader).pins)
+    end
+
+    # @param expression [String] a call to Integer#- starting with `1 - `
+    # @return [String]
+    def infer_value expression
+      source = Solargraph::Source.load_string(expression)
+      chain = Solargraph::Source::SourceChainer.chain(source, Solargraph::Position.new(0, 3))
+      chain.infer(api_map, Solargraph::Pin::ROOT_PIN, []).tag
+    end
+
+    context 'when it adds overloads with ...' do
+      let(:rbs) do
+        <<~RBS
+          class Integer
+            def -: (String) -> String | ...
+          end
+        RBS
+      end
+
+      it 'matches the overloads it adds to' do
+        expect(infer_value('1 - 1')).to eq('Integer')
+      end
+
+      it 'matches its own overloads' do
+        expect(infer_value("1 - 'a'")).to eq('String')
+      end
+    end
+
+    context 'when two declarations add overloads' do
+      let(:rbs) do
+        <<~RBS
+          class Integer
+            def -: (String) -> String | ...
+          end
+          class Integer
+            def -: (Symbol) -> Symbol | ...
+          end
+        RBS
+      end
+
+      it 'matches the overloads they add to' do
+        expect(infer_value('1 - 1')).to eq('Integer')
+      end
+
+      it 'matches the overloads of each' do
+        expect([infer_value("1 - 'a'"), infer_value('1 - :a')]).to eq(%w[String Symbol])
+      end
+    end
+
+    context 'when it replaces the method' do
+      let(:rbs) do
+        <<~RBS
+          class Integer
+            def -: (String) -> String
+          end
+        RBS
+      end
+
+      it 'does not match the replaced overloads' do
+        expect(infer_value('1 - 1')).to eq('String')
+      end
+    end
+  end
 end
