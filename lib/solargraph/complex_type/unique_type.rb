@@ -450,6 +450,7 @@ module Solargraph
             generic_name = t.subtypes.first&.name
             idx = definitions.generics.index(generic_name)
             next t if idx.nil?
+            generic_default = definitions.generic_defaults[generic_name]
             if context_type.parameters_type == :hash
               if idx.zero?
                 next ComplexType.new(context_type.key_types)
@@ -458,10 +459,19 @@ module Solargraph
               else
                 next ComplexType::UNDEFINED
               end
-            # @todo Treating parameterized classes and tuples the same for now
-            # elsif context_type.all?(&:implicit_union?) || true
-            elsif idx.zero? && !context_type.all_params.empty?
-              ComplexType.new(context_type.all_params)
+            elsif context_type.all?(&:implicit_union?) || definitions.generics.length < context_type.all_params.length
+              if idx.zero? && !context_type.all_params.empty?
+                ComplexType.new(context_type.all_params)
+              else
+                ComplexType::UNDEFINED
+              end
+            elsif context_type.all_params[idx]
+              context_type.all_params[idx]
+            elsif generic_default
+              # Tuples declare later positional generics (e.g. C, D, ...) as defaults
+              # in terms of earlier ones (e.g. C = A | B). Resolve those defaults
+              # against the same context instead of returning unresolved placeholders.
+              generic_default.resolve_generics(definitions, context_type)
             else
               ComplexType::UNDEFINED
             end
