@@ -867,4 +867,74 @@ describe Solargraph::Source::Chain::Call do
     clip = api_map.clip_at('test.rb', [14, 14])
     expect(clip.infer.rooted_tags).to eq('::Set<::Foo::Bar::Symbol>')
   end
+
+  it 'infers an index assignment as its right-hand side' do
+    source = Solargraph::Source.load_string(%(
+      # @type [Hash{Integer => String, Symbol}]
+      h = {}
+      x = (h[1] = 'str')
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 6])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'infers an attribute assignment as its right-hand side' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param value [String, Symbol]
+        # @return [Integer]
+        def bar=(value)
+          123
+        end
+      end
+      x = (Foo.new.bar = 'str')
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [9, 6])
+    expect(clip.infer.rooted_tags).to eq('::String')
+  end
+
+  it 'infers a safe-navigation attribute assignment as its right-hand side or nil' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param value [String, Symbol]
+        # @return [Integer]
+        def bar=(value)
+          123
+        end
+      end
+      # @type [Foo, nil]
+      foo = nil
+      x = (foo&.bar = 'str')
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [11, 6])
+    expect(clip.infer.rooted_tags).to eq('::String, nil')
+  end
+
+  it 'infers an explicit []= method call as the method return type' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @param key [Integer]
+        # @param value [String]
+        # @return [Integer]
+        def []=(key, value)
+          123
+        end
+      end
+      x = Foo.new.[]=(1, 'str')
+      x
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [10, 6])
+    expect(clip.infer.rooted_tags).to eq('::Integer')
+  end
 end

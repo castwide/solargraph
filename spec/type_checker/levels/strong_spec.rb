@@ -1167,6 +1167,94 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'types a method ending in an index assignment as the assigned value' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Hash{Integer => String, Symbol}]
+            @cache = {}
+          end
+
+          # @return [String]
+          def bar
+            @cache[1] = :in_process
+            @cache[1] = baz
+          end
+
+          # @return [String]
+          def baz
+            'baz'
+          end
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'still checks the value passed to an index assignment' do
+      checker = type_checker(%(
+        class Foo
+          def initialize
+            # @type [Hash{Integer => String}]
+            @cache = {}
+          end
+
+          # @return [Integer]
+          def bar
+            @cache[1] = 123
+          end
+        end
+      ))
+      # The parameter name comes from core RBS and varies by rbs version
+      expect(checker.problems.map(&:message))
+        .to contain_exactly(/\AWrong argument type for Hash#\[\]=: \w+ expected String, received Integer\z/)
+    end
+
+    it 'still reports an assignment to an undefined attribute' do
+      checker = type_checker(%(
+        class Foo; end
+
+        # @return [String]
+        def bar
+          Foo.new.baz = 'baz'
+        end
+      ))
+      expect(checker.problems.map(&:message)).to include('Unresolved call to baz= on Foo')
+    end
+
+    it 'reports an unresolved call in an assigned value, not the assignment' do
+      checker = type_checker(%(
+        class Foo
+          # @return [String]
+          attr_accessor :baz
+        end
+
+        # @param foo [Foo]
+        # @param value [String, nil]
+        # @return [void]
+        def bar foo, value
+          foo.baz = value.upcase
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to upcase on String, nil'])
+    end
+
+    it 'does not report a resolved setter whose assigned value cannot be inferred' do
+      checker = type_checker(%(
+        class Foo
+          # @return [Integer]
+          attr_accessor :baz
+        end
+
+        # @param foo [Foo]
+        # @param options [Hash{String => undefined}]
+        # @return [void]
+        def bar foo, options
+          foo.baz = options['baz']
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo
