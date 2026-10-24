@@ -428,6 +428,7 @@ module Solargraph
                                                  resolved_generic_values: resolved_generic_values
               end
             else
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1451
               ut.resolve_generics_from_context generics_to_resolve, nil,
                                                resolved_generic_values: resolved_generic_values
             end
