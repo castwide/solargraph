@@ -9,20 +9,15 @@ module Solargraph
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
-      # @param only_downcast_these_names [Array<String>, nil] If given,
-      #   only downcast variables with these names, so a condition can be
-      #   reused to narrow just the variables a clause reassigned.
-      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
-                     only_downcast_these_names: nil
+      def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin
         @locals = locals
         @ivars = ivars
         @enclosing_breakable_pin = enclosing_breakable_pin
         @enclosing_compound_statement_pin = enclosing_compound_statement_pin
-        @only_downcast_these_names = only_downcast_these_names
       end
 
       # Assert what a true/false expression implies over the given ranges.
-      # Public for instances configured with only_downcast_these_names.
+      # Public so assert_after_guard can run it on a scratch instance.
       #
       # @param expression_node [Parser::AST::Node]
       # @param true_ranges [Array<Range>]
@@ -303,9 +298,12 @@ module Solargraph
       def assert_after_guard conditional_node, names, true_ranges, false_ranges
         return if names.empty?
 
-        FlowSensitiveTyping.new(locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
-                                only_downcast_these_names: names)
+        scratch_locals = locals.dup
+        scratch_ivars = ivars.dup
+        FlowSensitiveTyping.new(scratch_locals, scratch_ivars, enclosing_breakable_pin, enclosing_compound_statement_pin)
                            .process_expression(conditional_node, true_ranges, false_ranges)
+        locals.concat(scratch_locals.drop(locals.size).select { |pin| names.include?(pin.name) })
+        ivars.concat(scratch_ivars.drop(ivars.size).select { |pin| names.include?(pin.name) })
       end
 
       # Names this clause assigns on every path. Only unconditional plain
@@ -334,8 +332,6 @@ module Solargraph
       #
       # @return [void]
       def add_downcast_var pin, presence:, downcast_type:, downcast_not_type:
-        return if only_downcast_these_names && !only_downcast_these_names.include?(pin.name)
-
         new_pin = pin.downcast(exclude_return_type: downcast_not_type,
                                intersection_return_type: downcast_type,
                                source: :flow_sensitive_typing,
@@ -654,8 +650,7 @@ module Solargraph
         %i[return raise next redo retry].include?(clause_node&.type)
       end
 
-      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin,
-                  :only_downcast_these_names
+      attr_reader :locals, :ivars, :enclosing_breakable_pin, :enclosing_compound_statement_pin
     end
   end
 end
