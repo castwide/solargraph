@@ -26,6 +26,7 @@ module Solargraph
         autoload :OpasgnNode,    'solargraph/parser/parser_gem/node_processors/opasgn_node'
         autoload :SymNode,       'solargraph/parser/parser_gem/node_processors/sym_node'
         autoload :ResbodyNode,   'solargraph/parser/parser_gem/node_processors/resbody_node'
+        autoload :RescueNode,    'solargraph/parser/parser_gem/node_processors/rescue_node'
         autoload :UntilNode,     'solargraph/parser/parser_gem/node_processors/until_node'
         autoload :WhenNode,      'solargraph/parser/parser_gem/node_processors/when_node'
         autoload :WhileNode,     'solargraph/parser/parser_gem/node_processors/while_node'
@@ -38,7 +39,8 @@ module Solargraph
       register :source,       ParserGem::NodeProcessors::BeginNode
       register :begin,        ParserGem::NodeProcessors::BeginNode
       register :kwbegin,      ParserGem::NodeProcessors::BeginNode
-      register :rescue,       ParserGem::NodeProcessors::BeginNode
+      register :rescue,       ParserGem::NodeProcessors::RescueNode
+      register :ensure,       ParserGem::NodeProcessors::RescueNode
       register :resbody,      ParserGem::NodeProcessors::ResbodyNode
       register :def,          ParserGem::NodeProcessors::DefNode
       register :defs,         ParserGem::NodeProcessors::DefsNode

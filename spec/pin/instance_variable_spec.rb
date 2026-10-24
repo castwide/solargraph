@@ -13,4 +13,36 @@ describe Solargraph::Pin::InstanceVariable do
     pin = described_class.new(name: '@bar')
     expect(pin.link_documentation).to eq('@bar')
   end
+
+  it 'does not dominate reads from a block outside its closure' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          @x = 1
+          @x
+        end
+      end
+    ), 'test.rb')
+    map = Solargraph::SourceMap.map(source)
+    pin = map.pins.find { |p| p.is_a?(described_class) }
+    read = Solargraph::Location.new('test.rb', Solargraph::Range.from_to(4, 10, 4, 12))
+    orphan_block = Solargraph::Pin::Block.new(closure: nil)
+    expect(pin.dominates?(pin.closure, read)).to be(true)
+    expect(pin.dominates?(orphan_block, read)).to be(false)
+  end
+
+  it 'is not visible from inside its own assigned value' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def bar
+          @x = 1
+          @x = [@x]
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [4, 17])
+    expect(clip.infer.to_s).to eq('Integer')
+  end
 end
