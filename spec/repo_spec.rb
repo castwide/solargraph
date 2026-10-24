@@ -70,5 +70,11 @@ describe Solargraph::Repo do
       meta = repo.find_by_name('nokogiri')
       expect(meta.name).to eq('nokogiri')
     end
+
+    it 'raises TypeError when the bundle reports metagems that are not an array' do
+      status = instance_double(Process::Status, success?: true)
+      allow(Open3).to receive(:capture3).and_return(['{"metagems":{},"groups":{}}', '', status])
+      expect { described_class.new(directory) }.to raise_error(TypeError)
+    end
   end
 end

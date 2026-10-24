@@ -19,6 +19,19 @@ describe Solargraph::RbsCollection do
     end
   end
 
+  describe 'gems without a path' do
+    let(:lockfile) { File.join('spec', 'fixtures', 'rbs_collection_no_path', 'rbs_collection.lock.yaml') }
+
+    it 'leaves them out of the gem keys' do
+      expect(rbs_collection.gem_keys).to be_empty
+    end
+
+    it 'returns no pins for them' do
+      metagem = instance_double(Solargraph::Metagem, name: 'pathless_fixture', version: '1.0')
+      expect(rbs_collection.load(metagem)).to eq([])
+    end
+  end
+
   describe '#stdlib_names' do
     let(:lockfile) { File.join('spec', 'fixtures', 'rbs_collection_stdlib', 'rbs_collection.lock.yaml') }
 

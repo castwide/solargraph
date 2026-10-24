@@ -37,14 +37,12 @@ module Solargraph
       # @return [::Array<Pin::Base>]
       def do_query
         return @pins if @query.nil? || @query.empty?
-        @pins.map do |pin|
+        @pins.filter_map do |pin|
           match = [fuzzy_string_match(pin.path, @query), fuzzy_string_match(pin.name, @query)].max
           Result.new(match, pin) if match > 0.7
         end
-             .compact
              # @param a [self]
              # @param b [self]
-             # @sg-ignore https://github.com/castwide/solargraph/pull/1050
              .sort { |a, b| b.match <=> a.match }
              .map(&:pin)
       end

@@ -57,7 +57,9 @@ module Solargraph
             match = source[offset...eol].to_s.match(/\A\s*#\[([^\]]*)\]/)
             return unless match
 
+            # @sg-ignore MatchData#[] is nilable even for a group that always matches
             code = match[1].strip
+            # @sg-ignore MatchData#[] is nilable even for a group that always matches
             return if code.empty?
 
             "<#{code}>"

@@ -26,4 +26,11 @@ describe Solargraph::LanguageServer::Message::TextDocument::TypeDefinition do
     message.process
     expect(message.result.first[:uri]).to eq(something_uri)
   end
+
+  it 'returns no locations when the file is not mapped yet' do
+    host = instance_double(Solargraph::LanguageServer::Host, type_definitions_at: nil)
+    message = described_class.new(host, { 'params' => { 'textDocument' => { 'uri' => 'file:///unmapped.rb' }, 'position' => { 'line' => 0, 'character' => 0 } } })
+    message.process
+    expect(message.result).to eq([])
+  end
 end

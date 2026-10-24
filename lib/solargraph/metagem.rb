@@ -72,7 +72,7 @@ module Solargraph
                   full_path: gem.full_gem_path,
                   spec_file: gem.spec_file,
                   source: gem.source.to_s,
-                  version: gem.version,
+                  version: gem.version.to_s,
                   require_paths: gem.require_paths,
                   dependencies: gem.runtime_dependencies.map(&:name))
     end

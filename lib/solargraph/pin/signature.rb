@@ -30,11 +30,9 @@ module Solargraph
       end
 
       def typify api_map
-        # @sg-ignore Need to add nil check here
         if return_type.defined?
           # @sg-ignore Need to add nil check here
           qualified = return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore Need to add nil check here
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end
@@ -47,11 +45,9 @@ module Solargraph
         method_stack.each do |pin|
           sig = pin.signatures.find { |s| s.arity == arity }
           next unless sig
-          # @sg-ignore Need to add nil check here
           next if sig.return_type.undefined?
           # @sg-ignore Need to add nil check here
           qualified = sig.return_type.qualify(api_map, closure.namespace)
-          # @sg-ignore Need to add nil check here
           logger.debug { "Signature#typify(self=#{self}) => #{qualified.rooted_tags.inspect}" }
           return qualified
         end

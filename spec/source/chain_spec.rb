@@ -209,6 +209,47 @@ describe Solargraph::Source::Chain do
     Solargraph::Convention.unregister dummy_convention
   end
 
+  it 'defines no factory parameters for a literal nested in an argument' do
+    dummy_convention = Class.new(Solargraph::Convention::Base) do
+      def local _source_map
+        Solargraph::Environ.new(
+          pins: [
+            Solargraph::Pin::FactoryParameter.new(
+              method_name: 'create',
+              method_namespace: 'FactoryBot',
+              method_scope: :class,
+              param_name: 'traits',
+              value: :published,
+              decl: :restarg,
+              return_type: nil,
+              location: Solargraph::Location.new('test.rb', Solargraph::Range.from_to(0, 6, 0, 18))
+            )
+          ]
+        )
+      end
+    end
+
+    Solargraph::Convention.register dummy_convention
+
+    source = Solargraph::Source.new(%(
+      module FactoryBot
+        def self.create(name, *traits, **overrides)
+        end
+      end
+
+      FactoryBot.create(:post, [:published])
+    ), 'test.rb')
+    source_map = Solargraph::SourceMap.map(source)
+
+    api_map = Solargraph::ApiMap.new
+    api_map.index source_map.pins + source_map.convention_pins
+    chain = Solargraph::Source::SourceChainer.chain(source_map.source, Solargraph::Position.new(6, 34))
+    pins = chain.define(api_map, Solargraph::Pin::ROOT_PIN, [])
+    expect(pins).to be_empty
+  ensure
+    Solargraph::Convention.unregister dummy_convention
+  end
+
   it "follows constant chains" do
     source = Solargraph::Source.load_string(%(
       module Mixin; end

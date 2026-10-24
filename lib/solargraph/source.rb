@@ -19,6 +19,13 @@ module Solargraph
     attr_reader :filename
 
     # @return [String]
+    def filename!
+      name = filename
+      return name if name
+      raise ArgumentError, 'Source has no filename'
+    end
+
+    # @return [String]
     def code
       finalize
       @code
@@ -277,7 +284,7 @@ module Solargraph
     # @return [Integer]
     def first_not_empty_from line
       cursor = line
-      cursor += 1 while cursor < code_lines.length && code_lines[cursor].strip.empty?
+      cursor += 1 while cursor < code_lines.length && code_lines.fetch(cursor).strip.empty?
       cursor = line if cursor > code_lines.length - 1
       cursor
     end
@@ -324,7 +331,8 @@ module Solargraph
         else
           here = p.index(/[^ \t]/)
           # @sg-ignore flow sensitive typing should be able to handle redefinition
-          skip = here if skip.nil? || here < skip
+          indent = here.nil? ? raise('Non-blank comment line has no non-blank character') : here
+          skip = indent if skip.nil? || indent < skip
           ctxt.push p[skip..]
         end
         started = true

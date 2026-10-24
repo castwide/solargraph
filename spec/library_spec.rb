@@ -176,6 +176,16 @@ describe Solargraph::Library do
     expect(result.to_s).to include('rubocop')
   end
 
+  it 'rejects a diagnostics reporter entry with no name' do
+    config = instance_double(Solargraph::Workspace::Config)
+    allow(config).to receive_messages(plugins: [], required: [], reporters: [':'])
+    workspace = Solargraph::Workspace.new '', config
+    library = described_class.new workspace
+    library.attach Solargraph::Source.load_string('puts 1', 'file.rb', 0)
+    expect { library.diagnose 'file.rb' }
+      .to raise_error(Solargraph::DiagnosticsError, 'Invalid diagnostics reporter entry ":"')
+  end
+
   it 'documents symbols' do
     library = described_class.new
     src = Solargraph::Source.load_string(%(
@@ -336,6 +346,20 @@ describe Solargraph::Library do
       expect(foo_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(5, 10, 5, 13))])
       obj_new_locs = library.references_from('test.rb', 6, 12)
       expect(obj_new_locs).to eq([Solargraph::Location.new('test.rb', Solargraph::Range.from_to(6, 12, 6, 15))])
+    end
+
+    it 'keeps Class#new references whose receivers match' do
+      workspace = Solargraph::Workspace.new('*')
+      library = described_class.new(workspace)
+      source = Solargraph::Source.load_string(%(
+        klass = Class.new
+        klass.new
+        Class.new
+      ), 'test.rb')
+      library.merge source
+      library.catalog
+      locs = library.references_from('test.rb', 3, 15)
+      expect(locs.map { |loc| loc.range.start.line }).to eq([1, 3])
     end
 
     it 'searches the core for queries' do
