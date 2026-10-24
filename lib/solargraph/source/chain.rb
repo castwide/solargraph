@@ -420,7 +420,7 @@ module Solargraph
       # @return [Boolean] true for a Hash whose declared values exclude
       #   nil, e.g. Hash{String => Integer}
       def non_nil_hash? type, api_map
-        type.defined? && type.each_unique_type.all? do |t|
+        type.defined? && type.to_a.all? do |t|
           api_map.super_and_sub?('Hash', t.name) &&
             # 'nil' can arrive spelled 'NilClass'
             t.value_types.none? { |value| value.each_unique_type.any? { |u| u.namespace == 'NilClass' } }
