@@ -10,11 +10,7 @@ module Solargraph
           super
         end
 
-        # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Base>]
-        # @param _receiver_path [::Array<String>, nil]
-        def resolve api_map, name_pin, locals, _receiver_path = nil
+        def resolve api_map, name_pin, locals
           return [Pin::ROOT_PIN] if word.empty?
           if word.start_with?('::')
             base = word[2..]

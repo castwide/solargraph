@@ -170,6 +170,9 @@ module Solargraph
           end
         end
         types
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        [ComplexType::UNDEFINED]
       end
 
       # @param api_map [ApiMap]
@@ -288,13 +291,6 @@ module Solargraph
 
       # @return [Range]
       attr_writer :presence
-
-      # Downcast pins share name/location/closure; must differ by narrowing facts too.
-      #
-      # @return [::Array]
-      def equality_fields
-        super + [presence, intersection_return_type, exclude_return_type]
-      end
 
       private
 

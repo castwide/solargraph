@@ -110,16 +110,12 @@ module Solargraph
         #
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
-        # Dotted-word path of the receiver chain seen so far (e.g. ['pin',
-        # 'location'] while about to resolve 'filename' in
-        # 'pin.location.filename'), or nil once a link is seen that isn't a
-        # variable or an argument-less attr_reader call. Lets Chain::Call
-        # look up flow-sensitive-typing facts recorded against repeated
-        # calls to the same attr_reader.
+        # Lets Chain::Call find downcast vars of repeated attr_reader
+        # calls; see Pin::ProxyType#receiver_path
         receiver_path = []
         # @sg-ignore Need to add nil check here
         links[0..-2].each do |link|
-          pins = link.resolve(api_map, working_pin, locals, receiver_path)
+          pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
           if type.undefined?
             logger.debug do
@@ -132,8 +128,9 @@ module Solargraph
           # evaluation.  However, we use the last link's return type
           # for the binder, as this is chaining off of it, and the
           # binder is now the lhs of the rhs we are evaluating.
-          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin, source: :chain)
           receiver_path = next_receiver_path(receiver_path, link, pins)
+          working_pin = Pin::ProxyType.anonymous(name_pin.context, binder: type, closure: name_pin,
+                                                                   source: :chain, receiver_path: receiver_path)
           logger.debug do
             "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) - after processing #{link.desc}, new working_pin=#{working_pin} with binder #{working_pin.binder}"
           end
@@ -144,7 +141,7 @@ module Solargraph
         return [] if last_link.nil?
 
         last_link.last_context = working_pin
-        last_link.resolve(api_map, working_pin, locals, receiver_path)
+        last_link.resolve(api_map, working_pin, locals)
       end
 
       # @param api_map [ApiMap]
@@ -347,6 +344,8 @@ module Solargraph
       def next_receiver_path path, link, pins
         return nil if path.nil?
         return path + [link.word] if link.is_a?(Chain::InstanceVariable)
+        # explicit self, e.g. 'self' in 'self.location'
+        return ['self'] if path.empty? && link.is_a?(Chain::Head) && link.word == 'self'
 
         return nil unless link.is_a?(Chain::Call) && !link.is_a?(Chain::ZSuper) && !link.with_block?
 
