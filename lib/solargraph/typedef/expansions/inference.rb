@@ -7,7 +7,22 @@ module Solargraph
       #
       class Inference < Base
         def expand
-          return infer_from_block_receiver(pin, receiver) if receiver.is_a?(Pin::Block)
+          if receiver.is_a?(Pin::Block)
+            node = if pin.location
+              source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+            end
+            if node
+              call_chain = Parser.chain(node)
+              chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(call_chain.node).start, chain: call_chain).infer
+              return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
+
+              call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
+              return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+            else
+              call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
+              return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+            end
+          end
 
           case pin
           when Pin::BaseVariable, Pin::Constant
@@ -25,28 +40,6 @@ module Solargraph
 
         def position
           receiver.location.range.start
-        end
-
-        def infer_from_block_receiver pin, receiver
-          # @todo For now, we assume that an undefined typeset from call chain
-          #   inference requires a type to be inferred from the block chain. We
-          #   might need to make it more accurate, e.g., the call chain should
-          #   be calling the native `yield` method or `call` on a block parameter.
-          if next_chain
-            chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
-            return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
-          end
-
-          call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-          Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
-        end
-
-        # @param pin [Pin::Base]
-        # @return [Source::Chain, nil]
-        def next_chain
-          @next_chain ||= if pin.location
-            Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
-          end
         end
 
         def next_node
