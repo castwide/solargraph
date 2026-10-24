@@ -308,7 +308,7 @@ module Solargraph
     # Does not recurse into qualifying the type parameters, but
     # returns any which were passed in unchanged.
     #
-    # @param tag [String, nil] The namespace to
+    # @param tag [String] The namespace to
     #   match, complete with generic parameters set to appropriate
     #   values if available
     # @param gates [Array<String>] The fully qualified context in which

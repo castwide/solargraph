@@ -62,7 +62,7 @@ module Solargraph
       # referenced from the specified open gates. This method will
       # search in each gate until it finds a match for the name.
       #
-      # @param tag [String, nil] The type to match
+      # @param tag [String] The type to match
       # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
       def qualify tag, *gates
