@@ -448,7 +448,7 @@ module Solargraph
     # @return [ComplexType, ComplexType::UniqueType]
     def resolve_param_type_against_receiver ptype, pin, receiver_type
       return ptype if ptype.nil? || ptype.undefined?
-      # @sg-ignore pin.closure is a Pin::Namespace for a top-level method pin
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1344
       ptype.resolve_generics(pin.closure, receiver_type)
     end
 
@@ -557,7 +557,7 @@ module Solargraph
 
       # par.return_type is the restarg's own array type (e.g.
       # `Array<Integer>`); unwrap one level to get the element type.
-      # @sg-ignore pin.closure is a Pin::Namespace for a top-level method pin
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1344
       wrapped_ptype = par.return_type.resolve_generics(pin.closure, receiver_type)
       subtypes = wrapped_ptype.items.flat_map(&:subtypes)
       # An untyped restarg (e.g. `(*untyped)`) yields a ComplexType
@@ -566,8 +566,7 @@ module Solargraph
       return errors if subtypes.empty?
 
       ptype = ComplexType.new(subtypes.flat_map(&:items))
-      # @sg-ignore pin.closure is a Pin::Namespace for a top-level method pin
-      ptype = ptype.qualify(api_map, *pin.closure.gates).self_to_type(par.context)
+      ptype = ptype.qualify(api_map, *pin.gates).self_to_type(par.context)
       return errors if ptype.nil? || ptype.undefined?
 
       restarg_arguments(sig, arguments, idx).each do |restargchain|
@@ -590,7 +589,7 @@ module Solargraph
     # @param idx [Integer] the restarg's index within sig.parameters
     # @return [Array<Source::Chain>] the call-site arguments absorbed
     #   by the restarg at idx
-    # @sg-ignore flow sensitive typing incorrectly includes an intermediate local variable's type in the inferred return type
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1395
     def restarg_arguments sig, arguments, idx
       # Trailing positional parameters after a restarg (`def foo(*path,
       # baz)`) consume the last N arguments - exclude them from the restarg.
@@ -602,13 +601,13 @@ module Solargraph
       # parsed as an implicit kwargs hash appended to the call's
       # arguments - it belongs to the signature's keyword parameters,
       # not the restarg.
-      # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1395
       last_arg = restargs.last
-      # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1395
       has_trailing_hash = last_arg && last_arg.links.last.is_a?(Solargraph::Source::Chain::Hash)
       has_keyword_params = sig.parameters.any? { |p| %i[kwarg kwoptarg kwrestarg].include?(p.decl) }
       if has_trailing_hash && has_keyword_params
-        # @sg-ignore exclusive range literals infer as undefined, so Array#[] resolves to the element type
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1395
         restargs[0...-1]
       else
         restargs
