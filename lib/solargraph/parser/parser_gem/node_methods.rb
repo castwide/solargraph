@@ -680,8 +680,8 @@ module Solargraph
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
                   node => [_, _, *branches]
                   result.concat reduce_to_value_nodes(branches)
-                elsif node.type == :return || ENSURE.include?(node.type)
-                  # s(:return, value, *more_values) or s(:ensure, body, ensure_body)
+                elsif node.type == :return
+                  # s(:return, value, *more_values)
                   first = (node in [_, ::Parser::AST::Node => value, *]) ? value : nil
                   result.concat reduce_to_value_nodes([first])
                 elsif FIRST_TWO_CHILDREN.include?(node.type)
