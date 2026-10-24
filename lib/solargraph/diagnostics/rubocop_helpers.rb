@@ -60,9 +60,7 @@ module Solargraph
       # @return [String]
       def redirect_stdout
         redir = StringIO.new
-        # @sg-ignore RBS core declares $stdout: IO, but Ruby accepts any
-        #   object that responds to write -
-        #   https://github.com/ruby/rbs/blob/v4.2.0/core/global_variables.rbs#L181
+        # @sg-ignore https://github.com/soutaro/steep/issues/549
         $stdout = redir
         yield if block_given?
         $stdout = STDOUT
