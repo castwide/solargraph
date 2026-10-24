@@ -10,8 +10,8 @@ module Solargraph
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
       # @param only_downcast_these_names [Array<String>, nil] If given,
-      #   only apply a downcast to variables with these names, ignoring
-      #   any other variable the analyzed condition happens to mention.
+      #   only downcast variables with these names, so a condition can be
+      #   reused to narrow just the variables a clause reassigned.
       def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin,
                      only_downcast_these_names: nil
         @locals = locals
@@ -290,8 +290,9 @@ module Solargraph
         assert_after_guard(conditional_node, [name], [rest], []) if always_leaves_compound_statement?(else_clause)
       end
 
-      # Applies, not checks: `names` is already assigned unconditionally
-      # over these ranges, so the narrowed types take effect as fact.
+      # Narrows only `names`, as if the condition were true over
+      # true_ranges and false over false_ranges; callers pass only ranges
+      # where that holds on every path reaching them.
       #
       # @param conditional_node [Parser::AST::Node]
       # @param names [Array<String>]
