@@ -203,9 +203,9 @@ module Solargraph
         # @param nodes [Enumerable<Parser::AST::Node>]
         def any_forwarded_args? nodes
           nodes.any? do |n|
-            next false unless Parser.is_ast_node?(n)
+            next false unless n.is_a?(::Parser::AST::Node)
             next true if %i[forwarded_args forwarded_restarg].include?(n.type)
-            n.type == :hash && n.children.any? { |c| Parser.is_ast_node?(c) && c.type == :forwarded_kwrestarg }
+            n.type == :hash && n.children.any? { |c| c.is_a?(::Parser::AST::Node) && c.type == :forwarded_kwrestarg }
           end
         end
 
@@ -622,27 +622,19 @@ module Solargraph
               nodes.each do |node|
                 if !node.is_a?(::Parser::AST::Node)
                   result.push nil
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif COMPOUND_STATEMENTS.include?(node.type)
                   result.concat from_value_position_compound_statement(node)
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes(node.children[1..])
                 elsif ONLY_ONE_CHILD.include?(node.type) || ENSURE.include?(node.type)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[0]])
                 elsif FIRST_TWO_CHILDREN.include?(node.type)
                   # a :rescue node's value is its body's value or the
                   # value of whichever resbody handled the exception
                   result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[2]])
                 else
                   result.push node
