@@ -82,6 +82,24 @@ module Solargraph
         super
       end
 
+      # A variable holds its type as pin state rather than as prose, so
+      # rendering it here is the only way a reader sees it -- from RBS,
+      # which never writes a @type tag, as much as from YARD, whose tag
+      # the docstring strips out of the text it returns.
+      #
+      # @return [String]
+      def documentation
+        if @documentation.nil?
+          docs = super || ''
+          if return_type.defined?
+            docs += "\n\n" unless docs.empty?
+            docs += "Type:\n* [#{escape_brackets(return_type.rooted_tags)}]"
+          end
+          @documentation = docs
+        end
+        @documentation.to_s
+      end
+
       def combine_with other, attrs = {}
         new_assignments = combine_assignments(other)
         new_attrs = attrs.merge({
@@ -215,7 +233,7 @@ module Solargraph
         "#{super} = #{assignment&.type.inspect}"
       end
 
-      # @return [ComplexType, nil]
+      # @return [ComplexType]
       def return_type
         generate_complex_type || @return_type || intersection_return_type || ComplexType::UNDEFINED
       end
@@ -342,6 +360,16 @@ module Solargraph
       # @param other [self]
       # @return [ComplexType, nil]
       def combine_return_type other
+        # An authoritative side (e.g. an @!override) replaces the type
+        # rather than widening it
+        authoritative = authoritative_value(other, :return_type)
+        return authoritative if authoritative&.defined?
+
+        # The reader never returns nil, so an untyped side would add an
+        # undefined member to the union and lose the other side's type
+        return other.return_type if return_type.undefined?
+        return return_type if other.return_type.undefined?
+
         combine_types(other, :return_type)
       end
 
@@ -372,6 +400,11 @@ module Solargraph
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         nil
+      end
+
+      # @return [::Symbol]
+      def return_type_tag_name
+        :type
       end
     end
   end

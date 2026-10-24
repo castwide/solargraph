@@ -8,6 +8,8 @@ module Solargraph
       include Common
       include Conversions
       include Documenting
+      include Abstractable
+      include Authority
       include Logging
 
       # @return [YARD::CodeObjects::Base]
@@ -33,6 +35,12 @@ module Solargraph
       #   Between 2 pins, the one with the higher priority gets chosen. If the priorities are equal, they are combined.
       attr_reader :combine_priority
 
+      # Why this pin is abstract, when that came from something other than a
+      # YARD @abstract tag. nil when it did not.
+      #
+      # @return [String, nil]
+      attr_reader :abstract
+
       def presence_certain?
         true
       end
@@ -46,8 +54,9 @@ module Solargraph
       # @param docstring [YARD::Docstring, nil]
       # @param directives [::Array<YARD::Tags::Directive>, nil]
       # @param combine_priority [::Numeric, nil] See attr_reader for combine_priority
+      # @param abstract [::String, nil] See attr_reader for abstract
       def initialize location: nil, type_location: nil, closure: nil, source: nil, name: '', comments: '',
-                     docstring: nil, directives: nil, combine_priority: nil
+                     docstring: nil, directives: nil, combine_priority: nil, abstract: nil
         @location = location
         @type_location = type_location
         @closure = closure
@@ -58,6 +67,7 @@ module Solargraph
         @docstring = docstring
         @directives = directives
         @combine_priority = combine_priority
+        @abstract = abstract
         # @type [ComplexType, ComplexType::UniqueType, nil]
         @binder = nil
 
@@ -87,22 +97,28 @@ module Solargraph
       #
       # @return [self]
       def combine_with other, attrs = {}
-        priority_choice = choose_priority(other)
-        return priority_choice unless priority_choice.nil?
-
         type_location = choose(other, :type_location)
         location = choose(other, :location)
         combined_name = combine_name(other)
+        combined_docstring = docstring_for(other, choose_longer(other, :comments))
+        # With an authority the two must agree, or the pin documents one side
+        # and renders from the other.
+        combined_comments = if authority_over(other).nil?
+                              choose_longer(other, :comments)
+                            else
+                              "#{combined_docstring.to_raw}\n"
+                            end
         new_attrs = {
           location: location,
           type_location: type_location,
           name: combined_name,
           closure: combine_closure(other),
-          comments: choose_longer(other, :comments),
+          comments: combined_comments,
           source: :combined,
-          docstring: choose(other, :docstring),
+          docstring: combined_docstring,
           directives: combine_directives(other),
-          combine_priority: combine_priority
+          combine_priority: combine_priority,
+          abstract: abstract || other.abstract
         }.merge(attrs)
         assert_same_macros(other)
         logger.debug do
@@ -114,29 +130,13 @@ module Solargraph
       end
 
       # @param other [self]
-      # @return [self, nil] Returns either the pin chosen based on priority or nil
-      #   A nil return means that the combination process must proceed
-      def choose_priority other
-        if combine_priority.nil? && !other.combine_priority.nil?
-          return other
-        elsif other.combine_priority.nil? && !combine_priority.nil?
-          return self
-        elsif !combine_priority.nil? && !other.combine_priority.nil?
-          if combine_priority > other.combine_priority
-            return self
-          elsif combine_priority < other.combine_priority
-            return other
-          end
-        end
-
-        nil
-      end
-
-      # @param other [self]
       # @param attr [::Symbol]
       # @sg-ignore
       # @return [undefined]
       def choose_longer other, attr
+        authoritative = authoritative_value(other, attr)
+        return authoritative unless authoritative.nil?
+
         # @type [undefined]
         val1 = send(attr)
         # @type [undefined]
@@ -194,11 +194,7 @@ module Solargraph
         #
         # Same with @directives, @macros, @maybe_directives, which
         # regenerate docstring
-        @deprecated = nil
-        @context = nil
-        @binder = nil
-        @path = nil
-        reset_conversions
+        reset_own_generated
       end
 
       def needs_consistent_name?
@@ -248,6 +244,9 @@ module Solargraph
       # @sg-ignore
       # @return [undefined, nil]
       def choose other, attr
+        authoritative = authoritative_value(other, attr)
+        return authoritative unless authoritative.nil?
+
         results = [self, other].map(&attr).compact
         # true and false are different classes and can't be sorted
 
@@ -628,9 +627,9 @@ module Solargraph
       # @param api_map [ApiMap]
       # @return [self]
       def realize api_map
-        return self if return_type.defined?
+        return self if return_type.defined? && return_type.all_rooted?
         type = typify(api_map)
-        return proxy(type) if type.defined?
+        return proxy(type) if type.defined? && type.all_rooted?
         type = probe(api_map)
         return self if type.undefined?
         result = proxy(type)
@@ -645,9 +644,20 @@ module Solargraph
       # @param return_type [ComplexType, ComplexType::UniqueType, nil]
       # @return [self]
       def proxy return_type
+        # Read the docstring before duplicating, so the copy inherits parsed
+        # directives and macro names; nil ones reparse from comments and
+        # would throw away the docstring assigned below.
+        copied_docstring = docstring.dup
         result = dup
         result.return_type = return_type
         result.proxied = true
+        # Not reset_generated!, whose overrides cascade into the parameters
+        # and signatures dup still shares with this pin, rereading their tag
+        # types over any already resolved
+        result.send(:reset_own_generated)
+        # dup shares this pin's docstring, whose tags hold the old return type
+        result.docstring = copied_docstring
+        result.send(:sync_return_type_tag) if result.return_type.defined?
         # Macros should have been processed already
         result.macro_names.clear
         result
@@ -742,6 +752,18 @@ module Solargraph
 
       private
 
+      # The state this class memoizes itself, without what subclasses add
+      #
+      # @return [void]
+      def reset_own_generated
+        @deprecated = nil
+        @context = nil
+        @binder = nil
+        @path = nil
+        @documentation = nil
+        reset_conversions
+      end
+
       # Declarations of a reopened generic may spell its parameters
       # differently, so bind by position against this pin's own one.
       #
@@ -759,7 +781,8 @@ module Solargraph
       def parse_comments
         # HACK: Avoid a NoMethodError on nil with empty overload tags
         if comments.nil? || comments.empty? || comments.strip.end_with?('@overload')
-          @docstring = nil
+          # A docstring assigned at construction has no comments to reparse
+          # from, so clearing it here would discard it for good.
           @directives = []
           @macro_names = []
         else
@@ -770,6 +793,38 @@ module Solargraph
           @directives = parse.directives
           @macro_names = collect_macro_names
         end
+        return unless @return_type&.defined?
+
+        @docstring ||= Solargraph::Source.parse_docstring("\n").to_docstring
+        sync_return_type_tag
+      end
+
+      # Reads the return type instance variable, not the reader method:
+      # BaseVariable derives its reader from this tag, so it would sync
+      # the tag to itself. Callers force the reader first.
+      #
+      # @return [void]
+      def sync_return_type_tag
+        rooted_tags = @return_type.items.map(&:rooted_tag)
+        # Replace rather than assign #types on the tag in place: a proxy holds
+        # a duplicated docstring whose tag objects the original still shares.
+        # Carry the first description over, so replacing the tag does not drop
+        # the prose written beside the type.
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        text = @docstring.tags(return_type_tag_name).map(&:text).find { |t| !t.to_s.empty? }
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        @docstring.delete_tags(return_type_tag_name)
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1259
+        @docstring.add_tag(YARD::Tags::Tag.new(return_type_tag_name, text.to_s, rooted_tags))
+      end
+
+      # The docstring tag name that holds this pin's return type. Method
+      # and constant pins use :return; variable pins (ivars, cvars, gvars)
+      # use :type, the YARD convention for variables.
+      #
+      # @return [::Symbol]
+      def return_type_tag_name
+        :return
       end
 
       # True if two docstrings have the same tags, regardless of any other
