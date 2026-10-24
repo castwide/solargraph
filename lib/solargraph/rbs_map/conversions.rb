@@ -608,7 +608,8 @@ module Solargraph
                     # the annotation describes the method's return value, not the block's
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, false)
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
-                                       type_location: type_location, closure: pin)
+                                       type_location: type_location, closure: pin,
+                                       self_type: RbsTranslator.block_self_type(overload.method_type))
                   end
           Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
                              type_location: type_location, closure: pin)
