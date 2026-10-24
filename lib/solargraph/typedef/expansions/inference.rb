@@ -44,15 +44,8 @@ module Solargraph
         # @param pin [Pin::Base]
         # @return [Source::Chain, nil]
         def next_chain
-          @next_chain ||= begin
-            if pin.location
-              if pin.location.range.start != position
-                Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
-              elsif pin.is_a?(Pin::Callable)
-                node = method_body_node
-                Parser::ParserGem::NodeChainer.chain(node) if node
-              end
-            end
+          @next_chain ||= if pin.location
+            Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
           end
         end
 
