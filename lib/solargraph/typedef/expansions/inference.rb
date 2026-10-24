@@ -12,13 +12,7 @@ module Solargraph
           case pin
           when Pin::BaseVariable, Pin::Constant
             return_types_from_node(pin.assignment)
-          # when Pin::Callable
-          #   return_types_from_node(real_method_body_node(pin))
           else
-            # next_chain = next_chain(pin)
-            # return pin.typedef_typeset unless next_chain
-            # Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
-            next_node = next_node(pin)
             return_types_from_node(next_node)
           end
         end
@@ -38,7 +32,6 @@ module Solargraph
           #   inference requires a type to be inferred from the block chain. We
           #   might need to make it more accurate, e.g., the call chain should
           #   be calling the native `yield` method or `call` on a block parameter.
-          next_chain = next_chain(pin)
           if next_chain
             chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
             return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
@@ -50,36 +43,42 @@ module Solargraph
 
         # @param pin [Pin::Base]
         # @return [Source::Chain, nil]
-        def next_chain pin
-          return unless pin.location
-
-          if pin.location.range.start != position
-            Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
-          elsif pin.is_a?(Pin::Callable)
-            node = method_body_node(pin)
-            Parser::ParserGem::NodeChainer.chain(node) if node
+        def next_chain
+          @next_chain ||= begin
+            if pin.location
+              if pin.location.range.start != position
+                Parser::ParserGem::NodeChainer.chain(source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column))
+              elsif pin.is_a?(Pin::Callable)
+                node = method_body_node
+                Parser::ParserGem::NodeChainer.chain(node) if node
+              end
+            end
           end
         end
 
-        def next_node pin
-          if pin.is_a?(Pin::Method)
-            method_body_node(pin)
-          else
-            return unless pin.location
-            source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        def next_node
+          @next_node ||= begin
+            if pin.is_a?(Pin::Method)
+              method_body_node
+            else
+              return unless pin.location
+              source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+            end
           end
         end
 
         # @param pin [Pin::Base]
         # @return [Parser::AST::Node, nil]
-        def method_body_node pin
-          # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-          node = pin.node
-          return unless node
-          return node.children[1].children.last if node.type == :DEFN
-          return node.children[2].children.last if node.type == :DEFS
-          return node.children[2] if %i[def DEFS].include?(node.type)
-          node.children[3] if node.type == :defs
+        def method_body_node
+          @method_body_node ||= begin
+            # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+            node = pin.node
+            return unless node
+            return node.children[1].children.last if node.type == :DEFN
+            return node.children[2].children.last if node.type == :DEFS
+            return node.children[2] if %i[def DEFS].include?(node.type)
+            node.children[3] if node.type == :defs
+          end
         end
 
         # @param parent_node [Parser::AST::Node]
