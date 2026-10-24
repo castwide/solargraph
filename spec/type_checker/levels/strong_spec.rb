@@ -1167,6 +1167,18 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
+    it 'resolves calls on a block parameter in the second operand of ||' do
+      checker = type_checker(%(
+        # @param arr [Array<String>]
+        # @param str [String]
+        # @return [Array<String>]
+        def matching arr, str
+          arr.select { |elem| elem.empty? || elem == str }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to be_empty
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo
