@@ -112,9 +112,9 @@ module Solargraph
         working_pin = name_pin
         # @sg-ignore Need to add nil check here
         links[0..-2].each_with_index do |link, index|
-          pins = key_guarded_pins(index, api_map, name_pin, working_pin, locals) ||
-                 link.resolve(api_map, working_pin, locals)
+          pins = link.resolve(api_map, working_pin, locals)
           type = infer_from_definitions(pins, working_pin, api_map, locals)
+          type = type.without_nil if key_present?(index, api_map, name_pin, working_pin, locals)
           if type.undefined?
             logger.debug do
               "Chain#define(links=#{links.map(&:desc)}, name_pin=#{name_pin.inspect}, locals=#{locals}) => [] - undefined type from #{link.desc}"
@@ -132,8 +132,8 @@ module Solargraph
           end
         end
         links.last.last_context = working_pin
-        key_guarded_pins(links.length - 1, api_map, name_pin, working_pin, locals) ||
-          links.last.resolve(api_map, working_pin, locals)
+        # @sg-ignore Unresolved call to resolve on Solargraph::Source::Chain::Link, nil
+        links.last.resolve(api_map, working_pin, locals)
       end
 
       # @param api_map [ApiMap]
@@ -170,7 +170,11 @@ module Solargraph
           end
           return ComplexType::UNDEFINED
         end
-        type = infer_from_definitions(pins, links.last.last_context, api_map, locals)
+        # @sg-ignore Unresolved call to last_context on Solargraph::Source::Chain::Link, nil
+        last_context = links.last.last_context
+        type = infer_from_definitions(pins, last_context, api_map, locals)
+        # @sg-ignore Wrong argument type for Integer#-: arg_0 expected BigDecimal, received Integer
+        type = type.without_nil if key_present?(links.length - 1, api_map, name_pin, last_context, locals)
         out = maybe_nil(type, api_map)
         logger.debug do
           "Chain#infer_uncached(links=#{links.map(&:desc)}, locals=#{locals.map(&:desc)}, " \
@@ -325,61 +329,90 @@ module Solargraph
         type.self_to_type(name_pin.context)
       end
 
-      # Resolves 'h[k]' to the pin FlowSensitiveTyping records after a
-      # 'h.key?(k)' guard, whose type excludes nil. Applies only when 'h'
-      # is a Hash whose values can't be nil, and 'h' and 'k' read
-      # variables or attr_readers, which return the same value every time.
+      # True if links[index] is an 'h[k]' lookup that a Pin::KeyLookup in
+      # `locals` proves present, e.g. after 'return unless h.key?(k)'.
+      # Applies only when 'h' is a Hash whose values can't be nil, and 'h'
+      # and 'k' read variables or attr_readers, which return the same value
+      # every time.
       #
       # @param index [Integer] position of the possible '[]' link
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
       # @param working_pin [Pin::Base] its binder is the receiver's type
-      # @param locals [::Array<Pin::LocalVariable>]
-      # @return [::Array<Pin::Base>, nil]
-      def key_guarded_pins index, api_map, name_pin, working_pin, locals
+      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @return [Boolean]
+      def key_present? index, api_map, name_pin, working_pin, locals
         link = links[index]
-        return unless link.is_a?(Chain::Call) && link.word == '[]' && !link.nullable? && !link.with_block?
+        return false unless link.is_a?(Chain::Call) && link.word == '[]' && !link.nullable? && !link.with_block?
+        location = link.location
+        argument = link.arguments.first
+        return false unless link.arguments.length == 1 && argument && location
 
-        key = link.arguments.first if link.arguments.length == 1
-        return unless key
+        facts = locals.grep(Pin::KeyLookup).select { |fact| fact.visible_at?(name_pin, location) }
+        return false if facts.empty? || !non_nil_hash?(working_pin.binder, api_map)
 
-        receiver = links.first(index)
-        receiver_name = links_name(receiver)
-        name = receiver_name && Parser::NodeMethods.key_lookup_name(receiver_name, key.node)
-        pin = name && api_map.var_at_location(locals, name, name_pin, link.location)
-        return unless pin && non_nil_hash?(working_pin.binder, api_map)
-        return unless stable_links?(receiver, api_map, name_pin, locals)
-        return unless key.literal? || stable_links?(key.links, api_map, name_pin, locals)
+        receiver = steps_of(links.first(index), api_map, name_pin, locals)
+        key = key_steps_of(argument, api_map, name_pin, locals)
+        return false unless receiver && key
 
-        [pin]
+        # @sg-ignore Unresolved call to receiver on Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup
+        facts.any? { |fact| fact.receiver == receiver && fact.key == key }
       end
 
-      # @param chain_links [::Array<Chain::Link>]
-      # @return [String, nil] e.g. 'loc.filename', matching
-      #   NodeMethods#variable_chain_name
-      def links_name chain_links
-        return if chain_links.empty?
-
-        simple = chain_links.all? do |link|
-          link.is_a?(Chain::InstanceVariable) || link.is_a?(Chain::ClassVariable) ||
-            (link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?)
+      # @param key [Chain]
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @return [::Array<::Array>, nil] see Pin::KeyLookup#key
+      def key_steps_of key, api_map, name_pin, locals
+        literal = key.links.first
+        if key.links.length == 1 && literal.is_a?(Chain::Literal)
+          return Pin::KeyLookup.key_steps_from_node(literal.node)
         end
-        chain_links.map(&:word).join('.') if simple
+
+        steps_of(key.links, api_map, name_pin, locals)
       end
 
       # @param chain_links [::Array<Chain::Link>]
       # @param api_map [ApiMap]
       # @param name_pin [Pin::Base]
-      # @param locals [::Array<Pin::LocalVariable>]
-      # @return [Boolean] true if each link reads a variable or an
-      #   attr_reader
-      def stable_links? chain_links, api_map, name_pin, locals
-        (1..chain_links.length).all? do |length|
-          pins = Chain.new(chain_links.first(length)).define(api_map, name_pin, locals)
-          !pins.empty? && pins.all? do |pin|
-            pin.is_a?(Pin::BaseVariable) || (pin.is_a?(Pin::Method) && pin.attribute?)
-          end
+      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @return [::Array<::Array>, nil] see Pin::KeyLookup#receiver, or
+      #   nil unless each link reads a variable or an attr_reader
+      def steps_of chain_links, api_map, name_pin, locals
+        steps = []
+        chain_links.each_with_index do |link, index|
+          # 'self.table' reads the same attr_reader as 'table'
+          next if index.zero? && link.is_a?(Chain::Head) && link.word == 'self'
+
+          step = step_of(link, chain_links.first(index + 1), api_map, name_pin, locals, on_self: steps.empty?)
+          return nil unless step
+
+          steps.push step
         end
+        steps unless steps.empty?
+      end
+
+      # @param link [Chain::Link]
+      # @param prefix [::Array<Chain::Link>] the links up to and including `link`
+      # @param api_map [ApiMap]
+      # @param name_pin [Pin::Base]
+      # @param locals [::Array<Pin::LocalVariable, Pin::KeyLookup>]
+      # @param on_self [Boolean] true if `link` has no receiver but self
+      # @return [::Array, nil] e.g. [:lvar, :h] or [:self_call, :table]
+      def step_of link, prefix, api_map, name_pin, locals, on_self:
+        return [:ivar, link.word.to_sym] if link.is_a?(Chain::InstanceVariable)
+        return [:cvar, link.word.to_sym] if link.is_a?(Chain::ClassVariable)
+        return unless link.is_a?(Chain::Call) && !link.nullable? && link.arguments.empty? && !link.with_block?
+
+        # a bare 'table' chains the same way whether it reads a local or
+        # calls a method, so tell them apart by what it resolves to
+        pins = Chain.new(prefix).define(api_map, name_pin, locals)
+        return if pins.empty?
+        return [:lvar, link.word.to_sym] if prefix.length == 1 && pins.all?(Pin::LocalVariable)
+        return unless pins.all? { |pin| pin.is_a?(Pin::Method) && pin.attribute? }
+
+        [on_self ? :self_call : :call, link.word.to_sym]
       end
 
       # @param type [ComplexType, ComplexType::UniqueType]

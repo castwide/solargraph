@@ -1341,6 +1341,87 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       )
       expect(infer_at(code, [9, 12])).to eq('Array<Integer>')
     end
+
+    it 'still defines a guarded lookup as Hash#[]' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h[k]
+        end
+      )
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      expect(api_map.clip_at('test.rb', [5, 14]).define.map(&:path)).to eq(['Hash#[]'])
+    end
+
+    it 'still offers Hash#[] signatures in a guarded lookup' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h.[](k)
+        end
+      )
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      expect(api_map.clip_at('test.rb', [5, 15]).signify.map(&:path)).to eq(['Hash#[]'])
+    end
+
+    it 'does not add a local variable for the guarded lookup' do
+      code = %(
+        # @param h [Hash{String => Integer}]
+        # @param k [String]
+        def foo h, k
+          return 0 unless h.key?(k)
+          h[k]
+        end
+      )
+      api_map = Solargraph::ApiMap.new.map(Solargraph::Source.load_string(code, 'test.rb'))
+      names = api_map.source_map('test.rb').locals.grep(Solargraph::Pin::LocalVariable).map(&:name)
+      expect(names.uniq).to contain_exactly('h', 'k')
+    end
+
+    it 'does not narrow a local that shadows a guarded attr_reader' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          # @param other [Hash{String => Integer}]
+          def foo k, other
+            return 0 unless table.key?(k)
+            table = other
+            v = table[k]
+            v
+          end
+        end
+      )
+      expect(infer_at(code, [11, 12])).to eq('Integer, nil')
+    end
+
+    it 'narrows self.table after a table.key? guard' do
+      code = %(
+        class Foo
+          # @return [Hash{String => Integer}]
+          attr_reader :table
+
+          # @param k [String]
+          # @param other [Hash{String => Integer}]
+          def foo k, other
+            return 0 unless table.key?(k)
+            a = self.table[k]
+            table = other
+            b = self.table[k]
+            a
+            b
+          end
+        end
+      )
+      expect(infer_at(code, [12, 12])).to eq('Integer')
+      expect(infer_at(code, [13, 12])).to eq('Integer')
+    end
   end
 
   describe '#parse_receiver_chain' do

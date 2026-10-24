@@ -228,8 +228,8 @@ module Solargraph
             elsif cursor.word.start_with?('$')
               return package_completions(api_map.get_global_variable_pins)
             end
-            # 'h[k]' facts from Hash#key? guards are not variables
-            result.concat(locals.reject { |pin| pin.name.include?('[') })
+            # Hash key facts from FlowSensitiveTyping are not variables
+            result.concat(locals.grep(Pin::BaseVariable))
             result.concat file_global_methods unless closure.binder.namespace.empty?
             result.concat api_map.get_constants(context_pin.context.namespace, *gates)
             result.concat api_map.get_methods(closure.binder.namespace, scope: closure.binder.scope,

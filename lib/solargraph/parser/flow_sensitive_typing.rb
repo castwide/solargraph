@@ -15,7 +15,7 @@ module Solargraph
         transform_keys! compare_by_identity
       ].freeze
 
-      # @param locals [Array<Solargraph::Pin::LocalVariable>]
+      # @param locals [Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::KeyLookup>]
       # @param ivars [Array<Solargraph::Pin::InstanceVariable>]
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
@@ -619,22 +619,23 @@ module Solargraph
       # @return [void]
       def add_key_fact location_node, lookup, presences
         receiver, _, key = lookup.children
-        receiver_name = variable_chain_name(receiver)
-        name = receiver_name && key_lookup_name(receiver_name, key)
+        receiver_steps = Pin::KeyLookup.steps_from_node(receiver)
+        key_steps = Pin::KeyLookup.key_steps_from_node(key)
         statement = enclosing_compound_statement_pin
         # a method or block body is its own closure
         closure = statement.is_a?(Pin::Closure) ? statement : statement&.closure
-        return unless name && closure
+        return unless receiver_steps && key_steps && closure
 
-        pin = Pin::LocalVariable.new(
-          location: Location.from_node(location_node),
-          closure: closure,
-          name: name,
-          assignment: lookup,
-          source: :flow_sensitive_typing
-        )
-        presences = clip_at_key_writes(presences, receiver, key)
-        process_facts({ pin => [{ not_type: ComplexType::NIL }] }, presences)
+        clip_at_key_writes(presences, receiver, key).each do |presence|
+          locals.push Pin::KeyLookup.new(
+            location: Location.from_node(location_node),
+            closure: closure,
+            receiver: receiver_steps,
+            key: key_steps,
+            presence: presence,
+            source: :flow_sensitive_typing
+          )
+        end
       end
 
       # @param node [Parser::AST::Node]
