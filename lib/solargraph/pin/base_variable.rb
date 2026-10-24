@@ -159,8 +159,7 @@ module Solargraph
             rng = Range.from_node(node)
             next if rng.nil?
             pos = rng.ending
-            # A combined pin can hold assignments from other files,
-            # e.g. an ancestor's ivar
+            # Assignments combined from other files carry their own filename
             filename = Location.from_node(node)&.filename || location&.filename
             # @sg-ignore Need to add nil check here
             clip = api_map.clip_at(filename, pos)
