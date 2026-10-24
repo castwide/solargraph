@@ -11,8 +11,7 @@ module Solargraph
             contents = []
             suggestions = host.definitions_at(params['textDocument']['uri'], line, col)
             last_link = nil
-            # @sg-ignore Need to add nil check here
-            suggestions.each do |pin|
+            suggestions&.each do |pin|
               parts = []
               this_link = host.options['enablePages'] ? pin.link_documentation : pin.text_documentation
               parts.push this_link if !this_link.nil? && this_link != last_link

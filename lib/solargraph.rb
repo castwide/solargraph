@@ -4,6 +4,7 @@ Encoding.default_external = 'UTF-8'
 
 require 'bundler'
 require 'set'
+require 'yard-activesupport-concern'
 require 'yard-solargraph'
 require 'solargraph/yard_tags'
 require 'solargraph/version'
@@ -32,7 +33,10 @@ module Solargraph
   autoload :Yardoc,           'solargraph/yardoc'
   autoload :YardMap,          'solargraph/yard_map'
   autoload :Pin,              'solargraph/pin'
-  autoload :DocMap,           'solargraph/doc_map'
+  autoload :Metagem,          'solargraph/metagem'
+  autoload :Repo,             'solargraph/repo'
+  autoload :External,         'solargraph/external'
+  autoload :Collection,       'solargraph/collection'
   autoload :ServerMethods,    'solargraph/server_methods'
   autoload :LanguageServer,   'solargraph/language_server'
   autoload :Workspace,        'solargraph/workspace'
@@ -48,9 +52,9 @@ module Solargraph
   autoload :Convention,       'solargraph/convention'
   autoload :Parser,           'solargraph/parser'
   autoload :RbsMap,           'solargraph/rbs_map'
-  autoload :GemPins,          'solargraph/gem_pins'
-  autoload :PinCache,         'solargraph/pin_cache'
+  autoload :CacheDir,         'solargraph/cache_dir'
   autoload :RbsTranslator,    'solargraph/rbs_translator'
+  autoload :RbsCollection,    'solargraph/rbs_collection'
 
   dir = File.dirname(__FILE__)
   VIEWS_PATH = File.join(dir, 'solargraph', 'views')

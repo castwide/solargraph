@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
+require 'timeout'
+
 describe Solargraph::LanguageServer::Message::TextDocument::Hover do
   it 'returns nil for empty documentation' do
     host = Solargraph::LanguageServer::Host.new
     host.prepare('spec/fixtures/workspace')
-    sleep 0.1 until host.libraries.all?(&:mapped?)
+    Timeout.timeout 60 do
+      sleep 0.1 until host.libraries.all?(&:mapped?)
+    end
     host.catalog
     message = described_class.new(host, {
                                     'params' => {
