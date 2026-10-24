@@ -189,7 +189,11 @@ module Solargraph
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
           types.map! do |type|
-            if type.tuple?
+            if type.tuple? && index.negative?
+              # A target after a splat can get any element, depending
+              # on the tuple's length and the targets before the splat
+              ComplexType.new(type.all_params)
+            elsif type.tuple?
               type.all_params[index]
             elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
               type.all_params.first

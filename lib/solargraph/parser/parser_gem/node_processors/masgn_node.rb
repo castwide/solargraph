@@ -32,7 +32,14 @@ module Solargraph
             # Get pins created for the mlhs node
             process_children
 
+            splat_seen = false
             lhs_arr.each_with_index do |lhs, i|
+              # Targets after a splat count from the end of the value
+              # (`*a, b = x` gives b the last element), so their index
+              # is negative
+              splat_seen ||= lhs.type == :splat
+              # @sg-ignore https://github.com/apiology/solargraph/pull/286
+              index = splat_seen ? i - lhs_arr.length : i
               location = get_node_location(lhs)
               pin = if lhs.type == :lvasgn
                       # lvasgn is a local variable
@@ -51,7 +58,7 @@ module Solargraph
                 end
                 next
               end
-              pin.mass_assignment = [mass_rhs, i]
+              pin.mass_assignment = [mass_rhs, index]
             end
           end
         end
