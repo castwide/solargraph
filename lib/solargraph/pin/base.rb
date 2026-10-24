@@ -380,7 +380,9 @@ module Solargraph
       # @param other [self]
       # @param attr [::Symbol]
       #
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+      # @sg-ignore Declared return type ::Solargraph::Pin::Base, nil does not match inferred type
+      #   ::Solargraph::Pin::Base, nil, ::Enumerator<undefined, undefined, ::NilClass> for
+      #   Solargraph::Pin::Base#choose_pin_attr
       # @return [Pin::Base, nil]
       def choose_pin_attr other, attr
         # @type [Pin::Base, nil]
@@ -400,10 +402,10 @@ module Solargraph
             # maximize number of gates, as types in other combined pins may
             # depend on those gates
 
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to gates
             closure.gates.length,
             # use basename so that results don't vary system to system
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to best_location
             File.basename(closure.best_location.to_s)
           ]
         end

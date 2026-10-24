@@ -356,7 +356,7 @@ module Solargraph
         print_pin(pin)
       end
       references.each do |key, refpin|
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to to_s
         puts "\n# #{key.to_s.capitalize}:\n\n"
         print_pin(refpin)
       end

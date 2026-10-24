@@ -609,11 +609,13 @@ module Solargraph
                     # the annotation describes the method's return value, not the block's
                     # @sg-ignore https://github.com/castwide/solargraph/pull/1258
                     block_parameters, block_return_type = parts_of_function(overload.method_type.block, pin, false)
-                    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+                    # @sg-ignore Wrong argument type for Solargraph::Pin::Callable.new: return_type expected
+                    #   Solargraph::ComplexType, nil, received Array<Solargraph::Pin::Parameter>
                     Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs,
                                        type_location: type_location, closure: pin)
                   end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore Wrong argument type for Solargraph::Pin::Callable.new: return_type expected
+          #   Solargraph::ComplexType, nil, received Array<Solargraph::Pin::Parameter>
           Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
                              type_location: type_location, closure: pin)
         end

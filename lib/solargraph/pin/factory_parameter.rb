@@ -25,7 +25,8 @@ module Solargraph
       attr_reader :method_scope
       # @return [String, nil]
       attr_reader :param_name
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+      # @sg-ignore Declared return type ::String, ::Symbol does not match inferred type ::String,
+      #   ::Solargraph::Pin::Symbol for Solargraph::Pin::FactoryParameter#value
       # @return [::String, ::Symbol] The literal value
       attr_reader :value
       # @return [::Symbol] :arg, :optarg, :kwarg, :kwoptarg, :restarg, :kwrestarg, :block, :blockarg

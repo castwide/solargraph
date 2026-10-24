@@ -483,7 +483,8 @@ module Solargraph
     attr_writer :parsed
 
     # @return [Hash{Integer => Solargraph::Parser::Snippet}]
-    # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+    # @sg-ignore Declared return type ::Hash{::Integer => ::Solargraph::Parser::Snippet} does not match inferred type
+    #   ::Parser::AST::Node, ::Hash for Solargraph::Source#comments=
     attr_writer :comments
 
     # @return [Boolean]

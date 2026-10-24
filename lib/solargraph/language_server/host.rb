@@ -601,7 +601,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to query_symbols
         (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end
@@ -782,7 +782,7 @@ module Solargraph
         source = sources.find(uri)
         return change if source.code.length + 1 != change['text'].length
         diffs = Diff::LCS.diff(source.code, change['text'])
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to length on Array<Diff::LCS::Change>, nil
         return change if diffs.empty? || diffs.length > 1 || diffs.first.length > 1
         # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         #   empty? guards need https://github.com/apiology/solargraph/tree/narrow-first-last-after-empty-guard on top

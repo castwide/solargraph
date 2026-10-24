@@ -32,7 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to zero?
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1395
@@ -257,10 +257,10 @@ module Solargraph
 
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to nil?
             next if refs.nil?
             # @param ref [String]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to map
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref

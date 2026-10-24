@@ -260,9 +260,9 @@ module Solargraph
                 (workspace.sources + (@current ? [@current] : []))
               end
       files.uniq(&:filename).each do |source|
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to references
         found = source.references(pin.name)
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to select!
         found.select! do |loc|
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)&.first
           referenced&.path == pin.path
@@ -271,25 +271,25 @@ module Solargraph
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if caller.defined?
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to select!
             found.select! do |loc|
               clip = api_map.clip_at(loc.filename, loc.range.start)
               other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to clear
             found.clear
           end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore Unresolved call to map!
           found.map! do |loc|
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to sort
         result.concat(found.sort do |a, b|
           a.range.start.line <=> b.range.start.line
         end)
@@ -432,7 +432,7 @@ module Solargraph
         end
       end
       repargs.each_pair do |reporter, args|
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+        # @sg-ignore Unresolved call to new
         result.concat reporter.new(*args.uniq).diagnose(source, api_map)
       end
       result
@@ -622,7 +622,7 @@ module Solargraph
           cmd = [workspace.command_path, 'cache', spec.name]
           cmd.push('--directory', workspace.directory) if workspace.directory
           _o, e, s = Open3.capture3(*cmd)
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore Unresolved call to success?
           if s.success?
             logger.info "Cached #{spec.name} #{spec.version}"
           else

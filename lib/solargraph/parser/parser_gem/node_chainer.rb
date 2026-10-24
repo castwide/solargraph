@@ -136,7 +136,9 @@ module Solargraph
             # @todo Undefined or what?
             result.push Chain::UNDEFINED_CALL
           elsif n.type == :and
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer#generate_links: n expected
+            #   Parser::AST::Node, received Parser::AST::Node, Integer, Float, Rational, Complex, String, Symbol,
+            #   NilClass, nil
             result.concat generate_links(n.children.last)
           elsif n.type == :or
             # @sg-ignore https://github.com/castwide/solargraph/pull/1418
@@ -162,7 +164,9 @@ module Solargraph
                           end
             result.push Chain::If.new([then_clause, else_clause])
           elsif %i[begin kwbegin].include?(n.type)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Wrong argument type for Solargraph::Parser::ParserGem::NodeChainer#generate_links: n expected
+            #   Parser::AST::Node, received Parser::AST::Node, Integer, Float, Rational, Complex, String, Symbol,
+            #   NilClass, nil
             result.concat generate_links(n.children.last)
           elsif n.type == :block_pass
             block_variable_name_node = n.children[0]

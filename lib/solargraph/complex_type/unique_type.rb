@@ -55,9 +55,9 @@ module Solargraph
               raise ComplexTypeError,
                     "Bad hash type: name=#{name}, substring=#{substring} - must have exactly two parameters"
             end
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to map on Solargraph::ComplexType::UniqueType, nil
             key_types.concat(subs[0].map { |u| ComplexType.new([u]) })
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to map on Solargraph::ComplexType::UniqueType, nil
             subtypes.concat(subs[1].map { |u| ComplexType.new([u]) })
           else
             subtypes.concat subs
@@ -422,7 +422,7 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore Unresolved call to items
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]

@@ -251,7 +251,7 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           elsif node.type == :send
             result.push node
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore Unresolved call to children on Parser::AST::Node, nil
             result.concat call_nodes_from(node.children.first)
             # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             #   also needs https://github.com/castwide/solargraph/pull/1416
@@ -648,7 +648,10 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 if idx == nodes.length - 1
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+                  # @sg-ignore Wrong argument type for
+                  #   Solargraph::Parser::ParserGem::NodeMethods::DeepInference.from_value_position_statement: node
+                  #   expected AST::Node, received Parser::AST::Node, Integer, Float, Rational, Complex, String, Symbol,
+                  #   NilClass, nil
                   result.concat from_value_position_statement(nodes.last,
                                                               include_explicit_returns: false)
                 end

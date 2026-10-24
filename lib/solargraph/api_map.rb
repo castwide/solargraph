@@ -611,7 +611,7 @@ module Solargraph
     def search query
       pins.map(&:path)
           .compact
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+          # @sg-ignore Unresolved call to downcase on String, NilClass
           .select { |path| path.downcase.include?(query.downcase) }
     end
 
