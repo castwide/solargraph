@@ -110,7 +110,7 @@ module Solargraph
         #
         # @todo ProxyType uses 'type' for the binder, but '
         working_pin = name_pin
-        # Lets Chain::Call find narrowing facts on repeated attr_reader
+        # Lets Chain::Call find downcast vars of repeated attr_reader
         # calls; see Pin::ProxyType#receiver_path
         receiver_path = []
         # @sg-ignore Need to add nil check here

@@ -193,7 +193,7 @@ module Solargraph
           [type, new_signature_pin]
         end
 
-        # Looks for a flow-sensitive-typing fact recorded against this
+        # Looks for a downcast var FlowSensitiveTyping recorded for this
         # exact call chained off of the same receiver expression -- e.g.
         # the narrowing FlowSensitiveTyping records for 'pin.location'
         # after a 'return unless pin.location' guard, consulted here while
@@ -212,7 +212,7 @@ module Solargraph
           return nil if receiver_path.nil? || receiver_path.empty?
           return nil unless arguments.empty? && !with_block?
 
-          pin = chain_fact(receiver_path + [word], name_pin)
+          pin = downcast_var(receiver_path + [word], name_pin)
           return nil if pin.nil?
 
           # @type [::Array<Pin::Method, nil>]
@@ -222,16 +222,16 @@ module Solargraph
           readers = readers.compact
           return nil if readers.empty? || !readers.all?(&:attribute?)
 
-          # Without a declared type the pin's type is the fact alone, e.g.
-          # 'nil, false'; declare the reader's type at the guard so the fact
+          # Without a declared type the pin's type is the downcast alone, e.g.
+          # 'nil, false'; declare the reader's type at the guard so the downcast
           # narrows it. An uninferrable pin would shadow the method lookup.
           declared = pin.assignments.flat_map { |node| pin.return_types_from_node(node, api_map) }
           narrowed = pin.proxy(ComplexType.new(declared.flat_map(&:items).uniq))
           narrowed.typify(api_map).defined? ? narrowed : nil
         end
 
-        # Combines the facts on path that FlowSensitiveTyping recorded in the
-        # closures around this call (see Pin::Closure#chain_facts), from the
+        # Combines the downcast vars on path that FlowSensitiveTyping recorded in the
+        # closures around this call (see Pin::Closure#downcast_vars), from the
         # innermost out to the closure that owns the root: a local stops at a
         # method or namespace, self or an ivar also at a block that rebinds
         # self, e.g. via instance_eval.
@@ -239,21 +239,21 @@ module Solargraph
         # @param path [::Array<String>] e.g. ['self', 'location'] or ['pin', 'location']
         # @param name_pin [Pin::Base]
         # @return [Pin::BaseVariable, nil]
-        def chain_fact path, name_pin
+        def downcast_var path, name_pin
           return nil if location.nil?
 
           self_bound = path.first == 'self' || path.first&.start_with?('@')
           here = name_pin
           here = here.closure until here.nil? || here.is_a?(Pin::Closure)
-          facts = []
+          vars = []
           while here.is_a?(Pin::Closure)
-            facts.concat((here.chain_facts[path] || []).select { |fact| fact.presence&.contain?(location.range.start) })
+            vars.concat((here.downcast_vars[path] || []).select { |var| var.presence&.contain?(location.range.start) })
             break if self_bound && here.rebound?
             break unless here.is_a?(Pin::Block)
 
             here = here.closure
           end
-          facts.inject(&:combine_with)
+          vars.inject(&:combine_with)
         end
 
         # @param pins [::Enumerable<Pin::Base>]

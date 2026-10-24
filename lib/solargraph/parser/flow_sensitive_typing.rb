@@ -10,7 +10,7 @@ module Solargraph
       # @param enclosing_breakable_pin [Solargraph::Pin::Breakable, nil]
       # @param enclosing_compound_statement_pin [Solargraph::Pin::CompoundStatement, nil]
       # @param closure [Solargraph::Pin::Closure, nil] the enclosing closure,
-      #   which keeps the facts on call chains; see Pin::Closure#chain_facts
+      #   which keeps the downcast vars of call chains; see Pin::Closure#downcast_vars
       def initialize locals, ivars, enclosing_breakable_pin, enclosing_compound_statement_pin, closure: nil
         @locals = locals
         @ivars = ivars
@@ -216,7 +216,7 @@ module Solargraph
                                presence: presence)
         path = chain_paths[pin]
         if path
-          closure.add_chain_fact(path, new_pin)
+          closure.add_downcast_var(path, new_pin)
         elsif pin.is_a?(Pin::LocalVariable)
           locals.push(new_pin)
         elsif pin.is_a?(Pin::InstanceVariable)
@@ -433,7 +433,7 @@ module Solargraph
         return self_call_pin(node, chain_words) if root_pin.nil?
         return root_pin if chain_words.length == 1
 
-        fact_pin(node, chain_words)
+        build_chain_pin(node, chain_words)
       end
 
       # Builds the pin for a chain from a bare or explicit self call, e.g.
@@ -446,7 +446,7 @@ module Solargraph
       def self_call_pin node, chain_words
         return unless self_rooted?(node)
 
-        fact_pin(node, chain_words.first == 'self' ? chain_words : ['self', *chain_words])
+        build_chain_pin(node, chain_words.first == 'self' ? chain_words : ['self', *chain_words])
       end
 
       # Builds a pin that only carries facts about the chain at path, which
@@ -455,7 +455,7 @@ module Solargraph
       # @param node [Parser::AST::Node]
       # @param path [::Array<String>] e.g. ['pin', 'location'] or ['self', 'location']
       # @return [Solargraph::Pin::LocalVariable, nil]
-      def fact_pin node, path
+      def build_chain_pin node, path
         return unless closure && path.length > 1
 
         pin = Pin::LocalVariable.new(

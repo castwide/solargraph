@@ -29,7 +29,7 @@ module Solargraph
       # @return [void]
       def rebind api_map
         # inferring the receiver can clip inside this block, which rebinds
-        # it again, e.g. via a narrowing fact recorded in the block
+        # it again, e.g. via a downcast var recorded in the block
         return @rebind if @rebind || @rebinding
 
         begin

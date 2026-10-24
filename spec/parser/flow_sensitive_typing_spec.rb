@@ -1543,7 +1543,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(clip.infer.rooted_tags).to eq('::Location, nil')
   end
 
-  describe 'a bare attr_reader fact inside a block' do
+  describe 'a bare attr_reader downcast inside a block' do
     let(:api_map) do
       source = Solargraph::Source.load_string(%(
         class Loc; end
@@ -1654,7 +1654,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
-  describe 'an attr_reader fact on explicit self' do
+  describe 'an attr_reader downcast on explicit self' do
     let(:api_map) do
       source = Solargraph::Source.load_string(%(
         class Loc
@@ -1698,7 +1698,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
-  it 'keeps call chain facts out of completions' do
+  it 'keeps call chain downcast vars out of completions' do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @return [Foo, nil]
@@ -1717,7 +1717,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     expect(names).not_to include('self.location', 'pin.location')
   end
 
-  it 'leaves call chain facts out of a marshaled closure' do
+  it 'leaves call chain downcast vars out of a marshaled closure' do
     source = Solargraph::Source.load_string(%(
       class Foo
         # @return [Foo, nil]
@@ -1730,8 +1730,8 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       end
     ), 'test.rb')
     method = Solargraph::SourceMap.map(source).pins.find { |pin| pin.path == 'Foo#bar' }
-    expect(method.chain_facts).not_to be_empty
-    expect(Marshal.load(Marshal.dump(method)).chain_facts).to be_empty
+    expect(method.downcast_vars).not_to be_empty
+    expect(Marshal.load(Marshal.dump(method)).downcast_vars).to be_empty
   end
 
   it 'uses is_a? with a fully-qualified type name to refine types' do
