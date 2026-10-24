@@ -18,20 +18,24 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node, nil]
-        # @return [Array<String>]
+        # @return [Array<String, Symbol, Numeric>]
         def pack_name node
-          # @type [Array<String>]
+          # @type [Array<String, Symbol, Numeric>]
           parts = []
           if node.is_a?(AST::Node)
             node.children.each do |n|
-              if n.is_a?(AST::Node)
-                if n.type == :cbase
-                  parts = [''] + pack_name(n)
-                elsif n.type == :const
-                  parts += pack_name(n)
-                end
-              else
-                parts.push n unless n.nil?
+              # s(:const, scope, :Name) packs to [*scope, :Name]; a leading
+              # s(:cbase) roots it with ''. Callers may pass other nodes, e.g. a
+              # constant's s(:str, "x") assignment, whose scalar children are kept.
+              case n
+              in ::AST::Node[:cbase, *]
+                parts = [''] + pack_name(n)
+              in ::AST::Node[:const, *]
+                parts += pack_name(n)
+              in ::AST::Node | nil
+                # other child nodes and an absent scope add nothing
+              in Symbol | String | Numeric => name
+                parts.push name
               end
             end
           end
