@@ -3,44 +3,21 @@
 module Solargraph
   module Typedef
     module Expansions
-      # Contextual expansion of YARD macros.
+      # Expansion of source code.
       #
       class Inference < Base
         def expand
-          if receiver.is_a?(Pin::Block)
-            infer_with_block_receiver
+          return Block.expand(api_map, pin, receiver) if receiver.is_a?(Pin::Block)
+
+          case pin
+          when Pin::BaseVariable, Pin::Constant
+            return_typeset_from_node(pin.assignment)
           else
-            infer_with_any_receiver
+            return_typeset_from_node(next_node)
           end
         end
 
         private
-
-        def infer_with_block_receiver
-          node = if pin.location
-            source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-          end
-          if node
-            call_chain = Parser.chain(node)
-            chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(call_chain.node).start, chain: call_chain).infer
-            return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
-
-            call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-            return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
-          else
-            call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-            return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
-          end
-        end
-
-        def infer_with_any_receiver
-          case pin
-          when Pin::BaseVariable, Pin::Constant
-            return_types_from_node(pin.assignment)
-          else
-            return_types_from_node(next_node)
-          end
-        end
 
         def source_map
           api_map.source_map(pin.filename)
@@ -77,7 +54,7 @@ module Solargraph
 
         # @param parent_node [Parser::AST::Node]
         # @return [Typeset]
-        def return_types_from_node parent_node
+        def return_typeset_from_node parent_node
           types = []
           Parser::ParserGem::NodeMethods.value_position_nodes_only(parent_node).each do |node|
             # Nil nodes may not have a location
