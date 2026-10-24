@@ -2772,6 +2772,42 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Array, Hash, Integer, nil')
   end
 
+  it 'keeps declared literal return types' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [:foo]
+        def sym; end
+
+        # @return [1]
+        def int; end
+      end
+      a = Foo.new.sym
+      a
+      b = Foo.new.int
+      b
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [9, 6])
+    expect(clip.infer.rooted_tags).to eq(':foo')
+    clip = api_map.clip_at('test.rb', [11, 6])
+    expect(clip.infer.rooted_tags).to eq('1')
+  end
+
+  it 'keeps declared literal parameter types' do
+    source = Solargraph::Source.load_string(%(
+      # @param mode [:read, :write]
+      # @return [void]
+      def open_with mode
+        mode
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [4, 8])
+    expect(clip.infer.rooted_tags).to eq(':read, :write')
+  end
+
   it 'infers that type of argument has been overridden' do
     source = Solargraph::Source.load_string(%(
       def foo a

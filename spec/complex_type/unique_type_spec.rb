@@ -16,6 +16,16 @@ describe Solargraph::ComplexType::UniqueType do
       type = described_class.parse('nil')
       expect(type.qualify(Solargraph::ApiMap.new).rooted_tags).to eq('nil')
     end
+
+    it 'keeps a symbol literal as :foo, not ::Symbol' do
+      type = described_class.parse(':foo')
+      expect(type.qualify(Solargraph::ApiMap.new).rooted_tags).to eq(':foo')
+    end
+
+    it 'keeps an integer literal as 1, not ::Integer' do
+      type = described_class.parse('1')
+      expect(type.qualify(Solargraph::ApiMap.new).rooted_tags).to eq('1')
+    end
   end
 
   describe '#simplify_literals' do
