@@ -38,7 +38,6 @@ module Solargraph
               # (`*a, b = x` gives b the last element), so their index
               # is negative
               splat_seen ||= lhs.type == :splat
-              # @sg-ignore https://github.com/apiology/solargraph/pull/286
               index = splat_seen ? i - lhs_arr.length : i
               location = get_node_location(lhs)
               pin = if lhs.type == :lvasgn
