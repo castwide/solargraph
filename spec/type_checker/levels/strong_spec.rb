@@ -1167,7 +1167,7 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).not_to include('Unresolved call to bar on Base')
     end
 
-    it 'flags calls on a guarded accessor of an undeclared generic' do
+    it 'reports a generic used in @yieldparam without being declared' do
       checker = type_checker(%(
         class Store
           # @yieldparam [generic<Elem>]
