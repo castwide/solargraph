@@ -4,7 +4,11 @@ module Solargraph
   module Convention
     class Rakefile < Base
       def local source_map
-        basename = File.basename(source_map.filename.to_s)
+        return EMPTY_ENVIRON if source_map.filename.nil?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+        # SourceMap#filename should be markable as pure via inline RBS, so
+        # this guard narrows the repeated call.
+        basename = File.basename(source_map.filename)
         return EMPTY_ENVIRON unless basename.end_with?('.rake') || basename == 'Rakefile'
 
         @local ||= Environ.new(
