@@ -8,22 +8,32 @@ module Solargraph
       class Inference < Base
         def expand
           if receiver.is_a?(Pin::Block)
-            node = if pin.location
-              source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-            end
-            if node
-              call_chain = Parser.chain(node)
-              chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(call_chain.node).start, chain: call_chain).infer
-              return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
-
-              call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-              return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
-            else
-              call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-              return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
-            end
+            infer_with_block_receiver
+          else
+            infer_with_any_receiver
           end
+        end
 
+        private
+
+        def infer_with_block_receiver
+          node = if pin.location
+            source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+          end
+          if node
+            call_chain = Parser.chain(node)
+            chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(call_chain.node).start, chain: call_chain).infer
+            return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
+
+            call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
+            return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+          else
+            call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
+            return Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+          end
+        end
+
+        def infer_with_any_receiver
           case pin
           when Pin::BaseVariable, Pin::Constant
             return_types_from_node(pin.assignment)
@@ -31,8 +41,6 @@ module Solargraph
             return_types_from_node(next_node)
           end
         end
-
-        private
 
         def source_map
           api_map.source_map(pin.filename)
