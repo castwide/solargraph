@@ -84,4 +84,25 @@ describe Solargraph::Workspace::Config do
     config = described_class.new(dir_path)
     expect { config.formatter }.to raise_error(Solargraph::InvalidConfigError, /formatter/)
   end
+
+  it 'reads required paths from the require key' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'require: [set]'
+    end
+    config = described_class.new(dir_path)
+    expect(config.required).to eq(['set'])
+  end
+
+  it 'has no required paths by default' do
+    config = described_class.new(dir_path)
+    expect(config.required).to eq([])
+  end
+
+  it 'rejects a require value that is not an array' do
+    File.open(File.join(dir_path, '.solargraph.yml'), 'w') do |file|
+      file.puts 'require: not_an_array'
+    end
+    config = described_class.new(dir_path)
+    expect { config.required }.to raise_error(Solargraph::InvalidConfigError, /require/)
+  end
 end
