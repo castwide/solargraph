@@ -70,7 +70,7 @@ module Solargraph
       # @param gates [Array<String>]
       # @return [String, nil] fully qualified tag
       def qualify tag, *gates
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
         type = ComplexType.try_parse(tag)
         qualify_type(type, *gates)&.tag
       end
