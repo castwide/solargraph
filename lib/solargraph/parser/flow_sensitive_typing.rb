@@ -263,37 +263,16 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
-          pin_presences = clip_at_writes(pin, presences)
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)
-            pin_presences.each do |presence|
+            presences.each do |presence|
               add_downcast_var(pin,
                                presence: presence,
                                downcast_type: downcast_type,
                                downcast_not_type: downcast_not_type)
             end
           end
-        end
-      end
-
-      # Ends each presence of a call-chain pin, e.g. 'pin.location' or
-      # 'self.location', at the first write that can change what the chain
-      # returns, e.g. 'pin = other' or 'pin.location = nil'.
-      #
-      # @param pin [Pin::BaseVariable]
-      # @param presences [Array<Range>]
-      # @return [Array<Range>]
-      def clip_at_writes pin, presences
-        return presences unless pin.name.include?('.')
-        # without the enclosing body, writes can't be ruled out
-        return [] if enclosing_compound_statement_pin&.node.nil?
-
-        writes = []
-        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes)
-        presences.map do |presence|
-          cut = writes.select { |pos| presence.include?(pos) }.min
-          cut ? Range.new(presence.start, cut) : presence
         end
       end
 
