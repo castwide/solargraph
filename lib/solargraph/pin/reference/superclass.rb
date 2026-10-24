@@ -11,6 +11,14 @@ module Solargraph
           # @sg-ignore Need to add nil check here
           @reference_gates ||= closure.gates - [closure.path]
         end
+
+        private
+
+        # @return [void]
+        def preassign_ivars
+          super
+          @reference_gates = nil
+        end
       end
     end
   end
