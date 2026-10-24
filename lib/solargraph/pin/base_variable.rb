@@ -186,15 +186,14 @@ module Solargraph
         #   well so that we can do better flow sensitive typing with
         #   multiple assignments
         unless @mass_assignment.nil?
-          mass_node, index = @mass_assignment
-          types = return_types_from_node(mass_node, api_map)
-          types.map! do |type|
-            if type.tuple?
-              type.all_params[index]
-            elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
-              type.all_params.first
+          mass_node, = @mass_assignment
+          # Destructure each union member separately: ComplexType#rooted_name
+          # and #all_params report on the first member only.
+          types = return_types_from_node(mass_node, api_map).flat_map do |type|
+            type.items.filter_map do |member|
+              member.all_params.first if ['::Array', '::Set', '::Enumerable'].include?(member.rooted_name)
             end
-          end.compact!
+          end
 
           return ComplexType::UNDEFINED if types.empty?
 
@@ -226,6 +225,15 @@ module Solargraph
         adjust_type(api_map, raw_return_type)
       end
 
+      # A merged multi-assignment pin and its earliest assignment share the
+      # same #choose-d location but differ in presence, which is what keeps
+      # Chain's recursion guard from conflating the two and dropping a valid lookup.
+      #
+      # @return [String, nil]
+      def identity_discriminator
+        presence&.hash&.to_s
+      end
+
       # @sg-ignore need boolish support for ? methods
       def presence_certain?
         exclude_return_type || intersection_return_type
@@ -238,6 +246,20 @@ module Solargraph
           presence &&
           # @sg-ignore flow sensitive typing needs to handle attrs
           presence.start == other_loc.range.start
+      end
+
+      # Whether other_loc is inside one of this variable's assigned values,
+      # e.g. the right-hand `a` in `a = a.next`, which still sees the old value.
+      #
+      # @param other_loc [Location]
+      # @return [Boolean]
+      def assigned_within? other_loc
+        return false unless location&.filename == other_loc.filename
+
+        assignments.any? do |node|
+          range = Range.from_node(node)
+          !range.nil? && range.contain?(other_loc.range.start)
+        end
       end
 
       # Narrow the presence range to the intersection of both.

@@ -27,14 +27,42 @@ module Solargraph
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [Pin::Parameter]
     def self.to_parameter_pin param_type, name, decl, closure, type_alias_decls: {}
-      return_type = if decl == :restarg
-                      ComplexType.parse('Array')
-                    elsif decl == :kwrestarg
-                      ComplexType.parse('Hash{Symbol => Object}')
+      return_type = case decl
+                    when :restarg
+                      RbsTranslator.to_restarg_return_type(param_type.type, type_alias_decls: type_alias_decls)
+                    when :kwrestarg
+                      RbsTranslator.to_kwrestarg_return_type(param_type.type, type_alias_decls: type_alias_decls)
                     else
                       RbsTranslator.to_complex_type(param_type.type, type_alias_decls: type_alias_decls)
                     end
       Solargraph::Pin::Parameter.new(decl: decl, name: name, closure: closure, return_type: return_type, source: :rbs, type_location: to_sg_location(param_type.location) || closure.type_location)
+    end
+
+    # The type of the local variable a restarg is captured into
+    # inside the method body - a wrapped Array of its per-element
+    # type, e.g. `Array<Integer>` for `*args: Integer`. When the
+    # element type isn't known (e.g. an untyped inline `#:`
+    # annotation), falls back to a bare, unparameterized Array.
+    #
+    # @param elem_rbs_type [RBS::Types::t]
+    # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
+    # @return [ComplexType]
+    def self.to_restarg_return_type elem_rbs_type, type_alias_decls: {}
+      elem_type = RbsTranslator.to_complex_type(elem_rbs_type, type_alias_decls: type_alias_decls)
+      return ComplexType.parse('Array') if elem_type.undefined?
+      ComplexType.new([ComplexType::UniqueType.new('Array', [], [elem_type], rooted: true, parameters_type: :list)])
+    end
+
+    # Likewise, the type of the local variable a kwrestarg is
+    # captured into - a wrapped Hash of Symbol to its per-value type.
+    #
+    # @param elem_rbs_type [RBS::Types::t]
+    # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
+    # @return [ComplexType]
+    def self.to_kwrestarg_return_type elem_rbs_type, type_alias_decls: {}
+      elem_type = RbsTranslator.to_complex_type(elem_rbs_type, type_alias_decls: type_alias_decls)
+      return ComplexType.parse('Hash{Symbol => Object}') if elem_type.undefined?
+      ComplexType.new([ComplexType::UniqueType.new('Hash', [ComplexType.try_parse('Symbol')], [elem_type], rooted: true, parameters_type: :hash)])
     end
 
     # @param method_type [RBS::MethodType, RBS::Types::Block]
