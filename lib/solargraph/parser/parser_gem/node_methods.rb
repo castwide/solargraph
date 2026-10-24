@@ -108,7 +108,7 @@ module Solargraph
         # @sg-ignore "does not match inferred type ::String, ::Parser::AST::Node" - this probably comes from the
         # `.children[0]` call, which is not recognized as returning a literal value.
         def simple_convert node
-          return nil unless Parser.is_ast_node?(node)
+          return nil unless node.is_a?(::Parser::AST::Node)
 
           case node.type
           when :const
@@ -127,18 +127,18 @@ module Solargraph
         # @param node [Parser::AST::Node]
         # @return [Array]
         def simple_convert_array node
-          return [] unless Parser.is_ast_node?(node) && node.type == :array
+          return [] unless node.is_a?(::Parser::AST::Node) && node.type == :array
           node.children.compact.map { |c| simple_convert(c) }
         end
 
         # @param node [Parser::AST::Node]
         # @return [Hash]
         def simple_convert_hash node
-          return {} unless Parser.is_ast_node?(node) && node.type == :hash
+          return {} unless node.is_a?(::Parser::AST::Node) && node.type == :hash
           result = {}
           # @param pair [Parser::AST::Node]
           node.children.each do |pair|
-            next unless Parser.is_ast_node?(pair) && pair.children[0]
+            next unless pair.is_a?(::Parser::AST::Node) && pair.children[0]
             result[pair.children[0].children[0]] = simple_convert(pair.children[1])
           end
           result
@@ -147,18 +147,18 @@ module Solargraph
         # @param node [Parser::AST::Node, nil]
         # @return [Hash{Symbol => Chain}]
         def convert_hash node
-          return {} unless Parser.is_ast_node?(node)
-          # @sg-ignore Translate to something flow sensitive typing understands
+          return {} unless node.is_a?(::Parser::AST::Node)
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           return convert_hash(node.children[0]) if node.type == :kwsplat
-          # @sg-ignore Translate to something flow sensitive typing understands
-          if Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
-            # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore flow sensitive typing needs to handle repeated pure calls
+          if node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             return convert_hash(node.children[0])
           end
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           return {} unless node.type == :hash
           result = {}
-          # @sg-ignore Translate to something flow sensitive typing understands
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           node.children.each do |pair|
             result[pair.children[0].children[0]] = Solargraph::Parser.chain(pair.children[1])
           end
@@ -171,7 +171,7 @@ module Solargraph
         #
         # @return [Array<Parser::AST::Node>]
         def const_nodes_from node
-          return [] unless Parser.is_ast_node?(node)
+          return [] unless node.is_a?(::Parser::AST::Node)
           result = []
           if node.type == :const
             result.push node
@@ -183,13 +183,13 @@ module Solargraph
 
         # @param node [Parser::AST::Node]
         def splatted_hash? node
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat
+          node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat
         end
 
         # @param node [Parser::AST::Node]
         def splatted_call? node
-          return false unless Parser.is_ast_node?(node)
-          Parser.is_ast_node?(node.children[0]) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
+          return false unless node.is_a?(::Parser::AST::Node)
+          node.children[0].is_a?(::Parser::AST::Node) && node.children[0].type == :kwsplat && node.children[0].children[0].type != :hash
         end
 
         # @param nodes [Enumerable<Parser::AST::Node>]
@@ -203,9 +203,9 @@ module Solargraph
         # @param nodes [Enumerable<Parser::AST::Node>]
         def any_forwarded_args? nodes
           nodes.any? do |n|
-            next false unless Parser.is_ast_node?(n)
+            next false unless n.is_a?(::Parser::AST::Node)
             next true if %i[forwarded_args forwarded_restarg].include?(n.type)
-            n.type == :hash && n.children.any? { |c| Parser.is_ast_node?(c) && c.type == :forwarded_kwrestarg }
+            n.type == :hash && n.children.any? { |c| c.is_a?(::Parser::AST::Node) && c.type == :forwarded_kwrestarg }
           end
         end
 
@@ -217,7 +217,7 @@ module Solargraph
           result = []
           if node.type == :block
             result.push node
-            if Parser.is_ast_node?(node.children[0]) && node.children[0].children.length > 2
+            if node.children[0].is_a?(::Parser::AST::Node) && node.children[0].children.length > 2
               # @sg-ignore Need to add nil check here
               node.children[0].children[2..].each { |child| result.concat call_nodes_from(child) }
             end
@@ -622,27 +622,19 @@ module Solargraph
               nodes.each do |node|
                 if !node.is_a?(::Parser::AST::Node)
                   result.push nil
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif COMPOUND_STATEMENTS.include?(node.type)
                   result.concat from_value_position_compound_statement(node)
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif CONDITIONAL_ALL_BUT_FIRST.include?(node.type)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes(node.children[1..])
                 elsif ONLY_ONE_CHILD.include?(node.type) || ENSURE.include?(node.type)
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[0]])
                 elsif FIRST_TWO_CHILDREN.include?(node.type)
                   # a :rescue node's value is its body's value or the
                   # value of whichever resbody handled the exception
                   result.concat reduce_to_value_nodes([node.children[0], node.children[1]])
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :block
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat explicit_return_values_from_compound_statement(node.children[2])
-                # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                 elsif node.type == :resbody
-                  # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
                   result.concat reduce_to_value_nodes([node.children[2]])
                 else
                   result.push node

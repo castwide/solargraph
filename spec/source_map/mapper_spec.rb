@@ -845,7 +845,7 @@ describe Solargraph::SourceMap::Mapper do
     ))
     pin = smap.locals.select { |p| p.name == 'baz' }.first
     # expect(pin.assignment).to be_a(Parser::AST::Node)
-    expect(Solargraph::Parser.is_ast_node?(pin.assignment)).to be(true)
+    expect(pin.assignment).to be_a(Parser::AST::Node)
   end
 
   it 'defers resolution of distant alias_method aliases' do
