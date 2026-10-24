@@ -423,7 +423,7 @@ module Solargraph
         type.defined? && type.to_a.all? do |t|
           api_map.super_and_sub?('Hash', t.name) &&
             # 'nil' can arrive spelled 'NilClass'
-            t.value_types.none? { |value| value.each_unique_type.any? { |u| u.namespace == 'NilClass' } }
+            t.value_types.none? { |value| value.to_a.any? { |u| u.namespace == 'NilClass' } }
         end
       end
 
