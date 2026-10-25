@@ -495,29 +495,8 @@ module Solargraph
         # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
         return true if %i[lvar ivar].include?(node.type) && node.children[0].to_s == name
 
-        # A block parameter of the same name shadows us for the whole
-        # block, so any mention inside the body is the parameter, not
-        # this variable.  The receiver (children[0]) is evaluated
-        # outside the block, so it still counts.
-        # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
-        return references_name?(node.children[0]) if shadowed_by_block_parameter?(node)
-
         # @sg-ignore flow sensitive typing doesn't narrow `node` past the guard above
         node.children.any? { |child| references_name?(child) }
-      end
-
-      # @param node [::AST::Node]
-      # @return [Boolean]
-      def shadowed_by_block_parameter? node
-        return false unless node.type == :block
-
-        args = node.children[1]
-        return false unless args.is_a?(::AST::Node)
-
-        # @sg-ignore flow sensitive typing doesn't narrow `args` past the guard above
-        args.children.any? do |arg|
-          arg.is_a?(::AST::Node) && arg.children[0].to_s == name
-        end
       end
 
       # @param api_map [ApiMap]
