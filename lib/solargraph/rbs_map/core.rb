@@ -4,6 +4,8 @@ module Solargraph
   module RbsMap
     class Core < Base
       FILLS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'fills'))
+      # Every .rbs file in it is loaded with the fills, its annotations
+      # copied onto core methods (see #annotate)
       ANNOTATIONS_DIRECTORY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', '..', 'rbs', 'annotations'))
 
       def pins

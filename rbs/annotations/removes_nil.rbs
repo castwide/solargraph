@@ -1,4 +1,4 @@
-# Adds Solargraph annotations to core methods.
+# Adds %a{solargraph:removes-nil} to core methods.
 #
 # Each 'def name: ...' adds only its annotations; RbsMap::Core copies them
 # onto the core method and keeps the core signatures, and uses nothing
