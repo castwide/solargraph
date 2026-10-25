@@ -69,7 +69,7 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (512):
+      # pending code fixes (523):
       #
       # @todo 143: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
@@ -85,7 +85,12 @@ module Solargraph
       # @todo 12: MatchData relies on regex always matching
       # @todo 10: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
+      # @todo 5: Unresolved call to join on Array<String>, nil
+      # @todo 3: Unresolved call to start_with? on Array, nil
       # @todo 1: Unresolved call to ==
+      # @todo 1: Unresolved call to gsub on Array, nil
+      # @todo 1: Unresolved call to end_with? on Array, nil
+      # @todo 1: Unresolved call to @@logger
       # @todo 1: Unresolved call to []=
       # @todo 1: Unresolved constant BlankRubocopFormatter
       # @todo 1: Proc#call return type isn't inferred without generics

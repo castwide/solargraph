@@ -110,23 +110,23 @@ module Solargraph
           # @return [String]
           # @sg-ignore https://github.com/castwide/solargraph/pull/1231
           def arg_name a
-            # @sg-ignore https://github.com/apiology/solargraph/pull/114
+            # @sg-ignore Unresolved call to gsub on Array, nil
             a[0].gsub(/[^a-z0-9_]/i, '')
           end
 
           # @param a [Array(String, String | nil)]
           # @return [::Symbol]
           def arg_type a
-            # @sg-ignore https://github.com/apiology/solargraph/pull/114
+            # @sg-ignore Unresolved call to start_with? on Array, nil
             if a[0].start_with?('**')
               :kwrestarg
-            # @sg-ignore https://github.com/apiology/solargraph/pull/114
+            # @sg-ignore Unresolved call to start_with? on Array, nil
             elsif a[0].start_with?('*')
               :restarg
-            # @sg-ignore https://github.com/apiology/solargraph/pull/114
+            # @sg-ignore Unresolved call to start_with? on Array, nil
             elsif a[0].start_with?('&')
               :blockarg
-            # @sg-ignore https://github.com/apiology/solargraph/pull/114
+            # @sg-ignore Unresolved call to end_with? on Array, nil
             elsif a[0].end_with?(':')
               a[1] ? :kwoptarg : :kwarg
             elsif a[1]
