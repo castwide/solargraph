@@ -875,4 +875,61 @@ describe 'YARD type specifier list parsing' do
       expect(Solargraph::ComplexType.parse.duck_type?).to be_nil
     end
   end
+
+  context 'when a union answers for all of its members' do
+    let(:api_map) { Solargraph::ApiMap.new }
+
+    it 'qualifies each member through #unalias_and_qualify' do
+      type = Solargraph::ComplexType.parse('String', 'Integer')
+      expect(type.unalias_and_qualify(api_map).rooted_tags).to eq('::String, ::Integer')
+    end
+
+    it 'conforms to a named expectation only when every member does' do
+      expected = Solargraph::ComplexType.parse('::Numeric').items.first
+      expect(Solargraph::ComplexType.parse('::Integer', '::Float')
+                                    .conforms_to_unique?(expected, api_map, :assignment)).to be(true)
+      expect(Solargraph::ComplexType.parse('::Integer', '::String')
+                                    .conforms_to_unique?(expected, api_map, :assignment)).to be(false)
+    end
+
+    it 'conforms to a named expectation when any member does under allow_any_match' do
+      expected = Solargraph::ComplexType.parse('::Numeric').items.first
+      type = Solargraph::ComplexType.parse('::Integer', '::String')
+      expect(type.conforms_to_unique?(expected, api_map, :assignment, [:allow_any_match])).to be(true)
+    end
+
+    it 'provides a duck method only when every member does' do
+      expect(Solargraph::ComplexType.parse('::String', '::Symbol').provides_duck_method?(api_map, 'upcase')).to be(true)
+      expect(Solargraph::ComplexType.parse('::String', '::Integer').provides_duck_method?(api_map, 'upcase')).to be(false)
+    end
+
+    it 'is all rooted only when every member is' do
+      expect(Solargraph::ComplexType.parse('::String', '::Integer').all_rooted?).to be(true)
+      expect(Solargraph::ComplexType.parse('::String', 'Integer').all_rooted?).to be(false)
+    end
+  end
+
+  describe '#duck_types_match?' do
+    let(:api_map) { Solargraph::ApiMap.new }
+    let(:type) { Solargraph::ComplexType.parse('::String') }
+
+    it 'matches when every inferred member provides the duck method' do
+      expect(type.duck_types_match?(api_map, Solargraph::ComplexType.parse('#upcase'), type)).to be(true)
+    end
+
+    it 'fails when an inferred member lacks the duck method' do
+      inferred = Solargraph::ComplexType.parse('::String', '::Integer')
+      expect(type.duck_types_match?(api_map, Solargraph::ComplexType.parse('#upcase'), inferred)).to be(false)
+    end
+
+    it 'matches when any inferred member provides it under allow_any_match' do
+      inferred = Solargraph::ComplexType.parse('::String', '::Integer')
+      expect(type.duck_types_match?(api_map, Solargraph::ComplexType.parse('#upcase'), inferred,
+                                    [:allow_any_match])).to be(true)
+    end
+
+    it 'rejects an expectation that is not a duck type' do
+      expect { type.duck_types_match?(api_map, type, type) }.to raise_error(ArgumentError)
+    end
+  end
 end
