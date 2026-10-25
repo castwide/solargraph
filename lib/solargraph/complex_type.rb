@@ -5,12 +5,15 @@ module Solargraph
   #
   class ComplexType < Type
     GENERIC_TAG_NAME = 'generic'
+    # @!parse
+    #   include TypeMethods
     include Equality
 
     autoload :Conformance, 'solargraph/complex_type/conformance'
+    autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<UniqueType, ComplexType>]
+    # @param types [Array<Type>]
     def initialize types = [UniqueType::UNDEFINED]
       super()
 
@@ -95,7 +98,7 @@ module Solargraph
     end
 
     # @yieldparam [UniqueType]
-    # @return [Array<UniqueType>]
+    # @return [void]
     # @overload each_unique_type()
     #   @return [Enumerator<UniqueType>]
     def each_unique_type &block
@@ -159,39 +162,14 @@ module Solargraph
     # @param [Array<Object>] args
     def method_missing name, *args, &block
       return if @items.first.nil?
-      if @items.first.respond_to?(name)
-        if @items.count > 1
-          Solargraph.assert_or_log(:complex_type_method_missing,
-                                   "ComplexType being used as UniqueType: delegating #{name} to #{self.class} with items #{@items.map(&:to_s).join(', ')}")
-        end
-        return @items.first.send(name, *args, &block)
-      end
+      return @items.first.send(name, *args, &block) if respond_to_missing?(name)
       super
-    end
-
-    def undefined?
-      @items.all?(&:undefined?)
-    end
-
-    # A union is a duck type only when every member is one. A mixed
-    # union has members that still need ordinary conformance checking,
-    # and an empty one is not a duck type at all.
-    #
-    # @return [Boolean]
-    def duck_type?
-      !@items.empty? && @items.all?(&:duck_type?)
-    end
-
-    # @return [Boolean]
-    def void?
-      !@items.empty? && @items.all?(&:void?)
     end
 
     # @param name [Symbol]
     # @param include_private [Boolean]
     def respond_to_missing? name, include_private = false
-      return false if @items.first.nil?
-      @items.first.respond_to?(name) || super
+      TypeMethods.public_method_defined?(name) || super
     end
 
     def to_s
@@ -268,8 +246,8 @@ module Solargraph
     end
 
     # @param api_map [ApiMap]
-    # @param expected [ComplexType, UniqueType]
-    # @param inferred [ComplexType, UniqueType]
+    # @param expected [Type]
+    # @param inferred [Type]
     # @param rules [Array<Symbol>]
     # @return [Boolean]
     def duck_types_match? api_map, expected, inferred, rules = []
@@ -359,6 +337,23 @@ module Solargraph
       @items.any?(&:nil_type?)
     end
 
+    def nil_type?
+      !@items.empty? && @items.all?(&:nil_type?)
+    end
+
+    def undefined?
+      @items.any?(&:undefined?)
+    end
+
+    # An empty union is neither defined nor undefined.
+    def defined?
+      !@items.empty? && !undefined?
+    end
+
+    def void?
+      @items.any?(&:void?)
+    end
+
     # @return [ComplexType]
     def without_nil
       new_items = @items.reject(&:nil_type?)
@@ -388,7 +383,7 @@ module Solargraph
       all?(&:all_rooted?)
     end
 
-    # @param other [ComplexType, UniqueType]
+    # @param other [Type]
     def erased_version_of? other
       return false if items.length != 1 || other.items.length != 1
 
@@ -591,8 +586,8 @@ module Solargraph
     # can reach the generic, which is bot.
     #
     # @param unique_type [UniqueType] A member of @items
-    # @param context_type [ComplexType, UniqueType, nil]
-    # @return [ComplexType, UniqueType, nil]
+    # @param context_type [Type, nil]
+    # @return [Type, nil]
     def destructure_context_type unique_type, context_type
       return context_type unless unique_type.generic? && context_type.is_a?(ComplexType) && @items.length > 1
 

@@ -188,18 +188,13 @@ module Solargraph
         unless @mass_assignment.nil?
           mass_node, index = @mass_assignment
           types = return_types_from_node(mass_node, api_map)
-          # Destructure each member separately: a union has no single
-          # #rooted_name or parameter list, and (Array<String>,
-          # Array<Integer>) destructures to (String, Integer).
-          types = types.flat_map do |type|
-            type.each_unique_type.map do |unique_type|
-              if unique_type.tuple?
-                unique_type.all_params[index]
-              elsif ['::Array', '::Set', '::Enumerable'].include?(unique_type.rooted_name)
-                unique_type.all_params.first
-              end
+          types.map! do |type|
+            if type.tuple?
+              type.all_params[index]
+            elsif ['::Array', '::Set', '::Enumerable'].include?(type.rooted_name)
+              type.all_params.first
             end
-          end.compact
+          end.compact!
 
           return ComplexType::UNDEFINED if types.empty?
 
@@ -304,9 +299,9 @@ module Solargraph
       private
 
       # @param api_map [ApiMap]
-      # @param raw_return_type [Type]
+      # @param raw_return_type [ComplexType, ComplexType::UniqueType]
       #
-      # @return [Type]
+      # @return [ComplexType, ComplexType::UniqueType]
       def adjust_type api_map, raw_return_type
         qualified_exclude = exclude_return_type&.qualify(api_map, *(closure&.gates || ['']))
         minus_exclusions = raw_return_type.exclude qualified_exclude, api_map

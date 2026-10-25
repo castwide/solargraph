@@ -26,10 +26,7 @@ module Solargraph
       # @param [Hash{Symbol => Object}] kwargs
       def self.anonymous context, closure: nil, binder: nil, **kwargs
         unless closure
-          # Members of a union can sit in different namespaces, and no one
-          # of them supplies the enclosing namespace for all; use the root.
-          namespaces = context.each_unique_type.map(&:namespace).uniq
-          parts = namespaces.one? ? namespaces.first.split('::') : []
+          parts = context.namespace.split('::')
           # @sg-ignore Need to add nil check here
           namespace = parts[0..-2].join('::').to_s
           closure = Solargraph::Pin::Namespace.new(name: namespace, source: :proxy_type)

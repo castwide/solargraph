@@ -1,266 +1,209 @@
 # frozen_string_literal: true
 
 module Solargraph
-  # A container for type data
+  # The contract every type class implements: ComplexType (a union) and
+  # ComplexType::UniqueType (one member of it). Code that accepts or
+  # returns "a type, whichever kind" writes [Type].
   #
-  # Methods for accessing type data available from
-  # both ComplexType and ComplexType::UniqueType.
+  # spec/type_contract_spec.rb checks that each subclass defines every
+  # method declared here, and that every public method all subclasses
+  # share is declared here.
   #
-  # @abstract This abstract class relies on the methods described
-  #   below defined in its subclasses.
+  # @abstract Every method below is a declaration with no implementation;
+  #   subclasses must define each one.
+  # rubocop:disable Lint/EmptyClass
   class Type
+    # rubocop:enable Lint/EmptyClass
+
+    # @!method ==(other)
+    #   @param other [Object]
+    #   @return [Boolean]
+
+    # @!method all?(&block)
+    #   @yieldparam [ComplexType::UniqueType]
+    #   @yieldreturn [Boolean]
+    #   @return [Boolean]
+
+    # @!method all_params
+    #   @return [Array<ComplexType>]
+
+    # @!method all_rooted?
+    #   Whether every type and subtype is fully qualified.
+    #   @return [Boolean]
+
+    # @!method any?(&block)
+    #   @yieldparam [ComplexType::UniqueType]
+    #   @yieldreturn [Boolean]
+    #   @return [Boolean]
+
+    # @!method conforms_to?(api_map, expected, situation, rules = [], variance: erased_variance(situation))
+    #   @param api_map [ApiMap]
+    #   @param expected [Type]
+    #   @param situation [:method_call, :return_type, :assignment]
+    #   @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    #   @param variance [:invariant, :covariant, :contravariant]
+    #   @return [Boolean]
+
+    # @!method defined?
+    #   @return [Boolean]
+
+    # @!method desc
+    #   @return [String]
+
+    # @!method downcast_to_literal_if_possible
+    #   @return [Type]
+
+    # @!method duck_type?
+    #   @return [Boolean]
+
+    # @!method each(&block)
+    #   @yieldparam [ComplexType::UniqueType]
+    #   @return [Enumerable<ComplexType::UniqueType>]
+
+    # @!method each_unique_type(&block)
+    #   @yieldparam [ComplexType::UniqueType]
+    #   @return [void]
+    #   @overload each_unique_type()
+    #     @return [Enumerator<ComplexType::UniqueType>]
+
+    # @!method eql?(other)
+    #   @param other [Object]
+    #   @return [Boolean]
+
+    # @!method erased_variance(situation = :method_call)
+    #   Variance of the type ignoring any type parameters.
+    #   @param situation [:method_call, :return_type, :assignment]
+    #   @return [Symbol]
+
+    # @!method erased_version_of?(other)
+    #   @param other [Type]
+    #   @return [Boolean]
+
+    # @!method exclude(exclude_types, api_map)
+    #   @param exclude_types [ComplexType, nil]
+    #   @param api_map [ApiMap]
+    #   @return [Type]
+
+    # @!method expand(named_types)
+    #   @param named_types [Hash{String => Type}]
+    #   @return [Type]
+
+    # @!method force_rooted
+    #   @return [self]
+
+    # @!method generic?
+    #   @return [Boolean]
+
+    # @!method hash
+    #   @return [Integer]
+
+    # @!method items
+    #   @return [Array<ComplexType::UniqueType>]
+
+    # @!method literal?
+    #   @return [Boolean]
+
+    # @!method map(&block)
+    #   @yieldparam [ComplexType::UniqueType]
+    #   @return [Array]
+
+    # @!method namespace
+    #   @return [String]
+
+    # @!method namespace_type
+    #   @return [Type]
+
+    # @!method nil_type?
+    #   @return [Boolean]
+
+    # @!method nullable?
+    #   Whether nil is a possible value.
+    #   @return [Boolean]
+
+    # @!method qualify(api_map, *gates)
+    #   Fully qualify this type's namespaces.
+    #   @param api_map [ApiMap]
+    #   @param gates [Array<String>] The namespaces from which to resolve names
+    #   @return [Type]
+
+    # @!method recreate(new_name: nil, make_rooted: nil, new_key_types: nil, new_subtypes: nil)
+    #   @param new_name [String, nil]
+    #   @param make_rooted [Boolean, nil]
+    #   @param new_key_types [Array<ComplexType>, nil]
+    #   @param new_subtypes [Array<ComplexType>, nil]
+    #   @return [self]
+
+    # @!method reduce_class_type
+    #   @return [ComplexType]
+
+    # @!method resolve_generics(definitions, context_type)
+    #   @param definitions [Pin::Namespace, Pin::Method]
+    #   @param context_type [ComplexType]
+    #   @return [Type]
+
+    # @!method resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: {})
+    #   @param generics_to_resolve [Enumerable<String>]
+    #   @param context_type [Type, nil]
+    #   @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
+    #   @return [Type]
+
+    # @!method rooted?
+    #   Whether every top-level type is fully qualified.
+    #   @return [Boolean]
+
+    # @!method rooted_namespace
+    #   @return [String]
+
+    # @!method rooted_tag
+    #   @return [String]
+
+    # @!method rooted_tags
+    #   @return [String]
+
+    # @!method scope
+    #   @return [::Symbol] :class or :instance
+
+    # @!method self_to_type(dst)
+    #   @param dst [Type]
+    #   @return [Type]
+
+    # @!method selfy?
+    #   @return [Boolean]
+
+    # @!method simplify_literals
+    #   @return [self]
+
+    # @!method tag
+    #   @return [String]
+
+    # @!method tags
+    #   @return [String]
+
+    # @!method to_a
+    #   @return [Array<ComplexType::UniqueType>]
+
+    # @!method to_rbs
+    #   @return [String]
+
+    # @!method to_s
+    #   @return [String]
+
     # @!method transform(new_name = nil, &transform_type)
     #   @param new_name [String, nil]
     #   @yieldparam t [ComplexType::UniqueType]
     #   @yieldreturn [ComplexType::UniqueType]
-    #   @return [ComplexType::UniqueType, nil]
-    # @!method all_params
-    #   @return [Array<Type>]
-    # @!method rooted?
-    # @!method can_root_name?(name_to_check = nil)
-    #   @param name_to_check [String, nil]
-    # @!method key_types
-    #   @return [Array<Type>]
-    # @!method name
-    #   @return [String]
-    # @!method parameters_type
-    #   @return [Symbol, nil]
-    # @!method subtypes
-    #   @return [Array<Type>]
-    # @!method value_types
-    #   @return [Array<Type>]
-    # @!method rooted_tags
-    #   @return [String]
-    # @!method reduce_class_type
-    #   @return [ComplexType]
-    # @!method each &block
-    #   @yieldparam t [self]
-    #   @yieldreturn [self]
-    #   @return [Enumerable<self>]
-    # @!method resolve_generics_from_context  generics_to_resolve, context_type, resolved_generic_values: {}
-    #   @param generics_to_resolve [Enumerable<String>]
-    #   @param context_type [ComplexType, ComplexType::UniqueType, nil]
-    #   @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
-    #   @return [ComplexType::UniqueType, ComplexType]
-    # @!method downcast_to_literal_if_possible
-    #   @return [ComplexType::UniqueType]
-    # @!method generic?
-    # @!method conforms_to? api_map, expected, situation, rules = [], variance: erased_variance(situation)
-    #   @param api_map [ApiMap]
-    #   @param expected [ComplexType::UniqueType, ComplexType]
-    #   @param situation [:method_call, :assignment, :return_type]
-    #   @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
-    #   @param variance [:invariant, :covariant, :contravariant]
-    # @!method exclude exclude_types, api_map
-    #   @param exclude_types [ComplexType, nil]
-    #   @param api_map [ApiMap]
-    #   @return [ComplexType, self]
-    # @!method intersect_with intersection_type, api_map
-    #   @param intersection_type [Type, nil]
-    #   @param api_map [ApiMap]
-    #   @return [self, ComplexType]
-    # @!method self_to_type dst
-    #   @param dst [ComplexType]
-    #   @return [self]
-    # @!method to_rbs
-    #   @return [String]
-    # @!method tags
-    #   @return [String]
-    # @!method nullable?
-    # @!method items
-    #   @return [Array<Type>]
-    # @!method expand named_types
-    #   @param named_types [Hash{String => Type}]
     #   @return [Type]
 
-    # @return [String]
-    def tag
-      @tag ||= "#{name}#{substring}"
-    end
+    # @!method undefined?
+    #   @return [Boolean]
 
-    # @return [String]
-    def rooted_tag
-      @rooted_tag ||= rooted_name + rooted_substring
-    end
+    # @!method value_types
+    #   @return [Array<ComplexType>]
 
-    # Whether this is an RBS interface like _ToAry or Hash::_Key.
-    def interface?
-      name.start_with?('_') || name.include?('::_')
-    end
+    # @!method void?
+    #   @return [Boolean]
 
-    # @return [Boolean]
-    def duck_type?
-      @duck_type ||= name.start_with?('#')
-    end
-
-    # @return [Boolean]
-    def nil_type?
-      @nil_type ||= name.casecmp('nil').zero?
-    end
-
-    def tuple?
-      false
-    end
-
-    def void?
-      name == 'void'
-    end
-
-    def defined?
-      !undefined?
-    end
-
-    def undefined?
-      name == 'undefined'
-    end
-
-    # Variance of the type ignoring any type parameters
-    # @return [Symbol]
-    # @param situation [Symbol] The situation in which the variance is being considered.
-    def erased_variance situation = :method_call
-      # :nocov:
-      unless %i[method_call return_type assignment].include?(situation)
-        raise "Unknown situation: #{situation.inspect}"
-      end
-      # :nocov:
-      :covariant
-    end
-
-    # @param generics_to_erase [Enumerable<String>]
-    # @return [self]
-    def erase_generics generics_to_erase
-      transform do |type|
-        if type.name == ComplexType::GENERIC_TAG_NAME
-          if type.all_params.length == 1 && generics_to_erase.include?(type.all_params.first.to_s)
-            ComplexType::UNDEFINED
-          else
-            type
-          end
-        else
-          type
-        end
-      end
-    end
-
-    # @type [Hash{String => Symbol}]
-    PARAMETERS_TYPE_BY_STARTING_TAG = {
-      '{' => :hash,
-      '(' => :fixed,
-      '<' => :list
-    }.freeze
-
-    # @return [Boolean]
-    def list_parameters?
-      parameters_type == :list
-    end
-
-    # @return [Boolean]
-    def fixed_parameters?
-      parameters_type == :fixed
-    end
-
-    # @return [Boolean]
-    def hash_parameters?
-      parameters_type == :hash
-    end
-
-    # @return [String]
-    def namespace
-      # if priority higher than ||=, old implements cause unnecessary check
-      @namespace ||= lambda do
-        return 'Object' if duck_type?
-        return 'NilClass' if nil_type?
-        (%w[Class Module].include?(name) ? subtypes.first&.name : nil) || name
-      end.call
-    end
-
-    # @return [self]
-    def namespace_type
-      return ComplexType.parse('::Object') if duck_type?
-      return ComplexType.parse('::NilClass') if nil_type?
-      return subtypes.first if %w[Class Module].include?(name) && !subtypes.empty?
-      self
-    end
-
-    # @return [String]
-    def rooted_namespace
-      return namespace unless rooted? && can_root_name?(namespace)
-      "::#{namespace}"
-    end
-
-    # @return [String]
-    def rooted_name
-      return name unless rooted? && can_root_name?
-      "::#{name}"
-    end
-
-    # @return [String]
-    def substring
-      @substring ||= generate_substring_from(&:tags)
-    end
-
-    # @return [String]
-    def rooted_substring
-      @rooted_substring = generate_substring_from(&:rooted_tags)
-    end
-
-    # @return [String]
-    def generate_substring_from &to_str
-      key_types_str = key_types.map(&to_str).join(', ')
-      subtypes_str = subtypes.map(&to_str).join(', ')
-      if (key_types.none?(&:defined?) && subtypes.none?(&:defined?)) ||
-         (key_types.empty? && subtypes.empty?)
-        ''
-      elsif hash_parameters?
-        "{#{key_types_str} => #{subtypes_str}}"
-      elsif fixed_parameters?
-        "(#{subtypes_str})"
-      elsif name == 'Hash'
-        "<#{key_types_str}, #{subtypes_str}>"
-      else
-        "<#{key_types_str}#{subtypes_str}>"
-      end
-    end
-
-    # @return [::Symbol] :class or :instance
-    def scope
-      @scope ||= :instance if duck_type? || nil_type?
-      @scope ||= %w[Class Module].include?(name) && !subtypes.empty? ? :class : :instance
-    end
-
-    # @param other [Object]
-    def == other
-      return false unless self.class == other.class
-      # @sg-ignore flow sensitive typing should support .class == .class
-      tag == other.tag
-    end
-
-    # Generate a ComplexType that fully qualifies this type's namespaces.
-    #
-    # @param api_map [ApiMap] The ApiMap that performs qualification
-    # @param context [String] The namespace from which to resolve names
-    # @return [self, Type] The generated ComplexType
-    def qualify api_map, context = ''
-      transform do |t|
-        next t if t.name == ComplexType::GENERIC_TAG_NAME
-        next t if t.duck_type? || t.void? || t.undefined?
-        recon = (t.rooted? ? '' : context)
-        fqns = api_map.qualify(t.name, recon)
-        if fqns.nil?
-          next ComplexType::UniqueType::BOOLEAN if t.tag == 'Boolean'
-          next ComplexType::UniqueType::UNDEFINED
-        end
-        t.recreate(new_name: fqns, make_rooted: true)
-      end
-    end
-
-    # @yieldparam [ComplexType::UniqueType]
-    # @return [void]
-    # @overload each_unique_type()
-    #   @return [Enumerator<ComplexType::UniqueType>]
-    def each_unique_type &block
-      return enum_for(__method__) unless block_given?
-      yield self
-    end
+    # @!method without_nil
+    #   @return [Type]
   end
 end

@@ -6,9 +6,10 @@ module Solargraph
     # unique types.
     #
     class UniqueType < Type
+      include TypeMethods
       include Equality
 
-      attr_reader :all_params, :subtypes, :key_types, :name
+      attr_reader :all_params, :subtypes, :key_types
 
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
@@ -101,11 +102,6 @@ module Solargraph
         tag
       end
 
-      # @return [Array<ComplexType>]
-      def value_types
-        @subtypes
-      end
-
       # @return [self]
       def simplify_literals
         transform do |t|
@@ -129,7 +125,6 @@ module Solargraph
       #
       # @param intersection_type [Type, nil]
       # @param api_map [ApiMap]
-      #
       # @return [self, ComplexType]
       def intersect_with intersection_type, api_map
         return self if intersection_type.nil?
@@ -204,9 +199,6 @@ module Solargraph
           @parameters_type == other.parameters_type
       end
 
-      # @return [Symbol, nil]
-      attr_reader :parameters_type
-
       def == other
         eql?(other)
       end
@@ -257,7 +249,7 @@ module Solargraph
       end
 
       # @param api_map [ApiMap]
-      # @param expected [ComplexType::UniqueType, ComplexType]
+      # @param expected [Type]
       # @param situation [:method_call, :assignment, :return_type]
       # @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic>]
       # @param variance [:invariant, :covariant, :contravariant]
@@ -348,7 +340,7 @@ module Solargraph
         !all_params.empty?
       end
 
-      # @param types [Array<UniqueType, ComplexType>]
+      # @param types [Array<Type>]
       # @return [String]
       def rbs_union types
         if types.length == 1
@@ -390,9 +382,9 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [ComplexType, UniqueType, nil]
+      # @param context_type [Type, nil]
       # @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
-      # @return [UniqueType, ComplexType]
+      # @return [Type]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
@@ -422,7 +414,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, ComplexType, nil]
+      # @param context_type [Type, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -430,10 +422,7 @@ module Solargraph
         types = yield self
         types.each_with_index.flat_map do |ct, i|
           ct.items.flat_map do |ut|
-            # Positional matching needs one parameter list; a union has one
-            # per member (Hash{String => Integer}, Hash{Symbol => Float}),
-            # so leave the generic unresolved rather than pick a member.
-            context_params = yield context_type if context_type&.each_unique_type&.one?
+            context_params = yield context_type if context_type
             if context_params && context_params[i]
               type_arg = context_params[i]
               type_arg.map do |new_unique_context_type|
@@ -454,7 +443,7 @@ module Solargraph
       #
       # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
       # @param context_type [ComplexType] The receiver type
-      # @return [UniqueType, ComplexType]
+      # @return [Type]
       def resolve_generics definitions, context_type
         # Method-scoped generics bind per call site via
         # resolve_generics_from_context, not against a receiver's type params.
@@ -571,7 +560,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param gates [Array<String>] The namespaces from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
+      # @return [self, Type] The generated ComplexType
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME

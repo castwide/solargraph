@@ -449,6 +449,18 @@ describe 'YARD type specifier list parsing' do
       end
     end
 
+    it 'is void or undefined when any member is' do
+      expect(Solargraph::ComplexType.parse('String, void')).to be_void
+      expect(Solargraph::ComplexType.parse('String, undefined')).to be_undefined
+      expect(Solargraph::ComplexType.parse('String, Integer')).not_to be_void
+      expect(Solargraph::ComplexType.parse('String, Integer')).to be_defined
+    end
+
+    it 'is the nil type only when every member is nil' do
+      expect(Solargraph::ComplexType.parse('nil')).to be_nil_type
+      expect(Solargraph::ComplexType.parse('nil, String')).not_to be_nil_type
+    end
+
     context 'when defining rooted and unrooted concept' do
       it 'identify rooted types' do
         types = Solargraph::ComplexType.parse '::Array'
