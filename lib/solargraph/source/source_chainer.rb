@@ -69,11 +69,11 @@ module Solargraph
 
         if source.parsed? && !source.repaired? && source.synchronized?
           tree = source.tree_at(position.line, position.column)
-          # @sg-ignore Unresolved call to [] on Array<Parser::AST::Node>, nil
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           node, parent = tree[0..2]
         elsif source.parsed? && source.repaired? && end_of_phrase == '.'
           tree = source.tree_at(fixed_position.line, fixed_position.column)
-          # @sg-ignore Unresolved call to [] on Array<Parser::AST::Node>, nil
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1395
           node, parent = tree[0..2]
           # provide filename and line so that we can look up local variables there later
           node = Parser.parse(fixed_phrase, source.filename, fixed_position.line) if node.nil?
@@ -84,7 +84,7 @@ module Solargraph
         else
           unless source.error_ranges.any? { |r| r.nil? || r.include?(fixed_position) }
             tree = source.tree_at(fixed_position.line, fixed_position.column)
-            # @sg-ignore Unresolved call to [] on Array<Parser::AST::Node>, nil
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1395
             node, parent = tree[0..2]
           end
           # Exception for positions that chain literal nodes in unsynchronized sources

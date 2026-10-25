@@ -69,10 +69,9 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (589):
+      # pending code fixes (512):
       #
-      # @todo 141: Need to add nil check here
-      # @todo 79: https://github.com/castwide/solargraph/pull/1223
+      # @todo 143: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
       # @todo 50: https://github.com/castwide/solargraph/pull/1245
       # @todo 48: Array#first/#last relies on non-empty invariant
@@ -94,7 +93,7 @@ module Solargraph
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
       #
-      # flow sensitive typing could handle (162):
+      # flow sensitive typing could handle (163):
       #
       # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
@@ -108,7 +107,7 @@ module Solargraph
       # @todo 4: literal arrays in this module turn into ::Solargraph::Source::Chain::Array
       # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
-      # @todo 2: flow sensitive typing needs to handle "if foo = bar"
+      # @todo 3: flow sensitive typing needs to handle "if foo = bar"
       # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
       # @todo 2: downcast output of Enumerable#select

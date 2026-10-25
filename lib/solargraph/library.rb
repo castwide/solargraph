@@ -254,16 +254,16 @@ module Solargraph
       return [] unless pin
 
       result = []
+      # @type [Array<Source, SourceMap>]
       files = if only
                 [api_map.source_map(filename)]
               else
                 (workspace.sources + (@current ? [@current] : []))
               end
       files.uniq(&:filename).each do |source|
-        # @sg-ignore Unresolved call to references
         found = source.references(pin.name)
-        # @sg-ignore Unresolved call to select!
         found.select! do |loc|
+          # @sg-ignore Need to add nil check here
           referenced = definitions_at(loc.filename, loc.range.ending.line, loc.range.ending.character)&.first
           referenced&.path == pin.path
         end
@@ -271,25 +271,23 @@ module Solargraph
           caller = cursor.chain.base.infer(api_map, clip.send(:closure), clip.locals).first
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           if caller.defined?
-            # @sg-ignore Unresolved call to select!
             found.select! do |loc|
+              # @sg-ignore Need to add nil check here
               clip = api_map.clip_at(loc.filename, loc.range.start)
               other = clip.send(:cursor).chain.base.infer(api_map, clip.send(:closure), clip.locals).first
               caller == other
             end
           else
-            # @sg-ignore Unresolved call to clear
             found.clear
           end
         end
         # HACK: for language clients that exclude special characters from the start of variable names
         if strip && (match = cursor.word.match(/^[^a-z0-9_]+/i))
-          # @sg-ignore Unresolved call to map!
           found.map! do |loc|
+            # @sg-ignore flow sensitive typing needs to handle "if foo = bar"
             Solargraph::Location.new(loc.filename, Solargraph::Range.from_to(loc.range.start.line, loc.range.start.column + match[0].length, loc.range.ending.line, loc.range.ending.column))
           end
         end
-        # @sg-ignore Unresolved call to sort
         result.concat(found.sort do |a, b|
           a.range.start.line <=> b.range.start.line
         end)
