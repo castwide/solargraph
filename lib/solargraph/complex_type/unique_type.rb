@@ -255,9 +255,6 @@ module Solargraph
                        variance: erased_variance(situation)
         return true if undefined? && rules.include?(:allow_undefined)
 
-        # @todo teach this to validate duck types as inferred type
-        return true if duck_type?
-
         # complex types as expectations are unions - we only need to
         # match one of their unique types
         expected.any? do |expected_unique_type|
