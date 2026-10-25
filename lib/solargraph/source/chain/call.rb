@@ -185,8 +185,9 @@ module Solargraph
         # resolving the 'location' call in a later 'pin.location.filename'.
         #
         # Only applies to argument-less attr_reader calls, or pure (RBS
-        # %a{pure}) calls with literal arguments, whose receiver chain is
-        # variables and such calls (see Chain#next_receiver_path): other
+        # %a{pure}) calls with literal or local variable arguments, whose
+        # receiver chain is variables and such calls (see
+        # Chain#next_receiver_path): other
         # methods and arguments aren't known to return the same value twice.
         #
         # @param api_map [ApiMap]

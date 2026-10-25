@@ -1564,7 +1564,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_at(code, [4, 18])).to eq('::String, nil')
     end
 
-    it 'does not narrow a pure call with a variable argument' do
+    it 'narrows a repeated pure call with the same local variable argument' do
       code = %(
         # @param table [Table]
         # @param index [Integer]
@@ -1573,7 +1573,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
           table[index]
         end
       )
-      expect(infer_at(code, [5, 22])).to eq('::String, nil')
+      expect(infer_at(code, [5, 22])).to eq('::String')
     end
 
     it 'ends the narrowing at an index assignment to the receiver' do
@@ -1635,8 +1635,8 @@ describe Solargraph::Parser::FlowSensitiveTyping do
       expect(infer_core("        return unless list[0]\n        list[1]\n", 6)).to eq('::String, nil')
     end
 
-    it 'does not narrow Hash#[] with a variable key' do
-      expect(infer_core("        return unless table[key]\n        table[key]\n", 6)).to eq('::String, nil')
+    it 'narrows a repeated Hash#[] with the same local variable key' do
+      expect(infer_core("        return unless table[key]\n        table[key]\n", 6)).to eq('::String')
     end
 
     it 'ends the narrowing at an index write' do
@@ -1656,6 +1656,41 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     it 'ends the narrowing at a merge into the receiver' do
       expect(infer_core("        return unless table[:k]\n        table.merge!(k: nil)\n        table[:k]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at any other call on the receiver' do
+      expect(infer_core("        return unless list[0]\n        list.pop\n        list[0]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'keeps the narrowing across another read of the same method' do
+      expect(infer_core("        return unless list[0]\n        list[1]\n        list[0]\n", 7))
+        .to eq('::String')
+    end
+
+    it 'narrows Hash#[] assigned into a fresh local variable' do
+      expect(infer_core("        return unless table[key]\n        value = table[key]\n        value\n", 7))
+        .to eq('::String')
+    end
+
+    it 'does not narrow Hash#[] with a different local variable key' do
+      expect(infer_core("        other = key\n        return unless table[key]\n        table[other]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing when the local variable key is reassigned' do
+      expect(infer_core("        return unless table[key]\n        key = :other\n        table[key]\n", 7))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing when the local variable index is updated' do
+      expect(infer_core("        n = 0\n        return unless list[n]\n        n += 1\n        list[n]\n", 8))
+        .to eq('::String, nil')
+    end
+
+    it 'ends the narrowing at an index write with a local variable key' do
+      expect(infer_core("        return unless table[key]\n        table[key] = nil\n        table[key]\n", 7))
         .to eq('::String, nil')
     end
   end

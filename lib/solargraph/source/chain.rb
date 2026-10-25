@@ -337,7 +337,7 @@ module Solargraph
       # Extends a receiver-chain path (see #define) with the word from
       # `link`, or breaks the chain (returns nil) once `link` is anything
       # other than a variable, an argument-less attr_reader call, or a pure
-      # call whose arguments are literals.
+      # call whose arguments are literals or local variables.
       # Only those are known to return the same value on a repeat call.
       #
       # @param path [::Array<String>, nil]

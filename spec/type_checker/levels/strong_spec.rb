@@ -1065,5 +1065,79 @@ describe Solargraph::TypeChecker do
 
       expect(checker.problems.map(&:message)).to eq([])
     end
+
+    it 'narrows a repeated index with a local variable argument, also through an assignment' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>, nil]
+          # @param i [Integer]
+          # @return [void]
+          def direct cp, i
+            cp[i].map { |n| n } if cp && cp[i]
+          end
+
+          # @param cp [Array<Array<Integer>>, nil]
+          # @param i [Integer]
+          # @return [void]
+          def assigned cp, i
+            return unless cp && cp[i]
+
+            type_arg = cp[i]
+            type_arg.map { |n| n }
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq([])
+    end
+
+    it 'ends index narrowing in a block whose parameter shadows the argument or receiver' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>]
+          # @param i [Integer]
+          # @return [void]
+          def argument cp, i
+            return unless cp[i]
+
+            [1].each do |i|
+              cp[i].map { |n| n + i }
+            end
+          end
+
+          # @param cp [Array<Array<Integer>>]
+          # @return [void]
+          def receiver cp
+            return unless cp[0]
+
+            [cp].each do |cp|
+              cp[0].map { |n| n }
+            end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'] * 2)
+    end
+
+    it 'ends index narrowing at a loop that changes the argument after the read' do
+      checker = type_checker(%(
+        class Repro
+          # @param cp [Array<Array<Integer>>]
+          # @param i [Integer]
+          # @return [void]
+          def advance cp, i
+            return unless cp[i]
+
+            while i < 3
+              cp[i].map { |n| n }
+              i += 1
+            end
+          end
+        end
+      ))
+
+      expect(checker.problems.map(&:message)).to eq(['Unresolved call to map on Array<Integer>, nil'])
+    end
   end
 end

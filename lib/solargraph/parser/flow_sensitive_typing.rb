@@ -9,6 +9,17 @@ module Solargraph
       # fixed by the source text
       LITERAL_ARGUMENTS = %i[int sym str true false nil].freeze
 
+      # Nodes that bind a local variable, e.g. 'i = 1', 'i += 1' or the 'i'
+      # in '|i|': each ends the narrowing of a call that takes 'i'
+      LOCAL_BINDINGS = %i[
+        lvasgn arg optarg restarg kwarg kwoptarg kwrestarg blockarg shadowarg
+        procarg0 match_var
+      ].freeze
+
+      # Nodes whose body can run again, so a write late in the body changes
+      # what an earlier read in the body sees on the next pass
+      REPEATING = %i[while until while_post until_post for block numblock].freeze
+
       # Methods that can remove, move or overwrite what 'receiver[...]'
       # returns, ending the narrowing of every index on that receiver
       INDEX_REMOVERS = %i[
@@ -17,10 +28,11 @@ module Solargraph
         compare_by_identity
       ].freeze
 
-      # The word a receiver chain records for a call, e.g. 'location' or
-      # '[](int:0)' for '[0]'. Repeated calls only match when their arguments
-      # are the same literals, so this is nil for any other argument, and for
-      # a literal whose text contains the '.' that separates chain words.
+      # The word a receiver chain records for a call, e.g. 'location',
+      # '[](int:0)' for '[0]' or '[](lvar:i)' for '[i]'. Repeated calls only
+      # match when their arguments are the same literals or local variables,
+      # so this is nil for any other argument, and for a literal whose text
+      # contains the '.' that separates chain words.
       #
       # @param name [String]
       # @param arguments [::Array<::Parser::AST::Node, nil>]
@@ -29,7 +41,9 @@ module Solargraph
         return name if arguments.empty?
 
         keys = arguments.map do |argument|
-          return nil unless argument.is_a?(::Parser::AST::Node) && LITERAL_ARGUMENTS.include?(argument.type)
+          return nil unless argument.is_a?(::Parser::AST::Node)
+          next "lvar:#{argument.children.first}" if argument.type == :lvar
+          return nil unless LITERAL_ARGUMENTS.include?(argument.type)
 
           "#{argument.type}:#{argument.children.first.inspect}"
         end
@@ -278,7 +292,8 @@ module Solargraph
 
       # Ends each presence of a call-chain pin, e.g. 'pin.location' or
       # 'self.location', at the first write that can change what the chain
-      # returns, e.g. 'pin = other' or 'pin.location = nil'.
+      # returns, e.g. 'pin = other' or 'pin.location = nil', or at the start
+      # of a loop or block inside the presence that contains such a write.
       #
       # @param pin [Pin::BaseVariable]
       # @param presences [Array<Range>]
@@ -288,23 +303,29 @@ module Solargraph
         # without the enclosing body, writes can't be ruled out
         return [] if enclosing_compound_statement_pin&.node.nil?
 
+        # @type [::Array<::Array<Position>>]
         writes = []
-        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes)
+        collect_writes(enclosing_compound_statement_pin.node, pin.name.split('.'), writes, [])
         presences.map do |presence|
-          cut = writes.select { |pos| presence.include?(pos) }.min
+          cut = writes.filter_map { |positions| positions.find { |pos| presence.include?(pos) } }.min
           cut ? Range.new(presence.start, cut) : presence
         end
       end
 
       # @param node [Parser::AST::Node]
       # @param words [::Array<String>] e.g. ['pin', 'location']
-      # @param writes [::Array<Position>] start positions found so far
+      # @param writes [::Array<::Array<Position>>] for each write found so
+      #   far, the starts of its enclosing REPEATING nodes, outermost first,
+      #   then the start of the write
+      # @param repeats [::Array<Position>] starts of the REPEATING nodes
+      #   enclosing `node`, outermost first
       # @return [void]
-      def collect_writes node, words, writes
+      def collect_writes node, words, writes, repeats
         range = Range.from_node(node)
-        writes << range.start if range && write_to?(node, words)
+        writes << [*repeats, range.start] if range && write_to?(node, words)
+        repeats += [range.start] if range && REPEATING.include?(node.type)
         node.children.each do |child|
-          collect_writes(child, words, writes) if child.is_a?(::Parser::AST::Node)
+          collect_writes(child, words, writes, repeats) if child.is_a?(::Parser::AST::Node)
         end
       end
 
@@ -318,10 +339,15 @@ module Solargraph
         return false unless target.is_a?(::Parser::AST::Node)
 
         variable = target.children[0].to_s
+        # 'i += 1' or a block's '|i|' changes what 'list[i]' reads, and a
+        # block's '|list|' is another 'list'
+        return true if LOCAL_BINDINGS.include?(target.type) && [words.first, *argument_locals(words)].include?(variable)
+
         # an attr_reader on self reads its same-named instance variable
         self_ivar = words.first == 'self' && variable == "@#{words[1]}"
         return variable == words.first || self_ivar if target.type == :ivasgn
         return words.first == variable if target.type == :lvasgn
+        return true if %i[send csend].include?(target.type) && changes_receiver?(target, words)
         return false unless target.type == :send
 
         name = target.children[1].to_s
@@ -348,6 +374,31 @@ module Solargraph
 
         receiver_words == words.first(receiver_words.length) &&
           words.fetch(receiver_words.length).start_with?('[](')
+      end
+
+      # A call with arguments is only known to be pure, so any other call on
+      # its receiver can change what it returns, e.g. 'list.pop' for
+      # 'list[0]'; a call to the same method is another pure read.
+      #
+      # @param send_node [Parser::AST::Node] e.g. 'list.pop'
+      # @param words [::Array<String>] e.g. ['list', '[](lvar:i)']
+      # @return [Boolean]
+      def changes_receiver? send_node, words
+        receiver_words = write_receiver(send_node.children[0], words)
+        return false if receiver_words.nil? || receiver_words.length >= words.length
+        return false unless receiver_words == words.first(receiver_words.length)
+
+        read = words.fetch(receiver_words.length)
+        read.include?('(') && send_node.children[1].to_s != read.sub(/\(.*\z/m, '')
+      end
+
+      # @param words [::Array<String>] e.g. ['list', '[](lvar:i)']
+      # @return [::Array<String>] the locals passed in `words`, e.g. ['i']
+      def argument_locals words
+        words.flat_map do |word|
+          keys = word.delete_suffix(')').split(/[(,]/).drop(1)
+          keys.select { |key| key.start_with?('lvar:') }.map { |key| key.delete_prefix('lvar:') }
+        end
       end
 
       # @param node [Parser::AST::Node, nil] a setter's receiver, e.g.
