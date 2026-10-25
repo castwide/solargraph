@@ -398,7 +398,7 @@ module Solargraph
           end
           if new_binding
             resolved_generic_values.transform_values! do |complex_type|
-              # @sg-ignore https://github.com/apiology/solargraph/pull/225
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1451
               complex_type.resolve_generics_from_context(generics_to_resolve, nil,
                                                          resolved_generic_values: resolved_generic_values)
             end

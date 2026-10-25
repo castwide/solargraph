@@ -43,7 +43,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_tcp_server host: options[:host], port: port, adapter: Solargraph::LanguageServer::Transport::Adapter
-        # @sg-ignore https://github.com/apiology/solargraph/pull/229
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts "Solargraph is listening PORT=#{port} PID=#{Process.pid}"
       end
     end
@@ -61,7 +61,7 @@ module Solargraph
         end
         # @sg-ignore https://github.com/castwide/backport/pull/6
         Backport.prepare_stdio_server adapter: Solargraph::LanguageServer::Transport::Adapter
-        # @sg-ignore https://github.com/apiology/solargraph/pull/229
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts "Solargraph is listening on stdio PID=#{Process.pid}"
       end
     end
@@ -90,7 +90,7 @@ module Solargraph
       File.open(File.join(directory, '.solargraph.yml'), 'w') do |file|
         file.puts conf.to_yaml
       end
-      # @sg-ignore https://github.com/apiology/solargraph/pull/229
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1439
       $stdout.puts 'Configuration file initialized.'
     end
 
@@ -374,11 +374,11 @@ module Solargraph
       begin
         require 'vernier'
       rescue LoadError
-        # @sg-ignore https://github.com/apiology/solargraph/pull/229
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts 'vernier gem not found. Please install this dependency:'
-        # @sg-ignore https://github.com/apiology/solargraph/pull/229
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts
-        # @sg-ignore https://github.com/apiology/solargraph/pull/229
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1439
         $stderr.puts "  gem 'vernier', '>1.0', '<2'"
 
         return
@@ -513,7 +513,7 @@ module Solargraph
           next unless pin.return_type.undefined?
           type = pin.typify(api_map)
           type = pin.probe(api_map) if type.undefined?
-          # @sg-ignore https://github.com/apiology/solargraph/pull/225
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1451
           pin.docstring.add_tag YARD::Tags::Tag.new('return', nil, type.items.map(&:to_s))
           pin.instance_variable_set(:@return_type, type)
         end

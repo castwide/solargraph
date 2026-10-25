@@ -10,7 +10,7 @@ module Solargraph
     # The base directory for cached YARD documentation and serialized pins.
     #
     # @return [String]
-    # @sg-ignore https://github.com/apiology/solargraph/pull/225
+    # @sg-ignore https://github.com/castwide/solargraph/pull/1451
     def base_dir
       ENV['SOLARGRAPH_CACHE'] ||
         (ENV['XDG_CACHE_HOME'] ? File.join(ENV['XDG_CACHE_HOME'], 'solargraph') : nil) ||

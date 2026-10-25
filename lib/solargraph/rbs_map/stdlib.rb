@@ -20,7 +20,7 @@ module Solargraph
 
       # @param library [String]
       def self.has? library
-        # @sg-ignore https://github.com/apiology/solargraph/pull/225
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         !!RBS::Collection::Sources::Stdlib.instance.has?(library.gsub('/', '-'), nil)
       end
     end

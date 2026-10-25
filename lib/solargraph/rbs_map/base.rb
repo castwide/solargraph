@@ -15,7 +15,7 @@ module Solargraph
 
       # @return [RBS::EnvironmentLoader]
       def loader
-        # @sg-ignore https://github.com/apiology/solargraph/pull/225
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         @loader ||= RBS::EnvironmentLoader.new(core_root: nil, repository: repository)
       end
 

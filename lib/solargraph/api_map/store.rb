@@ -410,9 +410,9 @@ module Solargraph
 
       # @param fq_sub_tag [String]
       # @return [String, nil]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/225
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1451
       def qualify_and_cache_superclass fq_sub_tag
-        # @sg-ignore https://github.com/apiology/solargraph/pull/225
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         cached_qualify_superclass[fq_sub_tag] = uncached_qualify_superclass(fq_sub_tag)
       end
 

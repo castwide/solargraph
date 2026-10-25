@@ -85,7 +85,7 @@ module Solargraph
     # @return [Boolean] True if the specified file was detached
     def detach filename
       return false if @current.nil? || @current.filename != filename
-      # @sg-ignore https://github.com/apiology/solargraph/pull/225
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1451
       attach nil
       true
     end
@@ -445,7 +445,7 @@ module Solargraph
 
     # @return [Bench]
     def bench
-      # @sg-ignore https://github.com/apiology/solargraph/pull/225
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1451
       Bench.new(
         source_maps: source_map_hash.values,
         workspace: workspace,

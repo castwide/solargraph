@@ -96,9 +96,9 @@ module Solargraph
       end
 
       # @return [YARD::CodeObjects::RootObject]
-      # @sg-ignore https://github.com/apiology/solargraph/pull/225
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1451
       def root_code_object
-        # @sg-ignore https://github.com/apiology/solargraph/pull/225
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         @root_code_object ||= YARD::CodeObjects::RootObject.new(nil, 'root')
       end
     end

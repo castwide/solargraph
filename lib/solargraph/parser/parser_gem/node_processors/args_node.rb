@@ -15,7 +15,7 @@ module Solargraph
                   # @sg-ignore https://github.com/castwide/solargraph/pull/1418
                   #   also needs https://github.com/castwide/solargraph/pull/1416
                   loc = get_node_location(u)
-                  # @sg-ignore https://github.com/apiology/solargraph/pull/225
+                  # @sg-ignore https://github.com/castwide/solargraph/pull/1451
                   locals.push Solargraph::Pin::Parameter.new(
                     location: loc,
                     closure: callable,
