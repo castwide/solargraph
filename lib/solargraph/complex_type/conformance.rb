@@ -42,6 +42,7 @@ module Solargraph
         end
 
         return true if ignore_interface?
+        return true if inferred == expected
         return true if conforms_via_reverse_match?
 
         downcast_inferred = inferred.downcast_to_literal_if_possible
@@ -58,8 +59,6 @@ module Solargraph
         return with_new_types(inferred.erase_parameters, expected).conforms_to_unique_type? if only_inferred_parameters?
 
         return conforms_via_stripped_expected_parameters? if can_strip_expected_parameters?
-
-        return true if inferred == expected
 
         return false unless erased_type_conforms?
 
@@ -150,13 +149,22 @@ module Solargraph
 
         return true if inferred.subtypes.any?(&:undefined?) && rules.include?(:allow_undefined)
 
-        return true if inferred.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
-
-        return true if expected.subtypes.all?(&:generic?) && rules.include?(:allow_unresolved_generic)
-
         return false if inferred.subtypes.empty?
 
-        return tuple_elements_conform? if expected.fixed_parameters? && expected.name == 'Array'
+        if expected.implicit_union? || (inferred.implicit_union? && !expected.fixed_parameters?)
+          return union_subtypes_conform?
+        end
+
+        positional_subtypes_conform?
+      end
+
+      # Element types gathered as a union are unordered and need not match in
+      # count, so the two lists are compared as whole unions.
+      def union_subtypes_conform?
+        if rules.include?(:allow_unresolved_generic) &&
+           (inferred.subtypes.any?(&:generic?) || expected.subtypes.any?(&:generic?))
+          return true
+        end
 
         ComplexType.new(inferred.subtypes).conforms_to?(api_map,
                                                         ComplexType.new(expected.subtypes),
@@ -165,21 +173,25 @@ module Solargraph
                                                         variance: inferred.parameter_variance(situation))
       end
 
-      # An Array(A, B) expects A at index 0 and B at index 1, so
-      # compare position by position rather than as a union of A and B.
-      # A list such as Array<A> can fill it only if every element type
-      # could sit at every position.
-      def tuple_elements_conform?
-        return false if inferred.fixed_parameters? && inferred.subtypes.length != expected.subtypes.length
+      # Fixed parameters line up by position, so each slot is compared against
+      # its counterpart and a differing count cannot conform. A list such as
+      # Array<A> can fill a tuple only if its element type fits every slot.
+      def positional_subtypes_conform?
+        inferred_subtypes = if inferred.implicit_union?
+                              [ComplexType.new(inferred.subtypes)] * expected.subtypes.length
+                            else
+                              inferred.subtypes
+                            end
+        return false unless inferred_subtypes.length == expected.subtypes.length
 
-        expected.subtypes.each_with_index.all? do |expected_element, index|
-          inferred_element = if inferred.fixed_parameters?
-                               inferred.subtypes.fetch(index)
-                             else
-                               ComplexType.new(inferred.subtypes)
-                             end
-          inferred_element.conforms_to?(api_map, expected_element, situation, rules,
-                                        variance: inferred.parameter_variance(situation))
+        variance = inferred.parameter_variance(situation)
+        inferred_subtypes.zip(expected.subtypes).all? do |inferred_subtype, expected_subtype|
+          # @sg-ignore Block parameters destructured from a tuple are untyped
+          unresolved = inferred_subtype.generic? || expected_subtype.generic?
+          next true if rules.include?(:allow_unresolved_generic) && unresolved
+
+          # @sg-ignore Block parameters destructured from a tuple are untyped
+          inferred_subtype.conforms_to?(api_map, expected_subtype, situation, rules, variance: variance)
         end
       end
 
