@@ -105,7 +105,7 @@ module Solargraph
             message.process unless cancel?(request['id'])
           rescue StandardError => e
             logger.warn "Error processing request: [#{e.class}] #{e.message}"
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+            # @sg-ignore https://github.com/apiology/solargraph/pull/108
             #   rescued exceptions need https://github.com/apiology/solargraph/tree/type-rescued-exception-backtrace on top
             logger.warn e.backtrace.join("\n")
             message.set_error Solargraph::LanguageServer::ErrorCodes::INTERNAL_ERROR, "[#{e.class}] #{e.message}"
