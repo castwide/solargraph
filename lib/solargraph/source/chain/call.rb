@@ -11,11 +11,6 @@ module Solargraph
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
-        # Methods whose results drop nil elements (Hash#compact: nil
-        # values), which RBS signatures like `() -> ::Array[Elem]` cannot
-        # express.
-        NIL_DROPPING_METHODS = %w[Array#compact Enumerable#compact Hash#compact].freeze
-
         # @return [String]
         attr_reader :word
 
@@ -217,6 +212,7 @@ module Solargraph
               break if type.defined?
             end
             p = p.with_single_signature(new_signature_pin) unless new_signature_pin.nil?
+            type = without_nil_elements(type) if p.removes_nil? && type.defined?
             next p.proxy(type) if type.defined?
             if !p.macros.empty?
               result = process_macro(p, api_map, name_pin.context, locals)
@@ -236,8 +232,6 @@ module Solargraph
             if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
-            elsif NIL_DROPPING_METHODS.include?(pin.path)
-              without_nil_elements(pin)
             else
               # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
@@ -249,11 +243,11 @@ module Solargraph
           end
         end
 
-        # @param pin [Pin::Base] a resolved NIL_DROPPING_METHODS pin
-        # @return [Pin::Base]
-        def without_nil_elements pin
-          compacted = ComplexType.new(pin.return_type.items.map { |type| without_nil_subtypes(type) })
-          compacted == pin.return_type ? pin : pin.proxy(compacted)
+        # @param type [ComplexType] the return type of a method annotated
+        #   %a{solargraph:removes-nil}
+        # @return [ComplexType]
+        def without_nil_elements type
+          ComplexType.new(type.items.map { |unique_type| without_nil_subtypes(unique_type) })
         end
 
         # @param type [ComplexType::UniqueType]

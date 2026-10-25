@@ -1,0 +1,24 @@
+# Adds Solargraph annotations to core methods.
+#
+# Each 'def name: ...' adds only its annotations; RbsMap::Core copies them
+# onto the core method and keeps the core signatures, and uses nothing
+# else from this file.
+#
+# %a{solargraph:removes-nil} drops nil from the element types
+# (Hash: value types) of the returned collection, which a signature like
+# '() -> ::Array[Elem]' cannot express.
+
+class Array[unchecked out Elem]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end
+
+module Enumerable[unchecked out Elem]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end
+
+class Hash[unchecked out K, unchecked out V]
+  %a{solargraph:removes-nil}
+  def compact: ...
+end

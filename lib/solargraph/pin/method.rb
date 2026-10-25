@@ -12,6 +12,9 @@ module Solargraph
 
       attr_writer :signatures
 
+      # @return [Boolean]
+      attr_writer :removes_nil
+
       # @return [Parser::AST::Node]
       attr_reader :node
 
@@ -22,10 +25,11 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
+      # @param removes_nil [Boolean] declared by RBS %a{solargraph:removes-nil}
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     context: nil, **splat
+                     removes_nil: false, context: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -34,6 +38,7 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
+        @removes_nil = removes_nil
         @context = context if context
       end
 
@@ -68,6 +73,7 @@ module Solargraph
           parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
+          removes_nil: removes_nil? || other.removes_nil?,
           return_type: nil # pulled from signatures on first call
         }.merge(attrs)
         super(other, new_attrs)
@@ -379,6 +385,14 @@ module Solargraph
 
       def attribute?
         @attribute
+      end
+
+      # True when the method returns a collection with its receiver's nil
+      # elements (Hash: nil values) removed (RBS %a{solargraph:removes-nil})
+      #
+      # @return [Boolean]
+      def removes_nil?
+        @removes_nil
       end
 
       # @parm other [self]
