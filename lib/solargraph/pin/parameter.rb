@@ -48,6 +48,7 @@ module Solargraph
         super(other, new_attrs.merge(attrs))
       end
 
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def combine_return_type other
         out = super
         if out&.undefined?
@@ -95,7 +96,7 @@ module Solargraph
 
       # @return [String]
       def type_arity_decl
-        arity_decl + return_type.items.count.to_s
+        arity_decl + return_type.unioned_items.count.to_s
       end
 
       def arg?
@@ -231,7 +232,7 @@ module Solargraph
                                           ptype,
                                           :method_call,
                                           %i[allow_empty_params allow_undefined])
-        ptype.generic?
+        ptype.any_generic?
       end
 
       # @sg-ignore flow sensitive typing needs to handle attrs

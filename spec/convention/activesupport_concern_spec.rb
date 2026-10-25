@@ -93,7 +93,7 @@ describe Solargraph::Convention::ActiveSupportConcern do
     end
 
     it 'is able to typify from superclass' do
-      expect(pins.first.typify(api_map).map(&:tag)).to include('Numeric')
+      expect(pins.first.typify(api_map).items.map(&:tag)).to include('Numeric')
     end
   end
 

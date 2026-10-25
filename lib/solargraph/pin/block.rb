@@ -77,7 +77,9 @@ module Solargraph
             param = parameters[idx]
             param_type = chain.base.infer(api_map, param, locals)
             unless arg_type.nil?
-              if arg_type.generic? && param_type.defined?
+              # Resolving generics in arg_type needs a concrete type to read
+              # the values from, which is what param_type supplies.
+              if arg_type.any_generic? && param_type.defined?
                 # @sg-ignore Need to add nil check here
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
                 arg_type.resolve_generics(namespace_pin, param_type)

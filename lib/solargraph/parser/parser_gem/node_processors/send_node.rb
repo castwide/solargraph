@@ -7,7 +7,6 @@ module Solargraph
         class SendNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
-          # @sg-ignore @override is adding, not overriding
           def process
             # @sg-ignore Variable type could not be inferred for method_name
             # @type [Symbol]
@@ -215,7 +214,7 @@ module Solargraph
                                                             source: :parser)
               if method_pin.return_type.defined?
                 pins.last.docstring.add_tag YARD::Tags::Tag.new(:param, '',
-                                                                pins.last.return_type.items.map(&:rooted_tags), 'value')
+                                                                pins.last.return_type.unioned_items.map(&:rooted_tags), 'value')
               end
             end
           end
