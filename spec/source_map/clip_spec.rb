@@ -843,6 +843,23 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('undefined')
   end
 
+  it 'keeps a Class#new union whose first member is Class' do
+    source = Solargraph::Source.load_string(%(
+      class Class
+        # @return [Class, nil]
+        def new; end
+      end
+      # @param klass [Class]
+      def make(klass)
+        klass.new
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new
+    api_map.map source
+    clip = api_map.clip_at('test.rb', [7, 16])
+    expect(clip.infer.tags).to eq('Class, nil')
+  end
+
   it 'completes class instance variables in the namespace' do
     source = Solargraph::Source.load_string(%(
       class Foo
