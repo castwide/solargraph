@@ -11,6 +11,11 @@ module Solargraph
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
+        # Methods whose results drop nil elements (Hash#compact: nil
+        # values), which RBS signatures like `() -> ::Array[Elem]` cannot
+        # express.
+        NIL_DROPPING_METHODS = %w[Array#compact Enumerable#compact Hash#compact].freeze
+
         # @return [String]
         attr_reader :word
 
@@ -231,6 +236,8 @@ module Solargraph
             if pin.path == 'Class#new' && name_pin.binder.tag != 'Class'
               reduced_context = name_pin.binder.reduce_class_type
               pin.proxy(reduced_context)
+            elsif NIL_DROPPING_METHODS.include?(pin.path)
+              without_nil_elements(pin)
             else
               # @sg-ignore Need to add nil check here
               next pin if pin.return_type.undefined?
@@ -240,6 +247,23 @@ module Solargraph
               selfy == pin.return_type ? pin : pin.proxy(selfy)
             end
           end
+        end
+
+        # @param pin [Pin::Base] a resolved NIL_DROPPING_METHODS pin
+        # @return [Pin::Base]
+        def without_nil_elements pin
+          compacted = ComplexType.new(pin.return_type.items.map { |type| without_nil_subtypes(type) })
+          compacted == pin.return_type ? pin : pin.proxy(compacted)
+        end
+
+        # @param type [ComplexType::UniqueType]
+        # @return [ComplexType::UniqueType]
+        def without_nil_subtypes type
+          non_nil_items = type.subtypes.map do |subtype|
+            subtype.items.reject { |item| item.nil_type? || item.name == 'NilClass' }
+          end
+          subtypes = non_nil_items.reject(&:empty?).map { |items| ComplexType.new(items) }
+          subtypes.empty? ? type : type.recreate(new_subtypes: subtypes)
         end
 
         # @param api_map [ApiMap]
