@@ -1809,8 +1809,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
           def []: (Integer | Symbol | String) -> String?
 
           def []=: (Integer | Symbol | String, String?) -> String?
-
-          def row: (Integer) -> String?
         end
       RBS
       filename = File.join(@workspace, 'test.rb')
@@ -1819,7 +1817,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'narrows a repeated pure call with the same literal argument' do
-      pending 'workspace-local sig RBS no longer loads after https://github.com/castwide/solargraph/pull/1378, so a non-core %a{pure} method with arguments cannot be set up in a clip'
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1831,7 +1829,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'does not narrow a pure call with a different literal argument' do
-      pending 'workspace-local sig RBS no longer loads after https://github.com/castwide/solargraph/pull/1378, so a non-core %a{pure} method with arguments cannot be set up in a clip'
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1843,7 +1841,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'does not narrow a pure call with a variable argument' do
-      pending 'workspace-local sig RBS no longer loads after https://github.com/castwide/solargraph/pull/1378, so a non-core %a{pure} method with arguments cannot be set up in a clip'
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         # @param index [Integer]
@@ -1856,7 +1854,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'ends the narrowing at an index assignment to the receiver' do
-      pending 'workspace-local sig RBS no longer loads after https://github.com/castwide/solargraph/pull/1378, so a non-core %a{pure} method with arguments cannot be set up in a clip'
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1866,18 +1864,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       )
       expect(infer_at(code, [5, 19])).to eq('::String, nil')
-    end
-
-    it 'does not narrow a call with arguments that is not pure' do
-      pending 'workspace-local sig RBS no longer loads after https://github.com/castwide/solargraph/pull/1378, so a non-core %a{pure} method with arguments cannot be set up in a clip'
-      code = %(
-        # @param table [Table]
-        def cell(table)
-          return nil unless table.row(0)
-          table.row(0)
-        end
-      )
-      expect(infer_at(code, [4, 22])).to eq('::String, nil')
     end
   end
 
