@@ -23,9 +23,8 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
         # @param locals [::Array<Pin::Parameter, Pin::LocalVariable>]
-        # @param _receiver_path [::Array<String>, nil]
         # @return [::Array<Pin::Base>]
-        def resolve api_map, name_pin, locals, _receiver_path = nil
+        def resolve api_map, name_pin, locals
           # @type [Pin::Method]
           method_pin = method_call_chain.define(api_map, name_pin, locals)&.first
           return [] unless method_pin

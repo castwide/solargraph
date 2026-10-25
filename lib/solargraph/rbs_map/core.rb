@@ -49,6 +49,7 @@ module Solargraph
       # @param pins [Array<Pin::Base>]
       # @return [void]
       def mark_pure pins
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1451
         loader = RBS::EnvironmentLoader.new(core_root: nil, repository: RBS::Repository.new(no_stdlib: false))
         loader.add(path: Pathname(PURITY_DIRECTORY))
         markers = Conversions.new(loader: loader).pins.select { |pin| pin.is_a?(Pin::Method) && pin.pure? }

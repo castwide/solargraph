@@ -43,48 +43,63 @@ module Solargraph
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Closure] name_pin.binder should give us the type of the object on which 'word' will be invoked
         # @param locals [::Array<Pin::LocalVariable>]
-        # @param receiver_path [::Array<String>, nil] Dotted-word path of the
-        #   receiver chain leading up to this call (see Chain#define). Used
-        #   to find flow-sensitive-typing facts recorded against repeated
-        #   calls to the same argument-less accessor, e.g. a nil check on
-        #   'pin.location' narrowing a later 'pin.location.filename'.
-        def resolve api_map, name_pin, locals, receiver_path = nil
+        def resolve api_map, name_pin, locals
           return super_pins(api_map, name_pin) if word == 'super'
           return yield_pins(api_map, name_pin) if word == 'yield'
           found = api_map.var_at_location(locals, word, name_pin, location) if head?
-          # a head call with no local of its name is an implicit-self call
-          found ||= narrowed_call_pin(api_map, name_pin, locals, head? ? ['self'] : receiver_path)
+          found ||= narrowed_call_pin(api_map, name_pin)
 
           return inferred_pins([found], api_map, name_pin, locals) unless found.nil?
-          pins = method_pins(api_map, name_pin)
-          return [] if pins.empty?
-          inferred_pins(pins, api_map, name_pin, locals)
+          # Resolve one unique type at a time, so a `self` return type narrows to the one that supplied the pin.
+          # @type [::Array<Pin::Base>]
+          resolved = []
+          unresolved_type = false
+          each_method_pin(api_map, name_pin) do |context, pin|
+            if pin.nil?
+              unresolved_type = true
+              next
+            end
+            # Bind name_pin to this type alone, so #inferred_pins (incl. Class#new) cannot see the others.
+            type_name_pin = Pin::ProxyType.anonymous(name_pin.context,
+                                                     closure: name_pin.closure,
+                                                     gates: name_pin.gates,
+                                                     binder: context,
+                                                     source: :chain)
+            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
+          end
+          return [] if unresolved_type && !api_map.loose_unions
+          return [] if resolved.empty?
+          # Accumulating every type's result treats the binder as a union, which is the only
+          # multi-type binder ComplexType builds; dedup on rooted_tags rather than #tag, which
+          # reports only the first member and so collapses two distinct unions.
+          resolved.uniq { |pin| [pin.path, pin.return_type.rooted_tags] }
         end
 
         private
 
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @return [::Array<Pin::Method>] the methods this call dispatches to
-        def method_pins api_map, name_pin
+        # @yieldparam context [ComplexType::UniqueType] one member of the binder
+        # @yieldparam pin [Pin::Method, nil] the method this call dispatches to on that member
+        # @return [void]
+        def each_method_pin api_map, name_pin
           binder = name_pin.binder
           # this is a q_call - i.e., foo&.bar - assume result of call
           # will be nil or result as if binder were not nil -
           # chain.rb#maybe_nil will add the nil type later, we just
           # need to worry about the not-nil case
 
-          # @sg-ignore Need to handle duck-typed method calls on union types
           binder = binder.without_nil if nullable?
-          # @sg-ignore Need to handle duck-typed method calls on union types
-          pin_groups = binder.each_unique_type.map do |context|
-            ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-            stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-            [stack.first].compact
+          binder.each_unique_type do |context|
+            if context.duck_type? && context.name[1..] == word
+              # explicit: false skips arity checking; the duck type
+              # only tells us the method exists, not its signature
+              yield context, Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
+            else
+              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
+              yield context, api_map.get_method_stack(ns_tag, word, scope: context.scope).first
+            end
           end
-          pin_groups = [] if !api_map.loose_unions && pin_groups.any?(&:empty?)
-          # Several union members can end up with the same pin and return type.
-          # @sg-ignore Array#flatten returns a bare Array
-          pin_groups.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
         end
 
         # Checks whether a single overload signature matches the call's
@@ -178,7 +193,7 @@ module Solargraph
           [type, new_signature_pin]
         end
 
-        # Looks for a flow-sensitive-typing fact recorded against this
+        # Looks for a downcast var FlowSensitiveTyping recorded for this
         # exact call chained off of the same receiver expression -- e.g.
         # the narrowing FlowSensitiveTyping records for 'pin.location'
         # after a 'return unless pin.location' guard, consulted here while
@@ -192,32 +207,64 @@ module Solargraph
         #
         # @param api_map [ApiMap]
         # @param name_pin [Pin::Base]
-        # @param locals [::Array<Pin::Base>]
-        # @param receiver_path [::Array<String>, nil]
         # @return [Pin::Base, nil]
-        def narrowed_call_pin api_map, name_pin, locals, receiver_path
+        def narrowed_call_pin api_map, name_pin
+          # a head call with no local of its name is an implicit-self call
+          receiver_path = head? ? ['self'] : (name_pin.receiver_path if name_pin.is_a?(Pin::ProxyType))
           return nil if receiver_path.nil? || receiver_path.empty?
           return nil if with_block?
 
           call_word = Parser::FlowSensitiveTyping.call_word(word, arguments.map(&:node))
           return nil unless call_word
 
-          composite_name = (receiver_path + [call_word]).join('.')
-          pin = api_map.var_at_location(locals, composite_name, name_pin, location)
+          pin = downcast_var(receiver_path + [call_word], name_pin)
           return nil if pin.nil?
 
-          readers = method_pins(api_map, name_pin)
+          # @type [::Array<Pin::Method, nil>]
+          readers = []
+          each_method_pin(api_map, name_pin) { |_context, reader| readers.push reader }
+          return nil if readers.include?(nil) && !api_map.loose_unions
+          readers = readers.compact
+          # @sg-ignore Need better handling of #compact
           return nil if readers.empty? || !readers.all? { |reader| reader.attribute? || reader.pure? }
 
-          # An uninferrable narrowed pin would shadow the method lookup
-          type = pin.typify(api_map)
-          type = pin.probe(api_map) if type.undefined?
-          type.defined? ? pin : nil
+          # Without a declared type the pin's type is the downcast alone, e.g.
+          # 'nil, false'; declare the reader's type at the guard so the downcast
+          # narrows it. An uninferrable pin would shadow the method lookup.
+          declared = pin.assignments.flat_map { |node| pin.return_types_from_node(node, api_map) }
+          narrowed = pin.proxy(ComplexType.new(declared.flat_map(&:items).uniq))
+          narrowed.typify(api_map).defined? ? narrowed : nil
+        end
+
+        # Combines the downcast vars on path that FlowSensitiveTyping recorded in the
+        # closures around this call (see Pin::Closure#downcast_vars), from the
+        # innermost out to the closure that owns the root: a local stops at a
+        # method or namespace, self or an ivar also at a block that rebinds
+        # self, e.g. via instance_eval.
+        #
+        # @param path [::Array<String>] e.g. ['self', 'location'] or ['pin', 'location']
+        # @param name_pin [Pin::Base]
+        # @return [Pin::BaseVariable, nil]
+        def downcast_var path, name_pin
+          return nil if location.nil?
+
+          self_bound = path.first == 'self' || path.first&.start_with?('@')
+          here = name_pin
+          here = here.closure until here.nil? || here.is_a?(Pin::Closure)
+          vars = []
+          while here.is_a?(Pin::Closure)
+            vars.concat((here.downcast_vars[path] || []).select { |var| var.presence&.contain?(location.range.start) })
+            break if self_bound && here.rebound?
+            break unless here.is_a?(Pin::Block)
+
+            here = here.closure
+          end
+          vars.inject(&:combine_with)
         end
 
         # @param pins [::Enumerable<Pin::Base>]
         # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # @param name_pin [Pin::Base] its #binder resolves `self` in the declarations of `pins`
         # @param locals [::Array<Solargraph::Pin::LocalVariable, Solargraph::Pin::Parameter>]
         # @return [::Array<Pin::Base>]
         def inferred_pins pins, api_map, name_pin, locals

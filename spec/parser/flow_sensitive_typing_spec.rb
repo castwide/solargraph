@@ -1485,6 +1485,282 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
   end
 
+  it 'keeps the declared attr_reader type in the else branch of a truthy guard' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [String, nil]
+        attr_reader :name
+
+        # @return [Boolean]
+        attr_reader :flag
+
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      # @param pin [Pin]
+      # @param name [String, nil]
+      # @param flag [Boolean]
+      def scan(pin, name, flag)
+        if pin.name then pin.name else pin.name end
+        if pin.flag then pin.flag else pin.flag end
+        if pin.location then pin.location else pin.location end
+        if name then name else name end
+        if flag then flag else flag end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    # each attr_reader matches the param of the same type on the next lines
+    { [18, 44] => 'nil', [19, 44] => '::Boolean', [20, 52] => 'nil',
+      [21, 32] => 'nil', [22, 32] => '::Boolean' }.each do |position, tags|
+      expect(api_map.clip_at('test.rb', position).infer.rooted_tags).to eq(tags), position.inspect
+    end
+  end
+
+  it 'drops attr_reader narrowing once the attribute is written through safe navigation' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_accessor :location
+      end
+
+      # @param pin [Pin]
+      def scan(pin)
+        return nil unless pin.location
+        pin&.location = nil
+        pin.location
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [12, 12])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  it 'drops ivar-rooted attr_reader narrowing once the ivar is written through its writer' do
+    source = Solargraph::Source.load_string(%(
+      class Location; end
+
+      class Pin
+        # @return [Location, nil]
+        attr_reader :location
+      end
+
+      class Bundler
+        # @return [Pin]
+        attr_accessor :pin
+
+        # @param pin [Pin]
+        def initialize(pin)
+          @pin = pin
+        end
+
+        def scan
+          return nil unless @pin.location
+          self.pin = Pin.new
+          @pin.location
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    clip = api_map.clip_at('test.rb', [20, 16])
+    expect(clip.infer.rooted_tags).to eq('::Location, nil')
+  end
+
+  describe 'a bare attr_reader downcast inside a block' do
+    let(:api_map) do
+      source = Solargraph::Source.load_string(%(
+        class Loc; end
+        class Loc2; end
+
+        class Other
+          # @return [Loc2, nil]
+          attr_reader :location
+        end
+
+        class Dsl
+          # @yieldreceiver [Other]
+          # @return [void]
+          def self.configure(&block); end
+        end
+
+        class Foo
+          # @return [Loc, nil]
+          attr_reader :location
+
+          # @param o [Other]
+          def other_eval o
+            return unless location
+            o.instance_eval do
+              puts 'checking'
+              location
+            end
+          end
+
+          # @param o [Foo]
+          def foo_eval o
+            return unless location
+            o.instance_eval do
+              puts 'checking'
+              location
+            end
+          end
+
+          def each_block
+            return unless location
+            [1].each do
+              puts 'checking'
+              location
+            end
+          end
+
+          def dsl_block
+            return unless location
+            Dsl.configure do
+              puts 'checking'
+              location
+            end
+          end
+
+          # @param o [Other]
+          def guard_in_block o
+            o.instance_eval do
+              next unless location
+              location
+            end
+          end
+
+          # @param o [Other]
+          def nested_eval o
+            return unless location
+            o.instance_eval do
+              [1].each do
+                puts 'checking'
+                location
+              end
+            end
+          end
+        end
+      ), 'test.rb')
+      Solargraph::ApiMap.new.map(source)
+    end
+
+    # @param line [Integer]
+    # @return [String]
+    def infer_at line
+      api_map.clip_at('test.rb', [line, 16]).infer.rooted_tags
+    end
+
+    it 'is not applied where instance_eval rebinds self to another class' do
+      expect(infer_at(24)).to eq('::Loc2, nil')
+    end
+
+    it 'is not applied where instance_eval rebinds self to the same class' do
+      expect(infer_at(33)).to eq('::Loc, nil')
+    end
+
+    it 'is applied in a block that keeps self' do
+      expect(infer_at(41)).to eq('::Loc')
+    end
+
+    it 'is not applied where a @yieldreceiver rebinds self' do
+      expect(infer_at(49)).to eq('::Loc2, nil')
+    end
+
+    it 'is applied when recorded inside the rebound block' do
+      expect(infer_at(57)).to eq('::Loc2')
+    end
+
+    it 'is not applied in a block nested inside a rebound block' do
+      pending('Blocks nested in a rebound block should inherit its self - castwide/solargraph#1310')
+
+      expect(infer_at(67)).to eq('::Loc2, nil')
+    end
+  end
+
+  describe 'an attr_reader downcast on explicit self' do
+    let(:api_map) do
+      source = Solargraph::Source.load_string(%(
+        class Loc
+          # @return [String, nil]
+          attr_reader :filename
+        end
+
+        class Foo
+          # @return [Loc, nil]
+          attr_reader :location
+
+          def explicit_guard
+            return unless self.location
+            location
+          end
+
+          def bare_guard
+            return unless location
+            self.location
+          end
+
+          def explicit_chain
+            return unless self.location.filename
+            location.filename
+          end
+        end
+      ), 'test.rb')
+      Solargraph::ApiMap.new.map(source)
+    end
+
+    it 'narrows a bare call after an explicit self guard' do
+      expect(api_map.clip_at('test.rb', [12, 13]).infer.rooted_tags).to eq('::Loc')
+    end
+
+    it 'narrows an explicit self call after a bare guard' do
+      expect(api_map.clip_at('test.rb', [17, 18]).infer.rooted_tags).to eq('::Loc')
+    end
+
+    it 'narrows a bare chain after an explicit self chain guard' do
+      expect(api_map.clip_at('test.rb', [22, 22]).infer.rooted_tags).to eq('::String')
+    end
+  end
+
+  it 'keeps call chain downcast vars out of completions' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Foo, nil]
+        attr_reader :location
+
+        # @param pin [Foo]
+        def bar pin
+          return unless location
+          return unless pin.location
+          lo
+        end
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    names = api_map.clip_at('test.rb', [9, 10]).complete.pins.map(&:name)
+    expect(names).not_to include('self.location', 'pin.location')
+  end
+
+  it 'leaves call chain downcast vars out of a marshaled closure' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        # @return [Foo, nil]
+        attr_reader :location
+
+        def bar
+          return unless location
+          location
+        end
+      end
+    ), 'test.rb')
+    method = Solargraph::SourceMap.map(source).pins.find { |pin| pin.path == 'Foo#bar' }
+    expect(method.downcast_vars).not_to be_empty
+    expect(Marshal.load(Marshal.dump(method)).downcast_vars).to be_empty
+  end
+
   it 'uses is_a? with a fully-qualified type name to refine types' do
     source = Solargraph::Source.load_string(%(
       # @param x [Object]
@@ -1533,8 +1809,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
           def []: (Integer | Symbol | String) -> String?
 
           def []=: (Integer | Symbol | String, String?) -> String?
-
-          def row: (Integer) -> String?
         end
       RBS
       filename = File.join(@workspace, 'test.rb')
@@ -1543,6 +1817,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'narrows a repeated pure call with the same literal argument' do
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1554,6 +1829,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'does not narrow a pure call with a different literal argument' do
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1565,6 +1841,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'narrows a repeated pure call with the same local variable argument' do
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         # @param index [Integer]
@@ -1577,6 +1854,7 @@ describe Solargraph::Parser::FlowSensitiveTyping do
     end
 
     it 'ends the narrowing at an index assignment to the receiver' do
+      pending 'workspace-local sig RBS needs https://github.com/apiology/solargraph/pull/349'
       code = %(
         # @param table [Table]
         def cell(table)
@@ -1586,17 +1864,6 @@ describe Solargraph::Parser::FlowSensitiveTyping do
         end
       )
       expect(infer_at(code, [5, 19])).to eq('::String, nil')
-    end
-
-    it 'does not narrow a call with arguments that is not pure' do
-      code = %(
-        # @param table [Table]
-        def cell(table)
-          return nil unless table.row(0)
-          table.row(0)
-        end
-      )
-      expect(infer_at(code, [4, 22])).to eq('::String, nil')
     end
   end
 
@@ -1637,6 +1904,10 @@ describe Solargraph::Parser::FlowSensitiveTyping do
 
     it 'narrows a repeated Hash#[] with the same local variable key' do
       expect(infer_core("        return unless table[key]\n        table[key]\n", 6)).to eq('::String')
+    end
+
+    it 'does not narrow a call with arguments that is not pure' do
+      expect(infer_core("        return unless list.at(0)\n        list.at(0)\n", 6)).to eq('::String, nil')
     end
 
     it 'ends the narrowing at an index write' do

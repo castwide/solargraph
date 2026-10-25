@@ -62,9 +62,43 @@ module Solargraph
         end
       end
 
+      # Downcast vars FlowSensitiveTyping recorded in this closure for
+      # repeatable call chains, by chain, e.g. [self, location] after
+      # `return unless location` or [pin, location] after
+      # `return unless pin.location`; see Chain::Call#narrowed_call_pin
+      #
+      # @return [Hash{Array<String> => Array<Pin::LocalVariable>}]
+      def downcast_vars
+        @downcast_vars || {}
+      end
+
+      # @param path [::Array<String>]
+      # @param var [Pin::LocalVariable]
+      # @return [void]
+      def add_downcast_var path, var
+        ((@downcast_vars ||= ChainFacts.new)[path] ||= []).push(var)
+      end
+
+      # Downcast vars come from parsing this closure, so gem pin caches leave them out
+      class ChainFacts < ::Hash
+        # @return [::Array]
+        def marshal_dump
+          []
+        end
+
+        # @param _data [::Array]
+        # @return [void]
+        def marshal_load _data; end
+      end
+
       # @param api_map [Solargraph::ApiMap]
       # @return [void]
       def rebind api_map; end
+
+      # True once #rebind found a different self for this closure
+      def rebound?
+        false
+      end
 
       # @return [::Array<String>]
       def generics
