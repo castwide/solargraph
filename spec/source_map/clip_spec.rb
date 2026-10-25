@@ -845,18 +845,14 @@ describe Solargraph::SourceMap::Clip do
 
   it 'keeps a Class#new union whose first member is Class' do
     source = Solargraph::Source.load_string(%(
-      class Class
-        # @return [Class, nil]
-        def new; end
-      end
-      # @param klass [Class]
+      # @param klass [Class<Class>, nil]
       def make(klass)
-        klass.new
+        klass&.new
       end
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
-    clip = api_map.clip_at('test.rb', [7, 16])
+    clip = api_map.clip_at('test.rb', [3, 17])
     expect(clip.infer.tags).to eq('Class, nil')
   end
 
