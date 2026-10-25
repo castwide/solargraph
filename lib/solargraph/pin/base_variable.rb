@@ -194,6 +194,16 @@ module Solargraph
         assignment_sites == other.assignment_sites
       end
 
+      # Inference skips a pin whose identity is already being probed, and
+      # a combined pin keeps its first part's location, so the assignment
+      # sites are what tell `x = 1; x = x.to_s` apart from the `x = 1`
+      # that its value reads.
+      #
+      # @return [String]
+      def identity
+        "#{super}|#{assignment_sites.map(&:inspect).join(',')}"
+      end
+
       # @return [::Array<Solargraph::Range, nil>]
       def assignment_sites
         assignments.map { |node| Solargraph::Range.from_node(node) }
@@ -431,15 +441,14 @@ module Solargraph
       private
 
       # True if `other` supersedes us rather than unioning: it reassigns
-      # the same variable in the same scope, guaranteed to have run.
-      # Excludes self-referential reassignments (`x = x.foo`), whose RHS
-      # needs our assignments as the base case.
+      # the same variable in the same scope, guaranteed to have run.  A
+      # self-referencing reassignment (`x = x.foo`) supersedes too: its
+      # value still reads the earlier binding, per #within_own_assignment?
       #
       # @param other [self]
       # @return [Boolean]
       def override_assignments? other
-        other.definite && within_closure?(other.closure) &&
-          other.value_nodes.none? { |node| references_name?(node) }
+        other.definite && within_closure?(other.closure)
       end
 
       # True if `other_closure` is our closure or a block nested in it,

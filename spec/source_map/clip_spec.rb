@@ -2440,6 +2440,72 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.to_s).to eq('Foo')
   end
 
+  it 'replaces the earlier type with a self-referencing reassignment' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        s = 1
+        s = s.to_s
+        s
+        s = s.length
+        s
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('String')
+    expect(api_map.clip_at('test.rb', [6, 8]).infer.to_s).to eq('Integer')
+  end
+
+  it 'replaces a declared type with a self-referencing reassignment' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        # @type [::Array<String, nil>]
+        readers = []
+        readers = readers.map { |r| r.to_s }
+        readers
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 8]).infer.to_s).to eq('Array<String>')
+  end
+
+  it 'unions a conditional self-referencing reassignment' do
+    source = Solargraph::Source.load_string(%(
+      def foo cond
+        x = 1
+        x = x.to_s if cond
+        x
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Integer, String')
+  end
+
+  it 'keeps a self-referencing reassignment in a loop sound' do
+    source = Solargraph::Source.load_string(%(
+      def foo
+        count = 0
+        [1].each { count = count + 1 }
+        count
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [4, 8]).infer.to_s).to eq('Integer')
+  end
+
+  it 'replaces an ivar type with a self-referencing reassignment' do
+    source = Solargraph::Source.load_string(%(
+      class Foo
+        def foo
+          @s = 1
+          @s = @s.to_s
+          @s
+        end
+      end
+  ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+    expect(api_map.clip_at('test.rb', [5, 10]).infer.to_s).to eq('String')
+  end
+
   it 'replaces nil with reassignments' do
     source = Solargraph::Source.load_string(%(
       bar = nil

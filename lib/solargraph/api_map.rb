@@ -384,8 +384,10 @@ module Solargraph
       with_correct_name = candidates.select { |pin| pin.name == name }
       vars_at_location = with_correct_name.reject do |pin|
         # visible_at? excludes the starting position, but we want to
-        # include it for this purpose
-        !pin.visible_at?(closure, location) && !pin.starts_at?(location)
+        # include it for this purpose - unless the position is inside
+        # the pin's own value, like the `x` that `x += 1` reads
+        !pin.visible_at?(closure, location) &&
+          !(pin.starts_at?(location) && !pin.within_own_assignment?(location))
       end
 
       definite_vars = vars_at_location.map { |pin| pin.definite_at(location) }
@@ -687,7 +689,6 @@ module Solargraph
       sub = sub.simplify_literals.to_s
       return true if sup == sub
       sc_fqns = sub
-      # @sg-ignore flow sensitive typing should be able to handle redefinition
       while (sc = store.get_superclass(sc_fqns))
         sc_new = store.constants.dereference(sc)
         # Cyclical inheritance is invalid
