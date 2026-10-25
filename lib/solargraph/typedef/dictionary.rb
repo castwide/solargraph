@@ -51,19 +51,18 @@ module Solargraph
 
       # @return [Array<Pin::Base>]
       def define
-        # rubocop:disable Lint/UselessDefaultValueArgument
+        # rubocop:disable-next Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:define), [[], nil] do
-          pins, receiver = define_from chain
+          pins, receiver = define_from_chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
         end
-        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       # @return [Type]
       def infer
-        # rubocop:disable Lint/UselessDefaultValueArgument
+        # rubocop:disable-next Lint/UselessDefaultValueArgument
         Typedef.memos.fetch memo_key(:infer), Union::UNDEFINED do
-          pins, receiver = define_from chain
+          pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
           proxies = infer_proxies(pins, receiver)
@@ -72,14 +71,13 @@ module Solargraph
 
           ComplexType::UNDEFINED.to_typedef_typeset
         end
-        # rubocop:enable Lint/UselessDefaultValueArgument
       end
 
       private
 
       # @param chain [Source::Chain]
-      # @return [Array(Array<Pin::Base>, Pin::Closure)]
-      def define_from chain
+      # @return [Array<Pin::Base>, Pin::Closure)]
+      def define_from_chain
         return [[closure], closure.closure] if chain.undefined?
 
         pins = []
@@ -98,16 +96,20 @@ module Solargraph
       end
 
       # @param pins [Array<Pin::Base>]
-      # @param receiver [Pin::Closure, nil]
+      # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
       def infer_proxies pins, receiver
-        return pins unless receiver # @todo Why is this necessary?
+        expanded = if receiver
+                     pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
+                         .map { |pin| pin.proxy(resolve_rooted(pin, receiver).to_complex_type) }
+                         .map { |pin| expand_self(pin, receiver) }
+                   else
+                     pins
+                   end
 
-        # @todo This is inefficient. We probably only need to find and return the first pin that isn't undefined,
-        #   or undefined otherwise
-        result = pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-                     .map { |pin| root_and_infer(pin, receiver) }
+        result = expanded.map { |pin| deep_infer(pin, receiver) }
 
+        # @todo Find the first pin with a defined type?
         # @todo Making a proxy for undefined types seems inefficient
         [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
       end
@@ -119,17 +121,27 @@ module Solargraph
         pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
       end
 
+      def expand_self pin, receiver
+        # @todo A Class#new exception is necessary because the current pin from
+        #   RBS core has return type `undefined`. A better solution is a
+        #   CoreFills override of `Class#new => self`, but it interferes with
+        #   the existing chain inference.
+        if pin.path == 'Class#new'
+          pin.proxy(Solargraph::ComplexType.parse('::Class'))
+        else
+          pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
+        end
+      end
+
       # @param pin [Pin::Base]
       # @param receiver [Pin::Closure]
       # @return [Pin::Base]
-      def root_and_infer pin, receiver
-        # Early self expansion for the sake of Class#new et al.
-        pin = pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.namespace }).to_complex_type)
-        rooted = resolve_rooted(pin, receiver)
-        inferred = if rooted.to_s == 'undefined' # @todo Better way to identify undefined
+      def deep_infer pin, receiver
+        typeset = pin.typedef_typeset
+        inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
                      infer_by_pin_type pin, receiver
                    else
-                     rooted
+                     typeset
                    end
         # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
         #   breaks a whole lot of stuff
@@ -142,12 +154,15 @@ module Solargraph
 
         case pin
         when Pin::BaseVariable, Pin::Constant
-          chain = Solargraph::Parser::ParserGem::NodeChainer.chain(pin.assignment)
-          Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: chain).infer
+          return_types_from_node(pin.assignment)
+        # when Pin::Callable
+        #   return_types_from_node(real_method_body_node(pin))
         else
-          next_chain = next_chain(pin)
-          return pin.typedef_typeset unless next_chain
-          Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+          # next_chain = next_chain(pin)
+          # return pin.typedef_typeset unless next_chain
+          # Dictionary.new(api_map, pin.filename, Range.from_node(next_chain.node).start, chain: next_chain).infer
+          next_node = next_node(pin)
+          return_types_from_node(next_node)
         end
       end
 
@@ -176,15 +191,23 @@ module Solargraph
         elsif pin.is_a?(Pin::Callable)
           node = method_body_node(pin)
           Parser::ParserGem::NodeChainer.chain(node) if node
-        elsif pin.is_a?(Pin::BaseVariable)
-          Parser::ParserGem::NodeChainer.chain(pin.assignment)
+        end
+      end
+
+      def next_node pin
+        if pin.is_a?(Pin::Method)
+          method_body_node(pin)
+        else
+          return unless pin.location
+          source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
         end
       end
 
       # @param pin [Pin::Base]
       # @return [Parser::AST::Node, nil]
       def method_body_node pin
-        node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+        node = pin.node
         return unless node
         return node.children[1].children.last if node.type == :DEFN
         return node.children[2].children.last if node.type == :DEFS
@@ -192,10 +215,34 @@ module Solargraph
         node.children[3] if node.type == :defs
       end
 
+      # @param parent_node [Parser::AST::Node]
+      # @return [Typeset]
+      def return_types_from_node parent_node
+        types = []
+        Parser::ParserGem::NodeMethods.value_position_nodes_only(parent_node).each do |node|
+          # Nil nodes may not have a location
+          if node.nil? || node.type == :NIL || node.type == :nil
+            types.push ComplexType::NIL.to_typedef_typeset
+          else
+            rng = Range.from_node(node)
+            next if rng.nil?
+            pos = rng.ending
+            chain = Parser.chain(node, nil, nil)
+            result = Dictionary.new(api_map, source_map, pos, chain: chain).infer
+            types.push result
+          end
+        end
+        return ComplexType::UNDEFINED.to_typedef_typeset if types.empty?
+        Union.new(types)
+      rescue FileNotFoundError
+        # @todo Necessary for pins from source maps that are not part of the workspace
+        [ComplexType::UNDEFINED]
+      end
+
       # @param action [Symbol]
       # @return [Key]
       def memo_key action
-        Memoizer::Key.new(filename: source_map.filename, api_map: api_map, position: position, chain: chain, action: action)
+        Memoizer::Key.new(filename: source_map.filename, api_map: api_map, chain: chain, action: action)
       end
     end
   end

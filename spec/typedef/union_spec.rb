@@ -38,6 +38,16 @@ describe Solargraph::Typedef::Union do
       expanded = typeset.expand(named_values)
       expect(expanded.to_s).to eq('Array[String] | Set[String]')
     end
+
+    it 'expands parameterized types' do
+      # expanded = pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.namespace }).to_complex_type)
+
+      selfset = Solargraph::ComplexType.parse('self').to_typedef_typeset
+      typeset = Solargraph::ComplexType.parse('Class, Class<Beta>').to_typedef_typeset
+      named_values = { 'self' => typeset.to_s }
+      expanded = selfset.expand(named_values).to_complex_type
+      expect(expanded.to_s).to eq('Class | Class[Beta]')
+    end
   end
 
   describe '#any_generic?' do

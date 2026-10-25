@@ -834,14 +834,14 @@ describe Solargraph::SourceMap::Clip do
     expect(clip.infer.tag).to eq('Class')
   end
 
-  it 'infers BasicObject from Class.new.new' do
+  it 'infers undefined from Class.new.new' do
     source = Solargraph::Source.load_string(%(
       Class.new.new
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new
     api_map.map source
     clip = api_map.clip_at('test.rb', [1, 17])
-    expect(clip.infer.tag).to eq('BasicObject')
+    expect(clip.infer.tag).to eq('undefined')
   end
 
   it 'completes class instance variables in the namespace' do
@@ -3167,5 +3167,25 @@ describe Solargraph::SourceMap::Clip do
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
+  end
+
+  it 'handles unfinished namespaces before methods' do
+    source = Solargraph::Source.load_string(%(
+      module Top
+        class Foo
+          class Bar
+          end
+        end
+      end
+
+      module Top
+        Foo::
+        attr_reader :quuz
+      end
+    ), 'test.rb')
+    api_map = Solargraph::ApiMap.new.map(source)
+
+    clip = api_map.clip_at('test.rb', [9, 13])
+    expect(clip.complete.pins.map(&:path)).to eq(['Top::Foo::Bar'])
   end
 end

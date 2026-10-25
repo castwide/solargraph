@@ -1,3 +1,29 @@
+## 0.61.0 - October 7, 2026
+- Clips qualify constant pins for completion (#1368)
+- Unused spec tags (#1370)
+- External gem dependency management (#1369)
+- Use a development branch of Solargraph::RSpec for plugin tests (#1371)
+- Pin::Base spec changes (#1372)
+- Consolidate cache and gems commands (#1373)
+- Sleep timeouts (#1375)
+- RbsMap loads minimal pins (#1377)
+- Fix 10x slowdown when analyzing projects with many gems (#1374)
+- Clone main solargraph-rspec repo in plugins workflow (#1388)
+- Add new Pin::FactoryParameter (#1063)
+- Support YARD `@!scope` directive (#1387)
+- Add nil guard to Hover (#1389)
+- Stop dropping union members that differ only by type parameter (#1273)
+
+## 0.60.4 - August 30, 2026
+- Fix @yieldparam type lost on multi-overload block-form methods (#1289) (#1290)
+- Read inline RBS superclass params only on the class line (#1301)
+- Stop recording YARD's implicit Object superclass (#1315)
+- Improve overload resolution and macro handling in Chain::Call (#1247)
+- Fix Chain#nullable? leaking nil from earlier &. into later calls (#1271)
+- Handle YARD bug with open singleton classes (#1279)
+- Fix duck_types_match? to check the inferred type's own duck interface (#1295)
+- Use the original repo (run_solargraph_rspec_specs job) (#1291)
+
 ## 0.60.3 - August 5, 2026
 - Pin rdoc to ~> 7.0 (#1216)
 - (tag: v0.60.2) Release 0.60.2 (rdoc fix)

@@ -51,7 +51,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map = Solargraph::ApiMap.new.map(source)
     dictionary = described_class.new(api_map, 'test.rb', [16, 15])
     typeset = dictionary.infer
-    expect(typeset.to_s).to eq('Hash[String, Baz]')
+    expect(typeset.to_s).to eq('Hash[String, Baz[String]]')
   end
 
   it 'infers method return types based on method generic' do

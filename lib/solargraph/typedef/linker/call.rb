@@ -29,7 +29,11 @@ module Solargraph
         end
 
         def method_call
-          return receiver.signatures.map(&:block).compact if link.word == 'yield'
+          if link.word == 'yield'
+            return receiver.signatures
+                           .map(&:block)
+                           .compact
+          end
 
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([receiver.context]).to_typedef_types

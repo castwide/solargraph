@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Solargraph
-  class RbsMap
+  module RbsMap
     # Override pins to fill gaps in RbsMap::CoreMap coverage
     #
     module CoreFills
@@ -38,8 +38,7 @@ module Solargraph
                               source: :core_fill),
         # RBS does not define Class with a generic, so all calls to
         # generic() return an 'untyped'.  We can do better:
-        Override.method_return('Class#allocate', 'self', source: :core_fill),
-        Override.method_return('Class#new', 'self', source: :core_fill)
+        Override.method_return('Class#allocate', 'self', source: :core_fill)
       ].freeze
 
       # @todo I don't see any direct link in RBS to build this from -

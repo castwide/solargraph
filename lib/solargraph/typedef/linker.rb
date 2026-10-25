@@ -12,6 +12,7 @@ module Solargraph
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
       autoload :Literal,          'solargraph/typedef/linker/literal'
       autoload :Or,               'solargraph/typedef/linker/or'
+      autoload :If,               'solargraph/typedef/linker/if'
 
       def hitch link, closure
         case link
@@ -27,6 +28,8 @@ module Solargraph
           Literal.resolve(self, link, closure)
         when Source::Chain::Or
           Or.resolve(self, link, closure)
+        when Source::Chain::If
+          If.resolve(self, link, closure)
         when Source::Chain::ClassVariable
           ClassVariable.resolve(self, link, closure)
         when Source::Chain::BlockSymbol
