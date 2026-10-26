@@ -95,21 +95,6 @@ module Solargraph
           [pins, receiver]
       end
 
-      # @todo This is a placeholder for a possible different workflow when the
-      #   closure is a Block. Currently unused.
-      def define_from_block
-        block_chain = Parser.chain(closure.node)
-        caller = Dictionary.new(api_map, source_map, Range.from_node(closure.node).start, chain: Parser.chain(closure.receiver), closure: closure.closure).define.first
-        # expanded = Expansions::Inference.expand(api_map, caller, closure)
-        # Dictionary.new(api_map, source_map, Range.from_node(closure.node).start, chain: block_chain, closure: caller).infer
-        block_chain.links.each do |link|
-          pins = hitch(link, caller)
-          proxies = infer_proxies(pins, caller)
-          puts 'hmm'
-        end
-        [[Pin::ProxyType.anonymous(ComplexType::UNDEFINED)], closure]
-      end
-
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
       # @return [Array<Pin::ProxyType>]
@@ -122,7 +107,17 @@ module Solargraph
                      pins
                    end
 
-        result = expanded.map { |pin| deep_infer(pin, receiver) }
+        result = expanded.map do |pin|
+          typeset = pin.typedef_typeset
+          inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
+                      Expansions::Inference.expand(api_map, pin, receiver)
+                    else
+                      typeset
+                    end
+          # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
+          #   breaks a whole lot of stuff
+          Pin::ProxyType.anonymous(inferred.to_complex_type)
+        end
 
         # @todo Find the first pin with a defined type?
         # @todo Making a proxy for undefined types seems inefficient
@@ -146,26 +141,6 @@ module Solargraph
         else
           pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
         end
-      end
-
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Closure]
-      # @return [Pin::Base]
-      def deep_infer pin, receiver
-        typeset = pin.typedef_typeset
-        inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
-                     infer_by_pin_type pin, receiver
-                   else
-                     typeset
-                   end
-        # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
-        #   breaks a whole lot of stuff
-        Pin::ProxyType.anonymous(inferred.to_complex_type)
-      end
-
-      # @return [Typeset]
-      def infer_by_pin_type pin, receiver
-        Expansions::Inference.expand(api_map, pin, receiver)
       end
 
       # @param action [Symbol]
