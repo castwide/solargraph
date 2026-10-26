@@ -130,22 +130,20 @@ module Solargraph
         def nearest_method_pin
           @nearest_method_pin ||= begin
             method_pin = receiver
-            method_pin = receiver.closure until method_pin.is_a?(Pin::Method) || method_pin.nil?
+            method_pin = method_pin.closure until method_pin.is_a?(Pin::Method) || method_pin.nil?
             method_pin
           end
         end
 
         def yield_receivers
-          case receiver
-          when Pin::Method
-            receiver.signatures
+          # yield is lexically scoped to the innermost enclosing method, even
+          # when it appears inside a block passed to another method.
+          return [] if receiver.nil?
+          method_pin = receiver.is_a?(Pin::Method) ? receiver : nearest_method_pin
+          return [] unless method_pin
+          method_pin.signatures
                     .map(&:block)
                     .compact
-          when Pin::Block
-            Typedef::Dictionary.new(api_map, source_map, Parser.chain(receiver.receiver), closure: receiver).define
-          else
-            []
-          end
         end
       end
     end
