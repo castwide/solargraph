@@ -30,7 +30,7 @@ module Solargraph
         end
 
         def caller_pins
-          @caller_pin ||= Dictionary.new(api_map, pin.filename, Parser.chain(receiver.receiver)).define
+          @caller_pins ||= Dictionary.new(api_map, pin.filename, Parser.chain(receiver.receiver)).define
         end
 
         def yieldparam_tags
