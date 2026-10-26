@@ -136,14 +136,9 @@ module Solargraph
         end
 
         def yield_receivers
-          # yield is lexically scoped to the innermost enclosing method, even
-          # when it appears inside a block passed to another method.
-          return [] if receiver.nil?
-          method_pin = receiver.is_a?(Pin::Method) ? receiver : nearest_method_pin
-          return [] unless method_pin
-          method_pin.signatures
-                    .map(&:block)
-                    .compact
+          nearest_method_pin&.signatures
+                            &.map(&:block)
+                            &.compact || []
         end
       end
     end
