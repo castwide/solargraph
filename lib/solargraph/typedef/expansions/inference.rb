@@ -7,7 +7,13 @@ module Solargraph
       #
       class Inference < Base
         def expand
-          return Block.expand(api_map, pin, receiver) if receiver.is_a?(Pin::Block)
+          if receiver.is_a?(Pin::Block)
+            from_block = Block.expand(api_map, pin, receiver) if receiver.is_a?(Pin::Block)
+            # @todo Continuing on undefined seems to work in most cases, but we
+            #   should use a more precise condition to determine whether block
+            #   expansion is necessary in the first place.
+            return from_block unless from_block.to_s == 'undefined'
+          end
 
           case pin
           when Pin::BaseVariable, Pin::Constant

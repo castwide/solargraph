@@ -14,7 +14,7 @@ module Solargraph
           #   are always the head of the chain, so they should go to the Head link.
           #   This change will require a change to the way chainers work, so it might
           #   have to wait until processes outside of Typedef stop using chains.
-          local_variable || method_call
+          local_variable || yield_call || super_call || method_call
         end
 
         private
@@ -28,13 +28,19 @@ module Solargraph
           [found] if found
         end
 
-        def method_call
+        def yield_call
           if link.head? && link.word == 'yield'
-            return receiver.signatures
-                           .map(&:block)
-                           .compact
+            receiver.signatures
+                    .map(&:block)
+                    .compact
           end
+        end
 
+        def super_call
+          super_pins if link.head? && link.word == 'super'
+        end
+
+        def method_call
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([receiver.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
@@ -113,6 +119,23 @@ module Solargraph
           end
           named_values = pin.parameter_names.zip(arguments).to_h
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Pin::Base>]
+        def super_pins
+          return [] unless nearest_method_pin
+          api_map.get_method_stack(nearest_method_pin.namespace, nearest_method_pin.name, scope: nearest_method_pin.context.scope)
+                 .reject { |pin| pin.path == nearest_method_pin.path }
+        end
+
+        def nearest_method_pin
+          @nearest_method_pin ||= begin
+            method_pin = receiver
+            method_pin = receiver.closure until method_pin.is_a?(Pin::Method) || method_pin.nil?
+            method_pin
+          end
         end
       end
     end

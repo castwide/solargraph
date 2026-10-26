@@ -500,5 +500,32 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [10, 21]).infer
       expect(typeset.to_s).to eq('Integer')
     end
+
+    it 'infers from super calls' do
+      code = %(
+        class Foo
+          # @return [Integer]
+          def foo
+          end
+        end
+
+        class Bar < Foo
+          def foo
+            bar = super
+            bar
+            [1,2,3].each do |i|
+              baz = super
+              baz
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [10, 12]).infer
+      expect(typeset.to_s).to eq('Integer')
+
+      typeset = dictionary_for(code, [13, 14]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
   end
 end
