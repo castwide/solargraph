@@ -11,7 +11,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 8])
     # @todo Unnecessary conversion
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
@@ -27,7 +27,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [3, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [3, 8])
     # @todo Unnecessary conversion
     types = dictionary.infer.types
     expect(types.map(&:to_s)).to eq(['String'])

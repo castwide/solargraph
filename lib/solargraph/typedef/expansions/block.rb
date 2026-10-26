@@ -15,11 +15,11 @@ module Solargraph
           else
             node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
             call_chain = Parser.chain(node)
-            chain_inferred = Dictionary.new(api_map, pin.filename, Range.from_node(call_chain.node).start, chain: call_chain).infer
+            chain_inferred = Dictionary.new(api_map, pin.filename, call_chain).infer
             return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
 
             call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
-            Dictionary.new(api_map, pin.filename, receiver.location.range.start, chain: call_chain.links.last.block).infer
+            Dictionary.new(api_map, pin.filename, call_chain.links.last.block).infer
           end
         end
 
@@ -30,7 +30,7 @@ module Solargraph
         end
 
         def caller_pins
-          @caller_pin ||= Dictionary.new(api_map, pin.filename, pin.location.range.start, chain: Parser.chain(receiver.receiver)).define
+          @caller_pin ||= Dictionary.new(api_map, pin.filename, Parser.chain(receiver.receiver)).define
         end
 
         def yieldparam_tags

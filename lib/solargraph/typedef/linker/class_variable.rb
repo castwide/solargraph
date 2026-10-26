@@ -9,7 +9,7 @@ module Solargraph
           return [] unless found
 
           chain = Solargraph::Parser::ParserGem::NodeChainer.chain(found.assignment)
-          typeset = Dictionary.new(api_map, found.filename, found.location.range.start, chain: chain).infer
+          typeset = Dictionary.new(api_map, found.filename, chain).infer
           [found.proxy(typeset.to_complex_type)]
         end
       end

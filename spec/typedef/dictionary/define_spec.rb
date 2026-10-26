@@ -2,7 +2,7 @@ describe Solargraph::Typedef::Dictionary do
   def dictionary_for code, position
     source = Solargraph::Source.load_string(code, 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
-    described_class.new(api_map, 'test.rb', position)
+    described_class.at(api_map, 'test.rb', position)
   end
 
   describe '#define' do

@@ -18,7 +18,7 @@ describe Solargraph::Typedef::Dictionary do
       Bar.new.my_method), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [11, 14])
+    dictionary = described_class.at(api_map, 'test.rb', [11, 14])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -35,7 +35,7 @@ describe Solargraph::Typedef::Dictionary do
       Foo.new.my_method), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [7, 14])
+    dictionary = described_class.at(api_map, 'test.rb', [7, 14])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -52,7 +52,7 @@ describe Solargraph::Typedef::Dictionary do
       Foo.new.my_method { "foo" }), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [7, 32])
+    dictionary = described_class.at(api_map, 'test.rb', [7, 32])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -69,7 +69,7 @@ describe Solargraph::Typedef::Dictionary do
     api_map.map source
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 11])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
@@ -85,7 +85,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [6, 10])
+    dictionary = described_class.at(api_map, 'test.rb', [6, 10])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
@@ -102,7 +102,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [7, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [7, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
@@ -121,7 +121,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [9, 9])
+    dictionary = described_class.at(api_map, 'test.rb', [9, 9])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -140,7 +140,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [9, 9])
+    dictionary = described_class.at(api_map, 'test.rb', [9, 9])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -157,7 +157,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [7, 9])
+    dictionary = described_class.at(api_map, 'test.rb', [7, 9])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -172,11 +172,11 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
 
-    dictionary = described_class.new(api_map, 'test.rb', [3, 11])
+    dictionary = described_class.at(api_map, 'test.rb', [3, 11])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
 
-    dictionary = described_class.new(api_map, 'test.rb', [4, 11])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer')
   end
@@ -194,11 +194,11 @@ describe Solargraph::Typedef::Dictionary do
 
     api_map = Solargraph::ApiMap.new.map(source)
 
-    dictionary = described_class.new(api_map, 'test.rb', [3, 11])
+    dictionary = described_class.at(api_map, 'test.rb', [3, 11])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
 
-    dictionary = described_class.new(api_map, 'test.rb', [4, 11])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 11])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Enumerator[Integer | Array[Integer]]')
   end
@@ -212,7 +212,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 6])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 6])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
@@ -227,7 +227,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 6])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 6])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('undefined')
   end
@@ -244,7 +244,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [4, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [4, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Array[undefined] | Hash[String, undefined] | String | Integer | nil')
   end
@@ -261,7 +261,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [6, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [6, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('undefined')
   end
@@ -280,7 +280,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [7, 10])
+    dictionary = described_class.at(api_map, 'test.rb', [7, 10])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Integer | nil')
   end
@@ -294,7 +294,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new(loose_unions: false).map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [3, 8])
+    dictionary = described_class.at(api_map, 'test.rb', [3, 8])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('String')
   end
@@ -310,7 +310,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [6, 6])
+    dictionary = described_class.at(api_map, 'test.rb', [6, 6])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Set[String]')
   end
@@ -323,7 +323,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [3, 15])
+    dictionary = described_class.at(api_map, 'test.rb', [3, 15])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Example')
   end
@@ -334,7 +334,7 @@ describe Solargraph::Typedef::Dictionary do
     ), 'test.rb')
 
     api_map = Solargraph::ApiMap.new.map(source)
-    dictionary = described_class.new(api_map, 'test.rb', [1, 12])
+    dictionary = described_class.at(api_map, 'test.rb', [1, 12])
     typeset = dictionary.infer
     expect(typeset.to_s).to eq('Class')
   end

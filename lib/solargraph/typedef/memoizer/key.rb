@@ -21,12 +21,16 @@ module Solargraph
         # @return [Integer]
         attr_reader :hash
 
-        def initialize filename:, api_map:, chain:, action:
+        # @return [Pin::Closure]
+        attr_reader :closure
+
+        def initialize filename:, api_map:, chain:, action:, closure:
           @filename = filename
           @api_map = api_map
           @chain = chain
           @action = action
-          @hash = [filename, api_map, chain, action].hash
+          @closure = closure
+          @hash = [filename, api_map, chain, action, closure].hash
           freeze
         end
 

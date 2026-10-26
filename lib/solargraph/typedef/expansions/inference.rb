@@ -61,11 +61,8 @@ module Solargraph
             if node.nil? || node.type == :NIL || node.type == :nil
               types.push ComplexType::NIL.to_typedef_typeset
             else
-              rng = Range.from_node(node)
-              next if rng.nil?
-              pos = rng.ending
               chain = Parser.chain(node, nil, nil)
-              result = Dictionary.new(api_map, source_map, pos, chain: chain).infer
+              result = Dictionary.new(api_map, source_map, chain).infer
               types.push result
             end
           end

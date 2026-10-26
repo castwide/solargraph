@@ -13,15 +13,14 @@ module Solargraph
       # @return [SourceMap]
       attr_reader :source_map
 
-      # @return [Position]
-      attr_reader :position
+      # @return [Chain]
+      attr_reader :chain
 
       # @param api_map [ApiMap]
       # @param source_map [SourceMap, String] A SourceMap object or filename
-      # @param position [Position, Array(Integer, Integer), nil]
-      # @param chain [Source::Chain, nil]
+      # @param chain [Source::Chain]
       # @param closure [Pin::Closure, nil]
-      def initialize api_map, source_map, position, chain: nil, closure: nil
+      def initialize api_map, source_map, chain, closure: nil
         @api_map = api_map
         @source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
         @position = Solargraph::Position.normalize(position) if position
@@ -29,9 +28,8 @@ module Solargraph
         @closure = closure
       end
 
-      # @return [Source::Chain]
-      def chain
-        @chain ||= Solargraph::Source::SourceChainer.chain(source_map.source, position)
+      def position
+        @position ||= Range.from_node(chain&.node)&.ending
       end
 
       # @return [Pin::Closure]
@@ -72,6 +70,15 @@ module Solargraph
 
           ComplexType::UNDEFINED.to_typedef_typeset
         end
+      end
+
+      # @param api_map [ApiMap]
+      # @param source_map [SourceMap, String] A SourceMap object or filename
+      # @param position [Position, Array(Integer, Integer), nil]
+      def self.at(api_map, source_map, position)
+        source_map = source_map.is_a?(SourceMap) ? source_map : api_map.source_map(source_map)
+        chain = Solargraph::Source::SourceChainer.chain(source_map.source, position)
+        new(api_map, source_map, chain)
       end
 
       private
@@ -146,7 +153,7 @@ module Solargraph
       # @param action [Symbol]
       # @return [Key]
       def memo_key action
-        Memoizer::Key.new(filename: source_map.filename, api_map: api_map, chain: chain, action: action)
+        Memoizer::Key.new(filename: source_map.filename, api_map: api_map, chain: chain, closure: closure, action: action)
       end
     end
   end

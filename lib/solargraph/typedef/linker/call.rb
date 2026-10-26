@@ -56,7 +56,7 @@ module Solargraph
             next unless signature.arity_matches?(link.arguments, link.with_block?)
 
             arguments = link.arguments.map do |arg|
-              Dictionary.new(api_map, source_map, Range.from_node(arg.node).start, chain: arg).infer
+              Dictionary.new(api_map, source_map, arg).infer
             end
             match = true
             signature.parameters.each.with_index do |par, idx|
@@ -87,7 +87,7 @@ module Solargraph
 
           named_values = {}
           pin.parameters.map.with_index do |param, idx|
-            arg = Dictionary.new(api_map, source_map, param.location.range.start, chain: link.arguments[idx]).infer
+            arg = Dictionary.new(api_map, source_map, link.arguments[idx]).infer
             next_hash = param.typedef_typeset.extract_generics(arg)
             named_values.merge! next_hash
           end
