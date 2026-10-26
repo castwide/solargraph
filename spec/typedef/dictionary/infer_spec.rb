@@ -560,5 +560,20 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [7, 12]).infer
       expect(typeset.to_s).to eq('Integer')
     end
+
+    it 'expands local variable types with multiple assignment pins' do
+      code = %(
+        bar = 'a'
+        if baz
+          bar = :foo
+        elsif qux
+          bar = 123
+        end
+        bar
+      )
+
+      typeset = dictionary_for(code, [7, 8]).infer
+      expect(typeset.to_s).to eq('Integer | Symbol | String')
+    end
   end
 end
