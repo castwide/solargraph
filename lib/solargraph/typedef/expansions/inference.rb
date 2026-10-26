@@ -7,7 +7,7 @@ module Solargraph
       #
       class Inference < Base
         def expand
-          return Block.expand(api_map, pin, receiver) if receiver.is_a?(Pin::Block)
+          # return Block.expand(api_map, pin, receiver) if receiver.is_a?(Pin::Block)
 
           case pin
           when Pin::BaseVariable, Pin::Constant

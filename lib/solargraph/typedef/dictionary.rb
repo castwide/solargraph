@@ -52,7 +52,7 @@ module Solargraph
       # @return [Array<Pin::Base>]
       def define
         # rubocop:disable-next Lint/UselessDefaultValueArgument
-        Typedef.memos.fetch memo_key(:define), [[], nil] do
+        Typedef.memos.fetch memo_key(:define), [] do
           pins, receiver = define_from_chain
           pins.map { |pin| pin.proxy(Expansions::Macros.expand(api_map, pin, receiver).to_complex_type) }
         end
@@ -66,6 +66,7 @@ module Solargraph
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
           proxies = infer_proxies(pins, receiver)
+          # @todo Is macro expansion necessary here?
           inferred = proxies.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
           return inferred.typedef_typeset if inferred
 
@@ -79,20 +80,34 @@ module Solargraph
       # @return [Array<Pin::Base>, Pin::Closure)]
       def define_from_chain
         return [[closure], closure.closure] if chain.undefined?
+          pins = []
+          receiver = closure
+          last_link = chain.links.last
+          chain.links.each do |link|
+            pins = hitch(link, receiver)
+            break if link == last_link
 
-        pins = []
-        receiver = closure
-        last_link = chain.links.last
-        chain.links.each do |link|
-          pins = hitch(link, receiver)
-          break if link == last_link
+            proxies = infer_proxies(pins, receiver)
+            return [[], receiver] if proxies.empty?
+            receiver = proxies.first
+            return [[], nil] unless receiver
+          end
+          [pins, receiver]
+      end
 
-          proxies = infer_proxies(pins, receiver)
-          return [[], receiver] if proxies.empty?
-          receiver = proxies.first
-          return [[], nil] unless receiver
+      # @todo This is a placeholder for a possible different workflow when the
+      #   closure is a Block. Currently unused.
+      def define_from_block
+        block_chain = Parser.chain(closure.node)
+        caller = Dictionary.new(api_map, source_map, Range.from_node(closure.node).start, chain: Parser.chain(closure.receiver), closure: closure.closure).define.first
+        # expanded = Expansions::Inference.expand(api_map, caller, closure)
+        # Dictionary.new(api_map, source_map, Range.from_node(closure.node).start, chain: block_chain, closure: caller).infer
+        block_chain.links.each do |link|
+          pins = hitch(link, caller)
+          proxies = infer_proxies(pins, caller)
+          puts 'hmm'
         end
-        [pins, receiver]
+        [[Pin::ProxyType.anonymous(ComplexType::UNDEFINED)], closure]
       end
 
       # @param pins [Array<Pin::Base>]
