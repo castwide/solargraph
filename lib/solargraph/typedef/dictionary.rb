@@ -114,7 +114,7 @@ module Solargraph
                      pins
                    end
 
-        result = expanded.map do |pin|
+        expanded.map do |pin|
           typeset = pin.typedef_typeset
           inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
                       Expansions::Inference.expand(api_map, pin, receiver)
@@ -125,10 +125,6 @@ module Solargraph
           #   breaks a whole lot of stuff
           Pin::ProxyType.anonymous(inferred.to_complex_type)
         end
-
-        # @todo Find the first pin with a defined type?
-        # @todo Making a proxy for undefined types seems inefficient
-        [result.first || Pin::ProxyType.anonymous(ComplexType::UNDEFINED)]
       end
 
       # @param pin [Pin::Base]

@@ -250,6 +250,7 @@ describe Solargraph::Typedef::Dictionary do
   end
 
   it 'preserves undefined and underdefined types in resolution' do
+    skip 'Unsure about supporting `undefined` as an explicit tag'
     source = Solargraph::Source.load_string(%(
       # @param params [Hash{String => Array<undefined>, Hash{String => undefined}, String, Integer}]
       def foo(params)

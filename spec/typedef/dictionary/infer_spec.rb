@@ -482,5 +482,23 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [4, 11]).infer
       expect(typeset.to_s).to eq('Array')
     end
+
+    it 'infers from superclass return tags' do
+      code = %(
+        class Superclass
+          # @return [Integer]
+          def example
+          end
+        end
+
+        class Subclass < Superclass
+        end
+
+        Subclass.new.example
+      )
+
+      typeset = dictionary_for(code, [10, 21]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
   end
 end
