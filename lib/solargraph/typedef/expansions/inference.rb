@@ -76,7 +76,7 @@ module Solargraph
           Typeset.new(types)
         rescue FileNotFoundError
           # @todo Necessary for pins from source maps that are not part of the workspace
-          [ComplexType::UNDEFINED]
+          ComplexType::UNDEFINED.to_typedef_typeset
         end
       end
     end
