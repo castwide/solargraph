@@ -540,5 +540,25 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [3, 13]).infer
       expect(typeset.to_s).to eq('String')
     end
+
+    it 'handles block method yield scenarios' do
+      code = %(
+        # @yieldreturn [Integer]
+        def foo
+          bar = yield
+          bar
+          [1,2,3].each do |i|
+            baz = yield
+            baz
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [4, 10]).infer
+      expect(typeset.to_s).to eq('Integer')
+
+      typeset = dictionary_for(code, [7, 12]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
   end
 end
