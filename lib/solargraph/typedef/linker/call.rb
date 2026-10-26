@@ -29,11 +29,7 @@ module Solargraph
         end
 
         def yield_call
-          if link.head? && link.word == 'yield'
-            receiver.signatures
-                    .map(&:block)
-                    .compact
-          end
+          yield_receivers if link.head? && link.word == 'yield'
         end
 
         def super_call
@@ -136,6 +132,19 @@ module Solargraph
             method_pin = receiver
             method_pin = receiver.closure until method_pin.is_a?(Pin::Method) || method_pin.nil?
             method_pin
+          end
+        end
+
+        def yield_receivers
+          case receiver
+          when Pin::Method
+            receiver.signatures
+                    .map(&:block)
+                    .compact
+          when Pin::Block
+            Typedef::Dictionary.new(api_map, source_map, Parser.chain(receiver.receiver), closure: receiver).define
+          else
+            []
           end
         end
       end
