@@ -527,5 +527,18 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [13, 14]).infer
       expect(typeset.to_s).to eq('Integer')
     end
+
+    it 'handles resolving String#each_line overloads' do
+      code = %(
+        def foo
+          'abcdef'.each_line do |line|
+            line
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [3, 13]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end

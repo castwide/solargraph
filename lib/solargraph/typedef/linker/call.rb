@@ -60,6 +60,7 @@ module Solargraph
           signatures = pin.is_a?(Pin::Method) ? pin.signatures : [pin]
           signatures.each do |signature|
             next unless signature.arity_matches?(link.arguments, link.with_block?)
+            next if !signature.block? && link.with_block?
 
             arguments = link.arguments.map do |arg|
               Dictionary.new(api_map, source_map, arg).infer
