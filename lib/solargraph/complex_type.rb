@@ -424,7 +424,7 @@ module Solargraph
     def to_typedef_typeset
       # @todo Quick and dirty hack
       return Typedef::Typeset.new([Typedef::Type::ROOT]) if to_s == 'Class<>'
-      if hash_parameters? || name == 'Hash'
+      if hash_parameters?
         top = Typedef.tokenize(name)
         key = Typedef::Typeset.new(key_types.map(&:to_typedef_typeset))
         val = Typedef::Typeset.new(value_types.map(&:to_typedef_typeset))
