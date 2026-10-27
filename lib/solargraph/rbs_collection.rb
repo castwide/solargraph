@@ -68,7 +68,7 @@ module Solargraph
       full_key = "#{metagem.name}-#{metagem.version}."
       zero_key = "#{metagem.name}-0"
       found = gem_path_map.find { |key, _| full_key.start_with?("#{key}.") } ||
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+              # @sg-ignore Unresolved call to ==
               gem_path_map.find { |key, _| key == zero_key }
       found&.first || closest_key(metagem)
     end
