@@ -127,8 +127,6 @@ module Solargraph
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
         end
 
-        # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
         # @return [::Array<Pin::Base>]
         def super_pins
           return [] unless nearest_method_pin
