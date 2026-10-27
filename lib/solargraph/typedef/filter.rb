@@ -2,9 +2,14 @@
 
 module Solargraph
   module Typedef
+    # Reduce an array of pins and their receiver to a typeset or proxy pin.
+    #
     class Filter
       attr_reader :api_map, :pins, :receiver
 
+      # @param api_map [ApiMap]
+      # @param pins [Array<Pin::Base>]
+      # @param receiver [Pin::Closure]
       def initialize api_map, pins, receiver
         @api_map = api_map
         @pins = if receiver
@@ -17,6 +22,7 @@ module Solargraph
         @receiver = receiver
       end
 
+      # @return [Typeset]
       def typeset
         case pins.first
         when Pin::BaseVariable
@@ -31,8 +37,9 @@ module Solargraph
         end
       end
 
+      # @return [Pin::ProxyType]
       def proxy
-        Pin::ProxyType.anonymous(typeset.to_complex_type)
+        Pin::ProxyType.anonymous(typeset.to_complex_type, closure: receiver)
       end
 
       private
