@@ -577,7 +577,6 @@ describe Solargraph::Typedef::Dictionary do
     end
 
     it 'infers that type of argument has been overridden' do
-      pending 'WIP'
       code = %(
         def foo a
           a = 'foo'

@@ -25,7 +25,16 @@ module Solargraph
                               .reverse
                               .select { |pin| pin.name == link.word }
                   end
-          found if found&.any?
+          reduce_local_type(found) if found&.any?
+        end
+
+        # Local variables supersede parameters
+        #
+        # @param [Array<Pin::LocalVariable>]
+        # @return [Array<Pin::LocalVariable>]
+        def reduce_local_type pins
+          return pins if pins.first.is_a?(Pin::Parameter)
+          pins.reject { |pin| pin.is_a?(Pin::Parameter) }
         end
 
         def yield_call
