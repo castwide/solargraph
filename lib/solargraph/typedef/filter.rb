@@ -4,6 +4,10 @@ module Solargraph
   module Typedef
     # Reduce an array of pins and their receiver to a typeset or proxy pin.
     #
+    # The Dictionary determines the selection of pins that can define the
+    # return type of a given Chain. The Filter collates them into a single
+    # typeset.
+    #
     class Filter
       attr_reader :api_map, :pins, :receiver
 
@@ -46,11 +50,11 @@ module Solargraph
 
       # @return [Typeset]
       def first_declared_or_combined
-        return first_declared unless first_declared.to_s == 'undefined' # @todo Better way to identify undefined
+        return first_declared if first_declared.defined?
 
         inferred = pins.filter_map do |pin|
           inferred = Expansions::Inference.expand(api_map, pin, receiver)
-          return inferred if inferred.to_s == 'undefined' # @todo Better way to identify undefined
+          return inferred if inferred.undefined?
           inferred
         end
 
@@ -59,11 +63,11 @@ module Solargraph
 
       # @return [Typeset]
       def first_declared_or_inferred
-        return first_declared unless first_declared.to_s == 'undefined' # @todo Better way to identify undefined
+        return first_declared if first_declared.defined?
 
         pins.each do |pin|
           inferred = Expansions::Inference.expand(api_map, pin, receiver)
-          return inferred unless inferred.to_s == 'undefined' # @todo Better way to identify undefined
+          return inferred if inferred.defined?
         end
 
         ComplexType::UNDEFINED.to_typedef_typeset
@@ -71,8 +75,7 @@ module Solargraph
 
       def first_declared
         @first_declared ||= begin
-          # @todo Better way to identify undefined
-          found = pins.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
+          found = pins.find { |pin| pin.typedef_typeset.defined? }
           found&.typedef_typeset || ComplexType::UNDEFINED.to_typedef_typeset
         end
       end

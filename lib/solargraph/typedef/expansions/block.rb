@@ -14,7 +14,7 @@ module Solargraph
             node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
             call_chain = Parser.chain(node)
             chain_inferred = Dictionary.new(api_map, pin.filename, call_chain).infer
-            return chain_inferred unless chain_inferred.to_s == 'undefined' || chain_inferred.to_s.empty?
+            return chain_inferred unless chain_inferred.undefined? || chain_inferred.to_s.empty?
 
             call_chain = Solargraph::Parser::ParserGem::NodeChainer.chain(receiver.node)
             Dictionary.new(api_map, pin.filename, call_chain.links.last.block).infer

@@ -66,6 +66,14 @@ module Solargraph
         types.map(&:to_s_for_complex_type).join(', ')
       end
 
+      def undefined?
+        to_s == 'undefined'
+      end
+
+      def defined?
+        !undefined?
+      end
+
       private
 
       def reduce!

@@ -12,7 +12,7 @@ module Solargraph
             # @todo Continuing on undefined seems to work in most cases, but we
             #   should use a more precise condition to determine whether block
             #   expansion is necessary in the first place.
-            return from_block unless from_block.to_s == 'undefined'
+            return from_block if from_block.defined?
           end
 
           case pin

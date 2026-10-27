@@ -90,7 +90,7 @@ module Solargraph
             break if link == last_link
 
             proxy = Filter.new(api_map, pins, receiver).proxy
-            return [[], receiver] if proxy.to_s == 'undefined' # @todo Better way to identify undefined
+            return [[], receiver] if proxy.typedef_typeset.undefined?
             receiver = proxy
           end
           [pins, receiver]

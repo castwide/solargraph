@@ -575,5 +575,18 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [7, 8]).infer
       expect(typeset.to_s).to eq('Integer | Symbol | String')
     end
+
+    it 'infers that type of argument has been overridden' do
+      pending 'WIP'
+      code = %(
+        def foo a
+          a = 'foo'
+          a
+        end
+      )
+
+      typeset = dictionary_for(code, [3, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end
