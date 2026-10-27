@@ -573,17 +573,17 @@ module Solargraph
     def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
       result = []
       kwargs.each_pair do |pname, argchain|
-        # @sg-ignore Unresolved call to to_s
+        # @sg-ignore Yielded tuples are not destructured into block params
         next unless params.key?(pname.to_s)
         # @sg-ignore https://github.com/apiology/solargraph/pull/198
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
-        # @sg-ignore Unresolved call to infer
+        # @sg-ignore Yielded tuples are not destructured into block params
         argtype = argchain.infer(api_map, closure_pin, locals)
-        # @sg-ignore Unresolved call to self_to_type
+        # @sg-ignore Yielded tuples are not destructured into block params
         argtype = argtype.self_to_type(closure_pin.context)
-        # @sg-ignore Unresolved call to defined?
+        # @sg-ignore Yielded tuples are not destructured into block params
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location,
                                   "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")

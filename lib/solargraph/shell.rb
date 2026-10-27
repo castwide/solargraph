@@ -356,7 +356,7 @@ module Solargraph
         print_pin(pin)
       end
       references.each do |key, refpin|
-        # @sg-ignore Unresolved call to to_s
+        # @sg-ignore Yielded tuples are not destructured into block params
         puts "\n# #{key.to_s.capitalize}:\n\n"
         print_pin(refpin)
       end

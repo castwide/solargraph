@@ -402,10 +402,10 @@ module Solargraph
             # maximize number of gates, as types in other combined pins may
             # depend on those gates
 
-            # @sg-ignore Unresolved call to gates
+            # @sg-ignore Array literals infer bare Array without element types
             closure.gates.length,
             # use basename so that results don't vary system to system
-            # @sg-ignore Unresolved call to best_location
+            # @sg-ignore Array literals infer bare Array without element types
             File.basename(closure.best_location.to_s)
           ]
         end

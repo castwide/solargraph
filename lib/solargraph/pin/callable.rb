@@ -148,10 +148,10 @@ module Solargraph
         callable = super(generics_to_resolve, return_type_context, resolved_generic_values: resolved_generic_values)
         callable.parameters = callable.parameters.each_with_index.map do |param, i|
           if arg_types.nil?
-            # @sg-ignore Unresolved call to dup
+            # @sg-ignore Yielded tuples are not destructured into block params
             param.dup
           else
-            # @sg-ignore Unresolved call to resolve_generics_from_context
+            # @sg-ignore Yielded tuples are not destructured into block params
             param.resolve_generics_from_context(generics_to_resolve,
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)

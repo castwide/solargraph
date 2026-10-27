@@ -257,10 +257,10 @@ module Solargraph
 
           # Add includes, prepends, and extends
           [get_includes(current), get_prepends(current), get_extends(current)].each do |refs|
-            # @sg-ignore Unresolved call to nil?
+            # @sg-ignore Array literals infer bare Array without element types
             next if refs.nil?
             # @param ref [String]
-            # @sg-ignore Unresolved call to map
+            # @sg-ignore Array literals infer bare Array without element types
             refs.map(&:type).map(&:to_s).each do |ref|
               next if ref.nil? || ref.empty? || visited.include?(ref)
               ancestors << ref

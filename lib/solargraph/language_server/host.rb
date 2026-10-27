@@ -600,7 +600,7 @@ module Solargraph
       # @return [Array<Solargraph::Pin::Base>]
       def query_symbols query
         result = []
-        # @sg-ignore Unresolved call to query_symbols
+        # @sg-ignore Array literals infer bare Array without element types
         (libraries + [generic_library]).each { |lib| result.concat lib.query_symbols(query) }
         result.uniq
       end

@@ -430,7 +430,7 @@ module Solargraph
         end
       end
       repargs.each_pair do |reporter, args|
-        # @sg-ignore Unresolved call to new
+        # @sg-ignore Yielded tuples are not destructured into block params
         result.concat reporter.new(*args.uniq).diagnose(source, api_map)
       end
       result

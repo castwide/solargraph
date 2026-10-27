@@ -243,7 +243,7 @@ module Solargraph
         # Add specialized vars for the rest of the block
         #
         facts_by_pin.each_pair do |pin, facts|
-          # @sg-ignore Unresolved call to each
+          # @sg-ignore Yielded tuples are not destructured into block params
           facts.each do |fact|
             downcast_type = fact.fetch(:type, nil)
             downcast_not_type = fact.fetch(:not_type, nil)

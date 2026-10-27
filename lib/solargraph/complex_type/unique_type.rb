@@ -422,7 +422,7 @@ module Solargraph
       def resolve_param_generics_from_context generics_to_resolve, context_type, resolved_generic_values
         types = yield self
         types.each_with_index.flat_map do |ct, i|
-          # @sg-ignore Unresolved call to items
+          # @sg-ignore Yielded tuples are not destructured into block params
           ct.items.flat_map do |ut|
             context_params = yield context_type if context_type
             if context_params && context_params[i]
