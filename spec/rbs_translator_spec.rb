@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 describe Solargraph::RbsTranslator do
   describe '.to_complex_type' do
     # @param rbs [String]
@@ -56,6 +58,12 @@ describe Solargraph::RbsTranslator do
 
     it 'keeps a tuple of string literals that contain type syntax characters' do
       expect(translate('["<", Integer]').rooted_tags).to eq('::Array("<", ::Integer)')
+    end
+
+    it 'translates an unrecognized type to undefined' do
+      unrecognized = Struct.new(:location).new(nil)
+
+      expect(described_class.to_complex_type(unrecognized).rooted_tags).to eq('undefined')
     end
 
     it 'gives an empty tuple no members' do
