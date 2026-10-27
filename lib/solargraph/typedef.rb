@@ -8,6 +8,7 @@ module Solargraph
     autoload :Linker,     'solargraph/typedef/linker'
     autoload :Memoizer,   'solargraph/typedef/memoizer'
     autoload :Dictionary, 'solargraph/typedef/dictionary'
+    autoload :Filter,     'solargraph/typedef/filter'
     autoload :Expansions, 'solargraph/typedef/expansions'
     autoload :Typeset,    'solargraph/typedef/typeset'
     autoload :Tuple,      'solargraph/typedef/tuple'

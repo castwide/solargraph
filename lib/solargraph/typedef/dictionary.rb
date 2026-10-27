@@ -97,79 +97,14 @@ module Solargraph
       end
 
       def infer_typeset pins, receiver
-        expanded = if receiver
-                     pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
-                         .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
-                         .map { |pin| expand_self(pin, receiver) }
-                   else
-                     pins
-                   end
-
-        case expanded.first
-        when Pin::BaseVariable
-          first_declared_or_combined expanded, receiver
-        when Pin::Method, Pin::Signature
-          first_declared_or_inferred expanded, receiver
-        when Pin::ProxyType
-          expanded.first.typedef_typeset
-        else
-          # @todo Check for additional cases
-          first_declared_or_inferred expanded, receiver
-        end
+        Filter.new(api_map, pins, receiver).typeset
       end
 
       # @param pins [Array<Pin::Base>]
       # @param receiver [Pin::Closure]
       # @return [Pin::ProxyType]
       def infer_proxy pins, receiver
-        inferred = infer_typeset(pins, receiver)
-        Pin::ProxyType.anonymous(inferred.to_complex_type)
-      end
-
-      # @return [Typeset]
-      def first_declared_or_combined pins, receiver
-        declared = pins.find { |pin| pin.typedef_typeset.to_s != 'undefined' } # @todo Better way to identify undefined
-        return declared.typedef_typeset if declared
-
-        inferred = pins.filter_map do |pin|
-          inferred = Expansions::Inference.expand(api_map, pin, receiver)
-          return inferred if inferred.to_s == 'undefined' # @todo Better way to identify undefined
-          inferred
-        end
-
-        Typeset.new(inferred)
-      end
-
-      # @return [Typeset]
-      def first_declared_or_inferred pins, receiver
-        declared = pins.find { |pin| pin.typedef_typeset.to_s != 'undefined' } # @todo Better way to identify undefined
-        return declared.typedef_typeset if declared
-
-        pins.each do |pin|
-          inferred = Expansions::Inference.expand(api_map, pin, receiver)
-          return inferred unless inferred.to_s == 'undefined' # @todo Better way to identify undefined
-        end
-
-        ComplexType::UNDEFINED.to_typedef_typeset
-      end
-
-      # @param pin [Pin::Base]
-      # @param receiver [Pin::Closure, Pin::ProxyType]
-      # @return [Typeset]
-      def expand_root pin, receiver
-        pin.typedef_typeset.resolve_rooted(api_map, receiver&.closure&.gates || [''])
-      end
-
-      def expand_self pin, receiver
-        # @todo A Class#new exception is necessary because the current pin from
-        #   RBS core has return type `undefined`. A better solution is a
-        #   CoreFills override of `Class#new => self`, but it interferes with
-        #   the existing chain inference.
-        if pin.path == 'Class#new'
-          pin.proxy(Solargraph::ComplexType.parse('::Class'))
-        else
-          pin.proxy(pin.typedef_typeset.expand({ 'self' => receiver.typedef_typeset }).to_complex_type)
-        end
+        Filter.new(api_map, pins, receiver).proxy
       end
 
       # @param action [Symbol]
