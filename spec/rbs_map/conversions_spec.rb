@@ -352,6 +352,38 @@ describe Solargraph::RbsMap::Conversions do
         expect(prepend_pin.name).to eq('Bar')
       end
     end
+
+    context 'with a constant typed as a tuple holding a symbol literal' do
+      subject(:constant_pin) { conversions.pins.find { |pin| pin.path == 'NO_ARGUMENT' } }
+
+      let(:rbs) do
+        <<~RBS
+          NO_ARGUMENT: [:NONE, nil]
+        RBS
+      end
+
+      it 'keeps the tuple type' do
+        expect(constant_pin.return_type.tag).to eq('Array(:NONE, nil)')
+      end
+    end
+
+    context 'with a type alias of string literals holding type syntax characters' do
+      subject(:method_pin) { api_map.get_method_stack('Requirement', 'parse', scope: :class).first }
+
+      let(:rbs) do
+        <<~RBS
+          class Requirement
+            type operator = "=" | "<" | ">="
+
+            def self.parse: () -> operator
+          end
+        RBS
+      end
+
+      it 'keeps each literal' do
+        expect(method_pin.return_type.rooted_tags).to eq('"=", "<", ">="')
+      end
+    end
   end
 
   context 'with standard loads for solargraph project' do
