@@ -108,7 +108,7 @@ module Solargraph
 
           # @param a [Array(String, String | nil)]
           # @return [String]
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+          # @sg-ignore Solargraph::YardMap::Mapper::ToMethod.arg_name return type could not be inferred
           def arg_name a
             # @sg-ignore Unresolved call to gsub on Array, nil
             a[0].gsub(/[^a-z0-9_]/i, '')
