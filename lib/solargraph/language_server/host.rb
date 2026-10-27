@@ -715,6 +715,15 @@ module Solargraph
         client_capabilities['window'] && client_capabilities['window']['workDoneProgress']
       end
 
+      # The Library observer callback that sends a library's progress to
+      # the client.
+      #
+      # @param progress [Solargraph::LanguageServer::Progress, nil]
+      # @return [void]
+      def update progress
+        progress&.send(self)
+      end
+
       private
 
       # @return [Array<Integer>]
