@@ -141,6 +141,8 @@ module Solargraph
     # @return [Array<Problem>]
     def method_return_type_problems_for pin
       return [] if pin.is_a?(Pin::MethodAlias)
+      # An unresolvable DelegatedMethod's type comes from its @!method directive, not a @return tag.
+      return [] if pin.is_a?(Pin::DelegatedMethod) && !pin.resolvable?(api_map)
       result = []
       declared = pin.typify(api_map).self_to_type(pin.full_context).qualify(api_map, *pin.gates)
       if declared.undefined?
@@ -219,7 +221,7 @@ module Solargraph
         params = param_details_from_stack(sig, stack)
         if rules.require_type_tags?
           sig.parameters.each do |par|
-            break if %i[restarg kwrestarg blockarg].include?(par.decl)
+            break if %i[restarg kwrestarg blockarg forward_args].include?(par.decl)
             unless params[par.name]
               if pin.attribute?
                 inferred = pin.probe(api_map).self_to_type(pin.full_context)
@@ -394,6 +396,7 @@ module Solargraph
       return [] unless last_base_link.is_a?(Solargraph::Source::Chain::Call)
 
       arguments = last_base_link.arguments
+      return [] if any_forwarded_args?(arguments.map(&:node))
 
       pins = base.define(api_map, closure_pin, locals)
 
