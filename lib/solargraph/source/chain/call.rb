@@ -224,7 +224,8 @@ module Solargraph
           each_method_pin(api_map, name_pin) { |_context, reader| readers.push reader }
           return nil if readers.include?(nil) && !api_map.loose_unions
           readers = readers.compact
-          # @sg-ignore Need better handling of #compact
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1458
+          #   https://github.com/castwide/solargraph/pull/1338
           return nil if readers.empty? || !readers.all? { |reader| reader.attribute? || reader.pure? }
 
           # Without a declared type the pin's type is the downcast alone, e.g.
