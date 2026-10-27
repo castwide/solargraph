@@ -1193,6 +1193,43 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to eq([])
     end
 
+    it 'types the yielded pair of each_with_index.map' do
+      checker = type_checker(%(
+        # @param s [Symbol]
+        # @return [void]
+        def take_sym s; end
+
+        # @return [Array<String>]
+        def names
+          []
+        end
+
+        names.each_with_index.map do |pair|
+          take_sym pair
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(
+        ['Wrong argument type for #take_sym: s expected Symbol, received Array(String, Integer)']
+      )
+    end
+
+    it 'types block parameters and the result of map.with_index' do
+      checker = type_checker(%(
+        # @param s [Symbol]
+        # @return [void]
+        def take_sym s; end
+
+        # @param items [Array<Integer>]
+        # @return [Array<Integer>]
+        def doubled items
+          items.map.with_index { |item, idx| take_sym idx; item * 2 }
+        end
+      ))
+      expect(checker.problems.map(&:message)).to eq(
+        ['Wrong argument type for #take_sym: s expected Symbol, received Integer']
+      )
+    end
+
     it 'resolves the operators TrueClass and FalseClass share on Boolean' do
       checker = type_checker(%(
         class Foo
