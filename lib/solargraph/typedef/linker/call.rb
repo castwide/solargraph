@@ -23,9 +23,9 @@ module Solargraph
           found = if link.head?
                     source_map.locals_at(dictionary.location)
                               .reverse
-                              .find { |pin| pin.name == link.word }
+                              .select { |pin| pin.name == link.word }
                   end
-          [found] if found
+          found if found&.any?
         end
 
         def yield_call

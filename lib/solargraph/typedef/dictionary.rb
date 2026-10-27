@@ -63,12 +63,7 @@ module Solargraph
           pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
-          proxies = infer_proxies(pins, receiver)
-          # @todo Is macro expansion necessary here?
-          inferred = proxies.find { |pin| pin.typedef_typeset.to_s != 'undefined' }
-          return inferred.typedef_typeset if inferred
-
-          ComplexType::UNDEFINED.to_typedef_typeset
+          infer_typeset(pins, receiver)
         end
       end
 
@@ -94,18 +89,14 @@ module Solargraph
             pins = hitch(link, receiver)
             break if link == last_link
 
-            proxies = infer_proxies(pins, receiver)
-            return [[], receiver] if proxies.empty?
-            receiver = proxies.first
-            return [[], nil] unless receiver
+            proxy = infer_proxy(pins, receiver)
+            return [[], receiver] if proxy.to_s == 'undefined' # @todo Better way to identify undefined
+            receiver = proxy
           end
           [pins, receiver]
       end
 
-      # @param pins [Array<Pin::Base>]
-      # @param receiver [Pin::Closure]
-      # @return [Array<Pin::ProxyType>]
-      def infer_proxies pins, receiver
+      def infer_typeset pins, receiver
         expanded = if receiver
                      pins.map { |pin| pin.proxy(Expansions::Generics.expand(api_map, pin, receiver).to_complex_type) }
                          .map { |pin| pin.proxy(expand_root(pin, receiver).to_complex_type) }
@@ -114,17 +105,52 @@ module Solargraph
                      pins
                    end
 
-        expanded.map do |pin|
-          typeset = pin.typedef_typeset
-          inferred = if typeset.to_s == 'undefined' # @todo Better way to identify undefined
-                      Expansions::Inference.expand(api_map, pin, receiver)
-                    else
-                      typeset
-                    end
-          # @todo Not sure why this has to be an anonymous proxy, proxying the pin directly
-          #   breaks a whole lot of stuff
-          Pin::ProxyType.anonymous(inferred.to_complex_type)
+        case expanded.first
+        when Pin::BaseVariable
+          first_declared_or_combined expanded, receiver
+        when Pin::Method, Pin::Signature
+          first_declared_or_inferred expanded, receiver
+        when Pin::ProxyType
+          expanded.first.typedef_typeset
+        else
+          # @todo Check for additional cases
+          first_declared_or_inferred expanded, receiver
         end
+      end
+
+      # @param pins [Array<Pin::Base>]
+      # @param receiver [Pin::Closure]
+      # @return [Pin::ProxyType]
+      def infer_proxy pins, receiver
+        inferred = infer_typeset(pins, receiver)
+        Pin::ProxyType.anonymous(inferred.to_complex_type)
+      end
+
+      # @return [Typeset]
+      def first_declared_or_combined pins, receiver
+        declared = pins.find { |pin| pin.typedef_typeset.to_s != 'undefined' } # @todo Better way to identify undefined
+        return declared.typedef_typeset if declared
+
+        inferred = pins.filter_map do |pin|
+          inferred = Expansions::Inference.expand(api_map, pin, receiver)
+          return inferred if inferred.to_s == 'undefined' # @todo Better way to identify undefined
+          inferred
+        end
+
+        Typeset.new(inferred)
+      end
+
+      # @return [Typeset]
+      def first_declared_or_inferred pins, receiver
+        declared = pins.find { |pin| pin.typedef_typeset.to_s != 'undefined' } # @todo Better way to identify undefined
+        return declared.typedef_typeset if declared
+
+        pins.each do |pin|
+          inferred = Expansions::Inference.expand(api_map, pin, receiver)
+          return inferred unless inferred.to_s == 'undefined' # @todo Better way to identify undefined
+        end
+
+        ComplexType::UNDEFINED.to_typedef_typeset
       end
 
       # @param pin [Pin::Base]
