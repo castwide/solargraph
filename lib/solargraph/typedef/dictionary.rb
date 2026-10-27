@@ -63,7 +63,7 @@ module Solargraph
           pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
-          infer_typeset(pins, receiver)
+          Filter.new(api_map, pins, receiver).typeset
         end
       end
 
@@ -89,22 +89,11 @@ module Solargraph
             pins = hitch(link, receiver)
             break if link == last_link
 
-            proxy = infer_proxy(pins, receiver)
+            proxy = Filter.new(api_map, pins, receiver).proxy
             return [[], receiver] if proxy.to_s == 'undefined' # @todo Better way to identify undefined
             receiver = proxy
           end
           [pins, receiver]
-      end
-
-      def infer_typeset pins, receiver
-        Filter.new(api_map, pins, receiver).typeset
-      end
-
-      # @param pins [Array<Pin::Base>]
-      # @param receiver [Pin::Closure]
-      # @return [Pin::ProxyType]
-      def infer_proxy pins, receiver
-        Filter.new(api_map, pins, receiver).proxy
       end
 
       # @param action [Symbol]
