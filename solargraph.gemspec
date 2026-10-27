@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# @sg-ignore Unresolved call to unshift on Array<String>, _LoadPathAPI
+# @sg-ignore https://github.com/castwide/solargraph/pull/1231
 $LOAD_PATH.unshift "#{File.dirname(__FILE__)}/lib"
 require 'solargraph/version'
 require 'date'
