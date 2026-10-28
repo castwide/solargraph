@@ -611,7 +611,8 @@ module Solargraph
                                        type_location: type_location, closure: pin,
                                        self_type: RbsTranslator.block_self_type(overload.method_type))
                   end
-          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block, source: :rbs,
+          Pin::Signature.new(generics: generics, parameters: signature_parameters, return_type: signature_return_type, block: block,
+                             block_required: overload.method_type.block&.required || false, source: :rbs,
                              type_location: type_location, closure: pin)
         end
       end
