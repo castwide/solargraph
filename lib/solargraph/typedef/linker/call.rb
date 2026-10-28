@@ -30,7 +30,7 @@ module Solargraph
 
         # Local variables supersede parameters
         #
-        # @param [Array<Pin::LocalVariable>]
+        # @param pins [Array<Pin::LocalVariable>]
         # @return [Array<Pin::LocalVariable>]
         # @param [Object] pins
         def reduce_local_type pins

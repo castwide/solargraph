@@ -478,7 +478,7 @@ describe Solargraph::Typedef::Dictionary do
           things
         end
       )
-      
+
       typeset = dictionary_for(code, [4, 11]).infer
       expect(typeset.to_s).to eq('Array')
     end
