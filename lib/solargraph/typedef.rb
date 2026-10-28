@@ -40,7 +40,7 @@ module Solargraph
       # @return [Path, Token]
       def convert string
         # @todo cleanup
-        # rubocop:disable Lint\DuplicateBranch
+        # rubocop:disable-next Lint\DuplicateBranch
         case string
         when 's'
           Path::ROOT
@@ -62,7 +62,6 @@ module Solargraph
         else
           raise "Invalid Typedef token string: #{string.inspect}"
         end
-        # rubocop:enable Lint\DuplicateBranch
       end
     end
   end

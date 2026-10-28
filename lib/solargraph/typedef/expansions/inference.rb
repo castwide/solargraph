@@ -34,14 +34,12 @@ module Solargraph
         end
 
         def next_node
-          @next_node ||= begin
-            if pin.is_a?(Pin::Method)
-              method_body_node
-            else
-              return unless pin.location
-              source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-            end
-          end
+          @next_node ||= if pin.is_a?(Pin::Method)
+                           method_body_node
+                         else
+                           return unless pin.location
+                           source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+                         end
         end
 
         # @param pin [Pin::Base]

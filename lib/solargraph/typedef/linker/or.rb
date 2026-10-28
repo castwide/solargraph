@@ -7,7 +7,7 @@ module Solargraph
         def resolve
           # @todo Lots of unnecessary conversion here
           types = link.links.map do |link|
-            range = Solargraph::Range.from_node(link.node)
+            Solargraph::Range.from_node(link.node)
             Dictionary.new(api_map, dictionary.source_map.filename, link).infer
           end
           .flatten.map(&:to_complex_type)

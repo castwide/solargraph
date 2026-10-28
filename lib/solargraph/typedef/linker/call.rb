@@ -32,9 +32,10 @@ module Solargraph
         #
         # @param [Array<Pin::LocalVariable>]
         # @return [Array<Pin::LocalVariable>]
+        # @param [Object] pins
         def reduce_local_type pins
           return pins if pins.first.is_a?(Pin::Parameter)
-          pins.reject { |pin| pin.is_a?(Pin::Parameter) }
+          pins.grep_v(Pin::Parameter)
         end
 
         def yield_call
@@ -187,9 +188,11 @@ module Solargraph
         end
 
         def yield_receivers
-          nearest_method_pin&.signatures
-                            &.map(&:block)
-                            &.compact || []
+          return [] unless nearest_method_pin
+
+          nearest_method_pin.signatures
+                            .map(&:block)
+                            .compact
         end
       end
     end
