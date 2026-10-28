@@ -5,7 +5,7 @@ module Solargraph
     module ParserGem
       module NodeProcessors
         class SclassNode < Parser::NodeProcessor::Base
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+          # @return [void]
           def process
             sclass = node.children[0]
             # @todo Changing Parser::AST::Node to AST::Node below will

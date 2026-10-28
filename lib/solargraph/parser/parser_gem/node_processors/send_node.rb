@@ -7,7 +7,7 @@ module Solargraph
         class SendNode < Parser::NodeProcessor::Base
           include ParserGem::NodeMethods
 
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+          # @return [void]
           def process
             # @sg-ignore https://github.com/castwide/solargraph/pull/1418
             #   also needs https://github.com/castwide/solargraph/pull/1416
