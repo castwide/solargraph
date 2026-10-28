@@ -3212,7 +3212,9 @@ describe Solargraph::SourceMap::Clip do
       # @return [Array(String, Integer)]
       def foo; end
 
-      foo[0]._
+      # @type [Integer]
+      i = 0
+      foo[i]._
 
       foo.each do |bar|
         bar._
@@ -3220,15 +3222,15 @@ describe Solargraph::SourceMap::Clip do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
 
-    clip = api_map.clip_at('test.rb', [4, 12])
+    clip = api_map.clip_at('test.rb', [6, 12])
     expect(clip.infer.to_s).to eq('String, Integer, nil')
 
-    clip = api_map.clip_at('test.rb', [4, 13])
+    clip = api_map.clip_at('test.rb', [6, 13])
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
 
-    clip = api_map.clip_at('test.rb', [7, 12])
+    clip = api_map.clip_at('test.rb', [9, 12])
     paths = clip.complete.pins.map(&:path)
     expect(paths).to include('String#upcase')
     expect(paths).to include('Integer#abs')
