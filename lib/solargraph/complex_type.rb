@@ -48,7 +48,7 @@ module Solargraph
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
-      return self unless generic?
+      return self unless any_generic?
 
       ComplexType.new(@items.map do |unique_type|
         unique_type.resolve_generics_from_context(generics_to_resolve,
@@ -341,6 +341,13 @@ module Solargraph
 
     def generic?
       any?(&:generic?)
+    end
+
+    # Whether any member mentions a generic type parameter anywhere.
+    #
+    # @return [Boolean]
+    def any_generic?
+      @items.any?(&:any_generic?)
     end
 
     # @return [self]

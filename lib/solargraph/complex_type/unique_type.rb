@@ -422,6 +422,14 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
+      # A single type is one member, so whether it mentions a generic
+      # type parameter anywhere is #generic?.
+      #
+      # @return [Boolean]
+      def any_generic?
+        generic?
+      end
+
       def nullable?
         nil_type?
       end
