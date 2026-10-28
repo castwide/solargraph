@@ -50,7 +50,15 @@ module Solargraph
       # @param pin [Pin::Reference]
       # @return [String, nil]
       def dereference pin
-        qualify_type(pin.type, *pin.reference_gates)&.tag
+        dereference_type(pin)&.tag
+      end
+
+      # Get the fully qualified type a reference pin refers to.
+      #
+      # @param pin [Pin::Reference]
+      # @return [ComplexType, nil]
+      def dereference_type pin
+        qualify_type(pin.type, *pin.reference_gates)
       end
 
       # Collect a list of all constants defined in the specified gates.

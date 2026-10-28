@@ -19,6 +19,10 @@ Example code:
     expect(object.documentation).to include("```ruby\nclass Foo; end\n```")
   end
 
+  it 'has no abstract note unless a pin supplies one' do
+    expect(object.abstract_note).to be_nil
+  end
+
   it 'allows unclosed tags' do
     object.docstring = YARD::Docstring.new('comment <tt>code')
     expect(object.documentation).to include('comment `code`')

@@ -439,7 +439,7 @@ module Solargraph
       # parameters used in this type, and return a new type if
       # possible.
       #
-      # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
+      # @param definitions [Pin::Namespace, Pin::Method, nil] The module/class/method which uses generic types
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type

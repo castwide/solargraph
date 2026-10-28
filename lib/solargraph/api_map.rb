@@ -17,6 +17,11 @@ module Solargraph
 
     include Equality
 
+    CLASS_TYPE = ComplexType.parse('::Class')
+    KERNEL_TYPE = ComplexType.parse('::Kernel')
+    MODULE_TYPE = ComplexType.parse('::Module')
+    private_constant :CLASS_TYPE, :KERNEL_TYPE, :MODULE_TYPE
+
     @@core_pins = Collection::Core.load
 
     # @param pins [Array<Solargraph::Pin::Base>]
@@ -336,6 +341,14 @@ module Solargraph
       store.constants.dereference(pin)
     end
 
+    # Get the fully qualified type a reference pin refers to.
+    #
+    # @param pin [Pin::Reference]
+    # @return [ComplexType, nil]
+    def dereference_type pin
+      store.constants.dereference_type(pin)
+    end
+
     # @param fqns [String]
     # @return [Array<Pin::Reference::Extend>]
     def get_extends fqns
@@ -436,13 +449,13 @@ module Solargraph
         conventions_environ.domains.each do |domain|
           type = ComplexType.try_parse(domain)
           next if type.undefined?
-          result.concat inner_get_methods(type.name, type.scope, visibility, deep, skip)
+          result.concat inner_get_methods(ComplexType.parse(type.name), type.scope, visibility, deep, skip)
         end
-        result.concat inner_get_methods(rooted_tag, :class, visibility, deep, skip)
-        result.concat inner_get_methods(rooted_tag, :instance, visibility, deep, skip)
-        result.concat inner_get_methods('Kernel', :instance, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_type, :class, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_type, :instance, visibility, deep, skip)
+        result.concat inner_get_methods(KERNEL_TYPE, :instance, visibility, deep, skip)
       else
-        result.concat inner_get_methods(rooted_tag, scope, visibility, deep, skip)
+        result.concat inner_get_methods(rooted_type, scope, visibility, deep, skip)
         unless %w[Class Class<Class>].include?(rooted_tag)
           result.map! do |pin|
             next pin unless pin.path == 'Class#new'
@@ -481,8 +494,8 @@ module Solargraph
             new_pin
           end
         end
-        result.concat inner_get_methods('Kernel', :instance, [:public], deep, skip) if visibility.include?(:private)
-        result.concat inner_get_methods('Module', scope, visibility, deep, skip) if scope == :module
+        result.concat inner_get_methods(KERNEL_TYPE, :instance, [:public], deep, skip) if visibility.include?(:private)
+        result.concat inner_get_methods(MODULE_TYPE, scope, visibility, deep, skip) if scope == :module
       end
       result = resolve_method_aliases(result, visibility)
       if namespace_pin && rooted_tag != rooted_type.name
@@ -734,18 +747,18 @@ module Solargraph
       @workspace
     end
 
-    # @param fq_reference_tag [String] A fully qualified whose method should be pulled in
-    # @param namespace_pin [Pin::Base] Namespace pin for the rooted_type
+    # @param reference_type [ComplexType] A fully qualified type whose methods should be pulled in
+    # @param namespace_pin [Pin::Namespace, nil] Namespace pin for the rooted_type
     #   parameter - used to pull generics information
     # @param type [ComplexType] The type which is having its
-    #   methods supplemented from fq_reference_tag
+    #   methods supplemented from reference_type
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
     # @param deep [Boolean]
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods_from_reference fq_reference_tag, namespace_pin, type, scope, visibility, deep, skip, no_core
+    def inner_get_methods_from_reference reference_type, namespace_pin, type, scope, visibility, deep, skip, no_core
       logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) starting" }
 
       # Ensure the types returned by the methods in the referenced
@@ -755,9 +768,9 @@ module Solargraph
       # @todo perform the same translation in the other areas
       #  here after adding a spec and handling things correctly
       #  in ApiMap::Store and RbsMap::Conversions for each
-      resolved_reference_type = ComplexType.parse(fq_reference_tag).force_rooted.resolve_generics(namespace_pin, type)
+      resolved_reference_type = reference_type.force_rooted.resolve_generics(namespace_pin, type)
       # @todo Can inner_get_methods be cached?  Lots of lookups of base types going on.
-      methods = inner_get_methods(resolved_reference_type.tag, scope, visibility, deep, skip, no_core)
+      methods = inner_get_methods(resolved_reference_type, scope, visibility, deep, skip, no_core)
       if namespace_pin && !resolved_reference_type.all_params.empty?
         reference_pin = store.get_path_pins(resolved_reference_type.name).select { |p| p.is_a?(Pin::Namespace) }.first
         # logger.debug { "ApiMap#add_methods_from_reference(type=#{type}) - resolving generics with #{reference_pin.generics}, #{resolved_reference_type.rooted_tags}" }
@@ -774,14 +787,14 @@ module Solargraph
     #
     # @param fqns [String]
     # @param keywords [Array<::Symbol>] which of :include, :prepend and :extend
-    # @return [Array<String>]
+    # @return [Array<ComplexType>]
     def included_hook_mixins fqns, keywords
       store.get_includes(fqns).flat_map do |ref|
-        included = dereference(ref)
+        included = store.constants.dereference_type(ref)
         next [] if included.nil?
-        store.get_included_mixins(ComplexType.parse(included).namespace)
+        store.get_included_mixins(included.namespace)
              .select { |mixin| keywords.include?(mixin.keyword) }
-             .filter_map { |mixin| dereference(mixin) }
+             .filter_map { |mixin| store.constants.dereference_type(mixin) }
       end
     end
 
@@ -806,7 +819,7 @@ module Solargraph
     # @return [Solargraph::ApiMap::Cache]
     attr_reader :cache
 
-    # @param rooted_tag [String] A fully qualified namespace, with
+    # @param rooted_type [ComplexType] A fully qualified namespace, with
     #   generic parameter values if applicable
     # @param scope [Symbol] :class or :instance
     # @param visibility [Array<Symbol>] :public, :protected, and/or :private
@@ -814,11 +827,12 @@ module Solargraph
     # @param skip [Set<String>]
     # @param no_core [Boolean] Skip core classes if true
     # @return [Array<Pin::Base>]
-    def inner_get_methods rooted_tag, scope, visibility, deep, skip, no_core = false
-      rooted_type = ComplexType.parse(rooted_tag).force_rooted
+    def inner_get_methods rooted_type, scope, visibility, deep, skip, no_core = false
+      rooted_type = rooted_type.force_rooted
+      rooted_tag = rooted_type.tag
       fqns = rooted_type.namespace
       rooted_type.all_params
-      namespace_pin = store.get_path_pins(fqns).select { |p| p.is_a?(Pin::Namespace) }.first
+      namespace_pin = store.get_path_pins(fqns).grep(Pin::Namespace).first
       return [] if no_core && fqns =~ /^(Object|BasicObject|Class|Module)$/
       reqstr = "#{fqns}|#{scope}|#{visibility.sort}|#{deep}"
       return [] if skip.include?(reqstr)
@@ -835,7 +849,7 @@ module Solargraph
 
       if deep && scope == :instance
         store.get_prepends(fqns).reverse.each do |im|
-          fqim = store.constants.dereference(im)
+          fqim = store.constants.dereference_type(im)
           result.concat inner_get_methods(fqim, scope, visibility, deep, skip, true) unless fqim.nil?
         end
       end
@@ -852,17 +866,18 @@ module Solargraph
 
         if scope == :instance
           store.get_includes(fqns).reverse.each do |ref|
-            in_tag = dereference(ref)
-            # @sg-ignore Need to add nil check here
-            result.concat inner_get_methods_from_reference(in_tag, namespace_pin, rooted_type, scope, visibility, deep,
+            in_type = store.constants.dereference_type(ref)
+            next if in_type.nil?
+
+            result.concat inner_get_methods_from_reference(in_type, namespace_pin, rooted_type, scope, visibility, deep,
                                                            skip, true)
           end
           included_hook_mixins(fqns, %i[include prepend]).each do |mixin|
             result.concat inner_get_methods(mixin, scope, visibility, deep, skip, true)
           end
-          rooted_sc_tag = qualify_superclass(rooted_tag)
-          unless rooted_sc_tag.nil?
-            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
+          rooted_sc_type = store.superclass_type(rooted_type)
+          unless rooted_sc_type.nil?
+            result.concat inner_get_methods_from_reference(rooted_sc_type, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, no_core)
           end
         else
@@ -870,26 +885,26 @@ module Solargraph
             "ApiMap#inner_get_methods(#{fqns}, #{scope}, #{visibility}, #{deep}, #{skip}) - looking for get_extends() from #{fqns}"
           end
           store.get_extends(fqns).reverse.each do |em|
-            fqem = dereference(em)
+            fqem = store.constants.dereference_type(em)
             result.concat inner_get_methods(fqem, :instance, visibility, deep, skip, true) unless fqem.nil?
           end
           included_hook_mixins(fqns, [:extend]).each do |mixin|
             result.concat inner_get_methods(mixin, :instance, visibility, deep, skip, true)
           end
-          rooted_sc_tag = qualify_superclass(rooted_tag)
-          unless rooted_sc_tag.nil?
-            result.concat inner_get_methods_from_reference(rooted_sc_tag, namespace_pin, rooted_type, scope,
+          rooted_sc_type = store.superclass_type(rooted_type)
+          unless rooted_sc_type.nil?
+            result.concat inner_get_methods_from_reference(rooted_sc_type, namespace_pin, rooted_type, scope,
                                                            visibility, true, skip, true)
           end
           unless no_core || fqns.empty?
             type = get_namespace_type(fqns)
-            result.concat inner_get_methods('Class', :instance, visibility, deep, skip, no_core) if type == :class
-            result.concat inner_get_methods('Module', :instance, visibility, deep, skip, no_core)
+            result.concat inner_get_methods(CLASS_TYPE, :instance, visibility, deep, skip, no_core) if type == :class
+            result.concat inner_get_methods(MODULE_TYPE, :instance, visibility, deep, skip, no_core)
           end
         end
         store.domains(fqns).each do |d|
           dt = ComplexType.try_parse(d)
-          result.concat inner_get_methods(dt.namespace, dt.scope, visibility, deep, skip)
+          result.concat inner_get_methods(ComplexType.parse(dt.namespace), dt.scope, visibility, deep, skip)
         end
       end
       result

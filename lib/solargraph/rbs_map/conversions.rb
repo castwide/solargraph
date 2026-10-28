@@ -225,7 +225,7 @@ module Solargraph
       # @return [void]
       def convert_self_type_to_pins decl, closure
         type = build_type(decl.name, decl.args)
-        generic_values = type.all_params.map(&:to_s)
+        generic_values = type.all_params
         include_pin = Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
           type_location: location_decl_to_pin_location(decl.location),
@@ -341,7 +341,7 @@ module Solargraph
         pins.push class_pin
         if decl.super_class
           type = build_type(decl.super_class.name, decl.super_class.args)
-          generic_values = type.all_params.map(&:to_s)
+          generic_values = type.all_params
           pins.push Solargraph::Pin::Reference::Superclass.new(
             type_location: location_decl_to_pin_location(decl.super_class.location),
             closure: class_pin,
@@ -757,7 +757,7 @@ module Solargraph
       # @return [void]
       def include_to_pin decl, closure
         type = build_type(decl.name, decl.args)
-        generic_values = type.all_params.map(&:to_s)
+        generic_values = type.all_params
         pins.push Solargraph::Pin::Reference::Include.new(
           name: decl.name.relative!.to_s,
           type_location: location_decl_to_pin_location(decl.location),
@@ -850,7 +850,7 @@ module Solargraph
           # @todo are we handling prepend correctly?
           klass = mixin.is_a?(RBS::AST::Members::Include) ? Pin::Reference::Include : Pin::Reference::Extend
           type = build_type(mixin.name, mixin.args)
-          generic_values = type.all_params.map(&:to_s)
+          generic_values = type.all_params
           pins.push klass.new(
             name: mixin.name.relative!.to_s,
             type_location: location_decl_to_pin_location(mixin.location),

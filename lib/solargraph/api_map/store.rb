@@ -47,7 +47,6 @@ module Solargraph
         @index = @indexes.last.clone
         @index = @index.merge(block.call) if block
         constants.clear
-        cached_qualify_superclass.clear
         true
       end
 
@@ -96,14 +95,18 @@ module Solargraph
       # @param fq_sub_tag [String]
       # @return [String, nil]
       def qualify_superclass fq_sub_tag
-        cached_qualify_superclass[fq_sub_tag] || qualify_and_cache_superclass(fq_sub_tag)
-        type = ComplexType.try_parse(fq_sub_tag)
-        return type.simplify_literals.to_s if type.literal?
-        ref = get_superclass(fq_sub_tag)
+        superclass_type(ComplexType.try_parse(fq_sub_tag))&.tag
+      end
+
+      # @param sub_type [ComplexType]
+      # @return [ComplexType, nil]
+      def superclass_type sub_type
+        return sub_type.simplify_literals if sub_type.literal?
+
+        ref = get_superclass(sub_type.namespace)
         return unless ref
-        res = constants.dereference(ref)
-        return unless res
-        res
+
+        constants.dereference_type(ref)
       end
 
       # @param fqns [String]
@@ -327,7 +330,6 @@ module Solargraph
         @index = @indexes.last.clone
         @index = @index.merge(block.call) if block
         constants.clear
-        cached_qualify_superclass.clear
         true
       end
 
@@ -399,29 +401,6 @@ module Solargraph
         return get_superclass(sub.simplify_literals.name) if sub.literal?
 
         get_superclass(sub.namespace) if sub.namespace != fqns
-      end
-
-      # @param fq_sub_tag [String]
-      # @return [String, nil]
-      def qualify_and_cache_superclass fq_sub_tag
-        cached_qualify_superclass[fq_sub_tag] = uncached_qualify_superclass(fq_sub_tag)
-      end
-
-      # @return [Hash{String => String, nil}]
-      def cached_qualify_superclass
-        @cached_qualify_superclass ||= {}
-      end
-
-      # @param fq_sub_tag [String]
-      # @return [String, nil]
-      def uncached_qualify_superclass fq_sub_tag
-        type = ComplexType.try_parse(fq_sub_tag)
-        return type.simplify_literals.to_s if type.literal?
-        ref = get_superclass(fq_sub_tag)
-        return unless ref
-        res = constants.dereference(ref)
-        return unless res
-        res + type.substring
       end
     end
   end
