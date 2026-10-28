@@ -17,10 +17,6 @@ module Solargraph
     # @return [String, nil]
     attr_reader :name
 
-    # Seconds to wait for another process to finish building a gem's yardoc
-    # before caching the gem anyway
-    YARDOC_PROCESSING_TIMEOUT = 30
-
     # @return [Source, nil]
     attr_reader :current
 
@@ -593,11 +589,7 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-      # Prefer a gem that no other process is building. If every remaining
-      # gem is locked, take one anyway and wait out its lock in the thread
-      # below, since a lock left by a killed process never clears.
-      remaining = api_map.unloaded_gems - cache_errors
-      spec = remaining.reject { |gem| Yardoc.processing?(gem) }.first || remaining.first
+      spec = (api_map.unloaded_gems - cache_errors).first
       return end_cache_progress unless spec
 
       pending = api_map.unloaded_gems.length - cache_errors.length - 1
@@ -605,7 +597,6 @@ module Solargraph
       logger.info "Caching #{spec.name} #{spec.version}"
       Thread.new do
         report_cache_progress spec.name, pending
-        wait_for_yardoc_lock spec
 
         cmd = [workspace.command_path, 'cache', spec.name]
         cmd.push('--directory', workspace.directory) if workspace.directory
@@ -625,13 +616,6 @@ module Solargraph
         catalog
         sync_catalog
       end
-    end
-
-    # @param spec [Metagem]
-    # @return [void]
-    def wait_for_yardoc_lock spec
-      deadline = Time.now + YARDOC_PROCESSING_TIMEOUT
-      sleep 0.25 while Yardoc.processing?(spec) && Time.now < deadline
     end
 
     # @param gem_name [String]
