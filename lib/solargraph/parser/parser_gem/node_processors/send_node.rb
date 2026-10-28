@@ -27,8 +27,6 @@ module Solargraph
                 process_module_function
               elsif %i[attr_reader attr_writer attr_accessor].include?(method_name)
                 process_attribute
-              elsif method_name == :class_attribute
-                process_class_attribute
               elsif method_name == :include
                 process_include
               elsif method_name == :extend
@@ -222,53 +220,6 @@ module Solargraph
             end
           end
 
-          # Process an ActiveSupport +class_attribute+ declaration.
-          #
-          # +class_attribute :name+ generates a singleton reader, writer and
-          # predicate plus, unless disabled by options, an instance reader,
-          # writer and predicate. The accessors are created at run time, so
-          # without pins for them every class that calls +class_attribute+
-          # loses its configuration API.
-          #
-          # @return [void]
-          def process_class_attribute
-            options = class_attribute_options
-            instance_accessor = boolean_option options, 'instance_accessor', true
-            instance_reader = boolean_option options, 'instance_reader', instance_accessor
-            instance_writer = boolean_option options, 'instance_writer', instance_accessor
-            instance_predicate = boolean_option options, 'instance_predicate', true
-            node.children[2..].each do |a|
-              next unless a.is_a?(::Parser::AST::Node) && %i[sym str].include?(a.type)
-              name = a.children[0].to_s
-              next if name.empty?
-              pins.push build_class_attribute_pin name, scope: :class
-              pins.push build_class_attribute_pin "#{name}=", scope: :class, writer: true
-              pins.push build_class_attribute_pin "#{name}?", scope: :class if instance_predicate
-              if instance_reader
-                pins.push build_class_attribute_pin name, scope: :instance
-                pins.push build_class_attribute_pin "#{name}?", scope: :instance if instance_predicate
-              end
-              pins.push build_class_attribute_pin "#{name}=", scope: :instance, writer: true if instance_writer
-            end
-          end
-
-          # The literal keyword arguments passed to a +class_attribute+ call.
-          # Values which cannot be evaluated statically are ignored.
-          #
-          # @return [Hash{String => AST::Node}]
-          def class_attribute_options
-            hash = node.children[-1]
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-            return {} unless hash.is_a?(::Parser::AST::Node) && hash.type == :hash
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-            hash.children.each_with_object({}) do |pair, result|
-              next unless pair.is_a?(::Parser::AST::Node) && pair.type == :pair
-              key = pair.children[0]
-              next unless key.is_a?(::Parser::AST::Node) && %i[sym str].include?(key.type)
-              result[key.children[0].to_s] = pair.children[1]
-            end
-          end
-
           # @param options [Hash{String => AST::Node}]
           # @param name [String]
           # @param default [Boolean]
@@ -283,25 +234,6 @@ module Solargraph
             return false if value.type == :false
             # rubocop:enable Lint/BooleanSymbol
             default
-          end
-
-          # @param name [String]
-          # @param scope [Symbol] :class or :instance
-          # @param writer [Boolean]
-          # @return [Pin::Method]
-          def build_class_attribute_pin name, scope:, writer: false
-            pin = Pin::Method.new(
-              location: get_node_location(node),
-              closure: region.closure,
-              name: name,
-              comments: comments_for(node),
-              scope: scope,
-              visibility: region.visibility,
-              attribute: true,
-              source: :parser
-            )
-            pin.parameters.push Pin::Parameter.new(name: 'value', decl: :arg, closure: pin, source: :parser) if writer
-            pin
           end
 
           # @return [void]
