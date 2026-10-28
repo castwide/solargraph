@@ -89,6 +89,17 @@ module Solargraph
         [self]
       end
 
+      # A lone type has one member, so there is one pair to make.
+      #
+      # @param other [Type]
+      # @yieldparam mine [self]
+      # @yieldparam theirs [Type]
+      # @yieldreturn [Type]
+      # @return [Type]
+      def combine_via other
+        yield self, other
+      end
+
       # A lone type has no members to reorder.
       #
       # @return [self]

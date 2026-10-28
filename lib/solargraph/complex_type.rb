@@ -423,6 +423,21 @@ module Solargraph
       !undefined?
     end
 
+    # Pairs this union up with another type member by member, yields
+    # each pair, and reassembles the results into one union.
+    #
+    # @param other [ComplexType, ComplexType::UniqueType]
+    # @yieldparam mine [Type]
+    # @yieldparam theirs [Type]
+    # @yieldreturn [Type]
+    # @return [Type]
+    def combine_via other, &block
+      # @param members [Array<ComplexType::UniqueType>]
+      gather = ->(members) { ComplexType.union(*members) }
+      key = lambda(&:rooted_tags)
+      ComplexType.union(*Typedef::Pairing.combine_members(items, other.items, gather, key, &block))
+    end
+
     # @return [ComplexType]
     def without_nil
       new_items = @items.reject(&:nil_type?)
@@ -662,6 +677,19 @@ module Solargraph
         result = partial ? types : ComplexType.new(types)
         @cache[strings] = result unless partial
         result
+      end
+
+      # Builds a union of the given types, dropping duplicates. A lone
+      # type comes back as itself rather than as a union of one, so
+      # union(A, A) is A.
+      #
+      # @param types [Array<Type>]
+      # @return [Type]
+      def union *types
+        members = types.flat_map(&:items).uniq(&:rooted_tags)
+        return members.fetch(0) if members.length == 1
+
+        ComplexType.new(members)
       end
 
       # @param strings [Array<String>]

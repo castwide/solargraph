@@ -47,6 +47,42 @@ describe Solargraph::Type do
     end
   end
 
+  describe '#combine_via' do
+    # Keeps a pair whose sides read the same, and unions any other pair
+    def combine left, right
+      left.combine_via(right) { |mine, theirs| mine.to_s == theirs.to_s ? mine : union(mine, theirs) }
+    end
+
+    it 'pairs a concrete type with the whole of the other' do
+      type = concrete('A')
+      other = union(concrete('B'), concrete('C'))
+      expect(type.combine_via(other) { |mine, theirs| [mine, theirs] }).to eq([type, other])
+    end
+
+    it 'matches the members both unions carry whatever order they appear in' do
+      result = combine(union(concrete('A'), concrete('B')), union(concrete('B'), concrete('A')))
+      expect(result.to_s).to eq('A | B')
+    end
+
+    it 'zips up the members left over once the shared ones are matched' do
+      result = combine(union(concrete('A'), concrete('C')), union(concrete('D'), concrete('A')))
+      expect(result.to_s).to eq('A | C | D')
+    end
+
+    it 'hands the whole remainder of the longer side to the last member of the shorter' do
+      result = combine(union(concrete('A'), concrete('B'), concrete('C')), union(concrete('A'), concrete('D')))
+      expect(result.to_s).to eq('A | B | C | D')
+    end
+
+    it 'sets a lone concrete type against the whole union' do
+      expect(combine(union(concrete('A'), concrete('B')), concrete('A')).to_s).to eq('A | B')
+    end
+
+    it 'gathers a lone member on either side into one pair' do
+      expect(combine(union(concrete('A')), concrete('A')).to_s).to eq('A')
+    end
+  end
+
   describe '#order_nil_last' do
     it 'moves nil to the end of a union and keeps the other members in order' do
       type = union(concrete('nil'), concrete('String'), concrete('Integer'))

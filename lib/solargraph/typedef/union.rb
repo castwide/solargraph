@@ -12,6 +12,22 @@ module Solargraph
         types.join(' | ')
       end
 
+      # Pairs this union up with another type member by member, yields
+      # each pair, and reassembles the results into one union.
+      #
+      # @param other [Type]
+      # @yieldparam mine [Type]
+      # @yieldparam theirs [Type]
+      # @yieldreturn [Type]
+      # @return [Union]
+      def combine_via(other, &)
+        theirs = other.is_a?(Union) ? other.types : [other]
+        # @param members [Array<Type>]
+        gather = ->(members) { members.length == 1 ? members.fetch(0) : Union.new(members) }
+        key = lambda(&:to_s)
+        Union.new(Pairing.combine_members(types, theirs, gather, key, &))
+      end
+
       # Moves nil members to the end by convention; the other members keep
       # their order.
       #

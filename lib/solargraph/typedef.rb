@@ -13,6 +13,7 @@ module Solargraph
     autoload :Typeset,    'solargraph/typedef/typeset'
     autoload :Union,      'solargraph/typedef/union'
     autoload :Tuple,      'solargraph/typedef/tuple'
+    autoload :Pairing,    'solargraph/typedef/pairing'
 
     # Convert a value to a Path, Token, or Type
     # @param value [String, Path, Token, Type, Array<String, Path, Token, Type>]

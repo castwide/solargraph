@@ -168,6 +168,17 @@ module Solargraph
         @non_literal_name ||= determine_non_literal_name
       end
 
+      # A lone type has one member, so there is one pair to make.
+      #
+      # @param other [Type]
+      # @yieldparam mine [self]
+      # @yieldparam theirs [Type]
+      # @yieldreturn [Type]
+      # @return [Type]
+      def combine_via other
+        yield self, other
+      end
+
       # @return [self]
       def without_nil
         return UniqueType::UNDEFINED if nil_type?

@@ -128,6 +128,15 @@ module Solargraph
     #   @yieldreturn [Type, nil]
     #   @return [Type, nil]
 
+    # @!method combine_via(other, &block)
+    #   Pairs this type up with +other+ member by member, yields each pair,
+    #   and reassembles the results.
+    #   @param other [Type]
+    #   @yieldparam mine [Type]
+    #   @yieldparam theirs [Type]
+    #   @yieldreturn [Type]
+    #   @return [Type]
+
     # @!method order_nil_last
     #   This type with any nil members moved to the end, by convention.
     #   @return [Type]
