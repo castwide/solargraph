@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 module Solargraph
   module Pin
     class BaseVariable < Base
@@ -35,6 +37,9 @@ module Solargraph
       #
       # @return [Pin::CompoundStatement, nil]
       attr_reader :compound_statement
+
+      # @return [String, nil]
+      attr_reader :type_assertion
 
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
@@ -73,14 +78,18 @@ module Solargraph
       # @param compound_statement [Pin::CompoundStatement, nil] Where the
       #   assignment was made; lets a non-definite one still override
       #   within its own range - see #definite_reaches?.
+      # @param type_assertion [String, nil] RBS type from a trailing
+      #   rbs-inline `#: TYPE` comment on the assignment
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
                      definite: true,
                      compound_statement: nil,
+                     type_assertion: nil,
                      **splat
         super(**splat)
+        @type_assertion = type_assertion
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
@@ -168,7 +177,10 @@ module Solargraph
                                   presence: combine_presence(other),
                                   # a guaranteed assignment on either side may
                                   # override, not just union with, the rest
-                                  definite: definite || other.definite || superseded
+                                  definite: definite || other.definite || superseded,
+                                  # like the @type tag, a superseding assignment's
+                                  # #: assertion replaces the old one
+                                  type_assertion: redeclared ? other.type_assertion : choose(other, :type_assertion)
                                 })
         new_attrs.merge!(comments: other.comments, docstring: other.docstring) if redeclared
         super(other, new_attrs)
@@ -568,11 +580,28 @@ module Solargraph
         :instance
       end
 
+      # An rbs-inline type assertion takes precedence over a @type tag,
+      # as inline RBS method signatures do over YARD tags.
+      #
       # @return [ComplexType, nil]
       def generate_complex_type
+        asserted = type_from_assertion
+        return asserted unless asserted.nil?
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         nil
+      end
+
+      # @return [ComplexType, nil]
+      def type_from_assertion
+        assertion = type_assertion
+        return nil if assertion.nil? || assertion.empty?
+        @type_from_assertion ||= begin
+          rbs_type = RBS::Parser.parse_type(assertion, require_eof: true)
+          RbsTranslator.to_complex_type(rbs_type) unless rbs_type.nil?
+        rescue RBS::ParsingError
+          nil
+        end
       end
     end
   end

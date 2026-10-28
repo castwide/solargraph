@@ -18,6 +18,7 @@ module Solargraph
               name: node.children[0].to_s,
               assignment: node.children[1],
               comments: comments_for(node),
+              type_assertion: type_assertion_for(node),
               presence: presence,
               # false inside an if/while/rescue body, which may not run
               definite: !region.compound_statement.conditional,

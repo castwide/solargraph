@@ -14,6 +14,7 @@ module Solargraph
               closure: region.closure,
               name: node.children[0].to_s,
               comments: comments_for(node),
+              type_assertion: type_assertion_for(node),
               assignment: node.children[1],
               # dominates a read only within its compound statement - see
               # Pin::InstanceVariable#definite_reaches?
@@ -32,6 +33,7 @@ module Solargraph
                                               name: region.closure.name),
                   name: node.children[0].to_s,
                   comments: comments_for(node),
+                  type_assertion: type_assertion_for(node),
                   assignment: node.children[1],
                   source: :parser
                 )
