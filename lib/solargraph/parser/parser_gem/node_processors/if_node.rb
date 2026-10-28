@@ -9,6 +9,13 @@ module Solargraph
 
           def process
             condition_node = node.children[0]
+            # built before the condition adds its pins: a ternary's
+            # condition starts where the if does, so its own compound
+            # statement would otherwise be taken as the enclosing one
+            flow_sensitive_typing = FlowSensitiveTyping.new(locals,
+                                                            ivars,
+                                                            enclosing_breakable_pin,
+                                                            enclosing_compound_statement_pin)
             if condition_node
               pins.push Solargraph::Pin::CompoundStatement.new(
                 location: get_node_location(condition_node),
@@ -22,10 +29,7 @@ module Solargraph
             # after the condition, so that a variable the condition
             # itself assigns (`if (md = foo.match(...))`) already has a
             # pin to assert facts about
-            FlowSensitiveTyping.new(locals,
-                                    ivars,
-                                    enclosing_breakable_pin,
-                                    enclosing_compound_statement_pin).process_if(node)
+            flow_sensitive_typing.process_if(node)
             then_node = node.children[1]
             if then_node
               then_cs = Solargraph::Pin::CompoundStatement.new(
