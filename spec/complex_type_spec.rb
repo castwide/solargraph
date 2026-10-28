@@ -341,6 +341,37 @@ describe 'YARD type specifier list parsing' do
     xit 'understands reference tags'
   end
 
+  # https://github.com/lsegal/yard/pull/1700
+  context 'with anonymous shorthand forms' do
+    it 'defaults <A> to Array<A>' do
+      ut = Solargraph::ComplexType.parse('<String>').items.first
+      expect(ut.name).to eq('Array')
+      expect(ut.list_parameters?).to be(true)
+      expect(ut.tag).to eq('Array<String>')
+    end
+
+    it 'defaults (A) to Array(A)' do
+      ut = Solargraph::ComplexType.parse('(String)').items.first
+      expect(ut.name).to eq('Array')
+      expect(ut.fixed_parameters?).to be(true)
+      expect(ut.tag).to eq('Array(String)')
+    end
+
+    it 'defaults {A=>B} to Hash{A=>B}' do
+      ut = Solargraph::ComplexType.parse('{String=>Integer}').items.first
+      expect(ut.name).to eq('Hash')
+      expect(ut.hash_parameters?).to be(true)
+      expect(ut.tag).to eq('Hash{String => Integer}')
+      expect(ut.to_rbs).to eq('Hash[String, Integer]')
+    end
+
+    it 'roots an anonymous shorthand the same way its named equivalent would be' do
+      anonymous = Solargraph::ComplexType.parse('<String>').items.first
+      named = Solargraph::ComplexType.parse('Array<String>').items.first
+      expect(anonymous.rooted?).to eq(named.rooted?)
+    end
+  end
+
   context 'when given non-sensical types by machine users' do
     it 'raises ComplexTypeError for unmatched brackets' do
       expect do
@@ -737,7 +768,9 @@ describe 'YARD type specifier list parsing' do
     it 'resolves self keywords in ordered array types' do
       selfy = Solargraph::ComplexType.parse('Array<(String, Symbol, self)>')
       type = selfy.self_to_type(Solargraph::ComplexType.parse('Foo'))
-      expect(type.tag).to eq('Array<(String, Symbol, Foo)>')
+      # the anonymous `(...)` tuple defaults its name to Array (see
+      # "anonymous shorthand" specs below)
+      expect(type.tag).to eq('Array<Array(String, Symbol, Foo)>')
       expect(type.to_rbs).to eq('Array[[String, Symbol, Foo]]')
     end
 
