@@ -631,5 +631,26 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [2, 8]).infer
       expect(typeset.to_s).to eq('Array[Integer]')
     end
+
+    it 'interprets self type in superclass method return type' do
+      code = %(
+        class Foo
+          # @return [self]
+          def foo
+            dup
+          end
+        end
+
+        class Bar < Foo
+          def foo
+            a = super()
+            a
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [11, 12]).infer
+      expect(typeset.to_s).to eq('Bar')
+    end
   end
 end
