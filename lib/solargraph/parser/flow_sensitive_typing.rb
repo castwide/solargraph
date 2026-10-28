@@ -276,7 +276,7 @@ module Solargraph
         return if parent_node.nil?
 
         lhs_node = or_asgn_node.children[0]
-        return if lhs_node.nil?
+        return unless lhs_node.is_a?(::Parser::AST::Node)
 
         name = lhs_node.children[0].to_s
         rest = Range.new(get_node_end_position(or_asgn_node), get_node_end_position(parent_node))
@@ -319,7 +319,9 @@ module Solargraph
         when :lvasgn, :ivasgn
           [clause_node.children[0].to_s]
         when :begin, :kwbegin
-          clause_node.children.flat_map { |child| definitely_assigned_names(child) }
+          clause_node.children.flat_map do |child|
+            (child in ::Parser::AST::Node => child_node) ? definitely_assigned_names(child_node) : []
+          end
         else
           []
         end
