@@ -46,13 +46,12 @@ module Solargraph
         # @return [Parser::AST::Node, nil]
         def method_body_node
           @method_body_node ||= begin
-            # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-            node = pin.node
-            return unless node
-            return node.children[1].children.last if node.type == :DEFN
-            return node.children[2].children.last if node.type == :DEFS
-            return node.children[2] if %i[def DEFS].include?(node.type)
-            node.children[3] if node.type == :defs
+            case pin.node.type
+            when :def
+              pin.node.children[2]
+            when :defs
+              pin.node.children[3]
+            end
           end
         end
 
