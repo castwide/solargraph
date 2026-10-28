@@ -89,6 +89,13 @@ module Solargraph
         [self]
       end
 
+      # A lone type has no members to reorder.
+      #
+      # @return [self]
+      def order_nil_last
+        self
+      end
+
       # A concrete type is its own only part, so the block decides it
       # directly.
       #

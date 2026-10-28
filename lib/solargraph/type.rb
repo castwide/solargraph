@@ -122,5 +122,9 @@ module Solargraph
     #   @yieldparam named_type [Type]
     #   @yieldreturn [Type, nil]
     #   @return [Type, nil]
+
+    # @!method order_nil_last
+    #   This type with any nil members moved to the end, by convention.
+    #   @return [Type]
   end
 end

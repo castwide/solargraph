@@ -12,6 +12,15 @@ module Solargraph
         types.join(' | ')
       end
 
+      # Moves nil members to the end by convention; the other members keep
+      # their order.
+      #
+      # @return [Union]
+      def order_nil_last
+        nils, rest = types.partition(&:nullable?)
+        Union.new(rest + nils)
+      end
+
       def to_s_for_complex_type
         types.map(&:to_s_for_complex_type).join(', ').to_s
       end

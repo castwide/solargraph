@@ -47,6 +47,18 @@ describe Solargraph::Type do
     end
   end
 
+  describe '#order_nil_last' do
+    it 'moves nil to the end of a union and keeps the other members in order' do
+      type = union(concrete('nil'), concrete('String'), concrete('Integer'))
+      expect(type.order_nil_last.to_s).to eq('String | Integer | nil')
+    end
+
+    it 'leaves a concrete type as it is' do
+      type = concrete('nil')
+      expect(type.order_nil_last).to be(type)
+    end
+  end
+
   describe '#qualify_parts' do
     it 'hands a concrete type to the block as itself' do
       type = concrete('Foo')
