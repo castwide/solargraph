@@ -32,7 +32,7 @@ module Solargraph
 
         # @todo Fix this map
         @fqns_pins_map = nil
-        # @sg-ignore Unresolved call to zero?
+        # @sg-ignore https://github.com/apiology/solargraph/pull/386
         return catalog(pinsets) if changed.zero?
 
         # @sg-ignore https://github.com/castwide/solargraph/pull/1395
