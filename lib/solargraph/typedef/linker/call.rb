@@ -177,6 +177,17 @@ module Solargraph
           return [] unless nearest_method_pin
           api_map.get_method_stack(nearest_method_pin.namespace, nearest_method_pin.name, scope: nearest_method_pin.context.scope)
                  .reject { |pin| pin.path == nearest_method_pin.path }
+                 .map { |pin| expand_self_type(pin) }
+        end
+
+        # A superclass method may declare a return type of +self+, which
+        # should resolve to the type of the calling context.
+        #
+        # @param pin [Pin::Base]
+        # @return [Pin::Base]
+        def expand_self_type pin
+          return pin unless pin.typedef_typeset.to_complex_type.selfy?
+          pin.proxy(pin.typedef_typeset.expand({ 'self' => nearest_method_pin.context.to_typedef_typeset }).to_complex_type)
         end
 
         def nearest_method_pin
