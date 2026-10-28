@@ -29,9 +29,7 @@ module Solargraph
           new_pins.each do |p|
             # @todo Smelly instance variable access
             next if p.location.nil?
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1356
             p.location.range.start.instance_variable_set(:@line, p.location.range.start.line + loff)
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1356
             p.location.range.ending.instance_variable_set(:@line, p.location.range.ending.line + loff)
           end
 
