@@ -9,9 +9,8 @@ describe Solargraph::Typedef::Linker::Constant do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     link = Solargraph::Source::Chain::Constant.new('::String')
-    # rubocop:disable RSpec/VerifiedDoubles
+    # rubocop:disable-next RSpec/VerifiedDoubles
     dictionary = double(Solargraph::Typedef::Dictionary, api_map: api_map)
-    # rubocop:enable RSpec/VerifiedDoubles
     constant = described_class.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
     typeset = result.typedef_typeset
@@ -27,9 +26,8 @@ describe Solargraph::Typedef::Linker::Constant do
     ), 'test.rb')
     api_map = Solargraph::ApiMap.new.map(source)
     link = Solargraph::Source::Chain::Constant.new('String')
-    # rubocop:disable RSpec/VerifiedDoubles
+    # rubocop:disable-next RSpec/VerifiedDoubles
     dictionary = double(Solargraph::Typedef::Dictionary, api_map: api_map)
-    # rubocop:enable RSpec/VerifiedDoubles
     constant = described_class.new(dictionary, link, api_map.get_path_pins('Example').first)
     result = constant.resolve.first
     typeset = result.typedef_typeset

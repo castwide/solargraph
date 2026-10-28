@@ -478,7 +478,7 @@ describe Solargraph::Typedef::Dictionary do
           things
         end
       )
-      
+
       typeset = dictionary_for(code, [4, 11]).infer
       expect(typeset.to_s).to eq('Array')
     end
@@ -585,6 +585,22 @@ describe Solargraph::Typedef::Dictionary do
       )
 
       typeset = dictionary_for(code, [3, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'infers types from named macros' do
+      code = %(
+        # @!macro firstarg
+        #   @return [$1]
+        class Foo
+          # @macro firstarg
+          def bar klass
+          end
+        end
+        Foo.new.bar(String)
+      )
+
+      typeset = dictionary_for(code, [8, 16]).infer
       expect(typeset.to_s).to eq('String')
     end
   end

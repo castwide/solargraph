@@ -30,11 +30,12 @@ module Solargraph
 
         # Local variables supersede parameters
         #
-        # @param [Array<Pin::LocalVariable>]
+        # @param pins [Array<Pin::LocalVariable>]
         # @return [Array<Pin::LocalVariable>]
+        # @param [Object] pins
         def reduce_local_type pins
           return pins if pins.first.is_a?(Pin::Parameter)
-          pins.reject { |pin| pin.is_a?(Pin::Parameter) }
+          pins.grep_v(Pin::Parameter)
         end
 
         def yield_call
@@ -51,8 +52,8 @@ module Solargraph
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
                             .select { |pin| pin.name == link.word }
                             .map { |pin| find_matching_signature(pin, receiver) }
-                            .map { |pin| expand_generic_parameters_from_arguments(pin) }
                             .map { |pin| expand_macros_from_arguments(pin) }
+                            .map { |pin| expand_generic_parameters_from_arguments(pin) }
           return pins unless link.nullable? && receiver.typedef_typeset.nullable?
 
           pins.map { |pin| pin.proxy(ComplexType.new([pin.return_type, ComplexType::NIL])) }
@@ -107,28 +108,70 @@ module Solargraph
           pin.proxy(expanded.to_complex_type)
         end
 
-        # @param pin [Pin::Method]
+        # Expands the return type of a method call using YARD macros.
+        #
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Pin::Base]
         def expand_macros_from_arguments pin
-          return pin unless pin.closure.maybe_directives?
+          anonymous = anonymous_macros(pin)
+          names = macro_reference_names(pin)
+          return pin unless names.any? || anonymous.any?
 
-          pin.closure.directives.each do |_directive|
-            macro = Solargraph::YardMap::Macro.from_directive(pin.closure.directives.first, pin.closure)
-            expanded = macro.macro_object.expand([pin.name, *pin.parameter_names])
-            docstring = Solargraph::Source.parse_docstring(expanded).to_docstring
-            types = docstring.tags(:return).flat_map(&:types)
-            complex_type = ComplexType.try_parse(*types)
-            pin = pin.proxy(complex_type)
+          types = names.filter_map do |mac|
+            macro = api_map.named_macro(mac)
+            next unless macro
+            return_types_from_macro(macro, pin)
+          end.flatten
+          anonymous.each do |macro|
+            types.concat return_types_from_macro(macro, pin)
           end
-          arguments = pin.parameters.map.with_index do |_param, idx|
-            token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(link.arguments[idx].node))
-            Union.new([Concrete.new(token)])
+          return pin if types.empty?
+
+          pin = pin.proxy(ComplexType.try_parse(*types))
+          named_values = {}
+          pin.parameters.each_with_index do |param, idx|
+            arg = link.arguments[idx]
+            next if arg.nil?
+            token = Typedef.tokenize(Solargraph::Parser::ParserGem::NodeMethods.simple_convert(arg.node))
+            named_values[param.name] = Union.new([Concrete.new(token)])
           end
-          named_values = pin.parameter_names.zip(arguments).to_h
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
         end
 
-        # @param api_map [ApiMap]
-        # @param name_pin [Pin::Base]
+        # The named macros referenced by the pin's docstring. When the pin is
+        # an @overload signature, the references may be documented on the
+        # method instead of on the signature.
+        #
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Array<String>]
+        def macro_reference_names pin
+          names = pin.macro_names
+          names += pin.closure.macro_names if pin.is_a?(Pin::Signature) && pin.closure
+          names.uniq
+        end
+
+        # Anonymous macros are @!macro directives with no name that carry
+        # their macro data inline. Named macro definitions and references
+        # are excluded.
+        #
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Array<Solargraph::YardMap::Macro>]
+        def anonymous_macros pin
+          return [] unless pin.closure&.maybe_directives?
+          declarations = pin.closure.directives.select do |directive|
+            directive.tag.tag_name == 'macro' && directive.tag.name.to_s.empty? && !directive.tag.text.to_s.empty?
+          end
+          declarations.map { |directive| Solargraph::YardMap::Macro.from_directive(directive, pin.closure) }
+        end
+
+        # @param macro [Solargraph::YardMap::Macro]
+        # @param pin [Pin::Method, Pin::Signature]
+        # @return [Array<String>]
+        def return_types_from_macro macro, pin
+          expanded = macro.macro_object.expand([pin.name, *pin.parameter_names])
+          Solargraph::Source.parse_docstring(expanded).to_docstring.tags(:return).flat_map(&:types)
+        end
+
         # @return [::Array<Pin::Base>]
         def super_pins
           return [] unless nearest_method_pin
@@ -145,9 +188,11 @@ module Solargraph
         end
 
         def yield_receivers
-          nearest_method_pin&.signatures
-                            &.map(&:block)
-                            &.compact || []
+          return [] unless nearest_method_pin
+
+          nearest_method_pin.signatures
+                            .map(&:block)
+                            .compact
         end
       end
     end

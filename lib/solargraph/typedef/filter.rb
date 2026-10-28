@@ -31,12 +31,10 @@ module Solargraph
         case pins.first
         when Pin::BaseVariable
           first_declared_or_combined
-        when Pin::Method, Pin::Signature
-          first_declared_or_inferred
         when Pin::ProxyType
           pins.first.typedef_typeset
         else
-          # @todo Check for additional cases
+          # @todo Handles methods. Check for other exceptions
           first_declared_or_inferred
         end
       end

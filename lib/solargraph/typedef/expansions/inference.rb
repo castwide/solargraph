@@ -21,6 +21,8 @@ module Solargraph
           else
             return_typeset_from_node(next_node)
           end
+        rescue FileNotFoundError => _e
+          ComplexType::UNDEFINED.to_typedef_typeset
         end
 
         private
@@ -34,28 +36,23 @@ module Solargraph
         end
 
         def next_node
-          @next_node ||= begin
-            if pin.is_a?(Pin::Method)
-              method_body_node
-            else
-              return unless pin.location
-              source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-            end
-          end
+          @next_node ||= if pin.is_a?(Pin::Method)
+                           method_body_node
+                         else
+                           return unless pin.location
+                           source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
+                         end
         end
 
         # @param pin [Pin::Base]
         # @return [Parser::AST::Node, nil]
         def method_body_node
-          @method_body_node ||= begin
-            # node = source_map.source.node_at(pin.location.range.start.line, pin.location.range.start.column)
-            node = pin.node
-            return unless node
-            return node.children[1].children.last if node.type == :DEFN
-            return node.children[2].children.last if node.type == :DEFS
-            return node.children[2] if %i[def DEFS].include?(node.type)
-            node.children[3] if node.type == :defs
-          end
+          @method_body_node ||= case pin.node.type
+                                when :def
+                                  pin.node.children[2]
+                                when :defs
+                                  pin.node.children[3]
+                                end
         end
 
         # @param parent_node [Parser::AST::Node]
