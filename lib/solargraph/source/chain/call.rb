@@ -11,9 +11,6 @@ module Solargraph
       class Call < Chain::Link
         include Solargraph::Parser::NodeMethods
 
-        # The `**` in `def m(**) = n(**)`
-        FORWARDED_KWRESTARG = ::Parser::AST::Node.new(:forwarded_kwrestarg)
-
         # @return [String]
         attr_reader :word
 
@@ -279,7 +276,7 @@ module Solargraph
           return true if keyword_argument.nil?
           # An anonymous `**` passes on whatever keywords the caller received,
           # so no overload can be ruled out by them
-          return true if keyword_argument.node.children.include?(FORWARDED_KWRESTARG)
+          return true if any_forwarded_args?([keyword_argument.node])
 
           # @type [::Hash{::Symbol => Chain}]
           kwargs = convert_hash(keyword_argument.node)
