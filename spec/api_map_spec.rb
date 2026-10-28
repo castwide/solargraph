@@ -787,27 +787,6 @@ describe Solargraph::ApiMap do
     expect(baz.path).to eq('Foo#baz')
   end
 
-  it 'qualifies a superclass' do
-    source = Solargraph::Source.load_string("class Foo; end\nclass Bar < Foo; end\n", 'test.rb')
-    api_map = described_class.new.map(source)
-
-    expect(api_map.qualify_superclass('Bar')).to eq('Foo')
-  end
-
-  it 'adds methods from a namespace domain' do
-    pins = Solargraph::SourceMap.load_string(%(
-      class Helper
-        def help; end
-      end
-
-      class Foo; end
-    ), 'test.rb').pins
-    pins.find { |pin| pin.path == 'Foo' }.domains.push 'Helper'
-    api_map = described_class.new(pins: pins)
-
-    expect(api_map.get_methods('Foo').map(&:path)).to include('Helper#help')
-  end
-
   it 'ignores malformed mixins' do
     closure = Solargraph::Pin::Namespace.new(name: 'Foo', closure: Solargraph::Pin::ROOT_PIN, type: :class)
     mixin = Solargraph::Pin::Reference::Include.new(

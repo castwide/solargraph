@@ -30,7 +30,7 @@ module Solargraph
       # types and subtypes.
       #
       # @param name [String] rooted name of the referenced type
-      # @param generic_values [Array<ComplexType>]
+      # @param generic_values [Array<String>]
       # @param [Hash{Symbol => Object}] splat
       def initialize generic_values: [], **splat
         super(**splat)
@@ -39,7 +39,14 @@ module Solargraph
 
       # @return [ComplexType]
       def type
-        @type ||= ComplexType.new([referenced_type])
+        @type ||= ComplexType.try_parse(
+          name +
+          if generic_values&.length&.> 0
+            "<#{generic_values.join(', ')}>"
+          else
+            ''
+          end
+        )
       end
 
       # @sg-ignore Need to add nil check here
@@ -47,23 +54,6 @@ module Solargraph
       def reference_gates
         # @sg-ignore Need to add nil check here
         closure.gates
-      end
-
-      private
-
-      # @return [ComplexType::UniqueType]
-      def referenced_type
-        base = name.delete_prefix('::')
-        rooted = name.start_with?('::') || !ComplexType::UniqueType.can_root_name?(base)
-        return ComplexType::UniqueType.new(base, rooted: rooted) if generic_values.empty?
-
-        # As in a parsed Hash<K, V>, two values on a Hash are its key and value
-        key_types, subtypes = if base == 'Hash' && generic_values.length == 2
-                                [[generic_values.first], [generic_values.last]]
-                              else
-                                [[], generic_values]
-                              end
-        ComplexType::UniqueType.new(base, key_types, subtypes, rooted: rooted, parameters_type: :list)
       end
     end
   end
