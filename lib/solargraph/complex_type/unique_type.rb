@@ -38,6 +38,13 @@ module Solargraph
         @intern[key] = fresh
       end
 
+      # @type [Hash{String => String}]
+      ANONYMOUS_NAME_BY_STARTING_TAG = {
+        '{' => 'Hash',
+        '(' => 'Array',
+        '<' => 'Array'
+      }.freeze
+
       # Create a UniqueType with the specified name and an optional substring.
       # The substring is the parameter section of a parametrized type, e.g.,
       # for the type `Array<String>`, the name is `Array` and the substring is
@@ -49,6 +56,9 @@ module Solargraph
       # @return [UniqueType]
       def self.parse name, substring = '', make_rooted: nil
         raise ComplexTypeError, "Illegal prefix: #{name}" if name.start_with?(':::')
+        # Anonymous shorthand (`<A>`, `(A)`, `{A=>B}`) defaults the
+        # omitted type name to Array or Hash, before the rooted check below.
+        name = ANONYMOUS_NAME_BY_STARTING_TAG.fetch(substring.chars.fetch(0)) if name.empty? && !substring.empty?
         if name.start_with?('::')
           name = name[2..]
           rooted = true
@@ -481,6 +491,9 @@ module Solargraph
       # @param context_type [ComplexType] The receiver type
       # @return [UniqueType, ComplexType]
       def resolve_generics definitions, context_type
+        # Method-scoped generics bind per call site via
+        # resolve_generics_from_context, not against a receiver's type params.
+        return self if definitions.is_a?(Pin::Callable)
         return self if definitions.nil? || definitions.generics.empty?
 
         transform(name) do |t|

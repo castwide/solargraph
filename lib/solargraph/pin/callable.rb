@@ -14,12 +14,15 @@ module Solargraph
       # @param block [Signature, nil]
       # @param return_type [ComplexType, nil]
       # @param parameters [::Array<Pin::Parameter>]
+      # @param block_required [Boolean] Whether callers must pass a block, per
+      #   an RBS non-optional block (`{ ... }` rather than `?{ ... }`).
       # @param [Hash{Symbol => Object}] splat
-      def initialize block: nil, return_type: nil, parameters: [], **splat
+      def initialize block: nil, return_type: nil, parameters: [], block_required: false, **splat
         super(**splat)
         @block = block
         @return_type = return_type
         @parameters = parameters
+        @block_required = block_required
       end
 
       def reset_generated!
@@ -55,6 +58,7 @@ module Solargraph
       def combine_with other, attrs = {}
         new_attrs = {
           block: combine_blocks(other),
+          block_required: block_required? || other.block_required?,
           return_type: combine_return_type(other)
         }.merge(attrs)
         new_attrs[:parameters] = choose_parameters(other).clone.freeze unless new_attrs.key?(:parameters)
@@ -241,7 +245,7 @@ module Solargraph
         argcount = arguments.length
         parcount = mandatory_positional_param_count
         parcount -= 1 if !parameters.empty? && parameters.last.block?
-        return false if block? && !with_block
+        return false if block? && block_required? && !with_block
         # @todo this and its caller should be changed so that this can
         #   look at the kwargs provided and check names against what
         #   we acccept
@@ -265,6 +269,11 @@ module Solargraph
 
       def block?
         !!@block
+      end
+
+      # @return [Boolean]
+      def block_required?
+        !!@block_required
       end
 
       protected
