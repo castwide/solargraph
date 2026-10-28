@@ -648,10 +648,7 @@ module Solargraph
                 # from above; now we need to also gather the value
                 # position nodes
                 if idx == nodes.length - 1
-                  # @sg-ignore Wrong argument type for
-                  #   Solargraph::Parser::ParserGem::NodeMethods::DeepInference.from_value_position_statement: node
-                  #   expected AST::Node, received Parser::AST::Node, Integer, Float, Rational, Complex, String, Symbol,
-                  #   NilClass, nil
+                  # @sg-ignore Array#first/#last relies on non-empty invariant
                   result.concat from_value_position_statement(nodes.last,
                                                               include_explicit_returns: false)
                 end

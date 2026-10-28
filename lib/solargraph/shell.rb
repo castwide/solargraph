@@ -356,7 +356,7 @@ module Solargraph
         print_pin(pin)
       end
       references.each do |key, refpin|
-        # @sg-ignore Yielded tuples are not destructured into block params
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         puts "\n# #{key.to_s.capitalize}:\n\n"
         print_pin(refpin)
       end

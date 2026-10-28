@@ -101,7 +101,7 @@ module Solargraph
       Solargraph.with_clean_env do
         cmd = ['ruby', '-e', bundle_script]
         o, e, s = Open3.capture3(*cmd, chdir: directory)
-        # @sg-ignore Unresolved call to success?
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         if s.success?
           # @sg-ignore https://github.com/castwide/solargraph/pull/1245
           json = o && !o.empty? ? JSON.parse(o.strip.split("\n").last, symbolize_names: true) : []

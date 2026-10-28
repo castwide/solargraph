@@ -573,17 +573,17 @@ module Solargraph
     def kwrestarg_problems_for api_map, closure_pin, locals, location, pin, params, kwargs
       result = []
       kwargs.each_pair do |pname, argchain|
-        # @sg-ignore Yielded tuples are not destructured into block params
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         next unless params.key?(pname.to_s)
         # @sg-ignore https://github.com/apiology/solargraph/pull/198
         # @type [ComplexType]
         raw_ptype = params[pname.to_s][:qualified]
         ptype = raw_ptype.self_to_type(pin.context)
-        # @sg-ignore Yielded tuples are not destructured into block params
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         argtype = argchain.infer(api_map, closure_pin, locals)
-        # @sg-ignore Yielded tuples are not destructured into block params
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         argtype = argtype.self_to_type(closure_pin.context)
-        # @sg-ignore Yielded tuples are not destructured into block params
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1461
         if argtype.defined? && ptype && !arg_conforms_to?(argtype, ptype)
           result.push Problem.new(location,
                                   "Wrong argument type for #{pin.path}: #{pname} expected #{ptype}, received #{argtype}")
@@ -656,13 +656,9 @@ module Solargraph
         next unless param_names.include?(param_name)
 
         param_details[param_name] ||= {}
-        # @sg-ignore Unresolved call to [] on Hash{Symbol => String, Solargraph::ComplexType}, nil
-        #   Unresolved call to []
-        #   also needs https://github.com/castwide/solargraph/pull/1417
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1417
         param_details[param_name][:tagged] ||= details[:tagged]
-        # @sg-ignore Unresolved call to [] on Hash{Symbol => String, Solargraph::ComplexType}, nil
-        #   Unresolved call to []
-        #   also needs https://github.com/castwide/solargraph/pull/1417
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1417
         param_details[param_name][:qualified] ||= details[:qualified]
       end
     end

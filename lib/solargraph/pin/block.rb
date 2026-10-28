@@ -45,9 +45,7 @@ module Solargraph
       # @param parameters [::Array<Parameter>]
       #
       # @return [::Array<ComplexType>]
-      # @sg-ignore Declared return type ::Array<::Solargraph::ComplexType> does not match inferred type
-      #   ::Enumerator<::Array(::Solargraph::Pin::Parameter, ::Array, ::Integer), undefined> for
-      #   Solargraph::Pin::Block#destructure_yield_types
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1415
       def destructure_yield_types yield_types, parameters
         # yielding a tuple into a block will destructure the tuple
         if yield_types.length == 1
@@ -81,16 +79,16 @@ module Solargraph
             param = parameters[idx]
             # @sg-ignore https://github.com/castwide/solargraph/pull/1245
             param_type = chain.base.infer(api_map, param, locals)
-            # @sg-ignore Yielded tuples are not destructured into block params
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1461
             unless arg_type.nil?
-              # @sg-ignore Yielded tuples are not destructured into block params
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1461
               if arg_type.generic? && param_type.defined?
                 # @sg-ignore https://github.com/castwide/solargraph/pull/1393
                 namespace_pin = api_map.get_namespace_pins(meth.namespace, closure.namespace).first
-                # @sg-ignore Yielded tuples are not destructured into block params
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1461
                 arg_type.resolve_generics(namespace_pin, param_type)
               else
-                # @sg-ignore Yielded tuples are not destructured into block params
+                # @sg-ignore https://github.com/castwide/solargraph/pull/1461
                 arg_type.self_to_type(chain.base.infer(api_map, self, locals)).qualify(api_map, *meth.gates)
               end
             end

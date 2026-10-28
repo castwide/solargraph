@@ -69,12 +69,12 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (551):
+      # pending code fixes (533):
       #
       # @todo 143: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
       # @todo 50: https://github.com/castwide/solargraph/pull/1245
-      # @todo 48: Array#first/#last relies on non-empty invariant
+      # @todo 49: Array#first/#last relies on non-empty invariant
       # @todo 33: pin.closure relies on closure always resolved
       # @todo 29: Range.from_node result assumed always present
       # @todo 26: Translate to something flow sensitive typing understands
@@ -82,14 +82,13 @@ module Solargraph
       # @todo 22: String/Array Range slice relies on valid bounds
       # @todo 19: pin.location relies on location always resolved
       # @todo 17: Need a downcast here
-      # @todo 14: Yielded tuples are not destructured into block params
       # @todo 12: MatchData relies on regex always matching
-      # @todo 10: Array#[] integer index relies on fixed arity
-      # @todo 9: Literal index into a tuple returns every element type plus nil
+      # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
       # @todo 5: Array literals infer bare Array without element types
       # @todo 5: Unresolved call to join on Array<String>, nil
       # @todo 3: Unresolved call to start_with? on Array, nil
+      # @todo 2: Yielded tuples are not destructured into block params
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to gsub on Array, nil
       # @todo 1: Unresolved call to end_with? on Array, nil

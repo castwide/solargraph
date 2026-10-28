@@ -413,7 +413,7 @@ module Solargraph
             parameters: tag.parameters.map do |src|
               # @sg-ignore https://github.com/castwide/solargraph/pull/1392
               name, decl = parse_overload_param(src.first)
-              # @sg-ignore Wrong argument type for Solargraph::Pin::Parameter.new: decl expected Symbol, received String
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1461
               Pin::Parameter.new(
                 location: location,
                 closure: self,
