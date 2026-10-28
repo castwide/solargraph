@@ -85,11 +85,11 @@ module Solargraph
       # @todo 12: MatchData relies on regex always matching
       # @todo 12: Array#[] integer index relies on fixed arity
       # @todo 7: Missing @return tag
-      # @todo 5: Array literals infer bare Array without element types
       # @todo 5: Unresolved call to join on Array<String>, nil
+      # @todo 4: Yielded tuples are not destructured into block params
       # @todo 3: Unresolved call to start_with? on Array, nil
+      # @todo 3: Array literals infer bare Array without element types
       # @todo 2: probably nil false alarm
-      # @todo 2: Yielded tuples are not destructured into block params
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to gsub on Array, nil
       # @todo 1: Unresolved call to end_with? on Array, nil
@@ -102,7 +102,7 @@ module Solargraph
       # @todo 1: @@inference_cache has no declared value type
       # @todo 1: Use fetch to suppress false alarm
       #
-      # flow sensitive typing could handle (163):
+      # flow sensitive typing could handle (165):
       #
       # @todo 30: https://github.com/castwide/solargraph/issues/1249
       # @todo 28: https://github.com/castwide/solargraph/issues/1241
@@ -117,6 +117,7 @@ module Solargraph
       # @todo 4: flow sensitive typing needs to handle 'raise if'
       # @todo 2: flow sensitive typing should handle is_a? and next
       # @todo 3: flow sensitive typing needs to handle "if foo = bar"
+      # @todo 3: Should better support meaning of '&' in RBS
       # @todo 2: flow sensitive typing needs to create separate ranges for postfix if
       # @todo 2: Need better handling of #compact
       # @todo 2: downcast output of Enumerable#select
@@ -130,7 +131,6 @@ module Solargraph
       # @todo 1: flow sensitive typing not smart enough to handle this case
       # @todo 1: flow sensitive typing needs to handle self.class == other.class
       # @todo 1: flow sensitive typing needs to eliminate literal from union with [:bar].include?(foo)
-      # @todo 1: Should better support meaning of '&' in RBS
       # @todo 1: flow sensitive typing needs to handle constants
       # @todo 1: Need to handle duck-typed method calls on union types
       # @todo 1: flow sensitive typing needs to remove literal with

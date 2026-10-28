@@ -53,7 +53,7 @@ module Solargraph
       def pins_by_class klass
         # @type [Set<generic<T>>]
         s = Set.new
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1231
+        # @sg-ignore Yielded tuples are not destructured into block params
         @pin_select_cache[klass] ||= pin_class_hash.each_with_object(s) { |(key, o), n| n.merge(o) if key <= klass }
       end
 
