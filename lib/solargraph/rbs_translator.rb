@@ -12,11 +12,16 @@ module Solargraph
       'NilClass' => 'nil'
     }.freeze
 
+    # Relative type names (e.g. `Bar` in an inline `#: () -> Bar`) stay
+    # unrooted so they resolve against the pin's namespace like YARD tags
+    # do. Absolute names (`::Bar`, or any name from an RBS environment
+    # after `resolve_type_names`) and RBS builtins stay rooted.
+    #
     # @param type [RBS::Types::t]
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [ComplexType]
     def self.to_complex_type type, type_alias_decls: {}
-      to_type(type, type_alias_decls).force_rooted
+      to_type(type, type_alias_decls)
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -105,7 +110,8 @@ module Solargraph
                 block_return_type = to_complex_type(method_type.block.type.return_type, type_alias_decls: type_alias_decls)
                 Pin::Signature.new(generics: generics, parameters: block_parameters, return_type: block_return_type, source: :rbs, type_location: closure.location, closure: closure)
               end
-      Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block, source: :rbs, type_location: closure.location, closure: closure)
+      Pin::Signature.new(generics: generics, parameters: parameters, return_type: return_type, block: block,
+                         block_required: method_type.block&.required || false, source: :rbs, type_location: closure.location, closure: closure)
     end
 
     # @param location [RBS::Location, nil]
@@ -176,7 +182,10 @@ module Solargraph
             # @sg-ignore flow sensitive typing should support case/when
             ComplexType.new([build_type(type.name, type.args, type_alias_decls, expanding_aliases)])
           else
-            to_type(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name])
+            # The alias body belongs to the alias's declaration, not the
+            # use site, so its names stay rooted even when a core-less
+            # environment left them relative.
+            to_type(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name]).force_rooted
           end
         when RBS::Types::ClassInstance, RBS::Types::Interface
           # `Interface` represents a mix-in module which can be considered a
@@ -215,12 +224,14 @@ module Solargraph
       # @param expanding_aliases [Array<String>]
       # @return [ComplexType::UniqueType]
       def build_type type_name, type_args = [], type_alias_decls = {}, expanding_aliases = []
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        yard_base = RBS_TO_YARD_TYPE[type_name.relative!.to_s]
+        base = yard_base || type_name.relative!.to_s
+        rooted = !yard_base.nil? || type_name.absolute?
         params = type_args.map { |a| to_type(a, type_alias_decls, expanding_aliases) }
         if base == 'Hash' && params.length == 2 && params.any?(&:defined?)
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)
         end
       end
     end

@@ -12,6 +12,7 @@ module Solargraph
     autoload :Clip,          'solargraph/source_map/clip'
     autoload :Completion,    'solargraph/source_map/completion'
     autoload :Data,          'solargraph/source_map/data'
+    autoload :Call,          'solargraph/source_map/call'
 
     # @return [Source]
     attr_reader :source
@@ -82,6 +83,16 @@ module Solargraph
       pins_by_class(Pin::Reference::Require)
     end
 
+    def calls *method_names
+      symbolized = method_names.map(&:to_sym)
+      node_map.find_by_type(:send).select { |node| node.children[0].nil? && symbolized.include?(node.children[1].to_sym) }
+              .map { |node| Call.new(self, Parser.chain(node), locate_namespace_pin(node.loc.line, node.loc.column)) }
+    end
+
+    def node_map
+      @node_map ||= Source::NodeMap.new(source.node)
+    end
+
     # @return [Environ]
     def conventions_environ
       @conventions_environ ||= Environ.new
@@ -126,6 +137,10 @@ module Solargraph
     # @return [Pin::Method,Pin::Namespace]
     def locate_named_path_pin line, character
       _locate_pin line, character, Pin::Namespace, Pin::Method
+    end
+
+    def locate_namespace_pin line, character
+      _locate_pin line, character, Pin::Namespace, Pin::Singleton
     end
 
     # @param line [Integer]
@@ -197,7 +212,7 @@ module Solargraph
 
     private
 
-    # @return [Hash{Class<Pin::Base> => Array<Pin::Base>}]
+    # @return [Hash{Class, Pin::Base => Array<Pin::Base>}]
     def pin_class_hash
       # @todo Need to support generic resolution in classify and transform_values
       @pin_class_hash ||= pins.to_set.classify(&:class).transform_values(&:to_a)
