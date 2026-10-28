@@ -651,6 +651,8 @@ module Solargraph
         yield new_type
       end
 
+      # @param named_types [Hash{String => Type}]
+      # @return [Type]
       def expand named_types
         named_types[name] || self
       end
