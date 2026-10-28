@@ -12,6 +12,7 @@ module Solargraph
     autoload :Cursor,        'solargraph/source/cursor'
     autoload :Chain,         'solargraph/source/chain'
     autoload :SourceChainer, 'solargraph/source/source_chainer'
+    autoload :NodeMap,       'solargraph/source/node_map'
 
     include EncodingFixes
 
@@ -210,6 +211,21 @@ module Solargraph
         buff = associated_comments[rng.start.line]
         stringify_comment_array(buff)
       end
+    end
+
+    # The RBS type in an rbs-inline type assertion, i.e., a `#: TYPE`
+    # comment that trails the node on its last line.
+    #
+    # @example
+    #   x = [] #: Array[String]
+    #
+    # @param node [AST::Node]
+    # @return [String, nil]
+    def type_assertion_for node
+      rng = Range.from_node(node)
+      return nil if rng.nil?
+      rest = code_lines[rng.ending.line]&.[](rng.ending.column..)
+      rest&.[](/\A\s*#:(.*)$/, 1)&.strip
     end
 
     # A location representing the file in its entirety.
@@ -460,6 +476,7 @@ module Solargraph
     # @return [String]
     def code= val
       @code_lines = nil
+      @node_map = nil
       @finalized = false
       @code = val
     end

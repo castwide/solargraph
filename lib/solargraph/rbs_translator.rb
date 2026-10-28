@@ -12,14 +12,18 @@ module Solargraph
       'NilClass' => 'nil'
     }.freeze
 
+    # Relative type names (e.g. `Bar` in an inline `#: () -> Bar`) stay
+    # unrooted so they resolve against the pin's namespace like YARD tags
+    # do. Absolute names (`::Bar`, or any name from an RBS environment
+    # after `resolve_type_names`) and RBS builtins stay rooted.
+    #
     # rubocop:disable Layout/LineLength
     # @param type [RBS::Types::Bases::Bool, RBS::Types::Bases::Void, RBS::Types::Bases::Any, RBS::Types::Bases::Nil, RBS::Types::Bases::Top, RBS::Types::Bases::Bottom, RBS::Types::Bases::Self, RBS::Types::Bases::Instance, RBS::Types::Bases::Class, RBS::Types::Variable, RBS::Types::ClassSingleton, RBS::Types::Interface, RBS::Types::ClassInstance, RBS::Types::Alias, RBS::Types::Tuple, RBS::Types::Record, RBS::Types::Optional, RBS::Types::Union, RBS::Types::Intersection, RBS::Types::Proc, RBS::Types::Literal]
     # rubocop:enable Layout/LineLength
     # @param type_alias_decls [Hash{String => RBS::AST::Declarations::TypeAlias}]
     # @return [ComplexType]
     def self.to_complex_type type, type_alias_decls: {}
-      tag = type_to_tag(type, type_alias_decls)
-      ComplexType.try_parse(tag).force_rooted
+      ComplexType.try_parse(type_to_tag(type, type_alias_decls))
     end
 
     # @param param_type [RBS::Types::Function::Param]
@@ -142,10 +146,10 @@ module Solargraph
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           "#{type_to_tag(type.type, type_alias_decls, expanding_aliases)}, nil"
         when RBS::Types::Bases::Bool
-          'Boolean'
+          '::Boolean'
         when RBS::Types::Tuple
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-          "Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
+          "::Array(#{type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')})"
         when RBS::Types::Literal
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.literal.inspect
@@ -154,7 +158,7 @@ module Solargraph
           type.types.map { |t| type_to_tag(t, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Record
           # @todo Better record support
-          'Hash'
+          '::Hash'
         when RBS::Types::Bases::Nil
           'nil'
         when RBS::Types::Bases::Void
@@ -166,12 +170,12 @@ module Solargraph
           'self'
         when RBS::Types::Bases::Top
           # `Top` is the most super superclass
-          'BasicObject'
+          '::BasicObject'
         when RBS::Types::Intersection
           # @sg-ignore https://github.com/castwide/solargraph/pull/1259
           type.types.map { |member| type_to_tag(member, type_alias_decls, expanding_aliases) }.join(', ')
         when RBS::Types::Proc
-          'Proc'
+          '::Proc'
         when RBS::Types::Alias
           # Expand so conformance checks see the members, not the name. A
           # generic alias falls back: args are not substituted, so expanding
@@ -184,7 +188,11 @@ module Solargraph
             # @sg-ignore flow sensitive typing should support case/when
             type_tag(type.name, type.args, type_alias_decls, expanding_aliases)
           else
-            type_to_tag(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name])
+            # The alias body belongs to the alias's declaration, not the
+            # use site, so its names stay rooted even when a core-less
+            # environment left them relative.
+            expanded = type_to_tag(alias_decl.type, type_alias_decls, expanding_aliases + [alias_name])
+            ComplexType.try_parse(expanded).force_rooted.rooted_tags
           end
         when RBS::Types::ClassInstance, RBS::Types::Interface
           # `Interface` represents a mix-in module which can be considered a
@@ -214,7 +222,7 @@ module Solargraph
       # @param expanding_aliases [Array<String>]
       # @return [String]
       def type_tag type_name, type_args = [], type_alias_decls = {}, expanding_aliases = []
-        build_type(type_name, type_args, type_alias_decls, expanding_aliases).tags
+        build_type(type_name, type_args, type_alias_decls, expanding_aliases).rooted_tags
       end
 
       # @param type_name [RBS::TypeName]
@@ -223,14 +231,16 @@ module Solargraph
       # @param expanding_aliases [Array<String>]
       # @return [ComplexType::UniqueType]
       def build_type type_name, type_args = [], type_alias_decls = {}, expanding_aliases = []
-        base = RBS_TO_YARD_TYPE[type_name.relative!.to_s] || type_name.relative!.to_s
+        yard_base = RBS_TO_YARD_TYPE[type_name.relative!.to_s]
+        base = yard_base || type_name.relative!.to_s
+        rooted = !yard_base.nil? || type_name.absolute?
         params = type_args.map { |a| type_to_tag(a, type_alias_decls, expanding_aliases) }.map do |t|
           ComplexType.try_parse(t)
         end
         if base == 'Hash' && params.length == 2
-          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: true, parameters_type: :hash)
+          ComplexType::UniqueType.new(base, [params.first], [params.last], rooted: rooted, parameters_type: :hash)
         else
-          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: true, parameters_type: :list)
+          ComplexType::UniqueType.new(base, [], params.reject(&:undefined?), rooted: rooted, parameters_type: :list)
         end
       end
     end

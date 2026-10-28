@@ -93,6 +93,12 @@ module Solargraph
           region.source.comments_for(node)
         end
 
+        # @param node [Parser::AST::Node]
+        # @return [String, nil]
+        def type_assertion_for node
+          region.source.type_assertion_for(node)
+        end
+
         # @param position [Solargraph::Position]
         # @return [Pin::Closure, nil]
         def named_path_pin position

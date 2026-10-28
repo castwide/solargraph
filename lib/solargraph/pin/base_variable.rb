@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'rbs'
+
 module Solargraph
   module Pin
     class BaseVariable < Base
@@ -13,6 +15,9 @@ module Solargraph
 
       # @return [Range, nil]
       attr_reader :presence
+
+      # @return [String, nil]
+      attr_reader :type_assertion
 
       # @param return_type [ComplexType, nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
@@ -45,12 +50,16 @@ module Solargraph
       # @see https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types
       # @see https://en.wikipedia.org/wiki/Intersection_type#TypeScript_example
       # @param presence [Range, nil]
+      # @param type_assertion [String, nil] RBS type from a trailing
+      #   rbs-inline `#: TYPE` comment on the assignment
       # @param [Hash{Symbol => Object}] splat
       def initialize assignment: nil, assignments: [], mass_assignment: nil,
                      presence: nil, return_type: nil,
                      intersection_return_type: nil, exclude_return_type: nil,
+                     type_assertion: nil,
                      **splat
         super(**splat)
+        @type_assertion = type_assertion
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
         # @type [nil, ::Array(Parser::AST::Node, Integer)]
         @mass_assignment = mass_assignment
@@ -95,7 +104,8 @@ module Solargraph
                                   return_type: combine_return_type(other),
                                   intersection_return_type: combine_types(other, :intersection_return_type),
                                   exclude_return_type: combine_types(other, :exclude_return_type),
-                                  presence: combine_presence(other)
+                                  presence: combine_presence(other),
+                                  type_assertion: choose(other, :type_assertion)
                                 })
         super(other, new_attrs)
       end
@@ -370,11 +380,28 @@ module Solargraph
         :instance
       end
 
+      # An rbs-inline type assertion takes precedence over a @type tag,
+      # as inline RBS method signatures do over YARD tags.
+      #
       # @return [ComplexType, nil]
       def generate_complex_type
+        asserted = type_from_assertion
+        return asserted unless asserted.nil?
         tag = docstring.tag(:type)
         return ComplexType.try_parse(*tag.types) unless tag.nil? || tag.types.nil? || tag.types.empty?
         nil
+      end
+
+      # @return [ComplexType, nil]
+      def type_from_assertion
+        assertion = type_assertion
+        return nil if assertion.nil? || assertion.empty?
+        @type_from_assertion ||= begin
+          rbs_type = RBS::Parser.parse_type(assertion, require_eof: true)
+          RbsTranslator.to_complex_type(rbs_type) unless rbs_type.nil?
+        rescue RBS::ParsingError
+          nil
+        end
       end
     end
   end
