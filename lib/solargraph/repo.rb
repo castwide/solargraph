@@ -82,8 +82,9 @@ module Solargraph
     end
 
     def bundled_directory?
-      # @sg-ignore Translate to something flow sensitive typing understands
-      directory && File.file?(gemfile) && File.file?(lockfile)
+      gemfile_path = gemfile
+      lockfile_path = lockfile
+      gemfile_path && lockfile_path && File.file?(gemfile_path) && File.file?(lockfile_path)
     end
 
     # Load metagems from the directory's bundle definition if available.
