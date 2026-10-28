@@ -228,5 +228,9 @@ module Solargraph
 
     # @!method downcast_to_literal_if_possible
     #   @return [Type]
+
+    # @!method namespaces
+    #   The namespace of each value this type may be.
+    #   @return [Array<String>]
   end
 end
