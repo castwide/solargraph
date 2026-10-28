@@ -80,7 +80,10 @@ module Solargraph
                                                      gates: name_pin.gates,
                                                      binder: context,
                                                      source: :chain)
-            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
+            pins = inferred_pins([pin], api_map, type_name_pin, locals)
+            element_type = tuple_element_type(context)
+            pins = pins.map { |p| p.proxy(element_type) } unless element_type.nil?
+            resolved.concat pins
           end
           return [] if unresolved_type && !api_map.loose_unions
           return [] if resolved.empty?
@@ -91,6 +94,35 @@ module Solargraph
         end
 
         private
+
+        # The element a declared tuple returns from #first, #last, or
+        # #[] with an integer literal, which Array's signatures can only
+        # type as the union of all elements
+        #
+        # @param context [ComplexType::UniqueType] the receiver
+        # @return [ComplexType, nil] nil when this is not such a call
+        def tuple_element_type context
+          return nil unless context.tuple?
+          index = case word
+                  when 'first' then 0 if arguments.empty?
+                  when 'last' then -1 if arguments.empty?
+                  when '[]' then integer_literal_argument
+                  end
+          return nil if index.nil?
+          context.all_params[index] || ComplexType::NIL
+        end
+
+        # @return [Integer, nil] the value of the call's only argument,
+        #   when that is an integer literal
+        def integer_literal_argument
+          return nil unless arguments.length == 1
+          argument = arguments.first
+          return nil if argument.nil? || argument.links.length != 1
+          link = argument.links.first
+          return nil unless link.is_a?(Chain::Literal)
+          value = link.value
+          value if value.is_a?(Integer)
+        end
 
         # Checks whether a single overload signature matches the call's
         # arguments/block and, if so, resolves its return type. Threaded
