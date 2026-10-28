@@ -124,6 +124,12 @@ module Solargraph
         extend_references[fqns] || []
       end
 
+      # @param fqns [String]
+      # @return [Array<Pin::Reference::IncludedMixin>]
+      def get_included_mixins fqns
+        index.included_mixin_references[fqns] || []
+      end
+
       # @param path [String]
       # @return [Array<Solargraph::Pin::Base>]
       def get_path_pins path
@@ -261,6 +267,14 @@ module Solargraph
         ancestors.compact.uniq
       end
 
+      # Get factory parameters for a method pin.
+      #
+      # @param method_pin [Pin::Method]
+      # @return [Array<Pin::FactoryParameter>]
+      def factory_parameters_for_method method_pin
+        factory_parameter_hash[method_pin.path] || []
+      end
+
       # @param fqns [String]
       #
       # @return [Array<Solargraph::Pin::Reference>]
@@ -356,6 +370,11 @@ module Solargraph
       # @return [Hash{String => Array<Pin::Reference::Extend>}]
       def extend_references
         index.extend_references
+      end
+
+      # @return [Hash{String => Array<Pin::FactoryParameter>}]
+      def factory_parameter_hash
+        index.factory_parameter_hash
       end
 
       # @param name [String]
