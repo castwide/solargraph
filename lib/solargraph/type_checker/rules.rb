@@ -71,9 +71,11 @@ module Solargraph
       #
       # pending code fixes (277):
       #
-      # @todo 278: Need to add nil check here
+      # @todo 276: Need to add nil check here
       # @todo 22: Translate to something flow sensitive typing understands
       # @todo 3: Need a downcast here
+      # @todo 1: Range.from_node result assumed always present
+      # @todo 1: node.children[] relies on grammar-guaranteed arity
       #
       # flow sensitive typing could handle (97):
       #

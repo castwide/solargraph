@@ -214,12 +214,12 @@ module Solargraph
         variable_name = parse_variable(subject_node)
         return if variable_name.nil?
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Range.from_node result assumed always present
         subject_position = Range.from_node(subject_node).start
         pin = find_var(variable_name, subject_position)
         return unless pin
 
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore node.children[] relies on grammar-guaranteed arity
         when_nodes = case_node.children[1..].compact.select { |child| child.type == :when }
         # @sg-ignore flow sensitive typing needs to narrow down type with an if is_a? check
         when_nodes.each do |when_node|
