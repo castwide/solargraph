@@ -95,6 +95,18 @@ module Solargraph
         types.flat_map(&:flat_types)
       end
 
+      # Rebuilds this typeset with each named type replaced by what the
+      # block returns for it. A block returning nil makes the whole type
+      # unresolvable, since a typeset with a missing member is not one.
+      #
+      # @yieldparam named_type [Concrete]
+      # @yieldreturn [Concrete, nil]
+      # @return [Typeset, nil]
+      def qualify_parts &block
+        parts = types.map { |type| type.qualify_parts(&block) }
+        self.class.new(parts) unless parts.any?(&:nil?)
+      end
+
       # The methods that might be reachable on a value of this typeset,
       # pooled from its members: a union's value is one of them, and an
       # intersection's value is all of them at once.

@@ -47,6 +47,23 @@ describe Solargraph::Type do
     end
   end
 
+  describe '#qualify_parts' do
+    it 'hands a concrete type to the block as itself' do
+      type = concrete('Foo')
+      expect(type.qualify_parts { |part| [part] }).to eq([type])
+    end
+
+    it 'rebuilds a union from what the block returns for each member' do
+      result = union(concrete('Foo'), concrete('Bar')).qualify_parts { |part| concrete("::Outer::#{part}") }
+      expect(result.to_s).to eq('Outer::Foo | Outer::Bar')
+    end
+
+    it 'is nil when the block cannot resolve any one member' do
+      result = union(concrete('Foo'), concrete('Bar')).qualify_parts { |part| part.to_s == 'Bar' ? nil : part }
+      expect(result).to be_nil
+    end
+  end
+
   describe '#method_stack_pins' do
     it 'answers with the first pin of the method stack' do
       expect(concrete('::String').method_stack_pins('upcase', api_map).map(&:path)).to eq(['String#upcase'])

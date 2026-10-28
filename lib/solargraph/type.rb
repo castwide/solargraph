@@ -114,5 +114,13 @@ module Solargraph
     #   @param word [String]
     #   @param api_map [ApiMap]
     #   @return [Array<Pin::Base>, nil]
+
+    # @!method qualify_parts(&block)
+    #   Rebuilds this type with each named part replaced by what the block
+    #   returns for it; nil from the block for any part makes the whole
+    #   type unresolvable.
+    #   @yieldparam named_type [Type]
+    #   @yieldreturn [Type, nil]
+    #   @return [Type, nil]
   end
 end

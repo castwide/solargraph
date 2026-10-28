@@ -282,6 +282,16 @@ module Solargraph
         end
       end
 
+      # A named type is its own only part, so the block decides it
+      # directly.
+      #
+      # @yieldparam named_type [ComplexType::UniqueType]
+      # @yieldreturn [ComplexType::UniqueType, nil]
+      # @return [ComplexType::UniqueType, nil]
+      def qualify_parts
+        yield self
+      end
+
       # The first pin of the method stack for +word+ on this type, or
       # nil when the method does not resolve.
       #

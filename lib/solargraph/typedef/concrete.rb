@@ -89,6 +89,16 @@ module Solargraph
         [self]
       end
 
+      # A concrete type is its own only part, so the block decides it
+      # directly.
+      #
+      # @yieldparam named_type [Concrete]
+      # @yieldreturn [Concrete, nil]
+      # @return [Concrete, nil]
+      def qualify_parts
+        yield self
+      end
+
       # The first pin of the method stack for +word+ on this type, or nil
       # when the method does not resolve.
       #

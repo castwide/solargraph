@@ -271,6 +271,18 @@ module Solargraph
     end
     private :duck_type_provides?
 
+    # Rebuilds this union with each named type replaced by what the
+    # block returns for it. A block returning nil makes the whole type
+    # unresolvable, since a union with a missing member is not one.
+    #
+    # @yieldparam named_type [ComplexType::UniqueType]
+    # @yieldreturn [ComplexType::UniqueType, nil]
+    # @return [ComplexType, nil]
+    def qualify_parts &block
+      parts = @items.map { |item| item.qualify_parts(&block) }
+      ComplexType.new(parts) unless parts.any?(&:nil?)
+    end
+
     # Pins for calling +word+ on each alternative of this union, or nil
     # when a member does not resolve it and ApiMap#loose_unions is off.
     #
