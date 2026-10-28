@@ -73,7 +73,7 @@ module Solargraph
             end
           end
           return ComplexType::UNDEFINED.to_typedef_typeset if types.empty?
-          Typeset.new(types)
+          Union.new(types)
         rescue FileNotFoundError
           # @todo Necessary for pins from source maps that are not part of the workspace
           ComplexType::UNDEFINED.to_typedef_typeset
