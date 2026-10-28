@@ -19,7 +19,7 @@ module Solargraph
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
       #   assignments that may have been made to this variable
-      # @param mass_assignment [::Array(Parser::AST::Node, [Integer, ::Range<Integer>]), nil]
+      # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
       # @param assignment [Parser::AST::Node, nil] First assignment
       #   that was made to this variable
       # @param assignments [Array<Parser::AST::Node>] Possible
@@ -52,7 +52,7 @@ module Solargraph
                      **splat
         super(**splat)
         @assignments = (assignment.nil? ? [] : [assignment]) + assignments
-        # @type [nil, ::Array(Parser::AST::Node, [Integer, ::Range<Integer>])]
+        # @type [nil, ::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>)]
         @mass_assignment = mass_assignment
         @return_type = return_type
         @intersection_return_type = intersection_return_type
@@ -102,7 +102,7 @@ module Solargraph
 
       # @param other [self]
       #
-      # @return [Array(AST::Node, [Integer, ::Range<Integer>]), nil]
+      # @return [Array(AST::Node, Integer), Array(AST::Node, ::Range<Integer>), nil]
       def combine_mass_assignment other
         # @todo pick first non-nil arbitrarily - we don't yet support
         #   mass assignment merging

@@ -140,7 +140,7 @@ module Solargraph
 
           # @param var [Parser::AST::Node] a match_var node
           # @param assignment [Parser::AST::Node, nil]
-          # @param mass_assignment [::Array(Parser::AST::Node, [Integer, ::Range<Integer>]), nil]
+          # @param mass_assignment [::Array(Parser::AST::Node, Integer), ::Array(Parser::AST::Node, ::Range<Integer>), nil]
           # @param comments [String, nil]
           # @return [void]
           def add_capture var, assignment: nil, mass_assignment: nil, comments: nil
