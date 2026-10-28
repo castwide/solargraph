@@ -82,9 +82,8 @@ module Solargraph
     end
 
     def bundled_directory?
-      gemfile_path = gemfile
-      lockfile_path = lockfile
-      gemfile_path && lockfile_path && File.file?(gemfile_path) && File.file?(lockfile_path)
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1258
+      gemfile && lockfile && File.file?(gemfile) && File.file?(lockfile)
     end
 
     # Load metagems from the directory's bundle definition if available.
