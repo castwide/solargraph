@@ -93,5 +93,11 @@ module Solargraph
 
     # @!method all_generic?
     #   @return [Boolean]
+
+    # @!method undefined?
+    #   @return [Boolean]
+
+    # @!method defined?
+    #   @return [Boolean]
   end
 end
