@@ -69,11 +69,11 @@ module Solargraph
       #
       # @todo 3: Missed nil violation
       #
-      # pending code fixes (533):
+      # pending code fixes (532):
       #
       # @todo 140: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
-      # @todo 50: https://github.com/castwide/solargraph/pull/1245
+      # @todo 49: https://github.com/castwide/solargraph/pull/1245
       # @todo 49: Array#first/#last relies on non-empty invariant
       # @todo 33: pin.closure relies on closure always resolved
       # @todo 29: Range.from_node result assumed always present

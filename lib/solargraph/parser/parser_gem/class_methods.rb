@@ -21,8 +21,7 @@ module Solargraph
         # @param code [String]
         # @param filename [String, nil]
         # @param starting_line [Integer]
-        # @sg-ignore https://github.com/castwide/solargraph/pull/1245
-        # @return [Parser::AST::Node]
+        # @return [Parser::AST::Node, nil]
         def parse code, filename = nil, starting_line = 0
           buffer = ::Parser::Source::Buffer.new(filename, starting_line)
           buffer.source = code
