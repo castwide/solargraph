@@ -294,9 +294,9 @@ module Solargraph
               return false if kwrestarg.nil?
               next
             end
-            # @sg-ignore flow sensitive typing needs to infer Hash#each_pair block param types from a local @type tag
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
             atype = value_chain.infer(api_map, kw_arg_name_pin, locals)
-            # @sg-ignore flow sensitive typing needs to infer Hash#each_pair block param types from a local @type tag
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             return false unless param.compatible_arg?(atype, api_map)
           end
           named_params.none? { |param| param.decl == :kwarg && !kwargs.key?(param.name.to_sym) }
