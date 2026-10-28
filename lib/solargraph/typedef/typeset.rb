@@ -34,6 +34,7 @@ module Solargraph
       # @!method to_complex_type
       #   @return [ComplexType]
 
+      # @return [Array<Type>]
       attr_reader :types
 
       # @param types [Array<Type>]
@@ -92,6 +93,18 @@ module Solargraph
 
       def flat_types
         types.flat_map(&:flat_types)
+      end
+
+      # The methods that might be reachable on a value of this typeset,
+      # pooled from its members: a union's value is one of them, and an
+      # intersection's value is all of them at once.
+      #
+      # @param api_map [ApiMap]
+      # @param context [String] Fully qualified namespace the type is referenced from
+      # @param internal [Boolean] True to include private methods
+      # @return [Array<Pin::Base>]
+      def candidate_methods_from api_map, context, internal
+        types.flat_map { |type| type.candidate_methods_from(api_map, context, internal) }.uniq
       end
 
       def undefined?

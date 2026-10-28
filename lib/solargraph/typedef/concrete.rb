@@ -89,6 +89,23 @@ module Solargraph
         [self]
       end
 
+      # The methods reachable on a value of this type, from +context+:
+      # the class methods of Foo for Class[Foo], otherwise the instance
+      # methods of this type.
+      #
+      # @param api_map [ApiMap]
+      # @param context [String] Fully qualified namespace the type is referenced from
+      # @param internal [Boolean] True to include private methods
+      # @return [Array<Pin::Base>]
+      def candidate_methods_from api_map, context, internal
+        return [] if undefined? || to_s == 'void'
+
+        receiver = class_object_of || self
+        api_map.get_methods(receiver.base.to_s,
+                            scope: receiver.equal?(self) ? :instance : :class,
+                            visibility: api_map.visibility_for(receiver.base.to_s, context, internal))
+      end
+
       def to_s
         "#{base}#{params_to_s}"
       end
@@ -120,6 +137,22 @@ module Solargraph
       UNDEFINED = Concrete.new(Typedef.tokenize('undefined'))
 
       private
+
+      # The type this one is the class object of: Foo for Class[Foo] or
+      # Module[Foo]. A bare Class, or one over several types, names no one
+      # type.
+      #
+      # @return [Concrete, nil]
+      def class_object_of
+        return nil unless class? && params.length == 1
+
+        param = params.first
+        return Concrete.new(param) if param.is_a?(Path)
+        return nil unless param.is_a?(Type)
+
+        members = param.flat_types
+        members.first if members.length == 1
+      end
 
       def params_to_s
         return '' if params.empty?

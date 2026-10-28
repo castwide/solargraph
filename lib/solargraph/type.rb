@@ -99,5 +99,13 @@ module Solargraph
 
     # @!method defined?
     #   @return [Boolean]
+
+    # @!method candidate_methods_from(api_map, context, internal)
+    #   The methods that might be reachable on a value of this type, from
+    #   +context+.
+    #   @param api_map [ApiMap]
+    #   @param context [String] Fully qualified namespace the type is referenced from
+    #   @param internal [Boolean] True to include private methods
+    #   @return [Array<Pin::Base>]
   end
 end

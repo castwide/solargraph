@@ -271,6 +271,22 @@ module Solargraph
     end
     private :duck_type_provides?
 
+    # The methods that might be reachable on a value of this union, from
+    # +context+.
+    #
+    # Pooled, not intersected: a value is only one member, so what is
+    # certainly callable is what they all provide. Both callers want the
+    # wider set - completion offers candidates, and the macro test asks
+    # whether a pin might belong here.
+    #
+    # @param api_map [ApiMap]
+    # @param context [String] Fully qualified namespace the type is referenced from
+    # @param internal [Boolean] True to include private methods
+    # @return [Array<Pin::Base>]
+    def candidate_methods_from api_map, context, internal
+      @items.flat_map { |item| item.candidate_methods_from(api_map, context, internal) }.uniq
+    end
+
     # @return [String]
     def rooted_tags
       map(&:rooted_tag).join(', ')
