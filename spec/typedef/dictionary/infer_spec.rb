@@ -603,5 +603,23 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [8, 16]).infer
       expect(typeset.to_s).to eq('String')
     end
+
+    it 'roots type parameters' do
+      code = %(
+        module A
+          class B
+            class C
+              # @param x [Array<B>]
+              def d(x)
+                x
+              end
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [6, 16]).infer
+      expect(typeset.to_s).to eq('Array[A::B]')
+    end
   end
 end
