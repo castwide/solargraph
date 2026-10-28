@@ -229,10 +229,6 @@ module Solargraph
     # @!method downcast_to_literal_if_possible
     #   @return [Type]
 
-    # @!method any_duck_type?
-    #   Whether any member is a duck type, such as #to_s.
-    #   @return [Boolean]
-
     # @!method namespaces
     #   The namespace of each value this type may be.
     #   @return [Array<String>]

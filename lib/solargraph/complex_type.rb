@@ -345,13 +345,6 @@ module Solargraph
       any?(&:generic?)
     end
 
-    # Whether any member is a duck type, such as #to_s.
-    #
-    # @return [Boolean]
-    def any_duck_type?
-      @items.any?(&:duck_type?)
-    end
-
     # Whether any member mentions a generic type parameter anywhere.
     #
     # @return [Boolean]

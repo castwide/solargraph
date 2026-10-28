@@ -449,14 +449,6 @@ module Solargraph
         name == GENERIC_TAG_NAME || all_params.any?(&:generic?)
       end
 
-      # A single type is one member, so whether any member is a duck type
-      # is #duck_type?.
-      #
-      # @return [Boolean]
-      def any_duck_type?
-        duck_type?
-      end
-
       # A single type is one member, so whether it mentions a generic
       # type parameter anywhere is #generic?.
       #
