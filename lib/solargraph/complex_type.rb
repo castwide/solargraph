@@ -389,6 +389,38 @@ module Solargraph
       @items.any?(&:nil_type?)
     end
 
+    # Only a union of nothing but nil is the nil type; one that merely
+    # allows nil is #nullable?.
+    #
+    # @return [Boolean]
+    def nil_type?
+      !@items.empty? && @items.all?(&:nil_type?)
+    end
+
+    # A value of the union may be the void member, so one void member
+    # leaves the whole union with nothing usable to say.
+    #
+    # @return [Boolean]
+    def void?
+      @items.any?(&:void?)
+    end
+
+    # A value of the union may be the member we failed to resolve, so one
+    # undefined member makes the whole union undefined.
+    #
+    # @return [Boolean]
+    def undefined?
+      @items.any?(&:undefined?)
+    end
+
+    # The empty union is the bottom type, which is determined, so it is
+    # defined.
+    #
+    # @return [Boolean]
+    def defined?
+      !undefined?
+    end
+
     # @return [ComplexType]
     def without_nil
       new_items = @items.reject(&:nil_type?)

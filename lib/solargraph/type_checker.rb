@@ -363,7 +363,8 @@ module Solargraph
           closest = ComplexType.new(all_closest)
           # @todo remove the internal_or_core? check at a higher-than-strict level
           if (!found || found.is_a?(Pin::BaseVariable) || (closest.defined? && internal_or_core?(found))) && !(closest.any_generic? || ignored_pins.include?(found))
-            if closest.defined?
+            # An empty union is defined but names no receiver to report.
+            if closest.defined? && all_closest.any?
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word} on #{closest}")
             else
               result.push Problem.new(location, "Unresolved call to #{missing.links.last.word}")
