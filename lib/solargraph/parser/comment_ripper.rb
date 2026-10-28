@@ -27,7 +27,7 @@ module Solargraph
         # @sg-ignore https://github.com/castwide/solargraph/pull/1364
         # @type [Array(Symbol, String, Array(Integer, Integer))]
         result = super
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore Use fetch to suppress false alarm
         if @buffer_lines[result[2][0]][0..result[2][1]].strip =~ /^#/
           # @sg-ignore https://github.com/castwide/solargraph/pull/1463
           chomped = result[1].chomp
@@ -59,7 +59,7 @@ module Solargraph
           )
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1104
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def on_embdoc_beg *args
         result = super
         # @sg-ignore https://github.com/castwide/solargraph/pull/1364
@@ -67,7 +67,7 @@ module Solargraph
         result
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1104
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def on_embdoc *args
         result = super
         # @sg-ignore https://github.com/castwide/solargraph/pull/1364
@@ -75,7 +75,7 @@ module Solargraph
         result
       end
 
-      # @sg-ignore https://github.com/castwide/solargraph/pull/1104
+      # @sg-ignore https://github.com/castwide/solargraph/pull/1364
       def on_embdoc_end *args
         result = super
         # @sg-ignore https://github.com/castwide/solargraph/pull/1364

@@ -71,7 +71,7 @@ module Solargraph
       #
       # pending code fixes (533):
       #
-      # @todo 143: Need to add nil check here
+      # @todo 140: Need to add nil check here
       # @todo 66: node.children[] relies on grammar-guaranteed arity
       # @todo 50: https://github.com/castwide/solargraph/pull/1245
       # @todo 49: Array#first/#last relies on non-empty invariant
@@ -88,6 +88,7 @@ module Solargraph
       # @todo 5: Array literals infer bare Array without element types
       # @todo 5: Unresolved call to join on Array<String>, nil
       # @todo 3: Unresolved call to start_with? on Array, nil
+      # @todo 2: probably nil false alarm
       # @todo 2: Yielded tuples are not destructured into block params
       # @todo 1: Unresolved call to ==
       # @todo 1: Unresolved call to gsub on Array, nil
@@ -99,6 +100,7 @@ module Solargraph
       # @todo 1: super is typed void though it returns a value
       # @todo 1: parser gem's Builders::Default#value has no return type
       # @todo 1: @@inference_cache has no declared value type
+      # @todo 1: Use fetch to suppress false alarm
       #
       # flow sensitive typing could handle (163):
       #
