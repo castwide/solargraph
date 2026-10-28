@@ -151,7 +151,7 @@ module Solargraph
             # @sg-ignore Yielded tuples are not destructured into block params
             param.dup
           else
-            # @sg-ignore Yielded tuples are not destructured into block params
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1461
             param.resolve_generics_from_context(generics_to_resolve,
                                                 arg_types[i],
                                                 resolved_generic_values: resolved_generic_values)

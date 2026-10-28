@@ -250,7 +250,7 @@ module Solargraph
               last_link = current_argument.links.last
               argument_value = last_link.value
 
-              # @sg-ignore https://github.com/castwide/solargraph/pull/1245
+              # @sg-ignore https://github.com/castwide/solargraph/pull/1461
               param.name == factory_param.param_name && argument_value == factory_param.value
             end
           end
