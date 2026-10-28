@@ -271,6 +271,25 @@ module Solargraph
     end
     private :duck_type_provides?
 
+    # Pins for calling +word+ on each alternative of this union, or nil
+    # when a member does not resolve it and ApiMap#loose_unions is off.
+    #
+    # @param word [String]
+    # @param api_map [ApiMap]
+    # @return [Array<Pin::Base>, nil]
+    def method_stack_pins word, api_map
+      pin_groups = @items.map { |item| item.method_stack_pins(word, api_map) }
+      return nil if !api_map.loose_unions && pin_groups.any?(&:nil?)
+
+      found = pin_groups.compact
+      return nil if found.empty?
+
+      # Dedup on path *and* return type: alternatives can share a
+      # path (e.g. same generic method on different instantiations).
+      # @param p [Pin::Base]
+      found.flatten.uniq { |p| [p.path, p.return_type.rooted_tags] }
+    end
+
     # The methods that might be reachable on a value of this union, from
     # +context+.
     #

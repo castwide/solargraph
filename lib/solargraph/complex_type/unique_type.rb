@@ -282,6 +282,22 @@ module Solargraph
         end
       end
 
+      # The first pin of the method stack for +word+ on this type, or
+      # nil when the method does not resolve.
+      #
+      # @param word [String]
+      # @param api_map [ApiMap]
+      # @return [::Array<Pin::Base>, nil]
+      def method_stack_pins word, api_map
+        # explicit: false skips arity checking; the duck type
+        # only tells us the method exists, not its signature
+        return [Pin::DuckMethod.new(name: word, source: :chain, explicit: false)] if duck_type? && name[1..] == word
+
+        ns_tag = namespace == '' ? '' : namespace_type.tag
+        stack = api_map.get_method_stack(ns_tag, word, scope: scope)
+        stack.first.nil? ? nil : [stack.first]
+      end
+
       # The methods reachable on a value of this type, from +context+. A
       # duck type contributes the one method it names, over everything on
       # Object; a type with no methods to offer contributes none.

@@ -107,5 +107,12 @@ module Solargraph
     #   @param context [String] Fully qualified namespace the type is referenced from
     #   @param internal [Boolean] True to include private methods
     #   @return [Array<Pin::Base>]
+
+    # @!method method_stack_pins(word, api_map)
+    #   The pins for calling +word+ on a value of this type, or nil when
+    #   the type does not resolve it.
+    #   @param word [String]
+    #   @param api_map [ApiMap]
+    #   @return [Array<Pin::Base>, nil]
   end
 end

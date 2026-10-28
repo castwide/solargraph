@@ -89,6 +89,19 @@ module Solargraph
         [self]
       end
 
+      # The first pin of the method stack for +word+ on this type, or nil
+      # when the method does not resolve.
+      #
+      # @param word [String]
+      # @param api_map [ApiMap]
+      # @return [Array<Pin::Base>, nil]
+      def method_stack_pins word, api_map
+        receiver = class_object_of || self
+        stack = api_map.get_method_stack(receiver.base.to_s, word,
+                                         scope: receiver.equal?(self) ? :instance : :class)
+        stack.first.nil? ? nil : [stack.first]
+      end
+
       # The methods reachable on a value of this type, from +context+:
       # the class methods of Foo for Class[Foo], otherwise the instance
       # methods of this type.

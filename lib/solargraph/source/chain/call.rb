@@ -61,16 +61,8 @@ module Solargraph
           resolved = []
           unresolved_type = false
           binder.each_unique_type do |context|
-            if context.duck_type? && context.name[1..] == word
-              # explicit: false skips arity checking; the duck type
-              # only tells us the method exists, not its signature
-              pin = Pin::DuckMethod.new(name: word, source: :chain, explicit: false)
-            else
-              ns_tag = context.namespace == '' ? '' : context.namespace_type.tag
-              stack = api_map.get_method_stack(ns_tag, word, scope: context.scope)
-              pin = stack.first
-            end
-            if pin.nil?
+            pins = context.method_stack_pins(word, api_map) || []
+            if pins.empty?
               unresolved_type = true
               next
             end
@@ -80,7 +72,7 @@ module Solargraph
                                                      gates: name_pin.gates,
                                                      binder: context,
                                                      source: :chain)
-            resolved.concat inferred_pins([pin], api_map, type_name_pin, locals)
+            resolved.concat inferred_pins(pins, api_map, type_name_pin, locals)
           end
           return [] if unresolved_type && !api_map.loose_unions
           return [] if resolved.empty?

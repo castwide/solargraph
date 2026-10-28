@@ -46,4 +46,38 @@ describe Solargraph::Type do
       expect(pins.map(&:path)).to include('String#upcase', 'Symbol#to_proc')
     end
   end
+
+  describe '#method_stack_pins' do
+    it 'answers with the first pin of the method stack' do
+      expect(concrete('::String').method_stack_pins('upcase', api_map).map(&:path)).to eq(['String#upcase'])
+    end
+
+    it 'looks up class methods on a Class type' do
+      pins = concrete('Class', union(concrete('::String'))).method_stack_pins('try_convert', api_map)
+      expect(pins.map(&:path)).to eq(['String.try_convert'])
+    end
+
+    it 'answers nil when the type does not define the method' do
+      expect(concrete('::String').method_stack_pins('frobnicate', api_map)).to be_nil
+    end
+
+    it 'gathers the pins of every member of a union' do
+      pins = union(concrete('::String'), concrete('::Symbol')).method_stack_pins('upcase', api_map)
+      expect(pins.map(&:path)).to eq(['String#upcase', 'Symbol#upcase'])
+    end
+
+    it 'keeps the pins of the members that resolve under loose unions' do
+      pins = union(concrete('::String'), concrete('::Integer')).method_stack_pins('upcase', api_map)
+      expect(pins.map(&:path)).to eq(['String#upcase'])
+    end
+
+    it 'answers nil when a member does not resolve and unions are strict' do
+      strict_map = Solargraph::ApiMap.new(loose_unions: false)
+      expect(union(concrete('::String'), concrete('::Integer')).method_stack_pins('upcase', strict_map)).to be_nil
+    end
+
+    it 'answers nil when no member of a union resolves' do
+      expect(union(concrete('::String'), concrete('::Integer')).method_stack_pins('frobnicate', api_map)).to be_nil
+    end
+  end
 end
