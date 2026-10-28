@@ -21,6 +21,8 @@ module Solargraph
           else
             return_typeset_from_node(next_node)
           end
+        rescue FileNotFoundError => _e
+          ComplexType::UNDEFINED.to_typedef_typeset
         end
 
         private
