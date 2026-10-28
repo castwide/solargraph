@@ -17,6 +17,10 @@ module Solargraph
     # @return [String, nil]
     attr_reader :name
 
+    # Seconds to wait for another process to finish building a gem's yardoc
+    # before caching the gem anyway
+    YARDOC_PROCESSING_TIMEOUT = 30
+
     # @return [Source, nil]
     attr_reader :current
 
@@ -589,51 +593,45 @@ module Solargraph
     def cache_next_gemspec
       return if @cache_progress
 
-      spec = (api_map.unloaded_gems - cache_errors).first
+      # Prefer a gem that no other process is building. If every remaining
+      # gem is locked, take one anyway and wait out its lock in the thread
+      # below, since a lock left by a killed process never clears.
+      remaining = api_map.unloaded_gems - cache_errors
+      spec = remaining.reject { |gem| Yardoc.processing?(gem) }.first || remaining.first
       return end_cache_progress unless spec
 
       pending = api_map.unloaded_gems.length - cache_errors.length - 1
 
-      if Yardoc.processing?(spec)
-        logger.info "Enqueuing cache of #{spec.name} #{spec.version} (already being processed)"
-        queued_gemspec_cache.push(spec)
-        return if pending - queued_gemspec_cache.length < 1
+      logger.info "Caching #{spec.name} #{spec.version}"
+      Thread.new do
+        report_cache_progress spec.name, pending
+        wait_for_yardoc_lock spec
 
-        # Try the next cacheable gemspec. This method is always called
-        # from inside sync_catalog's mutex (either directly or via this
-        # same recursive call), so recursing through sync_catalog here
-        # would try to re-lock a mutex this thread already holds and
-        # deadlock (https://github.com/castwide/solargraph/issues/1111).
-        cache_next_gemspec
-      else
-        logger.info "Caching #{spec.name} #{spec.version}"
-        Thread.new do
-          report_cache_progress spec.name, pending
-
-          cmd = [workspace.command_path, 'cache', spec.name]
-          cmd.push('--directory', workspace.directory) if workspace.directory
-          begin
-            _o, e, s = Open3.capture3(*cmd)
-          rescue SystemCallError => e
-            # The command could not start, e.g. Errno::ENOENT - handled below
-          end
-          if s&.success?
-            logger.info "Cached #{spec.name} #{spec.version}"
-          else
-            cache_errors.add spec
-            logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
-            logger.warn e
-          end
-          end_cache_progress
-          catalog
-          sync_catalog
+        cmd = [workspace.command_path, 'cache', spec.name]
+        cmd.push('--directory', workspace.directory) if workspace.directory
+        begin
+          _o, e, s = Open3.capture3(*cmd)
+        rescue SystemCallError => e
+          # The command could not start, e.g. Errno::ENOENT - handled below
         end
+        if s&.success?
+          logger.info "Cached #{spec.name} #{spec.version}"
+        else
+          cache_errors.add spec
+          logger.warn "Error caching gemspec #{spec.name} #{spec.version}"
+          logger.warn e
+        end
+        end_cache_progress
+        catalog
+        sync_catalog
       end
     end
 
-    # @return [Array<Gem::Specification>]
-    def queued_gemspec_cache
-      @queued_gemspec_cache ||= []
+    # @param spec [Metagem]
+    # @return [void]
+    def wait_for_yardoc_lock spec
+      deadline = Time.now + YARDOC_PROCESSING_TIMEOUT
+      sleep 0.25 while Yardoc.processing?(spec) && Time.now < deadline
     end
 
     # @param gem_name [String]

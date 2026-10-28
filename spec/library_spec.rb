@@ -58,6 +58,39 @@ describe Solargraph::Library do
     end
   end
 
+  context 'with a require from a gem whose yardoc another process has locked' do
+    let(:metagem) { Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport')) }
+    let(:lock_file) { File.join(Solargraph::Yardoc.path_for(metagem), 'processing') }
+
+    before do
+      Solargraph::Collection::Gem.uncache(metagem)
+      FileUtils.mkdir_p File.dirname(lock_file)
+      FileUtils.touch lock_file
+      stub_const('Solargraph::Library::YARDOC_PROCESSING_TIMEOUT', 1)
+    end
+
+    after do
+      FileUtils.rm_f lock_file
+    end
+
+    it 'caches the gem after the lock times out' do
+      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+                                                              Solargraph::Workspace::Config.new))
+      library.attach Solargraph::Source.load_string(%(
+        require 'backport'
+
+        # @param adapter [Backport::Adapter]
+        def foo(adapter)
+          adapter.remo
+        end
+      ), 'file.rb', 0)
+      Timeout.timeout 60 do
+        sleep 0.25 while (completion = library.completions_at('file.rb', 5, 19)).pins.empty?
+        expect(completion.pins.map(&:name)).to include('remote')
+      end
+    end
+  end
+
   context 'with a require from an already-cached external gem' do
     before do
       metagem = Solargraph::Metagem.from_specification(Gem::Specification.find_by_name('backport'))
