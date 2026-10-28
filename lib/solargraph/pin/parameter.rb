@@ -262,7 +262,7 @@ module Solargraph
           return p if p.name == name
         end
         idx = index
-        # @sg-ignore Need to add nil check here
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1258
         params[idx] if idx && params[idx] && (params[idx].name.nil? || params[idx].name.empty?)
       end
 
