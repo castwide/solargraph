@@ -109,18 +109,6 @@ module Solargraph
 
         # Expands the return type of a method call using YARD macros.
         #
-        # A method can acquire a return type from two kinds of macros:
-        #
-        # * Named macros referenced in the pin's docstring with
-        #   +@macro name+. The macro definition is looked up by name in the
-        #   ApiMap.
-        # * Anonymous macros declared with a +@!macro+ directive that
-        #   carries the macro text inline at the pin's definition.
-        #
-        # Macro placeholders (e.g., +$1+) expand to the method's parameter
-        # names, then the parameters are replaced with types inferred from
-        # the arguments passed to this call site.
-        #
         # @param pin [Pin::Method, Pin::Signature]
         # @return [Pin::Base]
         def expand_macros_from_arguments pin
