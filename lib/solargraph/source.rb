@@ -275,7 +275,6 @@ module Solargraph
         # @param num [Integer]
         # @param snip [Solargraph::Parser::Snippet]
         comments.each_pair do |num, snip|
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1356
           if !last || num == last + 1
             buffer.push "#{snip.text}\n"
           else

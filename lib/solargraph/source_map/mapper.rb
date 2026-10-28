@@ -149,7 +149,6 @@ module Solargraph
                         code_lines.length, 0
                       )
                     end
-          # @sg-ignore https://github.com/castwide/solargraph/pull/1356
           com_pos = Position.new(line + 1 - comments.length, 0)
           process_comment(src_pos, com_pos, comments.join(''))
         end
