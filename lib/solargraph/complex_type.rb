@@ -3,7 +3,7 @@
 module Solargraph
   # A container for type data based on YARD type tags.
   #
-  class ComplexType
+  class ComplexType < Type
     GENERIC_TAG_NAME = 'generic'
     # @!parse
     #   include TypeMethods
@@ -13,8 +13,10 @@ module Solargraph
     autoload :TypeMethods, 'solargraph/complex_type/type_methods'
     autoload :UniqueType,  'solargraph/complex_type/unique_type'
 
-    # @param types [Array<UniqueType, ComplexType>]
+    # @param types [Array<Type>]
     def initialize types = [UniqueType::UNDEFINED]
+      super()
+
       # @todo @items here should not need an annotation
       # @type [Array<UniqueType>]
       items = types.flat_map(&:items).uniq(&:to_s)
@@ -44,7 +46,7 @@ module Solargraph
     end
 
     # @param generics_to_resolve [Enumerable<String>]]
-    # @param context_type [ComplexType, ComplexType::UniqueType, nil]
+    # @param context_type [Type, nil]
     # @param resolved_generic_values [Hash{String => ComplexType}] Added to as types are encountered or resolved
     # @return [self]
     def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
@@ -69,7 +71,7 @@ module Solargraph
        (@items.length > 1 ? ')' : ''))
     end
 
-    # @param dst [ComplexType, ComplexType::UniqueType]
+    # @param dst [Type]
     # @return [ComplexType]
     def self_to_type dst
       object_type_dst = dst.reduce_class_type
@@ -688,8 +690,8 @@ module Solargraph
     # can reach the generic, which is bot.
     #
     # @param unique_type [UniqueType] A member of @items
-    # @param context_type [ComplexType, UniqueType, nil]
-    # @return [ComplexType, UniqueType, nil]
+    # @param context_type [Type, nil]
+    # @return [Type, nil]
     def destructure_context_type unique_type, context_type
       return context_type unless unique_type.generic? && context_type.is_a?(ComplexType) && @items.length > 1
 

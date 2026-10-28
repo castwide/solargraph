@@ -12,6 +12,11 @@ module Solargraph
   # to accept or return "a type value, whichever kind" writes [Type],
   # unqualified, from anywhere in the app.
   #
+  # ComplexType (a union) and ComplexType::UniqueType (one member of it)
+  # are the implementation lib/ runs on today, so they subclass Type too
+  # while callers move to it. spec/type_contract_spec.rb lists, per
+  # class, the methods below each implementation does not define yet.
+  #
   # Typedef::Path and Typedef::Token sit outside this hierarchy - they're
   # the leaf tokens a Typedef::Concrete's base/params are built from, with
   # their own narrower protocol - but they implement #any_generic? for the
@@ -125,6 +130,94 @@ module Solargraph
 
     # @!method order_nil_last
     #   This type with any nil members moved to the end, by convention.
+    #   @return [Type]
+
+    # @!method ==(other)
+    #   @param other [Object]
+    #   @return [Boolean]
+
+    # @!method eql?(other)
+    #   @param other [Object]
+    #   @return [Boolean]
+
+    # @!method hash
+    #   @return [Integer]
+
+    # @!method all_rooted?
+    #   Whether every type and parameter is fully qualified.
+    #   @return [Boolean]
+
+    # @!method conforms_to?(api_map, expected, situation, rules = [], variance: erased_variance(situation))
+    #   @param api_map [ApiMap]
+    #   @param expected [Type]
+    #   @param situation [:method_call, :return_type, :assignment]
+    #   @param rules [Array<:allow_subtype_skew, :allow_empty_params, :allow_reverse_match, :allow_any_match, :allow_undefined, :allow_unresolved_generic, :allow_unmatched_interface>]
+    #   @param variance [:invariant, :covariant, :contravariant]
+    #   @return [Boolean]
+
+    # @!method erased_variance(situation = :method_call)
+    #   Variance of the type ignoring any type parameters.
+    #   @param situation [:method_call, :return_type, :assignment]
+    #   @return [Symbol]
+
+    # @!method erased_version_of?(other)
+    #   @param other [Type]
+    #   @return [Boolean]
+
+    # @!method nil_type?
+    #   @return [Boolean]
+
+    # @!method qualify(api_map, *gates)
+    #   Fully qualify this type's namespaces.
+    #   @param api_map [ApiMap]
+    #   @param gates [Array<String>] The namespaces from which to resolve names
+    #   @return [Type]
+
+    # @!method reduce_class_type
+    #   The instance type a class-object type describes: Foo for Class<Foo>.
+    #   @return [Type]
+
+    # @!method resolve_generics(definitions, context_type)
+    #   @param definitions [Pin::Namespace, Pin::Method]
+    #   @param context_type [Type]
+    #   @return [Type]
+
+    # @!method resolve_generics_from_context(generics_to_resolve, context_type, resolved_generic_values: {})
+    #   @param generics_to_resolve [Enumerable<String>]
+    #   @param context_type [Type, nil]
+    #   @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
+    #   @return [Type]
+
+    # @!method rooted_tags
+    #   @return [String]
+
+    # @!method selfy?
+    #   @return [Boolean]
+
+    # @!method tags
+    #   @return [String]
+
+    # @!method to_rbs
+    #   @return [String]
+
+    # @!method transform(new_name = nil, &transform_type)
+    #   @param new_name [String, nil]
+    #   @yieldparam t [ComplexType::UniqueType]
+    #   @yieldreturn [ComplexType::UniqueType]
+    #   @return [Type]
+
+    # @!method void?
+    #   @return [Boolean]
+
+    # @!method self_to_type(dst)
+    #   This type with self replaced by +dst+.
+    #   @param dst [Type]
+    #   @return [Type]
+
+    # @!method without_nil
+    #   @return [Type]
+
+    # @!method downcast_to_literal_if_possible
     #   @return [Type]
   end
 end

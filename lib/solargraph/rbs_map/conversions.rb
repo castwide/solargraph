@@ -311,7 +311,7 @@ module Solargraph
       # @param decl [RBS::AST::Declarations::Class]
       # @return [void]
       def class_decl_to_pin decl
-        # @type [Hash{String => ComplexType, ComplexType::UniqueType}]
+        # @type [Hash{String => Type}]
         generic_defaults = {}
         decl.type_params.each do |param|
           next unless param.default_type
@@ -395,7 +395,7 @@ module Solargraph
       end
 
       # @param fqns [String]
-      # @param type [ComplexType, ComplexType::UniqueType]
+      # @param type [Type]
       # @param comments [String, nil]
       # @param decl [RBS::AST::Declarations::ClassAlias,
       #   RBS::AST::Declarations::Constant,

@@ -5,7 +5,7 @@ module Solargraph
     # An individual type signature. A complex type can consist of multiple
     # unique types.
     #
-    class UniqueType
+    class UniqueType < Type
       include TypeMethods
       include Equality
 
@@ -80,6 +80,8 @@ module Solargraph
       # @param rooted [Boolean]
       # @param parameters_type [Symbol, nil]
       def initialize name, key_types = [], subtypes = [], rooted:, parameters_type: nil
+        super()
+
         if parameters_type.nil? && !(key_types.empty? && subtypes.empty?)
           raise 'You must supply parameters_type if you provide parameters'
         end
@@ -403,7 +405,7 @@ module Solargraph
         !all_params.empty?
       end
 
-      # @param types [Array<UniqueType, ComplexType>]
+      # @param types [Array<Type>]
       # @return [String]
       def rbs_union types
         if types.length == 1
@@ -453,9 +455,9 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [ComplexType, UniqueType, nil]
-      # @param resolved_generic_values [Hash{String => ComplexType, ComplexType::UniqueType}] Added to as types are encountered or resolved
-      # @return [UniqueType, ComplexType]
+      # @param context_type [Type, nil]
+      # @param resolved_generic_values [Hash{String => Type}] Added to as types are encountered or resolved
+      # @return [Type]
       def resolve_generics_from_context generics_to_resolve, context_type, resolved_generic_values: {}
         if name == ComplexType::GENERIC_TAG_NAME
           type_param = subtypes.first&.name
@@ -485,7 +487,7 @@ module Solargraph
       end
 
       # @param generics_to_resolve [Enumerable<String>]
-      # @param context_type [UniqueType, ComplexType, nil]
+      # @param context_type [Type, nil]
       # @param resolved_generic_values [Hash{String => ComplexType}]
       # @yieldreturn [Array<ComplexType>]
       # @return [Array<ComplexType>]
@@ -514,7 +516,7 @@ module Solargraph
       #
       # @param definitions [Pin::Namespace, Pin::Method] The module/class/method which uses generic types
       # @param context_type [ComplexType] The receiver type
-      # @return [UniqueType, ComplexType]
+      # @return [Type]
       def resolve_generics definitions, context_type
         # Method-scoped generics bind per call site via
         # resolve_generics_from_context, not against a receiver's type params.
@@ -631,7 +633,7 @@ module Solargraph
       #
       # @param api_map [ApiMap] The ApiMap that performs qualification
       # @param gates [Array<String>] The namespaces from which to resolve names
-      # @return [self, ComplexType, UniqueType] The generated ComplexType
+      # @return [self, Type] The generated ComplexType
       def qualify api_map, *gates
         transform do |t|
           next t if t.name == GENERIC_TAG_NAME
