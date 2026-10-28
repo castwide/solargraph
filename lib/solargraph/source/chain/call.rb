@@ -294,7 +294,7 @@ module Solargraph
               return false if kwrestarg.nil?
               next
             end
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1223
+            # @sg-ignore https://github.com/castwide/solargraph/pull/1461
             atype = value_chain.infer(api_map, kw_arg_name_pin, locals)
             # @sg-ignore https://github.com/castwide/solargraph/pull/1259
             return false unless param.compatible_arg?(atype, api_map)
