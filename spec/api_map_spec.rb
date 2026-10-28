@@ -787,6 +787,13 @@ describe Solargraph::ApiMap do
     expect(baz.path).to eq('Foo#baz')
   end
 
+  it 'qualifies a superclass' do
+    source = Solargraph::Source.load_string("class Foo; end\nclass Bar < Foo; end\n", 'test.rb')
+    api_map = described_class.new.map(source)
+
+    expect(api_map.qualify_superclass('Bar')).to eq('Foo')
+  end
+
   it 'adds methods from a namespace domain' do
     pins = Solargraph::SourceMap.load_string(%(
       class Helper
