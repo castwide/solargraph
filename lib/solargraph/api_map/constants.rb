@@ -124,6 +124,7 @@ module Solargraph
         parts = name.split('::')
         first = nil
         parts.each.with_index do |nam, idx|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1415
           resolved, remainder = complex_resolve(nam, base, idx != parts.length - 1)
           first ||= remainder
           if resolved
@@ -147,6 +148,7 @@ module Solargraph
       def complex_resolve name, gates, internal
         resolved = nil
         gates.each.with_index do |gate, idx|
+          # @sg-ignore https://github.com/castwide/solargraph/pull/1415
           resolved = simple_resolve(name, gate, internal)
           return [resolved, gates[(idx + 1)..]] if resolved
           store.get_ancestor_references(gate).each do |ref|
