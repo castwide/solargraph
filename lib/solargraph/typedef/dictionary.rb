@@ -63,7 +63,9 @@ module Solargraph
           pins, receiver = define_from_chain
           return ComplexType::UNDEFINED.to_typedef_typeset if pins.empty?
 
-          Filter.new(api_map, pins, receiver).typeset
+          Filter.new(api_map, pins, receiver)
+                .typeset
+                .resolve_rooted(api_map, receiver.gates)
         end
       end
 
