@@ -45,14 +45,12 @@ module Solargraph
         # @param pin [Pin::Base]
         # @return [Parser::AST::Node, nil]
         def method_body_node
-          @method_body_node ||= begin
-            case pin.node.type
-            when :def
-              pin.node.children[2]
-            when :defs
-              pin.node.children[3]
-            end
-          end
+          @method_body_node ||= case pin.node.type
+                                when :def
+                                  pin.node.children[2]
+                                when :defs
+                                  pin.node.children[3]
+                                end
         end
 
         # @param parent_node [Parser::AST::Node]
