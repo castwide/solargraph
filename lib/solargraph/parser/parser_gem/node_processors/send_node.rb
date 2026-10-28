@@ -220,22 +220,6 @@ module Solargraph
             end
           end
 
-          # @param options [Hash{String => AST::Node}]
-          # @param name [String]
-          # @param default [Boolean]
-          # @return [Boolean]
-          def boolean_option options, name, default
-            value = options[name]
-            return default unless value.is_a?(::Parser::AST::Node)
-            # rubocop:disable Lint/BooleanSymbol -- these are AST node types
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-            return true if value.type == :true
-            # @sg-ignore https://github.com/castwide/solargraph/pull/1259
-            return false if value.type == :false
-            # rubocop:enable Lint/BooleanSymbol
-            default
-          end
-
           # @return [void]
           def process_include
             return unless node.children[2].is_a?(AST::Node) && node.children[2].type == :const
