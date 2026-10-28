@@ -7,6 +7,7 @@ module Solargraph
       autoload :BlockSymbol,      'solargraph/typedef/linker/block_symbol'
       autoload :Call,             'solargraph/typedef/linker/call'
       autoload :ClassVariable,    'solargraph/typedef/linker/class_variable'
+      autoload :GlobalVariable,   'solargraph/typedef/linker/global_variable'
       autoload :Constant,         'solargraph/typedef/linker/constant'
       autoload :Head,             'solargraph/typedef/linker/head'
       autoload :InstanceVariable, 'solargraph/typedef/linker/instance_variable'
@@ -32,6 +33,8 @@ module Solargraph
           If.resolve(self, link, closure)
         when Source::Chain::ClassVariable
           ClassVariable.resolve(self, link, closure)
+        when Source::Chain::GlobalVariable
+          GlobalVariable.resolve(self, link, closure)
         when Source::Chain::BlockSymbol
           BlockSymbol.resolve(self, link, closure)
         else

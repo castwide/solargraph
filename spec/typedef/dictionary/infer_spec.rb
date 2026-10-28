@@ -621,5 +621,15 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [6, 16]).infer
       expect(typeset.to_s).to eq('Array[A::B]')
     end
+
+    it 'types global variables' do
+      code = %(
+        $foo = [] #: Array[Integer]
+        $foo
+      )
+
+      typeset = dictionary_for(code, [2, 8]).infer
+      expect(typeset.to_s).to eq('Array[Integer]')
+    end
   end
 end
