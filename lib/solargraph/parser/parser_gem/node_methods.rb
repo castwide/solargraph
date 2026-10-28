@@ -661,29 +661,23 @@ module Solargraph
             # Useful when this statement isn't in value position, but
             # we care explicit return statements nonetheless.
             #
-            # @param parent [Parser::AST::Node]
+            # @param parent [Parser::AST::Node, nil]
             #
             # @return [Array<Parser::AST::Node>]
             def explicit_return_values_from_compound_statement parent
               return [] unless parent.is_a?(::Parser::AST::Node)
               result = []
+              # @sg-ignore flow sensitive typing needs to narrow down type with an unless is_a? check
               nodes = parent.children.select { |n| n.is_a?(::Parser::AST::Node) }
+              # @sg-ignore flow sensitive typing needs to narrow down type with an unless is_a? check
               nodes.each do |node|
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                #   also needs https://github.com/castwide/solargraph/pull/1416
                 next if SKIPPABLE.include?(node.type)
-                # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                #   also needs https://github.com/castwide/solargraph/pull/1416
                 if node.type == :return
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat reduce_to_value_nodes([node.children[0]])
                   # Return the result here because the rest of the code is
                   # unreachable
                   return result
                 else
-                  # @sg-ignore https://github.com/castwide/solargraph/pull/1418
-                  #   also needs https://github.com/castwide/solargraph/pull/1416
                   result.concat explicit_return_values_from_compound_statement(node)
                 end
               end
