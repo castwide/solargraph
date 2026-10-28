@@ -161,7 +161,6 @@ module Solargraph
             pos = rng.ending
             # Assignments combined from other files carry their own filename
             filename = Location.from_node(node)&.filename || location&.filename
-            # @sg-ignore Need to add nil check here
             clip = api_map.clip_at(filename, pos)
             # Use the return node for inference. The clip might infer from the
             # first node in a method call instead of the entire call.
