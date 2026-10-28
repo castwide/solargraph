@@ -17,6 +17,7 @@ module Solargraph
               # @sg-ignore https://github.com/castwide/solargraph/pull/1416
               name: name.to_s,
               comments: comments_for(node),
+              type_assertion: type_assertion_for(node),
               assignment: assignment,
               source: :parser
             )
