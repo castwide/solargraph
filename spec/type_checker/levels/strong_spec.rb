@@ -797,6 +797,31 @@ describe Solargraph::TypeChecker do
       expect(checker.problems.map(&:message)).to be_empty
     end
 
+    it 'checks a call on a union where one member resolves through a macro' do
+      checker = type_checker(%(
+        class Foo
+          # @param klass [Class]
+          # @return [Integer]
+          def baz(klass); 1; end
+        end
+
+        class Bar
+          # @param klass [Class]
+          # @!macro
+          #   @return [$1]
+          def baz(klass); end
+        end
+
+        # @param foo_or_bar [Foo, Bar]
+        # @return [void]
+        def run foo_or_bar
+          foo_or_bar.baz(String)
+        end
+      ))
+      # Bar#baz needs no @return of its own for the call to go through the macro
+      expect(checker.problems.map(&:message)).to eq(['Missing @return tag for Bar#baz'])
+    end
+
     context 'with class name available in more than one gate' do
       let(:checker) do
         type_checker(%(
