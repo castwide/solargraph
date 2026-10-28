@@ -11,15 +11,15 @@ describe Solargraph::RbsTranslator do
     end
 
     {
-      'String' => '::String',
+      '::String' => '::String',
       '::Array[::String]' => '::Array<::String>',
-      'Array[String | Integer]' => '::Array<::String, ::Integer>',
-      'Hash[Symbol, Integer]' => '::Hash{::Symbol => ::Integer}',
-      'Hash[Symbol, untyped]' => '::Hash{::Symbol => undefined}',
-      'Array[untyped]' => '::Array',
-      'String?' => '::String, nil',
-      '(String | Integer)?' => '::String, ::Integer, nil',
-      'String | Integer' => '::String, ::Integer',
+      '::Array[::String | ::Integer]' => '::Array<::String, ::Integer>',
+      '::Hash[::Symbol, ::Integer]' => '::Hash{::Symbol => ::Integer}',
+      '::Hash[::Symbol, untyped]' => '::Hash{::Symbol => undefined}',
+      '::Array[untyped]' => '::Array',
+      '::String?' => '::String, nil',
+      '(::String | ::Integer)?' => '::String, ::Integer, nil',
+      '::String | ::Integer' => '::String, ::Integer',
       'bool' => '::Boolean',
       'nil' => 'nil',
       'NilClass' => 'nil',
@@ -29,7 +29,7 @@ describe Solargraph::RbsTranslator do
       'top' => '::BasicObject',
       'self' => 'self',
       'instance' => 'self',
-      '[String, Integer]' => '::Array(::String, ::Integer)',
+      '[::String, ::Integer]' => '::Array(::String, ::Integer)',
       ':foo' => ':foo',
       '"str"' => '"str"',
       '1' => '1',
@@ -37,13 +37,13 @@ describe Solargraph::RbsTranslator do
       'true | false' => '::Boolean',
       '{ a: String }' => '::Hash',
       '^() -> void' => '::Proc',
-      'singleton(String)' => '::String',
-      '_ToS' => '::_ToS',
-      'String & Comparable' => '::String, ::Comparable',
+      'singleton(::String)' => '::String',
+      '::_ToS' => '::_ToS',
+      '::String & ::Comparable' => '::String, ::Comparable',
       'T' => 'generic<T>',
-      'Array[T]' => '::Array<generic<T>>',
-      'Foo::Bar[T, String]' => '::Foo::Bar<generic<T>, ::String>',
-      'Enumerator[String, void]' => '::Enumerator<::String, void>'
+      '::Array[T]' => '::Array<generic<T>>',
+      '::Foo::Bar[T, ::String]' => '::Foo::Bar<generic<T>, ::String>',
+      '::Enumerator[::String, void]' => '::Enumerator<::String, void>'
     }.each do |rbs, expected|
       it "translates #{rbs} to #{expected}" do
         type = translate(rbs)
@@ -57,7 +57,7 @@ describe Solargraph::RbsTranslator do
     end
 
     it 'keeps a tuple of string literals that contain type syntax characters' do
-      expect(translate('["<", Integer]').rooted_tags).to eq('::Array("<", ::Integer)')
+      expect(translate('["<", ::Integer]').rooted_tags).to eq('::Array("<", ::Integer)')
     end
 
     it 'translates an unrecognized type to undefined' do
