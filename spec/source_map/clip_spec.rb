@@ -2458,7 +2458,7 @@ describe Solargraph::SourceMap::Clip do
   it 'replaces a declared type with a self-referencing reassignment' do
     source = Solargraph::Source.load_string(%(
       def foo
-        # @type [::Array<String, nil>]
+        # @type [::Array<String, Integer>]
         readers = []
         readers = readers.map { |r| r.to_s }
         readers
