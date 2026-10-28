@@ -12,7 +12,7 @@ describe Solargraph::Type do
   # yet. Each one ported shrinks this list.
   not_yet_on_typedef = %i[
     == all_rooted? conforms_to? downcast_to_literal_if_possible eql? erased_variance
-    erased_version_of? hash namespaces nil_type? qualify reduce_class_type resolve_generics
+    erased_version_of? hash nil_type? qualify reduce_class_type resolve_generics
     resolve_generics_from_context rooted_tags self_to_type selfy? tags to_rbs transform
     void? without_nil
   ].freeze

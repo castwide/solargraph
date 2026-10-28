@@ -1063,17 +1063,4 @@ describe Solargraph::ApiMap do
     expect(api_map.get_path_pins('Example.foo_one')).to be_one
     expect(api_map.get_path_pins('Example.foo_two')).to be_one
   end
-
-  it 'finds the methods of every namespace a constant may stand for' do
-    source = Solargraph::Source.load_string(%(
-      class Alpha; def self.one; end; end
-      class Beta; def self.two; end; end
-      # @return [Class<Alpha>, Class<Beta>]
-      Either = rand > 0.5 ? Alpha : Beta
-    ), 'test.rb')
-    api_map = described_class.new
-    api_map.map source
-    expect(api_map.get_method_stack('Either', 'one', scope: :class).map(&:path)).to eq(['Alpha.one'])
-    expect(api_map.get_method_stack('Either', 'two', scope: :class).map(&:path)).to eq(['Beta.two'])
-  end
 end

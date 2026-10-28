@@ -266,13 +266,6 @@ module Solargraph
         # end
       end
 
-      # A single type has its one namespace.
-      #
-      # @return [Array<String>]
-      def namespaces
-        [namespace]
-      end
-
       # Whether this is an RBS interface like _ToAry or Hash::_Key.
       def interface?
         name.start_with?('_') || name.include?('::_')

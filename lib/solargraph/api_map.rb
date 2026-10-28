@@ -552,13 +552,8 @@ module Solargraph
                   type = namespace_pin.typify(self)
                   type = namespace_pin.probe(self) unless type.defined?
                   if type.defined?
-                    # The constant may stand for any of its type's namespaces,
-                    # so the methods are those of each. Generics are erased
-                    # against the first, which is the only one for a class alias.
-                    namespaces = type.namespaces
-                    namespace_pin = store.get_path_pins(namespaces.first.to_s).first
-                    namespaces.flat_map { |ns| get_methods(ns, scope: scope, visibility: visibility) }
-                              .select { |p| p.name == name }
+                    namespace_pin = store.get_path_pins(type.namespace).first
+                    get_methods(type.namespace, scope: scope, visibility: visibility).select { |p| p.name == name }
                   else
                     []
                   end
