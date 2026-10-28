@@ -448,7 +448,7 @@ module Solargraph
           end
         end
 
-        # @sg-ignore Translate to something flow sensitive typing understands
+        # @sg-ignore Nil guard in one if/else branch is lost after the branches merge
         file_uri = Solargraph::LanguageServer::UriHelpers.file_to_uri(File.absolute_path(test_file))
 
         puts "Profiling go-to-definition for #{test_file}"
