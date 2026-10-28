@@ -14,7 +14,7 @@ module Solargraph
           #   are always the head of the chain, so they should go to the Head link.
           #   This change will require a change to the way chainers work, so it might
           #   have to wait until processes outside of Typedef stop using chains.
-          local_variable || method_call
+          local_variable || yield_call || super_call || method_call
         end
 
         private
@@ -23,18 +23,29 @@ module Solargraph
           found = if link.head?
                     source_map.locals_at(dictionary.location)
                               .reverse
-                              .find { |pin| pin.name == link.word }
+                              .select { |pin| pin.name == link.word }
                   end
-          [found] if found
+          reduce_local_type(found) if found&.any?
+        end
+
+        # Local variables supersede parameters
+        #
+        # @param [Array<Pin::LocalVariable>]
+        # @return [Array<Pin::LocalVariable>]
+        def reduce_local_type pins
+          return pins if pins.first.is_a?(Pin::Parameter)
+          pins.reject { |pin| pin.is_a?(Pin::Parameter) }
+        end
+
+        def yield_call
+          yield_receivers if link.head? && link.word == 'yield'
+        end
+
+        def super_call
+          super_pins if link.head? && link.word == 'super'
         end
 
         def method_call
-          if link.head? && link.word == 'yield'
-            return receiver.signatures
-                           .map(&:block)
-                           .compact
-          end
-
           # @todo Quick and dirty hack to force UniqueType to ComplexType
           pins = ComplexType.new([receiver.context]).to_typedef_types
                             .flat_map { |type| dictionary.api_map.typedef_type_methods(type) }
@@ -54,6 +65,7 @@ module Solargraph
           signatures = pin.is_a?(Pin::Method) ? pin.signatures : [pin]
           signatures.each do |signature|
             next unless signature.arity_matches?(link.arguments, link.with_block?)
+            next if !signature.block? && link.with_block?
 
             arguments = link.arguments.map do |arg|
               Dictionary.new(api_map, source_map, arg).infer
@@ -113,6 +125,29 @@ module Solargraph
           end
           named_values = pin.parameter_names.zip(arguments).to_h
           pin.proxy(pin.typedef_typeset.expand(named_values).to_complex_type)
+        end
+
+        # @param api_map [ApiMap]
+        # @param name_pin [Pin::Base]
+        # @return [::Array<Pin::Base>]
+        def super_pins
+          return [] unless nearest_method_pin
+          api_map.get_method_stack(nearest_method_pin.namespace, nearest_method_pin.name, scope: nearest_method_pin.context.scope)
+                 .reject { |pin| pin.path == nearest_method_pin.path }
+        end
+
+        def nearest_method_pin
+          @nearest_method_pin ||= begin
+            method_pin = receiver
+            method_pin = method_pin.closure until method_pin.is_a?(Pin::Method) || method_pin.nil?
+            method_pin
+          end
+        end
+
+        def yield_receivers
+          nearest_method_pin&.signatures
+                            &.map(&:block)
+                            &.compact || []
         end
       end
     end

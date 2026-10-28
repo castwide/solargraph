@@ -482,5 +482,110 @@ describe Solargraph::Typedef::Dictionary do
       typeset = dictionary_for(code, [4, 11]).infer
       expect(typeset.to_s).to eq('Array')
     end
+
+    it 'infers from superclass return tags' do
+      code = %(
+        class Superclass
+          # @return [Integer]
+          def example
+          end
+        end
+
+        class Subclass < Superclass
+        end
+
+        Subclass.new.example
+      )
+
+      typeset = dictionary_for(code, [10, 21]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'infers from super calls' do
+      code = %(
+        class Foo
+          # @return [Integer]
+          def foo
+          end
+        end
+
+        class Bar < Foo
+          def foo
+            bar = super
+            bar
+            [1,2,3].each do |i|
+              baz = super
+              baz
+            end
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [10, 12]).infer
+      expect(typeset.to_s).to eq('Integer')
+
+      typeset = dictionary_for(code, [13, 14]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'handles resolving String#each_line overloads' do
+      code = %(
+        def foo
+          'abcdef'.each_line do |line|
+            line
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [3, 13]).infer
+      expect(typeset.to_s).to eq('String')
+    end
+
+    it 'handles block method yield scenarios' do
+      code = %(
+        # @yieldreturn [Integer]
+        def foo
+          bar = yield
+          bar
+          [1,2,3].each do |i|
+            baz = yield
+            baz
+          end
+        end
+      )
+
+      typeset = dictionary_for(code, [4, 10]).infer
+      expect(typeset.to_s).to eq('Integer')
+
+      typeset = dictionary_for(code, [7, 12]).infer
+      expect(typeset.to_s).to eq('Integer')
+    end
+
+    it 'expands local variable types with multiple assignment pins' do
+      code = %(
+        bar = 'a'
+        if baz
+          bar = :foo
+        elsif qux
+          bar = 123
+        end
+        bar
+      )
+
+      typeset = dictionary_for(code, [7, 8]).infer
+      expect(typeset.to_s).to eq('Integer | Symbol | String')
+    end
+
+    it 'infers that type of argument has been overridden' do
+      code = %(
+        def foo a
+          a = 'foo'
+          a
+        end
+      )
+
+      typeset = dictionary_for(code, [3, 10]).infer
+      expect(typeset.to_s).to eq('String')
+    end
   end
 end

@@ -77,6 +77,14 @@ module Solargraph
         all.all?(&:rooted?)
       end
 
+      def undefined?
+        to_s == 'undefined'
+      end
+
+      def defined?
+        !undefined?
+      end
+
       def flat_types
         [self]
       end

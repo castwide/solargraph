@@ -2747,7 +2747,7 @@ describe Solargraph::SourceMap::Clip do
   it 'handles resolving String#each_line overloads' do
     source = Solargraph::Source.load_string(%(
       def foo
-        'abc\ndef'.each_line do |line|
+        'abcdef'.each_line do |line|
           line
         end
       end

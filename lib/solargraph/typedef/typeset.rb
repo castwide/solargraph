@@ -94,6 +94,14 @@ module Solargraph
         types.flat_map(&:flat_types)
       end
 
+      def undefined?
+        to_s == 'undefined'
+      end
+
+      def defined?
+        !undefined?
+      end
+
       private
 
       def reduce!
