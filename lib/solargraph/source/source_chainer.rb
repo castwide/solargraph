@@ -39,6 +39,7 @@ module Solargraph
           return Chain.new([Chain::UNDEFINED_CALL])
         end
 
+        # @sg-ignore https://github.com/castwide/solargraph/pull/1223
         return Chain.new([Chain::UNDEFINED_CALL]) if node.nil? || (node.type == :sym && !phrase.start_with?(':'))
 
         chain = Parser.chain(node, source.filename, parent, tree)
