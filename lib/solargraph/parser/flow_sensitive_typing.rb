@@ -205,10 +205,8 @@ module Solargraph
         return unless case_node.type == :case_match
 
         subject = case_node.children.fetch(0)
-        # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
         return unless %i[lvar ivar].include?(subject.type)
 
-        # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
         pin = find_var(subject.children.fetch(0).to_s, get_node_start_position(subject))
         return unless pin
 
@@ -490,18 +488,14 @@ module Solargraph
       def process_in_pattern pin, in_pattern
         pattern = in_pattern.children.fetch(0)
         # `in Pt(x:)` on subject x rebinds x, so x is no longer the subject
-        # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
         return if binds_name?(pattern, pin.name)
 
-        # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
         type_name = pattern_type_name(pattern)
         guard_and_body = in_pattern.children.drop(1).compact
         return if type_name.nil? || guard_and_body.empty?
 
         before_loc = guard_and_body.fetch(0).location.expression.adjust(begin_pos: -1)
-        # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
         presence = Range.new(Position.new(before_loc.line, before_loc.column),
-                             # @sg-ignore Array#fetch without a block takes its block overload's generic<T>
                              get_node_end_position(guard_and_body.fetch(-1)))
         process_facts({ pin => [{ type: ComplexType.parse(type_name) }] }, [presence])
       end
