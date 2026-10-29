@@ -181,13 +181,34 @@ module Solargraph
         end
 
         # A superclass method may declare a return type of +self+, which
-        # should resolve to the type of the calling context.
+        # should resolve to the type of the calling context. Detection of
+        # +self+ is performed entirely within the Typedef typeset
+        # structure, avoiding any reliance on ComplexType.
         #
         # @param pin [Pin::Base]
         # @return [Pin::Base]
         def expand_self_type pin
-          return pin unless pin.typedef_typeset.to_complex_type.selfy?
-          pin.proxy(pin.typedef_typeset.expand({ 'self' => nearest_method_pin.context.to_typedef_typeset }).to_complex_type)
+          typeset = pin.typedef_typeset
+          return pin unless selfy?(typeset)
+          pin.proxy(typeset.expand({ 'self' => nearest_method_pin.context.to_typedef_typeset }).to_complex_type)
+        end
+
+        # True if the given Typedef node contains a +self+ token, either
+        # as a base or nested within parameters.
+        #
+        # @param node [Typedef::Typeset, Typedef::Type, Typedef::Token, Typedef::Path]
+        # @return [Boolean]
+        def selfy? node
+          case node
+          when Typedef::Typeset
+            node.types.any? { |type| selfy?(type) }
+          when Typedef::Type
+            node.all.any? { |part| selfy?(part) }
+          when Typedef::Token
+            node.name == 'self' || node.params.any? { |par| selfy?(Typedef.tokenize(par)) }
+          else
+            false
+          end
         end
 
         def nearest_method_pin
