@@ -65,7 +65,7 @@ describe Solargraph::Library do
     end
 
     it 'returns a Completion' do
-      library = described_class.new(Solargraph::Workspace.new(Dir.pwd,
+      library = described_class.new(Solargraph::Workspace.new('',
                                                               Solargraph::Workspace::Config.new))
       library.attach Solargraph::Source.load_string(%(
         require 'backport'
