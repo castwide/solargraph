@@ -2,9 +2,8 @@
 # and return the same value for the same receiver and arguments, so
 # flow-sensitive typing can narrow a repeated call after a guard.
 #
-# Each 'def name: ...' adds only the annotation; RbsMap::Core copies it
-# onto the core method and keeps the core signatures, and uses nothing
-# else from this file.
+# Each 'def name: ...' has no overloads of its own, so it only adds its
+# annotations to the core method.
 #
 # Steep treats Array#[] and Hash#[] as pure, and ruby/rbs#3186 proposes
 # annotating them in core RBS.

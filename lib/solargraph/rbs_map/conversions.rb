@@ -550,7 +550,12 @@ module Solargraph
         generics = decl.overloads.map(&:method_type).map do |method_type|
           type_parameter_names method_type
         end
-        pure = pure_method?(decl)
+        annotations = method_annotations(decl)
+        if decl.overloading? && decl.overloads.empty?
+          # 'def name: ...' only adds its annotations to a method declared elsewhere
+          annotation_overrides(decl, closure, annotations)
+          return
+        end
 
         if decl.instance?
           name = decl.name.to_s
@@ -565,7 +570,7 @@ module Solargraph
             signatures: [],
             generics: generics,
             visibility: visibility,
-            pure: pure,
+            annotations: annotations,
             source: :rbs
           )
           pin.signatures.concat method_def_to_sigs(decl, pin)
@@ -588,23 +593,39 @@ module Solargraph
           scope: final_scope,
           signatures: [],
           generics: generics,
-          pure: pure,
+          annotations: annotations,
           source: :rbs
         )
         pin.signatures.concat method_def_to_sigs(decl, pin)
         pins.push pin
       end
 
-      # %a{pure} on the method, or on every overload, declares it side-effect
-      # free and stable for the same arguments
+      # The method's annotations, plus any annotation that every overload has
       #
       # @param decl [RBS::AST::Members::MethodDefinition]
-      # @return [Boolean]
-      def pure_method? decl
-        return true if decl.annotations.any? { |annotation| annotation.string == 'pure' }
-        return false if decl.overloads.empty?
+      # @return [Set<String>]
+      def method_annotations decl
+        annotations = decl.annotations.to_set(&:string)
+        return annotations if decl.overloads.empty?
 
-        decl.overloads.all? { |overload| overload.annotations.any? { |annotation| annotation.string == 'pure' } }
+        annotations | decl.overloads.map { |overload| overload.annotations.to_set(&:string) }.reduce(:&)
+      end
+
+      # @param decl [RBS::AST::Members::MethodDefinition] a 'def name: ...'
+      #   with no overloads of its own
+      # @param closure [Pin::Closure]
+      # @param annotations [Set<String>]
+      # @return [void]
+      def annotation_overrides decl, closure, annotations
+        return if annotations.empty?
+
+        location = location_decl_to_pin_location(decl.location)
+        paths = []
+        paths.push "#{closure.path}##{decl.name}" if decl.instance?
+        paths.push "#{closure.path}.#{decl.name}" if decl.singleton?
+        paths.each do |path|
+          pins.push Pin::Reference::Override.new(location, path, [], annotations: annotations, source: :rbs)
+        end
       end
 
       # @param decl [RBS::AST::Members::MethodDefinition]

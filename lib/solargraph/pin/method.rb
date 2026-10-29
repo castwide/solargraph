@@ -12,8 +12,8 @@ module Solargraph
 
       attr_writer :signatures
 
-      # @return [Boolean]
-      attr_writer :pure
+      # @return [::Set<::String>]
+      attr_writer :annotations
 
       # @return [Parser::AST::Node]
       attr_reader :node
@@ -25,11 +25,11 @@ module Solargraph
       # @param attribute [Boolean]
       # @param signatures [::Array<Signature>, nil]
       # @param anon_splat [Boolean]
-      # @param pure [Boolean] declared side-effect free, e.g. by RBS %a{pure}
+      # @param annotations [::Enumerable<::String>] e.g. 'pure' from RBS %a{pure}
       # @param context [ComplexType, ComplexType::UniqueType, nil]
       # @param [Hash{Symbol => Object}] splat
       def initialize visibility: :public, explicit: true, block: :undefined, node: nil, attribute: false, signatures: nil, anon_splat: false,
-                     pure: false, context: nil, **splat
+                     annotations: [], context: nil, **splat
         super(**splat)
         @visibility = visibility
         @explicit = explicit
@@ -38,7 +38,7 @@ module Solargraph
         @attribute = attribute
         @signatures = signatures
         @anon_splat = anon_splat
-        @pure = pure
+        @annotations = annotations.to_set
         @context = context if context
       end
 
@@ -73,7 +73,7 @@ module Solargraph
           parameters: parameters,
           signatures: sigs,
           anon_splat: assert_same(other, :anon_splat?),
-          pure: pure? || other.pure?,
+          annotations: annotations | other.annotations,
           return_type: nil # pulled from signatures on first call
         }.merge(attrs)
         super(other, new_attrs)
@@ -387,12 +387,19 @@ module Solargraph
         @attribute
       end
 
+      # The method's annotations, e.g. 'pure' from RBS %a{pure}
+      #
+      # @return [::Set<::String>]
+      def annotations
+        @annotations ||= Set.new
+      end
+
       # True when the method is declared to return the same value for the
       # same receiver and arguments, with no side effects (RBS %a{pure})
       #
       # @return [Boolean]
       def pure?
-        @pure
+        annotations.include?('pure')
       end
 
       # @parm other [self]

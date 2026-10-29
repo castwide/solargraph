@@ -10,6 +10,9 @@ module Solargraph
         # @return [::Array<::Symbol>]
         attr_reader :delete
 
+        # @return [::Set<::String>] annotations to add to the method
+        attr_reader :annotations
+
         def closure
           nil
         end
@@ -18,11 +21,13 @@ module Solargraph
         # @param name [String]
         # @param tags [::Array<YARD::Tags::Tag>]
         # @param delete [::Array<Symbol>]
+        # @param annotations [::Enumerable<::String>] annotations to add to the method
         # @param splat [Hash]
-        def initialize location, name, tags, delete = [], **splat
+        def initialize location, name, tags, delete = [], annotations: [], **splat
           super(location: location, name: name, **splat)
           @tags = tags
           @delete = delete
+          @annotations = annotations.to_set
         end
 
         # @param name [String]
