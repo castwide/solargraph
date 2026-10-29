@@ -155,7 +155,7 @@ module Solargraph
         end
 
         # @param node [Parser::AST::Node, nil]
-        # @return [Hash{Symbol => Chain}]
+        # @return [Hash{Symbol => Source::Chain}]
         def convert_hash node
           return {} unless Parser.is_ast_node?(node)
           # @sg-ignore https://github.com/castwide/solargraph/pull/1396
