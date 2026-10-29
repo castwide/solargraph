@@ -93,6 +93,13 @@ Metrics/PerceivedComplexity:
 RSpec/ExampleLength:
   Max: 310
 
+# CollectionStyle flags Hash{Array<T> => V} and autocorrects it to
+# Hash{Array, T => V}, a different type. CollectionType alone accepts
+# what we write.
+# https://github.com/lsegal/yard/pull/1710
+YARD/CollectionStyle:
+  Enabled: false
+
 plugins:
   - rubocop-rspec
   - rubocop-rake
