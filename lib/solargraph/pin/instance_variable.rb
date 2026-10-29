@@ -42,9 +42,8 @@ module Solargraph
       # @return [Boolean]
       def definitely_visible_at? location
         start = self.location&.range&.start
-        return false unless super && start
+        return false unless location && super && start
 
-        # @sg-ignore flow sensitive typing needs to handle attrs
         (location.range.start <=> start) == 1
       end
 

@@ -77,7 +77,7 @@ module Solargraph
       #
       # flow sensitive typing could handle (91):
       #
-      # @todo 39: flow sensitive typing needs to handle attrs
+      # @todo 38: flow sensitive typing needs to handle attrs
       # @todo 29: flow sensitive typing should be able to handle redefinition
       # @todo 21: flow sensitive typing needs to narrow down type with an if is_a? check
       # @todo 13: Need to validate config
